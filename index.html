@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>自作SRPG</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <div id="gameScreen">
+
+        <img id="bgImage" src="assets/background_forest.png" alt="背景" />
+
+        <!-- ─── 上部パネル ─── -->
+        <div id="topPanel">
+
+            <!-- 会話レイヤー -->
+            <div id="topLayerDialogue" class="topLayer">
+                <div id="standingLayer">
+                    <img id="leftCharacter"  class="standingCharacter" src="assets/enemy_bell_portrait.png" alt="" />
+                    <img id="rightCharacter" class="standingCharacter" src="assets/ringholm_portrait.png"   alt="" />
+                </div>
+                <div id="dialogueBox">
+                    <div id="nameText">リングホルム</div>
+                    <div id="messageText">……この森、静かすぎる。気を抜くな。</div>
+                </div>
+            </div>
+
+            <!-- 戦況レイヤー -->
+            <div id="topLayerBattle" class="topLayer hidden">
+                <div id="phaseHeader">
+                    <span id="phaseLabel">――</span>
+                    <span id="turnLabel"></span>
+                </div>
+                <div id="logPanel">
+                    <div id="logTextList"></div>
+                </div>
+            </div>
+
+            <!-- タブ -->
+            <div id="topTabs">
+                <button class="topTab active" data-layer="dialogue">会話</button>
+                <button class="topTab"        data-layer="battle">戦況</button>
+            </div>
+
+        </div>
+
+        <!-- ─── バトル盤面 ─── -->
+        <div id="battleBoard">
+            <div id="battleBoardTint"></div>
+            <div id="battleGrid"></div>
+            <div id="unitLayer"></div>
+        </div>
+
+        <!-- ラジアルメニュー（#gameScreen直下でクリッピングされない） -->
+        <div id="radialMenu" class="hidden"></div>
+
+        <!-- ─── 下部パネル ─── -->
+        <div id="bottomPanel">
+            <div id="commandPanel">
+                <div id="commandHeader">command</div>
+                <div id="commandInfo"></div>
+                <div id="commandList"></div>
+            </div>
+            <div id="modeButtons">
+                <button id="scenarioModeButton" class="modeButton">シナリオ</button>
+                <button id="battleModeButton"   class="modeButton">バトル</button>
+                <button id="fullscreenButton"   class="modeButton">全画面</button>
+            </div>
+        </div>
+
+        <!-- フェーズバナー -->
+        <div id="phaseBanner" class="hidden"></div>
+
+        <!-- ステータスモーダル -->
+        <div id="statusModalOverlay" class="hidden">
+            <div id="statusModal">
+                <div id="statusModalHeader">
+                    <span id="statusModalTitle">ステータス</span>
+                    <button id="closeStatusModal">×</button>
+                </div>
+                <div id="statusTabs">
+                    <button class="statusTab active" data-tab="basic">基本</button>
+                    <button class="statusTab" data-tab="battle">特技</button>
+                    <button class="statusTab" data-tab="magic">魔法</button>
+                    <button class="statusTab" data-tab="special">その他</button>
+                </div>
+                <div id="statusModalBody"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="characters.js"></script>
+    <script src="skills.js"></script>
+    <script src="magics.js"></script>
+    <script src="spells.js"></script>
+    <script src="dataHelper.js"></script>
+    <script src="game.js"></script>
+</body>
+
+</html>
