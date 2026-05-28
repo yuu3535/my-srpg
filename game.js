@@ -9,7 +9,6 @@
 const nameText           = document.getElementById("nameText");
 const messageText        = document.getElementById("messageText");
 const logTextList        = document.getElementById("logTextList");
-const standingLayer      = document.getElementById("standingLayer");
 const unitLayer          = document.getElementById("unitLayer");
 const battleBoard        = document.getElementById("battleBoard");
 const battleGrid         = document.getElementById("battleGrid");
@@ -32,6 +31,11 @@ const logPanel           = document.getElementById("logPanel");
 const topTabs            = document.querySelectorAll(".topTab");
 const topLayerDialogue   = document.getElementById("topLayerDialogue");
 const topLayerBattle     = document.getElementById("topLayerBattle");
+const scenarioCharLayer  = document.getElementById("scenarioCharLayer");
+const topPanelBg         = document.getElementById("topPanelBg");
+const dialogueBox        = document.getElementById("dialogueBox");
+const topPanel           = document.getElementById("topPanel");
+const bgImage            = document.getElementById("bgImage");
 
 // =============================================
 // 定数
@@ -56,6 +60,18 @@ const EVADE_SKILL_NAME = "回避";
 // ゲームモード状態
 // =============================================
 let gameMode = "scenario";
+
+// =============================================
+// バトル状態
+// =============================================
+// =============================================
+// シナリオ状態
+// =============================================
+let scenarioActive    = false;  // シナリオ再生中か
+let currentChapter    = null;   // 現在の章データ
+let currentSceneIdx   = 0;      // 現在のシーンインデックス
+let fromScenario      = false;  // バトルがシナリオ経由か
+let scenarioCharacters = [];    // 現在ステージに立つキャラ [文字列 or {name,image}]
 
 // =============================================
 // バトル状態
@@ -1305,6 +1321,8 @@ function checkVictoryCondition() {
         commandInfo.textContent   = "";
         commandList.innerHTML     = "";
         showPhaseBanner("勝利！");
+        // シナリオ経由のバトルなら2秒後にシナリオへ戻る
+        if (fromScenario) setTimeout(resumeScenarioAfterBattle, 2000);
         return;
     }
     if (aliveAllies.length === 0) {
@@ -1604,6 +1622,136 @@ function switchTopLayer(layer) {
     topLayerBattle.classList.toggle("hidden", layer !== "battle");
 }
 
+// =============================================
+// シナリオシステム
+// =============================================
+/** シナリオ用レイアウトに切り替え */
+function enterScenarioLayout() {
+    switchTopLayer("dialogue");
+    battleGrid.style.display  = "none";   // グリッド線を非表示
+    unitLayer.style.display   = "none";   // ユニットトークンを非表示
+}
+
+/** バトル用レイアウトに戻す */
+function exitScenarioLayout() {
+    battleGrid.style.display  = "";
+    unitLayer.style.display   = "";
+}
+
+/**
+ * シナリオキャラ立ち絵レイヤーを再描画する
+ * @param {string} speaker - 現在の話者名（アクティブハイライト用）
+ */
+function updateScenarioCharLayer(speaker) {
+    scenarioCharLayer.innerHTML = "";
+    scenarioCharacters.forEach(entry => {
+        // entry は文字列 or { name, image }
+        const name  = (typeof entry === "string") ? entry : entry.name;
+        const image = (typeof entry === "object" && entry.image)
+            ? entry.image
+            : (CHARACTERS_DATA.find(c => c.name === name)?.portraitImage ?? "");
+
+        const charData = CHARACTERS_DATA.find(c => c.name === name);
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "scenarioChar" + (name === speaker ? " active" : "");
+
+        const portrait = document.createElement("div");
+        portrait.className = "scenarioCharPortrait";
+        if (image) {
+            portrait.style.backgroundImage = `url('${image}')`;
+        }
+        // キャラ個別のシナリオ立ち絵トリミング設定（未指定ならCSSデフォルト）
+        if (charData?.scenarioBgSize) portrait.style.backgroundSize     = charData.scenarioBgSize;
+        if (charData?.scenarioBgPos)  portrait.style.backgroundPosition = charData.scenarioBgPos;
+
+        wrapper.appendChild(portrait);
+        scenarioCharLayer.appendChild(wrapper);
+    });
+}
+
+function startChapter(chapterId) {
+    const ch = CHAPTERS.find(c => c.id === chapterId);
+    if (!ch) { console.warn("Chapter not found:", chapterId); return; }
+    currentChapter  = ch;
+    currentSceneIdx = 0;
+    scenarioActive  = true;
+    gameMode        = "scenario";
+
+    clearHighlights();
+    hideRadialMenu();
+    scenarioCharacters = [];
+    scenarioCharLayer.innerHTML = "";
+    enterScenarioLayout();
+
+    renderScenarioCommands();
+    playCurrentScene();
+}
+
+function playCurrentScene() {
+    if (!scenarioActive || !currentChapter) return;
+    if (currentSceneIdx >= currentChapter.scenes.length) {
+        endChapter();
+        return;
+    }
+    const scene = currentChapter.scenes[currentSceneIdx];
+    switch (scene.type) {
+        case "dialogue": playDialogueScene(scene); break;
+        case "battle":   playBattleScene(scene);   break;
+        default:         advanceScene();            break;
+    }
+}
+
+function playDialogueScene(scene) {
+    // setCharacters が指定された場合のみキャラ行を更新
+    if (scene.setCharacters !== undefined) {
+        scenarioCharacters = scene.setCharacters.slice();
+    }
+    updateScenarioCharLayer(scene.speaker);
+    showMessage(scene.speaker, scene.text);
+    dialogueBox.dataset.scenario = "active";
+}
+
+function advanceScene() {
+    currentSceneIdx++;
+    playCurrentScene();
+}
+
+function playBattleScene(/* scene */) {
+    scenarioActive               = false;
+    fromScenario                 = true;
+    dialogueBox.dataset.scenario = "";
+    exitScenarioLayout();
+    setBattleMode();
+}
+
+function resumeScenarioAfterBattle() {
+    if (!fromScenario) return;
+    fromScenario   = false;
+    scenarioActive = true;
+    gameMode       = "scenario";
+
+    clearHighlights();
+    enterScenarioLayout();
+    renderScenarioCommands();
+    advanceScene();
+}
+
+function endChapter() {
+    const title = currentChapter?.title ?? "章";
+    scenarioActive               = false;
+    fromScenario                 = false;
+    currentChapter               = null;
+    currentSceneIdx              = 0;
+    dialogueBox.dataset.scenario = "";
+
+    exitScenarioLayout();
+    addLog(`── ${title} 終了 ──`);
+    showMessage("SYSTEM", `${title} クリア！`);
+}
+
+// =============================================
+
 function setScenarioMode() {
     gameMode = "scenario";
     clearHighlights();
@@ -1624,6 +1772,7 @@ function setScenarioMode() {
 }
 
 function setBattleMode() {
+    exitScenarioLayout();   // シナリオレイアウトが残っていたらリセット
     switchTopLayer("battle");
     gameMode   = "battle";
     battleOver = false;
@@ -1646,7 +1795,6 @@ function setBattleMode() {
         skills: { ...c.skills },
     }));
 
-    standingLayer.style.display     = "none";
     unitLayer.style.display         = "block";
     battleBoard.style.opacity       = "1";
     battleBoard.style.pointerEvents = "auto";
@@ -1708,7 +1856,8 @@ async function toggleFullscreen() {
 // =============================================
 // イベントリスナー
 // =============================================
-scenarioModeButton.addEventListener("click", setScenarioMode);
+scenarioModeButton.addEventListener("click", () => startChapter("ch1"));
+dialogueBox.addEventListener("click", () => { if (scenarioActive) advanceScene(); });
 battleModeButton.addEventListener("click",   setBattleMode);
 fullscreenButton.addEventListener("click",   toggleFullscreen);
 

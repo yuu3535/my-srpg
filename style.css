@@ -51,14 +51,30 @@ html, body {
     overflow: hidden;
 }
 
-/* ─── 背景 ─── */
-#bgImage {
+/* ─── パネル背景（上パネル・マップパネル共通） ─── */
+.panelBg {
     position: absolute;
     inset: 0;
     width: 100%; height: 100%;
     object-fit: cover;
     z-index: 0;
     filter: brightness(0.45) saturate(0.75);
+}
+
+/* 上パネル用ダーク／グラデーションオーバーレイ */
+.panelTint {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+#topPanelTint {
+    background: linear-gradient(to bottom, rgba(4,5,12,0.45) 0%, rgba(4,5,12,0.20) 100%);
+}
+
+/* 上パネル背景は少し明るめに */
+#topPanelBg {
+    filter: brightness(0.65) saturate(0.85);
 }
 
 /* ============================================================
@@ -72,47 +88,86 @@ html, body {
     z-index: 10;
     overflow: hidden;
     border-bottom: 1px solid var(--gold-dim);
-    background: linear-gradient(to bottom, rgba(4,5,12,0.85) 0%, rgba(4,5,12,0.60) 100%);
-    /* topPanelは上部の余りを埋めるためflexで高さが変わる可能性があるので固定 */
+    /* 背景は #topPanelBg + #topPanelTint で管理 */
 }
 
 .topLayer {
     position: absolute;
     inset: 0;
     display: flex;
+    z-index: 2;  /* panelBg(0) + panelTint(1) の上に表示 */
 }
 .topLayer.hidden { display: none; }
 
-/* 会話レイヤー */
+/* 会話レイヤー：子要素はすべて absolute 配置するので flex-direction 不要 */
 #topLayerDialogue {
-    flex-direction: row;
-    align-items: stretch;
+    /* .topLayer の position:absolute; inset:0 を継承 */
 }
 
-#standingLayer {
-    position: relative;
-    flex: 0 0 38%;
+/* ── キャラ立ち絵レイヤー（背景の上、テキストボックスの下） ── */
+#scenarioCharLayer {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: stretch;       /* 子を全高に引き伸ばす */
+    justify-content: space-evenly;
     overflow: hidden;
+    pointer-events: none;
 }
 
-.standingCharacter {
+/* 1キャラのラッパー */
+.scenarioChar {
+    position: relative;
+    flex: 1;
+    max-width: 185px;
+    /* 非話者：色はそのまま、少し暗く（影にいる感じ） */
+    filter: brightness(0.72);
+    transition: filter 0.3s;
+}
+
+/* 話者：明るく鮮やか＋ゴールドの光 */
+.scenarioChar.active {
+    filter: brightness(1.05) saturate(1.15) drop-shadow(0 2px 14px rgba(200,146,42,0.30));
+}
+
+/* 立ち絵本体（背景画像で描画） */
+.scenarioCharPortrait {
+    width: 100%;
+    height: 100%;
+    background-repeat: no-repeat;
+    background-size: auto 160%;   /* デフォルト：頭〜腰あたりで切れる */
+    background-position: center top; /* 上から表示 */
+}
+
+/* ── テキストボックス（最前面・下部グラデ） ── */
+#dialogueBox {
     position: absolute;
     bottom: 0;
-    height: 105%;
-    width: auto;
-    object-fit: contain;
-    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.8));
-}
-#leftCharacter  { left: -4%; }
-#rightCharacter { left: 30%; }
-
-#dialogueBox {
-    flex: 1;
+    left: 0;
+    right: 0;
+    padding: 2.2em 0.9em 0.75em;
+    background: linear-gradient(to bottom,
+        transparent          0%,
+        rgba(4,5,12,0.88)   30%,
+        rgba(4,5,12,0.95)  100%);
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    padding: 0.5em 0.9em 0.9em;
-    background: linear-gradient(to right, transparent 0%, rgba(4,5,12,0.55) 30%);
+    cursor: default;
+}
+#dialogueBox[data-scenario="active"] { cursor: pointer; }
+#dialogueBox[data-scenario="active"]::after {
+    content: "▼";
+    position: absolute;
+    right: 0.8em;
+    bottom: 0.5em;
+    color: var(--gold);
+    font-size: 10px;
+    animation: scenarioNext 1.2s ease-in-out infinite;
+}
+@keyframes scenarioNext {
+    0%, 100% { opacity: 1;   transform: translateY(0); }
+    50%       { opacity: 0.3; transform: translateY(3px); }
 }
 
 #nameText {

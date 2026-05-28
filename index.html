@@ -11,17 +11,16 @@
 <body>
     <div id="gameScreen">
 
-        <img id="bgImage" src="assets/background_forest.png" alt="背景" />
-
         <!-- ─── 上部パネル ─── -->
         <div id="topPanel">
 
+            <!-- 上パネル専用背景（シナリオ・バトルで個別設定可） -->
+            <img id="topPanelBg" class="panelBg" src="assets/background_forest.png" alt="" />
+            <div id="topPanelTint" class="panelTint"></div>
+
             <!-- 会話レイヤー -->
             <div id="topLayerDialogue" class="topLayer">
-                <div id="standingLayer">
-                    <img id="leftCharacter"  class="standingCharacter" src="assets/enemy_bell_portrait.png" alt="" />
-                    <img id="rightCharacter" class="standingCharacter" src="assets/ringholm_portrait.png"   alt="" />
-                </div>
+                <div id="scenarioCharLayer"></div>
                 <div id="dialogueBox">
                     <div id="nameText">リングホルム</div>
                     <div id="messageText">……この森、静かすぎる。気を抜くな。</div>
@@ -49,6 +48,8 @@
 
         <!-- ─── バトル盤面 ─── -->
         <div id="battleBoard">
+            <!-- マップパネル専用背景 -->
+            <img id="bgImage" class="panelBg" src="assets/background_forest.png" alt="背景" />
             <div id="battleBoardTint"></div>
             <div id="battleGrid"></div>
             <div id="unitLayer"></div>
@@ -98,6 +99,7 @@
     <script src="magics.js"></script>
     <script src="spells.js"></script>
     <script src="dataHelper.js"></script>
+    <script src="scenario.js"></script>
     <script src="game.js"></script>
 </body>
 
