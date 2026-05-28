@@ -22,7 +22,7 @@ const CHARACTERS_DATA = [
         race: "ヒト",
         clan: "黒の一族",
 
-        x: 1, y: 7,
+        x: 2, y: 7,
 
         level: 5,
         hp: 23, maxHp: 23,
@@ -32,7 +32,6 @@ const CHARACTERS_DATA = [
         courage: 90, luck: 35,
 
         move: 3, attackRange: 1,
-        physicalBonus: "1d6", magicBonus: "2d6",
 
         moved: false, acted: false,
         char: "リ",
@@ -60,6 +59,7 @@ const CHARACTERS_DATA = [
 
         seizureType: "破壊衝動",
         secretArt: "黒炎",
+        counterMode: "auto",      // 期待値で物理/魔法を自動選択
         statusEffects: [],
     },
 
@@ -70,7 +70,7 @@ const CHARACTERS_DATA = [
         race: "ヒト",
         clan: "天使の落胤",
 
-        x: 2, y: 7,
+        x: 3, y: 7,
 
         level: 4,
         hp: 22, maxHp: 22,
@@ -80,7 +80,6 @@ const CHARACTERS_DATA = [
         courage: 90, luck: 90,
 
         move: 3, attackRange: 1,
-        physicalBonus: "1d6", magicBonus: "2d6",
 
         moved: false, acted: false,
         char: "ア",
@@ -109,333 +108,7 @@ const CHARACTERS_DATA = [
 
         seizureType: "共鳴",
         secretArt: "祈り",
-        statusEffects: [],
-    },
-
-    {
-        id: "ivan",
-        name: "イヴァン",
-        side: "ally",
-        race: "エルフ",
-        clan: "白の一族",
-
-        x: 3, y: 7,
-
-        level: 4,
-        hp: 21, maxHp: 21,
-        mp: 29, maxMp: 29,
-
-        str: 17, con: 18, dex: 23, pow: 29, edu: 23, int: 20, siz: 15,
-        courage: 70, luck: 30,
-
-        move: 3, attackRange: 2,
-        physicalBonus: "1d4", magicBonus: "2d6",
-
-        moved: false, acted: false,
-        char: "イ",
-        tokenImage: "Character/イヴァンアイコン.png",
-        portraitImage: "立ち絵AI生成/イヴァン1.png",  portraitBgSize: "310%",  portraitBgPos: "center -50px",
-
-        spells: {
-            氷: 9,
-            加速: 8,
-            カウンター: 7,
-            結界: 9,
-            破壊: 8,
-            "フギン＆ムギン": 9,
-        },
-        skills: {
-            海洋学: 7,
-            回避: 7,
-            機械工学: 7,
-            図書館: 8,
-            武器: 8,
-            魔導: 7,
-            歴史: 6,
-        },
-
-        seizureType: "結晶化",
-        secretArt: "凍結",
-        statusEffects: [],
-    },
-
-    {
-        id: "egun",
-        name: "エギュン",
-        side: "ally",
-        race: "魔物",
-        clan: "王族",
-
-        x: 0, y: 8,
-
-        level: 3,
-        hp: 15, maxHp: 15,
-        mp: 22, maxMp: 22,
-
-        str: 18, con: 16, dex: 20, pow: 22, edu: 19, int: 19, siz: 8,
-        courage: 80, luck: 80,
-
-        move: 3, attackRange: 1,
-        physicalBonus: "1d4", magicBonus: "2d6",
-
-        moved: false, acted: false,
-        char: "エ",
-        tokenImage: "Character/エギュンアイコン.png",
-        portraitImage: "立ち絵AI生成/エギュン1.png",  portraitBgSize: "320%",  portraitBgPos: "center -45px",
-
-        spells: {
-            水: 8,
-            治癒: 7,
-            結界: 7,
-            破壊: 7,
-            グレムリン: 8,
-        },
-        skills: {
-            言いくるめ: 5,
-            隠密: 3,
-            回避: 7,
-            聞き耳: 6,
-            心理学: 9,
-            水泳: 8,
-            爪: 7,
-            武道: 7,
-        },
-
-        seizureType: "なし",
-        secretArt: "なし",
-        statusEffects: [],
-    },
-
-    {
-        id: "karima",
-        name: "カリマ",
-        side: "ally",
-        race: "ヒト",
-        clan: "天使の落胤",
-
-        x: 1, y: 8,
-
-        level: 4,
-        hp: 21, maxHp: 21,
-        mp: 27, maxMp: 27,
-
-        str: 21, con: 20, dex: 27, pow: 27, edu: 25, int: 23, siz: 13,
-        courage: 90, luck: 90,
-
-        move: 3, attackRange: 1,
-        physicalBonus: "1d6", magicBonus: "2d6",
-
-        moved: false, acted: false,
-        char: "カ",
-        tokenImage: "Character/カリマ　立ち絵 (2).png",
-
-        spells: {
-            火: 5,
-            治癒: 6,
-            加速: 7,
-            虚像: 5,
-            結界: 7,
-            補助: 6,
-            落雷: 9,
-        },
-        skills: {
-            隠密: 7,
-            回避: 7,
-            説得: 6,
-            投擲: 7,
-            変装: 9,
-            捕縛: 7,
-            魔導: 7,
-            目星: 7,
-            武器: 7,
-        },
-
-        seizureType: "共鳴",
-        secretArt: "祈り",
-        statusEffects: [],
-    },
-
-    {
-        id: "karura",
-        name: "カルラ",
-        side: "ally",
-        race: "エルフ",
-        clan: "白の一族",
-
-        x: 2, y: 8,
-
-        level: 1,
-        hp: 12, maxHp: 12,
-        mp: 19, maxMp: 19,
-
-        str: 8, con: 12, dex: 14, pow: 19, edu: 14, int: 16, siz: 12,
-        courage: 70, luck: 45,
-
-        move: 3, attackRange: 1,
-        physicalBonus: "0", magicBonus: "1d6",
-
-        moved: false, acted: false,
-        char: "カ",
-        tokenImage: "Character/カルラ 立ち絵 (2).png",
-
-        spells: {
-            氷: 9,
-            治癒: 6,
-            悪夢: 6,
-            虚像: 6,
-            結界: 5,
-        },
-        skills: {
-            回避: 5,
-            家事: 5,
-            戯れる: 5,
-            変装: 7,
-            投擲: 5,
-            図書館: 6,
-            ナビゲート: 6,
-            魔導: 6,
-        },
-
-        seizureType: "結晶化",
-        secretArt: "凍結",
-        statusEffects: [],
-    },
-
-    {
-        id: "jack",
-        name: "ジャック",
-        side: "ally",
-        race: "魔物",
-        clan: "なし",
-
-        x: 3, y: 8,
-
-        level: 4,
-        hp: 21, maxHp: 21,
-        mp: 24, maxMp: 24,
-
-        str: 25, con: 23, dex: 22, pow: 24, edu: 20, int: 17, siz: 14,
-        courage: 65, luck: 60,
-
-        move: 3, attackRange: 1,
-        physicalBonus: "1d6", magicBonus: "2d6",
-
-        moved: false, acted: false,
-        char: "ジ",
-        tokenImage: "Character/ジャックアイコン.png",
-        portraitImage: "立ち絵AI生成/ジャック1.png",  portraitBgSize: "360%",
-
-        spells: {
-            治癒: 7,
-            悪夢: 7,
-            虚像: 8,
-            結界: 7,
-            暗器召喚: 7,
-        },
-        skills: {
-            言いくるめ: 6,
-            応急手当: 6,
-            回避: 7,
-            家事: 7,
-            精神分析: 7,
-            投擲: 9,
-            武道: 5,
-            キック: 6,
-        },
-
-        seizureType: "なし",
-        secretArt: "なし",
-        statusEffects: [],
-    },
-
-    {
-        id: "baldo",
-        name: "バルド",
-        side: "ally",
-        race: "竜人",
-        clan: "なし",
-
-        x: 4, y: 7,
-
-        level: 4,
-        hp: 28, maxHp: 28,
-        mp: 25, maxMp: 25,
-
-        str: 28, con: 23, dex: 25, pow: 25, edu: 19, int: 18, siz: 14,
-        courage: 75, luck: 60,
-
-        move: 3, attackRange: 1,
-        physicalBonus: "2d6", magicBonus: "2d6",
-
-        moved: false, acted: false,
-        char: "バ",
-        tokenImage: "Character/バルドアイコン.png",
-        portraitImage: "立ち絵AI生成/バルド1.png",
-
-        spells: {
-            水: 8,
-            風: 7,
-            カウンター: 7,
-            破壊: 7,
-            封印: 7,
-        },
-        skills: {
-            言いくるめ: 5,
-            回避: 5,
-            水泳: 9,
-            跳躍: 7,
-            爪: 7,
-            ナビゲート: 6,
-            尾撃: 6,
-            武道: 8,
-        },
-
-        seizureType: "なし",
-        secretArt: "なし",
-        statusEffects: [],
-    },
-
-    {
-        id: "roy",
-        name: "ロイ",
-        side: "ally",
-        race: "魔物",
-        clan: "吸血鬼",
-
-        x: 4, y: 8,
-
-        level: 3,
-        hp: 19, maxHp: 19,
-        mp: 16, maxMp: 16,
-
-        str: 15, con: 26, dex: 17, pow: 16, edu: 18, int: 17, siz: 11,
-        courage: 45, luck: 55,
-
-        move: 3, attackRange: 1,
-        physicalBonus: "1d4", magicBonus: "1d6",
-
-        moved: false, acted: false,
-        char: "ロ",
-        tokenImage: "Character/ロイ　通常 (2).png",
-
-        spells: {
-            火: 5,
-            治癒: 8,
-            付与: 7,
-            悪夢: 5,
-        },
-        skills: {
-            回避: 6,
-            家事: 8,
-            芸術: 8,
-            投擲: 5,
-            図書館: 6,
-            武器: 8,
-            目星: 7,
-        },
-
-        seizureType: "督責",
-        secretArt: "吸血",
+        counterMode: "auto",      // 期待値で物理/魔法を自動選択
         statusEffects: [],
     },
 
@@ -446,7 +119,7 @@ const CHARACTERS_DATA = [
         race: "魔物",
         clan: "王族",
 
-        x: 0, y: 7,
+        x: 4, y: 7,
 
         level: 5,
         hp: 28, maxHp: 28,
@@ -456,7 +129,6 @@ const CHARACTERS_DATA = [
         courage: 65, luck: 65,
 
         move: 3, attackRange: 1,
-        physicalBonus: "1d6", magicBonus: "3d6",
 
         moved: false, acted: false,
         char: "ア",
@@ -488,6 +160,7 @@ const CHARACTERS_DATA = [
 
         seizureType: "なし",
         secretArt: "なし",
+        counterMode: "magic_first", // MPがある限り最高火力魔法で反撃
         statusEffects: [],
     },
 
@@ -496,13 +169,49 @@ const CHARACTERS_DATA = [
     // ============================================================
 
     {
+        id: "forest_guard",
+        name: "森の番人",
+        side: "enemy",
+        race: "ヒト",
+        clan: "なし",
+
+        x: 3, y: 2,
+
+        level: 2,
+        hp: 14, maxHp: 14,
+        mp: 8, maxMp: 8,
+
+        str: 18, con: 18, dex: 17, pow: 12, edu: 12, int: 12, siz: 14,
+        courage: 50, luck: 40,
+
+        move: 3, attackRange: 1,
+
+        moved: false, acted: false,
+        char: "番",
+        tokenImage: "立ち絵AI生成/モブ/アルストロ兵ドット.png",
+        portraitImage: "立ち絵AI生成/モブ/アルストロ兵1.png",
+
+        spells: {},
+        skills: {
+            回避: 5,
+            武器: 7,
+            武道: 5,
+        },
+
+        seizureType: "なし",
+        secretArt: "なし",
+        counterMode: "physical_only", // 呪文なし、物理のみ
+        statusEffects: [],
+    },
+
+    {
         id: "dylan",
         name: "ディラン",
         side: "enemy",
         race: "竜人",
         clan: "黒の一族",
 
-        x: 5, y: 1,
+        x: 4, y: 1,
 
         level: 4,
         hp: 26, maxHp: 26,
@@ -512,11 +221,11 @@ const CHARACTERS_DATA = [
         courage: 60, luck: 25,
 
         move: 3, attackRange: 1,
-        physicalBonus: "2d6", magicBonus: "2d6",
 
         moved: false, acted: false,
         char: "デ",
         tokenImage: "Character/ディラン立ち絵.png",
+        portraitImage: "立ち絵AI生成/モブ/アルストロ将軍1.png",  portraitBgSize: "280%",  portraitBgPos: "center top",
 
         spells: {
             火: 9,
@@ -536,6 +245,7 @@ const CHARACTERS_DATA = [
 
         seizureType: "破壊衝動",
         secretArt: "黒炎",
+        counterMode: "auto",      // 物理(爪)も魔法(火)も強い、期待値で選択
         statusEffects: [],
     },
 
@@ -546,7 +256,7 @@ const CHARACTERS_DATA = [
         race: "ヒト",
         clan: "星の一族",
 
-        x: 7, y: 1,
+        x: 5, y: 2,
 
         level: 4,
         hp: 18, maxHp: 18,
@@ -556,11 +266,11 @@ const CHARACTERS_DATA = [
         courage: 70, luck: 90,
 
         move: 3, attackRange: 1,
-        physicalBonus: "1d4", magicBonus: "2d6",
 
         moved: false, acted: false,
         char: "ヘ",
         tokenImage: "Character/ヘレル立ち絵.png",
+        portraitImage: "立ち絵AI生成/モブ/アルストロ兵1魔法.png",  portraitBgSize: "280%",  portraitBgPos: "center top",
 
         spells: {
             隕石: 8,
@@ -583,6 +293,7 @@ const CHARACTERS_DATA = [
 
         seizureType: "天災",
         secretArt: "なし",
+        counterMode: "magic_first", // 物理弱い、魔法(破壊)で反撃優先
         statusEffects: [],
     },
 

@@ -5,6 +5,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <title>自作SRPG</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=M+PLUS+1:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css" />
 </head>
 
@@ -27,6 +30,11 @@
                 </div>
             </div>
 
+            <!-- 予測レイヤー -->
+            <div id="topLayerForecast" class="topLayer hidden">
+                <div id="forecastContent"></div>
+            </div>
+
             <!-- 戦況レイヤー -->
             <div id="topLayerBattle" class="topLayer hidden">
                 <div id="phaseHeader">
@@ -42,6 +50,7 @@
             <div id="topTabs">
                 <button class="topTab active" data-layer="dialogue">会話</button>
                 <button class="topTab"        data-layer="battle">戦況</button>
+                <button class="topTab"        data-layer="forecast">予測</button>
             </div>
 
         </div>
@@ -68,12 +77,28 @@
             <div id="modeButtons">
                 <button id="scenarioModeButton" class="modeButton">シナリオ</button>
                 <button id="battleModeButton"   class="modeButton">バトル</button>
-                <button id="fullscreenButton"   class="modeButton">全画面</button>
             </div>
         </div>
 
         <!-- フェーズバナー -->
         <div id="phaseBanner" class="hidden"></div>
+
+        <!-- ─── ホーム画面 ─── -->
+        <div id="homeScreen">
+            <img id="homeScreenBg" src="立ち絵AI生成/ホーム画面用(仮).png" alt="" />
+            <div id="homeScreenOverlay"></div>
+            <div id="homeScreenContent">
+                <div id="homeTitle">
+                    百年戦争編
+                    <span id="homeTitleSub">（仮）</span>
+                </div>
+                <div id="homeButtons">
+                    <button class="homeButton" id="homeStartBtn">はじめから</button>
+                    <button class="homeButton" id="homeContinueBtn" disabled>つづきから</button>
+                    <button class="homeButton" id="homeSettingsBtn" disabled>設定</button>
+                </div>
+            </div>
+        </div>
 
         <!-- ステータスモーダル -->
         <div id="statusModalOverlay" class="hidden">

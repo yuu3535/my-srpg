@@ -17,7 +17,6 @@ const commandInfo        = document.getElementById("commandInfo");
 const commandList        = document.getElementById("commandList");
 const scenarioModeButton = document.getElementById("scenarioModeButton");
 const battleModeButton   = document.getElementById("battleModeButton");
-const fullscreenButton   = document.getElementById("fullscreenButton");
 const statusModalOverlay = document.getElementById("statusModalOverlay");
 const statusModalTitle   = document.getElementById("statusModalTitle");
 const statusModalBody    = document.getElementById("statusModalBody");
@@ -32,7 +31,13 @@ const topTabs            = document.querySelectorAll(".topTab");
 const topLayerDialogue   = document.getElementById("topLayerDialogue");
 const topLayerBattle     = document.getElementById("topLayerBattle");
 const scenarioCharLayer  = document.getElementById("scenarioCharLayer");
+const topLayerForecast   = document.getElementById("topLayerForecast");
+const forecastContent    = document.getElementById("forecastContent");
 const topPanelBg         = document.getElementById("topPanelBg");
+const homeScreen         = document.getElementById("homeScreen");
+const homeStartBtn       = document.getElementById("homeStartBtn");
+const homeContinueBtn    = document.getElementById("homeContinueBtn");
+const homeSettingsBtn    = document.getElementById("homeSettingsBtn");
 const dialogueBox        = document.getElementById("dialogueBox");
 const topPanel           = document.getElementById("topPanel");
 const bgImage            = document.getElementById("bgImage");
@@ -86,6 +91,34 @@ let turnCount       = 1;
 let battleOver      = false;
 let statusTargetId  = null; // ステータスモーダル表示対象
 let currentStatusTab = "basic";
+
+// =============================================
+// DB / MB テーブル計算
+// =============================================
+/**
+ * STR+SIZ（DB）または POW+INT（MB）の合計値から
+ * ボーナスダイス式を返す（ルルブ対抗表準拠）
+ */
+function calcBonusDice(sum) {
+    if (sum <=  12) return "-1d6";
+    if (sum <=  16) return "-1d4";
+    if (sum <=  24) return "0";
+    if (sum <=  32) return "1d4";
+    if (sum <=  40) return "1d6";
+    if (sum <=  56) return "2d6";
+    if (sum <=  72) return "3d6";
+    if (sum <=  88) return "4d6";
+    if (sum <= 102) return "5d6";
+    if (sum <= 115) return "6d6";
+    if (sum <= 128) return "7d6";
+    if (sum <= 142) return "8d6";
+    if (sum <= 156) return "9d6";
+    if (sum <= 170) return "10d6";
+    if (sum <= 184) return "11d6";
+    if (sum <= 198) return "12d6";
+    if (sum <= 212) return "13d6";
+    return "14d6";
+}
 
 // =============================================
 // ダイス
@@ -164,6 +197,8 @@ function clearHighlights() {
 // ユニット描画
 // =============================================
 function renderUnits() {
+    // ダメージポップアップはアニメーション中なので退避して再追加する
+    const livePopups = [...unitLayer.querySelectorAll(".dmgPopup")];
     unitLayer.innerHTML = "";
     for (const unit of battleUnits) {
         if (unit.hp <= 0) continue;
@@ -201,7 +236,8 @@ function renderUnits() {
         el.style.left = `${unit.x * 10}%`;
         el.style.top  = `${unit.y * 10}%`;
 
-        if (unit.moved && unit.acted) el.classList.add("unitDone");
+        // 自分のフェーズ中のみ行動済み表示（他フェーズでは暗くしない）
+        if (unit.moved && unit.acted && unit.side === turnPhase) el.classList.add("unitDone");
 
         el.addEventListener("click", (e) => {
             e.stopPropagation();
@@ -210,6 +246,9 @@ function renderUnits() {
 
         unitLayer.appendChild(el);
     }
+
+    // 退避したポップアップを最前面に再追加
+    livePopups.forEach(p => unitLayer.appendChild(p));
 }
 
 // =============================================
@@ -280,12 +319,22 @@ function onUnitClick(unit) {
         }
         selectUnit(unit);
     } else if (unit.side === "enemy" && unit.hp > 0) {
-        showMessage("SYSTEM", `【${unit.name}】 HP: ${unit.hp}/${unit.maxHp}  MP: ${unit.mp}/${unit.maxMp}`);
+        renderEnemyInfoPanel(unit);
     }
 }
 
 function onCellClick(row, col) {
     if (gameMode !== "battle" || battleOver) return;
+
+    // 転移先マス選択
+    if (actionState === "magic" && selectedUnit && selectedSpell?.effectType === "teleport") {
+        const cell = getCell(row, col);
+        if (!cell || !cell.classList.contains("highlightMove")) return;
+        clearHighlights();
+        executeTeleport(selectedUnit, row, col);
+        return;
+    }
+
     if (actionState !== "moving" || !selectedUnit) return;
 
     const cell = getCell(row, col);
@@ -369,6 +418,8 @@ function showAttackRadial(unit) {
     const atkSkills = ATTACK_SKILL_PRIORITY
         .filter(name => name in (unit.skills || {}))
         .map(name => ({ label: name, val: unit.skills[name] }));
+    // 攻撃スキルが1つもない場合は「素手」で代替
+    if (atkSkills.length === 0) atkSkills.push({ label: "素手", val: 4 });
     const items = [
         ...atkSkills.map(({ label, val }) => ({
             label,
@@ -380,7 +431,7 @@ function showAttackRadial(unit) {
 
     const radius = Math.max(46, items.length * 9);
     buildRadialButtons(items, radius, (item) => {
-        if (item.isBack) { renderBattleCommands(unit); return; }
+        if (item.isBack) { hideForecastLayer(); renderBattleCommands(unit); return; }
         selectedAttackSkill = item.label;
         hideRadialMenu();
         if (item.label === "投擲") {
@@ -396,6 +447,7 @@ function showAttackRadial(unit) {
             }
             actionState = "throwing";
             highlightThrowRange(unit);
+            showForecastLayer(unit, throwTargets, "投擲", false, null);
             showMessage("SYSTEM", `${unit.name}の投擲対象を選択（直線4マス）`);
         } else {
             const atkTargets = battleUnits.filter(u =>
@@ -409,12 +461,39 @@ function showAttackRadial(unit) {
             }
             actionState = "attacking";
             highlightAttackRange(unit);
+            showForecastLayer(unit, atkTargets, item.label, false, null);
             showMessage("SYSTEM", `${unit.name}の攻撃対象を選択（${item.label}）`);
         }
         addLog(`・${unit.name}は${item.label}で攻撃を選択`);
     });
 }
 
+
+/** 特技選択ラジアル（2段目） */
+function showSkillRadial(unit) {
+    initRadialAtUnit(unit);
+
+    const utilityEntries = Object.entries(unit.skills || {})
+        .filter(([name]) => BATTLE_UTILITY_SKILLS.has(name));
+
+    const items = [
+        ...utilityEntries.map(([name, val]) => ({
+            label: name,
+            html: `${name}<span class="radialBtnSub">${val}</span>`,
+            skillName: name,
+            val,
+            isBack: false,
+        })),
+        { label: "戻る", html: `戻る<span class="radialBtnSub">BACK</span>`, isBack: true },
+    ];
+
+    const radius = Math.max(50, items.length * 10);
+    buildRadialButtons(items, radius, (item) => {
+        if (item.isBack) { renderBattleCommands(unit); return; }
+        hideRadialMenu();
+        executeSkill(unit, item.skillName, item.val, item.skillName);
+    });
+}
 
 /** 魔法選択ラジアル（2段目） */
 function showMagicRadial(unit) {
@@ -432,41 +511,76 @@ function showMagicRadial(unit) {
 
     const radius = Math.max(50, items.length * 10);
     buildRadialButtons(items, radius, (item) => {
-        if (item.isBack) { renderBattleCommands(unit); return; }
+        if (item.isBack) { hideForecastLayer(); renderBattleCommands(unit); return; }
 
-        // 射程がある呪文は対象がいるか確認
-        if (typeof item.spellData.range === "number") {
-            const sp = item.spellData;
-            const inRange = battleUnits.filter(u => {
-                if (u.hp <= 0) return false;
-                const dist = Math.abs(u.x - unit.x) + Math.abs(u.y - unit.y);
-                if (dist === 0 || dist > sp.range) return false;
-                return sp.targetType === "enemy"
-                    ? u.side !== unit.side
-                    : u.side === unit.side;
-            });
-            if (inRange.length === 0) {
-                const label = sp.targetType === "enemy" ? "敵" : "味方";
-                showMessage("SYSTEM", `射程内に${label}がいません`);
-                showMagicRadial(unit);
-                return;
+        // range:null の魔法は選択時に即発動（カウンター・浮遊・召喚など）
+        if (item.spellData.range === null) {
+            hideRadialMenu();
+            clearHighlights();
+            addLog(`・${unit.name}は ${item.spellData.name} を使用`);
+            executeMagic(unit, item.spellData, unit);
+            return;
+        }
+
+        // 転移：空きマスをタップして瞬間移動
+        if (item.spellData.effectType === "teleport") {
+            selectedSpell = item.spellData;
+            actionState   = "magic";
+            hideRadialMenu();
+            clearHighlights();
+            hideForecastLayer();
+            const tRange = item.spellData.range || 5;
+            for (let dy = -tRange; dy <= tRange; dy++) {
+                for (let dx = -tRange; dx <= tRange; dx++) {
+                    if (Math.abs(dx) + Math.abs(dy) > tRange || (dx === 0 && dy === 0)) continue;
+                    const nx = unit.x + dx, ny = unit.y + dy;
+                    if (nx < 0 || nx >= GRID_COLS || ny < 0 || ny >= GRID_ROWS) continue;
+                    if (battleUnits.some(u => u.hp > 0 && u.x === nx && u.y === ny)) continue;
+                    const cell = getCell(ny, nx);
+                    if (cell) cell.classList.add("highlightMove");
+                }
             }
+            showMessage(unit.name, "転移先のマスを選んでください。");
+            addLog(`・${unit.name}は 転移 を詠唱中...`);
+            return;
+        }
+
+        // 射程がある呪文は対象がいるか確認（自分自身も対象に含む）
+        const sp = item.spellData;
+        const inRange = battleUnits.filter(u => {
+            if (u.hp <= 0) return false;
+            const dist = Math.abs(u.x - unit.x) + Math.abs(u.y - unit.y);
+            if (dist > sp.range) return false;
+            return sp.targetType === "enemy"
+                ? u.side !== unit.side
+                : u.side === unit.side;
+        });
+        if (inRange.length === 0) {
+            const label = sp.targetType === "enemy" ? "敵" : "味方";
+            showMessage("SYSTEM", `射程内に${label}がいません`);
+            showMagicRadial(unit);
+            return;
         }
 
         selectedSpell = item.spellData;
         actionState   = "magic";
         hideRadialMenu();
         clearHighlights();
-        if (typeof item.spellData.range === "number") {
-            for (let dy = -item.spellData.range; dy <= item.spellData.range; dy++) {
-                for (let dx = -item.spellData.range; dx <= item.spellData.range; dx++) {
-                    if (Math.abs(dx) + Math.abs(dy) > item.spellData.range) continue;
-                    if (dx === 0 && dy === 0) continue;
-                    const cell = getCell(unit.y + dy, unit.x + dx);
-                    if (cell) cell.classList.add("highlightAttack");
-                }
+        for (let dy = -sp.range; dy <= sp.range; dy++) {
+            for (let dx = -sp.range; dx <= sp.range; dx++) {
+                if (Math.abs(dx) + Math.abs(dy) > sp.range) continue;
+                const cell = getCell(unit.y + dy, unit.x + dx);
+                if (cell) cell.classList.add("highlightAttack");
             }
         }
+        // 予測表示（自分自身も含む）
+        const magFcTargets = battleUnits.filter(u => {
+            if (u.hp <= 0) return false;
+            const dist = Math.abs(u.x - unit.x) + Math.abs(u.y - unit.y);
+            if (dist > sp.range) return false;
+            return sp.targetType === "enemy" ? u.side !== unit.side : u.side === unit.side;
+        });
+        showForecastLayer(unit, magFcTargets, null, true, item.spellData);
         showMessage(unit.name, `${item.spellData.name}の対象を選んでください。`);
         addLog(`・${unit.name}は ${item.spellData.name} を詠唱中...`);
     });
@@ -509,6 +623,7 @@ function deselectUnit() {
     selectedAttackSkill = null;
     clearHighlights();
     hideRadialMenu();
+    hideForecastLayer();
     renderIdlePanel();
 }
 
@@ -525,7 +640,9 @@ function getMoveRange(unit) {
     while (queue.length > 0) {
         const { x, y, remaining } = queue.shift();
         if (!(x === unit.x && y === unit.y)) {
-            reachable.push({ col: x, row: y });
+            // 同じ陣営のユニットが止まっているマスには着地不可（通過はOK）
+            const landOcc = battleUnits.find(u => u.hp > 0 && u.id !== unit.id && u.x === x && u.y === y);
+            if (!landOcc) reachable.push({ col: x, row: y });
         }
         if (remaining <= 0) continue;
 
@@ -534,7 +651,7 @@ function getMoveRange(unit) {
             if (nx < 0 || nx >= GRID_COLS || ny < 0 || ny >= GRID_ROWS) continue;
             const key = `${nx},${ny}`;
             if (visited.has(key)) continue;
-            // 敵ユニットは通過不可
+            // 敵ユニット（相手陣営）は通過不可
             const occ = battleUnits.find(u => u.hp > 0 && u.x === nx && u.y === ny);
             if (occ && occ.side !== unit.side) continue;
             visited.add(key);
@@ -633,6 +750,138 @@ function getOpposedRate(activeStat, passiveStat) {
     return 50 + diff * 5;
 }
 
+// =============================================
+// 反撃システム（物理 / 魔法 自動選択）
+// =============================================
+/**
+ * 物理・魔法の期待値を比較して最良手で反撃
+ * @param {object} originalAttacker - 攻撃してきた相手（反撃のターゲット）
+ * @param {object} defender         - 攻撃された側（反撃する側）
+ */
+function resolveCounterAttack(originalAttacker, defender) {
+    const mode = defender.counterMode ?? "auto";
+
+    // none：反撃しない
+    if (mode === "none") return;
+
+    // physical_only：常に物理
+    if (mode === "physical_only") {
+        executePhysicalCounter(defender, originalAttacker);
+        return;
+    }
+
+    const dist     = Math.abs(defender.x - originalAttacker.x) + Math.abs(defender.y - originalAttacker.y);
+    const evadeVal = getEvadeSkillVal(originalAttacker);
+
+    // ── ダメージ系呪文の中で最良のものを探す ──
+    const DAMAGE_TYPES = new Set(["magicDamage", "break"]);
+    let bestMagic = null, bestMagicExpected = 0;
+
+    for (const [spellId, spellVal] of Object.entries(defender.spells || {})) {
+        const spell = SPELLS_DATA[spellId];
+        if (!spell || !DAMAGE_TYPES.has(spell.effectType)) continue;
+        if (typeof spell.range === "number" && dist > spell.range) continue;
+        if (defender.mp <= 0) continue;
+
+        const basePart = (spell.powerFormula || "1d6+MB")
+            .replace(/\+?\s*MB/g, "").replace(/MB\s*\+?/g, "").trim() || "1d6";
+        const expected = (spellVal * 10 / 100) * (avgDice(basePart) + avgDice(defender.magicBonus));
+        if (expected > bestMagicExpected) { bestMagicExpected = expected; bestMagic = { spell, spellVal }; }
+    }
+
+    if (mode === "magic_first") {
+        // magic_first：魔法が使えるなら必ず魔法、なければ物理
+        if (bestMagic) {
+            executeMagicCounter(defender, originalAttacker, bestMagic.spell, bestMagic.spellVal);
+        } else {
+            executePhysicalCounter(defender, originalAttacker);
+        }
+        return;
+    }
+
+    // auto（デフォルト）：期待値で自動選択
+    const { val: phyAtk } = getAttackSkillVal(defender);
+    const phyExpected = (getOpposedRate(phyAtk, evadeVal) / 100)
+                      * ((3.5 + avgDice(defender.physicalBonus)) / 2);
+
+    if (bestMagic && bestMagicExpected > phyExpected) {
+        executeMagicCounter(defender, originalAttacker, bestMagic.spell, bestMagic.spellVal);
+    } else {
+        executePhysicalCounter(defender, originalAttacker);
+    }
+}
+
+function executePhysicalCounter(counterAttacker, counterTarget) {
+    const { val: atkVal, name: atkName } = getAttackSkillVal(counterAttacker);
+    const evadeVal = getEvadeSkillVal(counterTarget);
+    const hitRate  = getOpposedRate(atkVal, evadeVal);
+    const roll     = Math.floor(Math.random() * 100) + 1;
+    const isHit    = roll <= hitRate;
+    addLog(`  物理反撃！${counterAttacker.name}【${atkName}${atkVal} vs 回避${evadeVal}】 ${roll}/${hitRate}% → ${isHit ? "命中" : "失敗"}`);
+    if (!isHit) return;
+
+    let base = Math.floor(Math.random() * 6) + 1;
+    const db = rollDice(counterAttacker.physicalBonus);
+    if ("武道" in (counterAttacker.skills || {})) {
+        const r = Math.floor(Math.random() * 10) + 1;
+        if (r <= counterAttacker.skills["武道"]) { base *= 2; addLog(`    武道発動！`); }
+    }
+    const dmg = Math.max(1, Math.floor((base + db) / 2));
+    counterTarget.hp = Math.max(0, counterTarget.hp - dmg);
+    showDamagePopup(counterTarget.id, dmg, "counter");
+    flashUnitHit(counterTarget.id);
+    addLog(`    ${dmg}ダメージ（半分）→ ${counterTarget.name} HP ${counterTarget.hp}/${counterTarget.maxHp}`);
+    renderUnits();
+    if (counterTarget.hp <= 0) addLog(`    ${counterTarget.name}は倒れた！`);
+}
+
+function executeMagicCounter(caster, target, spell, spellVal) {
+    const successPct = spellVal * 10;
+    const roll    = Math.floor(Math.random() * 100) + 1;
+    const success = roll <= successPct;
+    const mpCost  = rollDice(spell.mpCost || "1d6");
+    caster.mp = Math.max(0, caster.mp - mpCost);
+    addLog(`  魔法反撃【${spell.name}】${caster.name}→${target.name} （${roll}/${successPct}%） MP-${mpCost} → ${success ? "成功" : "失敗"}`);
+    if (!success) return;
+
+    const mb = rollDice(caster.magicBonus);
+    const basePart = (spell.powerFormula || "1d6+MB")
+        .replace(/\+?\s*MB/g, "").replace(/MB\s*\+?/g, "").trim() || "1d6";
+    let baseDmg = rollDice(basePart);
+    if ("魔導" in (caster.skills || {})) {
+        const r = Math.floor(Math.random() * 10) + 1;
+        if (r <= caster.skills["魔導"]) { baseDmg *= 2; addLog(`    魔導発動！`); }
+    }
+    let rawDmg = baseDmg + mb;
+
+    // 装甲チェック（破壊なら完全破壊）
+    const barrierEff = (target.statusEffects || []).find(e => e.type === "barrier");
+    let barrierNote = "";
+    if (barrierEff && barrierEff.value > 0) {
+        const absorbed = Math.min(barrierEff.value, rawDmg);
+        rawDmg -= absorbed;
+        if (spell.effectType === "break") {
+            target.statusEffects = target.statusEffects.filter(e => e.type !== "barrier");
+            barrierNote = `（装甲${absorbed}→完全破壊！）`;
+        } else {
+            barrierEff.value -= absorbed;
+            if (barrierEff.value <= 0) {
+                target.statusEffects = target.statusEffects.filter(e => e.type !== "barrier");
+                barrierNote = `（装甲${absorbed}→砕け散った！）`;
+            } else {
+                barrierNote = `（装甲${absorbed}吸収 残${barrierEff.value}）`;
+            }
+        }
+    }
+
+    target.hp = Math.max(0, target.hp - rawDmg);
+    showDamagePopup(target.id, rawDmg, "counter");
+    flashUnitHit(target.id);
+    addLog(`    ${rawDmg}ダメージ${barrierNote} → ${target.name} HP ${target.hp}/${target.maxHp}`);
+    renderUnits();
+    if (target.hp <= 0) addLog(`    ${target.name}は倒れた！`);
+}
+
 /**
  * 命中後の物理ダメージ適用（武道×2・カウンター・装甲・気絶・反撃を処理）
  */
@@ -648,8 +897,10 @@ function resolvePhysicalHit(attacker, target, atkSkillName) {
         const rawDmg = baseDmg + db;
         // 攻撃側も同じダメージ
         attacker.hp = Math.max(0, attacker.hp - rawDmg);
+        showDamagePopup(attacker.id, rawDmg, "damage");
         // 防御側（カウンター持ち）も同じダメージ
         target.hp   = Math.max(0, target.hp - rawDmg);
+        showDamagePopup(target.id, rawDmg, "damage");
         addLog(`  カウンター発動！${rawDmg}ダメージ → ${target.name} HP ${target.hp}/${target.maxHp} / ${attacker.name} HP ${attacker.hp}/${attacker.maxHp}`);
         showMessage("SYSTEM", `${target.name}のカウンター！お互いに ${rawDmg} ダメージ！`);
         renderUnits();
@@ -674,18 +925,26 @@ function resolvePhysicalHit(attacker, target, atkSkillName) {
     }
     const rawDmg = baseDmg + db;
 
-    // 装甲（barrier）チェック：ダメージを軽減、装甲は壊れない
+    // 装甲（barrier）チェック：吸収分だけ装甲耐久を削り、0になったら砕ける
     const barrier = (target.statusEffects || []).find(e => e.type === "barrier");
     let actualDmg = rawDmg;
     let barrierNote = "";
     if (barrier && barrier.value > 0) {
         const absorbed = Math.min(barrier.value, rawDmg);
         actualDmg = rawDmg - absorbed;
-        barrierNote = `（装甲${absorbed}吸収）`;
+        barrier.value -= absorbed;
+        if (barrier.value <= 0) {
+            target.statusEffects = target.statusEffects.filter(e => e.type !== "barrier");
+            barrierNote = `（装甲${absorbed}吸収→砕け散った！）`;
+        } else {
+            barrierNote = `（装甲${absorbed}吸収 残${barrier.value}）`;
+        }
     }
 
     const hpBefore = target.hp;
     target.hp = Math.max(0, target.hp - actualDmg);
+    showDamagePopup(target.id, actualDmg, "damage");
+    flashUnitHit(target.id);
     addLog(`  命中！${actualDmg}ダメージ${budoNote}${barrierNote}（基本:${baseDmg} + DB:${db}）→ ${target.name} HP ${target.hp}/${target.maxHp}`);
     showMessage("SYSTEM", `${attacker.name}の攻撃命中！${target.name}に ${actualDmg} ダメージ！`);
 
@@ -704,30 +963,13 @@ function resolvePhysicalHit(attacker, target, atkSkillName) {
     renderUnits();
     if (target.hp <= 0) addLog(`  ${target.name}は倒れた！`);
 
-    // 反撃チェック：勇気% 成功で半ダメージ反撃
+    // 反撃チェック：勇気% 成功で物理/魔法の最良手を自動選択して反撃
     if (target.hp > 0) {
         const courageRoll = Math.floor(Math.random() * 100) + 1;
         if (courageRoll <= (target.courage || 50)) {
-            const { val: ctrAtk, name: ctrName } = getAttackSkillVal(target);
-            const ctrEvade = getEvadeSkillVal(attacker);
-            const ctrRate  = getOpposedRate(ctrAtk, ctrEvade);
-            const ctrRoll  = Math.floor(Math.random() * 100) + 1;
-            const ctrHit   = ctrRoll <= ctrRate;
             showMessage(target.name, "反撃！");
-            addLog(`  反撃！${target.name}【${ctrName}${ctrAtk} vs 回避${ctrEvade}】 ${ctrRoll}/${ctrRate}% → ${ctrHit ? "命中" : "失敗"}`);
-            if (ctrHit) {
-                let ctrBase = Math.floor(Math.random() * 6) + 1;
-                const ctrDb = rollDice(target.physicalBonus);
-                if ("武道" in (target.skills || {})) {
-                    const r = Math.floor(Math.random() * 10) + 1;
-                    if (r <= target.skills["武道"]) { ctrBase *= 2; addLog(`    武道発動（${r}/${target.skills["武道"]}）！`); }
-                }
-                const ctrDmg = Math.max(1, Math.floor((ctrBase + ctrDb) / 2));
-                attacker.hp  = Math.max(0, attacker.hp - ctrDmg);
-                addLog(`    ${ctrDmg}ダメージ（半分）→ ${attacker.name} HP ${attacker.hp}/${attacker.maxHp}`);
-                renderUnits();
-                if (attacker.hp <= 0) addLog(`    ${attacker.name}は倒れた！`);
-            }
+            addLog(`  反撃チャンス！（勇気${target.courage}% ロール${courageRoll}）`);
+            resolveCounterAttack(attacker, target);
         }
     }
 }
@@ -761,6 +1003,7 @@ function executeAttack(attacker, target) {
     addLog(`・${attacker.name} → ${target.name} 【${atkSkillName}${atkStat} vs 回避${evadeStat}】 ${rollNote} → ${isHit ? "命中" : "失敗"}`);
 
     if (!isHit) {
+        showDamagePopup(target.id, 0, "miss");
         showMessage("SYSTEM", `${attacker.name}の攻撃は外れた！`);
         endUnitTurn(attacker);
         return;
@@ -783,6 +1026,7 @@ function executeThrow(attacker, target) {
     addLog(`・${attacker.name} 投擲 → ${target.name} 【投擲${throwStat} vs 回避${evadeStat}】 ${rollNote} → ${isHit ? "命中" : "失敗"}`);
 
     if (!isHit) {
+        showDamagePopup(target.id, 0, "miss");
         showMessage("SYSTEM", `${attacker.name}の投擲は外れた！`);
         endUnitTurn(attacker);
         return;
@@ -791,6 +1035,41 @@ function executeThrow(attacker, target) {
     resolvePhysicalHit(attacker, target, "投擲");
     endUnitTurn(attacker);
     checkVictoryCondition();
+}
+
+// =============================================
+// 転移
+// =============================================
+function executeTeleport(caster, row, col) {
+    const successPct = (caster.spells?.["転移"] ?? 5) * 10;
+    const roll   = Math.floor(Math.random() * 100) + 1;
+    const success = roll <= successPct;
+    const mpCost = rollDice("1d8");
+    caster.mp = Math.max(0, caster.mp - mpCost);
+    addLog(`・${caster.name}が 転移 使用（${roll}/${successPct}%）  MP-${mpCost}`);
+
+    if (!success) {
+        addLog("  失敗！");
+        showMessage("SYSTEM", `${caster.name}の転移は失敗した！`);
+        endUnitTurn(caster);
+        return;
+    }
+
+    caster.x     = col;
+    caster.y     = row;
+    caster.moved = true;
+    selectedSpell = null;
+    actionState   = null;
+    addLog(`  転移成功！(${col}, ${row})へ瞬間移動`);
+    showMessage("SYSTEM", `${caster.name}が瞬間移動！`);
+    renderUnits();
+
+    // 移動扱い：まだ行動していなければコマンドを再表示
+    if (!caster.acted) {
+        selectUnit(caster);
+    } else {
+        endUnitTurn(caster);
+    }
 }
 
 // =============================================
@@ -847,13 +1126,14 @@ function renderMagicCommands(unit) {
 
 function executeMagic(caster, spell, target) {
     const successVal = caster.spells[spell.id] ?? 5;
-    const roll       = Math.floor(Math.random() * 10) + 1;
-    const success    = roll <= successVal;
+    const successPct = successVal * 10;                       // 成功値×10 = 成功率%
+    const roll       = Math.floor(Math.random() * 100) + 1;  // 1d100
+    const success    = roll <= successPct;
 
     // MPコスト
     const mpCost = rollDice(spell.mpCost || "1d6");
     caster.mp    = Math.max(0, caster.mp - mpCost);
-    addLog(`・${caster.name}が ${spell.name} 使用（${roll} vs ${successVal}）  MP-${mpCost}`);
+    addLog(`・${caster.name}が ${spell.name} 使用（${roll}/${successPct}%）  MP-${mpCost}`);
 
     if (!success) {
         addLog("  失敗！");
@@ -887,18 +1167,26 @@ function executeMagic(caster, spell, target) {
                 baseDmg *= 2;
             }
 
-            // 装甲チェック（魔法でも軽減、ただし破壊魔法は別処理）
+            // 装甲チェック：吸収分だけ装甲耐久を削り、0になったら砕ける
             const barrier = (target.statusEffects || []).find(e => e.type === "barrier");
             let rawDmg = baseDmg + mb;
             let barrierNote = "";
             if (barrier && barrier.value > 0) {
                 const absorbed = Math.min(barrier.value, rawDmg);
                 rawDmg -= absorbed;
-                barrierNote = `（装甲${absorbed}吸収）`;
+                barrier.value -= absorbed;
+                if (barrier.value <= 0) {
+                    target.statusEffects = target.statusEffects.filter(e => e.type !== "barrier");
+                    barrierNote = `（装甲${absorbed}吸収→砕け散った！）`;
+                } else {
+                    barrierNote = `（装甲${absorbed}吸収 残${barrier.value}）`;
+                }
             }
 
             const hpBefore = target.hp;
             target.hp = Math.max(0, target.hp - rawDmg);
+            showDamagePopup(target.id, rawDmg, "damage");
+            flashUnitHit(target.id);
             addLog(`  命中！${rawDmg}ダメージ${boostNote}${barrierNote}（base:${baseDmg} + MB:${mb}）→ ${target.name} HP ${target.hp}/${target.maxHp}`);
             showMessage("SYSTEM", `${caster.name}の${spell.name}命中！${target.name}に ${rawDmg} ダメージ！`);
 
@@ -938,6 +1226,7 @@ function executeMagic(caster, spell, target) {
         case "heal": {
             const healAmt = Math.floor(Math.random() * 6) + 1 + mb;
             target.hp = Math.min(target.maxHp, target.hp + healAmt);
+            showDamagePopup(target.id, healAmt, "heal");
             addLog(`  ${target.name}を ${healAmt} 回復（HP ${target.hp}/${target.maxHp}）`);
             showMessage("SYSTEM", `${caster.name}の${spell.name}！${target.name}のHP+${healAmt}`);
             break;
@@ -969,9 +1258,32 @@ function executeMagic(caster, spell, target) {
             break;
         }
         case "break": {
-            target.statusEffects = (target.statusEffects || []).filter(e => e.type !== "barrier");
-            addLog(`  ${target.name}の結界を破壊！`);
-            showMessage("SYSTEM", `${caster.name}の${spell.name}！${target.name}の結界を破壊！`);
+            // 破壊魔法：ダメージを与えつつ結界を完全破壊（超過分はHPへ）
+            const basePart = (spell.powerFormula || "1d6+MB")
+                .replace(/\+?\s*MB/g, "").replace(/MB\s*\+?/g, "").trim() || "1d6";
+            let breakBase = rollDice(basePart);
+            let breakBoost = "";
+            if (magicBoost) {
+                breakBoost = `（魔導:${breakBase}→${breakBase * 2}）`;
+                breakBase *= 2;
+            }
+            const breakTotal = breakBase + mb;
+            const barrierEff = (target.statusEffects || []).find(e => e.type === "barrier");
+            let dmgToHp = breakTotal;
+            let breakNote = "";
+            if (barrierEff && barrierEff.value > 0) {
+                const absorbed = Math.min(barrierEff.value, breakTotal);
+                dmgToHp = breakTotal - absorbed;
+                target.statusEffects = target.statusEffects.filter(e => e.type !== "barrier");
+                breakNote = `（装甲${absorbed}吸収→完全破壊！残${dmgToHp}ダメ）`;
+            } else {
+                breakNote = "（結界なし）";
+            }
+            target.hp = Math.max(0, target.hp - dmgToHp);
+            if (dmgToHp > 0) { showDamagePopup(target.id, dmgToHp, "damage"); flashUnitHit(target.id); }
+            addLog(`  破壊！${breakTotal}ダメージ${breakBoost}${breakNote} → ${target.name} HP ${target.hp}/${target.maxHp}`);
+            showMessage("SYSTEM", `${caster.name}の${spell.name}！結界を砕き${dmgToHp}ダメージ！`);
+            if (target.hp <= 0) addLog(`  ${target.name}は倒れた！`);
             break;
         }
         case "stun": {
@@ -994,6 +1306,7 @@ function executeMagic(caster, spell, target) {
             const reduction = rollDice(spell.effectValue || "1d6");
             // 勇気の代わりにMPを削る（SRPG内での表現）
             target.mp = Math.max(0, target.mp - reduction);
+            showDamagePopup(target.id, reduction, "counter");   // MP吸収はオレンジ色で表示
             addLog(`  ${target.name}のMPを ${reduction} 削った（悪夢）`);
             showMessage("SYSTEM", `${caster.name}の${spell.name}！${target.name}のMP-${reduction}！`);
             break;
@@ -1013,6 +1326,8 @@ function executeMagic(caster, spell, target) {
                 for (const t of targets) {
                     const dmg = rollDice(`1d12+${mbForArea}`);
                     t.hp = Math.max(0, t.hp - dmg);
+                    showDamagePopup(t.id, dmg, "damage");
+                    flashUnitHit(t.id);
                     addLog(`  ${t.name}に ${dmg} ダメージ`);
                     if (t.hp <= 0) addLog(`  ${t.name}は倒れた！`);
                 }
@@ -1099,9 +1414,10 @@ function renderSkillCommands(unit) {
 }
 
 function executeSkill(unit, skillId, successVal, displayName) {
-    const roll    = Math.floor(Math.random() * 10) + 1;
-    const success = roll <= successVal;
-    addLog(`・${unit.name}が ${displayName} 使用（${roll} vs ${successVal}）`);
+    const successPct = successVal * 10;                       // 成功値×10 = 成功率%
+    const roll       = Math.floor(Math.random() * 100) + 1;  // 1d100
+    const success    = roll <= successPct;
+    addLog(`・${unit.name}が ${displayName} 使用（${roll}/${successPct}%）`);
 
     if (!success) {
         addLog("  失敗！");
@@ -1111,6 +1427,7 @@ function executeSkill(unit, skillId, successVal, displayName) {
         if (skillId === "応急手当" || skillId === "医学") {
             const heal = Math.floor(Math.random() * 3) + 1;
             unit.hp = Math.min(unit.maxHp, unit.hp + heal);
+            showDamagePopup(unit.id, heal, "heal");
             addLog(`  ${skillId}：HP+${heal}（${unit.hp}/${unit.maxHp}）`);
             showMessage("SYSTEM", `${unit.name}が${skillId}！HP+${heal}`);
             renderUnits();
@@ -1141,6 +1458,7 @@ function endUnitTurn(unit) {
     selectedSpell       = null;
     selectedAttackSkill = null;
     clearHighlights();
+    hideForecastLayer();
     renderUnits();
 
     if (turnPhase !== "ally") return;
@@ -1151,7 +1469,7 @@ function endUnitTurn(unit) {
     if (allDone) {
         setTimeout(startEnemyPhase, 700);
     } else {
-        renderAllyPhasePanel();
+        renderIdlePanel();
         showMessage("SYSTEM", "次のユニットを選択してください。");
     }
 }
@@ -1174,10 +1492,199 @@ function startAllyPhase() {
     }
     tickStatusEffects("ally");
     renderUnits();
-    renderAllyPhasePanel();
+    renderIdlePanel();
 }
 
-function startEnemyPhase() {
+// =============================================
+// 戦闘予測（バトルフォーキャスト）
+// =============================================
+
+/** ダイス式の期待値を返す（"2d6+3" → 10, "1d6" → 3.5→3） */
+function avgDice(formula) {
+    if (!formula || formula === "0") return 0;
+    let expr = String(formula).replace(/(\d+)d(\d+)/g, (_, n, m) =>
+        String(parseInt(n) * (parseInt(m) + 1) / 2)
+    );
+    try {
+        const safe = expr.replace(/[^0-9+\-*/().]/g, "");
+        return safe ? Math.max(0, Math.floor(new Function("return " + safe)())) : 0;
+    } catch (e) { return 0; }
+}
+
+/**
+ * 上パネルに戦闘予測を表示し「予測」タブに自動切替
+ * @param {object}  attacker  - 攻撃側ユニット
+ * @param {Array}   targets   - 対象ユニット配列
+ * @param {string|null} skillName - 使用スキル名（物理）
+ * @param {boolean} isMagic   - 魔法かどうか
+ * @param {object|null} spell - 魔法データ（isMagic時）
+ */
+function showForecastLayer(attacker, targets, skillName, isMagic, spell) {
+    forecastContent.innerHTML = "";
+
+    // ヘッダー
+    const label = isMagic ? (spell?.name || "魔法") : (skillName || "攻撃");
+    const hdr = document.createElement("div");
+    hdr.className = "forecastHeader";
+    hdr.textContent = `${attacker.name}  ─  ${label}`;
+    forecastContent.appendChild(hdr);
+
+    if (targets.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "forecastEmpty";
+        empty.textContent = "射程内に対象がいません";
+        forecastContent.appendChild(empty);
+        switchTopLayer("forecast");
+        return;
+    }
+
+    for (const target of targets) {
+        const card = document.createElement("div");
+        card.className = "forecastCard";
+
+        // ターゲットHPヘッダー
+        const hpPct = target.hp / target.maxHp * 100;
+        const hpClass = hpPct <= 25 ? "critical" : hpPct <= 50 ? "low" : "";
+        card.innerHTML = `
+            <div class="forecastCardHeader">
+                <span class="forecastTargetName">${target.name}</span>
+                <div class="forecastHpBar"><div class="forecastHpFill ${hpClass}" style="width:${hpPct}%"></div></div>
+                <span class="forecastHpVal">${target.hp}/${target.maxHp}</span>
+            </div>
+            <div class="forecastCardBody" id="fcbody_${target.id}"></div>
+        `;
+        forecastContent.appendChild(card);
+
+        const body = card.querySelector(`#fcbody_${target.id}`);
+
+        if (!isMagic) {
+            // ── 物理攻撃予測 ──
+            const atkStat = skillName && skillName in (attacker.skills || {})
+                ? attacker.skills[skillName]
+                : getAttackSkillVal(attacker).val;
+            const stunned  = (target.statusEffects || []).some(e => e.type === "stun");
+            const evadeStat = stunned ? 0 : getEvadeSkillVal(target);
+            const hitRate   = stunned ? 100 : getOpposedRate(atkStat, evadeStat);
+
+            const avgDb   = avgDice(attacker.physicalBonus);
+            const rawDmg  = Math.round(3.5 + avgDb);
+            const barrier = (target.statusEffects || []).find(e => e.type === "barrier");
+            const expDmg  = barrier ? Math.max(0, rawDmg - barrier.value) : rawDmg;
+            const barrierNote = barrier ? `<span class="forecastNote">結界-${barrier.value}</span>` : "";
+
+            // 反撃期待値
+            const ctrAttempt = target.courage || 50;
+            const ctrAtkStat = getAttackSkillVal(target).val;
+            const ctrEvade   = getEvadeSkillVal(attacker);
+            const ctrHit     = getOpposedRate(ctrAtkStat, ctrEvade);
+            const ctrChance  = Math.round(ctrAttempt * ctrHit / 100);
+            const ctrDmg     = Math.max(1, Math.round((3.5 + avgDice(target.physicalBonus)) / 2));
+
+            body.innerHTML = `
+                <div class="forecastRow">
+                    <span class="forecastDir">→</span>
+                    <span class="forecastLabel">命中</span>
+                    <span class="forecastVal hit">${hitRate}%</span>
+                    <span class="forecastSep">／</span>
+                    <span class="forecastLabel">期待ダメ</span>
+                    <span class="forecastVal dmg">~${expDmg}</span>${barrierNote}
+                </div>
+                <div class="forecastRow">
+                    <span class="forecastDir ctr">←</span>
+                    <span class="forecastLabel">反撃</span>
+                    <span class="forecastVal ctr">${ctrChance}%</span>
+                    <span class="forecastSep">／</span>
+                    <span class="forecastLabel">被ダメ</span>
+                    <span class="forecastVal cdmg">~${ctrDmg}</span>
+                </div>
+            `;
+        } else if (isMagic && spell) {
+            // ── 魔法予測 ──
+            const successRate = (attacker.spells?.[spell.id] ?? 5) * 10;  // 成功値×10%
+            let effectHtml = "";
+
+            if (spell.effectType === "magicDamage") {
+                const basePart = (spell.powerFormula || "1d6+MB")
+                    .replace(/\+?\s*MB/g, "").replace(/MB\s*\+?/g, "").trim() || "1d6";
+                const avgMb  = avgDice(attacker.magicBonus);
+                const rawMdmg = Math.round(avgDice(basePart) + avgMb);
+                const barr2  = (target.statusEffects || []).find(e => e.type === "barrier");
+                const effMdmg = barr2 ? Math.max(0, rawMdmg - barr2.value) : rawMdmg;
+                const bNote   = barr2 ? `<span class="forecastNote">結界-${barr2.value}</span>` : "";
+                effectHtml = `<span class="forecastLabel">ダメ</span><span class="forecastVal dmg">~${effMdmg}</span>${bNote}`;
+            } else if (spell.effectType === "heal") {
+                const healAmt = Math.round(3.5 + avgDice(attacker.magicBonus));
+                effectHtml = `<span class="forecastLabel">回復</span><span class="forecastVal hit">~${healAmt}</span>`;
+            } else if (spell.effectType === "barrier") {
+                const barrVal = Math.round(avgDice(spell.powerFormula || "2d4"));
+                effectHtml = `<span class="forecastLabel">結界</span><span class="forecastVal hit">~${barrVal}</span>`;
+            } else {
+                effectHtml = `<span class="forecastLabel">${spell.description || spell.effectType}</span>`;
+            }
+
+            body.innerHTML = `
+                <div class="forecastRow">
+                    <span class="forecastDir">→</span>
+                    <span class="forecastLabel">成功</span>
+                    <span class="forecastVal hit">${successRate}%</span>
+                    <span class="forecastSep">／</span>
+                    ${effectHtml}
+                </div>
+            `;
+        }
+    }
+
+    switchTopLayer("forecast");
+}
+
+/** 予測レイヤーを閉じてバトルログに戻る */
+function hideForecastLayer() {
+    if (gameMode === "battle") switchTopLayer("battle");
+}
+
+// ─── 敵AI ユーティリティ ───────────────────────
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+/** 行動中ユニットの赤ハイライトをON/OFF */
+function setUnitActing(id, active) {
+    const el = document.getElementById(`unit_${id}`);
+    if (el) el.classList.toggle("acting", active);
+}
+/** 被ダメージ時の白フラッシュ */
+function flashUnitHit(id) {
+    const el = document.getElementById(`unit_${id}`);
+    if (!el) return;
+    el.classList.add("flashHit");
+    setTimeout(() => el.classList.remove("flashHit"), 500);
+}
+
+/**
+ * ユニットトークンの頭上にダメージ/回復値をポップアップ表示
+ * @param {string} unitId - ユニットID
+ * @param {number} value  - 数値（miss時は無視）
+ * @param {string} type   - "damage" | "counter" | "heal" | "miss"
+ */
+function showDamagePopup(unitId, value, type) {
+    const el = document.getElementById(`unit_${unitId}`);
+    if (!el) return;
+    const popup = document.createElement("div");
+    popup.className = `dmgPopup ${type}`;
+    switch (type) {
+        case "heal":  popup.textContent = `+${value}`; break;
+        case "miss":  popup.textContent = "Miss";      break;
+        default:      popup.textContent = String(value); break;
+    }
+    // ユニットは10%幅なので中心はleft+5%
+    const leftPct = parseFloat(el.style.left) + 5;
+    const topPct  = parseFloat(el.style.top);
+    popup.style.left = `${leftPct}%`;
+    popup.style.top  = `${topPct}%`;
+    unitLayer.appendChild(popup);
+    setTimeout(() => popup.remove(), 1200);
+}
+
+async function startEnemyPhase() {
     if (battleOver) return;
     hideRadialMenu();
     turnPhase = "enemy";
@@ -1195,16 +1702,16 @@ function startEnemyPhase() {
     tickStatusEffects("enemy");
 
     const enemies = battleUnits.filter(u => u.side === "enemy" && u.hp > 0);
-    let delay = 600;
+
     for (const enemy of enemies) {
-        setTimeout(() => {
-            if (!battleOver) enemyAction(enemy);
-        }, delay);
-        delay += 1000;
+        if (battleOver) break;
+        await sleep(600);              // 行動前の間
+        if (battleOver) break;
+        await enemyAction(enemy);
+        await sleep(450);              // 行動後の間
     }
-    setTimeout(() => {
-        if (!battleOver) startAllyPhase();
-    }, delay + 300);
+
+    if (!battleOver) startAllyPhase();
 }
 
 function tickStatusEffects(side) {
@@ -1215,10 +1722,13 @@ function tickStatusEffects(side) {
             if (e.type === "burn") {
                 const dmg = rollDice("1d3");
                 u.hp = Math.max(0, u.hp - dmg);
+                showDamagePopup(u.id, dmg, "damage");
                 addLog(`  ${u.name}は火傷で ${dmg} ダメージ（HP ${u.hp}/${u.maxHp}）`);
             } else if (e.type === "gravityField") {
-                u.hp = Math.max(0, u.hp - (e.value || 1));
-                addLog(`  ${u.name}は重力場で ${e.value || 1} ダメージ`);
+                const gDmg = e.value || 1;
+                u.hp = Math.max(0, u.hp - gDmg);
+                showDamagePopup(u.id, gDmg, "damage");
+                addLog(`  ${u.name}は重力場で ${gDmg} ダメージ`);
             } else if (e.type === "stun") {
                 const conRate  = (u.con || 10) * 3;
                 const conCheck = Math.floor(Math.random() * 100) + 1;
@@ -1243,19 +1753,25 @@ function tickStatusEffects(side) {
 // =============================================
 // 敵AI
 // =============================================
-function enemyAction(enemy) {
+async function enemyAction(enemy) {
     if (enemy.hp <= 0) return;
+
+    setUnitActing(enemy.id, true);   // 赤ハイライトON
 
     // スタン中は行動不可
     if ((enemy.statusEffects || []).some(e => e.type === "stun")) {
         addLog(`・${enemy.name}はスタン中のため行動できない`);
         enemy.moved = true;
         enemy.acted = true;
+        setUnitActing(enemy.id, false);
         return;
     }
 
     const aliveAllies = battleUnits.filter(u => u.side === "ally" && u.hp > 0);
-    if (aliveAllies.length === 0) return;
+    if (aliveAllies.length === 0) {
+        setUnitActing(enemy.id, false);
+        return;
+    }
 
     // 最近接の味方を探す
     const target = aliveAllies.reduce((best, u) => {
@@ -1281,6 +1797,8 @@ function enemyAction(enemy) {
                 enemy.moved = true;
                 addLog(`・${enemy.name}が移動した`);
                 renderUnits();
+                setUnitActing(enemy.id, true);  // renderUnitsで再生成されるので再付与
+                await sleep(550);               // 移動後に少し待つ
             }
         }
     }
@@ -1298,12 +1816,16 @@ function enemyAction(enemy) {
         addLog(`・${enemy.name} → ${target.name} 【${atkSkillName}${atkStat} vs 回避${evadeStat}】 ${rollNote} → ${isHit ? "命中" : "失敗"}`);
 
         if (isHit) {
+            flashUnitHit(target.id);            // 被弾フラッシュ
             resolvePhysicalHit(enemy, target, atkSkillName);
             checkVictoryCondition();
+            await sleep(700);                   // ダメージ表示を見せる間
         }
     }
+
     enemy.moved = true;
     enemy.acted = true;
+    setUnitActing(enemy.id, false);  // ハイライトOFF
 }
 
 // =============================================
@@ -1339,22 +1861,6 @@ function checkVictoryCondition() {
 // =============================================
 // コマンドパネル
 // =============================================
-function renderAllyPhasePanel() {
-    commandHeader.textContent = "味方フェーズ";
-    commandInfo.textContent   = `ターン ${turnCount}`;
-    commandList.innerHTML     = "";
-
-    for (const unit of battleUnits.filter(u => u.side === "ally" && u.hp > 0)) {
-        const done = unit.moved && unit.acted;
-        const btn  = document.createElement("button");
-        btn.className   = `commandItem${done ? " commandDone" : ""}`;
-        btn.textContent = `${unit.name}${done ? "（済）" : ""}`;
-        btn.addEventListener("click", () => {
-            if (!done) selectUnit(unit);
-        });
-        commandList.appendChild(btn);
-    }
-}
 
 function renderBattleCommands(unit) {
     commandHeader.textContent = unit.name;
@@ -1366,21 +1872,14 @@ function renderBattleCommands(unit) {
     const mpPct   = unit.mp / unit.maxMp;
     const hpClass = hpPct <= 0.25 ? "critical" : hpPct <= 0.5 ? "low" : "";
 
-    const atkLabel = (() => {
-        for (const n of ATTACK_SKILL_PRIORITY) {
-            if (n in (unit.skills || {})) return `${n} ${unit.skills[n]}`;
-        }
-        return "―";
-    })();
-    const magLabel = (() => {
-        const entries = Object.entries(unit.spells || {}).filter(([id]) => SPELLS_DATA[id]);
-        if (!entries.length) return "―";
-        const best = entries.reduce((a, b) => b[1] > a[1] ? b : a);
-        return `${SPELLS_DATA[best[0]].name} ${best[1]}`;
-    })();
-
     const bgSize = unit.portraitBgSize || "280%";
     const bgPos  = unit.portraitBgPos  || "top center";
+    const statusStr = (() => {
+        if (!unit.statusEffects || unit.statusEffects.length === 0) return "―";
+        const nm = { burn:"火傷", stun:"スタン", barrier:"結界", counter:"カウンター",
+                     accuracyDown:"命中↓", gravityField:"重力場", support:"強化" };
+        return unit.statusEffects.map(e => nm[e.type] || e.type).join(" ");
+    })();
     const imgTag = unit.portraitImage
         ? `<div class="portrait-wrapper" style="background-image:url('${unit.portraitImage}');background-size:${bgSize};background-position:${bgPos}"></div>`
         : unit.tokenImage
@@ -1404,26 +1903,154 @@ function renderBattleCommands(unit) {
             </div>
             <div class="unitInfoDivider"></div>
             <div class="unitInfoSubRow">
-                <div class="unitInfoSubItem">
-                    <span class="unitInfoSubLabel">物</span>
-                    <span class="unitInfoSubValue">${atkLabel} / ${unit.physicalBonus}</span>
+                <div class="unitInfoSubPair">
+                    <div class="unitInfoSubItem">
+                        <span class="unitInfoSubLabel">物理</span>
+                        <span class="unitInfoSubValue">+${unit.physicalBonus}</span>
+                    </div>
+                    <div class="unitInfoSubItem">
+                        <span class="unitInfoSubLabel">魔力</span>
+                        <span class="unitInfoSubValue">+${unit.magicBonus}</span>
+                    </div>
                 </div>
                 <div class="unitInfoSubItem">
-                    <span class="unitInfoSubLabel">魔</span>
-                    <span class="unitInfoSubValue">${magLabel} / ${unit.magicBonus}</span>
+                    <span class="unitInfoSubLabel">装備</span>
+                    <span class="unitInfoSubValue unitInfoEquip">${unit.equipment || "―"}</span>
                 </div>
+                <div class="unitInfoSubPair">
+                    <div class="unitInfoSubItem">
+                        <span class="unitInfoSubLabel">種族</span>
+                        <span class="unitInfoSubValue">${unit.race || "―"}</span>
+                    </div>
+                    <div class="unitInfoSubItem">
+                        <span class="unitInfoSubLabel">所属</span>
+                        <span class="unitInfoSubValue">${unit.side === "ally" ? "味方" : "敵"}</span>
+                    </div>
+                </div>
+                <div class="unitInfoSubPair">
+                    <div class="unitInfoSubItem">
+                        <span class="unitInfoSubLabel">移動</span>
+                        <span class="unitInfoSubValue">${unit.move}マス</span>
+                    </div>
+                    <div class="unitInfoSubItem">
+                        <span class="unitInfoSubLabel">状態</span>
+                        <span class="unitInfoSubValue">${statusStr}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="unitInfoBtnRow">
+                <button class="unitInfoTabBtn" id="allySkillBtn">特技</button>
+                <button class="unitInfoTabBtn" id="allyMagicBtn">魔法</button>
+                <button class="unitInfoStatusBtn" id="allyStatusBtn">詳細 ▶</button>
             </div>
         </div>
     `;
     commandList.appendChild(card);
+    document.getElementById("allySkillBtn").addEventListener("click",  () => openStatusModal(unit.id, "battle"));
+    document.getElementById("allyMagicBtn").addEventListener("click",  () => openStatusModal(unit.id, "magic"));
+    document.getElementById("allyStatusBtn").addEventListener("click", () => openStatusModal(unit.id, "basic"));
 
     showRadialMenu(unit);
 }
 
-function renderIdlePanel() {
-    commandHeader.textContent = "command";
-    commandInfo.textContent   = "";
+/** 敵ユニットをタップした時に下パネルに情報を表示 */
+function renderEnemyInfoPanel(unit) {
+    commandHeader.textContent = unit.name;
+    commandInfo.textContent   = `Lv ${unit.level}  /  敵`;
     commandList.innerHTML     = "";
+
+    const hpPct   = unit.hp / unit.maxHp;
+    const mpPct   = unit.mp / unit.maxMp;
+    const hpClass = hpPct <= 0.25 ? "critical" : hpPct <= 0.5 ? "low" : "";
+
+    const bgSize = unit.portraitBgSize || "280%";
+    const bgPos  = unit.portraitBgPos  || "top center";
+    const statusStr = (() => {
+        if (!unit.statusEffects || unit.statusEffects.length === 0) return "―";
+        const nm = { burn:"火傷", stun:"スタン", barrier:"結界", counter:"カウンター",
+                     accuracyDown:"命中↓", gravityField:"重力場", support:"強化" };
+        return unit.statusEffects.map(e => nm[e.type] || e.type).join(" ");
+    })();
+    const imgTag = unit.portraitImage
+        ? `<div class="portrait-wrapper" style="background-image:url('${unit.portraitImage}');background-size:${bgSize};background-position:${bgPos}"></div>`
+        : unit.tokenImage
+            ? `<img class="unit-icon" src="${unit.tokenImage}" alt="${unit.name}">`
+            : "";
+
+    const card = document.createElement("div");
+    card.id = "unitInfoCard";
+    card.innerHTML = `
+        ${imgTag}
+        <div id="unitInfoStats">
+            <div class="unitInfoRow">
+                <span class="unitInfoLabel">HP</span>
+                <div class="unitInfoBarWrap"><div class="unitInfoBarFill hp ${hpClass}" style="width:${hpPct*100}%"></div></div>
+                <span class="unitInfoValue">${unit.hp}/${unit.maxHp}</span>
+            </div>
+            <div class="unitInfoRow">
+                <span class="unitInfoLabel">MP</span>
+                <div class="unitInfoBarWrap"><div class="unitInfoBarFill mp" style="width:${mpPct*100}%"></div></div>
+                <span class="unitInfoValue">${unit.mp}/${unit.maxMp}</span>
+            </div>
+            <div class="unitInfoDivider"></div>
+            <div class="unitInfoSubRow">
+                <div class="unitInfoSubPair">
+                    <div class="unitInfoSubItem">
+                        <span class="unitInfoSubLabel">物理</span>
+                        <span class="unitInfoSubValue">+${unit.physicalBonus}</span>
+                    </div>
+                    <div class="unitInfoSubItem">
+                        <span class="unitInfoSubLabel">魔力</span>
+                        <span class="unitInfoSubValue">+${unit.magicBonus}</span>
+                    </div>
+                </div>
+                <div class="unitInfoSubItem">
+                    <span class="unitInfoSubLabel">装備</span>
+                    <span class="unitInfoSubValue unitInfoEquip">${unit.equipment || "―"}</span>
+                </div>
+                <div class="unitInfoSubPair">
+                    <div class="unitInfoSubItem">
+                        <span class="unitInfoSubLabel">種族</span>
+                        <span class="unitInfoSubValue">${unit.race || "―"}</span>
+                    </div>
+                    <div class="unitInfoSubItem">
+                        <span class="unitInfoSubLabel">所属</span>
+                        <span class="unitInfoSubValue">${unit.side === "ally" ? "味方" : "敵"}</span>
+                    </div>
+                </div>
+                <div class="unitInfoSubPair">
+                    <div class="unitInfoSubItem">
+                        <span class="unitInfoSubLabel">移動</span>
+                        <span class="unitInfoSubValue">${unit.move}マス</span>
+                    </div>
+                    <div class="unitInfoSubItem">
+                        <span class="unitInfoSubLabel">状態</span>
+                        <span class="unitInfoSubValue">${statusStr}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="unitInfoBtnRow">
+                <button class="unitInfoTabBtn" id="enemySkillBtn">特技</button>
+                <button class="unitInfoTabBtn" id="enemyMagicBtn">魔法</button>
+                <button class="unitInfoStatusBtn" id="enemyStatusBtn">詳細 ▶</button>
+            </div>
+        </div>
+    `;
+    commandList.appendChild(card);
+    document.getElementById("enemySkillBtn").addEventListener("click",  () => openStatusModal(unit.id, "battle"));
+    document.getElementById("enemyMagicBtn").addEventListener("click",  () => openStatusModal(unit.id, "magic"));
+    document.getElementById("enemyStatusBtn").addEventListener("click", () => openStatusModal(unit.id, "basic"));
+}
+
+function renderIdlePanel() {
+    if (gameMode === "battle" && !battleOver) {
+        commandHeader.textContent = turnPhase === "ally" ? "味方フェーズ" : "敵フェーズ";
+        commandInfo.textContent   = `TURN ${turnCount}  ―  ユニットを選択`;
+    } else {
+        commandHeader.textContent = "command";
+        commandInfo.textContent   = "";
+    }
+    commandList.innerHTML = "";
 }
 
 function handleBattleCommand(unit, label) {
@@ -1447,7 +2074,7 @@ function handleBattleCommand(unit, label) {
         case "特技":
             actionState = null;
             clearHighlights();
-            renderSkillCommands(unit);
+            showSkillRadial(unit);
             addLog(`・${unit.name}は特技を選択`);
             break;
         case "ステータス":
@@ -1470,9 +2097,9 @@ function handleBattleCommand(unit, label) {
 // =============================================
 // ステータスモーダル（CHARACTERS_DATA 対応）
 // =============================================
-function openStatusModal(unitId) {
+function openStatusModal(unitId, tab = "basic") {
     statusTargetId = unitId;
-    currentStatusTab = "basic";
+    currentStatusTab = tab;
     statusModalOverlay.classList.remove("hidden");
     renderStatusTab(currentStatusTab);
 }
@@ -1619,7 +2246,8 @@ function clearLog() {
 function switchTopLayer(layer) {
     topTabs.forEach(t => t.classList.toggle("active", t.dataset.layer === layer));
     topLayerDialogue.classList.toggle("hidden", layer !== "dialogue");
-    topLayerBattle.classList.toggle("hidden", layer !== "battle");
+    topLayerBattle.classList.toggle("hidden",   layer !== "battle");
+    topLayerForecast.classList.toggle("hidden",  layer !== "forecast");
 }
 
 // =============================================
@@ -1784,6 +2412,7 @@ function setBattleMode() {
     selectedAttackSkill = null;
 
     // CHARACTERS_DATA をディープコピーして live データとして使用
+    // DB = STR+SIZ、MB = POW+INT をルルブ表から自動計算
     battleUnits = CHARACTERS_DATA.map(c => ({
         ...c,
         hp: c.maxHp,
@@ -1793,6 +2422,8 @@ function setBattleMode() {
         statusEffects: [],
         spells: { ...c.spells },
         skills: { ...c.skills },
+        physicalBonus: calcBonusDice((c.str || 0) + (c.siz || 0)),
+        magicBonus:    calcBonusDice((c.pow || 0) + (c.int || 0)),
     }));
 
     unitLayer.style.display         = "block";
@@ -1807,7 +2438,7 @@ function setBattleMode() {
     updatePhaseHeader();
 
     renderUnits();
-    renderAllyPhasePanel();
+    renderIdlePanel();
 }
 
 // =============================================
@@ -1839,27 +2470,11 @@ function handleScenarioCommand(label) {
 }
 
 // =============================================
-// フルスクリーン
-// =============================================
-async function toggleFullscreen() {
-    try {
-        if (!document.fullscreenElement) {
-            await document.documentElement.requestFullscreen();
-        } else {
-            await document.exitFullscreen();
-        }
-    } catch (e) {
-        console.error("フルスクリーン切替に失敗:", e);
-    }
-}
-
-// =============================================
 // イベントリスナー
 // =============================================
 scenarioModeButton.addEventListener("click", () => startChapter("ch1"));
 dialogueBox.addEventListener("click", () => { if (scenarioActive) advanceScene(); });
 battleModeButton.addEventListener("click",   setBattleMode);
-fullscreenButton.addEventListener("click",   toggleFullscreen);
 
 topTabs.forEach(tab => {
     tab.addEventListener("click", () => switchTopLayer(tab.dataset.layer));
@@ -1884,9 +2499,39 @@ function scaleGame() {
 window.addEventListener("resize", scaleGame);
 
 // =============================================
+// ホーム画面
+// =============================================
+function showHomeScreen() {
+    homeScreen.style.display = "";
+    homeScreen.style.opacity = "";
+    homeScreen.style.pointerEvents = "";
+}
+function hideHomeScreen(callback) {
+    homeScreen.style.opacity = "0";
+    homeScreen.style.pointerEvents = "none";
+    setTimeout(() => {
+        homeScreen.style.display = "none";
+        if (callback) callback();
+    }, 500); // CSSのtransition時間と合わせる
+}
+
+homeStartBtn.addEventListener("click", () => {
+    hideHomeScreen(() => startChapter("ch1"));
+});
+
+homeContinueBtn.addEventListener("click", () => {
+    showMessage("SYSTEM", "セーブ機能は準備中です。");
+});
+
+homeSettingsBtn.addEventListener("click", () => {
+    showMessage("SYSTEM", "設定は準備中です。");
+});
+
+// =============================================
 // 初期化
 // =============================================
 createGrid();
-setBattleMode();
+setBattleMode();   // グリッド・ユニットを初期化しておく
 renderIdlePanel();
+showHomeScreen();  // 起動時はホーム画面を前面に表示
 scaleGame();
