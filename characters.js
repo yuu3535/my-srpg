@@ -36,7 +36,10 @@ const CHARACTERS_DATA = [
         moved: false, acted: false,
         char: "リ",
         tokenImage: "立ち絵AI生成/リングホルムドット.png",
-        portraitImage: "立ち絵AI生成/リングホルム1.png",  portraitBgSize: "340%",  portraitBgPos: "center -30px",
+        portraitImage: "立ち絵AI生成/リングホルム1.png",
+        portraitBgSize: "360%",  portraitBgPos: "52% -20px",
+        portraitDmgBgSize: "340%", portraitDmgBgPos: "center -10px",
+        statusBgSize: "280%", statusBgPos: "center -25px",
         portraitImageDamaged: "立ち絵AI生成/リングホルム被弾.png",
 
         spells: {
@@ -85,7 +88,10 @@ const CHARACTERS_DATA = [
         moved: false, acted: false,
         char: "ア",
         tokenImage: "立ち絵AI生成/幼少期アルシェドット.png",
-        portraitImage: "立ち絵AI生成/アルシェ1.png",  portraitBgSize: "300%",  portraitBgPos: "60% top",
+        portraitImage: "立ち絵AI生成/アルシェ1.png",
+        portraitBgSize: "300%",  portraitBgPos: "60% top",
+        portraitDmgBgSize: "250%", portraitDmgBgPos: "46% 5px",
+        statusBgSize: "300%", statusBgPos: "60% top",
         portraitImageDamaged: "立ち絵AI生成/幼少期アルシェ被弾.png",
 
         spells: {
@@ -135,7 +141,10 @@ const CHARACTERS_DATA = [
         moved: false, acted: false,
         char: "ア",
         tokenImage: "立ち絵AI生成/アルバスドット.png",
-        portraitImage: "立ち絵AI生成/アルバス1.png",  portraitBgSize: "300%",  portraitBgPos: "center -20px",
+        portraitImage: "立ち絵AI生成/アルバス1.png",
+        portraitBgSize: "400%",  portraitBgPos: "55% -15px",
+        portraitDmgBgSize: "400%", portraitDmgBgPos: "49% -20px",
+        statusBgSize: "355%", statusBgPos: "55% -25px",
         portraitImageDamaged: "立ち絵AI生成/アルバス被弾.png",
 
         spells: {
@@ -192,7 +201,10 @@ const CHARACTERS_DATA = [
         moved: false, acted: false,
         char: "番",
         tokenImage: "立ち絵AI生成/モブ/アルストロ兵ドット.png",
-        portraitImage: "立ち絵AI生成/モブ/アルストロ兵1.png",  portraitBgSize: "280%",  portraitBgPos: "center top",
+        portraitImage: "立ち絵AI生成/モブ/アルストロ兵1.png",
+        portraitBgSize: "350%",  portraitBgPos: "53% -40px",
+        portraitDmgBgSize: "355%", portraitDmgBgPos: "34% -30px",
+        statusBgSize: "275%", statusBgPos: "54% -35px",
         portraitImageDamaged: "立ち絵AI生成/モブ/アルストロ兵1被弾.png",
 
         spells: {},
@@ -229,7 +241,10 @@ const CHARACTERS_DATA = [
         moved: false, acted: false,
         char: "デ",
         tokenImage: "立ち絵AI生成/モブ/アルストロ将軍ドット.png",
-        portraitImage: "立ち絵AI生成/モブ/アルストロ将軍1.png",  portraitBgSize: "280%",  portraitBgPos: "center top",
+        portraitImage: "立ち絵AI生成/モブ/アルストロ将軍1.png",
+        portraitBgSize: "280%",  portraitBgPos: "center top",
+        portraitDmgBgSize: "285%", portraitDmgBgPos: "center top",
+        statusBgSize: "285%", statusBgPos: "46% -25px",
         portraitImageDamaged: "立ち絵AI生成/モブ/アルストロ将軍1被弾.png",
 
         spells: {
@@ -275,7 +290,10 @@ const CHARACTERS_DATA = [
         moved: false, acted: false,
         char: "ヘ",
         tokenImage: "立ち絵AI生成/モブ/アルストロ兵魔法ドット.png",
-        portraitImage: "立ち絵AI生成/モブ/アルストロ兵1魔法.png",  portraitBgSize: "280%",  portraitBgPos: "center top",
+        portraitImage: "立ち絵AI生成/モブ/アルストロ兵1魔法.png",
+        portraitBgSize: "285%",  portraitBgPos: "center -25px",
+        portraitDmgBgSize: "250%", portraitDmgBgPos: "44% -15px",
+        statusBgSize: "250%", statusBgPos: "34% -20px",
         portraitImageDamaged: "立ち絵AI生成/モブ/アルストロ兵1魔法被弾.png",
 
         spells: {
