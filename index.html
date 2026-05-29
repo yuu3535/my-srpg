@@ -100,6 +100,56 @@
             </div>
         </div>
 
+        <!-- FEH風バトル予測パネル -->
+        <div id="battlePreviewPanel" class="hidden">
+            <div class="bpInner">
+                <!-- 攻撃側 -->
+                <div class="bpUnit" id="bpAtkSide">
+                    <div class="bpPortrait" id="bpAtkPortrait"></div>
+                    <div class="bpUnitInfo">
+                        <div class="bpUnitName" id="bpAtkName">―</div>
+                        <div class="bpHpRow">
+                            <div class="bpHpBar"><div class="bpHpFill" id="bpAtkHpFill"></div></div>
+                            <span class="bpHpNum" id="bpAtkHpNum">0/0</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- 中央予測 -->
+                <div class="bpCenter">
+                    <div class="bpPredRow bpAtkRow">
+                        <span class="bpLabel">命中</span>
+                        <span class="bpVal bpHitVal" id="bpAtkHit">―%</span>
+                        <span class="bpSep">/</span>
+                        <span class="bpLabel">ダメ</span>
+                        <span class="bpVal bpDmgVal bpAtkDmgVal" id="bpAtkDmg">―</span>
+                    </div>
+                    <div class="bpCtrTag" id="bpCtrTag">反撃あり</div>
+                    <div class="bpPredRow bpDefRow" id="bpDefPredRow">
+                        <span class="bpLabel">命中</span>
+                        <span class="bpVal bpHitVal" id="bpDefHit">―%</span>
+                        <span class="bpSep">/</span>
+                        <span class="bpLabel">ダメ</span>
+                        <span class="bpVal bpDmgVal bpDefDmgVal" id="bpDefDmg">―</span>
+                    </div>
+                    <div class="bpBtns">
+                        <button id="bpCancelBtn" class="bpBtn bpCancelBtn">キャンセル</button>
+                        <button id="bpConfirmBtn" class="bpBtn bpConfirmBtn">攻撃実行</button>
+                    </div>
+                </div>
+                <!-- 防御側 -->
+                <div class="bpUnit" id="bpDefSide">
+                    <div class="bpPortrait" id="bpDefPortrait"></div>
+                    <div class="bpUnitInfo">
+                        <div class="bpUnitName" id="bpDefName">―</div>
+                        <div class="bpHpRow">
+                            <div class="bpHpBar"><div class="bpHpFill" id="bpDefHpFill"></div></div>
+                            <span class="bpHpNum" id="bpDefHpNum">0/0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- ステータスモーダル -->
         <div id="statusModalOverlay" class="hidden">
             <div id="statusModal">

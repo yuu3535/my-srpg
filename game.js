@@ -41,6 +41,7 @@ const homeSettingsBtn    = document.getElementById("homeSettingsBtn");
 const dialogueBox        = document.getElementById("dialogueBox");
 const topPanel           = document.getElementById("topPanel");
 const bgImage            = document.getElementById("bgImage");
+const battlePreviewPanel = document.getElementById("battlePreviewPanel");
 
 // =============================================
 // 定数
@@ -91,6 +92,7 @@ let turnCount       = 1;
 let battleOver      = false;
 let statusTargetId  = null; // ステータスモーダル表示対象
 let currentStatusTab = "basic";
+let _bpPendingAttack = null; // バトル予測確認待ち { attacker, target }
 
 // =============================================
 // DB / MB テーブル計算
@@ -262,8 +264,14 @@ function onUnitClick(unit) {
         if (unit.side !== selectedUnit.side && unit.hp > 0) {
             const dist = Math.abs(selectedUnit.x - unit.x) + Math.abs(selectedUnit.y - unit.y);
             if (dist <= selectedUnit.attackRange) {
-                clearHighlights();
-                executeAttack(selectedUnit, unit);
+                // 攻撃スキル名を確定
+                const atkSkillName = selectedAttackSkill && selectedAttackSkill in (selectedUnit.skills || {})
+                    ? selectedAttackSkill
+                    : getAttackSkillVal(selectedUnit).name;
+                // 予測パネルを出して確認待ちにする（即攻撃しない）
+                const pred = calculateBattlePrediction(selectedUnit, unit, atkSkillName);
+                _bpPendingAttack = { attacker: selectedUnit, target: unit };
+                showBattlePreview(selectedUnit, unit, pred);
             } else {
                 showMessage("SYSTEM", `${unit.name}は射程外です。`);
             }
@@ -624,6 +632,7 @@ function deselectUnit() {
     clearHighlights();
     hideRadialMenu();
     hideForecastLayer();
+    hideBattlePreview();
     renderIdlePanel();
 }
 
@@ -1459,6 +1468,7 @@ function endUnitTurn(unit) {
     selectedAttackSkill = null;
     clearHighlights();
     hideForecastLayer();
+    hideBattlePreview();
     renderUnits();
 
     if (turnPhase !== "ally") return;
@@ -1498,6 +1508,126 @@ function startAllyPhase() {
 // =============================================
 // 戦闘予測（バトルフォーキャスト）
 // =============================================
+
+// =============================================
+// FEH風バトル予測パネル
+// =============================================
+
+/**
+ * 攻撃側 vs 防御側の戦闘予測値を返す
+ * @returns {{ hitRate, expDmg, canCounter, ctrHitRate, ctrExpDmg }}
+ */
+function calculateBattlePrediction(attacker, target, atkSkillName) {
+    const atkStat = atkSkillName && atkSkillName in (attacker.skills || {})
+        ? attacker.skills[atkSkillName]
+        : getAttackSkillVal(attacker).val;
+    const stunned   = (target.statusEffects || []).some(e => e.type === "stun");
+    const evadeStat = stunned ? 0 : getEvadeSkillVal(target);
+    const hitRate   = stunned ? 100 : getOpposedRate(atkStat, evadeStat);
+
+    const avgDb   = avgDice(attacker.physicalBonus);
+    const rawDmg  = Math.round(3.5 + avgDb);
+    const barrier = (target.statusEffects || []).find(e => e.type === "barrier");
+    const expDmg  = barrier ? Math.max(0, rawDmg - barrier.value) : rawDmg;
+
+    // 反撃可否と期待値
+    const canCounter = target.hp > 0 && (target.counterMode ?? "auto") !== "none";
+    let ctrHitRate = 0, ctrExpDmg = 0;
+    if (canCounter) {
+        const ctrAtkStat = getAttackSkillVal(target).val;
+        const ctrEvade   = getEvadeSkillVal(attacker);
+        ctrHitRate = Math.round((target.courage || 50) * getOpposedRate(ctrAtkStat, ctrEvade) / 100);
+        ctrExpDmg  = Math.max(1, Math.round((3.5 + avgDice(target.physicalBonus)) / 2));
+    }
+
+    return { hitRate, expDmg, canCounter, ctrHitRate, ctrExpDmg };
+}
+
+/** ポートレートを背景画像として bpPortrait div にセット */
+function _setBpPortrait(el, unit) {
+    if (unit.portraitImage || unit.tokenImage) {
+        const src = unit.portraitImage || unit.tokenImage;
+        el.style.backgroundImage    = `url("${src}")`;
+        el.style.backgroundSize     = unit.portraitBgSize || "cover";
+        el.style.backgroundPosition = unit.portraitBgPos  || "center top";
+        el.textContent = "";
+    } else {
+        el.style.backgroundImage = "none";
+        el.textContent = unit.char || unit.name.slice(0, 1);
+    }
+}
+
+/** HP量に応じてバーと色クラスをセット */
+function _setBpHp(fillEl, numEl, unit) {
+    const pct = unit.hp / unit.maxHp;
+    fillEl.style.width = `${pct * 100}%`;
+    fillEl.className   = "bpHpFill" + (pct <= 0.25 ? " critical" : pct <= 0.5 ? " low" : "");
+    numEl.textContent  = `${unit.hp}/${unit.maxHp}`;
+}
+
+/**
+ * バトル予測パネルを表示する
+ * @param {object} attacker      攻撃側ユニット
+ * @param {object} target        防御側ユニット
+ * @param {object} prediction    calculateBattlePrediction() の戻り値
+ */
+function showBattlePreview(attacker, target, prediction) {
+    // 攻撃側
+    _setBpPortrait(document.getElementById("bpAtkPortrait"), attacker);
+    document.getElementById("bpAtkName").textContent = attacker.name;
+    _setBpHp(document.getElementById("bpAtkHpFill"), document.getElementById("bpAtkHpNum"), attacker);
+
+    // 防御側
+    _setBpPortrait(document.getElementById("bpDefPortrait"), target);
+    document.getElementById("bpDefName").textContent = target.name;
+    _setBpHp(document.getElementById("bpDefHpFill"), document.getElementById("bpDefHpNum"), target);
+
+    // 攻撃予測
+    document.getElementById("bpAtkHit").textContent = `${prediction.hitRate}%`;
+    document.getElementById("bpAtkDmg").textContent = `~${prediction.expDmg}`;
+
+    // 反撃予測
+    const ctrTag     = document.getElementById("bpCtrTag");
+    const defPredRow = document.getElementById("bpDefPredRow");
+    if (prediction.canCounter) {
+        ctrTag.textContent       = "反撃あり";
+        ctrTag.style.color       = "";
+        ctrTag.style.borderColor = "";
+        defPredRow.style.opacity = "1";
+        document.getElementById("bpDefHit").textContent = `${prediction.ctrHitRate}%`;
+        document.getElementById("bpDefDmg").textContent = `~${prediction.ctrExpDmg}`;
+    } else {
+        ctrTag.textContent       = "反撃なし";
+        ctrTag.style.color       = "rgba(180,150,80,0.45)";
+        ctrTag.style.borderColor = "rgba(200,146,42,0.15)";
+        defPredRow.style.opacity = "0.35";
+        document.getElementById("bpDefHit").textContent = "―%";
+        document.getElementById("bpDefDmg").textContent = "―";
+    }
+
+    battlePreviewPanel.classList.remove("hidden");
+}
+
+/** バトル予測パネルを閉じる */
+function hideBattlePreview() {
+    battlePreviewPanel.classList.add("hidden");
+    _bpPendingAttack = null;
+}
+
+// ── ボタンイベント（ページロード時に一度だけ登録） ──
+document.getElementById("bpConfirmBtn").addEventListener("click", () => {
+    if (!_bpPendingAttack) return;
+    const { attacker, target } = _bpPendingAttack;
+    hideBattlePreview();
+    clearHighlights();
+    executeAttack(attacker, target);
+});
+document.getElementById("bpCancelBtn").addEventListener("click", () => {
+    hideBattlePreview();
+    actionState = null;
+    clearHighlights();
+    if (selectedUnit) showAttackRadial(selectedUnit);
+});
 
 /** ダイス式の期待値を返す（"2d6+3" → 10, "1d6" → 3.5→3） */
 function avgDice(formula) {
@@ -2410,6 +2540,7 @@ function setBattleMode() {
     actionState         = null;
     selectedSpell       = null;
     selectedAttackSkill = null;
+    hideBattlePreview();
 
     // CHARACTERS_DATA をディープコピーして live データとして使用
     // DB = STR+SIZ、MB = POW+INT をルルブ表から自動計算

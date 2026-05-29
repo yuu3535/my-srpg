@@ -550,6 +550,196 @@ html, body {
 .unitHpFill.critical { background: #ff4444; }
 
 /* ============================================================
+   FEH風バトル予測パネル
+============================================================ */
+#battlePreviewPanel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 35;          /* topPanel(10) / radialMenu(20) より上 */
+    pointer-events: auto;
+    background: linear-gradient(170deg, rgba(4,6,18,0.97) 0%, rgba(10,14,32,0.96) 100%);
+    border-bottom: 2px solid var(--gold);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.85);
+    animation: bpSlideIn 0.18s ease-out;
+}
+#battlePreviewPanel.hidden { display: none; }
+
+@keyframes bpSlideIn {
+    from { transform: translateY(-100%); opacity: 0; }
+    to   { transform: translateY(0);     opacity: 1; }
+}
+
+.bpInner {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    padding: 10px 8px 8px;
+    gap: 6px;
+}
+
+/* ── ユニット側（左/右） ── */
+.bpUnit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    flex: 0 0 100px;
+}
+
+.bpPortrait {
+    width: 80px;
+    height: 80px;
+    border: 1px solid var(--gold-bright);
+    border-radius: 4px;
+    overflow: hidden;
+    background: rgba(0,0,0,0.5) center/cover no-repeat;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: var(--text-dim);
+}
+
+.bpUnitInfo {
+    width: 100%;
+}
+
+.bpUnitName {
+    font-size: 11px;
+    color: var(--text-main);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+}
+
+.bpHpRow {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.bpHpBar {
+    flex: 1;
+    height: 6px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.bpHpFill {
+    height: 100%;
+    background: #44ee77;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+.bpHpFill.low      { background: #ffcc00; }
+.bpHpFill.critical { background: #ff4444; }
+
+.bpHpNum {
+    font-size: 9px;
+    color: var(--text-sub);
+    white-space: nowrap;
+    min-width: 28px;
+    text-align: right;
+}
+
+/* ── 中央列 ── */
+.bpCenter {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 0 2px;
+}
+
+.bpPredRow {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    justify-content: center;
+}
+
+.bpAtkRow { /* 攻撃側（味方）は金色ベース */ }
+.bpDefRow { /* 防御側（敵）は赤ベース */ }
+
+.bpLabel {
+    font-size: 9px;
+    color: var(--text-dim);
+}
+
+.bpHitVal {
+    font-size: 11px;
+    font-weight: bold;
+    color: #80d4ff;
+    min-width: 32px;
+    text-align: right;
+}
+
+.bpDmgVal {
+    font-size: 15px;
+    font-weight: bold;
+    min-width: 24px;
+    text-align: right;
+}
+
+.bpAtkDmgVal { color: #ffca40; }
+.bpDefDmgVal { color: #ff8080; }
+
+.bpSep {
+    color: var(--text-dim);
+    font-size: 9px;
+}
+
+.bpCtrTag {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: rgba(200,146,42,0.12);
+    border: 1px solid var(--gold-dim);
+    color: var(--text-main);
+    white-space: nowrap;
+}
+
+.bpBtns {
+    display: flex;
+    gap: 6px;
+    margin-top: 2px;
+}
+
+.bpBtn {
+    font-size: 11px;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: inherit;
+    border: 1px solid transparent;
+    transition: filter 0.1s;
+}
+.bpBtn:active { filter: brightness(1.25); }
+
+.bpCancelBtn {
+    background: rgba(60,60,80,0.8);
+    color: #b0b0c0;
+    border-color: rgba(120,120,160,0.35);
+}
+
+.bpConfirmBtn {
+    background: linear-gradient(135deg, #6b3e0a, #c8922a);
+    color: #fff8e0;
+    border-color: var(--gold-bright);
+    font-weight: bold;
+}
+
+/* ============================================================
    ラジアルメニュー
 ============================================================ */
 #radialMenu {
