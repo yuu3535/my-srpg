@@ -41,7 +41,7 @@ const homeSettingsBtn    = document.getElementById("homeSettingsBtn");
 const dialogueBox        = document.getElementById("dialogueBox");
 const topPanel           = document.getElementById("topPanel");
 const bgImage            = document.getElementById("bgImage");
-const battlePreviewPanel = document.getElementById("battlePreviewPanel");
+const topLayerVS         = document.getElementById("topLayerVS");
 
 // =============================================
 // 定数
@@ -92,7 +92,7 @@ let turnCount       = 1;
 let battleOver      = false;
 let statusTargetId  = null; // ステータスモーダル表示対象
 let currentStatusTab = "basic";
-let _bpPendingAttack = null; // バトル予測確認待ち { attacker, target }
+let _vsAttack = null; // VS確認待ち { attacker, target, isMagic, spell }
 
 // =============================================
 // DB / MB テーブル計算
@@ -268,10 +268,10 @@ function onUnitClick(unit) {
                 const atkSkillName = selectedAttackSkill && selectedAttackSkill in (selectedUnit.skills || {})
                     ? selectedAttackSkill
                     : getAttackSkillVal(selectedUnit).name;
-                // 予測パネルを出して確認待ちにする（即攻撃しない）
-                const pred = calculateBattlePrediction(selectedUnit, unit, atkSkillName);
-                _bpPendingAttack = { attacker: selectedUnit, target: unit };
-                showBattlePreview(selectedUnit, unit, pred);
+                // VS 予測パネルを出して確認待ちにする（即攻撃しない）
+                const pred = calculateBattlePrediction(selectedUnit, unit, atkSkillName, false, null);
+                _vsAttack = { attacker: selectedUnit, target: unit, isMagic: false, spell: null };
+                showBattlePreview(selectedUnit, unit, pred, atkSkillName);
             } else {
                 showMessage("SYSTEM", `${unit.name}は射程外です。`);
             }
@@ -298,7 +298,7 @@ function onUnitClick(unit) {
 
     // ── 魔法対象選択中 ──
     if (actionState === "magic" && selectedUnit && selectedSpell) {
-        const spell = selectedSpell;
+        const spell  = selectedSpell;
         const caster = selectedUnit;
         const isAlly = unit.side === caster.side;
 
@@ -315,7 +315,16 @@ function onUnitClick(unit) {
             }
         }
         clearHighlights();
-        executeMagic(caster, spell, unit);
+
+        // 敵対象の攻撃/デバフ系 → VS プレビューを挟む
+        if (spell.targetType === "enemy") {
+            const pred = calculateBattlePrediction(caster, unit, null, true, spell);
+            _vsAttack  = { attacker: caster, target: unit, isMagic: true, spell };
+            showBattlePreview(caster, unit, pred, spell.name);
+        } else {
+            // 味方対象（治癒・結界など）はそのまま実行
+            executeMagic(caster, spell, unit);
+        }
         return;
     }
 
@@ -1510,27 +1519,51 @@ function startAllyPhase() {
 // =============================================
 
 // =============================================
-// FEH風バトル予測パネル
+// FEH風 VS レイヤー（topPanel 統合版）
 // =============================================
 
 /**
- * 攻撃側 vs 防御側の戦闘予測値を返す
- * @returns {{ hitRate, expDmg, canCounter, ctrHitRate, ctrExpDmg }}
+ * 物理・魔法の戦闘予測値を計算して返す
+ * isMagic=true の場合は spell を参照
  */
-function calculateBattlePrediction(attacker, target, atkSkillName) {
-    const atkStat = atkSkillName && atkSkillName in (attacker.skills || {})
-        ? attacker.skills[atkSkillName]
-        : getAttackSkillVal(attacker).val;
-    const stunned   = (target.statusEffects || []).some(e => e.type === "stun");
-    const evadeStat = stunned ? 0 : getEvadeSkillVal(target);
-    const hitRate   = stunned ? 100 : getOpposedRate(atkStat, evadeStat);
+function calculateBattlePrediction(attacker, target, atkSkillName, isMagic, spell) {
+    // ── 攻撃側予測 ──
+    let hitRate, expDmg, effectDesc;
+    if (isMagic && spell) {
+        hitRate    = (attacker.spells?.[spell.id] ?? 5) * 10;  // 成功率%
+        const barrier = (target.statusEffects || []).find(e => e.type === "barrier");
+        if (spell.effectType === "magicDamage" || spell.effectType === "break") {
+            const basePart = (spell.powerFormula || "1d6+MB")
+                .replace(/\+?\s*MB/g, "").replace(/MB\s*\+?/g, "").trim() || "1d6";
+            const raw = Math.round(avgDice(basePart) + avgDice(attacker.magicBonus));
+            expDmg     = barrier ? Math.max(0, raw - barrier.value) : raw;
+            effectDesc = `~${expDmg}`;
+        } else if (spell.effectType === "heal") {
+            expDmg     = Math.round(3.5 + avgDice(attacker.magicBonus));
+            effectDesc = `+${expDmg}`;
+        } else if (spell.effectType === "barrier") {
+            expDmg     = Math.round(avgDice(spell.powerFormula || "2d4"));
+            effectDesc = `+${expDmg}`;
+        } else {
+            expDmg     = 0;
+            effectDesc = "特殊";
+        }
+    } else {
+        const atkStat = atkSkillName && atkSkillName in (attacker.skills || {})
+            ? attacker.skills[atkSkillName]
+            : getAttackSkillVal(attacker).val;
+        const stunned   = (target.statusEffects || []).some(e => e.type === "stun");
+        const evadeStat = stunned ? 0 : getEvadeSkillVal(target);
+        hitRate = stunned ? 100 : getOpposedRate(atkStat, evadeStat);
 
-    const avgDb   = avgDice(attacker.physicalBonus);
-    const rawDmg  = Math.round(3.5 + avgDb);
-    const barrier = (target.statusEffects || []).find(e => e.type === "barrier");
-    const expDmg  = barrier ? Math.max(0, rawDmg - barrier.value) : rawDmg;
+        const avgDb   = avgDice(attacker.physicalBonus);
+        const rawDmg  = Math.round(3.5 + avgDb);
+        const barrier = (target.statusEffects || []).find(e => e.type === "barrier");
+        expDmg     = barrier ? Math.max(0, rawDmg - barrier.value) : rawDmg;
+        effectDesc = `~${expDmg}`;
+    }
 
-    // 反撃可否と期待値
+    // ── 反撃予測（共通） ──
     const canCounter = target.hp > 0 && (target.counterMode ?? "auto") !== "none";
     let ctrHitRate = 0, ctrExpDmg = 0;
     if (canCounter) {
@@ -1540,117 +1573,143 @@ function calculateBattlePrediction(attacker, target, atkSkillName) {
         ctrExpDmg  = Math.max(1, Math.round((3.5 + avgDice(target.physicalBonus)) / 2));
     }
 
-    return { hitRate, expDmg, canCounter, ctrHitRate, ctrExpDmg };
+    return { hitRate, expDmg, effectDesc, canCounter, ctrHitRate, ctrExpDmg };
 }
 
-/** ポートレートを <img> タグで bpPortrait div にセット */
-function _setBpPortrait(el, unit) {
-    const img   = el.querySelector("img");
-    const label = el.querySelector(".bpFallbackLabel");
-    const src   = unit.portraitImage || unit.tokenImage || "";
-
-    if (img) {
-        img.src = src;
-        // portraitBgPos を object-position に流用（"center -30px" 等がそのまま使える）
-        img.style.objectPosition = unit.portraitBgPos || "center top";
-        // portraitBgSize が "340%" 等なら、それに比例したズームを object-fit:none+サイズで再現
+/** vsPortrait の <img> と fallback char をセット */
+function _setVsPortrait(imgEl, charEl, unit) {
+    const src = unit.portraitImage || unit.tokenImage || "";
+    if (imgEl) {
+        imgEl.src                  = src;
+        imgEl.style.objectPosition = unit.portraitBgPos || "center top";
+        // portraitBgSize が % 指定なら scale 相当にする（例: "340%" → 画像を小さく表示）
         if (unit.portraitBgSize && unit.portraitBgSize !== "cover") {
-            // "340%" → 340 → 0.8 / 3.4 ≈ scale factor の逆なので object-fit:none + width/height 指定
-            const pct = parseFloat(unit.portraitBgSize) / 100;
-            img.style.objectFit = "none";
-            img.style.width     = `${100 / pct * 100}%`;  // コンテナ比でスケール
-            img.style.height    = `${100 / pct * 100}%`;
+            const pct            = parseFloat(unit.portraitBgSize) / 100 || 1;
+            imgEl.style.objectFit = "none";
+            imgEl.style.width    = `${(1 / pct) * 100}%`;
+            imgEl.style.height   = `${(1 / pct) * 100}%`;
         } else {
-            img.style.objectFit = "cover";
-            img.style.width     = "100%";
-            img.style.height    = "100%";
+            imgEl.style.objectFit = "cover";
+            imgEl.style.width    = "100%";
+            imgEl.style.height   = "100%";
         }
     }
-
-    // フォールバックテキスト（画像なし時）
-    if (!src) {
-        if (!label) {
-            const span = document.createElement("span");
-            span.className   = "bpFallbackLabel";
-            span.textContent = unit.char || unit.name.slice(0, 1);
-            el.appendChild(span);
-        }
-    } else {
-        if (label) label.remove();
-    }
+    if (charEl) charEl.textContent = src ? "" : (unit.char || unit.name.slice(0, 1));
 }
 
-/** HP量に応じてバーと色クラスをセット */
-function _setBpHp(fillEl, numEl, unit) {
+/** vsHpFill のバー幅・色クラスと HP 数値をセット */
+function _setVsHp(fillEl, numEl, unit) {
     const pct = unit.hp / unit.maxHp;
     fillEl.style.width = `${pct * 100}%`;
-    fillEl.className   = "bpHpFill" + (pct <= 0.25 ? " critical" : pct <= 0.5 ? " low" : "");
+    fillEl.className   = "vsHpFill" + (pct <= 0.25 ? " critical" : pct <= 0.5 ? " low" : "");
     numEl.textContent  = `${unit.hp}/${unit.maxHp}`;
 }
 
 /**
- * バトル予測パネルを表示する
- * @param {object} attacker      攻撃側ユニット
- * @param {object} target        防御側ユニット
- * @param {object} prediction    calculateBattlePrediction() の戻り値
+ * topLayerVS に予測を描画して表示。下パネルに確認ボタンを表示。
+ * @param {object} attacker  攻撃側
+ * @param {object} target    防御・対象側
+ * @param {object} pred      calculateBattlePrediction() の戻り値
+ * @param {string} actionLabel  ラジアルで選択した行動名（"武器"・"破壊" など）
  */
-function showBattlePreview(attacker, target, prediction) {
-    // 攻撃側
-    _setBpPortrait(document.getElementById("bpAtkPortrait"), attacker);
-    document.getElementById("bpAtkName").textContent = attacker.name;
-    _setBpHp(document.getElementById("bpAtkHpFill"), document.getElementById("bpAtkHpNum"), attacker);
+function showBattlePreview(attacker, target, pred, actionLabel) {
+    // ── 攻撃側 ──
+    _setVsPortrait(
+        document.getElementById("vsAtkImg"),
+        document.getElementById("vsAtkChar"),
+        attacker
+    );
+    document.getElementById("vsAtkName").textContent = attacker.name;
+    _setVsHp(
+        document.getElementById("vsAtkHpFill"),
+        document.getElementById("vsAtkHpNum"),
+        attacker
+    );
 
-    // 防御側
-    _setBpPortrait(document.getElementById("bpDefPortrait"), target);
-    document.getElementById("bpDefName").textContent = target.name;
-    _setBpHp(document.getElementById("bpDefHpFill"), document.getElementById("bpDefHpNum"), target);
+    // ── 防御側 ──
+    _setVsPortrait(
+        document.getElementById("vsDefImg"),
+        document.getElementById("vsDefChar"),
+        target
+    );
+    document.getElementById("vsDefName").textContent = target.name;
+    _setVsHp(
+        document.getElementById("vsDefHpFill"),
+        document.getElementById("vsDefHpNum"),
+        target
+    );
 
-    // 攻撃予測
-    document.getElementById("bpAtkHit").textContent = `${prediction.hitRate}%`;
-    document.getElementById("bpAtkDmg").textContent = `~${prediction.expDmg}`;
+    // ── 中央：行動名・攻撃予測 ──
+    document.getElementById("vsActionName").textContent = actionLabel || "";
+    document.getElementById("vsAtkHit").textContent = `${pred.hitRate}%`;
+    document.getElementById("vsAtkDmg").textContent = pred.effectDesc || `~${pred.expDmg}`;
 
-    // 反撃予測
-    const ctrTag     = document.getElementById("bpCtrTag");
-    const defPredRow = document.getElementById("bpDefPredRow");
-    if (prediction.canCounter) {
+    // ── 反撃予測 ──
+    const ctrTag     = document.getElementById("vsCtrTag");
+    const defStatRow = document.getElementById("vsDefStatRow");
+    if (pred.canCounter) {
         ctrTag.textContent       = "反撃あり";
-        ctrTag.style.color       = "";
-        ctrTag.style.borderColor = "";
-        defPredRow.style.opacity = "1";
-        document.getElementById("bpDefHit").textContent = `${prediction.ctrHitRate}%`;
-        document.getElementById("bpDefDmg").textContent = `~${prediction.ctrExpDmg}`;
+        ctrTag.style.opacity     = "1";
+        defStatRow.style.opacity = "1";
+        document.getElementById("vsDefHit").textContent = `${pred.ctrHitRate}%`;
+        document.getElementById("vsDefDmg").textContent = `~${pred.ctrExpDmg}`;
     } else {
         ctrTag.textContent       = "反撃なし";
-        ctrTag.style.color       = "rgba(180,150,80,0.45)";
-        ctrTag.style.borderColor = "rgba(200,146,42,0.15)";
-        defPredRow.style.opacity = "0.35";
-        document.getElementById("bpDefHit").textContent = "―%";
-        document.getElementById("bpDefDmg").textContent = "―";
+        ctrTag.style.opacity     = "0.5";
+        defStatRow.style.opacity = "0.35";
+        document.getElementById("vsDefHit").textContent = "―%";
+        document.getElementById("vsDefDmg").textContent = "―";
     }
 
-    battlePreviewPanel.classList.remove("hidden");
+    // ── topPanel を VS レイヤーに切り替え ──
+    switchTopLayer("vs");
+    hideRadialMenu();
+
+    // ── 下パネルに確認ボタンを表示 ──
+    _renderVsCommandButtons();
 }
 
-/** バトル予測パネルを閉じる */
+/** VS確認中の下パネルボタン */
+function _renderVsCommandButtons() {
+    if (!_vsAttack) return;
+    const { attacker, target, isMagic, spell } = _vsAttack;
+
+    commandHeader.textContent = "攻撃確認";
+    commandInfo.textContent   = `${attacker.name}  →  ${target.name}`;
+    commandList.innerHTML     = "";
+
+    const confirmBtn = document.createElement("button");
+    confirmBtn.className   = "commandItem vsConfirm";
+    confirmBtn.textContent = isMagic ? `${spell.name} を使用` : "攻撃実行";
+    confirmBtn.addEventListener("click", () => {
+        hideBattlePreview();
+        clearHighlights();
+        if (isMagic) executeMagic(attacker, spell, target);
+        else          executeAttack(attacker, target);
+    });
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.className   = "commandItem";
+    cancelBtn.textContent = "キャンセル";
+    cancelBtn.addEventListener("click", () => {
+        hideBattlePreview();
+        actionState = null;
+        clearHighlights();
+        if (selectedUnit) {
+            if (isMagic) showMagicRadial(selectedUnit);
+            else          showAttackRadial(selectedUnit);
+        }
+    });
+
+    commandList.appendChild(confirmBtn);
+    commandList.appendChild(cancelBtn);
+}
+
+/** VS レイヤーを閉じてバトルログに戻る */
 function hideBattlePreview() {
-    battlePreviewPanel.classList.add("hidden");
-    _bpPendingAttack = null;
+    _vsAttack = null;
+    if (gameMode === "battle") switchTopLayer("battle");
 }
-
-// ── ボタンイベント（ページロード時に一度だけ登録） ──
-document.getElementById("bpConfirmBtn").addEventListener("click", () => {
-    if (!_bpPendingAttack) return;
-    const { attacker, target } = _bpPendingAttack;
-    hideBattlePreview();
-    clearHighlights();
-    executeAttack(attacker, target);
-});
-document.getElementById("bpCancelBtn").addEventListener("click", () => {
-    hideBattlePreview();
-    actionState = null;
-    clearHighlights();
-    if (selectedUnit) showAttackRadial(selectedUnit);
-});
 
 /** ダイス式の期待値を返す（"2d6+3" → 10, "1d6" → 3.5→3） */
 function avgDice(formula) {
@@ -2401,6 +2460,7 @@ function switchTopLayer(layer) {
     topLayerDialogue.classList.toggle("hidden", layer !== "dialogue");
     topLayerBattle.classList.toggle("hidden",   layer !== "battle");
     topLayerForecast.classList.toggle("hidden",  layer !== "forecast");
+    topLayerVS.classList.toggle("hidden",        layer !== "vs");
 }
 
 // =============================================

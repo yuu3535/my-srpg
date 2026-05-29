@@ -46,6 +46,57 @@
                 </div>
             </div>
 
+            <!-- FEH風 VS レイヤー（攻撃対象選択時） -->
+            <div id="topLayerVS" class="topLayer hidden">
+                <div id="vsWrap">
+                    <!-- 攻撃側 -->
+                    <div class="vsUnit">
+                        <div class="vsPortrait">
+                            <img id="vsAtkImg" src="" alt="" />
+                            <span class="vsPortraitChar" id="vsAtkChar"></span>
+                        </div>
+                        <div class="vsUnitName" id="vsAtkName">―</div>
+                        <div class="vsHpWrap">
+                            <div class="vsHpBar"><div class="vsHpFill" id="vsAtkHpFill"></div></div>
+                            <span class="vsHpNum" id="vsAtkHpNum">0/0</span>
+                        </div>
+                    </div>
+                    <!-- 中央予測 -->
+                    <div class="vsMiddle">
+                        <div class="vsActionName" id="vsActionName"></div>
+                        <div class="vsStatRow vsAtkStat">
+                            <span class="vsDir">→</span>
+                            <span class="vsStatLabel">命中</span>
+                            <span class="vsStatVal vsHitVal" id="vsAtkHit">―%</span>
+                            <span class="vsStatSep">/</span>
+                            <span class="vsStatLabel">ダメ</span>
+                            <span class="vsStatVal vsAtkDmgVal" id="vsAtkDmg">―</span>
+                        </div>
+                        <div class="vsCtrTag" id="vsCtrTag">反撃あり</div>
+                        <div class="vsStatRow vsDefStat" id="vsDefStatRow">
+                            <span class="vsDir vsDirDef">←</span>
+                            <span class="vsStatLabel">命中</span>
+                            <span class="vsStatVal vsHitVal" id="vsDefHit">―%</span>
+                            <span class="vsStatSep">/</span>
+                            <span class="vsStatLabel">ダメ</span>
+                            <span class="vsStatVal vsDefDmgVal" id="vsDefDmg">―</span>
+                        </div>
+                    </div>
+                    <!-- 防御側 -->
+                    <div class="vsUnit">
+                        <div class="vsPortrait">
+                            <img id="vsDefImg" src="" alt="" />
+                            <span class="vsPortraitChar" id="vsDefChar"></span>
+                        </div>
+                        <div class="vsUnitName" id="vsDefName">―</div>
+                        <div class="vsHpWrap">
+                            <div class="vsHpBar"><div class="vsHpFill" id="vsDefHpFill"></div></div>
+                            <span class="vsHpNum" id="vsDefHpNum">0/0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- タブ -->
             <div id="topTabs">
                 <button class="topTab active" data-layer="dialogue">会話</button>
@@ -96,60 +147,6 @@
                     <button class="homeButton" id="homeStartBtn">はじめから</button>
                     <button class="homeButton" id="homeContinueBtn" disabled>つづきから</button>
                     <button class="homeButton" id="homeSettingsBtn" disabled>設定</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- FEH風バトル予測パネル -->
-        <div id="battlePreviewPanel" class="hidden">
-            <div class="bpInner">
-                <!-- 攻撃側 -->
-                <div class="bpUnit" id="bpAtkSide">
-                    <div class="bpPortrait" id="bpAtkPortrait">
-                            <img id="bpAtkImg" src="" alt="" />
-                        </div>
-                    <div class="bpUnitInfo">
-                        <div class="bpUnitName" id="bpAtkName">―</div>
-                        <div class="bpHpRow">
-                            <div class="bpHpBar"><div class="bpHpFill" id="bpAtkHpFill"></div></div>
-                            <span class="bpHpNum" id="bpAtkHpNum">0/0</span>
-                        </div>
-                    </div>
-                </div>
-                <!-- 中央予測 -->
-                <div class="bpCenter">
-                    <div class="bpPredRow bpAtkRow">
-                        <span class="bpLabel">命中</span>
-                        <span class="bpVal bpHitVal" id="bpAtkHit">―%</span>
-                        <span class="bpSep">/</span>
-                        <span class="bpLabel">ダメ</span>
-                        <span class="bpVal bpDmgVal bpAtkDmgVal" id="bpAtkDmg">―</span>
-                    </div>
-                    <div class="bpCtrTag" id="bpCtrTag">反撃あり</div>
-                    <div class="bpPredRow bpDefRow" id="bpDefPredRow">
-                        <span class="bpLabel">命中</span>
-                        <span class="bpVal bpHitVal" id="bpDefHit">―%</span>
-                        <span class="bpSep">/</span>
-                        <span class="bpLabel">ダメ</span>
-                        <span class="bpVal bpDmgVal bpDefDmgVal" id="bpDefDmg">―</span>
-                    </div>
-                    <div class="bpBtns">
-                        <button id="bpCancelBtn" class="bpBtn bpCancelBtn">キャンセル</button>
-                        <button id="bpConfirmBtn" class="bpBtn bpConfirmBtn">攻撃実行</button>
-                    </div>
-                </div>
-                <!-- 防御側 -->
-                <div class="bpUnit" id="bpDefSide">
-                    <div class="bpPortrait" id="bpDefPortrait">
-                            <img id="bpDefImg" src="" alt="" />
-                        </div>
-                    <div class="bpUnitInfo">
-                        <div class="bpUnitName" id="bpDefName">―</div>
-                        <div class="bpHpRow">
-                            <div class="bpHpBar"><div class="bpHpFill" id="bpDefHpFill"></div></div>
-                            <span class="bpHpNum" id="bpDefHpNum">0/0</span>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
