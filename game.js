@@ -42,6 +42,8 @@ const dialogueBox        = document.getElementById("dialogueBox");
 const topPanel           = document.getElementById("topPanel");
 const bgImage            = document.getElementById("bgImage");
 const topLayerVS         = document.getElementById("topLayerVS");
+const vsConfirmBtn       = document.getElementById("vsConfirmBtn");
+const vsCancelBtn        = document.getElementById("vsCancelBtn");
 
 // =============================================
 // 定数
@@ -1661,49 +1663,36 @@ function showBattlePreview(attacker, target, pred, actionLabel) {
         document.getElementById("vsDefDmg").textContent = "―";
     }
 
+    // ── 確認ボタンのテキストを行動に合わせて更新 ──
+    if (vsConfirmBtn) vsConfirmBtn.textContent = _vsAttack?.isMagic
+        ? `${_vsAttack.spell.name} を使用`
+        : "攻撃実行";
+
     // ── topPanel を VS レイヤーに切り替え ──
     switchTopLayer("vs");
     hideRadialMenu();
-
-    // ── 下パネルに確認ボタンを表示 ──
-    _renderVsCommandButtons();
 }
 
-/** VS確認中の下パネルボタン */
-function _renderVsCommandButtons() {
+// ── VS パネル内ボタン（ページロード時に一度だけ登録） ──
+vsConfirmBtn.addEventListener("click", () => {
     if (!_vsAttack) return;
     const { attacker, target, isMagic, spell } = _vsAttack;
-
-    commandHeader.textContent = "攻撃確認";
-    commandInfo.textContent   = `${attacker.name}  →  ${target.name}`;
-    commandList.innerHTML     = "";
-
-    const confirmBtn = document.createElement("button");
-    confirmBtn.className   = "commandItem vsConfirm";
-    confirmBtn.textContent = isMagic ? `${spell.name} を使用` : "攻撃実行";
-    confirmBtn.addEventListener("click", () => {
-        hideBattlePreview();
-        clearHighlights();
-        if (isMagic) executeMagic(attacker, spell, target);
-        else          executeAttack(attacker, target);
-    });
-
-    const cancelBtn = document.createElement("button");
-    cancelBtn.className   = "commandItem";
-    cancelBtn.textContent = "キャンセル";
-    cancelBtn.addEventListener("click", () => {
-        hideBattlePreview();
-        actionState = null;
-        clearHighlights();
-        if (selectedUnit) {
-            if (isMagic) showMagicRadial(selectedUnit);
-            else          showAttackRadial(selectedUnit);
-        }
-    });
-
-    commandList.appendChild(confirmBtn);
-    commandList.appendChild(cancelBtn);
-}
+    hideBattlePreview();
+    clearHighlights();
+    if (isMagic) executeMagic(attacker, spell, target);
+    else          executeAttack(attacker, target);
+});
+vsCancelBtn.addEventListener("click", () => {
+    if (!_vsAttack) return;
+    const { isMagic } = _vsAttack;
+    hideBattlePreview();
+    actionState = null;
+    clearHighlights();
+    if (selectedUnit) {
+        if (isMagic) showMagicRadial(selectedUnit);
+        else          showAttackRadial(selectedUnit);
+    }
+});
 
 /** VS レイヤーを閉じてバトルログに戻る */
 function hideBattlePreview() {

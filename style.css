@@ -568,25 +568,28 @@ html, body {
 
 /* ── ユニット側（左 / 右） ── */
 .vsUnit {
-    flex: 0 0 90px;
+    flex: 0 0 80px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3px;
+    gap: 4px;
+    padding-top: 10px;
 }
 
-.vsPortrait {
-    flex: 1;
-    width: 88px;
-    border: 1px solid var(--gold-bright);
-    border-radius: 4px;
+/* 円形 顔アイコン */
+.vsFaceIcon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
     overflow: hidden;
-    background-color: rgba(0, 0, 0, 0.45);
     position: relative;
-    min-height: 0;
+    background-color: rgba(20, 20, 30, 0.7);
+    /* 金色の薄いリング＋影 */
+    box-shadow: 0 0 0 2px var(--gold-dim), 0 3px 10px rgba(0,0,0,0.7);
+    flex-shrink: 0;
 }
 
-.vsPortrait img {
+.vsFaceIcon img {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -594,15 +597,15 @@ html, body {
     object-fit: cover;
     object-position: center top;
 }
-.vsPortrait img[src=""] { display: none; }
+.vsFaceIcon img[src=""] { display: none; }
 
-.vsPortraitChar {
+.vsFaceChar {
     position: absolute;
     inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 26px;
+    font-size: 22px;
     color: var(--text-dim);
     pointer-events: none;
 }
@@ -727,11 +730,35 @@ html, body {
     white-space: nowrap;
 }
 
-/* 下部パネルの攻撃実行ボタン（VS確認時） */
-.commandItem.vsConfirm {
-    background: linear-gradient(135deg, #6b3e0a, #c8922a);
-    color: #fff8e0 !important;
-    border-color: var(--gold-bright) !important;
+/* VS確認ボタン（上パネル内） */
+.vsButtons {
+    display: flex;
+    gap: 5px;
+    margin-top: 2px;
+}
+
+.vsBtn {
+    font-family: inherit;
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: filter 0.12s;
+    white-space: nowrap;
+}
+.vsBtn:active { filter: brightness(1.3); }
+
+.vsBtnCancel {
+    background: rgba(40, 40, 58, 0.85);
+    color: #9090a8;
+    border-color: rgba(100,100,140,0.35);
+}
+
+.vsBtnConfirm {
+    background: linear-gradient(135deg, #5a2e00, #c8922a);
+    color: #fff8e0;
+    border-color: var(--gold-bright);
     font-weight: bold;
 }
 
