@@ -35,8 +35,9 @@ const CHARACTERS_DATA = [
 
         moved: false, acted: false,
         char: "リ",
-        tokenImage: "Character/リングホルムアイコン.png",
+        tokenImage: "立ち絵AI生成/リングホルムドット.png",
         portraitImage: "立ち絵AI生成/リングホルム1.png",  portraitBgSize: "340%",  portraitBgPos: "center -30px",
+        portraitImageDamaged: "立ち絵AI生成/リングホルム被弾.png",
 
         spells: {
             火: 9,
@@ -83,8 +84,9 @@ const CHARACTERS_DATA = [
 
         moved: false, acted: false,
         char: "ア",
-        tokenImage: "Character/アルシェアイコン.png",
+        tokenImage: "立ち絵AI生成/幼少期アルシェドット.png",
         portraitImage: "立ち絵AI生成/アルシェ1.png",  portraitBgSize: "300%",  portraitBgPos: "60% top",
+        portraitImageDamaged: "立ち絵AI生成/幼少期アルシェ被弾.png",
 
         spells: {
             火: 7,
@@ -132,8 +134,9 @@ const CHARACTERS_DATA = [
 
         moved: false, acted: false,
         char: "ア",
-        tokenImage: "Character/アルバスアイコン.png",
+        tokenImage: "立ち絵AI生成/アルバスドット.png",
         portraitImage: "立ち絵AI生成/アルバス1.png",  portraitBgSize: "300%",  portraitBgPos: "center -20px",
+        portraitImageDamaged: "立ち絵AI生成/アルバス被弾.png",
 
         spells: {
             治癒: 9,
@@ -189,7 +192,8 @@ const CHARACTERS_DATA = [
         moved: false, acted: false,
         char: "番",
         tokenImage: "立ち絵AI生成/モブ/アルストロ兵ドット.png",
-        portraitImage: "立ち絵AI生成/モブ/アルストロ兵1.png",
+        portraitImage: "立ち絵AI生成/モブ/アルストロ兵1.png",  portraitBgSize: "280%",  portraitBgPos: "center top",
+        portraitImageDamaged: "立ち絵AI生成/モブ/アルストロ兵1被弾.png",
 
         spells: {},
         skills: {
@@ -224,8 +228,9 @@ const CHARACTERS_DATA = [
 
         moved: false, acted: false,
         char: "デ",
-        tokenImage: "Character/ディラン立ち絵.png",
+        tokenImage: "立ち絵AI生成/モブ/アルストロ将軍ドット.png",
         portraitImage: "立ち絵AI生成/モブ/アルストロ将軍1.png",  portraitBgSize: "280%",  portraitBgPos: "center top",
+        portraitImageDamaged: "立ち絵AI生成/モブ/アルストロ将軍1被弾.png",
 
         spells: {
             火: 9,
@@ -269,8 +274,9 @@ const CHARACTERS_DATA = [
 
         moved: false, acted: false,
         char: "ヘ",
-        tokenImage: "Character/ヘレル立ち絵.png",
+        tokenImage: "立ち絵AI生成/モブ/アルストロ兵魔法ドット.png",
         portraitImage: "立ち絵AI生成/モブ/アルストロ兵1魔法.png",  portraitBgSize: "280%",  portraitBgPos: "center top",
+        portraitImageDamaged: "立ち絵AI生成/モブ/アルストロ兵1魔法被弾.png",
 
         spells: {
             隕石: 8,

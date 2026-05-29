@@ -12,6 +12,7 @@ const logTextList        = document.getElementById("logTextList");
 const unitLayer          = document.getElementById("unitLayer");
 const battleBoard        = document.getElementById("battleBoard");
 const battleGrid         = document.getElementById("battleGrid");
+const battleCanvas       = document.getElementById("battleCanvas");
 const commandHeader      = document.getElementById("commandHeader");
 const commandInfo        = document.getElementById("commandInfo");
 const commandList        = document.getElementById("commandList");
@@ -224,27 +225,47 @@ function renderUnits() {
             el.appendChild(label);
         }
 
-        // HPバー
+        // HP 情報エリア（数値 + バー）
+        const hpPct  = unit.hp / unit.maxHp;
+        const hpState = hpPct <= 0.25 ? "critical" : hpPct <= 0.5 ? "low" : "";
+
+        const hpInfo = document.createElement("div");
+        hpInfo.className = "unitHpInfo";
+
+        const hpText = document.createElement("span");
+        hpText.className = `unitHpText${hpState ? " " + hpState : ""}`;
+        hpText.textContent = unit.hp;
+
         const hpBar  = document.createElement("div");
         hpBar.className = "unitHpBar";
         const hpFill = document.createElement("div");
-        hpFill.className = "unitHpFill";
-        const hpPct = unit.hp / unit.maxHp;
+        hpFill.className = `unitHpFill${hpState ? " " + hpState : ""}`;
         hpFill.style.width = `${hpPct * 100}%`;
-        if (hpPct <= 0.25)      hpFill.classList.add("critical");
-        else if (hpPct <= 0.5)  hpFill.classList.add("low");
         hpBar.appendChild(hpFill);
-        el.appendChild(hpBar);
 
-        // 位置（x=col, y=row）
-        el.style.left = `${unit.x * 10}%`;
-        el.style.top  = `${unit.y * 10}%`;
+        hpInfo.appendChild(hpText);
+        hpInfo.appendChild(hpBar);
+        el.appendChild(hpInfo);
+
+        // 位置（x=col, y=row）: トークンが12%×13%なのでマス中央に合わせてオフセット
+        el.style.left = `${unit.x * 10 - 1}%`;
+        el.style.top  = `${unit.y * 10 - 1.5}%`;
 
         // 自分のフェーズ中のみ行動済み表示（他フェーズでは暗くしない）
         if (unit.moved && unit.acted && unit.side === turnPhase) el.classList.add("unitDone");
 
+        // 5回タップでポートレート調整ツール
+        let _tapCount = 0, _tapTimer = null;
         el.addEventListener("click", (e) => {
             e.stopPropagation();
+            _tapCount++;
+            clearTimeout(_tapTimer);
+            if (_tapCount >= 5) {
+                _tapCount = 0;
+                showUnitPortraitAdjuster(unit);
+                return;
+            }
+            _tapTimer = setTimeout(() => { _tapCount = 0; }, 800);
             onUnitClick(unit);
         });
 
@@ -259,6 +280,7 @@ function renderUnits() {
 // クリックハンドラ
 // =============================================
 function onUnitClick(unit) {
+    if (_mapDragged) { _mapDragged = false; return; }
     if (gameMode !== "battle" || battleOver) return;
 
     // ── 攻撃対象選択中 ──
@@ -343,6 +365,7 @@ function onUnitClick(unit) {
 }
 
 function onCellClick(row, col) {
+    if (_mapDragged) { _mapDragged = false; return; }
     if (gameMode !== "battle" || battleOver) return;
 
     // 転移先マス選択
@@ -376,10 +399,13 @@ function initRadialAtUnit(unit) {
     const INNER_PX   = 390 - GRID_INSET * 2;
     const CELL_PX    = INNER_PX / GRID_COLS;
     const TOP_H      = 237;
+    // キャンバス上のユニット中心座標（ズーム・パン反映）
+    const rawX = GRID_INSET + (unit.x + 0.5) * CELL_PX;
+    const rawY = GRID_INSET + (unit.y + 0.5) * CELL_PX;
     radialMenu.innerHTML = "";
     radialMenu.classList.remove("hidden");
-    radialMenu.style.left = `${GRID_INSET + (unit.x + 0.5) * CELL_PX}px`;
-    radialMenu.style.top  = `${TOP_H + GRID_INSET + (unit.y + 0.5) * CELL_PX}px`;
+    radialMenu.style.left = `${rawX * mapZoom + mapPanX}px`;
+    radialMenu.style.top  = `${TOP_H + rawY * mapZoom + mapPanY}px`;
 }
 
 /** アイテム配列をラジアルボタンとして配置する */
@@ -466,7 +492,7 @@ function showAttackRadial(unit) {
             }
             actionState = "throwing";
             highlightThrowRange(unit);
-            showForecastLayer(unit, throwTargets, "投擲", false, null);
+            switchTopLayer("battle");
             showMessage("SYSTEM", `${unit.name}の投擲対象を選択（直線4マス）`);
         } else {
             const atkTargets = battleUnits.filter(u =>
@@ -480,7 +506,7 @@ function showAttackRadial(unit) {
             }
             actionState = "attacking";
             highlightAttackRange(unit);
-            showForecastLayer(unit, atkTargets, item.label, false, null);
+            switchTopLayer("battle");
             showMessage("SYSTEM", `${unit.name}の攻撃対象を選択（${item.label}）`);
         }
         addLog(`・${unit.name}は${item.label}で攻撃を選択`);
@@ -592,14 +618,7 @@ function showMagicRadial(unit) {
                 if (cell) cell.classList.add("highlightAttack");
             }
         }
-        // 予測表示（自分自身も含む）
-        const magFcTargets = battleUnits.filter(u => {
-            if (u.hp <= 0) return false;
-            const dist = Math.abs(u.x - unit.x) + Math.abs(u.y - unit.y);
-            if (dist > sp.range) return false;
-            return sp.targetType === "enemy" ? u.side !== unit.side : u.side === unit.side;
-        });
-        showForecastLayer(unit, magFcTargets, null, true, item.spellData);
+        switchTopLayer("battle");
         showMessage(unit.name, `${item.spellData.name}の対象を選んでください。`);
         addLog(`・${unit.name}は ${item.spellData.name} を詠唱中...`);
     });
@@ -1578,22 +1597,34 @@ function calculateBattlePrediction(attacker, target, atkSkillName, isMagic, spel
     return { hitRate, expDmg, effectDesc, canCounter, ctrHitRate, ctrExpDmg };
 }
 
-/** vsPortrait の <img> と fallback char をセット */
+/** HP に応じた立ち絵 URL を返す（HP50%以下 & 被弾絵あり → 被弾絵） */
+function getPortraitSrc(unit) {
+    const damaged = unit.maxHp > 0 && unit.hp / unit.maxHp <= 0.5;
+    if (damaged && unit.portraitImageDamaged) return unit.portraitImageDamaged;
+    return unit.portraitImage || "";
+}
+
+/** vsFaceIcon div に background-image でポートレートをセット
+ *  被弾状態なら portraitDmgBgSize/portraitDmgBgPos を優先使用 */
 function _setVsPortrait(imgEl, charEl, unit) {
-    const src = unit.portraitImage || unit.tokenImage || "";
-    if (imgEl) {
-        imgEl.src                  = src;
-        imgEl.style.objectPosition = unit.portraitBgPos || "center top";
-        // portraitBgSize が % 指定なら scale 相当にする（例: "340%" → 画像を小さく表示）
-        if (unit.portraitBgSize && unit.portraitBgSize !== "cover") {
-            const pct            = parseFloat(unit.portraitBgSize) / 100 || 1;
-            imgEl.style.objectFit = "none";
-            imgEl.style.width    = `${(1 / pct) * 100}%`;
-            imgEl.style.height   = `${(1 / pct) * 100}%`;
+    const damaged = unit.maxHp > 0 && unit.hp / unit.maxHp <= 0.5;
+    const src = getPortraitSrc(unit) || unit.tokenImage || "";
+    const bgSize = damaged
+        ? (unit.portraitDmgBgSize || unit.portraitBgSize || "cover")
+        : (unit.portraitBgSize || "cover");
+    const bgPos  = damaged
+        ? (unit.portraitDmgBgPos  || unit.portraitBgPos  || "center top")
+        : (unit.portraitBgPos  || "center top");
+    if (imgEl) imgEl.src = "";
+    const faceDiv = imgEl?.parentElement;
+    if (faceDiv) {
+        if (src) {
+            faceDiv.style.backgroundImage    = `url("${src}")`;
+            faceDiv.style.backgroundSize     = bgSize;
+            faceDiv.style.backgroundPosition = bgPos;
+            faceDiv.style.backgroundRepeat   = "no-repeat";
         } else {
-            imgEl.style.objectFit = "cover";
-            imgEl.style.width    = "100%";
-            imgEl.style.height   = "100%";
+            faceDiv.style.backgroundImage = "none";
         }
     }
     if (charEl) charEl.textContent = src ? "" : (unit.char || unit.name.slice(0, 1));
@@ -1616,11 +1647,9 @@ function _setVsHp(fillEl, numEl, unit) {
  */
 function showBattlePreview(attacker, target, pred, actionLabel) {
     // ── 攻撃側 ──
-    _setVsPortrait(
-        document.getElementById("vsAtkImg"),
-        document.getElementById("vsAtkChar"),
-        attacker
-    );
+    const vsAtkImg  = document.getElementById("vsAtkImg");
+    const vsAtkChar = document.getElementById("vsAtkChar");
+    _setVsPortrait(vsAtkImg, vsAtkChar, attacker);
     document.getElementById("vsAtkName").textContent = attacker.name;
     _setVsHp(
         document.getElementById("vsAtkHpFill"),
@@ -1629,17 +1658,27 @@ function showBattlePreview(attacker, target, pred, actionLabel) {
     );
 
     // ── 防御側 ──
-    _setVsPortrait(
-        document.getElementById("vsDefImg"),
-        document.getElementById("vsDefChar"),
-        target
-    );
+    const vsDefImg  = document.getElementById("vsDefImg");
+    const vsDefChar = document.getElementById("vsDefChar");
+    _setVsPortrait(vsDefImg, vsDefChar, target);
     document.getElementById("vsDefName").textContent = target.name;
     _setVsHp(
         document.getElementById("vsDefHpFill"),
         document.getElementById("vsDefHpNum"),
         target
     );
+
+    // ── 味方 / 敵 でリング色を切り替え ──
+    const vsAtkUnit = vsAtkImg?.closest(".vsUnit");
+    const vsDefUnit = vsDefImg?.closest(".vsUnit");
+    if (vsAtkUnit) {
+        vsAtkUnit.classList.toggle("vsAlly",  attacker.side === "ally");
+        vsAtkUnit.classList.toggle("vsEnemy", attacker.side !== "ally");
+    }
+    if (vsDefUnit) {
+        vsDefUnit.classList.toggle("vsAlly",  target.side === "ally");
+        vsDefUnit.classList.toggle("vsEnemy", target.side !== "ally");
+    }
 
     // ── 中央：行動名・攻撃予測 ──
     document.getElementById("vsActionName").textContent = actionLabel || "";
@@ -1693,6 +1732,335 @@ vsCancelBtn.addEventListener("click", () => {
         else          showAttackRadial(selectedUnit);
     }
 });
+
+// ── ポートレート位置調整ツール ──────────────────────────────
+
+/** スライダー1本を作る（VSパネル調整・単体調整で共用） */
+function _adjSlider(label, min, max, step, val, onChange) {
+    const wrap = document.createElement("div");
+    wrap.style.cssText = "display:flex;align-items:center;gap:4px;width:100%";
+    const lbl = document.createElement("span");
+    lbl.textContent = label;
+    lbl.style.cssText = "font-size:8px;color:#c0a0ff;min-width:28px;text-align:right";
+    const inp = document.createElement("input");
+    inp.type = "range"; inp.min = min; inp.max = max; inp.step = step; inp.value = val;
+    inp.style.cssText = "flex:1;height:12px;accent-color:#a060ff";
+    const num = document.createElement("span");
+    num.textContent = val;
+    num.style.cssText = "font-size:8px;color:#e0d0ff;min-width:30px";
+    inp.addEventListener("input", () => { num.textContent = inp.value; onChange(Number(inp.value)); });
+    wrap.appendChild(lbl); wrap.appendChild(inp); wrap.appendChild(num);
+    return wrap;
+}
+
+/** localStorage から保存済みのポートレート位置を読み込んでユニット配列に反映 */
+function loadPortraitAdj(units) {
+    try {
+        const saved = JSON.parse(localStorage.getItem("portraitAdj") || "{}");
+        const KEYS = ["portraitBgSize","portraitBgPos",
+                      "portraitDmgBgSize","portraitDmgBgPos",
+                      "statusBgSize","statusBgPos"];
+        units.forEach(u => {
+            if (saved[u.id]) {
+                KEYS.forEach(k => { if (saved[u.id][k] != null) u[k] = saved[u.id][k]; });
+            }
+        });
+    } catch(e) {}
+}
+
+/** ドット絵5回タップで呼ばれるスタンドアロン調整パネル
+ *  上パネル（VSレイヤー）・下パネル（portrait-wrapper）を直接プレビューとして使う */
+function showUnitPortraitAdjuster(unit) {
+    const existing = document.getElementById("unitAdjOverlay");
+    if (existing) { existing.remove(); return; }
+
+    // ── 元のトップレイヤーを記憶して閉じる時に復元 ──
+    const prevLayer = document.querySelector(".topTab.active")?.dataset.layer || "battle";
+
+    // ── ヘルパー ──
+    function parsePos(str) {
+        const p = (str || "center top").split(" ");
+        let x = 50, y = 0;
+        if (p[0] === "center") x = 50;
+        else if (p[0]?.endsWith("%")) x = parseFloat(p[0]);
+        if (p[1] === "top") y = 0;
+        else if (p[1]?.endsWith("px")) y = parseFloat(p[1]);
+        return { x, y };
+    }
+
+    // ── 3コンテキスト定義 ──
+    const CTX = [
+        { label:"VS立ち絵",   sk:"portraitBgSize",    pk:"portraitBgPos",
+          imgSrc: unit.portraitImage || "" },
+        { label:"VS被弾絵",   sk:"portraitDmgBgSize", pk:"portraitDmgBgPos",
+          imgSrc: unit.portraitImageDamaged || unit.portraitImage || "",
+          fallbackSK:"portraitBgSize", fallbackPK:"portraitBgPos" },
+        { label:"ステータス", sk:"statusBgSize",        pk:"statusBgPos",
+          imgSrc: unit.portraitImage || "",
+          fallbackSK:"portraitBgSize", fallbackPK:"portraitBgPos" },
+    ];
+
+    const state = CTX.map(c => {
+        const rawSize = unit[c.sk] || (c.fallbackSK && unit[c.fallbackSK]) || "280%";
+        const rawPos  = unit[c.pk] || (c.fallbackPK && unit[c.fallbackPK]) || "center top";
+        const pos = parsePos(rawPos);
+        return { size: parseFloat(rawSize) || 280, posX: pos.x, posY: pos.y };
+    });
+
+    // ── 実パネル更新関数 ──
+    function applyToVS(tabIdx) {
+        const s   = state[tabIdx];
+        const xStr = s.posX === 50 ? "center" : `${s.posX}%`;
+        const yStr = s.posY === 0  ? "top"    : `${s.posY}px`;
+        // VSレイヤーを表示して攻撃側（左）だけこのキャラのポートレートを入れる
+        switchTopLayer("vs");
+        const atkFace = document.getElementById("vsAtkImg")?.parentElement;
+        if (atkFace) {
+            atkFace.style.backgroundImage    = `url("${CTX[tabIdx].imgSrc}")`;
+            atkFace.style.backgroundSize     = `${s.size}%`;
+            atkFace.style.backgroundPosition = `${xStr} ${yStr}`;
+            atkFace.style.backgroundRepeat   = "no-repeat";
+        }
+        document.getElementById("vsAtkName").textContent   = unit.name;
+        document.getElementById("vsAtkChar").textContent   = "";
+        document.getElementById("vsAtkHpFill").style.width = "100%";
+        document.getElementById("vsAtkHpNum").textContent  = `${unit.maxHp}/${unit.maxHp}`;
+        // 防御側をブランク
+        const defFace = document.getElementById("vsDefImg")?.parentElement;
+        if (defFace) defFace.style.backgroundImage = "none";
+        document.getElementById("vsDefName").textContent   = "";
+        document.getElementById("vsDefChar").textContent   = "";
+        document.getElementById("vsDefHpFill").style.width = "0";
+        document.getElementById("vsDefHpNum").textContent  = "";
+        // 中央スタット非表示（調整中は不要）
+        const mid = document.getElementById("vsMiddle");
+        if (mid) mid.style.visibility = "hidden";
+        return `${CTX[tabIdx].sk}:"${s.size}%", ${CTX[tabIdx].pk}:"${xStr} ${yStr}"`;
+    }
+
+    function applyToStatus() {
+        const s   = state[2];
+        const xStr = s.posX === 50 ? "center" : `${s.posX}%`;
+        const yStr = s.posY === 0  ? "top"    : `${s.posY}px`;
+        switchTopLayer("battle");
+        // 下パネルのportrait-wrapperを直接更新（なければユニット情報を描画）
+        let wrapper = document.querySelector(".portrait-wrapper");
+        if (!wrapper) {
+            if (unit.side === "ally") renderBattleCommands(unit);
+            else renderEnemyInfoPanel(unit);
+            wrapper = document.querySelector(".portrait-wrapper");
+        }
+        if (wrapper) {
+            wrapper.style.backgroundImage    = `url("${CTX[2].imgSrc}")`;
+            wrapper.style.backgroundSize     = `${s.size}%`;
+            wrapper.style.backgroundPosition = `${xStr} ${yStr}`;
+        }
+        return `${CTX[2].sk}:"${s.size}%", ${CTX[2].pk}:"${xStr} ${yStr}"`;
+    }
+
+    function closeAdj() {
+        overlay.remove();
+        // vsMiddle の visibility を戻す
+        const mid = document.getElementById("vsMiddle");
+        if (mid) mid.style.visibility = "";
+        switchTopLayer(prevLayer);
+    }
+
+    // ── オーバーレイ（battleBoard だけ覆う） ──
+    const overlay = document.createElement("div");
+    overlay.id = "unitAdjOverlay";
+    overlay.style.cssText = "position:absolute;inset:0;z-index:300;background:rgba(5,3,15,0.82);pointer-events:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;";
+    overlay.addEventListener("click", e => { if (e.target === overlay) closeAdj(); });
+
+    // ── スライダーボックス ──
+    const box = document.createElement("div");
+    box.style.cssText = "background:rgba(8,4,22,0.97);border:1px solid rgba(160,80,255,0.55);border-radius:8px;padding:10px;width:86%;max-width:320px;display:flex;flex-direction:column;gap:6px;pointer-events:auto;";
+
+    // ヘッダー
+    const hdr = document.createElement("div");
+    hdr.style.cssText = "display:flex;justify-content:space-between;align-items:center";
+    const titleEl = document.createElement("span");
+    titleEl.textContent = `${unit.name} — ポートレート調整`;
+    titleEl.style.cssText = "font-size:10px;color:#c0a0ff;font-weight:bold";
+    const closeBtn = document.createElement("button");
+    closeBtn.textContent = "×";
+    closeBtn.style.cssText = "background:none;border:none;color:#aaa;font-size:18px;cursor:pointer;padding:0";
+    closeBtn.onclick = closeAdj;
+    hdr.appendChild(titleEl); hdr.appendChild(closeBtn);
+    box.appendChild(hdr);
+
+    // タブ
+    const tabBar = document.createElement("div");
+    tabBar.style.cssText = "display:flex;gap:4px;";
+    const tabBtns = CTX.map((c, i) => {
+        const btn = document.createElement("button");
+        btn.textContent = c.label;
+        btn.style.cssText = "flex:1;padding:5px 0;font-size:9px;border-radius:4px;cursor:pointer;border:1px solid rgba(160,80,255,0.4);background:rgba(20,10,40,0.8);color:#b090e0;";
+        btn.addEventListener("click", () => switchTab(i));
+        tabBar.appendChild(btn);
+        return btn;
+    });
+    box.appendChild(tabBar);
+
+    // スライダーエリア
+    const slidersWrap = document.createElement("div");
+    slidersWrap.style.cssText = "display:flex;flex-direction:column;gap:4px;";
+    box.appendChild(slidersWrap);
+
+    // 出力テキスト
+    const output = document.createElement("div");
+    output.style.cssText = "font-size:8px;color:#90e0a0;word-break:break-all;cursor:pointer;padding:4px 5px;background:rgba(0,40,0,0.35);border-radius:3px";
+    output.title = "タップでコピー";
+    output.addEventListener("click", () => {
+        navigator.clipboard?.writeText(output.textContent);
+        output.style.background = "rgba(80,200,80,0.25)";
+        setTimeout(() => output.style.background = "rgba(0,40,0,0.35)", 700);
+    });
+    box.appendChild(output);
+
+    // 保存ボタン
+    const saveBtn = document.createElement("button");
+    saveBtn.textContent = "全タブの位置を保存";
+    saveBtn.style.cssText = "padding:8px;border-radius:5px;cursor:pointer;background:rgba(70,35,150,0.9);border:1px solid rgba(160,80,255,0.6);color:#d0b0ff;font-size:12px;font-weight:bold;width:100%;";
+    saveBtn.onclick = () => {
+        CTX.forEach((c, i) => {
+            const s = state[i];
+            const xStr = s.posX === 50 ? "center" : `${s.posX}%`;
+            const yStr = s.posY === 0  ? "top"    : `${s.posY}px`;
+            unit[c.sk] = `${s.size}%`;
+            unit[c.pk] = `${xStr} ${yStr}`;
+        });
+        const saved = JSON.parse(localStorage.getItem("portraitAdj") || "{}");
+        // state から直接書き込む（unit[k] が未設定でも全タブ保存）
+        const entry = {};
+        CTX.forEach((c, i) => { entry[c.sk] = unit[c.sk]; entry[c.pk] = unit[c.pk]; });
+        saved[unit.id] = entry;
+        localStorage.setItem("portraitAdj", JSON.stringify(saved));
+        saveBtn.textContent = "✓ 保存しました！";
+        saveBtn.style.background = "rgba(30,100,60,0.9)";
+        saveBtn.style.borderColor = "rgba(80,200,100,0.6)";
+        setTimeout(() => {
+            saveBtn.textContent = "全タブの位置を保存";
+            saveBtn.style.background = "rgba(70,35,150,0.9)";
+            saveBtn.style.borderColor = "rgba(160,80,255,0.6)";
+        }, 1800);
+    };
+    box.appendChild(saveBtn);
+
+    // ── タブ切り替え ──
+    let activeTab = -1;
+    function switchTab(idx) {
+        if (activeTab === idx) return;
+        activeTab = idx;
+        tabBtns.forEach((b, i) => {
+            b.style.background  = i === idx ? "rgba(90,40,180,0.9)" : "rgba(20,10,40,0.8)";
+            b.style.color       = i === idx ? "#e0c8ff" : "#b090e0";
+            b.style.borderColor = i === idx ? "rgba(180,100,255,0.8)" : "rgba(160,80,255,0.4)";
+        });
+        // スライダー再構築
+        slidersWrap.innerHTML = "";
+        const s = state[idx];
+        const applyFn = () => {
+            output.textContent = idx < 2 ? applyToVS(idx) : applyToStatus();
+        };
+        slidersWrap.appendChild(_adjSlider("size",  80,  600, 5,  s.size, v => { s.size = v; applyFn(); }));
+        slidersWrap.appendChild(_adjSlider("x %",  -20,  120, 1,  s.posX, v => { s.posX = v; applyFn(); }));
+        slidersWrap.appendChild(_adjSlider("y px", -200, 200, 5,  s.posY, v => { s.posY = v; applyFn(); }));
+        applyFn(); // 初期表示
+    }
+    switchTab(0);
+
+    overlay.appendChild(box);
+    document.getElementById("battleBoard").appendChild(overlay);
+}
+
+{
+    let adjActive = false;
+    let adjPanel  = null;
+
+    /** 片側ユニットの調整ブロックを作る */
+    function _adjBlock(unit, faceDiv, titleColor) {
+        const block = document.createElement("div");
+        block.style.cssText = `display:flex;flex-direction:column;gap:3px;
+            background:rgba(20,10,35,0.88);border:1px solid rgba(160,80,255,0.35);
+            border-radius:4px;padding:5px;flex:1`;
+
+        const title = document.createElement("div");
+        title.textContent = unit?.name ?? "―";
+        title.style.cssText = `font-size:9px;font-weight:bold;color:${titleColor};margin-bottom:2px`;
+        block.appendChild(title);
+
+        if (!unit) return block;
+
+        let size = parseFloat(unit.portraitBgSize) || 280;
+        let posX = 50;  // % (centerを50とする)
+        let posY = 0;   // px
+
+        // 現在の portraitBgPos を解析
+        const rawPos = unit.portraitBgPos || "center top";
+        const parts  = rawPos.split(" ");
+        if (parts[0] === "center") posX = 50;
+        else if (parts[0].endsWith("%")) posX = parseFloat(parts[0]);
+        if (parts[1] === "top") posY = 0;
+        else if (parts[1]?.endsWith("px")) posY = parseFloat(parts[1]);
+
+        const apply = () => {
+            const xStr = posX === 50 ? "center" : `${posX}%`;
+            const yStr = posY === 0  ? "top"    : `${posY}px`;
+            faceDiv.style.backgroundSize     = `${size}%`;
+            faceDiv.style.backgroundPosition = `${xStr} ${yStr}`;
+            output.textContent = `portraitBgSize:"${size}%", portraitBgPos:"${xStr} ${yStr}"`;
+        };
+
+        block.appendChild(_adjSlider("size", 80, 600, 5,  size, v => { size = v; apply(); }));
+        block.appendChild(_adjSlider("x%",  -20, 120, 1,  posX, v => { posX = v; apply(); }));
+        block.appendChild(_adjSlider("y px",-200, 200, 5, posY, v => { posY = v; apply(); }));
+
+        const output = document.createElement("div");
+        output.style.cssText = "font-size:7px;color:#90e0a0;word-break:break-all;cursor:pointer;margin-top:2px";
+        output.title = "クリックでコピー";
+        output.addEventListener("click", () => {
+            navigator.clipboard?.writeText(output.textContent);
+            output.style.background = "rgba(100,200,100,0.2)";
+            setTimeout(() => output.style.background = "", 600);
+        });
+        apply();
+        block.appendChild(output);
+        return block;
+    }
+
+    function showAdjPanel() {
+        if (adjPanel) adjPanel.remove();
+        const atkUnit = _vsAttack?.attacker ?? null;
+        const defUnit = _vsAttack?.target   ?? null;
+        const atkFace = document.getElementById("vsAtkImg")?.parentElement;
+        const defFace = document.getElementById("vsDefImg")?.parentElement;
+
+        adjPanel = document.createElement("div");
+        adjPanel.id = "portraitAdjPanel";
+        adjPanel.style.cssText = `
+            position:absolute; bottom:0; left:0; right:0;
+            display:flex; gap:4px; padding:4px 4px 6px;
+            background:rgba(10,5,20,0.95);
+            border-top:1px solid rgba(160,80,255,0.4);
+            z-index:200; pointer-events:auto;`;
+        adjPanel.appendChild(_adjBlock(atkUnit, atkFace, "#70c0ff"));
+        adjPanel.appendChild(_adjBlock(defUnit, defFace, "#ff9090"));
+
+        // #topLayerVS ではなく #gameScreen の直下に置いて上パネルを隠さない
+        document.getElementById("gameScreen").appendChild(adjPanel);
+    }
+
+    document.getElementById("vsAdjustToggle").addEventListener("click", e => {
+        e.stopPropagation();
+        adjActive = !adjActive;
+        e.currentTarget.style.background = adjActive
+            ? "rgba(100,40,160,0.85)" : "rgba(40,20,60,0.85)";
+        if (adjActive) showAdjPanel();
+        else { adjPanel?.remove(); adjPanel = null; }
+    });
+
+}
 
 /** VS レイヤーを閉じてバトルログに戻る */
 function hideBattlePreview() {
@@ -2073,16 +2441,17 @@ function renderBattleCommands(unit) {
     const mpPct   = unit.mp / unit.maxMp;
     const hpClass = hpPct <= 0.25 ? "critical" : hpPct <= 0.5 ? "low" : "";
 
-    const bgSize = unit.portraitBgSize || "280%";
-    const bgPos  = unit.portraitBgPos  || "top center";
+    const bgSize = unit.statusBgSize || unit.portraitBgSize || "280%";
+    const bgPos  = unit.statusBgPos  || unit.portraitBgPos  || "top center";
     const statusStr = (() => {
         if (!unit.statusEffects || unit.statusEffects.length === 0) return "―";
         const nm = { burn:"火傷", stun:"スタン", barrier:"結界", counter:"カウンター",
                      accuracyDown:"命中↓", gravityField:"重力場", support:"強化" };
         return unit.statusEffects.map(e => nm[e.type] || e.type).join(" ");
     })();
-    const imgTag = unit.portraitImage
-        ? `<div class="portrait-wrapper" style="background-image:url('${unit.portraitImage}');background-size:${bgSize};background-position:${bgPos}"></div>`
+    const _portraitSrc = getPortraitSrc(unit);
+    const imgTag = _portraitSrc
+        ? `<div class="portrait-wrapper" style="background-image:url('${_portraitSrc}');background-size:${bgSize};background-position:${bgPos}"></div>`
         : unit.tokenImage
             ? `<img class="unit-icon" src="${unit.tokenImage}" alt="${unit.name}">`
             : "";
@@ -2164,16 +2533,17 @@ function renderEnemyInfoPanel(unit) {
     const mpPct   = unit.mp / unit.maxMp;
     const hpClass = hpPct <= 0.25 ? "critical" : hpPct <= 0.5 ? "low" : "";
 
-    const bgSize = unit.portraitBgSize || "280%";
-    const bgPos  = unit.portraitBgPos  || "top center";
+    const bgSize = unit.statusBgSize || unit.portraitBgSize || "280%";
+    const bgPos  = unit.statusBgPos  || unit.portraitBgPos  || "top center";
     const statusStr = (() => {
         if (!unit.statusEffects || unit.statusEffects.length === 0) return "―";
         const nm = { burn:"火傷", stun:"スタン", barrier:"結界", counter:"カウンター",
                      accuracyDown:"命中↓", gravityField:"重力場", support:"強化" };
         return unit.statusEffects.map(e => nm[e.type] || e.type).join(" ");
     })();
-    const imgTag = unit.portraitImage
-        ? `<div class="portrait-wrapper" style="background-image:url('${unit.portraitImage}');background-size:${bgSize};background-position:${bgPos}"></div>`
+    const _portraitSrc = getPortraitSrc(unit);
+    const imgTag = _portraitSrc
+        ? `<div class="portrait-wrapper" style="background-image:url('${_portraitSrc}');background-size:${bgSize};background-position:${bgPos}"></div>`
         : unit.tokenImage
             ? `<img class="unit-icon" src="${unit.tokenImage}" alt="${unit.name}">`
             : "";
@@ -2628,6 +2998,7 @@ function setBattleMode() {
         physicalBonus: calcBonusDice((c.str || 0) + (c.siz || 0)),
         magicBonus:    calcBonusDice((c.pow || 0) + (c.int || 0)),
     }));
+    loadPortraitAdj(battleUnits); // 保存済みの位置調整を反映
 
     unitLayer.style.display         = "block";
     battleBoard.style.opacity       = "1";
@@ -2690,6 +3061,116 @@ statusModalOverlay.addEventListener("click", e => {
 
 statusTabs.forEach(tab => {
     tab.addEventListener("click", () => renderStatusTab(tab.dataset.tab));
+});
+
+// =============================================
+// 盤面ズーム・パン
+// =============================================
+let mapZoom = 1, mapPanX = 0, mapPanY = 0;
+const MAP_ZOOM_MIN = 0.6, MAP_ZOOM_MAX = 4.0;
+
+function applyMapTransform() {
+    battleCanvas.style.transform =
+        `translate(${mapPanX}px,${mapPanY}px) scale(${mapZoom})`;
+}
+
+/** cx,cy は battleBoard 左上基準のズーム中心 */
+function zoomAt(newZoom, cx, cy) {
+    newZoom = Math.max(MAP_ZOOM_MIN, Math.min(MAP_ZOOM_MAX, newZoom));
+    const r = newZoom / mapZoom;
+    mapPanX = cx - r * (cx - mapPanX);
+    mapPanY = cy - r * (cy - mapPanY);
+    mapZoom = newZoom;
+    applyMapTransform();
+}
+
+// ドラッグ中かどうか（クリック判定の抑制に使う）
+let _mapDragged = false;
+
+// ── マウスホイール: ズーム ──
+battleBoard.addEventListener("wheel", e => {
+    e.preventDefault();
+    const rect = battleBoard.getBoundingClientRect();
+    // gameScreen のスケールを考慮
+    const gs   = parseFloat(document.getElementById("gameScreen").style.transform.replace(/[^0-9.]/g,"")) || 1;
+    zoomAt(mapZoom * (e.deltaY < 0 ? 1.15 : 0.87),
+           (e.clientX - rect.left) / gs,
+           (e.clientY - rect.top)  / gs);
+}, { passive: false });
+
+// ── マウスドラッグ: パン ──
+{
+    let dragging = false, sx = 0, sy = 0;
+    battleBoard.addEventListener("mousedown", e => {
+        if (e.button !== 0) return;
+        dragging = true; _mapDragged = false;
+        sx = e.clientX - mapPanX;
+        sy = e.clientY - mapPanY;
+    });
+    window.addEventListener("mousemove", e => {
+        if (!dragging) return;
+        const dx = e.clientX - sx - mapPanX;
+        const dy = e.clientY - sy - mapPanY;
+        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) _mapDragged = true;
+        if (_mapDragged) {
+            mapPanX = e.clientX - sx;
+            mapPanY = e.clientY - sy;
+            applyMapTransform();
+        }
+    });
+    window.addEventListener("mouseup", () => { dragging = false; });
+}
+
+// ── タッチ: ピンチズーム + 1本指パン ──
+{
+    let t0x = 0, t0y = 0, tPanning = false;
+    let pinchDist0 = 0, pinchZoom0 = 1;
+
+    battleBoard.addEventListener("touchstart", e => {
+        if (e.touches.length === 1) {
+            t0x = e.touches[0].clientX - mapPanX;
+            t0y = e.touches[0].clientY - mapPanY;
+            tPanning = false; _mapDragged = false;
+        } else if (e.touches.length === 2) {
+            pinchDist0 = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY);
+            pinchZoom0 = mapZoom;
+        }
+    }, { passive: true });
+
+    battleBoard.addEventListener("touchmove", e => {
+        if (e.touches.length === 1) {
+            const nx = e.touches[0].clientX - t0x;
+            const ny = e.touches[0].clientY - t0y;
+            if (!tPanning && (Math.abs(nx - mapPanX) > 6 || Math.abs(ny - mapPanY) > 6)) {
+                tPanning = true; _mapDragged = true;
+            }
+            if (tPanning) {
+                mapPanX = nx; mapPanY = ny;
+                applyMapTransform();
+                e.preventDefault();
+            }
+        } else if (e.touches.length === 2) {
+            const dist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY);
+            const rect = battleBoard.getBoundingClientRect();
+            const gs   = parseFloat(document.getElementById("gameScreen").style.transform.replace(/[^0-9.]/g,"")) || 1;
+            const cx   = ((e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left) / gs;
+            const cy   = ((e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top)  / gs;
+            zoomAt(pinchZoom0 * (dist / pinchDist0), cx, cy);
+            e.preventDefault();
+        }
+    }, { passive: false });
+}
+
+// ── ズームボタン ──
+document.getElementById("mapZoomIn")   .addEventListener("click", e => { e.stopPropagation(); zoomAt(mapZoom * 1.3, 195, 195); });
+document.getElementById("mapZoomOut")  .addEventListener("click", e => { e.stopPropagation(); zoomAt(mapZoom * 0.77, 195, 195); });
+document.getElementById("mapZoomReset").addEventListener("click", e => {
+    e.stopPropagation();
+    mapZoom = 1; mapPanX = 0; mapPanY = 0; applyMapTransform();
 });
 
 // =============================================

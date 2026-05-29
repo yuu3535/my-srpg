@@ -55,10 +55,12 @@
                             <img id="vsAtkImg" src="" alt="" />
                             <span class="vsFaceChar" id="vsAtkChar"></span>
                         </div>
-                        <div class="vsUnitName" id="vsAtkName">―</div>
-                        <div class="vsHpWrap">
-                            <div class="vsHpBar"><div class="vsHpFill" id="vsAtkHpFill"></div></div>
-                            <span class="vsHpNum" id="vsAtkHpNum">0/0</span>
+                        <div class="vsUnitInfo">
+                            <div class="vsUnitName" id="vsAtkName">―</div>
+                            <div class="vsHpWrap">
+                                <div class="vsHpBar"><div class="vsHpFill" id="vsAtkHpFill"></div></div>
+                                <span class="vsHpNum" id="vsAtkHpNum">0/0</span>
+                            </div>
                         </div>
                     </div>
                     <!-- 中央予測 + ボタン -->
@@ -85,6 +87,8 @@
                             <button id="vsCancelBtn"  class="vsBtn vsBtnCancel">キャンセル</button>
                             <button id="vsConfirmBtn" class="vsBtn vsBtnConfirm">攻撃実行</button>
                         </div>
+                        <!-- ポートレート位置調整ツール（開発用） -->
+                        <button id="vsAdjustToggle" class="vsBtn" style="font-size:9px;padding:3px 7px;background:rgba(40,20,60,0.85);border-color:rgba(160,80,255,0.4);color:#c0a0ff">調整</button>
                     </div>
                     <!-- 防御側 -->
                     <div class="vsUnit">
@@ -92,10 +96,12 @@
                             <img id="vsDefImg" src="" alt="" />
                             <span class="vsFaceChar" id="vsDefChar"></span>
                         </div>
-                        <div class="vsUnitName" id="vsDefName">―</div>
-                        <div class="vsHpWrap">
-                            <div class="vsHpBar"><div class="vsHpFill" id="vsDefHpFill"></div></div>
-                            <span class="vsHpNum" id="vsDefHpNum">0/0</span>
+                        <div class="vsUnitInfo">
+                            <div class="vsUnitName" id="vsDefName">―</div>
+                            <div class="vsHpWrap">
+                                <div class="vsHpBar"><div class="vsHpFill" id="vsDefHpFill"></div></div>
+                                <span class="vsHpNum" id="vsDefHpNum">0/0</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -115,8 +121,17 @@
             <!-- マップパネル専用背景 -->
             <img id="bgImage" class="panelBg" src="assets/background_forest.png" alt="背景" />
             <div id="battleBoardTint"></div>
-            <div id="battleGrid"></div>
-            <div id="unitLayer"></div>
+            <!-- ズーム・パン対象キャンバス -->
+            <div id="battleCanvas">
+                <div id="battleGrid"></div>
+                <div id="unitLayer"></div>
+            </div>
+            <!-- ズームボタン -->
+            <div id="mapZoomBtns">
+                <button class="mapZoomBtn" id="mapZoomIn">＋</button>
+                <button class="mapZoomBtn" id="mapZoomOut">－</button>
+                <button class="mapZoomBtn" id="mapZoomReset">⤢</button>
+            </div>
         </div>
 
         <!-- ラジアルメニュー（#gameScreen直下でクリッピングされない） -->
