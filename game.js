@@ -1543,17 +1543,40 @@ function calculateBattlePrediction(attacker, target, atkSkillName) {
     return { hitRate, expDmg, canCounter, ctrHitRate, ctrExpDmg };
 }
 
-/** ポートレートを背景画像として bpPortrait div にセット */
+/** ポートレートを <img> タグで bpPortrait div にセット */
 function _setBpPortrait(el, unit) {
-    if (unit.portraitImage || unit.tokenImage) {
-        const src = unit.portraitImage || unit.tokenImage;
-        el.style.backgroundImage    = `url("${src}")`;
-        el.style.backgroundSize     = unit.portraitBgSize || "cover";
-        el.style.backgroundPosition = unit.portraitBgPos  || "center top";
-        el.textContent = "";
+    const img   = el.querySelector("img");
+    const label = el.querySelector(".bpFallbackLabel");
+    const src   = unit.portraitImage || unit.tokenImage || "";
+
+    if (img) {
+        img.src = src;
+        // portraitBgPos を object-position に流用（"center -30px" 等がそのまま使える）
+        img.style.objectPosition = unit.portraitBgPos || "center top";
+        // portraitBgSize が "340%" 等なら、それに比例したズームを object-fit:none+サイズで再現
+        if (unit.portraitBgSize && unit.portraitBgSize !== "cover") {
+            // "340%" → 340 → 0.8 / 3.4 ≈ scale factor の逆なので object-fit:none + width/height 指定
+            const pct = parseFloat(unit.portraitBgSize) / 100;
+            img.style.objectFit = "none";
+            img.style.width     = `${100 / pct * 100}%`;  // コンテナ比でスケール
+            img.style.height    = `${100 / pct * 100}%`;
+        } else {
+            img.style.objectFit = "cover";
+            img.style.width     = "100%";
+            img.style.height    = "100%";
+        }
+    }
+
+    // フォールバックテキスト（画像なし時）
+    if (!src) {
+        if (!label) {
+            const span = document.createElement("span");
+            span.className   = "bpFallbackLabel";
+            span.textContent = unit.char || unit.name.slice(0, 1);
+            el.appendChild(span);
+        }
     } else {
-        el.style.backgroundImage = "none";
-        el.textContent = unit.char || unit.name.slice(0, 1);
+        if (label) label.remove();
     }
 }
 
