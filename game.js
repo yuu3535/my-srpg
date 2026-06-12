@@ -2842,10 +2842,17 @@ function exitScenarioLayout() {
  * シナリオキャラ立ち絵レイヤーを再描画する
  * @param {string} speaker - 現在の話者名（アクティブハイライト用）
  */
+// シナリオ立ち絵5タップ検出用
+let _scenTapCount = 0, _scenTapTimer = null, _scenTapName = null;
+
 function updateScenarioCharLayer(speaker) {
     scenarioCharLayer.innerHTML = "";
+    // localStorage 保存値（優先度最高）
+    let savedScenAdj = {};
+    try { savedScenAdj = JSON.parse(localStorage.getItem("scenarioPortraitAdj") || "{}"); } catch(e) {}
+
     scenarioCharacters.forEach(entry => {
-        // entry は文字列 or { name, image }
+        // entry は文字列 or { name, image, bgSize?, bgPos? }
         const name  = (typeof entry === "string") ? entry : entry.name;
         const image = (typeof entry === "object" && entry.image)
             ? entry.image
@@ -2858,16 +2865,157 @@ function updateScenarioCharLayer(speaker) {
 
         const portrait = document.createElement("div");
         portrait.className = "scenarioCharPortrait";
-        if (image) {
-            portrait.style.backgroundImage = `url('${image}')`;
-        }
-        // キャラ個別のシナリオ立ち絵トリミング設定（未指定ならCSSデフォルト）
-        if (charData?.scenarioBgSize) portrait.style.backgroundSize     = charData.scenarioBgSize;
-        if (charData?.scenarioBgPos)  portrait.style.backgroundPosition = charData.scenarioBgPos;
+        if (image) portrait.style.backgroundImage = `url('${image}')`;
+
+        // 優先順: localStorage(画像パスキー) > localStorage(キャラ名キー・全表情共通) > entry.bgSize > CHARACTERS_DATA
+        // ※ 旧バージョンはキャラ名キーで保存していたので後方互換として両方チェック
+        const adjKey  = image || name;
+        const sBgSize = savedScenAdj[adjKey]?.bgSize
+            || savedScenAdj[name]?.bgSize
+            || (typeof entry === "object" && entry.bgSize)
+            || charData?.scenarioBgSize;
+        const sBgPos  = savedScenAdj[adjKey]?.bgPos
+            || savedScenAdj[name]?.bgPos
+            || (typeof entry === "object" && entry.bgPos)
+            || charData?.scenarioBgPos;
+        if (sBgSize) portrait.style.backgroundSize     = sBgSize;
+        if (sBgPos)  portrait.style.backgroundPosition = sBgPos;
+
+        // ── 5タップで立ち絵調整パネルを開く ──
+        wrapper.addEventListener("click", (e) => {
+            if (!scenarioActive) return;
+            e.stopPropagation();
+            if (_scenTapName !== adjKey) { _scenTapCount = 0; _scenTapName = adjKey; }
+            _scenTapCount++;
+            clearTimeout(_scenTapTimer);
+            if (_scenTapCount >= 5) {
+                _scenTapCount = 0; _scenTapName = null;
+                showScenarioPortraitAdjuster(name, image, portrait);
+                return;
+            }
+            _scenTapTimer = setTimeout(() => { _scenTapCount = 0; _scenTapName = null; }, 800);
+        });
 
         wrapper.appendChild(portrait);
         scenarioCharLayer.appendChild(wrapper);
     });
+}
+
+// =============================================
+// シナリオ立ち絵調整パネル（5タップで起動）
+// =============================================
+function showScenarioPortraitAdjuster(name, image, portraitEl) {
+    // キー：画像パスがあれば画像パス、なければキャラ名（表情ごとに独立保存）
+    const adjKey = image || name;
+    // 表情名をタイトルに表示（例: "笑顔_transparent.png" → "笑顔"）
+    const exprMatch = image?.match(/\/([^/]+)_transparent\.png$/);
+    const exprLabel = exprMatch ? ` (${exprMatch[1]})` : "";
+
+    // 現在の値を読み込む（localStorage > CSSから取得）
+    let savedAdj = {};
+    try { savedAdj = JSON.parse(localStorage.getItem("scenarioPortraitAdj") || "{}"); } catch(e) {}
+    const saved = savedAdj[adjKey] || {};
+
+    const initSize = saved.bgSize || portraitEl.style.backgroundSize || "auto 140%";
+    const initPos  = saved.bgPos  || portraitEl.style.backgroundPosition || "center top";
+
+    // "auto XX%" → 数値
+    let sizeNum = parseInt(initSize.match(/(\d+)%/)?.[1] || "140");
+    // "center XXpx" or "center top" → 数値（topは0）
+    let posYNum = 0;
+    const posMatch = initPos.match(/(-?\d+)px/);
+    if (posMatch) posYNum = parseInt(posMatch[1]);
+
+    // ── オーバーレイ（#battleBoard に重ねる） ──
+    const overlay = document.createElement("div");
+    overlay.style.cssText = "position:fixed;inset:0;z-index:9999;pointer-events:none";
+
+    const panel = document.createElement("div");
+    panel.style.cssText = [
+        "position:absolute;bottom:0;left:0;right:0;",
+        "background:rgba(20,10,35,0.96);border-top:2px solid #7040b0;",
+        "padding:10px 14px 14px;pointer-events:all;",
+    ].join("");
+
+    // タイトル
+    const title = document.createElement("div");
+    title.textContent = `シナリオ立ち絵調整：${name}${exprLabel}`;
+    title.style.cssText = "color:#c0a0ff;font-size:11px;font-weight:bold;margin-bottom:8px;font-family:sans-serif";
+    panel.appendChild(title);
+
+    // ライブ更新
+    const apply = () => {
+        const newSize = `auto ${sizeNum}%`;
+        const newPos  = posYNum === 0 ? "center top" : `center ${posYNum}px`;
+        portraitEl.style.backgroundSize     = newSize;
+        portraitEl.style.backgroundPosition = newPos;
+        valDisp.textContent = `bgSize: "${newSize}"\nbgPos:  "${newPos}"`;
+    };
+
+    panel.appendChild(_adjSlider("サイズ %", 50, 400, 5, sizeNum, v => { sizeNum = v; apply(); }));
+    panel.appendChild(_adjSlider("縦 offset px", -50, 200, 5, posYNum, v => { posYNum = v; apply(); }));
+
+    // 値表示（scenario.js に貼る用）
+    const valWrap = document.createElement("div");
+    valWrap.style.cssText = "margin-top:8px";
+    const valLabel = document.createElement("div");
+    valLabel.textContent = "▼ scenario.js に貼る値";
+    valLabel.style.cssText = "font-size:8px;color:#808080;margin-bottom:2px;font-family:sans-serif";
+    const valDisp = document.createElement("pre");
+    valDisp.style.cssText = [
+        "font-size:9px;color:#90d0ff;margin:0;",
+        "background:rgba(0,0,0,0.5);padding:5px 8px;border-radius:3px;",
+        "white-space:pre-wrap;word-break:break-all;font-family:monospace",
+    ].join("");
+    valDisp.textContent = `bgSize: "auto ${sizeNum}%"\nbgPos:  "${posYNum === 0 ? "center top" : `center ${posYNum}px`}"`;
+    valWrap.appendChild(valLabel);
+    valWrap.appendChild(valDisp);
+    panel.appendChild(valWrap);
+
+    // ボタン行
+    const btns = document.createElement("div");
+    btns.style.cssText = "display:flex;gap:8px;margin-top:10px";
+
+    const saveBtn = document.createElement("button");
+    saveBtn.textContent = "保存（この表情のみ）";
+    saveBtn.style.cssText = "flex:1;padding:6px;background:#5a2090;color:#e0d0ff;border:1px solid #9060e0;border-radius:4px;font-size:10px;cursor:pointer;font-weight:bold";
+    saveBtn.addEventListener("click", () => {
+        const newSize = `auto ${sizeNum}%`;
+        const newPos  = posYNum === 0 ? "center top" : `center ${posYNum}px`;
+        const adj = (() => { try { return JSON.parse(localStorage.getItem("scenarioPortraitAdj") || "{}"); } catch(e) { return {}; } })();
+        adj[adjKey] = { bgSize: newSize, bgPos: newPos };
+        localStorage.setItem("scenarioPortraitAdj", JSON.stringify(adj));
+        saveBtn.textContent = "保存済 ✓";
+        setTimeout(() => { saveBtn.textContent = "保存（この表情のみ）"; }, 1500);
+    });
+
+    const saveAllBtn = document.createElement("button");
+    saveAllBtn.textContent = "全表情に適用";
+    saveAllBtn.style.cssText = "flex:1;padding:6px;background:#204060;color:#a0d0ff;border:1px solid #4080a0;border-radius:4px;font-size:10px;cursor:pointer;font-weight:bold";
+    saveAllBtn.addEventListener("click", () => {
+        const newSize = `auto ${sizeNum}%`;
+        const newPos  = posYNum === 0 ? "center top" : `center ${posYNum}px`;
+        const adj = (() => { try { return JSON.parse(localStorage.getItem("scenarioPortraitAdj") || "{}"); } catch(e) { return {}; } })();
+        // 表情個別キーと、キャラ名キー（全表情の共通デフォルト）両方に保存
+        adj[adjKey] = { bgSize: newSize, bgPos: newPos };
+        adj[name]   = { bgSize: newSize, bgPos: newPos };
+        localStorage.setItem("scenarioPortraitAdj", JSON.stringify(adj));
+        saveAllBtn.textContent = "適用済 ✓";
+        setTimeout(() => { saveAllBtn.textContent = "全表情に適用"; }, 1500);
+    });
+
+    const closeBtn = document.createElement("button");
+    closeBtn.textContent = "閉じる";
+    closeBtn.style.cssText = "flex:1;padding:6px;background:#2a1040;color:#c0a0ff;border:1px solid #5030a0;border-radius:4px;font-size:10px;cursor:pointer";
+    closeBtn.addEventListener("click", () => document.body.removeChild(overlay));
+
+    btns.appendChild(saveBtn);
+    btns.appendChild(saveAllBtn);
+    btns.appendChild(closeBtn);
+    panel.appendChild(btns);
+
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
 }
 
 function startChapter(chapterId) {
@@ -2903,6 +3051,11 @@ function playCurrentScene() {
 }
 
 function playDialogueScene(scene) {
+    // bg が指定された場合は背景画像を切り替える
+    if (scene.bg) {
+        bgImage.src    = scene.bg;
+        topPanelBg.src = scene.bg;
+    }
     // setCharacters が指定された場合のみキャラ行を更新
     if (scene.setCharacters !== undefined) {
         scenarioCharacters = scene.setCharacters.slice();
@@ -3046,7 +3199,7 @@ function handleScenarioCommand(label) {
 // =============================================
 // イベントリスナー
 // =============================================
-scenarioModeButton.addEventListener("click", () => startChapter("ch1"));
+scenarioModeButton.addEventListener("click", () => startChapter("prologue"));
 dialogueBox.addEventListener("click", () => { if (scenarioActive) advanceScene(); });
 battleModeButton.addEventListener("click",   setBattleMode);
 

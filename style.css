@@ -121,6 +121,7 @@ html, body {
     position: relative;
     flex: 1;
     max-width: 185px;
+    pointer-events: auto; /* 5タップ調整パネル用にクリックを受け取る */
     /* 非話者：色はそのまま、少し暗く（影にいる感じ） */
     filter: brightness(0.72);
     transition: filter 0.3s;
@@ -136,8 +137,8 @@ html, body {
     width: 100%;
     height: 100%;
     background-repeat: no-repeat;
-    background-size: auto 160%;   /* デフォルト：頭〜腰あたりで切れる */
-    background-position: center top; /* 上から表示 */
+    background-size: auto 220%;      /* デフォルト：胸〜頭をアップで表示 */
+    background-position: center top; /* 上端から表示 */
 }
 
 /* ── テキストボックス（最前面・下部グラデ） ── */
