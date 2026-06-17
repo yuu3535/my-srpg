@@ -2848,6 +2848,7 @@ let _scenTapCount = 0, _scenTapTimer = null, _scenTapName = null;
 
 function updateScenarioCharLayer(speaker) {
     scenarioCharLayer.innerHTML = "";
+    scenarioCharLayer.className = `count-${scenarioCharacters.length}`;
     // localStorage 保存値（優先度最高）
     let savedScenAdj = {};
     try { savedScenAdj = JSON.parse(localStorage.getItem("scenarioPortraitAdj") || "{}"); } catch(e) {}
@@ -3202,6 +3203,10 @@ function handleScenarioCommand(label) {
 // =============================================
 scenarioModeButton.addEventListener("click", () => startChapter("prologue"));
 dialogueBox.addEventListener("click", () => { if (scenarioActive) advanceScene(); });
+document.addEventListener("keydown", (e) => {
+    if (!scenarioActive) return;
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); advanceScene(); }
+});
 battleModeButton.addEventListener("click",   setBattleMode);
 
 topTabs.forEach(tab => {

@@ -124,12 +124,22 @@ html, body {
     pointer-events: auto; /* 5タップ調整パネル用にクリックを受け取る */
     /* 非話者：色はそのまま、少し暗く（影にいる感じ） */
     filter: brightness(0.72);
-    transition: filter 0.3s;
+    transition: filter 0.3s, flex 0.3s;
 }
 
 /* 話者：明るく鮮やか＋ゴールドの光 */
 .scenarioChar.active {
     filter: brightness(1.05) saturate(1.15) drop-shadow(0 2px 14px rgba(200,146,42,0.30));
+}
+
+/* 3人表示時: 話者を少し広く、脇役を少し詰める */
+#scenarioCharLayer.count-3 .scenarioChar {
+    flex: 0.8;
+    max-width: 138px;
+}
+#scenarioCharLayer.count-3 .scenarioChar.active {
+    flex: 1.4;
+    max-width: 162px;
 }
 
 /* 立ち絵本体（背景画像で描画） */
@@ -147,14 +157,16 @@ html, body {
     bottom: 0;
     left: 0;
     right: 0;
-    padding: 2.2em 0.9em 0.75em;
+    height: 98px;
+    padding: 0.65em 0.9em 0.6em;
     background: linear-gradient(to bottom,
         transparent          0%,
-        rgba(4,5,12,0.88)   30%,
+        rgba(4,5,12,0.88)   10%,
         rgba(4,5,12,0.95)  100%);
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
+    justify-content: flex-start;
+    overflow: hidden;
     cursor: default;
 }
 #dialogueBox[data-scenario="active"] { cursor: pointer; }
@@ -173,18 +185,24 @@ html, body {
 }
 
 #nameText {
-    color: var(--gold);
-    font-size: 15px;
+    display: inline-block;
+    align-self: flex-start;
+    color: #f1d27a;
+    font-size: 11px;
     font-weight: bold;
-    letter-spacing: 0.08em;
-    text-shadow: 0 0 8px rgba(200,146,42,0.6);
-    margin-bottom: 0.3em;
+    letter-spacing: 0.14em;
+    text-shadow: 0 0 8px rgba(200,146,42,0.5);
+    background: rgba(4,5,12,0.72);
+    border-left: 3px solid var(--gold);
+    padding: 0.15em 0.85em 0.15em 0.5em;
+    margin-bottom: 0.5em;
 }
 
 #messageText {
     color: #e8d8b0;
-    font-size: 13px;
+    font-size: 12px;
     line-height: 1.5;
+    overflow: hidden;
 }
 
 /* ============================================================
