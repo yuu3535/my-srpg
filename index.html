@@ -159,16 +159,23 @@
             <div id="homeScreenOverlay"></div>
             <div id="homeScreenContent">
                 <div id="homeTitle">
-                    百年戦争編
-                    <span id="homeTitleSub">（仮）</span>
+                    <div class="homeTitleDeco"><span>◆</span></div>
+                    <p class="homeTitleMain">百年戦争編</p>
+                    <p class="homeTitleEn">THE HUNDRED YEARS' WAR</p>
+                    <div class="homeTitleDeco"><span>◆</span></div>
                 </div>
                 <div id="homeButtons">
-                    <button class="homeButton" id="homeStartBtn">はじめから</button>
+                    <div id="homeMenuCursor"></div>
+                    <button class="homeButton homeButtonPrimary" id="homeStartBtn">はじめから</button>
                     <button class="homeButton" id="homeContinueBtn" disabled>つづきから</button>
-                    <button class="homeButton" id="homeSettingsBtn" disabled>設定</button>
+                    <button class="homeButton homeButtonTertiary" id="homeSettingsBtn" disabled>設定</button>
                 </div>
             </div>
+            <div id="homeVersion">ver. 0.1　(仮)</div>
         </div>
+
+        <!-- ローディング画面 -->
+        <div id="loadingScreen"></div>
 
         <!-- ステータスモーダル -->
         <div id="statusModalOverlay" class="hidden">

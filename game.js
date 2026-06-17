@@ -39,6 +39,7 @@ const homeScreen         = document.getElementById("homeScreen");
 const homeStartBtn       = document.getElementById("homeStartBtn");
 const homeContinueBtn    = document.getElementById("homeContinueBtn");
 const homeSettingsBtn    = document.getElementById("homeSettingsBtn");
+const homeMenuCursor     = document.getElementById("homeMenuCursor");
 const dialogueBox        = document.getElementById("dialogueBox");
 const topPanel           = document.getElementById("topPanel");
 const bgImage            = document.getElementById("bgImage");
@@ -3338,10 +3339,279 @@ window.addEventListener("resize", scaleGame);
 // =============================================
 // ホーム画面
 // =============================================
+// ── ホームメニューカーソル ──────────────────────────────────
+let _homeIdx = 0;
+
+function _homeAllBtns() {
+    return Array.from(document.querySelectorAll("#homeButtons .homeButton"));
+}
+function _homeMoveCursor(btn, instant) {
+    if (!btn) return;
+    if (instant) {
+        homeMenuCursor.style.transition = "none";
+        requestAnimationFrame(() => { homeMenuCursor.style.transition = ""; });
+    }
+    homeMenuCursor.style.top    = btn.offsetTop + "px";
+    homeMenuCursor.style.height = btn.offsetHeight + "px";
+    homeMenuCursor.style.opacity = "1";
+    document.querySelectorAll("#homeButtons .homeButton").forEach(b => b.classList.remove("homeButtonActive"));
+    btn.classList.add("homeButtonActive");
+}
+function _homeInitCursor() {
+    const btns = _homeAllBtns();
+    if (!btns.length) return;
+    _homeIdx = 0;
+    _homeMoveCursor(btns[0], true);
+}
+
+// マウスホバーでカーソル移動（disabled も乗れる）
+[homeStartBtn, homeContinueBtn, homeSettingsBtn].forEach(btn => {
+    btn.addEventListener("mouseenter", () => {
+        _homeIdx = _homeAllBtns().indexOf(btn);
+        _homeMoveCursor(btn, false);
+    });
+});
+
+// キーボード（上下 + Enter）
+document.addEventListener("keydown", e => {
+    if (homeScreen.style.display === "none") return;
+    const btns = _homeAllBtns();
+    if (e.key === "ArrowDown") {
+        _homeIdx = (_homeIdx + 1) % btns.length;
+        _homeMoveCursor(btns[_homeIdx]);
+        e.preventDefault();
+    } else if (e.key === "ArrowUp") {
+        _homeIdx = (_homeIdx - 1 + btns.length) % btns.length;
+        _homeMoveCursor(btns[_homeIdx]);
+        e.preventDefault();
+    } else if (e.key === "Enter" && !btns[_homeIdx]?.disabled) {
+        btns[_homeIdx]?.click();
+    }
+});
+
+// マウスホイール
+document.addEventListener("wheel", e => {
+    if (homeScreen.style.display === "none") return;
+    const btns = _homeAllBtns();
+    _homeIdx = (_homeIdx + (e.deltaY > 0 ? 1 : -1) + btns.length) % btns.length;
+    _homeMoveCursor(btns[_homeIdx]);
+    e.preventDefault();
+}, { passive: false });
+// ────────────────────────────────────────────────────────────
+
+function buildLoadingScreen() {
+    const ls = document.getElementById('loadingScreen');
+    if (!ls) return;
+    const ns = 'http://www.w3.org/2000/svg';
+    const cx = 150, cy = 150, R = 83;
+    const sweep = 164, wTail = 2.5, wNeck = 22, N = 140;
+
+    function mk(tag, attrs) {
+        const e = document.createElementNS(ns, tag);
+        for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, String(v));
+        return e;
+    }
+    const rad = d => d * Math.PI / 180;
+    const pt = (a, r) => [+(cx + r * Math.cos(rad(a))).toFixed(2), +(cy + r * Math.sin(rad(a))).toFixed(2)];
+    const width = t => (wTail + (wNeck - wTail) * Math.pow(t, 0.8)) / 2;
+
+    const svg = mk('svg', { viewBox: '0 0 300 300', id: 'loadingSvg' });
+    const defs = document.createElementNS(ns, 'defs');
+    defs.innerHTML = `
+        <radialGradient id="lsCG" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="rgba(200,146,42,0.09)"/>
+            <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+        </radialGradient>
+        <linearGradient id="lsBody" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#2c2824"/>
+            <stop offset="52%" stop-color="#121110"/>
+            <stop offset="100%" stop-color="#000"/>
+        </linearGradient>
+        <filter id="lsGlow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="2.4" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+    `;
+    svg.appendChild(defs);
+
+    // 背景グロー
+    svg.appendChild(mk('circle', { cx, cy, r: 140, fill: 'url(#lsCG)' }));
+
+    // 外周リング（ゆっくり時計回り）
+    const outerG = mk('g', { id: 'lsOuterRing' });
+    outerG.appendChild(mk('circle', { cx, cy, r: 128, fill: 'none', stroke: 'rgba(200,146,42,0.28)', 'stroke-width': 0.8 }));
+    for (let i = 0; i < 60; i++) {
+        const a = i * 6 * Math.PI / 180, maj = i % 5 === 0;
+        outerG.appendChild(mk('line', {
+            x1: cx+(maj?121:125)*Math.cos(a), y1: cy+(maj?121:125)*Math.sin(a),
+            x2: cx+128*Math.cos(a),           y2: cy+128*Math.sin(a),
+            stroke: maj ? 'rgba(200,146,42,0.7)' : 'rgba(200,146,42,0.3)',
+            'stroke-width': maj ? 1.5 : 0.7
+        }));
+    }
+    svg.appendChild(outerG);
+
+    // ローマ数字（固定）
+    ['XII','I','II','III','IV','V','VI','VII','VIII','IX','X','XI'].forEach((n, i) => {
+        const a = (i * 30 - 90) * Math.PI / 180;
+        const t = mk('text', {
+            x: cx+110*Math.cos(a), y: cy+110*Math.sin(a),
+            'text-anchor': 'middle', 'dominant-baseline': 'central',
+            'font-family': '"Noto Serif JP", serif',
+            'font-size': i%3===0 ? 10 : 7,
+            fill: i%3===0 ? 'rgba(200,146,42,0.85)' : 'rgba(200,146,42,0.55)'
+        });
+        t.textContent = n;
+        svg.appendChild(t);
+    });
+
+    // 蛇グループ（ゆっくり逆回転）
+    const snakeG = mk('g', { id: 'lsSnakeGroup' });
+
+    // 蛇1体を描画。A0=尻尾の開始角度、sweep°後に頭がA0+180°の相手の尻尾に噛みつく
+    function serpent(A0) {
+        const outer = [], inner = [], spine = [];
+        for (let i = 0; i <= N; i++) {
+            const t = i / N, a = A0 + t * sweep, w = width(t);
+            outer.push(pt(a, R + w));
+            inner.push(pt(a, R - w));
+            spine.push(pt(a, R));
+        }
+        // 胴体
+        let d = 'M' + outer[0];
+        outer.forEach(p => d += 'L' + p);
+        for (let i = inner.length - 1; i >= 0; i--) d += 'L' + inner[i];
+        d += 'Z';
+        snakeG.appendChild(mk('path', { d, fill: 'url(#lsBody)', stroke: '#c9a227', 'stroke-width': 1.5, 'stroke-linejoin': 'round' }));
+
+        // 背骨ハイライト
+        let sp = 'M' + spine[0];
+        spine.forEach(p => sp += 'L' + p);
+        snakeG.appendChild(mk('path', { d: sp, fill: 'none', stroke: '#f1d27a', 'stroke-width': 0.8, 'stroke-opacity': 0.28 }));
+
+        // 鱗（V字シェブロン、体の曲線に沿って個別配置）
+        for (let k = 3; k <= 16; k++) {
+            const t = k / 18, a = A0 + t * sweep, w = width(t);
+            if (w < 4) continue;
+            const o = pt(a, R + w * 0.78), inn = pt(a, R - w * 0.78), ap = pt(a + 5, R);
+            snakeG.appendChild(mk('path', {
+                d: `M${o} L${ap} L${inn}`,
+                fill: 'none', stroke: '#c9a227', 'stroke-width': 0.9, 'stroke-opacity': 0.75, 'stroke-linejoin': 'round'
+            }));
+        }
+
+        // 頭（開いた顎）― パートナーの尻尾(A0+180°)に噛みついている
+        const neckA = A0 + sweep, hw = wNeck / 2, bite = A0 + 180;
+        const nO = pt(neckA, R + hw), nI = pt(neckA, R - hw);
+        const upperFang = pt(bite + 4, R + 7);
+        const lowerFang = pt(bite - 3, R - 7);
+        const throat = pt(neckA + 9, R);
+        snakeG.appendChild(mk('path', {
+            d: `M${nO} L${upperFang} L${throat} L${lowerFang} L${nI} Z`,
+            fill: 'url(#lsBody)', stroke: '#c9a227', 'stroke-width': 1.5, 'stroke-linejoin': 'round'
+        }));
+
+        // 目（蛇の向きに合わせて回転）
+        const eye = pt(neckA + 8, R + hw * 0.55);
+        snakeG.appendChild(mk('ellipse', {
+            cx: eye[0], cy: eye[1], rx: 2.6, ry: 1.9, fill: '#b41e2c',
+            transform: `rotate(${neckA + 8}, ${eye[0]}, ${eye[1]})`
+        }));
+        snakeG.appendChild(mk('ellipse', {
+            cx: eye[0], cy: eye[1], rx: 0.7, ry: 1.6, fill: '#160000',
+            transform: `rotate(${neckA + 8}, ${eye[0]}, ${eye[1]})`
+        }));
+
+        // 眉（厳しい表情）
+        const b1 = pt(neckA + 3, R + hw * 0.95), b2 = pt(neckA + 12, R + hw * 0.75);
+        snakeG.appendChild(mk('path', {
+            d: `M${b1} L${b2}`,
+            stroke: '#c9a227', 'stroke-width': 1.2, 'stroke-linecap': 'round', 'stroke-opacity': 0.9, fill: 'none'
+        }));
+
+        // 宝石（蛇の中央付近）
+        const [gx, gy] = pt(A0 + 82, R);
+        snakeG.appendChild(mk('circle', { cx: gx, cy: gy, r: 4.5, fill: 'rgba(180,30,30,0.25)' }));
+        snakeG.appendChild(mk('circle', { cx: gx, cy: gy, r: 2.2, fill: '#bb2020', stroke: 'rgba(255,100,100,0.45)', 'stroke-width': 0.7 }));
+    }
+
+    serpent(0);
+    serpent(180);
+    svg.appendChild(snakeG);
+
+    // 内側装飾リング群（多重＋羅針盤風目盛り）
+    svg.appendChild(mk('circle', { cx, cy, r: 68, fill: 'none', stroke: 'rgba(200,146,42,0.22)', 'stroke-width': 0.8 }));
+    svg.appendChild(mk('circle', { cx, cy, r: 62, fill: 'none', stroke: 'rgba(200,146,42,0.12)', 'stroke-width': 0.5 }));
+    // 4方位の長い目盛り
+    for (let i = 0; i < 4; i++) {
+        const a = i * 90 - 90;
+        const [p1x, p1y] = pt(a, 71), [p2x, p2y] = pt(a, 58);
+        svg.appendChild(mk('line', { x1: p1x, y1: p1y, x2: p2x, y2: p2y, stroke: 'rgba(200,146,42,0.55)', 'stroke-width': 1.3 }));
+    }
+    // 斜め4方位の短い目盛り
+    for (let i = 0; i < 4; i++) {
+        const a = i * 90 + 45 - 90;
+        const [p1x, p1y] = pt(a, 69), [p2x, p2y] = pt(a, 63);
+        svg.appendChild(mk('line', { x1: p1x, y1: p1y, x2: p2x, y2: p2y, stroke: 'rgba(200,146,42,0.3)', 'stroke-width': 0.8 }));
+    }
+    // 内側4方位に菱形マーカー
+    for (let i = 0; i < 4; i++) {
+        const a = i * 90 - 90, [mx, my] = pt(a, 58), s = 3;
+        svg.appendChild(mk('path', {
+            d: `M${mx},${my-s} L${mx+s*0.65},${my} L${mx},${my+s} L${mx-s*0.65},${my} Z`,
+            fill: 'rgba(200,146,42,0.45)', stroke: 'rgba(200,146,42,0.6)', 'stroke-width': 0.5
+        }));
+    }
+
+    // 中央テキスト
+    const lt = mk('text', { x: cx, y: cy+16, 'text-anchor': 'middle', 'dominant-baseline': 'central',
+        'font-family': '"Noto Serif JP", serif', 'font-style': 'italic',
+        'font-size': 13, fill: 'rgba(200,146,42,0.72)', 'letter-spacing': 3 });
+    lt.textContent = 'Loading';
+    svg.appendChild(lt);
+    const st = mk('text', { x: cx, y: cy+30, 'text-anchor': 'middle', 'dominant-baseline': 'central',
+        'font-family': '"M PLUS 1", sans-serif',
+        'font-size': 5.5, fill: 'rgba(160,110,30,0.5)', 'letter-spacing': 3.5 });
+    st.textContent = 'TEMPUS REGIT OMNIA';
+    svg.appendChild(st);
+
+    // 時計の針（2本・ダイヤ形）
+    function buildHand(id, len, w, deco) {
+        const hg = mk('g', { id });
+        hg.appendChild(mk('path', {
+            d: `M${cx},${cy+9} L${cx-w},${cy} L${cx},${cy-len} L${cx+w},${cy} Z`,
+            fill: 'rgba(215,165,55,0.85)', stroke: '#f1d27a', 'stroke-width': 0.5, 'stroke-opacity': 0.5
+        }));
+        if (deco) {
+            const ty = cy - len + 13;
+            hg.appendChild(mk('path', {
+                d: `M${cx},${ty-6} L${cx-3.5},${ty} L${cx},${ty+6} L${cx+3.5},${ty} Z`,
+                fill: 'none', stroke: '#f1d27a', 'stroke-width': 0.9, 'stroke-opacity': 0.6
+            }));
+        }
+        // 反対側の短い尾
+        hg.appendChild(mk('path', {
+            d: `M${cx-w*0.7},${cy} L${cx},${cy+12} L${cx+w*0.7},${cy} Z`,
+            fill: 'rgba(200,146,42,0.4)'
+        }));
+        svg.appendChild(hg);
+    }
+    buildHand('lsHourHand', 46, 3.5, true);
+    buildHand('lsMinuteHand', 60, 2, false);
+
+    // 中心ピボット（多重リング）
+    svg.appendChild(mk('circle', { cx, cy, r: 9,   fill: 'rgba(12,8,3,0.97)', stroke: 'rgba(200,146,42,0.45)', 'stroke-width': 1 }));
+    svg.appendChild(mk('circle', { cx, cy, r: 5.5, fill: 'none', stroke: 'rgba(225,175,58,0.65)', 'stroke-width': 0.8 }));
+    svg.appendChild(mk('circle', { cx, cy, r: 3,   fill: 'rgba(220,170,60,0.95)' }));
+
+    ls.appendChild(svg);
+}
+
 function showHomeScreen() {
     homeScreen.style.display = "";
     homeScreen.style.opacity = "";
     homeScreen.style.pointerEvents = "";
+    requestAnimationFrame(_homeInitCursor);
 }
 function hideHomeScreen(callback) {
     homeScreen.style.opacity = "0";
@@ -3349,11 +3619,11 @@ function hideHomeScreen(callback) {
     setTimeout(() => {
         homeScreen.style.display = "none";
         if (callback) callback();
-    }, 500); // CSSのtransition時間と合わせる
+    }, 500);
 }
 
 homeStartBtn.addEventListener("click", () => {
-    hideHomeScreen(() => startChapter("ch1"));
+    hideHomeScreen(() => startChapter("prologue"));
 });
 
 homeContinueBtn.addEventListener("click", () => {
@@ -3368,7 +3638,15 @@ homeSettingsBtn.addEventListener("click", () => {
 // 初期化
 // =============================================
 createGrid();
-setBattleMode();   // グリッド・ユニットを初期化しておく
+setBattleMode();
 renderIdlePanel();
-showHomeScreen();  // 起動時はホーム画面を前面に表示
+buildLoadingScreen();  // ローディング画面を構築
+showHomeScreen();      // ホーム画面（ローディング画面の下に先に準備）
 scaleGame();
+
+// 2.8秒後にローディング画面をフェードアウト
+setTimeout(() => {
+    const ls = document.getElementById('loadingScreen');
+    ls.classList.add('ls-fade-out');
+    setTimeout(() => { ls.style.display = 'none'; }, 1000);
+}, 2800);
