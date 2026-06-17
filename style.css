@@ -21,7 +21,7 @@
     --design-w:    390px;
     --design-h:    844px;
     --top-h:       237px;   /* 844 × 0.281 */
-    --bottom-h:    185px;   /* 844 × 0.219 */
+    --bottom-h:    228px;   /* 正方形ボタン2行+スライダー */
     --grid-size:   390px;   /* 正方形グリッド = デザイン幅 */
 }
 
@@ -1002,8 +1002,8 @@ html, body {
     display: flex;
     flex-direction: row;
     align-items: stretch;
-    background: linear-gradient(to top, rgba(4,5,12,0.96) 60%, rgba(4,5,12,0.75) 100%);
-    border-top: 1px solid var(--gold-dim);
+    background: linear-gradient(to top, rgba(4,5,12,0.98) 60%, rgba(4,5,12,0.80) 100%);
+    border-top: 2px solid var(--gold);
     overflow: hidden;
 }
 
@@ -1017,16 +1017,30 @@ html, body {
 
 #commandHeader {
     flex-shrink: 0;
-    padding: 0.35em 0.9em;
-    font-size: 14px;
+    padding: 0.3em 0.7em;
+    font-size: 9.5px;
     font-weight: bold;
-    color: var(--gold);
-    letter-spacing: 0.06em;
-    border-bottom: 1px solid var(--gold-dim);
-    background: rgba(0,0,0,0.25);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    color: rgba(200,146,42,0.75);
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(200,146,42,0.15);
+    background: rgba(200,146,42,0.04);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.7em;
+}
+
+#commandHeader::before,
+#commandHeader::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(200,146,42,0.4));
+}
+
+#commandHeader::after {
+    background: linear-gradient(to left, transparent, rgba(200,146,42,0.4));
 }
 
 #commandInfo {
@@ -1036,16 +1050,33 @@ html, body {
     color: var(--text-sub);
     line-height: 1.4;
     border-bottom: 1px solid rgba(200,146,42,0.10);
-    min-height: 1.8em;
+}
+
+#commandInfo:empty {
+    display: none;
 }
 
 #commandList {
     flex: 1;
     overflow-y: auto;
-    padding: 0.3em 0.6em;
+    padding: 0.3em 0;
     display: flex;
     flex-direction: column;
-    gap: 0.25em;
+    justify-content: center;
+    gap: 0;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(200,146,42,0.2) transparent;
+}
+
+#commandList::-webkit-scrollbar { width: 3px; }
+#commandList::-webkit-scrollbar-track { background: transparent; }
+#commandList::-webkit-scrollbar-thumb { background: rgba(200,146,42,0.2); border-radius: 2px; }
+
+.scenarioCmdGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 5px;
+    padding: 0.35em 0.7em 0.2em;
 }
 
 #commandList:has(#unitInfoCard) {
@@ -1054,26 +1085,66 @@ html, body {
 }
 
 .commandItem {
-    background: transparent;
-    border: 1px solid rgba(200, 146, 42, 0.18);
-    color: var(--text-main);
-    padding: 0.5em 0.8em;
-    text-align: left;
-    cursor: pointer;
-    font-size: 13px;
+    --cc: rgba(200,146,42,0.35);
+    background-color: rgba(8,6,18,0.5);
+    background-image:
+        linear-gradient(var(--cc), var(--cc)),
+        linear-gradient(var(--cc), var(--cc)),
+        linear-gradient(var(--cc), var(--cc)),
+        linear-gradient(var(--cc), var(--cc)),
+        linear-gradient(var(--cc), var(--cc)),
+        linear-gradient(var(--cc), var(--cc)),
+        linear-gradient(var(--cc), var(--cc)),
+        linear-gradient(var(--cc), var(--cc));
+    background-size:
+        7px 1px, 1px 7px,
+        7px 1px, 1px 7px,
+        7px 1px, 1px 7px,
+        7px 1px, 1px 7px;
+    background-position:
+        0 0, 0 0,
+        100% 0, 100% 0,
+        0 100%, 0 100%,
+        100% 100%, 100% 100%;
+    background-repeat: no-repeat;
+    border: none;
+    color: rgba(200,165,95,0.6);
+    padding: 0.4em 0.3em;
+    aspect-ratio: 2.2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3em;
+    font-size: 9.5px;
+    line-height: 1;
     font-family: inherit;
-    transition: background 0.13s, border-color 0.13s, transform 0.1s;
-    border-left: 2px solid transparent;
-    border-radius: 2px;
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
+    letter-spacing: 0.06em;
+    width: 100%;
 }
 
 .commandItem:hover,
 .commandItem:active {
-    background: var(--gold-glow);
-    border-left-color: var(--gold);
-    transform: translateX(3px);
+    --cc: rgba(200,146,42,0.9);
+    background-color: rgba(200,146,42,0.08);
+    color: rgba(220,185,100,1);
+}
+
+.cmdIcon {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+    opacity: 0.65;
+    transition: opacity 0.15s;
+}
+
+.commandItem:hover .cmdIcon,
+.commandItem:active .cmdIcon {
+    opacity: 1;
 }
 
 .commandItem.commandDone {
@@ -1082,37 +1153,99 @@ html, body {
     pointer-events: none;
 }
 
-/* モードボタン */
-#modeButtons {
-    flex-shrink: 0;
+.audioSliders {
+    padding: 0.35em 0.8em 0.65em;
+    margin-top: 0.5em;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    gap: 0.3em;
-    padding: 0.5em 0.55em;
-    border-left: 1px solid var(--gold-dim);
+    gap: 5px;
+    border-top: 1px solid rgba(200,146,42,0.1);
+}
+
+.audioRow {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.audioNote {
+    font-size: 9px;
+    color: rgba(200,146,42,0.35);
+    flex-shrink: 0;
+    width: 10px;
+    text-align: center;
+}
+
+.audioLabel {
+    font-size: 9px;
+    color: rgba(200,146,42,0.55);
+    letter-spacing: 0.1em;
+    width: 22px;
+    flex-shrink: 0;
+}
+
+.sliderTrack {
+    flex: 1;
+    height: 3px;
+    background: rgba(200,146,42,0.15);
+    border-radius: 2px;
+    cursor: pointer;
+    position: relative;
+}
+
+.sliderFill {
+    height: 100%;
+    background: linear-gradient(to right, rgba(200,146,42,0.45), rgba(200,146,42,0.85));
+    border-radius: 2px;
+    position: relative;
+    min-width: 3px;
+}
+
+.sliderKnob {
+    position: absolute;
+    right: -4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    background: rgba(200,146,42,0.9);
+    border-radius: 50%;
+    box-shadow: 0 0 4px rgba(200,146,42,0.4);
+}
+
+/* モードボタン（上タブバー右端） */
+#modeButtons {
+    display: flex;
+    gap: 4px;
+    padding-left: 6px;
+    margin-left: 2px;
+    border-left: 1px solid rgba(200,146,42,0.3);
 }
 
 .modeButton {
-    background: rgba(0,0,0,0.4);
-    border: 1px solid rgba(200, 146, 42, 0.22);
-    color: var(--text-dim);
-    padding: 0.35em 0.55em;
-    text-align: center;
+    background: rgba(0,0,0,0.55);
+    border: 1px solid rgba(200,146,42,0.15);
+    color: rgba(180,150,90,0.45);
+    padding: 0.2em 0.65em;
     cursor: pointer;
     font-size: 11px;
     font-family: inherit;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
     border-radius: 2px;
-    transition: background 0.13s, color 0.13s;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
     -webkit-tap-highlight-color: transparent;
     white-space: nowrap;
 }
 
-.modeButton:hover,
-.modeButton:active {
-    background: var(--gold-glow);
+.modeButton.active {
+    background: rgba(200,146,42,0.1);
     color: var(--gold);
+    border-color: rgba(200,146,42,0.4);
+}
+
+.modeButton:hover:not(.active) {
+    background: rgba(200,146,42,0.06);
+    color: var(--text-main);
 }
 
 /* ============================================================
@@ -1174,106 +1307,174 @@ html, body {
 #statusModalOverlay.hidden { display: none; }
 
 #statusModal {
-    width: 360px;
-    max-height: 680px;
-    background: rgba(7, 8, 18, 0.98);
-    border: 1px solid var(--gold-dim);
-    box-shadow: 0 0 40px rgba(0,0,0,0.8);
+    width: 370px;
+    height: 640px;
+    background: linear-gradient(165deg, rgba(14,11,26,0.99) 0%, rgba(6,8,18,0.99) 100%);
+    border: 1px solid rgba(200,146,42,0.22);
+    border-top: 2px solid var(--gold);
+    box-shadow: 0 8px 48px rgba(0,0,0,0.9), inset 0 0 80px rgba(200,146,42,0.02);
     color: var(--text-main);
     display: flex;
     flex-direction: column;
-    padding: 16px;
-    border-radius: 4px;
+    border-radius: 2px;
+    overflow: hidden;
 }
 
 #statusModalHeader {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--gold-dim);
+    padding: 12px 16px 10px;
+    background: rgba(200,146,42,0.04);
+    border-bottom: 1px solid rgba(200,146,42,0.14);
+    flex-shrink: 0;
 }
 
 #statusModalTitle {
-    font-size: 18px;
+    font-size: 14px;
     font-weight: bold;
     color: var(--gold);
-    letter-spacing: 0.05em;
+    letter-spacing: 0.1em;
 }
 
 #closeStatusModal {
-    width: 34px; height: 34px;
+    width: 26px; height: 26px;
     background: transparent;
-    border: 1px solid var(--gold-dim);
-    color: var(--text-main);
-    font-size: 20px;
+    border: 1px solid rgba(200,146,42,0.28);
+    color: var(--text-sub);
+    font-size: 15px;
     cursor: pointer;
-    transition: background 0.13s;
+    transition: background 0.13s, color 0.13s, border-color 0.13s;
     border-radius: 2px;
+    line-height: 1;
+    display: flex; align-items: center; justify-content: center;
 }
 
-#closeStatusModal:hover { background: var(--gold-glow); }
+#closeStatusModal:hover {
+    background: rgba(200,146,42,0.12);
+    color: var(--gold);
+    border-color: var(--gold);
+}
 
 #statusTabs {
     display: flex;
-    gap: 5px;
-    margin-bottom: 12px;
-    flex-wrap: wrap;
+    border-bottom: 1px solid rgba(200,146,42,0.12);
+    padding: 0 12px;
+    flex-shrink: 0;
 }
 
 .statusTab {
     background: transparent;
-    border: 1px solid var(--gold-dim);
-    color: var(--text-sub);
-    padding: 0.35em 0.85em;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: rgba(180,150,90,0.45);
+    padding: 0.55em 0.9em;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 12px;
     font-family: inherit;
-    transition: background 0.13s, color 0.13s;
-    border-radius: 2px;
+    letter-spacing: 0.08em;
+    transition: color 0.15s, border-color 0.15s;
+    margin-bottom: -1px;
 }
 
-.statusTab.active,
-.statusTab:hover {
-    background: var(--gold-glow);
+.statusTab.active {
     color: var(--gold);
+    border-bottom-color: var(--gold);
 }
+
+.statusTab:hover:not(.active) { color: var(--text-main); }
 
 #statusModalBody {
     overflow-y: auto;
-    padding-right: 4px;
-    line-height: 1.7;
-    font-size: 13px;
+    padding: 14px 16px;
+    flex: 1;
 }
 
-.statusSection {
-    margin-bottom: 1.2em;
-}
+.statusSection { margin-bottom: 1.2em; }
 
 .statusSection h3 {
-    margin-bottom: 0.45em;
-    font-size: 1em;
-    color: var(--teal);
-    letter-spacing: 0.05em;
-    border-bottom: 1px solid var(--teal-dim);
-    padding-bottom: 0.2em;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    opacity: 0.65;
+    margin-bottom: 0.55em;
+    padding-left: 8px;
+    border-left: 2px solid var(--gold);
+    line-height: 1.2;
+    font-weight: normal;
 }
 
 .statusGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-    gap: 0.25em 1em;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+}
+
+.statusGrid.wide { grid-template-columns: 1fr; }
+
+.statRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.28em 0.5em;
+    border-bottom: 1px solid rgba(200,146,42,0.07);
+}
+
+.statRow:nth-child(odd) { background: rgba(200,146,42,0.025); }
+
+.statLabel {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: rgba(180,150,80,0.52);
+    text-transform: uppercase;
+}
+
+.statVal {
+    font-size: 12px;
+    color: var(--text-main);
+    font-weight: bold;
+    letter-spacing: 0.03em;
+}
+
+.hpBarWrap { margin-bottom: 0.7em; }
+
+.hpBarLabel {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+}
+
+.hpBarLabelName {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: rgba(180,150,80,0.55);
+    text-transform: uppercase;
+}
+
+.hpBarLabelVal {
+    font-size: 12px;
+    font-weight: bold;
     color: var(--text-main);
 }
 
-/* ============================================================
-   コマンドヘッダー強化
-============================================================ */
-#commandHeader {
-    border-left: 3px solid var(--gold);
-    letter-spacing: 0.1em;
+.hpBarTrack {
+    height: 3px;
+    background: rgba(200,146,42,0.1);
+    border-radius: 2px;
+    overflow: hidden;
 }
+
+.hpBarFill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.hpBarFill.hp { background: linear-gradient(90deg, #c8922a, #f1d27a); }
+.hpBarFill.mp { background: linear-gradient(90deg, #3ecfb8, #7eeedd); }
+
 
 /* ============================================================
    ユニット情報カード（下部パネル選択時）

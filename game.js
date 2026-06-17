@@ -2693,73 +2693,83 @@ function renderStatusTab(tabName) {
     });
     statusModalTitle.textContent = `${unit.name} ― ステータス`;
 
+    const sr = (label, val) =>
+        `<div class="statRow"><span class="statLabel">${label}</span><span class="statVal">${val}</span></div>`;
+    const hpBar = (cls, name, cur, max) => {
+        const pct = max > 0 ? Math.max(0, Math.min(100, cur / max * 100)) : 0;
+        return `<div class="hpBarWrap">
+          <div class="hpBarLabel">
+            <span class="hpBarLabelName">${name}</span>
+            <span class="hpBarLabelVal">${cur} / ${max}</span>
+          </div>
+          <div class="hpBarTrack"><div class="hpBarFill ${cls}" style="width:${pct}%"></div></div>
+        </div>`;
+    };
+
     if (tabName === "basic") {
         statusModalBody.innerHTML = `
         <div class="statusSection">
           <h3>基本情報</h3>
           <div class="statusGrid">
-            <div>Name：${unit.name}</div>
-            <div>種族：${unit.race || "―"}</div>
-            <div>一族：${unit.clan || "―"}</div>
-            <div>所属：${unit.side === "ally" ? "味方" : "敵"}</div>
-            <div>Lv：${unit.level}</div>
-            <div>HP：${unit.hp}/${unit.maxHp}</div>
-            <div>MP：${unit.mp}/${unit.maxMp}</div>
+            ${sr("Name", unit.name)}
+            ${sr("種族", unit.race || "―")}
+            ${sr("一族", unit.clan || "―")}
+            ${sr("所属", unit.side === "ally" ? "味方" : "敵")}
+            ${sr("Lv", unit.level)}
           </div>
+        </div>
+        <div class="statusSection">
+          <h3>HP / MP</h3>
+          ${hpBar("hp", "HP", unit.hp, unit.maxHp)}
+          ${hpBar("mp", "MP", unit.mp, unit.maxMp)}
         </div>
         <div class="statusSection">
           <h3>能力値</h3>
           <div class="statusGrid">
-            <div>STR：${unit.str}</div>
-            <div>CON：${unit.con}</div>
-            <div>DEX：${unit.dex}</div>
-            <div>POW：${unit.pow}</div>
-            <div>INT：${unit.int}</div>
-            <div>EDU：${unit.edu}</div>
-            <div>SIZ：${unit.siz}</div>
+            ${sr("STR", unit.str)}${sr("CON", unit.con)}
+            ${sr("DEX", unit.dex)}${sr("POW", unit.pow)}
+            ${sr("INT", unit.int)}${sr("EDU", unit.edu)}
+            ${sr("SIZ", unit.siz)}
           </div>
         </div>
         <div class="statusSection">
           <h3>戦闘基本</h3>
           <div class="statusGrid">
-            <div>移動：${unit.move}マス</div>
-            <div>射程：${unit.attackRange}マス</div>
-            <div>DB：${unit.physicalBonus}</div>
-            <div>MB：${unit.magicBonus}</div>
-            <div>勇気：${unit.courage}%</div>
+            ${sr("移動", unit.move + " マス")}
+            ${sr("射程", unit.attackRange + " マス")}
+            ${sr("DB", unit.physicalBonus)}
+            ${sr("MB", unit.magicBonus)}
+            ${sr("勇気", unit.courage + "%")}
           </div>
         </div>`;
         return;
     }
-    if (tabName === "battle") {
+    if (tabName === "skills") {
         const skillLines = Object.entries(unit.skills || {})
-            .map(([name, v]) => `<div>${name}：${v}</div>`).join("");
-        statusModalBody.innerHTML = `
-        <div class="statusSection">
-          <h3>特技（戦闘）</h3>
-          <div class="statusGrid">${skillLines || "なし"}</div>
-        </div>`;
-        return;
-    }
-    if (tabName === "magic") {
+            .map(([name, v]) => sr(name, v)).join("");
         const spellLines = Object.entries(unit.spells || {}).map(([name, v]) => {
             const sp = SPELLS_DATA[name];
-            return `<div>${name}：${v}　射程${typeof sp?.range === "number" ? sp.range : "―"}</div>`;
+            const range = typeof sp?.range === "number" ? sp.range : "―";
+            return `<div class="statRow">
+              <span class="statLabel">${name}</span>
+              <span class="statVal">${v}&nbsp;<span style="font-size:10px;opacity:0.6;font-weight:normal">射程${range}</span></span>
+            </div>`;
         }).join("");
+        const empty = '<div class="statRow"><span class="statVal">―</span></div>';
         statusModalBody.innerHTML = `
+        <div class="statusSection">
+          <h3>特技</h3>
+          <div class="statusGrid">${skillLines || empty}</div>
+        </div>
         <div class="statusSection">
           <h3>魔法</h3>
-          <div class="statusGrid">${spellLines || "なし"}</div>
-        </div>`;
-        return;
-    }
-    if (tabName === "special") {
-        statusModalBody.innerHTML = `
+          <div class="statusGrid">${spellLines || empty}</div>
+        </div>
         <div class="statusSection">
           <h3>その他</h3>
-          <div class="statusGrid">
-            <div>発作タイプ：${unit.seizureType || "―"}</div>
-            <div>秘伝：${unit.secretArt || "―"}</div>
+          <div class="statusGrid wide">
+            ${sr("発作タイプ", unit.seizureType || "―")}
+            ${sr("秘伝", unit.secretArt || "―")}
           </div>
         </div>`;
     }
@@ -3173,25 +3183,75 @@ function setBattleMode() {
 // =============================================
 // シナリオコマンド
 // =============================================
+const SCENARIO_CMD_ICONS = {
+    "セーブ":    `<svg class="cmdIcon" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="1.5" width="9" height="9" rx="1"/><rect x="3.5" y="1.5" width="4" height="3"/><rect x="3.5" y="7" width="5" height="2.5" rx="0.5"/></svg>`,
+    "ロード":    `<svg class="cmdIcon" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 2A4 4 0 1 0 10 6.5"/><polyline points="10,2.5 10,6.5 6,6.5"/></svg>`,
+    "アイテム":  `<svg class="cmdIcon" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 1.5 L10.5 6 L6 10.5 L1.5 6 Z"/><line x1="6" y1="3.5" x2="6" y2="8.5"/><line x1="3.5" y1="6" x2="8.5" y2="6"/></svg>`,
+    "ステータス":`<svg class="cmdIcon" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="3.5" r="1.8"/><path d="M2.5 10.5C2.5 8.3 4.1 7 6 7s3.5 1.3 3.5 3.5"/></svg>`,
+    "ログ":      `<svg class="cmdIcon" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="1.5" width="8" height="9" rx="1"/><line x1="4" y1="4.5" x2="8" y2="4.5"/><line x1="4" y1="6.5" x2="8" y2="6.5"/><line x1="4" y1="8.5" x2="7" y2="8.5"/></svg>`,
+    "設定":      `<svg class="cmdIcon" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2"/><path d="M6 1v2M6 9v2M1 6h2M9 6h2M2.5 2.5l1.5 1.5M8 8l1.5 1.5M9.5 2.5L8 4M4 8l-1.5 1.5"/></svg>`,
+};
+
 function renderScenarioCommands() {
     commandHeader.textContent = "command";
     commandInfo.textContent   = "";
     commandList.innerHTML     = "";
 
-    for (const label of ["セーブ", "ロード", "アイテム", "ステータス", "設定"]) {
+    const grid = document.createElement("div");
+    grid.className = "scenarioCmdGrid";
+    commandList.appendChild(grid);
+
+    for (const label of ["セーブ", "ロード", "アイテム", "ステータス", "ログ", "設定"]) {
         const btn = document.createElement("button");
-        btn.className   = "commandItem";
-        btn.textContent = label;
+        btn.className = "commandItem";
+        btn.innerHTML = `${SCENARIO_CMD_ICONS[label] || ""}<span>${label}</span>`;
         btn.addEventListener("click", () => handleScenarioCommand(label));
-        commandList.appendChild(btn);
+        grid.appendChild(btn);
     }
+
+    const audio = document.createElement("div");
+    audio.className = "audioSliders";
+    audio.innerHTML = `
+      <div class="audioRow">
+        <span class="audioNote">♩</span>
+        <span class="audioLabel">BGM</span>
+        <div class="sliderTrack" data-vol="bgm">
+          <div class="sliderFill" style="width:70%"><div class="sliderKnob"></div></div>
+        </div>
+      </div>
+      <div class="audioRow">
+        <span class="audioNote">◈</span>
+        <span class="audioLabel">SE</span>
+        <div class="sliderTrack" data-vol="se">
+          <div class="sliderFill" style="width:80%"><div class="sliderKnob"></div></div>
+        </div>
+      </div>`;
+    commandList.appendChild(audio);
+
+    audio.querySelectorAll(".sliderTrack").forEach(track => {
+        const fill = track.querySelector(".sliderFill");
+        const setVol = (clientX) => {
+            const rect = track.getBoundingClientRect();
+            const x = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+            fill.style.width = (x * 100) + "%";
+        };
+        let dragging = false;
+        track.addEventListener("mousedown", e => { dragging = true; setVol(e.clientX); });
+        document.addEventListener("mousemove", e => { if (dragging) setVol(e.clientX); });
+        document.addEventListener("mouseup", () => { dragging = false; });
+        track.addEventListener("touchstart", e => { e.preventDefault(); setVol(e.touches[0].clientX); }, { passive: false });
+        track.addEventListener("touchmove", e => { e.preventDefault(); setVol(e.touches[0].clientX); }, { passive: false });
+    });
 }
 
 function handleScenarioCommand(label) {
     if (label === "ステータス") {
-        // シナリオ中はリングホルムのステータスを表示
         const first = CHARACTERS_DATA.find(c => c.side === "ally");
         if (first) openStatusModal(first.id);
+        return;
+    }
+    if (label === "ログ") {
+        showMessage("システム", "ログ機能は未実装です。");
         return;
     }
     showMessage("システム", `${label}を開きます。`);
@@ -3201,13 +3261,19 @@ function handleScenarioCommand(label) {
 // =============================================
 // イベントリスナー
 // =============================================
-scenarioModeButton.addEventListener("click", () => startChapter("prologue"));
+function setModeButtonActive(mode) {
+    scenarioModeButton.classList.toggle("active", mode === "scenario");
+    battleModeButton.classList.toggle("active",   mode === "battle");
+}
+
+scenarioModeButton.addEventListener("click", () => { startChapter("prologue"); setModeButtonActive("scenario"); });
 dialogueBox.addEventListener("click", () => { if (scenarioActive) advanceScene(); });
 document.addEventListener("keydown", (e) => {
     if (!scenarioActive) return;
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); advanceScene(); }
 });
-battleModeButton.addEventListener("click",   setBattleMode);
+battleModeButton.addEventListener("click", () => { setBattleMode(); setModeButtonActive("battle"); });
+setModeButtonActive("scenario");
 
 topTabs.forEach(tab => {
     tab.addEventListener("click", () => switchTopLayer(tab.dataset.layer));

@@ -112,6 +112,10 @@
                 <button class="topTab active" data-layer="dialogue">会話</button>
                 <button class="topTab"        data-layer="battle">戦況</button>
                 <button class="topTab"        data-layer="forecast">予測</button>
+                <div id="modeButtons">
+                    <button id="scenarioModeButton" class="modeButton">シナリオ</button>
+                    <button id="battleModeButton"   class="modeButton">バトル</button>
+                </div>
             </div>
 
         </div>
@@ -143,10 +147,6 @@
                 <div id="commandHeader">command</div>
                 <div id="commandInfo"></div>
                 <div id="commandList"></div>
-            </div>
-            <div id="modeButtons">
-                <button id="scenarioModeButton" class="modeButton">シナリオ</button>
-                <button id="battleModeButton"   class="modeButton">バトル</button>
             </div>
         </div>
 
@@ -186,9 +186,7 @@
                 </div>
                 <div id="statusTabs">
                     <button class="statusTab active" data-tab="basic">基本</button>
-                    <button class="statusTab" data-tab="battle">特技</button>
-                    <button class="statusTab" data-tab="magic">魔法</button>
-                    <button class="statusTab" data-tab="special">その他</button>
+                    <button class="statusTab" data-tab="skills">スキル</button>
                 </div>
                 <div id="statusModalBody"></div>
             </div>
