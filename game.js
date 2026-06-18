@@ -50,8 +50,16 @@ const vsCancelBtn        = document.getElementById("vsCancelBtn");
 // =============================================
 // 定数
 // =============================================
-const GRID_COLS = 10;
-const GRID_ROWS = 10;
+let GRID_COLS = 10;
+let GRID_ROWS = 10;
+let currentWalls = new Set(); // "col,row" 形式の通行不可タイル
+let currentVoids = new Set(); // "col,row" 形式の存在しないタイル（マップ外）
+
+/** タイルが壁またはvoidなら true */
+function isTileBlocked(x, y) {
+    const key = `${x},${y}`;
+    return currentWalls.has(key) || currentVoids.has(key);
+}
 
 // 攻撃ボタンの命中ロールに使うスキル優先順（魔導はパッシブなので除外）
 const ATTACK_SKILL_PRIORITY = [
@@ -94,6 +102,8 @@ let selectedAttackSkill = null;
 let turnPhase       = "ally"; // "ally" | "enemy"
 let turnCount       = 1;
 let battleOver      = false;
+let currentBattleId = "battle_tutorial"; // 現在の戦闘ID（初期値はチュートリアル）
+let currentMapItems = []; // マップ上に配置されたアイテム { x, y, item: {id,name,type,value} }
 let statusTargetId  = null; // ステータスモーダル表示対象
 let currentStatusTab = "basic";
 let _vsAttack = null; // VS確認待ち { attacker, target, isMagic, spell }
@@ -174,15 +184,33 @@ function evalDamage(formula, mb, db) {
 // =============================================
 // グリッド構築
 // =============================================
-function createGrid() {
+function createGrid(cols = 10, rows = 10, tiles = []) {
+    GRID_COLS = cols;
+    GRID_ROWS = rows;
+    currentWalls.clear();
+    currentVoids.clear();
+    for (const t of tiles) {
+        const key = `${t.x},${t.y}`;
+        if (t.type === "wall") currentWalls.add(key);
+        if (t.type === "void") currentVoids.add(key);
+    }
+
+    battleGrid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    battleGrid.style.gridTemplateRows    = `repeat(${rows}, 1fr)`;
     battleGrid.innerHTML = "";
-    for (let row = 0; row < GRID_ROWS; row++) {
-        for (let col = 0; col < GRID_COLS; col++) {
+
+    for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
             const cell = document.createElement("div");
+            const key  = `${col},${row}`;
             cell.className = "gridCell";
+            if (currentWalls.has(key)) cell.classList.add("tileWall");
+            if (currentVoids.has(key)) cell.classList.add("tileVoid");
             cell.dataset.row = row;
             cell.dataset.col = col;
-            cell.addEventListener("click", () => onCellClick(row, col));
+            if (!currentVoids.has(key) && !currentWalls.has(key)) {
+                cell.addEventListener("click", () => onCellClick(row, col));
+            }
             battleGrid.appendChild(cell);
         }
     }
@@ -248,9 +276,11 @@ function renderUnits() {
         hpInfo.appendChild(hpBar);
         el.appendChild(hpInfo);
 
-        // 位置（x=col, y=row）: トークンが12%×13%なのでマス中央に合わせてオフセット
-        el.style.left = `${unit.x * 10 - 1}%`;
-        el.style.top  = `${unit.y * 10 - 1.5}%`;
+        // セル中央にトークン(12%×13%)を配置。セルサイズはグリッド列・行数から動的計算
+        const cellW = 100 / GRID_COLS;
+        const cellH = 100 / GRID_ROWS;
+        el.style.left = `${(unit.x + 0.5) * cellW - 6}%`;
+        el.style.top  = `${(unit.y + 0.5) * cellH - 6.5}%`;
 
         // 自分のフェーズ中のみ行動済み表示（他フェーズでは暗くしない）
         if (unit.moved && unit.acted && unit.side === turnPhase) el.classList.add("unitDone");
@@ -396,17 +426,21 @@ function onCellClick(row, col) {
 // =============================================
 /** ラジアルメニューをユニット位置に初期化（位置セット＋クリア） */
 function initRadialAtUnit(unit) {
-    const GRID_INSET = 44;
-    const INNER_PX   = 390 - GRID_INSET * 2;
-    const CELL_PX    = INNER_PX / GRID_COLS;
-    const TOP_H      = 237;
-    // キャンバス上のユニット中心座標（ズーム・パン反映）
-    const rawX = GRID_INSET + (unit.x + 0.5) * CELL_PX;
-    const rawY = GRID_INSET + (unit.y + 0.5) * CELL_PX;
+    const cell = getCell(unit.y, unit.x);
+    if (!cell) return;
+    const cellRect   = cell.getBoundingClientRect();
+    const parentRect = radialMenu.parentElement.getBoundingClientRect();
+    // #gameScreen に scale() が掛かっているため getBoundingClientRect は
+    // スケール後の画面座標を返す。style.left/top はスケール前論理座標なので割り戻す
+    const scale = parseFloat(
+        document.getElementById("gameScreen").style.transform.replace(/[^0-9.]/g, "")
+    ) || 1;
+    const cx = (cellRect.left + cellRect.width  / 2 - parentRect.left) / scale;
+    const cy = (cellRect.top  + cellRect.height / 2 - parentRect.top)  / scale;
     radialMenu.innerHTML = "";
     radialMenu.classList.remove("hidden");
-    radialMenu.style.left = `${rawX * mapZoom + mapPanX}px`;
-    radialMenu.style.top  = `${TOP_H + rawY * mapZoom + mapPanY}px`;
+    radialMenu.style.left = `${cx}px`;
+    radialMenu.style.top  = `${cy}px`;
 }
 
 /** アイテム配列をラジアルボタンとして配置する */
@@ -444,6 +478,7 @@ function showRadialMenu(unit) {
         cmds.push({ label: "魔法", sub: "MAG" });
         const hasUtility = Object.keys(unit.skills || {}).some(s => BATTLE_UTILITY_SKILLS.has(s));
         if (hasUtility) cmds.push({ label: "特技", sub: "SKL" });
+        if ((unit.items?.length ?? 0) > 0) cmds.push({ label: "アイテム", sub: "ITEM" });
     }
     cmds.push({ label: "ステータス", sub: "ST" });
     cmds.push({ label: "待機", sub: "WAIT" });
@@ -691,6 +726,7 @@ function getMoveRange(unit) {
             if (nx < 0 || nx >= GRID_COLS || ny < 0 || ny >= GRID_ROWS) continue;
             const key = `${nx},${ny}`;
             if (visited.has(key)) continue;
+            if (isTileBlocked(nx, ny)) continue;
             // 敵ユニット（相手陣営）は通過不可
             const occ = battleUnits.find(u => u.hp > 0 && u.x === nx && u.y === ny);
             if (occ && occ.side !== unit.side) continue;
@@ -718,6 +754,17 @@ function moveUnit(unit, row, col) {
     actionState = null;
     renderUnits();
 
+    // アイテム拾得チェック
+    const pickedIdx = currentMapItems.findIndex(mi => mi.x === col && mi.y === row);
+    if (pickedIdx !== -1) {
+        const picked = currentMapItems.splice(pickedIdx, 1)[0];
+        if (!unit.items) unit.items = [];
+        unit.items.push(picked.item);
+        renderMapItems();
+        showMessage("SYSTEM", `${unit.name}は ${picked.item.name} を拾った！`);
+        addLog(`・${unit.name}は ${picked.item.name} を拾った`);
+    }
+
     // 移動後まだ行動していなければコマンドを再表示
     if (!unit.acted) {
         selectUnit(unit);
@@ -738,6 +785,7 @@ function highlightAttackRange(unit) {
             if (dx === 0 && dy === 0) continue;
             const nx = unit.x + dx, ny = unit.y + dy;
             if (nx < 0 || nx >= GRID_COLS || ny < 0 || ny >= GRID_ROWS) continue;
+            if (isTileBlocked(nx, ny)) continue;
             const cell = getCell(ny, nx);
             if (cell) cell.classList.add("highlightAttack");
         }
@@ -753,6 +801,7 @@ function highlightThrowRange(unit) {
             const nx = unit.x + dx * i;
             const ny = unit.y + dy * i;
             if (nx < 0 || nx >= GRID_COLS || ny < 0 || ny >= GRID_ROWS) break;
+            if (isTileBlocked(nx, ny)) break;
             const cell = getCell(ny, nx);
             if (cell) cell.classList.add("highlightAttack");
             // 途中にユニットがいても貫通しない
@@ -1003,8 +1052,8 @@ function resolvePhysicalHit(attacker, target, atkSkillName) {
     renderUnits();
     if (target.hp <= 0) addLog(`  ${target.name}は倒れた！`);
 
-    // 反撃チェック：勇気% 成功で物理/魔法の最良手を自動選択して反撃
-    if (target.hp > 0) {
+    // 反撃チェック：パッシブモードでは反撃しない
+    if (target.hp > 0 && !BATTLE_DEFINITIONS[currentBattleId]?.passive) {
         const courageRoll = Math.floor(Math.random() * 100) + 1;
         if (courageRoll <= (target.courage || 50)) {
             showMessage(target.name, "反撃！");
@@ -2326,6 +2375,15 @@ function tickStatusEffects(side) {
 async function enemyAction(enemy) {
     if (enemy.hp <= 0) return;
 
+    // パッシブモード（チュートリアル等）：行動しない
+    if (BATTLE_DEFINITIONS[currentBattleId]?.passive) {
+        enemy.moved = true;
+        enemy.acted = true;
+        setUnitActing(enemy.id, false);
+        addLog(`・${enemy.name}は様子を見ている`);
+        return;
+    }
+
     setUnitActing(enemy.id, true);   // 赤ハイライトON
 
     // スタン中は行動不可
@@ -2433,8 +2491,8 @@ function checkVictoryCondition() {
 // =============================================
 
 function renderBattleCommands(unit) {
-    commandHeader.textContent = unit.name;
-    commandInfo.textContent   = `Lv ${unit.level}`;
+    commandHeader.textContent = `${unit.name}  Lv ${unit.level}`;
+    commandInfo.innerHTML     = "";   // textContent="" は空テキストノードを残すため innerHTML で確実に空にする
     commandList.innerHTML     = "";
 
     // ユニット情報カード
@@ -2526,8 +2584,8 @@ function renderBattleCommands(unit) {
 
 /** 敵ユニットをタップした時に下パネルに情報を表示 */
 function renderEnemyInfoPanel(unit) {
-    commandHeader.textContent = unit.name;
-    commandInfo.textContent   = `Lv ${unit.level}  /  敵`;
+    commandHeader.textContent = `${unit.name}  Lv ${unit.level}`;
+    commandInfo.innerHTML     = "";
     commandList.innerHTML     = "";
 
     const hpPct   = unit.hp / unit.maxHp;
@@ -2653,6 +2711,10 @@ function handleBattleCommand(unit, label) {
             clearHighlights();
             openStatusModal(unit.id);
             break;
+        case "アイテム":
+            showItemRadial(unit);
+            addLog(`・${unit.name}はアイテムを選択`);
+            break;
         case "待機":
             hideRadialMenu();
             clearHighlights();
@@ -2664,6 +2726,35 @@ function handleBattleCommand(unit, label) {
             deselectUnit();
             break;
     }
+}
+
+function showItemRadial(unit) {
+    initRadialAtUnit(unit);
+    const items = [
+        ...(unit.items || []).map((item, idx) => ({
+            label: item.name,
+            html: `${item.name}<span class="radialBtnSub">使う</span>`,
+            idx,
+            isBack: false,
+        })),
+        { label: "戻る", html: `戻る<span class="radialBtnSub">BACK</span>`, isBack: true },
+    ];
+    const radius = Math.max(50, items.length * 10);
+    buildRadialButtons(items, radius, (item) => {
+        if (item.isBack) { renderBattleCommands(unit); return; }
+        const used = unit.items.splice(item.idx, 1)[0];
+        hideRadialMenu();
+        if (used.type === "heal") {
+            const restored = used.value;
+            unit.hp = Math.min(unit.maxHp, unit.hp + restored);
+            showDamagePopup(unit.id, restored, "heal");
+            renderUnits();
+            showMessage("SYSTEM", `${unit.name}は ${used.name} を使った！ HP +${restored}`);
+            addLog(`・${unit.name}は ${used.name} を使用 → HP +${restored}（HP ${unit.hp}/${unit.maxHp}）`);
+        }
+        unit.acted = true;
+        endUnitTurn(unit);
+    });
 }
 
 // =============================================
@@ -3030,17 +3121,17 @@ function showScenarioPortraitAdjuster(name, image, portraitEl) {
     document.body.appendChild(overlay);
 }
 
-function startChapter(chapterId) {
+function startChapter(chapterId, startIdx = 0, initialCharacters = null) {
     const ch = CHAPTERS.find(c => c.id === chapterId);
     if (!ch) { console.warn("Chapter not found:", chapterId); return; }
     currentChapter  = ch;
-    currentSceneIdx = 0;
+    currentSceneIdx = startIdx;
     scenarioActive  = true;
     gameMode        = "scenario";
 
     clearHighlights();
     hideRadialMenu();
-    scenarioCharacters = [];
+    scenarioCharacters = initialCharacters ? initialCharacters.slice() : [];
     scenarioCharLayer.innerHTML = "";
     enterScenarioLayout();
 
@@ -3082,12 +3173,13 @@ function advanceScene() {
     playCurrentScene();
 }
 
-function playBattleScene(/* scene */) {
+function playBattleScene(scene) {
     scenarioActive               = false;
     fromScenario                 = true;
     dialogueBox.dataset.scenario = "";
     exitScenarioLayout();
-    setBattleMode();
+    currentBattleId = scene.battleId;
+    setBattleMode(scene.battleId);
 }
 
 function resumeScenarioAfterBattle() {
@@ -3136,7 +3228,39 @@ function setScenarioMode() {
     renderScenarioCommands();
 }
 
-function setBattleMode() {
+// battleId → 参加ユニット・配置・背景の定義
+const BATTLE_DEFINITIONS = {
+    battle_tutorial: {
+        background: "背景/オルクス魔王城鍛錬場.png",
+        cols: 7,
+        rows: 8,
+        tiles: [],
+        passive: true, // チュートリアル：敵は行動・反撃しない
+        mapItems: [
+            { x: 3, y: 4, item: { id: "small_potion", name: "ポーション小", type: "heal", value: 5 } },
+        ],
+        unitIds: ["young_arshe", "young_karima", "gunter"],
+        positions: {
+            young_arshe:  { x: 2, y: 6 },
+            young_karima: { x: 4, y: 6 },
+            gunter:       { x: 3, y: 1 },
+        },
+    },
+    battle_ch1: {
+        background: "assets/background_forest.png",
+        unitIds: ["ringholm", "arshe", "albas", "forest_guard", "dylan", "herel"],
+        positions: {
+            ringholm:     { x: 2, y: 7 },
+            arshe:        { x: 3, y: 7 },
+            albas:        { x: 4, y: 7 },
+            forest_guard: { x: 3, y: 2 },
+            dylan:        { x: 4, y: 1 },
+            herel:        { x: 5, y: 2 },
+        },
+    },
+};
+
+function setBattleMode(battleId) {
     exitScenarioLayout();   // シナリオレイアウトが残っていたらリセット
     switchTopLayer("battle");
     gameMode   = "battle";
@@ -3149,20 +3273,33 @@ function setBattleMode() {
     selectedAttackSkill = null;
     hideBattlePreview();
 
+    const def = battleId && BATTLE_DEFINITIONS[battleId];
+    currentMapItems = (def?.mapItems || []).map(mi => ({ ...mi, item: { ...mi.item } }));
+    createGrid(def?.cols ?? 10, def?.rows ?? 10, def?.tiles ?? []);
+    if (def?.background) { bgImage.src = def.background; topPanelBg.src = def.background; }
+    const sourceData = def
+        ? CHARACTERS_DATA.filter(c => def.unitIds.includes(c.id))
+        : CHARACTERS_DATA;
+
     // CHARACTERS_DATA をディープコピーして live データとして使用
     // DB = STR+SIZ、MB = POW+INT をルルブ表から自動計算
-    battleUnits = CHARACTERS_DATA.map(c => ({
-        ...c,
-        hp: c.maxHp,
-        mp: c.maxMp,
-        moved: false,
-        acted: false,
-        statusEffects: [],
-        spells: { ...c.spells },
-        skills: { ...c.skills },
-        physicalBonus: calcBonusDice((c.str || 0) + (c.siz || 0)),
-        magicBonus:    calcBonusDice((c.pow || 0) + (c.int || 0)),
-    }));
+    battleUnits = sourceData.map(c => {
+        const pos = def?.positions?.[c.id] ?? { x: c.x, y: c.y };
+        return {
+            ...c,
+            x: pos.x,
+            y: pos.y,
+            hp: c.maxHp,
+            mp: c.maxMp,
+            moved: false,
+            acted: false,
+            statusEffects: [],
+            spells: { ...c.spells },
+            skills: { ...c.skills },
+            physicalBonus: calcBonusDice((c.str || 0) + (c.siz || 0)),
+            magicBonus:    calcBonusDice((c.pow || 0) + (c.int || 0)),
+        };
+    });
     loadPortraitAdj(battleUnits); // 保存済みの位置調整を反映
 
     unitLayer.style.display         = "block";
@@ -3177,7 +3314,20 @@ function setBattleMode() {
     updatePhaseHeader();
 
     renderUnits();
+    renderMapItems();
     renderIdlePanel();
+}
+
+function renderMapItems() {
+    for (const el of battleGrid.querySelectorAll(".mapItemToken")) el.remove();
+    for (const mi of currentMapItems) {
+        const cell = getCell(mi.y, mi.x);
+        if (!cell) continue;
+        const token = document.createElement("div");
+        token.className = "mapItemToken";
+        token.title = mi.item.name;
+        cell.appendChild(token);
+    }
 }
 
 // =============================================
@@ -3244,7 +3394,124 @@ function renderScenarioCommands() {
     });
 }
 
+// =============================================
+// セーブ / ロード
+// =============================================
+const SL_KEY   = slot => `srpg_save_${slot}`;
+const SL_SLOTS = 3;
+
+function getSaveData(slot) {
+    try { return JSON.parse(localStorage.getItem(SL_KEY(slot))); } catch { return null; }
+}
+
+function saveGame(slot) {
+    if (!currentChapter || !scenarioActive) {
+        showMessage("SYSTEM", "シナリオ中のみセーブできます。");
+        return false;
+    }
+    const d = new Date();
+    const savedAt = `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    localStorage.setItem(SL_KEY(slot), JSON.stringify({
+        chapterId:  currentChapter.id,
+        sceneIdx:   currentSceneIdx,
+        bgSrc:      bgImage.getAttribute("src"),
+        topBgSrc:   topPanelBg.getAttribute("src"),
+        savedAt,
+        preview:    currentChapter.title,
+    }));
+    return true;
+}
+
+function loadGame(slot) {
+    const data = getSaveData(slot);
+    if (!data) return false;
+    closeSaveLoadModal();
+
+    const ch = CHAPTERS.find(c => c.id === data.chapterId);
+
+    // 背景を復元（保存データ優先、なければシーン履歴を遡る）
+    if (data.bgSrc) {
+        bgImage.src    = data.bgSrc;
+        topPanelBg.src = data.topBgSrc || data.bgSrc;
+    } else if (ch) {
+        for (let i = data.sceneIdx; i >= 0; i--) {
+            if (ch.scenes[i]?.bg) {
+                bgImage.src    = ch.scenes[i].bg;
+                topPanelBg.src = ch.scenes[i].bg;
+                break;
+            }
+        }
+    }
+
+    // 立ち絵を復元（シーン履歴を遡って直近の setCharacters を探す）
+    let restoredChars = null;
+    if (ch) {
+        for (let i = data.sceneIdx; i >= 0; i--) {
+            if (ch.scenes[i]?.setCharacters !== undefined) {
+                restoredChars = ch.scenes[i].setCharacters.slice();
+                break;
+            }
+        }
+    }
+
+    startChapter(data.chapterId, data.sceneIdx, restoredChars);
+    return true;
+}
+
+let _slMode = "save";
+
+function openSaveModal() { _slMode = "save"; _renderSlModal(); saveLoadModal.classList.add("active"); }
+function openLoadModal() { _slMode = "load"; _renderSlModal(); saveLoadModal.classList.add("active"); }
+function closeSaveLoadModal() { saveLoadModal.classList.remove("active"); }
+
+function _renderSlModal() {
+    const isSave = _slMode === "save";
+    slotContainer.innerHTML = "";
+    for (let i = 1; i <= SL_SLOTS; i++) {
+        const data = getSaveData(i);
+        const btn  = document.createElement("button");
+        btn.className = "slSlot";
+        if (data) {
+            btn.innerHTML = `<span class="slSlotNum">${i}</span><div class="slSlotInfo"><div class="slSlotPreview">${data.preview}</div><div class="slSlotDate">${data.savedAt} &nbsp; Sc.${data.sceneIdx + 1}</div></div>`;
+        } else {
+            btn.innerHTML = `<span class="slSlotNum">${i}</span><div class="slSlotInfo"><span class="slSlotEmpty">空きスロット</span></div>`;
+            if (!isSave) btn.disabled = true;
+        }
+        btn.addEventListener("click", () => {
+            if (isSave) {
+                if (saveGame(i)) {
+                    closeSaveLoadModal();
+                    showMessage("SYSTEM", `スロット ${i} にセーブしました。`);
+                }
+            } else {
+                loadGame(i);
+            }
+        });
+        slotContainer.appendChild(btn);
+    }
+    slTitleEl.textContent = isSave ? "SAVE" : "LOAD";
+}
+
+// モーダルDOM
+const saveLoadModal = document.createElement("div");
+saveLoadModal.id = "saveLoadModal";
+const slPanel = document.createElement("div");
+slPanel.className = "slPanel";
+const slTitleEl = document.createElement("div");
+slTitleEl.className = "slTitle";
+const slotContainer = document.createElement("div");
+const slClose = document.createElement("div");
+slClose.className = "slClose";
+slClose.textContent = "[ CLOSE ]";
+slClose.addEventListener("click", closeSaveLoadModal);
+saveLoadModal.addEventListener("click", e => { if (e.target === saveLoadModal) closeSaveLoadModal(); });
+slPanel.append(slTitleEl, slotContainer, slClose);
+saveLoadModal.appendChild(slPanel);
+document.body.appendChild(saveLoadModal);
+
 function handleScenarioCommand(label) {
+    if (label === "セーブ") { openSaveModal(); return; }
+    if (label === "ロード") { openLoadModal(); return; }
     if (label === "ステータス") {
         const first = CHARACTERS_DATA.find(c => c.side === "ally");
         if (first) openStatusModal(first.id);
@@ -3272,7 +3539,7 @@ document.addEventListener("keydown", (e) => {
     if (!scenarioActive) return;
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); advanceScene(); }
 });
-battleModeButton.addEventListener("click", () => { setBattleMode(); setModeButtonActive("battle"); });
+battleModeButton.addEventListener("click", () => { setBattleMode(currentBattleId); setModeButtonActive("battle"); });
 setModeButtonActive("scenario");
 
 topTabs.forEach(tab => {
@@ -3679,6 +3946,8 @@ function buildLoadingScreen() {
 }
 
 function showHomeScreen() {
+    const hasSave = Array.from({length: SL_SLOTS}, (_, i) => getSaveData(i + 1)).some(Boolean);
+    homeContinueBtn.disabled = !hasSave;
     homeScreen.style.display = "";
     homeScreen.style.opacity = "";
     homeScreen.style.pointerEvents = "";
@@ -3698,7 +3967,12 @@ homeStartBtn.addEventListener("click", () => {
 });
 
 homeContinueBtn.addEventListener("click", () => {
-    showMessage("SYSTEM", "セーブ機能は準備中です。");
+    const hasSave = Array.from({length: SL_SLOTS}, (_, i) => getSaveData(i + 1)).some(Boolean);
+    if (!hasSave) {
+        showMessage("SYSTEM", "セーブデータがありません。");
+        return;
+    }
+    hideHomeScreen(() => openLoadModal());
 });
 
 homeSettingsBtn.addEventListener("click", () => {
@@ -3708,8 +3982,7 @@ homeSettingsBtn.addEventListener("click", () => {
 // =============================================
 // 初期化
 // =============================================
-createGrid();
-setBattleMode();
+setBattleMode(currentBattleId);
 renderIdlePanel();
 buildLoadingScreen();  // ローディング画面を構築
 showHomeScreen();      // ホーム画面（ローディング画面の下に先に準備）

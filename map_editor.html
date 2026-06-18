@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Map Editor — 自作SRPG</title>
+<style>
+:root {
+    --bg:         #070412;
+    --panel:      #0b0618;
+    --gold:       rgba(200,146,42,1);
+    --gold-mid:   rgba(200,146,42,0.6);
+    --gold-dim:   rgba(200,146,42,0.25);
+    --gold-faint: rgba(200,146,42,0.06);
+    --text:       rgba(220,185,100,0.9);
+    --text-dim:   rgba(200,146,42,0.45);
+    --teal:       rgba(62,207,184,0.12);
+    --cell:       36px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+    font-size: 13px;
+    padding: 1.5rem;
+    min-height: 100vh;
+}
+
+/* ── Header ── */
+h1 {
+    font-size: 10px;
+    letter-spacing: 0.45em;
+    text-transform: uppercase;
+    color: var(--gold-mid);
+    margin-bottom: 1.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8em;
+}
+h1::after { content:''; flex:1; height:1px; background: var(--gold-dim); }
+
+/* ── Layout ── */
+.layout {
+    display: grid;
+    grid-template-columns: 190px 1fr;
+    gap: 1.4rem;
+    align-items: start;
+}
+
+/* ── Controls ── */
+.controls {
+    background: var(--panel);
+    border: 1px solid var(--gold-dim);
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+}
+.slabel {
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--gold-dim);
+    padding-bottom: 0.35em;
+    margin-bottom: 0.55em;
+}
+.row { display: flex; align-items: center; gap: 0.5em; margin-bottom: 0.35em; }
+.row label { color: var(--text-dim); font-size: 11px; width: 2.5em; }
+.row input[type=number] {
+    width: 56px;
+    background: var(--bg);
+    border: 1px solid var(--gold-dim);
+    color: var(--text);
+    padding: 0.28em 0.5em;
+    font-size: 12px;
+    font-family: inherit;
+    text-align: center;
+}
+.row input:focus { outline: none; border-color: var(--gold-mid); }
+.btn {
+    width: 100%;
+    background: var(--gold-faint);
+    border: 1px solid var(--gold-dim);
+    color: var(--text);
+    padding: 0.4em 0.7em;
+    cursor: pointer;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    font-family: inherit;
+    transition: background 0.13s, border-color 0.13s;
+}
+.btn:hover  { background: rgba(200,146,42,0.11); border-color: var(--gold-mid); }
+.btn:active { background: rgba(200,146,42,0.17); }
+.btn-danger { border-color: rgba(200,80,60,0.28); color: rgba(200,120,100,0.65); }
+.btn-danger:hover { background: rgba(200,60,40,0.1); border-color: rgba(200,80,60,0.55); color: rgba(220,140,120,0.85); }
+
+/* ── Palette ── */
+.palette { display: flex; flex-direction: column; gap: 0.35em; }
+.tile-btn {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--gold-dim);
+    color: rgba(200,165,95,0.55);
+    padding: 0.45em 0.65em;
+    cursor: pointer;
+    font-size: 11px;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 0.55em;
+    transition: all 0.13s;
+    text-align: left;
+}
+.tile-btn:hover { border-color: var(--gold-mid); color: var(--text); }
+.tile-btn.active { border-color: var(--gold); color: var(--text); background: var(--gold-faint); }
+.swatch { width:13px; height:13px; flex-shrink:0; border:1px solid rgba(255,255,255,0.08); }
+.sw-empty { background: #0d091e; border-color: rgba(62,207,184,0.3) !important; }
+.sw-wall  { background: linear-gradient(135deg,#2a1405,#170b03); border-color: rgba(150,80,20,0.5) !important; }
+.sw-void  { background: #020108; border-color: rgba(80,30,80,0.28) !important; }
+
+/* ── Stats ── */
+.stats { display: flex; gap: 0.4em; flex-wrap: wrap; }
+.badge {
+    background: var(--gold-faint);
+    border: 1px solid var(--gold-dim);
+    padding: 0.18em 0.5em;
+    font-size: 9px;
+    color: var(--text-dim);
+}
+
+/* ── Grid area ── */
+.grid-area { display: flex; flex-direction: column; gap: 1.1rem; }
+.grid-wrap {
+    background: var(--panel);
+    border: 1px solid var(--gold-dim);
+    padding: 0.7rem;
+    display: inline-block;
+    overflow: auto;
+    max-width: 100%;
+}
+#mapGrid {
+    display: grid;
+    gap: 0;
+    cursor: crosshair;
+    user-select: none;
+    -webkit-user-select: none;
+}
+.mc {
+    border: 1px solid rgba(62,207,184,0.1);
+    transition: filter 0.07s;
+    position: relative;
+    overflow: hidden;
+}
+.mc:hover { filter: brightness(1.45); z-index: 1; }
+.mc.t-empty { background: #0c0920; }
+.mc.t-wall  {
+    background: linear-gradient(135deg, #2d1606 50%, #1b0d04);
+    border-color: rgba(150,80,20,0.4);
+}
+.mc.t-wall::after {
+    content:'';
+    position:absolute; inset:0;
+    background: repeating-linear-gradient(
+        45deg,
+        transparent, transparent 4px,
+        rgba(140,70,15,0.14) 4px, rgba(140,70,15,0.14) 5px
+    );
+}
+.mc.t-void  {
+    background: #030109;
+    border-color: rgba(50,20,55,0.22);
+}
+.mc.t-void::after {
+    content:'';
+    position:absolute; inset:4px;
+    background:
+        linear-gradient(135deg, transparent 43%, rgba(90,30,90,0.22) 43%, rgba(90,30,90,0.22) 57%, transparent 57%),
+        linear-gradient( 45deg, transparent 43%, rgba(90,30,90,0.22) 43%, rgba(90,30,90,0.22) 57%, transparent 57%);
+}
+
+/* ── Output ── */
+.output-panel {
+    background: var(--panel);
+    border: 1px solid var(--gold-dim);
+    padding: 0.85rem 1rem;
+}
+#jsonOutput {
+    background: var(--bg);
+    border: 1px solid var(--gold-dim);
+    color: rgba(200,190,145,0.8);
+    font-family: 'Consolas','Courier New',monospace;
+    font-size: 11px;
+    padding: 0.65em 0.8em;
+    width: 100%;
+    min-height: 5.5em;
+    resize: vertical;
+    line-height: 1.55;
+    white-space: pre;
+    overflow-x: auto;
+}
+.copy-row { display: flex; align-items: center; gap: 0.6em; margin-top: 0.5em; }
+#copyBtn {
+    background: var(--gold-faint);
+    border: 1px solid var(--gold-dim);
+    color: var(--text);
+    padding: 0.38em 1.1em;
+    cursor: pointer;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    font-family: inherit;
+    transition: all 0.13s;
+}
+#copyBtn:hover { background: rgba(200,146,42,0.13); border-color: var(--gold); }
+#copyMsg { font-size: 10px; color: rgba(100,200,150,0.75); opacity:0; transition: opacity 0.3s; }
+#copyMsg.show { opacity:1; }
+
+@media (max-width: 640px) {
+    .layout { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<h1>Map Editor</h1>
+
+<div class="layout">
+
+    <!-- ─── 左パネル ─── -->
+    <div class="controls">
+
+        <div>
+            <div class="slabel">マップサイズ</div>
+            <div class="row"><label>横</label><input type="number" id="inCols" value="10" min="2" max="20"></div>
+            <div class="row"><label>縦</label><input type="number" id="inRows" value="10" min="2" max="20"></div>
+            <button class="btn" onclick="applySize()" style="margin-top:0.5em">適用</button>
+        </div>
+
+        <div>
+            <div class="slabel">ペイント</div>
+            <div class="palette">
+                <button class="tile-btn active" data-type="empty" onclick="selectType('empty')">
+                    <span class="swatch sw-empty"></span>空マス
+                </button>
+                <button class="tile-btn" data-type="wall" onclick="selectType('wall')">
+                    <span class="swatch sw-wall"></span>壁
+                </button>
+                <button class="tile-btn" data-type="void" onclick="selectType('void')">
+                    <span class="swatch sw-void"></span>空虚 (void)
+                </button>
+            </div>
+            <div style="font-size:9px; color:var(--text-dim); margin-top:0.55em; line-height:1.5">
+                同じタイルをクリック → 消去<br>ドラッグで連続ペイント
+            </div>
+        </div>
+
+        <div>
+            <div class="slabel">操作</div>
+            <button class="btn btn-danger" onclick="clearMap()">全クリア</button>
+        </div>
+
+        <div class="stats" id="statsArea"></div>
+
+    </div>
+
+    <!-- ─── 右エリア ─── -->
+    <div class="grid-area">
+        <div class="grid-wrap">
+            <div id="mapGrid"></div>
+        </div>
+        <div class="output-panel">
+            <div class="slabel">Output — BATTLE_DEFINITIONS に貼り付け</div>
+            <textarea id="jsonOutput" readonly></textarea>
+            <div class="copy-row">
+                <button id="copyBtn" onclick="copyOutput()">[ コピー ]</button>
+                <span id="copyMsg">コピーしました</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+let cols = 10, rows = 10;
+let mapData = [];   // mapData[row][col] = "empty"|"wall"|"void"
+let paintType = "empty";
+let isPainting = false;
+let paintValue = "empty";
+
+// ─── 初期化 ───────────────────────────────
+function initMap(c, r, preserve = false) {
+    const old = mapData;
+    const oc = cols, or = rows;
+    cols = c; rows = r;
+    mapData = [];
+    for (let row = 0; row < r; row++) {
+        const newRow = [];
+        for (let col = 0; col < c; col++) {
+            newRow.push(preserve && row < or && col < oc ? old[row][col] : "empty");
+        }
+        mapData.push(newRow);
+    }
+}
+
+// ─── グリッド描画 ──────────────────────────
+function renderGrid() {
+    const cellPx = Math.max(22, Math.min(40, Math.floor(560 / Math.max(cols, rows))));
+    document.documentElement.style.setProperty("--cell", cellPx + "px");
+
+    const grid = document.getElementById("mapGrid");
+    grid.style.gridTemplateColumns = `repeat(${cols}, ${cellPx}px)`;
+    grid.style.gridTemplateRows    = `repeat(${rows}, ${cellPx}px)`;
+    grid.innerHTML = "";
+
+    for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+            const cell = document.createElement("div");
+            cell.className = `mc t-${mapData[row][col]}`;
+            cell.style.width = cell.style.height = cellPx + "px";
+
+            cell.addEventListener("mousedown", e => {
+                e.preventDefault();
+                isPainting = true;
+                const cur = mapData[row][col];
+                paintValue = (cur === paintType && paintType !== "empty") ? "empty" : paintType;
+                applyCell(row, col, paintValue);
+            });
+            cell.addEventListener("mouseenter", () => {
+                if (isPainting) applyCell(row, col, paintValue);
+            });
+            cell.addEventListener("touchstart", e => {
+                e.preventDefault();
+                const cur = mapData[row][col];
+                paintValue = (cur === paintType && paintType !== "empty") ? "empty" : paintType;
+                applyCell(row, col, paintValue);
+            }, { passive: false });
+
+            grid.appendChild(cell);
+        }
+    }
+    updateOutput();
+    updateStats();
+}
+
+function applyCell(row, col, type) {
+    if (mapData[row][col] === type) return;
+    mapData[row][col] = type;
+    const idx = row * cols + col;
+    const grid = document.getElementById("mapGrid");
+    const cell = grid.children[idx];
+    if (cell) cell.className = `mc t-${type}`;
+    cell.style.width = cell.style.height = getComputedStyle(document.documentElement).getPropertyValue("--cell");
+    updateOutput();
+    updateStats();
+}
+
+// ─── パレット ──────────────────────────────
+function selectType(type) {
+    paintType = type;
+    document.querySelectorAll(".tile-btn").forEach(b =>
+        b.classList.toggle("active", b.dataset.type === type)
+    );
+}
+
+// ─── サイズ適用 ────────────────────────────
+function applySize() {
+    const c = clamp(parseInt(document.getElementById("inCols").value) || 10, 2, 20);
+    const r = clamp(parseInt(document.getElementById("inRows").value) || 10, 2, 20);
+    document.getElementById("inCols").value = c;
+    document.getElementById("inRows").value = r;
+    initMap(c, r, true);
+    renderGrid();
+}
+
+function clearMap() {
+    initMap(cols, rows, false);
+    renderGrid();
+}
+
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+// ─── Output ───────────────────────────────
+function updateOutput() {
+    const tiles = [];
+    for (let row = 0; row < rows; row++)
+        for (let col = 0; col < cols; col++)
+            if (mapData[row][col] !== "empty")
+                tiles.push({ x: col, y: row, type: mapData[row][col] });
+
+    let out = `cols: ${cols},\nrows: ${rows},\n`;
+    if (tiles.length === 0) {
+        out += `tiles: [],`;
+    } else {
+        out += `tiles: [\n`;
+        out += tiles.map(t => `    { x: ${t.x}, y: ${t.y}, type: "${t.type}" },`).join("\n");
+        out += `\n],`;
+    }
+    document.getElementById("jsonOutput").value = out;
+}
+
+function updateStats() {
+    let walls = 0, voids = 0;
+    for (let row = 0; row < rows; row++)
+        for (let col = 0; col < cols; col++) {
+            if (mapData[row][col] === "wall") walls++;
+            if (mapData[row][col] === "void") voids++;
+        }
+    document.getElementById("statsArea").innerHTML = `
+        <span class="badge">${cols} × ${rows}</span>
+        <span class="badge">壁 ${walls}</span>
+        <span class="badge">空虚 ${voids}</span>
+        <span class="badge">有効マス ${cols * rows - voids}</span>
+    `;
+}
+
+function copyOutput() {
+    navigator.clipboard.writeText(document.getElementById("jsonOutput").value).then(() => {
+        const msg = document.getElementById("copyMsg");
+        msg.classList.add("show");
+        setTimeout(() => msg.classList.remove("show"), 2000);
+    });
+}
+
+// ─── グローバルイベント ──────────────────
+document.addEventListener("mouseup",  () => { isPainting = false; });
+document.addEventListener("touchend", () => { isPainting = false; });
+
+// ─── 起動 ────────────────────────────────
+initMap(10, 10);
+renderGrid();
+</script>
+</body>
+</html>

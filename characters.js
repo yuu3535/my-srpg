@@ -177,6 +177,115 @@ const CHARACTERS_DATA = [
     },
 
     // ============================================================
+    // プロローグ専用（Lv1）
+    // ============================================================
+
+    {
+        id: "young_arshe",
+        name: "アルシェ",
+        side: "ally",
+        race: "ヒト",
+        clan: "天使の落胤",
+
+        x: 2, y: 7,
+
+        level: 1,
+        hp: 13, maxHp: 13,
+        mp: 18, maxMp: 18,
+
+        str: 14, con: 13, dex: 18, pow: 18, edu: 16, int: 14, siz: 13,
+        courage: 90, luck: 90,
+
+        move: 3, attackRange: 1,
+
+        moved: false, acted: false,
+        char: "ア",
+        tokenImage: "立ち絵AI生成/幼少期アルシェドット.png",
+        portraitImage: "立ち絵AI生成/幼少期アルシェ1.png",
+        portraitBgSize: "300%",  portraitBgPos: "60% top",
+        portraitDmgBgSize: "250%", portraitDmgBgPos: "46% 5px",
+        statusBgSize: "300%", statusBgPos: "60% top",
+        portraitImageDamaged: "立ち絵AI生成/幼少期アルシェ被弾.png",
+
+        spells: {
+            カウンター: 8,
+            破壊: 6,
+            封印: 6,
+            火: 5,
+            落雷: 4,
+        },
+        skills: {
+            武器: 9,
+            回避: 6,
+            投擲: 6,
+            武道: 4,
+            暗器: 4,
+            隠密: 4,
+            説得: 4,
+            魔導: 4,
+            変装: 3,
+        },
+
+        seizureType: "共鳴",
+        secretArt: "祈り",
+        counterMode: "auto",
+        statusEffects: [],
+    },
+
+    {
+        id: "young_karima",
+        name: "カリマ",
+        side: "ally",
+        race: "ヒト",
+        clan: "天使の落胤",
+
+        x: 3, y: 7,
+
+        level: 1,
+        hp: 12, maxHp: 12,
+        mp: 18, maxMp: 18,
+
+        str: 14, con: 12, dex: 18, pow: 18, edu: 16, int: 14, siz: 13,
+        courage: 90, luck: 90,
+
+        move: 3, attackRange: 1,
+
+        moved: false, acted: false,
+        char: "カ",
+        tokenImage: "立ち絵AI生成/幼少期カリマドット.png",
+        portraitImage: "立ち絵AI生成/幼少期カリマ1.png",
+        portraitBgSize: "300%",  portraitBgPos: "55% top",
+        portraitDmgBgSize: "250%", portraitDmgBgPos: "50% 5px",
+        statusBgSize: "300%", statusBgPos: "55% top",
+        portraitImageDamaged: "立ち絵AI生成/幼少期カリマ1.png",
+
+        spells: {
+            加速: 9,
+            治癒: 7,
+            結界: 7,
+            補助: 4,
+            虚像: 3,
+            落雷: 3,
+        },
+        skills: {
+            魔導: 9,
+            回避: 6,
+            目星: 6,
+            投擲: 5,
+            変装: 4,
+            捕縛: 4,
+            隠密: 4,
+            説得: 4,
+            武器: 4,
+        },
+
+        seizureType: "共鳴",
+        secretArt: "祈り",
+        counterMode: "magic_first",
+        statusEffects: [],
+    },
+
+    // ============================================================
     // 敵
     // ============================================================
 
@@ -266,6 +375,56 @@ const CHARACTERS_DATA = [
         seizureType: "破壊衝動",
         secretArt: "黒炎",
         counterMode: "auto",      // 物理(爪)も魔法(火)も強い、期待値で選択
+        statusEffects: [],
+    },
+
+    {
+        id: "gunter",
+        name: "ギュンター",
+        side: "enemy",
+        race: "ヒト",
+        clan: "なし",
+
+        x: 3, y: 2,
+
+        level: 4,
+        hp: 24, maxHp: 24,
+        mp: 27, maxMp: 27,
+
+        str: 30, con: 27, dex: 30, pow: 27, edu: 25, int: 19, siz: 15,
+        courage: 70, luck: 50,
+
+        move: 3, attackRange: 1,
+
+        moved: false, acted: false,
+        char: "ギ",
+        tokenImage: "立ち絵AI生成/ギュンタードット絵.png",
+        portraitImage: "立ち絵AI生成/ギュンター立ち絵.png",
+        portraitBgSize: "280%",  portraitBgPos: "center top",
+        portraitDmgBgSize: "280%", portraitDmgBgPos: "center top",
+        statusBgSize: "280%", statusBgPos: "center top",
+        portraitImageDamaged: "立ち絵AI生成/ギュンター立ち絵.png",
+
+        spells: {
+            転移: 9,
+            水: 8,
+            破壊: 8,
+            カウンター: 7,
+            結界: 6,
+        },
+        skills: {
+            隠密: 8,
+            回避: 8,
+            武器: 8,
+            武道: 8,
+            跳躍: 8,
+            追跡: 7,
+            聞き耳: 6,
+        },
+
+        seizureType: "なし",
+        secretArt: "なし",
+        counterMode: "auto",
         statusEffects: [],
     },
 
