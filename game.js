@@ -6,6 +6,7 @@
 // =============================================
 // DOM 参照
 // =============================================
+const gameScreen         = document.getElementById("gameScreen");
 const nameText           = document.getElementById("nameText");
 const messageText        = document.getElementById("messageText");
 const logTextList        = document.getElementById("logTextList");
@@ -78,6 +79,17 @@ const EVADE_SKILL_NAME = "回避";
 // ゲームモード状態
 // =============================================
 let gameMode = "scenario";
+
+const UI_THEMES = new Set(["orcus", "alstro", "mixed", "abyss"]);
+
+function setUiTheme(theme = "orcus") {
+    const nextTheme = UI_THEMES.has(theme) ? theme : "orcus";
+    gameScreen?.setAttribute("data-theme", nextTheme);
+}
+
+const initialUiTheme = new URLSearchParams(location.search).get("theme");
+const forcedUiTheme = UI_THEMES.has(initialUiTheme) ? initialUiTheme : null;
+if (forcedUiTheme) setUiTheme(forcedUiTheme);
 
 // =============================================
 // バトル状態
@@ -223,8 +235,12 @@ function getCell(row, col) {
 
 function clearHighlights() {
     for (const cell of battleGrid.children) {
-        cell.classList.remove("highlightMove", "highlightAttack");
+        cell.classList.remove("highlightMove", "highlightAttack", "allyActionRange", "enemyActionRange");
     }
+}
+
+function getActionRangeClass(unit) {
+    return unit?.side === "enemy" ? "enemyActionRange" : "allyActionRange";
 }
 
 // =============================================
@@ -739,9 +755,10 @@ function getMoveRange(unit) {
 
 function highlightMoveRange(unit) {
     clearHighlights();
+    const sideClass = getActionRangeClass(unit);
     for (const { col, row } of getMoveRange(unit)) {
         const cell = getCell(row, col);
-        if (cell) cell.classList.add("highlightMove");
+        if (cell) cell.classList.add("highlightMove", sideClass);
     }
 }
 
@@ -778,6 +795,7 @@ function moveUnit(unit, row, col) {
 // =============================================
 function highlightAttackRange(unit) {
     clearHighlights();
+    const sideClass = getActionRangeClass(unit);
     const range = unit.attackRange;
     for (let dy = -range; dy <= range; dy++) {
         for (let dx = -range; dx <= range; dx++) {
@@ -787,7 +805,7 @@ function highlightAttackRange(unit) {
             if (nx < 0 || nx >= GRID_COLS || ny < 0 || ny >= GRID_ROWS) continue;
             if (isTileBlocked(nx, ny)) continue;
             const cell = getCell(ny, nx);
-            if (cell) cell.classList.add("highlightAttack");
+            if (cell) cell.classList.add("highlightAttack", sideClass);
         }
     }
 }
@@ -795,6 +813,7 @@ function highlightAttackRange(unit) {
 /** 投擲射程のハイライト：上下左右の直線4マス以内 */
 function highlightThrowRange(unit) {
     clearHighlights();
+    const sideClass = getActionRangeClass(unit);
     const dirs = [[0,-1],[0,1],[-1,0],[1,0]];
     for (const [dx, dy] of dirs) {
         for (let i = 1; i <= 4; i++) {
@@ -803,7 +822,7 @@ function highlightThrowRange(unit) {
             if (nx < 0 || nx >= GRID_COLS || ny < 0 || ny >= GRID_ROWS) break;
             if (isTileBlocked(nx, ny)) break;
             const cell = getCell(ny, nx);
-            if (cell) cell.classList.add("highlightAttack");
+            if (cell) cell.classList.add("highlightAttack", sideClass);
             // 途中にユニットがいても貫通しない
             if (battleUnits.some(u => u.hp > 0 && u.x === nx && u.y === ny)) break;
         }
@@ -3146,6 +3165,7 @@ function playCurrentScene() {
         return;
     }
     const scene = currentChapter.scenes[currentSceneIdx];
+    if (!forcedUiTheme && scene.uiTheme) setUiTheme(scene.uiTheme);
     switch (scene.type) {
         case "dialogue": playDialogueScene(scene); break;
         case "battle":   playBattleScene(scene);   break;
@@ -3231,6 +3251,7 @@ function setScenarioMode() {
 // battleId → 参加ユニット・配置・背景の定義
 const BATTLE_DEFINITIONS = {
     battle_tutorial: {
+        uiTheme: "orcus",
         background: "背景/オルクス魔王城鍛錬場.png",
         cols: 7,
         rows: 8,
@@ -3247,6 +3268,7 @@ const BATTLE_DEFINITIONS = {
         },
     },
     battle_ch1: {
+        uiTheme: "mixed",
         background: "assets/background_forest.png",
         unitIds: ["ringholm", "arshe", "albas", "forest_guard", "dylan", "herel"],
         positions: {
@@ -3274,6 +3296,7 @@ function setBattleMode(battleId) {
     hideBattlePreview();
 
     const def = battleId && BATTLE_DEFINITIONS[battleId];
+    setUiTheme(forcedUiTheme || def?.uiTheme || "orcus");
     currentMapItems = (def?.mapItems || []).map(mi => ({ ...mi, item: { ...mi.item } }));
     createGrid(def?.cols ?? 10, def?.rows ?? 10, def?.tiles ?? []);
     if (def?.background) { bgImage.src = def.background; topPanelBg.src = def.background; }
