@@ -3692,10 +3692,15 @@ document.getElementById("mapZoomReset").addEventListener("click", e => {
 // スケール調整（デザインサイズ390×844を画面にフィット）
 // =============================================
 function scaleGame() {
-    const s = Math.min(window.innerWidth / 390, window.innerHeight / 844);
+    const viewport = window.visualViewport || window;
+    const viewportW = viewport.width || window.innerWidth;
+    const viewportH = viewport.height || window.innerHeight;
+    const mobileReserve = viewportW <= 480 ? Math.min(36, Math.max(18, viewportH * 0.035)) : 0;
+    const s = Math.min(viewportW / 390, (viewportH - mobileReserve) / 844);
     document.getElementById("gameScreen").style.transform = `scale(${s})`;
 }
 window.addEventListener("resize", scaleGame);
+window.visualViewport?.addEventListener("resize", scaleGame);
 
 // =============================================
 // ホーム画面
