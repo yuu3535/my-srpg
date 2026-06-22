@@ -479,7 +479,7 @@ html, body {
 ============================================================ */
 #battleBoard {
     position: relative;
-    width: var(--grid-size);
+    width: 100%;
     height: var(--grid-size);
     flex-shrink: 0;
     z-index: 5;
@@ -499,7 +499,10 @@ html, body {
 /* ズーム・パン対象キャンバス */
 #battleCanvas {
     position: absolute;
-    inset: 0;
+    top: 0;
+    left: calc((100% - var(--grid-size)) / 2);
+    width: var(--grid-size);
+    height: var(--grid-size);
     transform-origin: top left;  /* translate+scale の基準を左上に統一 */
     z-index: 1;
 }
