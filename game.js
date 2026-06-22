@@ -3582,11 +3582,22 @@ statusTabs.forEach(tab => {
 // 盤面ズーム・パン
 // =============================================
 let mapZoom = 1, mapPanX = 0, mapPanY = 0;
+let mapViewMode = "top";
 const MAP_ZOOM_MIN = 0.6, MAP_ZOOM_MAX = 4.0;
 
 function applyMapTransform() {
+    const viewTransform = mapViewMode === "iso"
+        ? "perspective(520px) rotateX(48deg) rotateZ(-8deg) scale(1.16)"
+        : "";
     battleCanvas.style.transform =
-        `translate(${mapPanX}px,${mapPanY}px) scale(${mapZoom})`;
+        `translate(${mapPanX}px,${mapPanY}px) scale(${mapZoom}) ${viewTransform}`.trim();
+}
+
+function setMapViewMode(mode) {
+    mapViewMode = mode === "iso" ? "iso" : "top";
+    battleBoard.classList.toggle("mapViewIso", mapViewMode === "iso");
+    document.getElementById("mapViewToggle").textContent = mapViewMode === "iso" ? "2D" : "視点";
+    applyMapTransform();
 }
 
 /** cx,cy は battleBoard 左上基準のズーム中心 */
@@ -3686,6 +3697,10 @@ document.getElementById("mapZoomOut")  .addEventListener("click", e => { e.stopP
 document.getElementById("mapZoomReset").addEventListener("click", e => {
     e.stopPropagation();
     mapZoom = 1; mapPanX = 0; mapPanY = 0; applyMapTransform();
+});
+document.getElementById("mapViewToggle").addEventListener("click", e => {
+    e.stopPropagation();
+    setMapViewMode(mapViewMode === "iso" ? "top" : "iso");
 });
 
 // =============================================

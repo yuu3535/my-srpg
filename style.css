@@ -533,6 +533,31 @@ html, body {
 }
 .mapZoomBtn:active { background: rgba(200,146,42,0.18); }
 
+.mapViewBtn {
+    width: 38px;
+    font-size: 10px;
+    letter-spacing: 0.02em;
+}
+
+#battleBoard.mapViewIso #battleCanvas {
+    transform-origin: center center;
+    filter: drop-shadow(0 18px 16px rgba(0,0,0,0.48));
+}
+
+#battleBoard.mapViewIso #battleGrid {
+    border-color: rgba(224, 176, 72, 0.30);
+}
+
+#battleBoard.mapViewIso .gridCell {
+    background: rgba(8, 12, 18, 0.06);
+}
+
+#battleBoard.mapViewIso .mapViewBtn {
+    background: rgba(200,146,42,0.22);
+    border-color: var(--gold);
+    color: var(--gold);
+}
+
 /* 外周44px分を空きスペース（空マス帯）として確保 */
 #battleGrid {
     position: absolute;
