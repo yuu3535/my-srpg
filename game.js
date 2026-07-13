@@ -3915,7 +3915,7 @@ function scaleGame() {
     const viewportH = viewport.height || window.innerHeight;
     const isLandscapeBattle = gameScreen.dataset.mode === "battle"
         && viewportW > viewportH
-        && Math.min(viewportW, viewportH) <= 520;
+        && viewportW <= 1200;
     const baseW = isLandscapeBattle ? 844 : 390;
     const baseH = isLandscapeBattle ? 390 : 844;
     const mobileReserve = !isLandscapeBattle && viewportW <= 480

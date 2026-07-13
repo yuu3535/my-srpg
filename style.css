@@ -2160,16 +2160,14 @@ html, body {
    Battle landscape layout
    スマホ横画面の戦闘は、左コマンド / 中央マップ / 右ログに再配置する。
 ============================================================ */
-@media (orientation: landscape) and (max-height: 520px) {
-    :root {
+@media (orientation: landscape) {
+    #gameScreen[data-mode="battle"] {
         --design-w: 844px;
         --design-h: 390px;
         --top-h: 390px;
         --bottom-h: 390px;
         --grid-size: 390px;
-    }
 
-    #gameScreen[data-mode="battle"] {
         width: var(--design-w);
         height: var(--design-h);
         display: grid;
