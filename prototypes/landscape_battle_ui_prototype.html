@@ -18,6 +18,9 @@
             --text: #e0bd73;
             --text-soft: rgba(224, 189, 115, 0.68);
             --line: rgba(65, 199, 179, 0.26);
+            --status-panel-w: 210px;
+            --status-panel-h: 694px;
+            --status-portrait-h: 309px;
         }
 
         * {
@@ -107,7 +110,7 @@
             width: 100%;
             height: 100%;
             display: grid;
-            grid-template-columns: 210px minmax(0, 1fr) 176px;
+            grid-template-columns: var(--status-panel-w) minmax(0, 1fr) 176px;
             gap: 10px;
             padding: 48px 14px 12px;
         }
@@ -117,6 +120,9 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            width: var(--status-panel-w);
+            height: min(100%, var(--status-panel-h));
+            align-self: stretch;
             background:
                 linear-gradient(180deg, rgba(7, 8, 16, 0.94), rgba(3, 4, 10, 0.90)),
                 radial-gradient(circle at 20% 0%, rgba(200, 146, 42, 0.10), transparent 45%);
@@ -125,9 +131,9 @@
         }
 
         .unit-portrait {
-            aspect-ratio: 209 / 309;
-            height: auto;
             width: 100%;
+            height: var(--status-portrait-h);
+            flex: 0 0 var(--status-portrait-h);
             background:
                 linear-gradient(0deg, rgba(3, 4, 10, 0.74), transparent 42%),
                 url("../Character/カリマ　立ち絵 (2).png") center 10% / 126% auto no-repeat;
@@ -137,6 +143,7 @@
         .unit-body {
             padding: 8px 10px 10px;
             min-height: 0;
+            flex: 1 1 auto;
         }
 
         .unit-name {
@@ -464,6 +471,12 @@
         }
 
         @media (orientation: landscape) and (max-height: 520px) {
+            :root {
+                --status-panel-w: 150px;
+                --status-panel-h: calc(100dvh - 46px);
+                --status-portrait-h: 222px;
+            }
+
             body {
                 display: block;
             }
@@ -496,7 +509,7 @@
             }
 
             .main-layout {
-                grid-template-columns: 150px minmax(0, 1fr) 136px;
+                grid-template-columns: var(--status-panel-w) minmax(0, 1fr) 136px;
                 gap: 6px;
                 padding:
                     39px
@@ -506,8 +519,6 @@
             }
 
             .unit-portrait {
-                aspect-ratio: 209 / 309;
-                height: auto;
                 background-size: 126% auto;
                 background-position: center 10%;
             }
