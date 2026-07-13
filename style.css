@@ -2199,7 +2199,8 @@ html, body {
         inset: 0;
         z-index: 18;
         display: grid;
-        grid-template-columns: 150px minmax(0, 1fr) 136px;
+        /* コマンドはモーダル型オーバーレイのため専用カラムは持たない */
+        grid-template-columns: 150px minmax(0, 1fr) 0;
         grid-template-rows: 32px minmax(0, 1fr) 24px;
         gap: 6px;
         padding:
@@ -2422,31 +2423,41 @@ html, body {
         bottom: 16px;
     }
 
+    /* ── コマンド：盤面にかかるモーダル型オーバーレイ ──
+       右端から盤面へ薄いスクリムを伸ばし、その上に針型ボタンを重ねる */
     #landscapeCommandPanel {
-        grid-column: 3;
-        grid-row: 2;
-        position: relative;
+        position: absolute;
+        right: 6px;
+        top: 38px;
+        bottom: 30px;
+        width: 210px;
+        z-index: 22;
         display: flex;
         align-items: center;
-        min-width: 0;
+        justify-content: flex-end;
+        pointer-events: none;   /* スクリム部分はタップを透過させる */
+        background: linear-gradient(270deg,
+            rgba(5,5,10,0.80) 0%,
+            rgba(5,5,10,0.44) 55%,
+            transparent 100%);
+        transition: opacity 0.18s;
+    }
+
+    #landscapeCommandPanel.railHidden {
+        opacity: 0;
+        visibility: hidden;
     }
 
     /* ── 時計盤のリムと軸 ──
-       コマンド群の右に大きな円弧（時計の縁）と中心軸を描き、
-       針状のボタンが盤面に沿って並ぶ構図にする */
-    #landscapeCommandPanel {
-        overflow: hidden;   /* リム円は列の中だけ見せる */
-    }
-
+       軸（ハブ）は針の支点側＝左。リムは針の先端を囲む円弧 */
     #landscapeCommandCurve {
-        /* 円の中心＝時計の軸を右端から10px内側に置く（針の支点と一致） */
         position: absolute;
-        right: -125px;
+        left: -182px;           /* 円中心 x ≒ パネル左から18px、半径200で針先の外側を通す */
         top: 50%;
-        width: 270px;
-        height: 270px;
+        width: 400px;
+        height: 400px;
         transform: translateY(-50%);
-        border: 1px solid rgba(200,146,42,0.26);
+        border: 1px solid rgba(200,146,42,0.22);
         border-radius: 50%;
         pointer-events: none;
     }
@@ -2455,7 +2466,7 @@ html, body {
         content: "";
         position: absolute;
         inset: 12px;
-        border: 1px dashed rgba(200,146,42,0.14);
+        border: 1px dashed rgba(200,146,42,0.12);
         border-radius: 50%;
     }
 
@@ -2476,39 +2487,36 @@ html, body {
     #landscapeCommandList {
         position: relative;
         z-index: 2;
-        width: 132px;
-        max-height: calc(100dvh - 96px);
-        overflow: auto;
+        width: 158px;
+        max-height: 100%;
+        overflow: visible;
         display: grid;
         gap: 4px;
-        padding: 2px 4px 2px 2px;
-        scrollbar-width: none;
-    }
-
-    #landscapeCommandList::-webkit-scrollbar {
-        display: none;
+        padding: 2px 6px 2px 40px;   /* 左はハブぶんの余白 */
+        pointer-events: auto;
+        margin-right: 4px;
     }
 
     /* ── 時計の針コマンド（ヴァイオレット×ゴールド） ──
-       右端＝時計の軸側を支点に回転し、反時計回りの弧を描く。
+       左端＝時計の軸側を支点に回転し、上から下へ時計回りの弧を描く。
        transform（rotate・弧の膨らみ）は applyLandscapeRailArc() が指定する */
     .lsCommandBtn {
         position: relative;
         width: 104px;
         min-height: 30px;
-        padding: 6px 10px 7px 16px;
+        padding: 6px 16px 7px 10px;
         color: rgba(224,189,115,0.82);
         text-align: center;
         font-family: inherit;
         font-size: 12px;
         letter-spacing: 0.22em;
         text-indent: 0.22em;
-        background: linear-gradient(90deg, rgba(82,18,98,0.78), rgba(22,8,35,0.85));
+        background: linear-gradient(270deg, rgba(82,18,98,0.78), rgba(22,8,35,0.85));
         border: 1px solid rgba(200,146,42,0.32);
-        border-right-color: rgba(224,176,72,0.62);
+        border-left-color: rgba(224,176,72,0.62);
         box-shadow: 0 3px 8px rgba(0,0,0,0.50), inset 0 1px 0 rgba(255,232,160,0.08);
         cursor: pointer;
-        transform-origin: 100% 50%;   /* 針の支点＝時計の中心側 */
+        transform-origin: 0% 50%;   /* 針の支点＝時計の中心側（左） */
         -webkit-tap-highlight-color: transparent;
         touch-action: manipulation;
     }
@@ -2526,11 +2534,11 @@ html, body {
         text-indent: 0.12em;
     }
 
-    /* 針の先端（左端）の菱形 */
+    /* 針の先端（右端）の菱形 */
     .lsCommandBtn::before {
         content: "";
         position: absolute;
-        left: 5px;
+        right: 5px;
         top: 50%;
         width: 6px;
         height: 6px;
@@ -2575,8 +2583,8 @@ html, body {
     /* ── FE風 戦闘予測オーバーレイ ── */
     #lsForecast {
         position: absolute;
-        left: 162px;
-        right: 148px;
+        left: 170px;
+        right: 26px;
         bottom: 32px;
         z-index: 26;
         display: grid;

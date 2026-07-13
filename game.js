@@ -51,7 +51,8 @@ const landscapeBattleShell = document.getElementById("landscapeBattleShell");
 const landscapeBattlefield = document.getElementById("landscapeBattlefield");
 const landscapeUnitContent = document.getElementById("landscapeUnitContent");
 const landscapeUnitEmpty   = document.getElementById("landscapeUnitEmpty");
-const landscapeCommandList = document.getElementById("landscapeCommandList");
+const landscapeCommandList  = document.getElementById("landscapeCommandList");
+const landscapeCommandPanel = document.getElementById("landscapeCommandPanel");
 const landscapePhaseTitle  = document.getElementById("landscapePhaseTitle");
 const landscapeTurnChip    = document.getElementById("landscapeTurnChip");
 const landscapeHint        = document.getElementById("landscapeHint");
@@ -1005,8 +1006,9 @@ function sizeLandscapeBattleCanvas() {
         battleCanvas.style.top    = "";
         return;
     }
-    // 844 - 左右パネル(150+136) - gap/padding ≒ 524、390 - 上下帯 ≒ 300
-    const availW = 524, availH = 300;
+    // コマンドはモーダル型オーバーレイになったため、マップは左パネル以外を広く使える
+    // 844 - 左パネル150 - gap/padding ≒ 660、390 - 上下帯 ≒ 300
+    const availW = 650, availH = 300;
     const inset = 32; // battleGrid の上下左右 16px ずつ（セルを正方形に保つため差し引く）
     const ratio = GRID_COLS / GRID_ROWS;
     let innerH = availH - inset, innerW = innerH * ratio;
@@ -1090,16 +1092,6 @@ function renderLandscapeHeader() {
 }
 
 function getLandscapeCommands(unit) {
-    if (!unit || battleOver || turnPhase !== "ally" || unit.side !== "ally") {
-        return [
-            { label: "会話送り", disabled: true },
-            { label: "ログ", disabled: true },
-            { label: "セーブ", disabled: true },
-            { label: "ロード", disabled: true },
-            { label: "設定", disabled: true },
-        ];
-    }
-
     const commands = [];
     if (!unit.acted) commands.push({ label: "攻撃", active: actionState === "attacking" || actionState === "throwing" });
     if (!unit.acted && Object.keys(unit.spells || {}).length > 0) commands.push({ label: "魔法", active: actionState === "magic" });
@@ -1111,8 +1103,8 @@ function getLandscapeCommands(unit) {
 }
 
 /** レールのボタンを「時計の針」のような弧状に配置する。
- *  右端（時計の軸側）を支点に、中央から離れるほど針が傾き、
- *  全体が反時計回りの円弧を描く（タイムスリップ＝時計モチーフ） */
+ *  軸（ハブ）は左＝盤面側。各ボタンは左端を支点に回転する針で、
+ *  上から下へ 1時→3時→5時 と時計回りに掃く「)」型の弧を描く */
 function applyLandscapeRailArc() {
     if (!landscapeCommandList) return;
     const btns = [...landscapeCommandList.children];
@@ -1122,9 +1114,13 @@ function applyLandscapeRailArc() {
     btns.forEach((btn, i) => {
         const t = i - mid;                                    // 中央からの段数
         const rot = Math.max(-24, Math.min(24, t * 6.5));     // 針の傾き
-        const dx  = Math.abs(t) * 5;                          // 弧の膨らみ（中央が最も左）
+        const dx  = (mid - Math.abs(t)) * 5;                  // 弧の膨らみ（中央=3時が最も右）
         btn.style.transform = `translateX(${dx.toFixed(1)}px) rotate(${rot.toFixed(1)}deg)`;
     });
+}
+
+function setLandscapeRailVisible(visible) {
+    landscapeCommandPanel?.classList.toggle("railHidden", !visible);
 }
 
 function renderLandscapeCommandRail(unit = selectedUnit) {
@@ -1133,6 +1129,14 @@ function renderLandscapeCommandRail(unit = selectedUnit) {
         landscapeCommandList.innerHTML = "";
         return;
     }
+
+    // モーダル型：行動できるユニットを選んでいない間は針ごと隠す
+    if (!unit || battleOver || turnPhase !== "ally" || unit.side !== "ally") {
+        landscapeCommandList.innerHTML = "";
+        setLandscapeRailVisible(false);
+        return;
+    }
+    setLandscapeRailVisible(true);
 
     const commands = getLandscapeCommands(unit);
     landscapeCommandList.innerHTML = "";
@@ -1176,6 +1180,7 @@ function addLandscapeBackButton(unit) {
 
 function renderLandscapeSubCommandRail(unit, kind) {
     if (!landscapeCommandList || !unit) return;
+    setLandscapeRailVisible(true);
     landscapeCommandList.innerHTML = "";
 
     const addButton = (label, sub, onClick) => {
@@ -1298,6 +1303,7 @@ function renderLandscapeSubCommandRail(unit, kind) {
 function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
     if (!lsForecast) return;
     if (landscapeCommandList) landscapeCommandList.innerHTML = "";
+    setLandscapeRailVisible(false);   // 予測モーダル表示中は針を隠す
 
     const face = u => {
         const src = getPortraitSrc(u) || u.tokenImage || "";
