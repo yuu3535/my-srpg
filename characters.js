@@ -28,7 +28,13 @@ const CHARACTERS_DATA = [
         hp: 23, maxHp: 23,
         mp: 28, maxMp: 28,
 
-        str: 26, con: 23, dex: 22, pow: 28, edu: 24, int: 25, siz: 10,
+        str: { base: 16, gains: [3, 3, 2, 2] },
+        con: { base: 13, gains: [3, 1, 3, 3] },
+        dex: { base: 15, gains: [3, 2, 1, 1] },
+        pow: { base: 16, gains: [3, 3, 3, 3] },
+        edu: { base: 14, gains: [2, 3, 2, 3] },
+        int: { base: 14, gains: [3, 3, 3, 2] },
+        siz: 10,
         courage: 90, luck: 35,
 
         move: 3, attackRange: 1,
@@ -80,7 +86,13 @@ const CHARACTERS_DATA = [
         hp: 22, maxHp: 22,
         mp: 26, maxMp: 26,
 
-        str: 22, con: 20, dex: 23, pow: 26, edu: 24, int: 20, siz: 13,
+        str: { base: 14, gains: [3, 3, 2] },
+        con: { base: 13, gains: [2, 3, 2] },
+        dex: { base: 18, gains: [1, 3, 1] },
+        pow: { base: 18, gains: [3, 3, 2] },
+        edu: { base: 16, gains: [3, 3, 2] },
+        int: { base: 14, gains: [2, 2, 2] },
+        siz: 13,
         courage: 90, luck: 90,
 
         move: 3, attackRange: 1,
@@ -133,7 +145,13 @@ const CHARACTERS_DATA = [
         hp: 28, maxHp: 28,
         mp: 36, maxMp: 36,
 
-        str: 18, con: 29, dex: 36, pow: 36, edu: 28, int: 26, siz: 15,
+        str: { base: 12, gains: [1, 2, 2, 1] },
+        con: { base: 21, gains: [3, 1, 1, 3] },
+        dex: { base: 24, gains: [3, 3, 3, 3] },
+        pow: { base: 24, gains: [3, 3, 3, 3] },
+        edu: { base: 18, gains: [2, 3, 3, 2] },
+        int: { base: 16, gains: [2, 2, 3, 3] },
+        siz: 15,
         courage: 65, luck: 65,
 
         move: 3, attackRange: 1,
@@ -193,7 +211,13 @@ const CHARACTERS_DATA = [
         hp: 13, maxHp: 13,
         mp: 18, maxMp: 18,
 
-        str: 14, con: 13, dex: 18, pow: 18, edu: 16, int: 14, siz: 13,
+        str: { base: 14, gains: [3, 3, 2] },
+        con: { base: 13, gains: [2, 3, 2] },
+        dex: { base: 18, gains: [1, 3, 1] },
+        pow: { base: 18, gains: [3, 3, 2] },
+        edu: { base: 16, gains: [3, 3, 2] },
+        int: { base: 14, gains: [2, 2, 2] },
+        siz: 13,
         courage: 90, luck: 90,
 
         move: 3, attackRange: 1,
