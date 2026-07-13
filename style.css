@@ -2431,9 +2431,46 @@ html, body {
         min-width: 0;
     }
 
-    /* FE風プレート積みでは飾りカーブ線は使わない */
+    /* ── 時計盤のリムと軸 ──
+       コマンド群の右に大きな円弧（時計の縁）と中心軸を描き、
+       針状のボタンが盤面に沿って並ぶ構図にする */
+    #landscapeCommandPanel {
+        overflow: hidden;   /* リム円は列の中だけ見せる */
+    }
+
     #landscapeCommandCurve {
-        display: none;
+        /* 円の中心＝時計の軸を右端から10px内側に置く（針の支点と一致） */
+        position: absolute;
+        right: -125px;
+        top: 50%;
+        width: 270px;
+        height: 270px;
+        transform: translateY(-50%);
+        border: 1px solid rgba(200,146,42,0.26);
+        border-radius: 50%;
+        pointer-events: none;
+    }
+
+    #landscapeCommandCurve::before {
+        content: "";
+        position: absolute;
+        inset: 12px;
+        border: 1px dashed rgba(200,146,42,0.14);
+        border-radius: 50%;
+    }
+
+    /* 時計の軸（ハブ） */
+    #landscapeCommandCurve::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 9px;
+        height: 9px;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 30%, #ffe2a0, #c8922a 60%, #6b4a12);
+        box-shadow: 0 0 10px rgba(200,146,42,0.6);
     }
 
     #landscapeCommandList {
@@ -2452,32 +2489,26 @@ html, body {
         display: none;
     }
 
-    /* ── FE風 金属プレートコマンド ──
-       暗い青鋼のプラーク＋銀リム＋両端斜めのリボン形。
-       transform（skewX・カスケード）は applyLandscapeRailArc() が指定する */
+    /* ── 時計の針コマンド（ヴァイオレット×ゴールド） ──
+       右端＝時計の軸側を支点に回転し、反時計回りの弧を描く。
+       transform（rotate・弧の膨らみ）は applyLandscapeRailArc() が指定する */
     .lsCommandBtn {
         position: relative;
         width: 104px;
         min-height: 30px;
-        padding: 6px 8px 7px;
-        color: #ece9e2;
+        padding: 6px 10px 7px 16px;
+        color: rgba(224,189,115,0.82);
         text-align: center;
-        font-family: "Yu Mincho", "Hiragino Mincho ProN", "Noto Serif JP", serif;
+        font-family: inherit;
         font-size: 12px;
-        font-weight: 600;
-        letter-spacing: 0.30em;
-        text-indent: 0.30em;
-        text-shadow: 0 1px 3px rgba(0,0,0,0.85);
-        background:
-            radial-gradient(ellipse at 28% 22%, rgba(126,132,164,0.38), transparent 55%),
-            radial-gradient(ellipse at 74% 74%, rgba(92,98,130,0.30), transparent 60%),
-            linear-gradient(174deg, #3e4258 0%, #2b2e44 46%, #1e2033 100%);
-        border: 1px solid rgba(168,174,198,0.62);
-        box-shadow:
-            inset 0 0 0 1px rgba(16,18,30,0.85),
-            inset 0 1px 0 rgba(210,214,232,0.30),
-            0 3px 7px rgba(0,0,0,0.55);
+        letter-spacing: 0.22em;
+        text-indent: 0.22em;
+        background: linear-gradient(90deg, rgba(82,18,98,0.78), rgba(22,8,35,0.85));
+        border: 1px solid rgba(200,146,42,0.32);
+        border-right-color: rgba(224,176,72,0.62);
+        box-shadow: 0 3px 8px rgba(0,0,0,0.50), inset 0 1px 0 rgba(255,232,160,0.08);
         cursor: pointer;
+        transform-origin: 100% 50%;   /* 針の支点＝時計の中心側 */
         -webkit-tap-highlight-color: transparent;
         touch-action: manipulation;
     }
@@ -2485,44 +2516,35 @@ html, body {
     .lsCommandBtn span,
     .lsCommandBtn small {
         display: block;
-        transform: skewX(10deg) rotate(0.5deg);
     }
 
     .lsCommandBtn small {
         margin-top: 1px;
-        color: rgba(214,218,232,0.52);
+        color: rgba(224,189,115,0.45);
         font-size: 8px;
-        letter-spacing: 0.14em;
-        text-indent: 0.14em;
+        letter-spacing: 0.12em;
+        text-indent: 0.12em;
     }
 
-    /* 左端の金属鋲 */
+    /* 針の先端（左端）の菱形 */
     .lsCommandBtn::before {
         content: "";
         position: absolute;
-        left: 4px;
+        left: 5px;
         top: 50%;
-        width: 5px;
-        height: 5px;
-        transform: translateY(-50%);
-        border-radius: 50%;
-        background: radial-gradient(circle at 35% 30%, #e8ebf5, #8a90ac 55%, #3a3e54);
-        box-shadow: 0 1px 2px rgba(0,0,0,0.7);
+        width: 6px;
+        height: 6px;
+        transform: translateY(-50%) rotate(45deg);
+        background: rgba(22,8,35,0.9);
+        border: 1px solid rgba(224,176,72,0.55);
     }
 
     .lsCommandBtn.active,
     .lsCommandBtn:active {
-        color: #fffdf4;
-        border-color: rgba(244,240,220,0.95);
-        background:
-            radial-gradient(ellipse at 28% 22%, rgba(168,172,204,0.48), transparent 55%),
-            radial-gradient(ellipse at 74% 74%, rgba(120,126,160,0.36), transparent 60%),
-            linear-gradient(174deg, #4d5270 0%, #363a54 46%, #262940 100%);
-        box-shadow:
-            inset 0 0 0 1px rgba(16,18,30,0.85),
-            inset 0 1px 0 rgba(230,234,248,0.42),
-            0 0 10px rgba(236,238,255,0.38),
-            0 3px 7px rgba(0,0,0,0.55);
+        color: #ffe2a0;
+        background: linear-gradient(90deg, rgba(130,73,28,0.88), rgba(78,39,18,0.88));
+        border-color: rgba(224,176,72,0.75);
+        box-shadow: 0 0 12px rgba(200,146,42,0.45), 0 3px 8px rgba(0,0,0,0.50);
     }
 
     .lsCommandBtn:disabled {
@@ -2531,10 +2553,7 @@ html, body {
     }
 
     .lsCommandBtn.back {
-        color: rgba(226,222,214,0.75);
-        background:
-            radial-gradient(ellipse at 28% 22%, rgba(96,100,126,0.30), transparent 55%),
-            linear-gradient(174deg, #2d3042 0%, #202234 50%, #171928 100%);
+        background: rgba(8,6,18,0.75);
     }
 
     #landscapeHint {

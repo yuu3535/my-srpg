@@ -1110,13 +1110,20 @@ function getLandscapeCommands(unit) {
     return commands;
 }
 
-/** レールのボタンを FE 風カスケード配置にする（下の段ほど右へ流れ、わずかに傾く） */
+/** レールのボタンを「時計の針」のような弧状に配置する。
+ *  右端（時計の軸側）を支点に、中央から離れるほど針が傾き、
+ *  全体が反時計回りの円弧を描く（タイムスリップ＝時計モチーフ） */
 function applyLandscapeRailArc() {
     if (!landscapeCommandList) return;
     const btns = [...landscapeCommandList.children];
+    const n = btns.length;
+    if (!n) return;
+    const mid = (n - 1) / 2;
     btns.forEach((btn, i) => {
-        const off = Math.min(i, 6) * 3;
-        btn.style.transform = `translateX(${off.toFixed(1)}px) skewX(-10deg) rotate(-0.5deg)`;
+        const t = i - mid;                                    // 中央からの段数
+        const rot = Math.max(-24, Math.min(24, t * 6.5));     // 針の傾き
+        const dx  = Math.abs(t) * 5;                          // 弧の膨らみ（中央が最も左）
+        btn.style.transform = `translateX(${dx.toFixed(1)}px) rotate(${rot.toFixed(1)}deg)`;
     });
 }
 
