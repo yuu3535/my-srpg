@@ -1308,39 +1308,61 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
     if (landscapeCommandList) landscapeCommandList.innerHTML = "";
     setLandscapeRailVisible(false);   // 予測モーダル表示中は針を隠す
 
-    const face = u => {
+    // 戦闘後HPの予測（FE風の下段バーに使う）。
+    // effectDesc は通常攻撃でも常に入るため、ダメージ系かは effectType で判定する
+    const isDamage = !_vsAttack?.isMagic
+        || ["magicDamage", "break"].includes(_vsAttack?.spell?.effectType);
+    const dmgN = Number(pred.expDmg) || 0;
+    const ctrN = pred.canCounter ? (Number(pred.ctrExpDmg) || 0) : 0;
+    const defAfter = isDamage ? Math.max(0, target.hp - dmgN) : target.hp;
+    const atkAfter = Math.max(0, attacker.hp - ctrN);
+    const atkPct = attacker.maxHp ? atkAfter / attacker.maxHp * 100 : 0;
+    const defPct = target.maxHp   ? defAfter / target.maxHp   * 100 : 0;
+
+    const bust = (u, flip) => {
         const src = getPortraitSrc(u) || u.tokenImage || "";
-        return `<div class="lsFcFace" style="${src ? `background-image:url('${src}')` : ""}"></div>`;
+        return `<div class="lsFcBust${flip ? " flip" : ""}" style="${src ? `background-image:url('${src}')` : ""}"></div>`;
     };
-    const hpRow = u => {
-        const pct = u.maxHp ? Math.max(0, Math.min(100, u.hp / u.maxHp * 100)) : 0;
-        return `<div class="lsFcHp"><div class="lsFcHpBar"><i style="width:${pct}%"></i></div><b>${u.hp}/${u.maxHp}</b></div>`;
-    };
-    const sideClass = u => u.side === "ally" ? "ally" : "enemy";
+    const ctrWeapon = pred.canCounter ? (getAttackSkillVal(target).name || "反撃") : "─";
+    const dmgDisp = pred.effectDesc || dmgN;
 
     lsForecast.innerHTML = `
-        <div class="lsFcUnit ${sideClass(attacker)}">
-            ${face(attacker)}
-            <div class="lsFcInfo">
+        <div class="lsFcSide allySide">
+            ${bust(attacker, false)}
+            <div class="lsFcMeta">
                 <div class="lsFcName">${attacker.name}</div>
-                ${hpRow(attacker)}
+                <div class="lsFcClass">LV ${attacker.level}　${attacker.race || ""}</div>
+                <div class="lsFcWeaponTag">${actionLabel || "攻撃"}</div>
             </div>
         </div>
-        <div class="lsFcCenter">
-            <div class="lsFcAction">${actionLabel || "攻撃"}</div>
-            <div class="lsFcRow"><span>→ 命中 ${pred.hitRate}%</span><b>${pred.effectDesc || `~${pred.expDmg}`}</b></div>
-            <div class="lsFcCtr">${pred.canCounter ? "反撃あり" : "反撃なし"}</div>
-            <div class="lsFcRow${pred.canCounter ? "" : " muted"}"><span>← 命中 ${pred.canCounter ? `${pred.ctrHitRate}%` : "―"}</span><b>${pred.canCounter ? `~${pred.ctrExpDmg}` : "―"}</b></div>
-            <div class="lsFcBtns">
+        <div class="lsFcTable">
+            <div class="lsFcChipRow">
                 <button id="lsFcCancel">キャンセル</button>
                 <button id="lsFcConfirm">${_vsAttack?.isMagic ? `${_vsAttack.spell.name} 使用` : "攻撃実行"}</button>
             </div>
+            <div class="lsFcHead">
+                <span>威力</span><span>命中</span>
+                <b>${attacker.hp}　HP　${target.hp}</b>
+                <span>命中</span><span>威力</span>
+            </div>
+            <div class="lsFcVals">
+                <span>${dmgDisp}</span><span>${pred.hitRate}</span>
+                <b class="lsFcDmgMid">${isDamage ? `→ -${dmgN}` : `→ ${pred.effectDesc}`}　${pred.canCounter ? `-${ctrN} ←` : "反撃なし"}</b>
+                <span>${pred.canCounter ? pred.ctrHitRate : "─"}</span><span>${pred.canCounter ? ctrN : "─"}</span>
+            </div>
+            <div class="lsFcBars">
+                <div class="lsFcBar ally"><i style="width:${atkPct}%"></i></div>
+                <b class="lsFcAfter ally">${atkAfter}</b>
+                <b class="lsFcAfter enemy">${defAfter}</b>
+                <div class="lsFcBar enemy"><i style="width:${defPct}%"></i></div>
+            </div>
         </div>
-        <div class="lsFcUnit ${sideClass(target)}">
-            ${face(target)}
-            <div class="lsFcInfo">
+        <div class="lsFcSide enemySide">
+            ${bust(target, true)}
+            <div class="lsFcMeta">
                 <div class="lsFcName">${target.name}</div>
-                ${hpRow(target)}
+                <div class="lsFcClass">LV ${target.level}　${target.race || ""}</div>
+                <div class="lsFcWeaponTag">${ctrWeapon}</div>
             </div>
         </div>
     `;
