@@ -128,12 +128,12 @@
 
         .character {
             position: absolute;
-            bottom: -10px;
+            bottom: -118px;
             width: 28%;
-            height: 104%;
+            height: 130%;
             background-repeat: no-repeat;
             background-position: center bottom;
-            background-size: auto 104%;
+            background-size: auto 150%;
             filter: brightness(0.48) saturate(0.78);
             opacity: 0.76;
             transition: transform 0.25s ease, filter 0.25s ease, opacity 0.25s ease;
@@ -149,19 +149,19 @@
         .character.gunter {
             left: 1%;
             background-image: url("../立ち絵透過済み/ギュンター立ち絵_transparent.png");
-            background-size: auto 112%;
+            background-size: auto 168%;
         }
 
         .character.arshe {
             left: 34%;
             background-image: url("../立ち絵透過済み/アルシェ幼少期表情/生意気_transparent.png");
-            background-size: auto 96%;
+            background-size: auto 148%;
         }
 
         .character.karima {
             right: 4%;
             background-image: url("../立ち絵透過済み/幼少期カリマ1_transparent.png");
-            background-size: auto 96%;
+            background-size: auto 146%;
         }
 
         .focus-line {
@@ -176,7 +176,7 @@
 
         .dialogue-panel {
             position: absolute;
-            left: var(--safe-left);
+            left: calc(var(--safe-left) + 68px);
             right: calc(var(--safe-right) + 176px);
             bottom: 12px;
             min-height: 94px;
@@ -187,6 +187,20 @@
                 radial-gradient(circle at 8% 0%, rgba(200, 146, 42, 0.10), transparent 42%);
             border: 1px solid rgba(200, 146, 42, 0.32);
             box-shadow: inset 0 1px 0 rgba(255, 232, 160, 0.08);
+        }
+
+        .speaker-face {
+            position: absolute;
+            left: var(--safe-left);
+            bottom: 16px;
+            z-index: 10;
+            width: 74px;
+            height: 92px;
+            background:
+                linear-gradient(0deg, rgba(3, 4, 10, 0.65), transparent 46%),
+                url("../立ち絵透過済み/アルシェ幼少期表情/生意気_transparent.png") center 9% / 160% auto no-repeat;
+            border: 1px solid rgba(200, 146, 42, 0.42);
+            box-shadow: inset 0 1px 0 rgba(255, 232, 160, 0.08), 0 12px 18px rgba(0, 0, 0, 0.42);
         }
 
         .dialogue-panel::after {
@@ -318,11 +332,11 @@
 
         .choice-panel {
             position: absolute;
-            left: calc(var(--safe-left) + 18px);
-            top: 64px;
+            left: calc(var(--safe-left) + 84px);
+            bottom: 120px;
             z-index: 7;
-            width: min(320px, 30vw);
-            padding: 10px;
+            width: min(360px, 34vw);
+            padding: 8px;
             background: rgba(4, 5, 11, 0.70);
             border: 1px solid rgba(200, 146, 42, 0.20);
             box-shadow: inset 0 1px 0 rgba(255, 232, 160, 0.06);
@@ -388,31 +402,40 @@
             }
 
             .character {
-                height: 102%;
+                bottom: -112px;
+                height: 132%;
                 width: 30%;
             }
 
             .character.gunter {
                 left: -2%;
-                background-size: auto 116%;
+                background-size: auto 172%;
             }
 
             .character.arshe {
                 left: 33%;
-                background-size: auto 98%;
+                background-size: auto 150%;
             }
 
             .character.karima {
                 right: 0;
-                background-size: auto 98%;
+                background-size: auto 148%;
             }
 
             .dialogue-panel {
-                left: max(8px, env(safe-area-inset-left));
+                left: calc(max(8px, env(safe-area-inset-left)) + 58px);
                 right: calc(max(8px, env(safe-area-inset-right)) + 146px);
                 bottom: 7px;
                 min-height: 74px;
                 padding: 8px 12px 9px;
+            }
+
+            .speaker-face {
+                left: max(8px, env(safe-area-inset-left));
+                bottom: 9px;
+                width: 62px;
+                height: 78px;
+                background-size: 160% auto;
             }
 
             .speaker-row {
@@ -464,10 +487,10 @@
             }
 
             .choice-panel {
-                left: calc(max(8px, env(safe-area-inset-left)) + 10px);
-                top: 47px;
-                width: 220px;
-                padding: 7px;
+                left: calc(max(8px, env(safe-area-inset-left)) + 70px);
+                bottom: 86px;
+                width: 250px;
+                padding: 6px;
             }
 
             .choice-title {
@@ -540,6 +563,8 @@
                 <button class="command-btn"><span>設定</span></button>
             </nav>
         </aside>
+
+        <div class="speaker-face" aria-hidden="true"></div>
 
         <section class="dialogue-panel" aria-label="会話テキスト">
             <div class="speaker-row">
