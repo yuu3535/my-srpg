@@ -123,10 +123,12 @@
         }
 
         .unit-portrait {
-            height: 45%;
+            aspect-ratio: 209 / 309;
+            height: auto;
+            width: 100%;
             background:
                 linear-gradient(0deg, rgba(3, 4, 10, 0.74), transparent 42%),
-                url("../Character/カリマ　立ち絵 (2).png") center top / 148% auto no-repeat;
+                url("../Character/カリマ　立ち絵 (2).png") center 10% / 126% auto no-repeat;
             border-bottom: 1px solid rgba(200, 146, 42, 0.24);
         }
 
@@ -497,17 +499,18 @@
             }
 
             .unit-portrait {
-                height: 34%;
-                background-size: 118% auto;
-                background-position: center 7%;
+                aspect-ratio: 209 / 309;
+                height: auto;
+                background-size: 126% auto;
+                background-position: center 10%;
             }
 
             .unit-body {
-                padding: 6px 8px 7px;
+                padding: 5px 8px 6px;
             }
 
             .unit-name {
-                margin-bottom: 5px;
+                margin-bottom: 4px;
                 font-size: 11px;
                 letter-spacing: 0.10em;
             }
@@ -519,7 +522,7 @@
             .bar-row {
                 grid-template-columns: 22px minmax(0, 1fr) 31px;
                 gap: 5px;
-                margin: 4px 0;
+                margin: 3px 0;
                 font-size: 9px;
             }
 
@@ -528,14 +531,14 @@
             }
 
             .stat-grid {
-                gap: 3px 8px;
-                margin-top: 7px;
-                padding-top: 7px;
+                gap: 2px 8px;
+                margin-top: 6px;
+                padding-top: 6px;
                 font-size: 9px;
             }
 
             .prediction {
-                margin-top: 7px;
+                margin-top: 6px;
                 padding: 5px 6px;
                 font-size: 8.5px;
                 letter-spacing: 0.05em;
