@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>Landscape Scenario UI Prototype</title>
+    <style>
+        :root {
+            --gold: #c8922a;
+            --gold-line: rgba(224, 176, 72, 0.62);
+            --teal: #41c7b3;
+            --ink: #070911;
+            --panel: rgba(7, 8, 16, 0.82);
+            --panel-deep: rgba(4, 5, 11, 0.94);
+            --text: #e8d8b0;
+            --text-gold: #e0bd73;
+            --line: rgba(65, 199, 179, 0.26);
+            --safe-left: max(14px, env(safe-area-inset-left));
+            --safe-right: max(14px, env(safe-area-inset-right));
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            background: #0d0d0d;
+            color: var(--text);
+            font-family: "Noto Serif JP", "Yu Mincho", "Hiragino Mincho ProN", serif;
+        }
+
+        body {
+            display: grid;
+            place-items: center;
+        }
+
+        .scenario-shell {
+            position: relative;
+            width: 100vw;
+            height: 100dvh;
+            min-width: 0;
+            min-height: 0;
+            overflow: hidden;
+            background:
+                linear-gradient(90deg, rgba(5, 5, 10, 0.82), rgba(5, 5, 10, 0.12) 34%, rgba(5, 5, 10, 0.14) 66%, rgba(5, 5, 10, 0.86)),
+                linear-gradient(180deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.58)),
+                url("../背景/オルクス魔王城玉座の間.png") center / cover no-repeat;
+            border: 1px solid rgba(200, 146, 42, 0.28);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+        }
+
+        .scenario-shell::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 45% 40%, rgba(65, 199, 179, 0.08), transparent 34%),
+                linear-gradient(180deg, rgba(255, 210, 130, 0.04), rgba(0, 0, 0, 0.18));
+        }
+
+        .top-strip {
+            position: absolute;
+            left: var(--safe-left);
+            right: var(--safe-right);
+            top: 10px;
+            z-index: 8;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+
+        .chapter-title {
+            min-width: 252px;
+            padding: 8px 16px 9px;
+            color: #61dfcd;
+            letter-spacing: 0.18em;
+            font-size: 15px;
+            font-weight: 700;
+            background: linear-gradient(90deg, rgba(4, 6, 12, 0.88), rgba(4, 6, 12, 0.26));
+            border-left: 2px solid var(--teal);
+            box-shadow: inset 0 -1px 0 rgba(65, 199, 179, 0.18);
+        }
+
+        .scene-chip {
+            display: grid;
+            grid-template-columns: auto auto;
+            gap: 8px;
+            align-items: center;
+            padding: 6px 12px;
+            color: rgba(224, 189, 115, 0.86);
+            font-size: 10px;
+            letter-spacing: 0.12em;
+            background: rgba(4, 5, 11, 0.76);
+            border: 1px solid rgba(200, 146, 42, 0.24);
+        }
+
+        .stage {
+            position: absolute;
+            inset: 48px 188px 118px 18px;
+            border: 1px solid rgba(65, 199, 179, 0.18);
+            background:
+                linear-gradient(180deg, rgba(5, 12, 18, 0.10), rgba(5, 12, 18, 0.42)),
+                radial-gradient(circle at 48% 78%, rgba(200, 146, 42, 0.10), transparent 38%);
+            overflow: hidden;
+        }
+
+        .stage::after {
+            content: "ORCUS / ROYAL COMMAND";
+            position: absolute;
+            left: 12px;
+            bottom: 8px;
+            color: rgba(235, 205, 135, 0.48);
+            font-size: 9px;
+            letter-spacing: 0.18em;
+        }
+
+        .cast-layer {
+            position: absolute;
+            inset: 0;
+        }
+
+        .character {
+            position: absolute;
+            bottom: -10px;
+            width: 28%;
+            height: 104%;
+            background-repeat: no-repeat;
+            background-position: center bottom;
+            background-size: auto 104%;
+            filter: brightness(0.48) saturate(0.78);
+            opacity: 0.76;
+            transition: transform 0.25s ease, filter 0.25s ease, opacity 0.25s ease;
+        }
+
+        .character.active {
+            filter: brightness(1.04) saturate(1.05) drop-shadow(0 0 14px rgba(200, 146, 42, 0.22));
+            opacity: 1;
+            transform: translateY(-6px) scale(1.04);
+            z-index: 3;
+        }
+
+        .character.gunter {
+            left: 1%;
+            background-image: url("../立ち絵透過済み/ギュンター立ち絵_transparent.png");
+            background-size: auto 112%;
+        }
+
+        .character.arshe {
+            left: 34%;
+            background-image: url("../立ち絵透過済み/アルシェ幼少期表情/生意気_transparent.png");
+            background-size: auto 96%;
+        }
+
+        .character.karima {
+            right: 4%;
+            background-image: url("../立ち絵透過済み/幼少期カリマ1_transparent.png");
+            background-size: auto 96%;
+        }
+
+        .focus-line {
+            position: absolute;
+            left: 30%;
+            right: 18%;
+            bottom: 0;
+            height: 2px;
+            background: linear-gradient(90deg, rgba(65, 199, 179, 0), rgba(65, 199, 179, 0.70), rgba(200, 146, 42, 0));
+            opacity: 0.72;
+        }
+
+        .dialogue-panel {
+            position: absolute;
+            left: var(--safe-left);
+            right: calc(var(--safe-right) + 176px);
+            bottom: 12px;
+            min-height: 94px;
+            z-index: 9;
+            padding: 13px 18px 14px;
+            background:
+                linear-gradient(180deg, rgba(5, 6, 13, 0.76), rgba(4, 5, 11, 0.94)),
+                radial-gradient(circle at 8% 0%, rgba(200, 146, 42, 0.10), transparent 42%);
+            border: 1px solid rgba(200, 146, 42, 0.32);
+            box-shadow: inset 0 1px 0 rgba(255, 232, 160, 0.08);
+        }
+
+        .dialogue-panel::after {
+            content: "";
+            position: absolute;
+            right: 14px;
+            bottom: 12px;
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 7px solid rgba(224, 176, 72, 0.72);
+            animation: nextPulse 1.2s ease-in-out infinite;
+        }
+
+        @keyframes nextPulse {
+            0%, 100% { opacity: 0.95; transform: translateY(0); }
+            50% { opacity: 0.35; transform: translateY(3px); }
+        }
+
+        .speaker-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .speaker-name {
+            min-width: 120px;
+            padding-left: 10px;
+            color: #f0cf83;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            border-left: 3px solid rgba(200, 146, 42, 0.88);
+        }
+
+        .scene-location {
+            color: rgba(224, 189, 115, 0.52);
+            font-size: 9px;
+            letter-spacing: 0.16em;
+        }
+
+        .dialogue-text {
+            max-width: 78ch;
+            margin: 0;
+            color: var(--text);
+            font-size: 15px;
+            line-height: 1.72;
+            letter-spacing: 0.04em;
+        }
+
+        .command-rail {
+            position: absolute;
+            right: var(--safe-right);
+            top: 96px;
+            bottom: 86px;
+            z-index: 8;
+            width: 156px;
+            display: flex;
+            align-items: center;
+        }
+
+        .command-curve {
+            position: absolute;
+            top: -18px;
+            bottom: -18px;
+            left: -28px;
+            width: 74px;
+            border-left: 1px solid rgba(224, 176, 72, 0.34);
+            border-radius: 72% 0 0 72%;
+            pointer-events: none;
+        }
+
+        .command-list {
+            position: relative;
+            width: 146px;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .command-btn {
+            position: relative;
+            width: 146px;
+            height: 32px;
+            padding: 6px 9px 6px 16px;
+            color: rgba(235, 205, 135, 0.88);
+            background:
+                linear-gradient(90deg, rgba(62, 28, 72, 0.86), rgba(19, 12, 27, 0.88)),
+                rgba(7, 8, 16, 0.86);
+            border: 1px solid rgba(200, 146, 42, 0.30);
+            border-right-color: rgba(224, 176, 72, 0.58);
+            transform: skewY(-4deg);
+            font-family: inherit;
+            font-size: 12px;
+            letter-spacing: 0.12em;
+            text-align: left;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .command-btn span {
+            display: block;
+            transform: skewY(4deg);
+        }
+
+        .command-btn::before {
+            content: "";
+            position: absolute;
+            left: -8px;
+            top: 50%;
+            width: 14px;
+            height: 14px;
+            transform: translateY(-50%) rotate(45deg);
+            background: rgba(7, 8, 16, 0.96);
+            border-left: 1px solid rgba(200, 146, 42, 0.38);
+            border-bottom: 1px solid rgba(200, 146, 42, 0.38);
+        }
+
+        .command-btn.active,
+        .command-btn:active {
+            color: #fff1c2;
+            border-color: rgba(238, 198, 104, 0.82);
+            background: linear-gradient(90deg, rgba(126, 76, 34, 0.92), rgba(50, 20, 24, 0.92));
+            transform: skewY(-4deg) translateX(-4px);
+        }
+
+        .choice-panel {
+            position: absolute;
+            left: calc(var(--safe-left) + 18px);
+            top: 64px;
+            z-index: 7;
+            width: min(320px, 30vw);
+            padding: 10px;
+            background: rgba(4, 5, 11, 0.70);
+            border: 1px solid rgba(200, 146, 42, 0.20);
+            box-shadow: inset 0 1px 0 rgba(255, 232, 160, 0.06);
+        }
+
+        .choice-title {
+            margin-bottom: 7px;
+            color: rgba(224, 189, 115, 0.62);
+            font-size: 9px;
+            letter-spacing: 0.18em;
+        }
+
+        .choice-item {
+            display: block;
+            width: 100%;
+            margin-top: 6px;
+            padding: 8px 10px;
+            color: rgba(235, 205, 135, 0.88);
+            background: rgba(7, 8, 16, 0.72);
+            border: 1px solid rgba(200, 146, 42, 0.22);
+            font-family: inherit;
+            font-size: 11px;
+            text-align: left;
+            letter-spacing: 0.07em;
+        }
+
+        .choice-item.active {
+            color: #fff1c2;
+            border-color: rgba(238, 198, 104, 0.72);
+            background: rgba(96, 54, 27, 0.72);
+        }
+
+        .orientation-note {
+            display: none;
+        }
+
+        @media (orientation: landscape) and (max-height: 520px) {
+            .scenario-shell {
+                border: 0;
+                box-shadow: none;
+            }
+
+            .top-strip {
+                top: 6px;
+            }
+
+            .chapter-title {
+                min-width: 184px;
+                padding: 6px 12px 7px;
+                font-size: 13px;
+                letter-spacing: 0.15em;
+            }
+
+            .scene-chip {
+                padding: 5px 9px;
+                gap: 6px;
+                font-size: 9px;
+                letter-spacing: 0.09em;
+            }
+
+            .stage {
+                inset: 39px 152px 88px max(8px, env(safe-area-inset-left));
+            }
+
+            .character {
+                height: 102%;
+                width: 30%;
+            }
+
+            .character.gunter {
+                left: -2%;
+                background-size: auto 116%;
+            }
+
+            .character.arshe {
+                left: 33%;
+                background-size: auto 98%;
+            }
+
+            .character.karima {
+                right: 0;
+                background-size: auto 98%;
+            }
+
+            .dialogue-panel {
+                left: max(8px, env(safe-area-inset-left));
+                right: calc(max(8px, env(safe-area-inset-right)) + 146px);
+                bottom: 7px;
+                min-height: 74px;
+                padding: 8px 12px 9px;
+            }
+
+            .speaker-row {
+                gap: 8px;
+                margin-bottom: 4px;
+            }
+
+            .speaker-name {
+                min-width: 94px;
+                padding-left: 8px;
+                font-size: 12px;
+                letter-spacing: 0.12em;
+            }
+
+            .scene-location {
+                font-size: 8px;
+                letter-spacing: 0.12em;
+            }
+
+            .dialogue-text {
+                max-width: 70ch;
+                font-size: 12px;
+                line-height: 1.55;
+                letter-spacing: 0.03em;
+            }
+
+            .command-rail {
+                right: max(8px, env(safe-area-inset-right));
+                top: 78px;
+                bottom: 76px;
+                width: 132px;
+            }
+
+            .command-curve {
+                left: -24px;
+                width: 62px;
+            }
+
+            .command-list {
+                width: 126px;
+                gap: 5px;
+            }
+
+            .command-btn {
+                width: 126px;
+                height: 28px;
+                padding: 5px 8px 5px 14px;
+                font-size: 11px;
+            }
+
+            .choice-panel {
+                left: calc(max(8px, env(safe-area-inset-left)) + 10px);
+                top: 47px;
+                width: 220px;
+                padding: 7px;
+            }
+
+            .choice-title {
+                margin-bottom: 5px;
+                font-size: 8px;
+            }
+
+            .choice-item {
+                margin-top: 5px;
+                padding: 6px 8px;
+                font-size: 10px;
+            }
+        }
+
+        @media (orientation: portrait) {
+            .scenario-shell {
+                width: 100vw;
+                height: 100dvh;
+                display: grid;
+                place-items: center;
+                padding: 26px;
+            }
+
+            .scenario-shell > * {
+                display: none;
+            }
+
+            .orientation-note {
+                display: block;
+                max-width: 280px;
+                color: rgba(235, 205, 135, 0.86);
+                font-size: 13px;
+                line-height: 1.7;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="scenario-shell">
+        <div class="orientation-note">横画面シナリオUIのプロトタイプです。スマホを横向きにして確認します。</div>
+
+        <header class="top-strip">
+            <div class="chapter-title">プロローグ</div>
+            <div class="scene-chip"><span>ORCUS</span><span>SCENE 04</span></div>
+        </header>
+
+        <section class="stage" aria-label="横画面シナリオ舞台">
+            <div class="cast-layer">
+                <div class="character gunter"></div>
+                <div class="character arshe active"></div>
+                <div class="character karima"></div>
+                <div class="focus-line"></div>
+            </div>
+        </section>
+
+        <aside class="choice-panel" aria-label="選択肢プレビュー">
+            <div class="choice-title">CHOICE PREVIEW</div>
+            <button class="choice-item active">王子として振る舞う</button>
+            <button class="choice-item">カリマを気遣う</button>
+        </aside>
+
+        <aside class="command-rail">
+            <div class="command-curve"></div>
+            <nav class="command-list" aria-label="シナリオコマンド">
+                <button class="command-btn active"><span>会話送り</span></button>
+                <button class="command-btn"><span>ログ</span></button>
+                <button class="command-btn"><span>セーブ</span></button>
+                <button class="command-btn"><span>ロード</span></button>
+                <button class="command-btn"><span>設定</span></button>
+            </nav>
+        </aside>
+
+        <section class="dialogue-panel" aria-label="会話テキスト">
+            <div class="speaker-row">
+                <div class="speaker-name">アルシェ</div>
+                <div class="scene-location">ORCUS / ROYAL TRAINING HALL</div>
+            </div>
+            <p class="dialogue-text">長すぎないか？　途中で飽きなかったの？　……でも、今日の祝賀会のためなら少しくらい王子らしくしてやるよ。</p>
+        </section>
+    </main>
+</body>
+</html>
