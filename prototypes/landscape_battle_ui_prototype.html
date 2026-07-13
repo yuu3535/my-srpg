@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>Landscape Battle UI Prototype</title>
+    <style>
+        :root {
+            --gold: #c8922a;
+            --gold-soft: rgba(200, 146, 42, 0.38);
+            --gold-line: rgba(224, 176, 72, 0.62);
+            --teal: #41c7b3;
+            --red: #d75248;
+            --red-soft: rgba(215, 82, 72, 0.28);
+            --ink: #070911;
+            --panel: rgba(7, 8, 16, 0.84);
+            --panel-deep: rgba(4, 5, 11, 0.94);
+            --text: #e0bd73;
+            --text-soft: rgba(224, 189, 115, 0.68);
+            --line: rgba(65, 199, 179, 0.26);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            background: #0d0d0d;
+            color: var(--text);
+            font-family: "Noto Serif JP", "Yu Mincho", "Hiragino Mincho ProN", serif;
+        }
+
+        body {
+            display: grid;
+            place-items: center;
+        }
+
+        .prototype-shell {
+            position: relative;
+            width: min(100vw, calc(100dvh * 16 / 9));
+            height: min(100dvh, calc(100vw * 9 / 16));
+            min-width: 640px;
+            min-height: 360px;
+            overflow: hidden;
+            background:
+                linear-gradient(90deg, rgba(5, 5, 10, 0.86), rgba(5, 5, 10, 0.18) 34%, rgba(5, 5, 10, 0.18) 66%, rgba(5, 5, 10, 0.88)),
+                url("../背景/オルクス魔王城鍛錬場.png") center / cover no-repeat;
+            border: 1px solid rgba(200, 146, 42, 0.28);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+        }
+
+        .prototype-shell::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(circle at 42% 52%, rgba(65, 199, 179, 0.10), transparent 32%),
+                linear-gradient(180deg, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.48));
+        }
+
+        .top-strip {
+            position: absolute;
+            left: 18px;
+            right: 18px;
+            top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 8;
+            pointer-events: none;
+        }
+
+        .phase-title {
+            min-width: 220px;
+            padding: 8px 16px 9px;
+            color: #61dfcd;
+            letter-spacing: 0.18em;
+            font-size: 15px;
+            font-weight: 700;
+            background: linear-gradient(90deg, rgba(4, 6, 12, 0.88), rgba(4, 6, 12, 0.28));
+            border-left: 2px solid var(--teal);
+            box-shadow: inset 0 -1px 0 rgba(65, 199, 179, 0.18);
+        }
+
+        .turn-chip {
+            display: grid;
+            grid-template-columns: auto auto;
+            gap: 8px;
+            align-items: center;
+            padding: 6px 12px;
+            color: rgba(224, 189, 115, 0.86);
+            font-size: 10px;
+            letter-spacing: 0.12em;
+            background: rgba(4, 5, 11, 0.76);
+            border: 1px solid rgba(200, 146, 42, 0.24);
+        }
+
+        .main-layout {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: 210px minmax(0, 1fr) 176px;
+            gap: 10px;
+            padding: 48px 14px 12px;
+        }
+
+        .unit-panel {
+            position: relative;
+            overflow: hidden;
+            background:
+                linear-gradient(180deg, rgba(7, 8, 16, 0.94), rgba(3, 4, 10, 0.90)),
+                radial-gradient(circle at 20% 0%, rgba(200, 146, 42, 0.10), transparent 45%);
+            border: 1px solid rgba(200, 146, 42, 0.26);
+            box-shadow: inset 0 1px 0 rgba(255, 232, 160, 0.08);
+        }
+
+        .unit-portrait {
+            height: 45%;
+            background:
+                linear-gradient(0deg, rgba(3, 4, 10, 0.74), transparent 42%),
+                url("../Character/カリマ　立ち絵 (2).png") center top / 148% auto no-repeat;
+            border-bottom: 1px solid rgba(200, 146, 42, 0.24);
+        }
+
+        .unit-body {
+            padding: 8px 10px 10px;
+        }
+
+        .unit-name {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 8px;
+            color: #f0cf83;
+            font-size: 13px;
+            letter-spacing: 0.12em;
+            font-weight: 700;
+        }
+
+        .unit-name span {
+            color: rgba(224, 189, 115, 0.56);
+            font-size: 9px;
+            letter-spacing: 0.1em;
+        }
+
+        .bar-row {
+            display: grid;
+            grid-template-columns: 24px minmax(0, 1fr) 34px;
+            gap: 6px;
+            align-items: center;
+            margin: 6px 0;
+            font-size: 10px;
+            color: rgba(224, 189, 115, 0.52);
+        }
+
+        .bar {
+            height: 6px;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.52);
+            border-radius: 4px;
+        }
+
+        .bar i {
+            display: block;
+            height: 100%;
+            border-radius: inherit;
+        }
+
+        .bar.hp i {
+            width: 92%;
+            background: linear-gradient(90deg, #2fbf72, #59e48c);
+        }
+
+        .bar.mp i {
+            width: 78%;
+            background: linear-gradient(90deg, #2e73c7, #68a9ee);
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px 10px;
+            margin-top: 10px;
+            padding-top: 9px;
+            border-top: 1px solid rgba(200, 146, 42, 0.16);
+            font-size: 10px;
+        }
+
+        .stat-grid b {
+            color: rgba(224, 189, 115, 0.42);
+            font-weight: 400;
+        }
+
+        .stat-grid span {
+            color: #e0bd73;
+            font-weight: 700;
+        }
+
+        .prediction {
+            margin-top: 10px;
+            padding: 7px 8px;
+            background: linear-gradient(90deg, rgba(130, 36, 32, 0.34), rgba(130, 36, 32, 0.07));
+            border-left: 3px solid rgba(238, 132, 106, 0.78);
+            font-size: 10px;
+            color: #f3c09f;
+            letter-spacing: 0.08em;
+        }
+
+        .battlefield {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(65, 199, 179, 0.24);
+            background:
+                linear-gradient(180deg, rgba(5, 12, 18, 0.18), rgba(5, 12, 18, 0.52)),
+                rgba(4, 6, 12, 0.22);
+            box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.50), 0 0 28px rgba(42, 20, 66, 0.40);
+        }
+
+        .battlefield::after {
+            content: "ORCUS / DECLARATION BATTLE";
+            position: absolute;
+            left: 12px;
+            bottom: 8px;
+            color: rgba(235, 205, 135, 0.50);
+            font-size: 8px;
+            letter-spacing: 0.18em;
+            pointer-events: none;
+        }
+
+        .grid-plane {
+            position: absolute;
+            left: 50%;
+            top: 52%;
+            width: min(76%, 560px);
+            aspect-ratio: 10 / 7;
+            transform: translate(-50%, -50%) perspective(760px) rotateX(54deg) rotateZ(-8deg);
+            transform-origin: center;
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(7, 1fr);
+            border: 1px solid rgba(65, 199, 179, 0.38);
+            box-shadow: 0 28px 28px rgba(0, 0, 0, 0.38);
+        }
+
+        .cell {
+            border: 1px solid rgba(65, 199, 179, 0.20);
+            background: rgba(5, 9, 14, 0.10);
+        }
+
+        .cell.threat {
+            background: rgba(190, 48, 58, 0.22);
+            border-color: rgba(238, 132, 106, 0.70);
+            animation: pulseCell 1.3s ease-in-out infinite;
+        }
+
+        .cell.move {
+            background: rgba(229, 137, 78, 0.16);
+            border-color: rgba(229, 137, 78, 0.48);
+        }
+
+        @keyframes pulseCell {
+            0%, 100% { box-shadow: inset 0 0 2px rgba(238, 132, 106, 0.18); }
+            50% { box-shadow: inset 0 0 15px rgba(238, 132, 106, 0.62); }
+        }
+
+        .unit {
+            position: absolute;
+            width: 34px;
+            height: 34px;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            border: 2px solid currentColor;
+            background: rgba(4, 6, 12, 0.88);
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.55), inset 0 0 0 2px rgba(255, 255, 255, 0.05);
+            z-index: 5;
+        }
+
+        .unit.ally {
+            color: #62e3cf;
+        }
+
+        .unit.enemy {
+            color: #ee806c;
+        }
+
+        .unit.target {
+            box-shadow:
+                0 8px 12px rgba(0, 0, 0, 0.55),
+                0 0 0 8px rgba(215, 82, 72, 0.12),
+                0 0 0 14px rgba(215, 82, 72, 0.06);
+        }
+
+        .u-a { left: 42%; top: 62%; }
+        .u-k { left: 36%; top: 72%; }
+        .u-r { left: 28%; top: 56%; }
+        .u-e1 { left: 56%; top: 34%; }
+        .u-e2 { left: 69%; top: 44%; }
+        .u-e3 { left: 62%; top: 59%; }
+
+        .laser {
+            position: absolute;
+            height: 3px;
+            transform-origin: left center;
+            z-index: 4;
+            background: linear-gradient(90deg, rgba(255, 90, 74, 0), rgba(255, 90, 74, 0.95), rgba(255, 210, 170, 0.80));
+            box-shadow: 0 0 10px rgba(255, 80, 62, 0.72);
+            animation: laserBreath 1.25s ease-in-out infinite;
+        }
+
+        .laser.one {
+            left: 56%;
+            top: 34%;
+            width: 176px;
+            transform: rotate(142deg);
+        }
+
+        .laser.two {
+            left: 69%;
+            top: 44%;
+            width: 110px;
+            transform: rotate(166deg);
+            opacity: 0.68;
+        }
+
+        @keyframes laserBreath {
+            0%, 100% { opacity: 0.54; }
+            50% { opacity: 1; }
+        }
+
+        .target-label {
+            position: absolute;
+            left: 37%;
+            top: 51%;
+            z-index: 6;
+            padding: 3px 7px;
+            color: #ffd1ba;
+            font-size: 9px;
+            letter-spacing: 0.12em;
+            background: rgba(24, 9, 10, 0.84);
+            border: 1px solid rgba(238, 132, 106, 0.66);
+        }
+
+        .command-panel {
+            position: relative;
+            padding: 10px 0 10px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .command-curve {
+            position: absolute;
+            top: 8px;
+            bottom: 8px;
+            left: -34px;
+            width: 82px;
+            border-left: 1px solid rgba(224, 176, 72, 0.35);
+            border-radius: 70% 0 0 70%;
+            pointer-events: none;
+        }
+
+        .command-list {
+            position: relative;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .command-btn {
+            position: relative;
+            min-height: 34px;
+            padding: 7px 12px 7px 18px;
+            color: rgba(235, 205, 135, 0.88);
+            background:
+                linear-gradient(90deg, rgba(62, 28, 72, 0.88), rgba(19, 12, 27, 0.90)),
+                rgba(7, 8, 16, 0.86);
+            border: 1px solid rgba(200, 146, 42, 0.30);
+            border-right-color: rgba(224, 176, 72, 0.58);
+            transform: skewY(-4deg);
+            font-family: inherit;
+            font-size: 13px;
+            letter-spacing: 0.12em;
+            text-align: left;
+            cursor: pointer;
+            transition: transform 0.12s, border-color 0.12s, background 0.12s;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .command-btn span {
+            display: block;
+            transform: skewY(4deg);
+        }
+
+        .command-btn::before {
+            content: "";
+            position: absolute;
+            left: -8px;
+            top: 50%;
+            width: 14px;
+            height: 14px;
+            transform: translateY(-50%) rotate(45deg);
+            background: rgba(7, 8, 16, 0.96);
+            border-left: 1px solid rgba(200, 146, 42, 0.38);
+            border-bottom: 1px solid rgba(200, 146, 42, 0.38);
+        }
+
+        .command-btn.active,
+        .command-btn:active {
+            color: #fff1c2;
+            border-color: rgba(238, 198, 104, 0.82);
+            background: linear-gradient(90deg, rgba(126, 76, 34, 0.92), rgba(50, 20, 24, 0.92));
+            transform: skewY(-4deg) translateX(-4px);
+        }
+
+        .mini-log {
+            position: absolute;
+            left: 224px;
+            right: 190px;
+            bottom: 15px;
+            z-index: 7;
+            padding: 7px 12px;
+            color: rgba(235, 205, 135, 0.86);
+            font-size: 10px;
+            letter-spacing: 0.06em;
+            background: rgba(4, 5, 11, 0.72);
+            border-top: 1px solid rgba(200, 146, 42, 0.25);
+            border-bottom: 1px solid rgba(200, 146, 42, 0.18);
+        }
+
+        .orientation-note {
+            display: none;
+        }
+
+        @media (orientation: portrait) {
+            .prototype-shell {
+                width: 100vw;
+                height: 100dvh;
+                min-width: 0;
+                min-height: 0;
+                display: grid;
+                place-items: center;
+            }
+
+            .prototype-shell > * {
+                display: none;
+            }
+
+            .orientation-note {
+                display: block;
+                padding: 18px;
+                max-width: 320px;
+                color: rgba(235, 205, 135, 0.88);
+                background: rgba(4, 5, 11, 0.90);
+                border: 1px solid rgba(200, 146, 42, 0.26);
+                font-size: 13px;
+                line-height: 1.7;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="prototype-shell">
+        <div class="orientation-note">横画面戦闘UIのプロトタイプです。スマホを横向きにして確認します。</div>
+
+        <header class="top-strip">
+            <div class="phase-title">味方フェーズ</div>
+            <div class="turn-chip">
+                <span>TURN 2</span>
+                <span>敵行動予告 3</span>
+            </div>
+        </header>
+
+        <section class="main-layout" aria-label="横画面戦闘UIプロトタイプ">
+            <aside class="unit-panel">
+                <div class="unit-portrait"></div>
+                <div class="unit-body">
+                    <div class="unit-name">カリマ <span>LV 1</span></div>
+                    <div class="bar-row">
+                        <span>HP</span>
+                        <div class="bar hp"><i></i></div>
+                        <strong>12/13</strong>
+                    </div>
+                    <div class="bar-row">
+                        <span>MP</span>
+                        <div class="bar mp"><i></i></div>
+                        <strong>14/18</strong>
+                    </div>
+                    <div class="stat-grid">
+                        <b>物理</b><span>+1d4</span>
+                        <b>魔力</b><span>+1d4</span>
+                        <b>移動</b><span>3マス</span>
+                        <b>状態</b><span>通常</span>
+                    </div>
+                    <div class="prediction">TARGET: ギュンターが次ターン攻撃予定</div>
+                </div>
+            </aside>
+
+            <section class="battlefield">
+                <div class="grid-plane" aria-hidden="true">
+                    <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+                    <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell move"></div><div class="cell move"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+                    <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell move"></div><div class="cell move"></div><div class="cell move"></div><div class="cell move"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+                    <div class="cell"></div><div class="cell"></div><div class="cell move"></div><div class="cell threat"></div><div class="cell threat"></div><div class="cell move"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+                    <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell threat"></div><div class="cell threat"></div><div class="cell move"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+                    <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell move"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+                    <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+                </div>
+
+                <div class="laser one"></div>
+                <div class="laser two"></div>
+                <div class="target-label">TARGET</div>
+
+                <div class="unit ally u-a">AL</div>
+                <div class="unit ally target u-k">KA</div>
+                <div class="unit ally u-r">RG</div>
+                <div class="unit enemy u-e1">ATK</div>
+                <div class="unit enemy u-e2">MOV</div>
+                <div class="unit enemy u-e3">STN</div>
+            </section>
+
+            <aside class="command-panel">
+                <div class="command-curve"></div>
+                <nav class="command-list" aria-label="戦闘コマンド">
+                    <button class="command-btn active"><span>攻撃</span></button>
+                    <button class="command-btn"><span>戦技</span></button>
+                    <button class="command-btn"><span>計略</span></button>
+                    <button class="command-btn"><span>持ち物</span></button>
+                    <button class="command-btn"><span>待機</span></button>
+                    <button class="command-btn"><span>詳細</span></button>
+                </nav>
+            </aside>
+        </section>
+
+        <div class="mini-log">敵の宣言を確認し、攻撃線から外れるか、移動先を塞いで行動を崩せます。</div>
+    </main>
+</body>
+</html>
