@@ -239,16 +239,17 @@
         .grid-plane {
             position: absolute;
             left: 50%;
-            top: 52%;
-            width: min(76%, 560px);
+            top: 50%;
+            width: min(88%, calc((100dvh - 112px) * 10 / 7), 600px);
             aspect-ratio: 10 / 7;
-            transform: translate(-50%, -50%) perspective(760px) rotateX(54deg) rotateZ(-8deg);
+            transform: translate(-50%, -50%);
             transform-origin: center;
             display: grid;
             grid-template-columns: repeat(10, 1fr);
             grid-template-rows: repeat(7, 1fr);
             border: 1px solid rgba(65, 199, 179, 0.38);
-            box-shadow: 0 28px 28px rgba(0, 0, 0, 0.38);
+            background: rgba(3, 8, 13, 0.32);
+            box-shadow: 0 18px 22px rgba(0, 0, 0, 0.36), inset 0 0 24px rgba(65, 199, 179, 0.06);
         }
 
         .cell {
@@ -274,8 +275,10 @@
 
         .unit {
             position: absolute;
-            width: 34px;
-            height: 34px;
+            left: calc((var(--col) - 0.5) * 10%);
+            top: calc((var(--row) - 0.5) * 14.285714%);
+            width: 32px;
+            height: 32px;
             transform: translate(-50%, -50%);
             border-radius: 50%;
             display: grid;
@@ -304,36 +307,35 @@
                 0 0 0 14px rgba(215, 82, 72, 0.06);
         }
 
-        .u-a { left: 42%; top: 62%; }
-        .u-k { left: 36%; top: 72%; }
-        .u-r { left: 28%; top: 56%; }
-        .u-e1 { left: 56%; top: 34%; }
-        .u-e2 { left: 69%; top: 44%; }
-        .u-e3 { left: 62%; top: 59%; }
+        .u-a { --col: 5; --row: 5; }
+        .u-k { --col: 4; --row: 6; }
+        .u-r { --col: 3; --row: 4; }
+        .u-e1 { --col: 6; --row: 2; }
+        .u-e2 { --col: 8; --row: 3; }
+        .u-e3 { --col: 7; --row: 5; }
 
-        .laser {
+        .intent-layer {
             position: absolute;
-            height: 3px;
-            transform-origin: left center;
+            inset: 0;
             z-index: 4;
-            background: linear-gradient(90deg, rgba(255, 90, 74, 0), rgba(255, 90, 74, 0.95), rgba(255, 210, 170, 0.80));
-            box-shadow: 0 0 10px rgba(255, 80, 62, 0.72);
+            overflow: visible;
+            pointer-events: none;
+        }
+
+        .intent-curve {
+            fill: none;
+            stroke: rgba(255, 112, 86, 0.84);
+            stroke-width: 7;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            filter: drop-shadow(0 0 7px rgba(255, 90, 74, 0.70));
             animation: laserBreath 1.25s ease-in-out infinite;
         }
 
-        .laser.one {
-            left: 56%;
-            top: 34%;
-            width: 176px;
-            transform: rotate(142deg);
-        }
-
-        .laser.two {
-            left: 69%;
-            top: 44%;
-            width: 110px;
-            transform: rotate(166deg);
+        .intent-curve.secondary {
             opacity: 0.68;
+            stroke-width: 5;
+            stroke: rgba(255, 142, 104, 0.72);
         }
 
         @keyframes laserBreath {
@@ -343,8 +345,9 @@
 
         .target-label {
             position: absolute;
-            left: 37%;
-            top: 51%;
+            left: calc((5 - 0.5) * 10%);
+            top: calc((4 - 0.5) * 14.285714%);
+            transform: translate(-50%, -50%);
             z-index: 6;
             padding: 3px 7px;
             color: #ffd1ba;
@@ -360,6 +363,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            min-width: 0;
         }
 
         .command-curve {
@@ -375,7 +379,7 @@
 
         .command-list {
             position: relative;
-            width: 100%;
+            width: 176px;
             display: flex;
             flex-direction: column;
             gap: 7px;
@@ -383,6 +387,8 @@
 
         .command-btn {
             position: relative;
+            width: 176px;
+            height: 34px;
             min-height: 34px;
             padding: 7px 12px 7px 18px;
             color: rgba(235, 205, 135, 0.88);
@@ -400,6 +406,7 @@
             transition: transform 0.12s, border-color 0.12s, background 0.12s;
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
+            box-sizing: border-box;
         }
 
         .command-btn span {
@@ -480,8 +487,8 @@
             }
 
             .main-layout {
-                grid-template-columns: clamp(156px, 25vw, 190px) minmax(0, 1fr) clamp(138px, 21vw, 158px);
-                gap: 7px;
+                grid-template-columns: 170px minmax(0, 1fr) 142px;
+                gap: 6px;
                 padding:
                     39px
                     max(8px, env(safe-area-inset-right))
@@ -535,13 +542,13 @@
             }
 
             .grid-plane {
-                top: 51%;
-                width: min(88%, 510px);
+                top: 50%;
+                width: min(96%, calc((100dvh - 76px) * 10 / 7), 520px);
             }
 
             .unit {
-                width: 29px;
-                height: 29px;
+                width: 28px;
+                height: 28px;
                 font-size: 8px;
                 border-width: 1.5px;
             }
@@ -551,12 +558,8 @@
                 font-size: 8px;
             }
 
-            .laser.one {
-                width: 142px;
-            }
-
-            .laser.two {
-                width: 92px;
+            .intent-curve {
+                stroke-width: 6;
             }
 
             .command-panel {
@@ -571,12 +574,15 @@
             }
 
             .command-list {
+                width: 136px;
                 gap: 5px;
             }
 
             .command-btn {
+                width: 136px;
+                height: 28px;
                 min-height: 28px;
-                padding: 5px 9px 5px 15px;
+                padding: 5px 8px 5px 14px;
                 font-size: 11px;
                 letter-spacing: 0.10em;
             }
@@ -588,8 +594,8 @@
             }
 
             .mini-log {
-                left: calc(max(8px, env(safe-area-inset-left)) + clamp(156px, 25vw, 190px) + 10px);
-                right: calc(max(8px, env(safe-area-inset-right)) + clamp(138px, 21vw, 158px) + 10px);
+                left: calc(max(8px, env(safe-area-inset-left)) + 180px);
+                right: calc(max(8px, env(safe-area-inset-right)) + 152px);
                 bottom: 9px;
                 padding: 5px 9px;
                 font-size: 8.5px;
@@ -671,18 +677,19 @@
                     <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell threat"></div><div class="cell threat"></div><div class="cell move"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
                     <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell move"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
                     <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+
+                    <svg class="intent-layer" viewBox="0 0 1000 700" preserveAspectRatio="none" aria-hidden="true">
+                        <path class="intent-curve" d="M550 150 C640 250 560 300 450 350" />
+                        <path class="intent-curve secondary" d="M750 250 C650 260 610 350 450 350" />
+                    </svg>
+                    <div class="target-label">TARGET</div>
+                    <div class="unit ally u-a">AL</div>
+                    <div class="unit ally target u-k">KA</div>
+                    <div class="unit ally u-r">RG</div>
+                    <div class="unit enemy u-e1">ATK</div>
+                    <div class="unit enemy u-e2">MOV</div>
+                    <div class="unit enemy u-e3">STN</div>
                 </div>
-
-                <div class="laser one"></div>
-                <div class="laser two"></div>
-                <div class="target-label">TARGET</div>
-
-                <div class="unit ally u-a">AL</div>
-                <div class="unit ally target u-k">KA</div>
-                <div class="unit ally u-r">RG</div>
-                <div class="unit enemy u-e1">ATK</div>
-                <div class="unit enemy u-e2">MOV</div>
-                <div class="unit enemy u-e3">STN</div>
             </section>
 
             <aside class="command-panel">
