@@ -1110,15 +1110,13 @@ function getLandscapeCommands(unit) {
     return commands;
 }
 
-/** レールのボタンを円弧に沿って配置する（中央ほど内側=左へ張り出す） */
+/** レールのボタンを FE 風カスケード配置にする（下の段ほど右へ流れ、わずかに傾く） */
 function applyLandscapeRailArc() {
     if (!landscapeCommandList) return;
     const btns = [...landscapeCommandList.children];
-    const n = btns.length;
     btns.forEach((btn, i) => {
-        const t = n <= 1 ? 0.5 : i / (n - 1);
-        const off = -Math.sin(t * Math.PI) * 16;
-        btn.style.transform = `skewY(-3deg) translateX(${off.toFixed(1)}px)`;
+        const off = Math.min(i, 6) * 3;
+        btn.style.transform = `translateX(${off.toFixed(1)}px) skewX(-10deg) rotate(-0.5deg)`;
     });
 }
 

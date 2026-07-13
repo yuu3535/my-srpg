@@ -2431,26 +2431,20 @@ html, body {
         min-width: 0;
     }
 
+    /* FE風プレート積みでは飾りカーブ線は使わない */
     #landscapeCommandCurve {
-        position: absolute;
-        left: -28px;
-        top: 18px;
-        bottom: 18px;
-        width: 68px;
-        border-left: 1px solid rgba(224,176,72,0.35);
-        border-radius: 50% 0 0 50%;
-        pointer-events: none;
+        display: none;
     }
 
     #landscapeCommandList {
         position: relative;
         z-index: 2;
-        width: 130px;
+        width: 132px;
         max-height: calc(100dvh - 96px);
         overflow: auto;
         display: grid;
-        gap: 6px;
-        padding: 2px 0;
+        gap: 4px;
+        padding: 2px 4px 2px 2px;
         scrollbar-width: none;
     }
 
@@ -2458,20 +2452,31 @@ html, body {
         display: none;
     }
 
+    /* ── FE風 金属プレートコマンド ──
+       暗い青鋼のプラーク＋銀リム＋両端斜めのリボン形。
+       transform（skewX・カスケード）は applyLandscapeRailArc() が指定する */
     .lsCommandBtn {
         position: relative;
-        width: 130px;
-        min-height: 28px;
-        padding: 5px 12px 6px 15px;
-        color: rgba(224,189,115,0.78);
-        text-align: left;
-        font-family: inherit;
+        width: 104px;
+        min-height: 30px;
+        padding: 6px 8px 7px;
+        color: #ece9e2;
+        text-align: center;
+        font-family: "Yu Mincho", "Hiragino Mincho ProN", "Noto Serif JP", serif;
         font-size: 12px;
-        letter-spacing: 0.08em;
-        background: linear-gradient(90deg, rgba(82,18,98,0.76), rgba(22,8,35,0.82));
-        border: 1px solid rgba(200,146,42,0.30);
-        border-right-color: rgba(224,176,72,0.58);
-        transform: skewY(-3deg);
+        font-weight: 600;
+        letter-spacing: 0.30em;
+        text-indent: 0.30em;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.85);
+        background:
+            radial-gradient(ellipse at 28% 22%, rgba(126,132,164,0.38), transparent 55%),
+            radial-gradient(ellipse at 74% 74%, rgba(92,98,130,0.30), transparent 60%),
+            linear-gradient(174deg, #3e4258 0%, #2b2e44 46%, #1e2033 100%);
+        border: 1px solid rgba(168,174,198,0.62);
+        box-shadow:
+            inset 0 0 0 1px rgba(16,18,30,0.85),
+            inset 0 1px 0 rgba(210,214,232,0.30),
+            0 3px 7px rgba(0,0,0,0.55);
         cursor: pointer;
         -webkit-tap-highlight-color: transparent;
         touch-action: manipulation;
@@ -2480,33 +2485,44 @@ html, body {
     .lsCommandBtn span,
     .lsCommandBtn small {
         display: block;
-        transform: skewY(3deg);
+        transform: skewX(10deg) rotate(0.5deg);
     }
 
     .lsCommandBtn small {
-        margin-top: 2px;
-        color: rgba(224,189,115,0.45);
+        margin-top: 1px;
+        color: rgba(214,218,232,0.52);
         font-size: 8px;
+        letter-spacing: 0.14em;
+        text-indent: 0.14em;
     }
 
+    /* 左端の金属鋲 */
     .lsCommandBtn::before {
         content: "";
         position: absolute;
-        left: -7px;
+        left: 4px;
         top: 50%;
-        width: 12px;
-        height: 12px;
-        background: #050610;
-        border-left: 1px solid rgba(200,146,42,0.38);
-        border-bottom: 1px solid rgba(200,146,42,0.38);
-        transform: translateY(-50%) rotate(45deg);
+        width: 5px;
+        height: 5px;
+        transform: translateY(-50%);
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 30%, #e8ebf5, #8a90ac 55%, #3a3e54);
+        box-shadow: 0 1px 2px rgba(0,0,0,0.7);
     }
 
     .lsCommandBtn.active,
     .lsCommandBtn:active {
-        color: #ffe2a0;
-        background: linear-gradient(90deg, rgba(130,73,28,0.88), rgba(78,39,18,0.88));
-        border-color: rgba(224,176,72,0.72);
+        color: #fffdf4;
+        border-color: rgba(244,240,220,0.95);
+        background:
+            radial-gradient(ellipse at 28% 22%, rgba(168,172,204,0.48), transparent 55%),
+            radial-gradient(ellipse at 74% 74%, rgba(120,126,160,0.36), transparent 60%),
+            linear-gradient(174deg, #4d5270 0%, #363a54 46%, #262940 100%);
+        box-shadow:
+            inset 0 0 0 1px rgba(16,18,30,0.85),
+            inset 0 1px 0 rgba(230,234,248,0.42),
+            0 0 10px rgba(236,238,255,0.38),
+            0 3px 7px rgba(0,0,0,0.55);
     }
 
     .lsCommandBtn:disabled {
@@ -2515,7 +2531,10 @@ html, body {
     }
 
     .lsCommandBtn.back {
-        background: rgba(8,6,18,0.72);
+        color: rgba(226,222,214,0.75);
+        background:
+            radial-gradient(ellipse at 28% 22%, rgba(96,100,126,0.30), transparent 55%),
+            linear-gradient(174deg, #2d3042 0%, #202234 50%, #171928 100%);
     }
 
     #landscapeHint {
