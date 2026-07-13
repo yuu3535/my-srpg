@@ -474,7 +474,7 @@
             :root {
                 --status-panel-w: 150px;
                 --status-panel-h: calc(100dvh - 46px);
-                --status-portrait-h: 222px;
+                --status-portrait-h: 45%;
             }
 
             body {
@@ -519,12 +519,17 @@
             }
 
             .unit-portrait {
+                height: var(--status-portrait-h);
+                flex-basis: var(--status-portrait-h);
                 background-size: 126% auto;
                 background-position: center 10%;
             }
 
             .unit-body {
+                display: flex;
+                flex-direction: column;
                 padding: 4px 7px 5px;
+                overflow: hidden;
             }
 
             .unit-name {
@@ -540,7 +545,7 @@
             .bar-row {
                 grid-template-columns: 20px minmax(0, 1fr) 29px;
                 gap: 4px;
-                margin: 2px 0;
+                margin: 1px 0;
                 font-size: 8.5px;
             }
 
@@ -550,15 +555,16 @@
 
             .stat-grid {
                 gap: 1px 7px;
-                margin-top: 5px;
-                padding-top: 5px;
+                margin-top: 4px;
+                padding-top: 4px;
                 font-size: 8.5px;
                 line-height: 1.2;
             }
 
             .prediction {
-                margin-top: 5px;
+                margin-top: 4px;
                 padding: 4px 5px;
+                min-height: 31px;
                 font-size: 8px;
                 line-height: 1.25;
                 letter-spacing: 0.04em;
