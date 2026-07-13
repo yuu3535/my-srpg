@@ -55,6 +55,7 @@ const landscapeCommandList = document.getElementById("landscapeCommandList");
 const landscapePhaseTitle  = document.getElementById("landscapePhaseTitle");
 const landscapeTurnChip    = document.getElementById("landscapeTurnChip");
 const landscapeHint        = document.getElementById("landscapeHint");
+const lsForecast           = document.getElementById("lsForecast");
 const battleBoardHome      = battleBoard.parentNode;
 const battleBoardNext      = battleBoard.nextSibling;
 
@@ -1251,23 +1252,48 @@ function renderLandscapeSubCommandRail(unit, kind) {
 }
 
 function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
-    if (!landscapeCommandList) return;
-    landscapeCommandList.innerHTML = "";
+    if (!lsForecast) return;
+    if (landscapeCommandList) landscapeCommandList.innerHTML = "";
 
-    const preview = document.createElement("div");
-    preview.className = "lsPreview";
-    preview.innerHTML = `
-        <div class="lsPreviewTitle">${actionLabel || "攻撃"}</div>
-        <div class="lsPreviewRow"><span>${attacker.name}</span><b>${pred.hitRate}% / ${pred.effectDesc || pred.expDmg}</b></div>
-        <div class="lsPreviewTag">${pred.canCounter ? "反撃あり" : "反撃なし"}</div>
-        <div class="lsPreviewRow muted"><span>${target.name}</span><b>${pred.canCounter ? `${pred.ctrHitRate}% / ${pred.ctrExpDmg}` : "--"}</b></div>
+    const face = u => {
+        const src = getPortraitSrc(u) || u.tokenImage || "";
+        return `<div class="lsFcFace" style="${src ? `background-image:url('${src}')` : ""}"></div>`;
+    };
+    const hpRow = u => {
+        const pct = u.maxHp ? Math.max(0, Math.min(100, u.hp / u.maxHp * 100)) : 0;
+        return `<div class="lsFcHp"><div class="lsFcHpBar"><i style="width:${pct}%"></i></div><b>${u.hp}/${u.maxHp}</b></div>`;
+    };
+    const sideClass = u => u.side === "ally" ? "ally" : "enemy";
+
+    lsForecast.innerHTML = `
+        <div class="lsFcUnit ${sideClass(attacker)}">
+            ${face(attacker)}
+            <div class="lsFcInfo">
+                <div class="lsFcName">${attacker.name}</div>
+                ${hpRow(attacker)}
+            </div>
+        </div>
+        <div class="lsFcCenter">
+            <div class="lsFcAction">${actionLabel || "攻撃"}</div>
+            <div class="lsFcRow"><span>→ 命中 ${pred.hitRate}%</span><b>${pred.effectDesc || `~${pred.expDmg}`}</b></div>
+            <div class="lsFcCtr">${pred.canCounter ? "反撃あり" : "反撃なし"}</div>
+            <div class="lsFcRow${pred.canCounter ? "" : " muted"}"><span>← 命中 ${pred.canCounter ? `${pred.ctrHitRate}%` : "―"}</span><b>${pred.canCounter ? `~${pred.ctrExpDmg}` : "―"}</b></div>
+            <div class="lsFcBtns">
+                <button id="lsFcCancel">キャンセル</button>
+                <button id="lsFcConfirm">${_vsAttack?.isMagic ? `${_vsAttack.spell.name} 使用` : "攻撃実行"}</button>
+            </div>
+        </div>
+        <div class="lsFcUnit ${sideClass(target)}">
+            ${face(target)}
+            <div class="lsFcInfo">
+                <div class="lsFcName">${target.name}</div>
+                ${hpRow(target)}
+            </div>
+        </div>
     `;
-    landscapeCommandList.appendChild(preview);
+    lsForecast.classList.remove("hidden");
 
-    const confirm = document.createElement("button");
-    confirm.className = "lsCommandBtn active";
-    confirm.innerHTML = `<span>${_vsAttack?.isMagic ? `${_vsAttack.spell.name} 使用` : "攻撃実行"}</span>`;
-    confirm.addEventListener("click", () => {
+    document.getElementById("lsFcConfirm").addEventListener("click", () => {
         if (!_vsAttack) return;
         const { attacker, target, isMagic, spell } = _vsAttack;
         hideBattlePreview();
@@ -1275,12 +1301,7 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
         if (isMagic) executeMagic(attacker, spell, target);
         else executeAttack(attacker, target);
     });
-    landscapeCommandList.appendChild(confirm);
-
-    const cancel = document.createElement("button");
-    cancel.className = "lsCommandBtn back";
-    cancel.innerHTML = "<span>キャンセル</span>";
-    cancel.addEventListener("click", () => {
+    document.getElementById("lsFcCancel").addEventListener("click", () => {
         if (!_vsAttack) return;
         const { isMagic } = _vsAttack;
         hideBattlePreview();
@@ -1291,7 +1312,6 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
             else renderLandscapeSubCommandRail(selectedUnit, "attack");
         }
     });
-    landscapeCommandList.appendChild(cancel);
     setLandscapeHint(`${target.name}への${actionLabel || "攻撃"}を実行しますか。`);
 }
 
@@ -2466,6 +2486,7 @@ function showUnitPortraitAdjuster(unit) {
 /** VS レイヤーを閉じてバトルログに戻る */
 function hideBattlePreview() {
     _vsAttack = null;
+    lsForecast?.classList.add("hidden");
     if (gameMode === "battle") switchTopLayer("battle");
     syncLandscapeBattleUi(selectedUnit);
 }
@@ -2745,6 +2766,26 @@ function planEnemyActions() {
     syncLandscapeBattleUi(selectedUnit);
 }
 
+/** 攻撃レーザー用：2点間を「上空に弧を描く」3次ベジェにする。
+ *  idx で弧の高さ・膨らみをずらし、複数レーザーの混線を防ぐ */
+function declArcPath(x1, y1, x2, y2, idx, lift) {
+    const bow  = ((idx % 2 === 0) ? 1 : -1) * (4 + (idx % 3) * 2);
+    const topY = Math.min(y1, y2) - lift;
+    const c1x = x1 + (x2 - x1) * 0.25 + bow;
+    const c2x = x1 + (x2 - x1) * 0.75 + bow * 0.4;
+    return `M ${x1} ${y1} C ${c1x} ${topY}, ${c2x} ${topY + lift * 0.3}, ${x2} ${y2}`;
+}
+
+/** 移動線用：進行方向に対して垂直へ軽く膨らむ2次ベジェ（地を這う曲線） */
+function declBowPath(x1, y1, x2, y2, idx) {
+    const dx = x2 - x1, dy = y2 - y1;
+    const len = Math.hypot(dx, dy) || 1;
+    const k = ((idx % 2 === 0) ? 1 : -1) * Math.min(6, len * 0.22);
+    const mx = (x1 + x2) / 2 - (dy / len) * k;
+    const my = (y1 + y2) / 2 + (dx / len) * k;
+    return `M ${x1} ${y1} Q ${mx} ${my}, ${x2} ${y2}`;
+}
+
 function renderDeclarations() {
     const layer = getDeclLayer();
     layer.innerHTML = "";
@@ -2761,19 +2802,20 @@ function renderDeclarations() {
     svg.setAttribute("preserveAspectRatio", "none");
     layer.appendChild(svg);
 
+    const labeledTargets = new Set();
+    let idx = 0;
+
     for (const [id, decl] of enemyDeclarations) {
         const enemy = battleUnits.find(u => u.id === id && u.hp > 0);
         if (!enemy) continue;
 
         if (decl.dest && (decl.dest.x !== enemy.x || decl.dest.y !== enemy.y)) {
-            const moveLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            moveLine.setAttribute("x1", cx(enemy.x));
-            moveLine.setAttribute("y1", cy(enemy.y));
-            moveLine.setAttribute("x2", cx(decl.dest.x));
-            moveLine.setAttribute("y2", cy(decl.dest.y));
-            moveLine.setAttribute("class", "declMoveLine");
-            moveLine.setAttribute("vector-effect", "non-scaling-stroke");
-            svg.appendChild(moveLine);
+            const movePath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            movePath.setAttribute("d", declBowPath(
+                cx(enemy.x), cy(enemy.y), cx(decl.dest.x), cy(decl.dest.y), idx));
+            movePath.setAttribute("class", "declMoveLine");
+            movePath.setAttribute("vector-effect", "non-scaling-stroke");
+            svg.appendChild(movePath);
 
             const mark = document.createElement("div");
             mark.className = "declDestMark";
@@ -2786,17 +2828,28 @@ function renderDeclarations() {
 
         if (decl.type === "attack" && decl.targetCell) {
             const from = decl.dest || { x: enemy.x, y: enemy.y };
-            const attackLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            attackLine.setAttribute("x1", cx(from.x));
-            attackLine.setAttribute("y1", cy(from.y));
-            attackLine.setAttribute("x2", cx(decl.targetCell.x));
-            attackLine.setAttribute("y2", cy(decl.targetCell.y));
-            attackLine.setAttribute("class", "declAttackLine");
-            attackLine.setAttribute("vector-effect", "non-scaling-stroke");
-            svg.appendChild(attackLine);
+            const attackPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            attackPath.setAttribute("d", declArcPath(
+                cx(from.x), cy(from.y), cx(decl.targetCell.x), cy(decl.targetCell.y),
+                idx, 9 + (idx % 3) * 5));
+            attackPath.setAttribute("class", "declAttackLine");
+            attackPath.setAttribute("vector-effect", "non-scaling-stroke");
+            svg.appendChild(attackPath);
 
             const cell = getCell(decl.targetCell.y, decl.targetCell.x);
             if (cell) cell.classList.add("declAttackCell");
+
+            // 被弾セルの頭上に TARGET ラベル（同一セルは1つだけ）
+            const tKey = `${decl.targetCell.x},${decl.targetCell.y}`;
+            if (!labeledTargets.has(tKey)) {
+                labeledTargets.add(tKey);
+                const tl = document.createElement("div");
+                tl.className = "declTargetLabel";
+                tl.textContent = "TARGET";
+                tl.style.left = `${cx(decl.targetCell.x)}%`;
+                tl.style.top  = `${cy(decl.targetCell.y) - cellH * 0.92}%`;
+                layer.appendChild(tl);
+            }
         }
 
         const badge = document.createElement("div");
@@ -2807,6 +2860,7 @@ function renderDeclarations() {
         badge.style.left = `${cx(enemy.x) + cellW * 0.3}%`;
         badge.style.top = `${cy(enemy.y) - cellH * 0.72}%`;
         layer.appendChild(badge);
+        idx++;
     }
 }
 
@@ -3886,7 +3940,12 @@ function setBattleMode(battleId) {
     setUiTheme(forcedUiTheme || def?.uiTheme || "orcus");
     currentMapItems = (def?.mapItems || []).map(mi => ({ ...mi, item: { ...mi.item } }));
     createGrid(def?.cols ?? 10, def?.rows ?? 10, def?.tiles ?? []);
-    if (def?.background) { bgImage.src = def.background; topPanelBg.src = def.background; }
+    if (def?.background) {
+        bgImage.src = def.background;
+        topPanelBg.src = def.background;
+        // 横画面シェルは画面全体に背景を敷く（プロトタイプ準拠）
+        landscapeBattleShell?.style.setProperty("--ls-bg", `url("${encodeURI(def.background)}")`);
+    }
     const sourceData = def
         ? CHARACTERS_DATA.filter(c => def.unitIds.includes(c.id))
         : CHARACTERS_DATA;
