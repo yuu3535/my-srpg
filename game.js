@@ -3140,6 +3140,7 @@ function switchTopLayer(layer) {
 // =============================================
 /** シナリオ用レイアウトに切り替え */
 function enterScenarioLayout() {
+    gameScreen.dataset.mode = "scenario";
     switchTopLayer("dialogue");
     battleGrid.style.display  = "none";   // グリッド線を非表示
     unitLayer.style.display   = "none";   // ユニットトークンを非表示
@@ -3424,6 +3425,7 @@ function endChapter() {
 // =============================================
 
 function setScenarioMode() {
+    gameScreen.dataset.mode = "scenario";
     gameMode = "scenario";
     clearHighlights();
     hideRadialMenu();
@@ -3478,6 +3480,7 @@ const BATTLE_DEFINITIONS = {
 
 function setBattleMode(battleId) {
     exitScenarioLayout();   // シナリオレイアウトが残っていたらリセット
+    gameScreen.dataset.mode = "battle";
     switchTopLayer("battle");
     gameMode   = "battle";
     battleOver = false;
@@ -3910,8 +3913,15 @@ function scaleGame() {
     const viewport = window.visualViewport || window;
     const viewportW = viewport.width || window.innerWidth;
     const viewportH = viewport.height || window.innerHeight;
-    const mobileReserve = viewportW <= 480 ? Math.min(36, Math.max(18, viewportH * 0.035)) : 0;
-    const s = Math.min(viewportW / 390, (viewportH - mobileReserve) / 844);
+    const isLandscapeBattle = gameScreen.dataset.mode === "battle"
+        && viewportW > viewportH
+        && Math.min(viewportW, viewportH) <= 520;
+    const baseW = isLandscapeBattle ? 844 : 390;
+    const baseH = isLandscapeBattle ? 390 : 844;
+    const mobileReserve = !isLandscapeBattle && viewportW <= 480
+        ? Math.min(36, Math.max(18, viewportH * 0.035))
+        : 0;
+    const s = Math.min(viewportW / baseW, (viewportH - mobileReserve) / baseH);
     document.getElementById("gameScreen").style.transform = `scale(${s})`;
 }
 window.addEventListener("resize", scaleGame);

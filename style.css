@@ -2157,6 +2157,244 @@ html, body {
 }
 
 /* ============================================================
+   Battle landscape layout
+   スマホ横画面の戦闘は、左コマンド / 中央マップ / 右ログに再配置する。
+============================================================ */
+@media (orientation: landscape) and (max-height: 520px) {
+    :root {
+        --design-w: 844px;
+        --design-h: 390px;
+        --top-h: 390px;
+        --bottom-h: 390px;
+        --grid-size: 390px;
+    }
+
+    #gameScreen[data-mode="battle"] {
+        width: var(--design-w);
+        height: var(--design-h);
+        display: grid;
+        grid-template-columns: 204px 1fr 204px;
+        grid-template-rows: 100%;
+        align-items: stretch;
+        background: rgba(4,5,12,0.98);
+        border: 1px solid rgba(200,146,42,0.20);
+    }
+
+    #gameScreen[data-mode="battle"]::before {
+        left: 218px;
+        top: auto;
+        bottom: 7px;
+        z-index: 30;
+        font-size: 7px;
+        opacity: 0.86;
+    }
+
+    #gameScreen[data-mode="battle"] #bottomPanel {
+        grid-column: 1;
+        grid-row: 1;
+        width: 204px;
+        height: 100%;
+        min-height: 0;
+        border-top: 0;
+        border-right: 1px solid var(--gold-dim);
+        box-shadow: inset -10px 0 24px rgba(0,0,0,0.30);
+    }
+
+    #gameScreen[data-mode="battle"] #battleBoard {
+        grid-column: 2;
+        grid-row: 1;
+        width: 100%;
+        height: 100%;
+        border-top: 0;
+        border-bottom: 0;
+        border-left: 1px solid var(--theme-grid-line);
+        border-right: 1px solid var(--theme-grid-line);
+        box-shadow: inset 0 0 40px rgba(0,0,0,0.28), 0 0 28px var(--theme-shadow);
+    }
+
+    #gameScreen[data-mode="battle"] #battleCanvas {
+        width: var(--grid-size);
+        height: var(--grid-size);
+        left: calc((100% - var(--grid-size)) / 2);
+        top: 0;
+    }
+
+    #gameScreen[data-mode="battle"] #battleGrid,
+    #gameScreen[data-mode="battle"] #unitLayer,
+    #gameScreen[data-mode="battle"] #declLayer {
+        top: 31px;
+        left: 31px;
+        right: 31px;
+        bottom: 31px;
+    }
+
+    #gameScreen[data-mode="battle"] #topPanel {
+        grid-column: 3;
+        grid-row: 1;
+        width: 204px;
+        height: 100%;
+        border-bottom: 0;
+        border-left: 1px solid var(--gold-dim);
+        box-shadow: inset 10px 0 24px rgba(0,0,0,0.30);
+    }
+
+    #gameScreen[data-mode="battle"] #topTabs {
+        top: 7px;
+        right: 7px;
+        left: 7px;
+        justify-content: flex-end;
+        gap: 3px;
+    }
+
+    #gameScreen[data-mode="battle"] .topTab {
+        min-width: 36px;
+        min-height: 22px;
+        padding: 0.16em 0.34em;
+        font-size: 9px;
+    }
+
+    #gameScreen[data-mode="battle"] #modeButtons {
+        display: none;
+    }
+
+    #gameScreen[data-mode="battle"] #phaseHeader {
+        top: 40px;
+        left: 10px;
+        right: 10px;
+    }
+
+    #gameScreen[data-mode="battle"] #logPanel {
+        top: 68px;
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+    }
+
+    #gameScreen[data-mode="battle"] #forecastContent {
+        inset: 40px 10px 10px;
+    }
+
+    #gameScreen[data-mode="battle"] #vsWrap {
+        inset: 38px 8px 8px;
+        grid-template-columns: 1fr;
+        grid-template-rows: 74px 1fr 74px;
+        gap: 5px;
+    }
+
+    #gameScreen[data-mode="battle"] .vsUnit {
+        min-width: 0;
+        height: 74px;
+    }
+
+    #gameScreen[data-mode="battle"] .vsFaceIcon {
+        width: 56px;
+        height: 56px;
+    }
+
+    #gameScreen[data-mode="battle"] .vsMiddle {
+        min-width: 0;
+        padding: 5px;
+    }
+
+    #gameScreen[data-mode="battle"] #commandHeader {
+        min-height: 25px;
+        padding: 0.25em 0.45em;
+        font-size: 8.5px;
+        letter-spacing: 0.18em;
+    }
+
+    #gameScreen[data-mode="battle"] #commandInfo {
+        padding: 0.25em 0.6em;
+        font-size: 9.5px;
+    }
+
+    #gameScreen[data-mode="battle"] #commandList {
+        justify-content: flex-start;
+    }
+
+    #gameScreen[data-mode="battle"] #unitInfoCard {
+        flex-direction: column;
+        height: 100%;
+    }
+
+    #gameScreen[data-mode="battle"] .portrait-wrapper {
+        width: 100%;
+        height: 128px;
+        align-self: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--gold-dim);
+        background-size: 185% !important;
+        background-position: center 10% !important;
+    }
+
+    #gameScreen[data-mode="battle"] #unitInfoStats {
+        padding: 0.38em 0.58em 0.45em;
+        gap: 0.18em;
+    }
+
+    #gameScreen[data-mode="battle"] .unitInfoLabel,
+    #gameScreen[data-mode="battle"] .unitInfoSubLabel {
+        font-size: 9px;
+    }
+
+    #gameScreen[data-mode="battle"] .unitInfoValue,
+    #gameScreen[data-mode="battle"] .unitInfoSubValue {
+        font-size: 10px;
+    }
+
+    #gameScreen[data-mode="battle"] .unitInfoSubPair {
+        gap: 0.55em;
+    }
+
+    #gameScreen[data-mode="battle"] .unitInfoBtnRow {
+        gap: 0.25em;
+        padding-top: 0.28em;
+    }
+
+    #gameScreen[data-mode="battle"] .unitInfoTabBtn {
+        min-height: 25px;
+        font-size: 10px;
+        padding: 0.28em 0;
+    }
+
+    #gameScreen[data-mode="battle"] .unitInfoStatusBtn {
+        min-height: 25px;
+        font-size: 9px;
+    }
+
+    #gameScreen[data-mode="battle"] .commandItem {
+        min-height: 34px;
+        aspect-ratio: auto;
+        font-size: 10px;
+        padding: 0.45em 0.4em;
+    }
+
+    #gameScreen[data-mode="battle"] .scenarioCmdGrid {
+        grid-template-columns: 1fr 1fr;
+        gap: 5px;
+        padding: 0.55em 0.7em;
+    }
+
+    #gameScreen[data-mode="battle"] #mapZoomBtns {
+        right: 9px;
+        bottom: 9px;
+    }
+
+    #gameScreen[data-mode="battle"] .mapZoomBtn {
+        width: 28px;
+        height: 28px;
+    }
+
+    #gameScreen[data-mode="battle"] .mapViewBtn {
+        width: 42px;
+    }
+
+    #gameScreen[data-mode="battle"] #radialMenu {
+        z-index: 40;
+    }
+}
+
+/* ============================================================
    ダメージ・回復ポップアップ
 ============================================================ */
 .dmgPopup {
