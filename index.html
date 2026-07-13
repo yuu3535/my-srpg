@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=M+PLUS+1:wght@300;400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=battle-v2-landscape-2" />
+    <link rel="stylesheet" href="style.css?v=battle-v2-landscape-shell" />
 </head>
 
 <body>
@@ -139,6 +139,24 @@
             </div>
         </div>
 
+        <!-- 横画面戦闘専用UI -->
+        <div id="landscapeBattleShell" aria-hidden="true">
+            <div id="landscapeTopStrip">
+                <div id="landscapePhaseTitle">味方フェーズ</div>
+                <div id="landscapeTurnChip">TURN 1　敵行動予告 0</div>
+            </div>
+            <aside id="landscapeUnitPanel">
+                <div id="landscapeUnitEmpty">ユニットを選択</div>
+                <div id="landscapeUnitContent"></div>
+            </aside>
+            <div id="landscapeBattlefield"></div>
+            <aside id="landscapeCommandPanel">
+                <div id="landscapeCommandCurve"></div>
+                <div id="landscapeCommandList"></div>
+            </aside>
+            <div id="landscapeHint">敵の宣言を確認し、攻撃線から外れるか、移動先を塞いで行動を崩せます。</div>
+        </div>
+
         <!-- ラジアルメニュー（#gameScreen直下でクリッピングされない） -->
         <div id="radialMenu" class="hidden"></div>
 
@@ -201,7 +219,7 @@
     <script src="spells.js"></script>
     <script src="dataHelper.js"></script>
     <script src="scenario.js"></script>
-    <script src="game.js?v=battle-v2-landscape-2"></script>
+    <script src="game.js?v=battle-v2-landscape-shell"></script>
 </body>
 
 </html>

@@ -47,6 +47,16 @@ const bgImage            = document.getElementById("bgImage");
 const topLayerVS         = document.getElementById("topLayerVS");
 const vsConfirmBtn       = document.getElementById("vsConfirmBtn");
 const vsCancelBtn        = document.getElementById("vsCancelBtn");
+const landscapeBattleShell = document.getElementById("landscapeBattleShell");
+const landscapeBattlefield = document.getElementById("landscapeBattlefield");
+const landscapeUnitContent = document.getElementById("landscapeUnitContent");
+const landscapeUnitEmpty   = document.getElementById("landscapeUnitEmpty");
+const landscapeCommandList = document.getElementById("landscapeCommandList");
+const landscapePhaseTitle  = document.getElementById("landscapePhaseTitle");
+const landscapeTurnChip    = document.getElementById("landscapeTurnChip");
+const landscapeHint        = document.getElementById("landscapeHint");
+const battleBoardHome      = battleBoard.parentNode;
+const battleBoardNext      = battleBoard.nextSibling;
 
 // =============================================
 // 定数
@@ -492,6 +502,11 @@ function addRadialCenter(text) {
 }
 
 function showRadialMenu(unit) {
+    if (isLandscapeBattleUi()) {
+        hideRadialMenu();
+        renderLandscapeCommandRail(unit);
+        return;
+    }
     initRadialAtUnit(unit);
 
     const cmds = [];
@@ -517,6 +532,10 @@ function showRadialMenu(unit) {
 
 /** 攻撃スキル選択ラジアル（2段目） */
 function showAttackRadial(unit) {
+    if (isLandscapeBattleUi()) {
+        renderLandscapeSubCommandRail(unit, "attack");
+        return;
+    }
     initRadialAtUnit(unit);
 
     const atkSkills = ATTACK_SKILL_PRIORITY
@@ -575,6 +594,10 @@ function showAttackRadial(unit) {
 
 /** 特技選択ラジアル（2段目） */
 function showSkillRadial(unit) {
+    if (isLandscapeBattleUi()) {
+        renderLandscapeSubCommandRail(unit, "skill");
+        return;
+    }
     initRadialAtUnit(unit);
 
     const utilityEntries = Object.entries(unit.skills || {})
@@ -601,6 +624,10 @@ function showSkillRadial(unit) {
 
 /** 魔法選択ラジアル（2段目） */
 function showMagicRadial(unit) {
+    if (isLandscapeBattleUi()) {
+        renderLandscapeSubCommandRail(unit, "magic");
+        return;
+    }
     initRadialAtUnit(unit);
 
     const spellEntries = Object.entries(unit.spells || {})
@@ -706,6 +733,7 @@ function selectUnit(unit) {
     if (el) el.classList.add("unitSelected");
 
     renderBattleCommands(unit);
+    syncLandscapeBattleUi(unit);
     showMessage("SYSTEM", `${unit.name}の行動を選択してください。`);
 }
 
@@ -723,6 +751,7 @@ function deselectUnit() {
     hideForecastLayer();
     hideBattlePreview();
     renderIdlePanel();
+    syncLandscapeBattleUi(null);
 }
 
 // =============================================
@@ -777,6 +806,7 @@ function moveUnit(unit, row, col) {
     clearHighlights();
     actionState = null;
     renderUnits();
+    syncLandscapeBattleUi(unit);
 
     // アイテム拾得チェック
     const pickedIdx = currentMapItems.findIndex(mi => mi.x === col && mi.y === row);
@@ -933,6 +963,317 @@ function calculateMagicDamage(caster, target, spell, options = {}) {
 
 function canCounterByValor(unit) {
     return calcBattleStats(unit).valor > 0;
+}
+
+function isLandscapeBattleUi() {
+    return gameMode === "battle"
+        && gameScreen.dataset.mode === "battle"
+        && window.innerWidth > window.innerHeight
+        && window.innerWidth <= 1200;
+}
+
+function syncLandscapeBattleMount() {
+    if (!landscapeBattleShell || !landscapeBattlefield) return;
+    const active = isLandscapeBattleUi();
+    landscapeBattleShell.classList.toggle("active", active);
+    landscapeBattleShell.setAttribute("aria-hidden", active ? "false" : "true");
+
+    if (active && battleBoard.parentNode !== landscapeBattlefield) {
+        landscapeBattlefield.appendChild(battleBoard);
+    } else if (!active && battleBoard.parentNode === landscapeBattlefield) {
+        battleBoardHome.insertBefore(battleBoard, battleBoardNext);
+    }
+}
+
+function unitStatusText(unit) {
+    if (!unit.statusEffects || unit.statusEffects.length === 0) return "通常";
+    const nm = { burn:"火傷", stun:"スタン", barrier:"結界", counter:"カウンター",
+                 accuracyDown:"命中低下", gravityField:"重力場", support:"強化" };
+    return unit.statusEffects.map(e => nm[e.type] || e.type).join(" ");
+}
+
+function renderLandscapeUnitPanel(unit = selectedUnit) {
+    if (!landscapeUnitContent || !landscapeUnitEmpty) return;
+    if (!isLandscapeBattleUi() || !unit) {
+        landscapeUnitContent.innerHTML = "";
+        landscapeUnitEmpty.style.display = "";
+        return;
+    }
+
+    const hpPct = unit.maxHp ? Math.max(0, Math.min(100, unit.hp / unit.maxHp * 100)) : 0;
+    const mpPct = unit.maxMp ? Math.max(0, Math.min(100, unit.mp / unit.maxMp * 100)) : 0;
+    const src = getPortraitSrc(unit) || unit.tokenImage || "";
+    const stats = calcBattleStats(unit);
+    const declLabel = unit.side === "enemy" ? getDeclarationLabel(enemyDeclarations.get(unit.id)) : null;
+    landscapeUnitEmpty.style.display = "none";
+    landscapeUnitContent.innerHTML = `
+        <div class="lsUnitPortrait" style="${src ? `background-image:url('${src}')` : ""}"></div>
+        <div class="lsUnitBody">
+            <div class="lsUnitName"><b>${unit.name}</b><span>LV ${unit.level}</span></div>
+            <div class="lsBarRow"><span>HP</span><div class="lsBar hp"><i style="width:${hpPct}%"></i></div><b>${unit.hp}/${unit.maxHp}</b></div>
+            <div class="lsBarRow"><span>MP</span><div class="lsBar mp"><i style="width:${mpPct}%"></i></div><b>${unit.mp}/${unit.maxMp}</b></div>
+            <div class="lsStatGrid">
+                <div><b>力</b><span>${stats.power}</span></div>
+                <div><b>魔力</b><span>${stats.magic}</span></div>
+                <div><b>守備</b><span>${stats.armor}</span></div>
+                <div><b>魔防</b><span>${stats.ward}</span></div>
+                <div><b>移動</b><span>${unit.move}マス</span></div>
+                <div><b>状態</b><span>${unitStatusText(unit)}</span></div>
+            </div>
+            ${declLabel ? `<div class="lsPrediction">TARGET: ${declLabel}</div>` : ""}
+        </div>
+    `;
+}
+
+function setLandscapeHint(text) {
+    if (landscapeHint) landscapeHint.textContent = text || "敵の宣言を確認し、攻撃線から外れるか、移動先を塞いで行動を崩せます。";
+}
+
+function renderLandscapeHeader() {
+    if (!landscapePhaseTitle || !landscapeTurnChip) return;
+    const phase = turnPhase === "ally" ? "味方フェーズ" : "敵フェーズ";
+    landscapePhaseTitle.textContent = battleOver ? "戦闘終了" : phase;
+    const declCount = enemyDeclarations?.size || 0;
+    landscapeTurnChip.textContent = `TURN ${turnCount}　敵行動予告 ${declCount}`;
+}
+
+function getLandscapeCommands(unit) {
+    if (!unit || battleOver || turnPhase !== "ally" || unit.side !== "ally") {
+        return [
+            { label: "会話送り", disabled: true },
+            { label: "ログ", disabled: true },
+            { label: "セーブ", disabled: true },
+            { label: "ロード", disabled: true },
+            { label: "設定", disabled: true },
+        ];
+    }
+
+    const commands = [];
+    if (!unit.acted) commands.push({ label: "攻撃", active: actionState === "attacking" || actionState === "throwing" });
+    if (!unit.acted && Object.keys(unit.spells || {}).length > 0) commands.push({ label: "魔法", active: actionState === "magic" });
+    if (!unit.acted && Object.keys(unit.skills || {}).some(s => BATTLE_UTILITY_SKILLS.has(s))) commands.push({ label: "特技" });
+    if ((unit.items?.length ?? 0) > 0) commands.push({ label: "持ち物" });
+    if (!unit.moved) commands.push({ label: "移動", active: actionState === "moving" });
+    commands.push({ label: "待機" });
+    commands.push({ label: "詳細" });
+    return commands;
+}
+
+function renderLandscapeCommandRail(unit = selectedUnit) {
+    if (!landscapeCommandList) return;
+    if (!isLandscapeBattleUi()) {
+        landscapeCommandList.innerHTML = "";
+        return;
+    }
+
+    const commands = getLandscapeCommands(unit);
+    landscapeCommandList.innerHTML = "";
+    commands.forEach(cmd => {
+        const btn = document.createElement("button");
+        btn.className = `lsCommandBtn${cmd.active ? " active" : ""}`;
+        btn.disabled = !!cmd.disabled;
+        btn.innerHTML = `<span>${cmd.label}</span>`;
+        btn.addEventListener("click", () => {
+            if (!unit || cmd.disabled) return;
+            const label = cmd.label === "持ち物" ? "アイテム"
+                        : cmd.label === "詳細" ? "ステータス"
+                        : cmd.label;
+            handleBattleCommand(unit, label);
+            if (!["攻撃", "魔法", "特技", "アイテム"].includes(label)) {
+                syncLandscapeBattleUi(unit);
+            }
+        });
+        landscapeCommandList.appendChild(btn);
+    });
+}
+
+function addLandscapeBackButton(unit) {
+    const back = document.createElement("button");
+    back.className = "lsCommandBtn back";
+    back.innerHTML = "<span>戻る</span>";
+    back.addEventListener("click", () => {
+        actionState = null;
+        selectedSpell = null;
+        selectedAttackSkill = null;
+        clearHighlights();
+        hideForecastLayer();
+        renderBattleCommands(unit);
+        syncLandscapeBattleUi(unit);
+    });
+    landscapeCommandList.appendChild(back);
+}
+
+function renderLandscapeSubCommandRail(unit, kind) {
+    if (!landscapeCommandList || !unit) return;
+    landscapeCommandList.innerHTML = "";
+
+    const addButton = (label, sub, onClick) => {
+        const btn = document.createElement("button");
+        btn.className = "lsCommandBtn";
+        btn.innerHTML = `<span>${label}</span>${sub ? `<small>${sub}</small>` : ""}`;
+        btn.addEventListener("click", onClick);
+        landscapeCommandList.appendChild(btn);
+    };
+
+    if (kind === "attack") {
+        const atkSkills = ATTACK_SKILL_PRIORITY
+            .filter(name => name in (unit.skills || {}))
+            .map(name => ({ label: name, val: unit.skills[name] }));
+        if (atkSkills.length === 0) atkSkills.push({ label: "素手", val: 4 });
+        atkSkills.forEach(item => addButton(item.label, String(item.val), () => {
+            selectedAttackSkill = item.label;
+            if (item.label === "投擲") {
+                actionState = "throwing";
+                highlightThrowRange(unit);
+                switchTopLayer("battle");
+                addLog(`・${unit.name}は投擲を選択`);
+                setLandscapeHint(`${unit.name}の投擲対象を選択してください。`);
+            } else {
+                actionState = "attacking";
+                highlightAttackRange(unit);
+                switchTopLayer("battle");
+                addLog(`・${unit.name}は${item.label}で攻撃を選択`);
+                setLandscapeHint(`${unit.name}の攻撃対象を選択してください。`);
+            }
+            syncLandscapeBattleUi(unit);
+        }));
+        addLandscapeBackButton(unit);
+        return;
+    }
+
+    if (kind === "skill") {
+        const entries = Object.entries(unit.skills || {})
+            .filter(([name]) => BATTLE_UTILITY_SKILLS.has(name));
+        if (entries.length === 0) addButton("使える特技なし", "", () => {});
+        entries.forEach(([name, val]) => addButton(name, String(val), () => {
+            hideRadialMenu();
+            executeSkill(unit, name, val, name);
+        }));
+        addLandscapeBackButton(unit);
+        return;
+    }
+
+    if (kind === "magic") {
+        const entries = Object.entries(unit.spells || {}).filter(([id]) => SPELLS_DATA[id]);
+        entries.forEach(([id, val]) => {
+            const sp = SPELLS_DATA[id];
+            addButton(sp.name, String(val), () => {
+                if (sp.range === null) {
+                    clearHighlights();
+                    addLog(`・${unit.name}は ${sp.name} を使用`);
+                    executeMagic(unit, sp, unit);
+                    return;
+                }
+                if (sp.effectType === "teleport") {
+                    selectedSpell = sp;
+                    actionState = "magic";
+                    clearHighlights();
+                    hideForecastLayer();
+                    const tRange = sp.range || 5;
+                    for (let dy = -tRange; dy <= tRange; dy++) {
+                        for (let dx = -tRange; dx <= tRange; dx++) {
+                            if (Math.abs(dx) + Math.abs(dy) > tRange || (dx === 0 && dy === 0)) continue;
+                            const nx = unit.x + dx, ny = unit.y + dy;
+                            if (nx < 0 || nx >= GRID_COLS || ny < 0 || ny >= GRID_ROWS) continue;
+                            if (battleUnits.some(u => u.hp > 0 && u.x === nx && u.y === ny)) continue;
+                            const cell = getCell(ny, nx);
+                            if (cell) cell.classList.add("highlightMove");
+                        }
+                    }
+                    addLog(`・${unit.name}は 転移 を詠唱中...`);
+                    setLandscapeHint("転移先のマスを選んでください。");
+                    syncLandscapeBattleUi(unit);
+                    return;
+                }
+                selectedSpell = sp;
+                actionState = "magic";
+                clearHighlights();
+                for (let dy = -sp.range; dy <= sp.range; dy++) {
+                    for (let dx = -sp.range; dx <= sp.range; dx++) {
+                        if (Math.abs(dx) + Math.abs(dy) > sp.range) continue;
+                        const cell = getCell(unit.y + dy, unit.x + dx);
+                        if (cell) cell.classList.add("highlightAttack");
+                    }
+                }
+                switchTopLayer("battle");
+                addLog(`・${unit.name}は ${sp.name} を詠唱中...`);
+                setLandscapeHint(`${sp.name}の対象を選んでください。`);
+                syncLandscapeBattleUi(unit);
+            });
+        });
+        addLandscapeBackButton(unit);
+        return;
+    }
+
+    if (kind === "item") {
+        const entries = unit.items || [];
+        if (entries.length === 0) addButton("持ち物なし", "", () => {});
+        entries.forEach((item, idx) => addButton(item.name, "使う", () => {
+            const used = unit.items.splice(idx, 1)[0];
+            if (used?.type === "heal") {
+                const restored = used.value;
+                unit.hp = Math.min(unit.maxHp, unit.hp + restored);
+                showDamagePopup(unit.id, restored, "heal");
+                renderUnits();
+                addLog(`・${unit.name}は ${used.name} を使用 → HP +${restored}`);
+            }
+            unit.acted = true;
+            endUnitTurn(unit);
+        }));
+        addLandscapeBackButton(unit);
+    }
+}
+
+function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
+    if (!landscapeCommandList) return;
+    landscapeCommandList.innerHTML = "";
+
+    const preview = document.createElement("div");
+    preview.className = "lsPreview";
+    preview.innerHTML = `
+        <div class="lsPreviewTitle">${actionLabel || "攻撃"}</div>
+        <div class="lsPreviewRow"><span>${attacker.name}</span><b>${pred.hitRate}% / ${pred.effectDesc || pred.expDmg}</b></div>
+        <div class="lsPreviewTag">${pred.canCounter ? "反撃あり" : "反撃なし"}</div>
+        <div class="lsPreviewRow muted"><span>${target.name}</span><b>${pred.canCounter ? `${pred.ctrHitRate}% / ${pred.ctrExpDmg}` : "--"}</b></div>
+    `;
+    landscapeCommandList.appendChild(preview);
+
+    const confirm = document.createElement("button");
+    confirm.className = "lsCommandBtn active";
+    confirm.innerHTML = `<span>${_vsAttack?.isMagic ? `${_vsAttack.spell.name} 使用` : "攻撃実行"}</span>`;
+    confirm.addEventListener("click", () => {
+        if (!_vsAttack) return;
+        const { attacker, target, isMagic, spell } = _vsAttack;
+        hideBattlePreview();
+        clearHighlights();
+        if (isMagic) executeMagic(attacker, spell, target);
+        else executeAttack(attacker, target);
+    });
+    landscapeCommandList.appendChild(confirm);
+
+    const cancel = document.createElement("button");
+    cancel.className = "lsCommandBtn back";
+    cancel.innerHTML = "<span>キャンセル</span>";
+    cancel.addEventListener("click", () => {
+        if (!_vsAttack) return;
+        const { isMagic } = _vsAttack;
+        hideBattlePreview();
+        actionState = null;
+        clearHighlights();
+        if (selectedUnit) {
+            if (isMagic) renderLandscapeSubCommandRail(selectedUnit, "magic");
+            else renderLandscapeSubCommandRail(selectedUnit, "attack");
+        }
+    });
+    landscapeCommandList.appendChild(cancel);
+    setLandscapeHint(`${target.name}への${actionLabel || "攻撃"}を実行しますか。`);
+}
+
+function syncLandscapeBattleUi(unit = selectedUnit) {
+    syncLandscapeBattleMount();
+    renderLandscapeHeader();
+    renderLandscapeUnitPanel(unit);
+    renderLandscapeCommandRail(unit);
 }
 
 // =============================================
@@ -1526,6 +1867,7 @@ function endUnitTurn(unit) {
     hideForecastLayer();
     hideBattlePreview();
     renderUnits();
+    syncLandscapeBattleUi(null);
 
     if (turnPhase !== "ally") return;
 
@@ -1536,6 +1878,7 @@ function endUnitTurn(unit) {
         setTimeout(startEnemyPhase, 700);
     } else {
         renderIdlePanel();
+        syncLandscapeBattleUi(null);
         showMessage("SYSTEM", "次のユニットを選択してください。");
     }
 }
@@ -1560,6 +1903,7 @@ function startAllyPhase() {
     renderUnits();
     planEnemyActions();
     renderIdlePanel();
+    syncLandscapeBattleUi(null);
 }
 
 // =============================================
@@ -1670,6 +2014,13 @@ function _setVsHp(fillEl, numEl, unit) {
  * @param {string} actionLabel  ラジアルで選択した行動名（"武器"・"破壊" など）
  */
 function showBattlePreview(attacker, target, pred, actionLabel) {
+    if (isLandscapeBattleUi()) {
+        renderLandscapeUnitPanel(attacker);
+        renderLandscapeBattlePreview(attacker, target, pred, actionLabel);
+        hideRadialMenu();
+        return;
+    }
+
     // ── 攻撃側 ──
     const vsAtkImg  = document.getElementById("vsAtkImg");
     const vsAtkChar = document.getElementById("vsAtkChar");
@@ -2090,6 +2441,7 @@ function showUnitPortraitAdjuster(unit) {
 function hideBattlePreview() {
     _vsAttack = null;
     if (gameMode === "battle") switchTopLayer("battle");
+    syncLandscapeBattleUi(selectedUnit);
 }
 
 /** ダイス式の期待値を返す（"2d6+3" → 10, "1d6" → 3.5→3） */
@@ -2305,6 +2657,7 @@ function planEnemyActions() {
     enemyDeclarations = new Map();
     if (!DECLARATION_MODE || battleOver || BATTLE_DEFINITIONS[currentBattleId]?.passive) {
         renderDeclarations();
+        syncLandscapeBattleUi(selectedUnit);
         return;
     }
 
@@ -2312,6 +2665,7 @@ function planEnemyActions() {
     const enemies = battleUnits.filter(u => u.side === "enemy" && u.hp > 0);
     if (aliveAllies.length === 0 || enemies.length === 0) {
         renderDeclarations();
+        syncLandscapeBattleUi(selectedUnit);
         return;
     }
 
@@ -2362,6 +2716,7 @@ function planEnemyActions() {
         }
     }
     renderDeclarations();
+    syncLandscapeBattleUi(selectedUnit);
 }
 
 function renderDeclarations() {
@@ -2510,6 +2865,7 @@ async function startEnemyPhase() {
         }
     }
     tickStatusEffects("enemy");
+    syncLandscapeBattleUi(null);
 
     const enemies = battleUnits.filter(u => u.side === "enemy" && u.hp > 0);
 
@@ -2935,6 +3291,10 @@ function handleBattleCommand(unit, label) {
 }
 
 function showItemRadial(unit) {
+    if (isLandscapeBattleUi()) {
+        renderLandscapeSubCommandRail(unit, "item");
+        return;
+    }
     initRadialAtUnit(unit);
     const items = [
         ...(unit.items || []).map((item, idx) => ({
@@ -3118,6 +3478,7 @@ function addLog(text) {
     p.textContent = text;
     logTextList.appendChild(p);
     logPanel.scrollTop = logPanel.scrollHeight;
+    setLandscapeHint(text);
 }
 
 function clearLog() {
@@ -3542,6 +3903,7 @@ function setBattleMode(battleId) {
     renderMapItems();
     planEnemyActions();
     renderIdlePanel();
+    syncLandscapeBattleUi(null);
 }
 
 function renderMapItems() {
@@ -3923,6 +4285,7 @@ function scaleGame() {
         : 0;
     const s = Math.min(viewportW / baseW, (viewportH - mobileReserve) / baseH);
     document.getElementById("gameScreen").style.transform = `scale(${s})`;
+    syncLandscapeBattleUi(selectedUnit);
 }
 window.addEventListener("resize", scaleGame);
 window.visualViewport?.addEventListener("resize", scaleGame);

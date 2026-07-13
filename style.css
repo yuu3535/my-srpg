@@ -2158,28 +2158,30 @@ html, body {
 
 /* ============================================================
    Battle landscape layout
-   スマホ横画面の戦闘は、左コマンド / 中央マップ / 右ログに再配置する。
+   プロトタイプ準拠の横画面戦闘専用シェル。
 ============================================================ */
+#landscapeBattleShell {
+    display: none;
+}
+
 @media (orientation: landscape) {
     #gameScreen[data-mode="battle"] {
         --design-w: 844px;
         --design-h: 390px;
-        --top-h: 390px;
-        --bottom-h: 390px;
         --grid-size: 390px;
 
         width: var(--design-w);
         height: var(--design-h);
-        display: grid;
-        grid-template-columns: 204px 1fr 204px;
-        grid-template-rows: 100%;
-        align-items: stretch;
-        background: rgba(4,5,12,0.98);
+        display: block;
+        background:
+            linear-gradient(90deg, rgba(5,5,10,0.88), rgba(5,5,10,0.18) 34%, rgba(5,5,10,0.18) 66%, rgba(5,5,10,0.88)),
+            rgba(4,5,12,0.98);
         border: 1px solid rgba(200,146,42,0.20);
     }
 
     #gameScreen[data-mode="battle"]::before {
-        left: 218px;
+        left: 166px;
+        right: 146px;
         top: auto;
         bottom: 7px;
         z-index: 30;
@@ -2187,208 +2189,362 @@ html, body {
         opacity: 0.86;
     }
 
+    #gameScreen[data-mode="battle"] #topPanel,
     #gameScreen[data-mode="battle"] #bottomPanel {
-        grid-column: 1;
-        grid-row: 1;
-        width: 204px;
-        height: 100%;
-        min-height: 0;
-        border-top: 0;
-        border-right: 1px solid var(--gold-dim);
-        box-shadow: inset -10px 0 24px rgba(0,0,0,0.30);
+        display: none;
     }
 
-    #gameScreen[data-mode="battle"] #battleBoard {
-        grid-column: 2;
+    #gameScreen[data-mode="battle"] #landscapeBattleShell.active {
+        position: absolute;
+        inset: 0;
+        z-index: 18;
+        display: grid;
+        grid-template-columns: 150px minmax(0, 1fr) 136px;
+        grid-template-rows: 32px minmax(0, 1fr) 24px;
+        gap: 6px;
+        padding:
+            max(6px, env(safe-area-inset-top))
+            max(6px, env(safe-area-inset-right))
+            max(6px, env(safe-area-inset-bottom))
+            max(6px, env(safe-area-inset-left));
+        overflow: hidden;
+        background:
+            linear-gradient(90deg, rgba(5,5,10,0.86), rgba(5,5,10,0.08) 34%, rgba(5,5,10,0.10) 66%, rgba(5,5,10,0.88));
+    }
+
+    #landscapeTopStrip {
+        grid-column: 1 / 4;
         grid-row: 1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        pointer-events: none;
+        z-index: 3;
+    }
+
+    #landscapePhaseTitle {
+        min-width: 168px;
+        padding: 5px 12px 6px;
+        color: #61dfcd;
+        letter-spacing: 0.16em;
+        font-size: 14px;
+        font-weight: 700;
+        background: linear-gradient(90deg, rgba(4,6,12,0.88), rgba(4,6,12,0.24));
+        border-left: 2px solid var(--teal);
+        box-shadow: inset 0 -1px 0 rgba(65,199,179,0.18);
+    }
+
+    #landscapeTurnChip {
+        padding: 5px 10px;
+        color: rgba(224,189,115,0.86);
+        font-size: 10px;
+        letter-spacing: 0.11em;
+        background: rgba(4,5,11,0.78);
+        border: 1px solid rgba(200,146,42,0.24);
+    }
+
+    #landscapeUnitPanel {
+        grid-column: 1;
+        grid-row: 2 / 4;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        background:
+            linear-gradient(180deg, rgba(7,8,16,0.95), rgba(3,4,10,0.91)),
+            radial-gradient(circle at 20% 0%, rgba(200,146,42,0.10), transparent 45%);
+        border: 1px solid rgba(200,146,42,0.26);
+        box-shadow: inset 0 1px 0 rgba(255,232,160,0.08);
+    }
+
+    #landscapeUnitEmpty {
+        margin: auto;
+        color: rgba(224,189,115,0.48);
+        font-size: 11px;
+        letter-spacing: 0.12em;
+    }
+
+    #landscapeUnitContent {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+    }
+
+    .lsUnitPortrait {
+        width: 100%;
+        height: 45%;
+        flex: 0 0 45%;
+        background-color: rgba(3,4,10,0.78);
+        background-position: center 10%;
+        background-size: 132% auto;
+        background-repeat: no-repeat;
+        border-bottom: 1px solid rgba(200,146,42,0.24);
+    }
+
+    .lsUnitBody {
+        padding: 7px 9px 9px;
+        min-height: 0;
+        flex: 1;
+    }
+
+    .lsUnitName {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 6px;
+        color: #f0cf83;
+        font-size: 12px;
+        letter-spacing: 0.10em;
+        line-height: 1.15;
+    }
+
+    .lsUnitName span {
+        color: rgba(224,189,115,0.56);
+        font-size: 9px;
+        white-space: nowrap;
+    }
+
+    .lsBarRow {
+        display: grid;
+        grid-template-columns: 20px minmax(0, 1fr) 29px;
+        gap: 5px;
+        align-items: center;
+        margin: 5px 0;
+        font-size: 9px;
+        line-height: 1.15;
+        color: rgba(224,189,115,0.52);
+    }
+
+    .lsBar {
+        height: 5px;
+        overflow: hidden;
+        background: rgba(0,0,0,0.52);
+        border-radius: 4px;
+    }
+
+    .lsBar i {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+    }
+
+    .lsBar.hp i { background: linear-gradient(90deg, #2fbf72, #59e48c); }
+    .lsBar.mp i { background: linear-gradient(90deg, #2e73c7, #68a9ee); }
+
+    .lsStatGrid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 5px 8px;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid rgba(200,146,42,0.16);
+        font-size: 9px;
+        line-height: 1.2;
+    }
+
+    .lsStatGrid b {
+        display: inline-block;
+        width: 2.4em;
+        color: rgba(224,189,115,0.42);
+        font-weight: 400;
+    }
+
+    .lsStatGrid span {
+        color: #e0bd73;
+        font-weight: 700;
+    }
+
+    .lsPrediction {
+        margin-top: 8px;
+        padding: 6px 7px;
+        background: linear-gradient(90deg, rgba(130,36,32,0.34), rgba(130,36,32,0.07));
+        border-left: 3px solid rgba(238,132,106,0.78);
+        color: #f3c09f;
+        font-size: 9px;
+        line-height: 1.35;
+        letter-spacing: 0.05em;
+    }
+
+    #landscapeBattlefield {
+        grid-column: 2;
+        grid-row: 2;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(65,199,179,0.24);
+        background:
+            linear-gradient(180deg, rgba(5,12,18,0.18), rgba(5,12,18,0.52)),
+            rgba(4,6,12,0.22);
+        box-shadow: inset 0 0 35px rgba(0,0,0,0.50), 0 0 28px rgba(42,20,66,0.40);
+    }
+
+    #landscapeBattlefield::after {
+        content: "DECLARATION BATTLE";
+        position: absolute;
+        left: 10px;
+        bottom: 7px;
+        color: rgba(235,205,135,0.46);
+        font-size: 7px;
+        letter-spacing: 0.16em;
+        pointer-events: none;
+        z-index: 5;
+    }
+
+    #gameScreen[data-mode="battle"] #landscapeBattlefield #battleBoard {
+        display: block;
+        position: absolute;
+        inset: 0;
         width: 100%;
         height: 100%;
-        border-top: 0;
-        border-bottom: 0;
-        border-left: 1px solid var(--theme-grid-line);
-        border-right: 1px solid var(--theme-grid-line);
-        box-shadow: inset 0 0 40px rgba(0,0,0,0.28), 0 0 28px var(--theme-shadow);
+        border: 0;
+        box-shadow: none;
     }
 
     #gameScreen[data-mode="battle"] #battleCanvas {
-        width: var(--grid-size);
-        height: var(--grid-size);
-        left: calc((100% - var(--grid-size)) / 2);
-        top: 0;
+        --ls-map-size: min(calc(100dvh - 80px), calc(100dvw - 318px), 520px);
+        width: var(--ls-map-size);
+        height: var(--ls-map-size);
+        aspect-ratio: 1 / 1;
+        left: calc((100% - var(--ls-map-size)) / 2);
+        top: calc((100% - var(--ls-map-size)) / 2);
     }
 
     #gameScreen[data-mode="battle"] #battleGrid,
     #gameScreen[data-mode="battle"] #unitLayer,
     #gameScreen[data-mode="battle"] #declLayer {
-        top: 31px;
-        left: 31px;
-        right: 31px;
-        bottom: 31px;
+        top: 16px;
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
     }
 
-    #gameScreen[data-mode="battle"] #topPanel {
+    #landscapeCommandPanel {
         grid-column: 3;
-        grid-row: 1;
-        width: 204px;
-        height: 100%;
-        border-bottom: 0;
-        border-left: 1px solid var(--gold-dim);
-        box-shadow: inset 10px 0 24px rgba(0,0,0,0.30);
+        grid-row: 2;
+        position: relative;
+        display: flex;
+        align-items: center;
+        min-width: 0;
     }
 
-    #gameScreen[data-mode="battle"] #topTabs {
-        top: 7px;
-        right: 7px;
-        left: 7px;
-        justify-content: flex-end;
-        gap: 3px;
+    #landscapeCommandCurve {
+        position: absolute;
+        left: -28px;
+        top: 18px;
+        bottom: 18px;
+        width: 68px;
+        border-left: 1px solid rgba(224,176,72,0.35);
+        border-radius: 50% 0 0 50%;
+        pointer-events: none;
     }
 
-    #gameScreen[data-mode="battle"] .topTab {
-        min-width: 36px;
-        min-height: 22px;
-        padding: 0.16em 0.34em;
-        font-size: 9px;
+    #landscapeCommandList {
+        position: relative;
+        z-index: 2;
+        width: 130px;
+        max-height: calc(100dvh - 96px);
+        overflow: auto;
+        display: grid;
+        gap: 6px;
+        padding: 2px 0;
+        scrollbar-width: none;
     }
 
-    #gameScreen[data-mode="battle"] #modeButtons {
+    #landscapeCommandList::-webkit-scrollbar {
         display: none;
     }
 
-    #gameScreen[data-mode="battle"] #phaseHeader {
-        top: 40px;
-        left: 10px;
-        right: 10px;
+    .lsCommandBtn {
+        position: relative;
+        width: 130px;
+        min-height: 28px;
+        padding: 5px 12px 6px 15px;
+        color: rgba(224,189,115,0.78);
+        text-align: left;
+        font-family: inherit;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        background: linear-gradient(90deg, rgba(82,18,98,0.76), rgba(22,8,35,0.82));
+        border: 1px solid rgba(200,146,42,0.30);
+        border-right-color: rgba(224,176,72,0.58);
+        transform: skewY(-3deg);
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
     }
 
-    #gameScreen[data-mode="battle"] #logPanel {
-        top: 68px;
-        left: 10px;
-        right: 10px;
-        bottom: 10px;
+    .lsCommandBtn span,
+    .lsCommandBtn small {
+        display: block;
+        transform: skewY(3deg);
     }
 
-    #gameScreen[data-mode="battle"] #forecastContent {
-        inset: 40px 10px 10px;
+    .lsCommandBtn small {
+        margin-top: 2px;
+        color: rgba(224,189,115,0.45);
+        font-size: 8px;
     }
 
-    #gameScreen[data-mode="battle"] #vsWrap {
-        inset: 38px 8px 8px;
-        grid-template-columns: 1fr;
-        grid-template-rows: 74px 1fr 74px;
-        gap: 5px;
+    .lsCommandBtn::before {
+        content: "";
+        position: absolute;
+        left: -7px;
+        top: 50%;
+        width: 12px;
+        height: 12px;
+        background: #050610;
+        border-left: 1px solid rgba(200,146,42,0.38);
+        border-bottom: 1px solid rgba(200,146,42,0.38);
+        transform: translateY(-50%) rotate(45deg);
     }
 
-    #gameScreen[data-mode="battle"] .vsUnit {
+    .lsCommandBtn.active,
+    .lsCommandBtn:active {
+        color: #ffe2a0;
+        background: linear-gradient(90deg, rgba(130,73,28,0.88), rgba(78,39,18,0.88));
+        border-color: rgba(224,176,72,0.72);
+    }
+
+    .lsCommandBtn:disabled {
+        opacity: 0.38;
+        cursor: default;
+    }
+
+    .lsCommandBtn.back {
+        background: rgba(8,6,18,0.72);
+    }
+
+    #landscapeHint {
+        grid-column: 2 / 4;
+        grid-row: 3;
+        align-self: end;
+        padding: 5px 8px;
         min-width: 0;
-        height: 74px;
-    }
-
-    #gameScreen[data-mode="battle"] .vsFaceIcon {
-        width: 56px;
-        height: 56px;
-    }
-
-    #gameScreen[data-mode="battle"] .vsMiddle {
-        min-width: 0;
-        padding: 5px;
-    }
-
-    #gameScreen[data-mode="battle"] #commandHeader {
-        min-height: 25px;
-        padding: 0.25em 0.45em;
-        font-size: 8.5px;
-        letter-spacing: 0.18em;
-    }
-
-    #gameScreen[data-mode="battle"] #commandInfo {
-        padding: 0.25em 0.6em;
-        font-size: 9.5px;
-    }
-
-    #gameScreen[data-mode="battle"] #commandList {
-        justify-content: flex-start;
-    }
-
-    #gameScreen[data-mode="battle"] #unitInfoCard {
-        flex-direction: column;
-        height: 100%;
-    }
-
-    #gameScreen[data-mode="battle"] .portrait-wrapper {
-        width: 100%;
-        height: 128px;
-        align-self: auto;
-        border-right: 0;
-        border-bottom: 1px solid var(--gold-dim);
-        background-size: 185% !important;
-        background-position: center 10% !important;
-    }
-
-    #gameScreen[data-mode="battle"] #unitInfoStats {
-        padding: 0.38em 0.58em 0.45em;
-        gap: 0.18em;
-    }
-
-    #gameScreen[data-mode="battle"] .unitInfoLabel,
-    #gameScreen[data-mode="battle"] .unitInfoSubLabel {
-        font-size: 9px;
-    }
-
-    #gameScreen[data-mode="battle"] .unitInfoValue,
-    #gameScreen[data-mode="battle"] .unitInfoSubValue {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        color: rgba(224,189,115,0.72);
         font-size: 10px;
-    }
-
-    #gameScreen[data-mode="battle"] .unitInfoSubPair {
-        gap: 0.55em;
-    }
-
-    #gameScreen[data-mode="battle"] .unitInfoBtnRow {
-        gap: 0.25em;
-        padding-top: 0.28em;
-    }
-
-    #gameScreen[data-mode="battle"] .unitInfoTabBtn {
-        min-height: 25px;
-        font-size: 10px;
-        padding: 0.28em 0;
-    }
-
-    #gameScreen[data-mode="battle"] .unitInfoStatusBtn {
-        min-height: 25px;
-        font-size: 9px;
-    }
-
-    #gameScreen[data-mode="battle"] .commandItem {
-        min-height: 34px;
-        aspect-ratio: auto;
-        font-size: 10px;
-        padding: 0.45em 0.4em;
-    }
-
-    #gameScreen[data-mode="battle"] .scenarioCmdGrid {
-        grid-template-columns: 1fr 1fr;
-        gap: 5px;
-        padding: 0.55em 0.7em;
+        letter-spacing: 0.08em;
+        background: rgba(4,5,11,0.50);
+        border-top: 1px solid rgba(200,146,42,0.18);
     }
 
     #gameScreen[data-mode="battle"] #mapZoomBtns {
-        right: 9px;
-        bottom: 9px;
+        right: 8px;
+        bottom: 8px;
+        z-index: 24;
     }
 
     #gameScreen[data-mode="battle"] .mapZoomBtn {
         width: 28px;
         height: 28px;
+        border-width: 1.5px;
     }
 
     #gameScreen[data-mode="battle"] .mapViewBtn {
         width: 42px;
-    }
-
-    #gameScreen[data-mode="battle"] #radialMenu {
-        z-index: 40;
     }
 }
 
