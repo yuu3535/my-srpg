@@ -991,6 +991,31 @@ function syncLandscapeBattleMount() {
     } else if (!active && battleBoard.parentNode === landscapeBattlefield) {
         battleBoardHome.insertBefore(battleBoard, battleBoardNext);
     }
+    sizeLandscapeBattleCanvas();
+}
+
+/** 横画面時：マップの縦横比を GRID_COLS:GRID_ROWS に合わせて中央配置する。
+ *  デザイン空間（844×390）内の中央マップ領域に収める。縦画面時は CSS に戻す */
+function sizeLandscapeBattleCanvas() {
+    if (!battleCanvas) return;
+    if (!isLandscapeBattleUi()) {
+        battleCanvas.style.width  = "";
+        battleCanvas.style.height = "";
+        battleCanvas.style.left   = "";
+        battleCanvas.style.top    = "";
+        return;
+    }
+    // 844 - 左右パネル(150+136) - gap/padding ≒ 524、390 - 上下帯 ≒ 300
+    const availW = 524, availH = 300;
+    const inset = 32; // battleGrid の上下左右 16px ずつ（セルを正方形に保つため差し引く）
+    const ratio = GRID_COLS / GRID_ROWS;
+    let innerH = availH - inset, innerW = innerH * ratio;
+    if (innerW > availW - inset) { innerW = availW - inset; innerH = innerW / ratio; }
+    const w = innerW + inset, h = innerH + inset;
+    battleCanvas.style.width  = `${Math.round(w)}px`;
+    battleCanvas.style.height = `${Math.round(h)}px`;
+    battleCanvas.style.left   = `calc(50% - ${Math.round(w / 2)}px)`;
+    battleCanvas.style.top    = `calc(50% - ${Math.round(h / 2)}px)`;
 }
 
 function unitStatusText(unit) {
@@ -1085,6 +1110,18 @@ function getLandscapeCommands(unit) {
     return commands;
 }
 
+/** レールのボタンを円弧に沿って配置する（中央ほど内側=左へ張り出す） */
+function applyLandscapeRailArc() {
+    if (!landscapeCommandList) return;
+    const btns = [...landscapeCommandList.children];
+    const n = btns.length;
+    btns.forEach((btn, i) => {
+        const t = n <= 1 ? 0.5 : i / (n - 1);
+        const off = -Math.sin(t * Math.PI) * 16;
+        btn.style.transform = `skewY(-3deg) translateX(${off.toFixed(1)}px)`;
+    });
+}
+
 function renderLandscapeCommandRail(unit = selectedUnit) {
     if (!landscapeCommandList) return;
     if (!isLandscapeBattleUi()) {
@@ -1111,6 +1148,7 @@ function renderLandscapeCommandRail(unit = selectedUnit) {
         });
         landscapeCommandList.appendChild(btn);
     });
+    applyLandscapeRailArc();
 }
 
 function addLandscapeBackButton(unit) {
@@ -1128,6 +1166,7 @@ function addLandscapeBackButton(unit) {
         syncLandscapeBattleUi(unit);
     });
     landscapeCommandList.appendChild(back);
+    applyLandscapeRailArc();
 }
 
 function renderLandscapeSubCommandRail(unit, kind) {
@@ -2776,16 +2815,9 @@ function declArcPath(x1, y1, x2, y2, idx, lift) {
     return `M ${x1} ${y1} C ${c1x} ${topY}, ${c2x} ${topY + lift * 0.3}, ${x2} ${y2}`;
 }
 
-/** 移動線用：進行方向に対して垂直へ軽く膨らむ2次ベジェ（地を這う曲線） */
-function declBowPath(x1, y1, x2, y2, idx) {
-    const dx = x2 - x1, dy = y2 - y1;
-    const len = Math.hypot(dx, dy) || 1;
-    const k = ((idx % 2 === 0) ? 1 : -1) * Math.min(6, len * 0.22);
-    const mx = (x1 + x2) / 2 - (dy / len) * k;
-    const my = (y1 + y2) / 2 + (dx / len) * k;
-    return `M ${x1} ${y1} Q ${mx} ${my}, ${x2} ${y2}`;
-}
-
+/** 宣言表示は「攻撃レーザーのみ」。
+ *  MOV点線・バッジ・TARGETラベル等は盤面を汚すため出さない。
+ *  攻撃の詳細はユニットパネル側（lsPrediction / 敵情報）で読める */
 function renderDeclarations() {
     const layer = getDeclLayer();
     layer.innerHTML = "";
@@ -2802,64 +2834,23 @@ function renderDeclarations() {
     svg.setAttribute("preserveAspectRatio", "none");
     layer.appendChild(svg);
 
-    const labeledTargets = new Set();
     let idx = 0;
-
     for (const [id, decl] of enemyDeclarations) {
         const enemy = battleUnits.find(u => u.id === id && u.hp > 0);
         if (!enemy) continue;
+        if (decl.type !== "attack" || !decl.targetCell) continue;
 
-        if (decl.dest && (decl.dest.x !== enemy.x || decl.dest.y !== enemy.y)) {
-            const movePath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            movePath.setAttribute("d", declBowPath(
-                cx(enemy.x), cy(enemy.y), cx(decl.dest.x), cy(decl.dest.y), idx));
-            movePath.setAttribute("class", "declMoveLine");
-            movePath.setAttribute("vector-effect", "non-scaling-stroke");
-            svg.appendChild(movePath);
+        const from = decl.dest || { x: enemy.x, y: enemy.y };
+        const attackPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        attackPath.setAttribute("d", declArcPath(
+            cx(from.x), cy(from.y), cx(decl.targetCell.x), cy(decl.targetCell.y),
+            idx, 9 + (idx % 3) * 5));
+        attackPath.setAttribute("class", "declAttackLine");
+        attackPath.setAttribute("vector-effect", "non-scaling-stroke");
+        svg.appendChild(attackPath);
 
-            const mark = document.createElement("div");
-            mark.className = "declDestMark";
-            mark.style.left = `${decl.dest.x * cellW}%`;
-            mark.style.top = `${decl.dest.y * cellH}%`;
-            mark.style.width = `${cellW}%`;
-            mark.style.height = `${cellH}%`;
-            layer.appendChild(mark);
-        }
-
-        if (decl.type === "attack" && decl.targetCell) {
-            const from = decl.dest || { x: enemy.x, y: enemy.y };
-            const attackPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            attackPath.setAttribute("d", declArcPath(
-                cx(from.x), cy(from.y), cx(decl.targetCell.x), cy(decl.targetCell.y),
-                idx, 9 + (idx % 3) * 5));
-            attackPath.setAttribute("class", "declAttackLine");
-            attackPath.setAttribute("vector-effect", "non-scaling-stroke");
-            svg.appendChild(attackPath);
-
-            const cell = getCell(decl.targetCell.y, decl.targetCell.x);
-            if (cell) cell.classList.add("declAttackCell");
-
-            // 被弾セルの頭上に TARGET ラベル（同一セルは1つだけ）
-            const tKey = `${decl.targetCell.x},${decl.targetCell.y}`;
-            if (!labeledTargets.has(tKey)) {
-                labeledTargets.add(tKey);
-                const tl = document.createElement("div");
-                tl.className = "declTargetLabel";
-                tl.textContent = "TARGET";
-                tl.style.left = `${cx(decl.targetCell.x)}%`;
-                tl.style.top  = `${cy(decl.targetCell.y) - cellH * 0.92}%`;
-                layer.appendChild(tl);
-            }
-        }
-
-        const badge = document.createElement("div");
-        badge.className = `declIntentBadge ${decl.type}`;
-        badge.textContent = decl.type === "attack" ? "ATK"
-                          : decl.type === "move"   ? "MOV"
-                          : decl.type === "stun"   ? "STN" : "WAIT";
-        badge.style.left = `${cx(enemy.x) + cellW * 0.3}%`;
-        badge.style.top = `${cy(enemy.y) - cellH * 0.72}%`;
-        layer.appendChild(badge);
+        const cell = getCell(decl.targetCell.y, decl.targetCell.x);
+        if (cell) cell.classList.add("declAttackCell");
         idx++;
     }
 }
@@ -3909,14 +3900,17 @@ const BATTLE_DEFINITIONS = {
     battle_ch1: {
         uiTheme: "mixed",
         background: "assets/background_forest.png",
+        cols: 12,
+        rows: 8,
+        tiles: [],
         unitIds: ["ringholm", "arshe", "albas", "forest_guard", "dylan", "herel"],
         positions: {
-            ringholm:     { x: 2, y: 7 },
-            arshe:        { x: 3, y: 7 },
-            albas:        { x: 4, y: 7 },
-            forest_guard: { x: 3, y: 2 },
-            dylan:        { x: 4, y: 1 },
-            herel:        { x: 5, y: 2 },
+            ringholm:     { x: 3, y: 6 },
+            arshe:        { x: 4, y: 6 },
+            albas:        { x: 5, y: 6 },
+            forest_guard: { x: 6, y: 1 },
+            dylan:        { x: 7, y: 1 },
+            herel:        { x: 8, y: 2 },
         },
     },
 };
