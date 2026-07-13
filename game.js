@@ -1115,7 +1115,10 @@ function applyLandscapeRailArc() {
         const t = i - mid;                                    // 中央からの段数
         const rot = Math.max(-24, Math.min(24, t * 6.5));     // 針の傾き
         const dx  = (mid - Math.abs(t)) * 5;                  // 弧の膨らみ（中央=3時が最も右）
-        btn.style.transform = `translateX(${dx.toFixed(1)}px) rotate(${rot.toFixed(1)}deg)`;
+        // transform本体はCSS側（--rot/--dx参照）。選択時の「カチッ」をCSSで足せるようにする
+        btn.style.setProperty("--rot", `${rot.toFixed(1)}deg`);
+        btn.style.setProperty("--dx", `${dx.toFixed(1)}px`);
+        btn.style.setProperty("--tick-delay", `${i * 36}ms`);   // 針が順にカチッと収まる
     });
 }
 
@@ -2817,12 +2820,20 @@ function planEnemyActions() {
 }
 
 /** 攻撃レーザー用：2点間を「上空に弧を描く」3次ベジェにする。
- *  idx で弧の高さ・膨らみをずらし、複数レーザーの混線を防ぐ */
-function declArcPath(x1, y1, x2, y2, idx, lift) {
-    const bow  = ((idx % 2 === 0) ? 1 : -1) * (4 + (idx % 3) * 2);
+ *  座標系は 1セル=10 の等方ユニット（viewBox がマップ比率と一致している前提）。
+ *  弧の高さは距離に比例させ（近距離は低いホップ、遠距離は高いアーチ）、
+ *  idx で高さ・左右の膨らみをずらして複数レーザーの混線を防ぐ */
+function declArcPath(x1, y1, x2, y2, idx) {
+    const dx = x2 - x1, dy = y2 - y1;
+    const dist = Math.hypot(dx, dy);
+    const lift = Math.min(dist * 0.5 + idx * 4, 30);
+    // 膨らみの向きは進行方向から決める（交互だと隣のレーザーと交差しやすい）。
+    // 真下・真上への垂直レーザーだけ idx で左右に散らす
+    const bowDir = dx !== 0 ? Math.sign(dx) : (idx % 2 === 0 ? 1 : -1);
+    const bow = bowDir * Math.min(3 + dist * 0.12, 10);
     const topY = Math.min(y1, y2) - lift;
-    const c1x = x1 + (x2 - x1) * 0.25 + bow;
-    const c2x = x1 + (x2 - x1) * 0.75 + bow * 0.4;
+    const c1x = x1 + dx * 0.25 + bow;
+    const c2x = x1 + dx * 0.75 + bow * 0.4;
     return `M ${x1} ${y1} C ${c1x} ${topY}, ${c2x} ${topY + lift * 0.3}, ${x2} ${y2}`;
 }
 
@@ -2835,13 +2846,13 @@ function renderDeclarations() {
     clearDeclarationCells();
     if (!DECLARATION_MODE || enemyDeclarations.size === 0) return;
 
-    const cellW = 100 / GRID_COLS;
-    const cellH = 100 / GRID_ROWS;
-    const cx = v => (v + 0.5) * cellW;
-    const cy = v => (v + 0.5) * cellH;
+    // 1セル=10ユニットの等方座標系。viewBox をマップ縦横比に一致させ、
+    // 非正方形マップでも弧が歪まないようにする
+    const cx = v => (v + 0.5) * 10;
+    const cy = v => (v + 0.5) * 10;
 
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute("viewBox", "0 0 100 100");
+    svg.setAttribute("viewBox", `0 0 ${GRID_COLS * 10} ${GRID_ROWS * 10}`);
     svg.setAttribute("preserveAspectRatio", "none");
     layer.appendChild(svg);
 
@@ -2851,11 +2862,11 @@ function renderDeclarations() {
         if (!enemy) continue;
         if (decl.type !== "attack" || !decl.targetCell) continue;
 
-        const from = decl.dest || { x: enemy.x, y: enemy.y };
+        // 始点は敵の「現在位置」。移動予定先(dest)から生やすと、
+        // 移動予告線を消した今は宙に浮いた場所から出て見える
         const attackPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
         attackPath.setAttribute("d", declArcPath(
-            cx(from.x), cy(from.y), cx(decl.targetCell.x), cy(decl.targetCell.y),
-            idx, 9 + (idx % 3) * 5));
+            cx(enemy.x), cy(enemy.y), cx(decl.targetCell.x), cy(decl.targetCell.y), idx));
         attackPath.setAttribute("class", "declAttackLine");
         attackPath.setAttribute("vector-effect", "non-scaling-stroke");
         svg.appendChild(attackPath);
