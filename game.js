@@ -90,7 +90,9 @@ function setUiTheme(theme = "orcus") {
     gameScreen?.setAttribute("data-theme", nextTheme);
 }
 
-const initialUiTheme = new URLSearchParams(location.search).get("theme");
+const bootParams = new URLSearchParams(location.search);
+const initialUiTheme = bootParams.get("theme");
+const initialBattleId = bootParams.get("battle");
 const forcedUiTheme = UI_THEMES.has(initialUiTheme) ? initialUiTheme : null;
 if (forcedUiTheme) setUiTheme(forcedUiTheme);
 
@@ -4223,10 +4225,18 @@ homeSettingsBtn.addEventListener("click", () => {
 // =============================================
 // 初期化
 // =============================================
+const bootBattleId = BATTLE_DEFINITIONS[initialBattleId] ? initialBattleId : currentBattleId;
+currentBattleId = bootBattleId;
 setBattleMode(currentBattleId);
 renderIdlePanel();
 buildLoadingScreen();  // ローディング画面を構築
-showHomeScreen();      // ホーム画面（ローディング画面の下に先に準備）
+if (initialBattleId && BATTLE_DEFINITIONS[initialBattleId]) {
+    homeScreen.style.display = "none";
+    setModeButtonActive("battle");
+    addLog(`・テスト戦闘 ${initialBattleId} を直接開始`);
+} else {
+    showHomeScreen();      // ホーム画面（ローディング画面の下に先に準備）
+}
 scaleGame();
 
 // 2.8秒後にローディング画面をフェードアウト
