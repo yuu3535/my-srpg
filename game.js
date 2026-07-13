@@ -533,6 +533,8 @@ function showRadialMenu(unit) {
 /** 攻撃スキル選択ラジアル（2段目） */
 function showAttackRadial(unit) {
     if (isLandscapeBattleUi()) {
+        actionState = null;
+        clearHighlights();
         renderLandscapeSubCommandRail(unit, "attack");
         return;
     }
@@ -595,6 +597,8 @@ function showAttackRadial(unit) {
 /** 特技選択ラジアル（2段目） */
 function showSkillRadial(unit) {
     if (isLandscapeBattleUi()) {
+        actionState = null;
+        clearHighlights();
         renderLandscapeSubCommandRail(unit, "skill");
         return;
     }
@@ -625,6 +629,8 @@ function showSkillRadial(unit) {
 /** 魔法選択ラジアル（2段目） */
 function showMagicRadial(unit) {
     if (isLandscapeBattleUi()) {
+        actionState = null;
+        clearHighlights();
         renderLandscapeSubCommandRail(unit, "magic");
         return;
     }
@@ -733,6 +739,7 @@ function selectUnit(unit) {
     if (el) el.classList.add("unitSelected");
 
     renderBattleCommands(unit);
+    activateLandscapeDefaultMove(unit);
     syncLandscapeBattleUi(unit);
     showMessage("SYSTEM", `${unit.name}の行動を選択してください。`);
 }
@@ -992,6 +999,25 @@ function unitStatusText(unit) {
     return unit.statusEffects.map(e => nm[e.type] || e.type).join(" ");
 }
 
+function activateLandscapeDefaultMove(unit) {
+    if (!isLandscapeBattleUi()
+        || !unit
+        || battleOver
+        || turnPhase !== "ally"
+        || unit.side !== "ally"
+        || unit.moved) {
+        return false;
+    }
+
+    actionState = "moving";
+    selectedSpell = null;
+    selectedAttackSkill = null;
+    hideForecastLayer();
+    highlightMoveRange(unit);
+    setLandscapeHint(`${unit.name}の移動先を選べます。行動するなら右のコマンドを選んでください。`);
+    return true;
+}
+
 function renderLandscapeUnitPanel(unit = selectedUnit) {
     if (!landscapeUnitContent || !landscapeUnitEmpty) return;
     if (!isLandscapeBattleUi() || !unit) {
@@ -1053,7 +1079,6 @@ function getLandscapeCommands(unit) {
     if (!unit.acted && Object.keys(unit.spells || {}).length > 0) commands.push({ label: "魔法", active: actionState === "magic" });
     if (!unit.acted && Object.keys(unit.skills || {}).some(s => BATTLE_UTILITY_SKILLS.has(s))) commands.push({ label: "特技" });
     if ((unit.items?.length ?? 0) > 0) commands.push({ label: "持ち物" });
-    if (!unit.moved) commands.push({ label: "移動", active: actionState === "moving" });
     commands.push({ label: "待機" });
     commands.push({ label: "詳細" });
     return commands;
@@ -1098,6 +1123,7 @@ function addLandscapeBackButton(unit) {
         clearHighlights();
         hideForecastLayer();
         renderBattleCommands(unit);
+        activateLandscapeDefaultMove(unit);
         syncLandscapeBattleUi(unit);
     });
     landscapeCommandList.appendChild(back);
@@ -3292,6 +3318,8 @@ function handleBattleCommand(unit, label) {
 
 function showItemRadial(unit) {
     if (isLandscapeBattleUi()) {
+        actionState = null;
+        clearHighlights();
         renderLandscapeSubCommandRail(unit, "item");
         return;
     }
