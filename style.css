@@ -2448,47 +2448,10 @@ html, body {
         visibility: hidden;
     }
 
-    /* ── 時計盤のリムと軸 ──
-       軸（ハブ）は針の支点側＝左。リムは針の先端を囲む円弧 */
+    /* 時計盤のリム・目盛り・軸の装飾は盤面の邪魔になるため非表示
+       （針型ラジアルの配置と挙動だけを残す） */
     #landscapeCommandCurve {
-        position: absolute;
-        left: -182px;           /* 円中心 x ≒ パネル左から18px、半径200で針先の外側を通す */
-        top: 50%;
-        width: 400px;
-        height: 400px;
-        transform: translateY(-50%);
-        border: 1px solid rgba(200,146,42,0.22);
-        border-radius: 50%;
-        pointer-events: none;
-    }
-
-    /* 時計の分目盛り：60分割の放射ティックをリム内縁に刻む */
-    #landscapeCommandCurve::before {
-        content: "";
-        position: absolute;
-        inset: 2px;
-        border-radius: 50%;
-        background: repeating-conic-gradient(
-            rgba(224,176,72,0.55) 0deg 0.8deg,
-            transparent 0.8deg 6deg);
-        -webkit-mask: radial-gradient(closest-side,
-            transparent calc(100% - 10px), #000 calc(100% - 9px));
-        mask: radial-gradient(closest-side,
-            transparent calc(100% - 10px), #000 calc(100% - 9px));
-    }
-
-    /* 時計の軸（ハブ） */
-    #landscapeCommandCurve::after {
-        content: "";
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        width: 9px;
-        height: 9px;
-        transform: translate(-50%, -50%);
-        border-radius: 50%;
-        background: radial-gradient(circle at 35% 30%, #ffe2a0, #c8922a 60%, #6b4a12);
-        box-shadow: 0 0 10px rgba(200,146,42,0.6);
+        display: none;
     }
 
     #landscapeCommandList {
