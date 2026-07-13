@@ -321,6 +321,8 @@ function renderUnits() {
 
     // 退避したポップアップを最前面に再追加
     livePopups.forEach(p => unitLayer.appendChild(p));
+
+    renderDeclarations();
 }
 
 // =============================================
@@ -1601,6 +1603,7 @@ function startAllyPhase() {
     }
     tickStatusEffects("ally");
     renderUnits();
+    planEnemyActions();
     renderIdlePanel();
 }
 
@@ -2322,6 +2325,227 @@ function showDamagePopup(unitId, value, type) {
     setTimeout(() => popup.remove(), 1200);
 }
 
+// =============================================
+// 宣言制：敵行動予告
+// 味方フェーズ開始時に敵の次行動を表示し、敵フェーズでは予告マスへ実行する。
+// =============================================
+const DECLARATION_MODE = true;
+let enemyDeclarations = new Map();
+
+function clearDeclarationCells() {
+    for (const cell of battleGrid.children) cell.classList.remove("declAttackCell");
+}
+
+function clearDeclarations() {
+    enemyDeclarations = new Map();
+    const layer = document.getElementById("declLayer");
+    if (layer) layer.innerHTML = "";
+    clearDeclarationCells();
+}
+
+function getDeclLayer() {
+    let layer = document.getElementById("declLayer");
+    if (!layer) {
+        layer = document.createElement("div");
+        layer.id = "declLayer";
+        unitLayer.parentNode.insertBefore(layer, unitLayer);
+    }
+    return layer;
+}
+
+function planEnemyActions() {
+    enemyDeclarations = new Map();
+    if (!DECLARATION_MODE || battleOver || BATTLE_DEFINITIONS[currentBattleId]?.passive) {
+        renderDeclarations();
+        return;
+    }
+
+    const aliveAllies = battleUnits.filter(u => u.side === "ally" && u.hp > 0);
+    const enemies = battleUnits.filter(u => u.side === "enemy" && u.hp > 0);
+    if (aliveAllies.length === 0 || enemies.length === 0) {
+        renderDeclarations();
+        return;
+    }
+
+    const reserved = new Set();
+
+    for (const enemy of enemies) {
+        if ((enemy.statusEffects || []).some(e => e.type === "stun")) {
+            enemyDeclarations.set(enemy.id, { type: "stun" });
+            reserved.add(`${enemy.x},${enemy.y}`);
+            continue;
+        }
+
+        const target = aliveAllies.reduce((best, u) => {
+            const d = Math.abs(u.x - enemy.x) + Math.abs(u.y - enemy.y);
+            const bd = Math.abs(best.x - enemy.x) + Math.abs(best.y - enemy.y);
+            return d < bd ? u : best;
+        });
+
+        let dest = { x: enemy.x, y: enemy.y };
+        const distNow = Math.abs(target.x - enemy.x) + Math.abs(target.y - enemy.y);
+        if (distNow > enemy.attackRange) {
+            const candidates = getMoveRange(enemy).filter(c => !reserved.has(`${c.col},${c.row}`));
+            if (candidates.length > 0) {
+                const best = candidates.reduce((b, c) => {
+                    const d = Math.abs(c.col - target.x) + Math.abs(c.row - target.y);
+                    const bd = Math.abs(b.col - target.x) + Math.abs(b.row - target.y);
+                    return d < bd ? c : b;
+                });
+                if (Math.abs(best.col - target.x) + Math.abs(best.row - target.y) < distNow) {
+                    dest = { x: best.col, y: best.row };
+                }
+            }
+        }
+        reserved.add(`${dest.x},${dest.y}`);
+
+        const distAfter = Math.abs(target.x - dest.x) + Math.abs(target.y - dest.y);
+        if (distAfter <= enemy.attackRange) {
+            enemyDeclarations.set(enemy.id, {
+                type: "attack",
+                dest,
+                targetCell: { x: target.x, y: target.y },
+                targetName: target.name,
+            });
+        } else if (dest.x !== enemy.x || dest.y !== enemy.y) {
+            enemyDeclarations.set(enemy.id, { type: "move", dest });
+        } else {
+            enemyDeclarations.set(enemy.id, { type: "wait" });
+        }
+    }
+    renderDeclarations();
+}
+
+function renderDeclarations() {
+    const layer = getDeclLayer();
+    layer.innerHTML = "";
+    clearDeclarationCells();
+    if (!DECLARATION_MODE || enemyDeclarations.size === 0) return;
+
+    const cellW = 100 / GRID_COLS;
+    const cellH = 100 / GRID_ROWS;
+    const cx = v => (v + 0.5) * cellW;
+    const cy = v => (v + 0.5) * cellH;
+
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 100 100");
+    svg.setAttribute("preserveAspectRatio", "none");
+    layer.appendChild(svg);
+
+    for (const [id, decl] of enemyDeclarations) {
+        const enemy = battleUnits.find(u => u.id === id && u.hp > 0);
+        if (!enemy) continue;
+
+        if (decl.dest && (decl.dest.x !== enemy.x || decl.dest.y !== enemy.y)) {
+            const moveLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            moveLine.setAttribute("x1", cx(enemy.x));
+            moveLine.setAttribute("y1", cy(enemy.y));
+            moveLine.setAttribute("x2", cx(decl.dest.x));
+            moveLine.setAttribute("y2", cy(decl.dest.y));
+            moveLine.setAttribute("class", "declMoveLine");
+            moveLine.setAttribute("vector-effect", "non-scaling-stroke");
+            svg.appendChild(moveLine);
+
+            const mark = document.createElement("div");
+            mark.className = "declDestMark";
+            mark.style.left = `${decl.dest.x * cellW}%`;
+            mark.style.top = `${decl.dest.y * cellH}%`;
+            mark.style.width = `${cellW}%`;
+            mark.style.height = `${cellH}%`;
+            layer.appendChild(mark);
+        }
+
+        if (decl.type === "attack" && decl.targetCell) {
+            const from = decl.dest || { x: enemy.x, y: enemy.y };
+            const attackLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            attackLine.setAttribute("x1", cx(from.x));
+            attackLine.setAttribute("y1", cy(from.y));
+            attackLine.setAttribute("x2", cx(decl.targetCell.x));
+            attackLine.setAttribute("y2", cy(decl.targetCell.y));
+            attackLine.setAttribute("class", "declAttackLine");
+            attackLine.setAttribute("vector-effect", "non-scaling-stroke");
+            svg.appendChild(attackLine);
+
+            const cell = getCell(decl.targetCell.y, decl.targetCell.x);
+            if (cell) cell.classList.add("declAttackCell");
+        }
+
+        const badge = document.createElement("div");
+        badge.className = `declIntentBadge ${decl.type}`;
+        badge.textContent = decl.type === "attack" ? "ATK"
+                          : decl.type === "move"   ? "MOV"
+                          : decl.type === "stun"   ? "STN" : "WAIT";
+        badge.style.left = `${cx(enemy.x) + cellW * 0.3}%`;
+        badge.style.top = `${cy(enemy.y) - cellH * 0.72}%`;
+        layer.appendChild(badge);
+    }
+}
+
+function getDeclarationLabel(decl) {
+    if (!decl) return null;
+    if (decl.type === "attack") return `ATK ${decl.targetName || "対象"}を攻撃`;
+    if (decl.type === "move") return "MOV 前進";
+    if (decl.type === "stun") return "STN 行動不能";
+    return "WAIT 待機";
+}
+
+async function executeDeclaredAction(enemy, decl) {
+    if (decl.type === "stun") {
+        addLog(`・${enemy.name}はスタン中のため行動できない`);
+        await sleep(350);
+        return;
+    }
+
+    if (decl.dest && (decl.dest.x !== enemy.x || decl.dest.y !== enemy.y)) {
+        const occupied = battleUnits.find(u => u.hp > 0 && u.id !== enemy.id && u.x === decl.dest.x && u.y === decl.dest.y);
+        if (!occupied && !isTileBlocked(decl.dest.x, decl.dest.y)) {
+            enemy.x = decl.dest.x;
+            enemy.y = decl.dest.y;
+            enemy.moved = true;
+            addLog(`・${enemy.name}が予告どおり移動した`);
+            renderUnits();
+            setUnitActing(enemy.id, true);
+            await sleep(550);
+        } else {
+            addLog(`・${enemy.name}は進路を塞がれて移動できない`);
+            await sleep(450);
+        }
+    }
+
+    if (decl.type !== "attack" || !decl.targetCell) return;
+
+    const tc = decl.targetCell;
+    const dist = Math.abs(tc.x - enemy.x) + Math.abs(tc.y - enemy.y);
+    if (dist > enemy.attackRange) {
+        addLog(`・${enemy.name}の攻撃は届かなかった`);
+        await sleep(300);
+        return;
+    }
+
+    const victim = battleUnits.find(u => u.hp > 0 && u.side === "ally" && u.x === tc.x && u.y === tc.y);
+    if (!victim) {
+        addLog(`・${enemy.name}は予告地点を攻撃したが空振りした`);
+        await sleep(350);
+        return;
+    }
+
+    const { val: atkStat, name: atkSkillName } = getAttackSkillVal(enemy);
+    const targetStunned = (victim.statusEffects || []).some(e => e.type === "stun");
+    const evadeStat = targetStunned ? 0 : getEvadeSkillVal(victim);
+    const rate = targetStunned ? 100 : getOpposedRate(atkStat, evadeStat);
+    const roll = Math.floor(Math.random() * 100) + 1;
+    const isHit = roll <= rate;
+    const rollNote = targetStunned ? "スタン中：自動命中" : `${roll}/${rate}%`;
+    addLog(`・${enemy.name} → ${victim.name} 【${atkSkillName}${atkStat} vs 回避${evadeStat}】 ${rollNote} → ${isHit ? "命中" : "失敗"}`);
+
+    if (isHit) {
+        flashUnitHit(victim.id);
+        resolvePhysicalHit(enemy, victim, atkSkillName);
+        checkVictoryCondition();
+        await sleep(700);
+    }
+}
+
 async function startEnemyPhase() {
     if (battleOver) return;
     hideRadialMenu();
@@ -2405,6 +2629,17 @@ async function enemyAction(enemy) {
 
     setUnitActing(enemy.id, true);   // 赤ハイライトON
 
+    const declaration = DECLARATION_MODE ? enemyDeclarations.get(enemy.id) : null;
+    if (declaration) {
+        await executeDeclaredAction(enemy, declaration);
+        enemyDeclarations.delete(enemy.id);
+        renderDeclarations();
+        enemy.moved = true;
+        enemy.acted = true;
+        setUnitActing(enemy.id, false);
+        return;
+    }
+
     // スタン中は行動不可
     if ((enemy.statusEffects || []).some(e => e.type === "stun")) {
         addLog(`・${enemy.name}はスタン中のため行動できない`);
@@ -2484,6 +2719,7 @@ function checkVictoryCondition() {
 
     if (aliveEnemies.length === 0) {
         battleOver = true;
+        clearDeclarations();
         addLog("\n=== 勝利！ ===");
         showMessage("SYSTEM", "全ての敵を倒した！勝利！");
         commandHeader.textContent = "VICTORY";
@@ -2496,6 +2732,7 @@ function checkVictoryCondition() {
     }
     if (aliveAllies.length === 0) {
         battleOver = true;
+        clearDeclarations();
         addLog("\n=== 敗北... ===");
         showMessage("SYSTEM", "全員が倒れた…敗北。");
         commandHeader.textContent = "GAME OVER";
@@ -2606,6 +2843,7 @@ function renderEnemyInfoPanel(unit) {
     commandHeader.textContent = `${unit.name}  Lv ${unit.level}`;
     commandInfo.innerHTML     = "";
     commandList.innerHTML     = "";
+    const declLabel = getDeclarationLabel(enemyDeclarations.get(unit.id));
 
     const hpPct   = unit.hp / unit.maxHp;
     const mpPct   = unit.mp / unit.maxMp;
@@ -2678,6 +2916,7 @@ function renderEnemyInfoPanel(unit) {
                     </div>
                 </div>
             </div>
+            ${declLabel ? `<div class="unitInfoDeclRow">予告：${declLabel}</div>` : ""}
             <div class="unitInfoBtnRow">
                 <button class="unitInfoTabBtn" id="enemySkillBtn">特技</button>
                 <button class="unitInfoTabBtn" id="enemyMagicBtn">魔法</button>
@@ -2951,12 +3190,14 @@ function enterScenarioLayout() {
     switchTopLayer("dialogue");
     battleGrid.style.display  = "none";   // グリッド線を非表示
     unitLayer.style.display   = "none";   // ユニットトークンを非表示
+    document.getElementById("declLayer")?.style.setProperty("display", "none");
 }
 
 /** バトル用レイアウトに戻す */
 function exitScenarioLayout() {
     battleGrid.style.display  = "";
     unitLayer.style.display   = "";
+    document.getElementById("declLayer")?.style.removeProperty("display");
 }
 
 /**
@@ -3294,6 +3535,7 @@ function setBattleMode(battleId) {
     selectedSpell       = null;
     selectedAttackSkill = null;
     hideBattlePreview();
+    clearDeclarations();
 
     const def = battleId && BATTLE_DEFINITIONS[battleId];
     setUiTheme(forcedUiTheme || def?.uiTheme || "orcus");
@@ -3338,6 +3580,7 @@ function setBattleMode(battleId) {
 
     renderUnits();
     renderMapItems();
+    planEnemyActions();
     renderIdlePanel();
 }
 

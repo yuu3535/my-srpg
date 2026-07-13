@@ -664,7 +664,7 @@ html, body {
 #unitLayer {
     position: absolute;
     top: 44px; left: 44px; right: 44px; bottom: 44px;
-    z-index: 2;  /* #battleCanvas 内 */
+    z-index: 3;  /* #battleCanvas 内 */
     pointer-events: none;
 }
 
@@ -2533,4 +2533,107 @@ html, body {
 #lsMinuteHand {
     transform-origin: 150px 150px;
     animation: lsRotateHand 8s linear infinite;
+}
+
+/* =============================================
+   Enemy declaration preview
+   ============================================= */
+#declLayer {
+    position: absolute;
+    top: 44px; left: 44px; right: 44px; bottom: 44px;
+    z-index: 2;
+    pointer-events: none;
+}
+
+#declLayer svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    overflow: visible;
+}
+
+.declMoveLine {
+    stroke: rgba(229, 137, 78, 0.68);
+    stroke-width: 2;
+    stroke-dasharray: 5 4;
+}
+
+.declAttackLine {
+    stroke: rgba(218, 82, 72, 0.88);
+    stroke-width: 2.5;
+}
+
+.gridCell.declAttackCell {
+    background: rgba(190, 48, 58, 0.28) !important;
+    border-color: rgba(238, 132, 106, 0.78) !important;
+    animation: declPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes declPulse {
+    0%, 100% { box-shadow: inset 0 0 2px rgba(238, 132, 106, 0.18); }
+    50%      { box-shadow: inset 0 0 12px rgba(238, 132, 106, 0.56); }
+}
+
+.declDestMark {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.declDestMark::before {
+    content: "";
+    width: 36%;
+    height: 36%;
+    border: 2px dashed rgba(229, 137, 78, 0.82);
+    border-radius: 3px;
+    transform: rotate(45deg);
+    animation: declBlink 1.6s ease-in-out infinite;
+}
+
+@keyframes declBlink {
+    0%, 100% { opacity: 0.55; }
+    50%      { opacity: 1; }
+}
+
+.declIntentBadge {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    min-width: 24px;
+    padding: 2px 4px;
+    border: 1px solid rgba(238, 132, 106, 0.52);
+    border-radius: 2px;
+    background: rgba(24, 9, 10, 0.78);
+    color: #f3c09f;
+    font-size: 8px;
+    line-height: 1;
+    letter-spacing: 0.08em;
+    text-align: center;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.9);
+    z-index: 4;
+    animation: declBlink 1.6s ease-in-out infinite;
+}
+
+.declIntentBadge.move {
+    border-color: rgba(229, 137, 78, 0.52);
+    color: #e7b57c;
+}
+
+.declIntentBadge.stun,
+.declIntentBadge.wait {
+    border-color: rgba(200, 146, 42, 0.44);
+    color: rgba(224, 176, 72, 0.86);
+}
+
+.unitInfoDeclRow {
+    margin-top: 4px;
+    padding: 4px 8px;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: #f3c09f;
+    background: linear-gradient(90deg, rgba(130, 36, 32, 0.34), rgba(130, 36, 32, 0.07));
+    border-left: 3px solid rgba(238, 132, 106, 0.78);
+    border-radius: 3px;
 }
