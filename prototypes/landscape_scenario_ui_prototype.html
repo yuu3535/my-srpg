@@ -128,12 +128,13 @@
 
         .character {
             position: absolute;
-            bottom: -118px;
+            top: 0;
+            bottom: auto;
             width: 28%;
-            height: 130%;
+            height: 118%;
             background-repeat: no-repeat;
-            background-position: center bottom;
-            background-size: auto 150%;
+            background-position: center top;
+            background-size: auto 108%;
             filter: brightness(0.48) saturate(0.78);
             opacity: 0.76;
             transition: transform 0.25s ease, filter 0.25s ease, opacity 0.25s ease;
@@ -149,19 +150,19 @@
         .character.gunter {
             left: 1%;
             background-image: url("../立ち絵透過済み/ギュンター立ち絵_transparent.png");
-            background-size: auto 168%;
+            background-size: auto 118%;
         }
 
         .character.arshe {
             left: 34%;
             background-image: url("../立ち絵透過済み/アルシェ幼少期表情/生意気_transparent.png");
-            background-size: auto 148%;
+            background-size: auto 112%;
         }
 
         .character.karima {
             right: 4%;
             background-image: url("../立ち絵透過済み/幼少期カリマ1_transparent.png");
-            background-size: auto 146%;
+            background-size: auto 112%;
         }
 
         .focus-line {
@@ -198,7 +199,7 @@
             height: 92px;
             background:
                 linear-gradient(0deg, rgba(3, 4, 10, 0.65), transparent 46%),
-                url("../立ち絵透過済み/アルシェ幼少期表情/生意気_transparent.png") center 9% / 160% auto no-repeat;
+                url("../立ち絵透過済み/アルシェ幼少期表情/生意気_transparent.png") center 4% / auto 255% no-repeat;
             border: 1px solid rgba(200, 146, 42, 0.42);
             box-shadow: inset 0 1px 0 rgba(255, 232, 160, 0.08), 0 12px 18px rgba(0, 0, 0, 0.42);
         }
@@ -402,24 +403,25 @@
             }
 
             .character {
-                bottom: -112px;
-                height: 132%;
+                top: 0;
+                bottom: auto;
+                height: 116%;
                 width: 30%;
             }
 
             .character.gunter {
                 left: -2%;
-                background-size: auto 172%;
+                background-size: auto 122%;
             }
 
             .character.arshe {
                 left: 33%;
-                background-size: auto 150%;
+                background-size: auto 116%;
             }
 
             .character.karima {
                 right: 0;
-                background-size: auto 148%;
+                background-size: auto 116%;
             }
 
             .dialogue-panel {
@@ -435,7 +437,7 @@
                 bottom: 9px;
                 width: 62px;
                 height: 78px;
-                background-size: 160% auto;
+                background-size: auto 255%;
             }
 
             .speaker-row {
