@@ -1024,23 +1024,13 @@ function calculatePhysicalDamage(attacker, target, options = {}) {
     const atkStats = calcBattleStats(attacker);
     const defStats = calcBattleStats(target);
     const weaponPower = getWeaponPower(attacker);
-    let attackValue = atkStats.power + weaponPower;
-    let artNote = "";
-
-    if (options.allowMartialArt !== false && "武道" in (attacker.skills || {})) {
-        const artVal = attacker.skills["武道"];
-        const artRoll = Math.floor(Math.random() * 10) + 1;
-        if (artRoll <= artVal) {
-            artNote = `（武道発動:${artRoll}/${artVal} ${attackValue}→${attackValue * 2}）`;
-            attackValue *= 2;
-        } else {
-            artNote = `（武道不発:${artRoll}/${artVal}）`;
-        }
-    }
-
+    const attackValue = atkStats.power + weaponPower;
+    const masteryBonus = masteryDamageBonus(attacker.skills?.["武道"]);
+    const artNote = masteryBonus > 0 ? `（武道+${masteryBonus}）` : "";
     const raw = physicalDamage({ atk: attackValue }, defStats, 0);
-    const damage = options.half ? Math.max(1, Math.floor(raw / 2)) : raw;
-    return { damage, raw, power: atkStats.power, weaponPower, armor: defStats.armor, artNote };
+    const mastered = raw + masteryBonus;
+    const damage = options.half ? Math.max(1, Math.floor(mastered / 2)) : mastered;
+    return { damage, raw: mastered, power: atkStats.power, weaponPower, armor: defStats.armor, masteryBonus, artNote };
 }
 
 function calculateMagicDamage(caster, target, spell, options = {}) {
@@ -1048,12 +1038,49 @@ function calculateMagicDamage(caster, target, spell, options = {}) {
     const defStats = calcBattleStats(target);
     const spellPower = getSpellPower(spell);
     const raw = magicalDamage(atkStats, defStats, spellPower);
-    const damage = options.half ? Math.max(1, Math.floor(raw / 2)) : raw;
-    return { damage, raw, magic: atkStats.magic, spellPower, ward: defStats.ward };
+    const masteryBonus = masteryDamageBonus(caster.skills?.["魔導"]);
+    const mastered = raw + masteryBonus;
+    const damage = options.half ? Math.max(1, Math.floor(mastered / 2)) : mastered;
+    const masteryNote = masteryBonus > 0 ? `（魔導+${masteryBonus}）` : "";
+    return { damage, raw: mastered, magic: atkStats.magic, spellPower, ward: defStats.ward, masteryBonus, masteryNote };
 }
 
 function getCounterRate(unit) {
-    return Math.max(0, Math.min(100, calcBattleStats(unit).counterRate));
+    return Math.max(0, Math.min(100, getEffectiveCourage(unit)));
+}
+
+function getEffectiveCourage(unit) {
+    const base = calcBattleStats(unit).raw.courage;
+    return Math.max(0, Number(base || 0) - Number(unit?.battleCourageLoss || 0));
+}
+
+function getCriticalStatusModifier(unit, type) {
+    return (unit?.statusEffects || [])
+        .filter(effect => effect.type === type)
+        .reduce((sum, effect) => sum + Number(effect.value || 0), 0);
+}
+
+function getCriticalRate(attacker, defender) {
+    const defenderApp = calcBattleStats(defender).raw.app;
+    return criticalRate(getEffectiveCourage(attacker), attacker.level, defenderApp, {
+        critical: Number(attacker.criticalBonus || 0)
+            + getCriticalStatusModifier(attacker, "criticalBonus"),
+        criticalAvoidance: Number(defender.criticalAvoidanceBonus || 0)
+            + getCriticalStatusModifier(defender, "criticalAvoidance"),
+    });
+}
+
+function rollCritical(attacker, defender, baseDamage) {
+    const rate = getCriticalRate(attacker, defender);
+    const roll = Math.floor(Math.random() * 100) + 1;
+    const isCritical = roll <= rate;
+    if (isCritical) showCriticalCutIn(attacker);
+    return {
+        rate,
+        roll,
+        isCritical,
+        damage: isCritical ? criticalDamage(baseDamage) : baseDamage,
+    };
 }
 
 function canCounter(unit) {
@@ -1463,17 +1490,17 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
                 <button type="button" id="lsFcConfirm">実行</button>
             </div>
             <div class="lsFcHead">
-                <span>命中</span><span>威力</span>
+                <span>命中</span><span>威力</span><span>必殺</span>
                 <b class="lsFcHpPlate">${attacker.hp}<em>HP</em>${target.hp}</b>
-                <span>威力</span><span>命中</span>
+                <span>必殺</span><span>威力</span><span>命中</span>
             </div>
             <div class="lsFcVals">
-                <span>${pred.hitRate}</span><span>${dmgDisp}</span>
+                <span>${pred.hitRate}</span><span>${dmgDisp}</span><span class="lsFcCrit">${isDamage ? pred.critRate : "─"}</span>
                 <span class="lsFcExchange" aria-label="与えるダメージと受けるダメージ">
                     <b class="toDef"><small>与</small><strong>${isDamage ? dmgN : pred.effectDesc}</strong><i>→</i></b>
                     <b class="toAtk"><i>←</i><strong>${pred.canCounter ? ctrN : "─"}</strong><small>被</small></b>
                 </span>
-                <span>${pred.canCounter ? ctrN : "─"}</span><span>${pred.canCounter ? pred.ctrHitRate : "─"}</span>
+                <span class="lsFcCrit">${pred.canCounter ? pred.ctrCritRate : "─"}</span><span>${pred.canCounter ? ctrN : "─"}</span><span>${pred.canCounter ? pred.ctrHitRate : "─"}</span>
             </div>
             <div class="lsFcCounterNote${pred.canCounter ? "" : " hidden"}">
                 <span>反撃発生 ${pred.counterRate}%</span>
@@ -1499,12 +1526,7 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
     setLandscapeForecastOpen(true);
 
     document.getElementById("lsFcConfirm").addEventListener("click", () => {
-        if (!_vsAttack) return;
-        const { attacker, target, isMagic, spell } = _vsAttack;
-        hideBattlePreview();
-        clearHighlights();
-        if (isMagic) executeMagic(attacker, spell, target);
-        else executeAttack(attacker, target);
+        executePendingBattlePreview();
     });
     document.getElementById("lsFcCancel").addEventListener("click", () => {
         if (!_vsAttack) return;
@@ -1598,11 +1620,13 @@ function executePhysicalCounter(counterAttacker, counterTarget) {
     if (!isHit) return;
 
     const result = calculatePhysicalDamage(counterAttacker, counterTarget, { half: true });
-    const barrier = applyBarrierDamage(counterTarget, result.damage);
+    const critical = rollCritical(counterAttacker, counterTarget, result.damage);
+    const barrier = applyBarrierDamage(counterTarget, critical.damage);
     counterTarget.hp = Math.max(0, counterTarget.hp - barrier.damage);
-    showDamagePopup(counterTarget.id, barrier.damage, "counter");
+    showDamagePopup(counterTarget.id, barrier.damage, critical.isCritical ? "critical" : "counter");
     flashUnitHit(counterTarget.id);
-    addLog(`    ${barrier.damage}ダメージ（半分）${result.artNote}${barrier.note}（力${result.power}+武器${result.weaponPower}-物防${result.armor}）→ ${counterTarget.name} HP ${counterTarget.hp}/${counterTarget.maxHp}`);
+    const criticalNote = critical.isCritical ? ` 必殺！（${critical.roll}/${critical.rate}%）` : "";
+    addLog(`    ${barrier.damage}ダメージ（半分）${criticalNote}${result.artNote}${barrier.note}（力${result.power}+武器${result.weaponPower}-物防${result.armor}）→ ${counterTarget.name} HP ${counterTarget.hp}/${counterTarget.maxHp}`);
     renderUnits();
     if (counterTarget.hp <= 0) addLog(`    ${counterTarget.name}は倒れた！`);
 }
@@ -1615,30 +1639,34 @@ function executeMagicCounter(caster, target, spell, spellVal) {
     if (!hit.isHit) return;
 
     const result = calculateMagicDamage(caster, target, spell, { half: true });
-    const barrier = applyBarrierDamage(target, result.damage, spell.effectType === "break");
+    const critical = rollCritical(caster, target, result.damage);
+    const barrier = applyBarrierDamage(target, critical.damage, spell.effectType === "break");
     target.hp = Math.max(0, target.hp - barrier.damage);
-    showDamagePopup(target.id, barrier.damage, "counter");
+    showDamagePopup(target.id, barrier.damage, critical.isCritical ? "critical" : "counter");
     flashUnitHit(target.id);
-    addLog(`    ${barrier.damage}ダメージ（半分）${barrier.note}（魔力${result.magic}+呪文${result.spellPower}-魔防${result.ward}）→ ${target.name} HP ${target.hp}/${target.maxHp}`);
+    const criticalNote = critical.isCritical ? ` 必殺！（${critical.roll}/${critical.rate}%）` : "";
+    addLog(`    ${barrier.damage}ダメージ（半分）${criticalNote}${result.masteryNote}${barrier.note}（魔力${result.magic}+呪文${result.spellPower}-魔防${result.ward}）→ ${target.name} HP ${target.hp}/${target.maxHp}`);
     renderUnits();
     if (target.hp <= 0) addLog(`    ${target.name}は倒れた！`);
 }
 
 /**
- * 命中後の物理ダメージ適用（武道×2・カウンター・装甲・気絶・反撃を処理）
+ * 命中後の物理ダメージ適用（武道補正・必殺・カウンター・装甲・気絶・反撃を処理）
  */
 function resolvePhysicalHit(attacker, target, atkSkillName) {
     // カウンター状態：同じダメージを両者に与える
     if ((target.statusEffects || []).some(e => e.type === "counter")) {
         const result = calculatePhysicalDamage(attacker, target);
-        const rawDmg = result.damage;
+        const critical = rollCritical(attacker, target, result.damage);
+        const rawDmg = critical.damage;
         // 攻撃側も同じダメージ
         attacker.hp = Math.max(0, attacker.hp - rawDmg);
         showDamagePopup(attacker.id, rawDmg, "damage");
         // 防御側（カウンター持ち）も同じダメージ
         target.hp   = Math.max(0, target.hp - rawDmg);
         showDamagePopup(target.id, rawDmg, "damage");
-        addLog(`  カウンター発動！${rawDmg}ダメージ${result.artNote} → ${target.name} HP ${target.hp}/${target.maxHp} / ${attacker.name} HP ${attacker.hp}/${attacker.maxHp}`);
+        const criticalNote = critical.isCritical ? ` 必殺！（${critical.roll}/${critical.rate}%）` : "";
+        addLog(`  カウンター発動！${rawDmg}ダメージ${criticalNote}${result.artNote} → ${target.name} HP ${target.hp}/${target.maxHp} / ${attacker.name} HP ${attacker.hp}/${attacker.maxHp}`);
         showMessage("SYSTEM", `${target.name}のカウンター！お互いに ${rawDmg} ダメージ！`);
         renderUnits();
         if (target.hp   <= 0) addLog(`  ${target.name}は倒れた！`);
@@ -1647,15 +1675,19 @@ function resolvePhysicalHit(attacker, target, atkSkillName) {
     }
 
     const result = calculatePhysicalDamage(attacker, target);
-    const barrier = applyBarrierDamage(target, result.damage);
+    const critical = rollCritical(attacker, target, result.damage);
+    const barrier = applyBarrierDamage(target, critical.damage);
     const actualDmg = barrier.damage;
 
     const hpBefore = target.hp;
     target.hp = Math.max(0, target.hp - actualDmg);
-    showDamagePopup(target.id, actualDmg, "damage");
+    showDamagePopup(target.id, actualDmg, critical.isCritical ? "critical" : "damage");
     flashUnitHit(target.id);
-    addLog(`  命中！${actualDmg}ダメージ${result.artNote}${barrier.note}（力${result.power}+武器${result.weaponPower}-物防${result.armor}）→ ${target.name} HP ${target.hp}/${target.maxHp}`);
-    showMessage("SYSTEM", `${attacker.name}の攻撃命中！${target.name}に ${actualDmg} ダメージ！`);
+    const criticalNote = critical.isCritical ? ` 必殺！（${critical.roll}/${critical.rate}%）` : "";
+    addLog(`  命中！${actualDmg}ダメージ${criticalNote}${result.artNote}${barrier.note}（力${result.power}+武器${result.weaponPower}-物防${result.armor}）→ ${target.name} HP ${target.hp}/${target.maxHp}`);
+    showMessage("SYSTEM", critical.isCritical
+        ? `${attacker.name}の必殺！${target.name}に ${actualDmg} ダメージ！`
+        : `${attacker.name}の攻撃命中！${target.name}に ${actualDmg} ダメージ！`);
 
     // 気絶チェック：HPが一気に2以下に減った場合 CON×5% 失敗で戦闘不能
     if (hpBefore > 2 && target.hp <= 2 && target.hp > 0) {
@@ -1853,15 +1885,19 @@ function executeMagic(caster, spell, target) {
     switch (spell.effectType) {
         case "magicDamage": {
             const result = calculateMagicDamage(caster, target, spell);
-            const barrier = applyBarrierDamage(target, result.damage);
+            const critical = rollCritical(caster, target, result.damage);
+            const barrier = applyBarrierDamage(target, critical.damage);
             const rawDmg = barrier.damage;
 
             const hpBefore = target.hp;
             target.hp = Math.max(0, target.hp - rawDmg);
-            showDamagePopup(target.id, rawDmg, "damage");
+            showDamagePopup(target.id, rawDmg, critical.isCritical ? "critical" : "damage");
             flashUnitHit(target.id);
-            addLog(`  命中！${rawDmg}ダメージ${barrier.note}（魔力${result.magic}+呪文${result.spellPower}-魔防${result.ward}）→ ${target.name} HP ${target.hp}/${target.maxHp}`);
-            showMessage("SYSTEM", `${caster.name}の${spell.name}命中！${target.name}に ${rawDmg} ダメージ！`);
+            const criticalNote = critical.isCritical ? ` 必殺！（${critical.roll}/${critical.rate}%）` : "";
+            addLog(`  命中！${rawDmg}ダメージ${criticalNote}${result.masteryNote}${barrier.note}（魔力${result.magic}+呪文${result.spellPower}-魔防${result.ward}）→ ${target.name} HP ${target.hp}/${target.maxHp}`);
+            showMessage("SYSTEM", critical.isCritical
+                ? `${caster.name}の${spell.name}必殺！${target.name}に ${rawDmg} ダメージ！`
+                : `${caster.name}の${spell.name}命中！${target.name}に ${rawDmg} ダメージ！`);
 
             // 気絶チェック
             if (hpBefore > 2 && target.hp <= 2 && target.hp > 0) {
@@ -1874,7 +1910,7 @@ function executeMagic(caster, spell, target) {
             }
 
             // スペル固有の状態異常付与。命中後は追加抽選を重ねない。
-            const dmgForCheck = result.damage; // 装甲前のダメージで判定
+            const dmgForCheck = critical.damage; // 装甲前のダメージで判定
             if (dmgForCheck >= 10 && spell.statusEffect) {
                 target.statusEffects = target.statusEffects || [];
                 if (spell.statusEffect === "burn") {
@@ -1929,13 +1965,17 @@ function executeMagic(caster, spell, target) {
         case "break": {
             // 破壊魔法：ダメージを与えつつ結界を完全破壊（超過分はHPへ）
             const result = calculateMagicDamage(caster, target, spell);
-            const barrier = applyBarrierDamage(target, result.damage, true);
+            const critical = rollCritical(caster, target, result.damage);
+            const barrier = applyBarrierDamage(target, critical.damage, true);
             const dmgToHp = barrier.damage;
             const breakNote = barrier.note || "（結界なし）";
             target.hp = Math.max(0, target.hp - dmgToHp);
-            if (dmgToHp > 0) { showDamagePopup(target.id, dmgToHp, "damage"); flashUnitHit(target.id); }
-            addLog(`  破壊！${result.damage}ダメージ${breakNote}（魔力${result.magic}+呪文${result.spellPower}-魔防${result.ward}） → ${target.name} HP ${target.hp}/${target.maxHp}`);
-            showMessage("SYSTEM", `${caster.name}の${spell.name}！結界を砕き${dmgToHp}ダメージ！`);
+            if (dmgToHp > 0) { showDamagePopup(target.id, dmgToHp, critical.isCritical ? "critical" : "damage"); flashUnitHit(target.id); }
+            const criticalNote = critical.isCritical ? ` 必殺！（${critical.roll}/${critical.rate}%）` : "";
+            addLog(`  破壊！${critical.damage}ダメージ${criticalNote}${result.masteryNote}${breakNote}（魔力${result.magic}+呪文${result.spellPower}-魔防${result.ward}） → ${target.name} HP ${target.hp}/${target.maxHp}`);
+            showMessage("SYSTEM", critical.isCritical
+                ? `${caster.name}の${spell.name}必殺！結界を砕き${dmgToHp}ダメージ！`
+                : `${caster.name}の${spell.name}！結界を砕き${dmgToHp}ダメージ！`);
             if (target.hp <= 0) addLog(`  ${target.name}は倒れた！`);
             break;
         }
@@ -1956,12 +1996,15 @@ function executeMagic(caster, spell, target) {
             break;
         }
         case "nightmare": {
-            const reduction = rollDice(spell.effectValue || "1d6");
-            // 勇気の代わりにMPを削る（SRPG内での表現）
-            target.mp = Math.max(0, target.mp - reduction);
-            showDamagePopup(target.id, reduction, "counter");   // MP吸収はオレンジ色で表示
-            addLog(`  ${target.name}のMPを ${reduction} 削った（悪夢）`);
-            showMessage("SYSTEM", `${caster.name}の${spell.name}！${target.name}のMP-${reduction}！`);
+            const reduction = evalDamage(
+                spell.effectValue || "1d6",
+                calcBattleStats(caster).supportMagic,
+                0
+            );
+            target.battleCourageLoss = Number(target.battleCourageLoss || 0) + reduction;
+            showDamagePopup(target.id, reduction, "counter");
+            addLog(`  ${target.name}の勇気を ${reduction} 削った（残り${getEffectiveCourage(target)}）`);
+            showMessage("SYSTEM", `${caster.name}の${spell.name}！${target.name}の勇気-${reduction}！`);
             break;
         }
         case "areaDamage": {
@@ -1976,11 +2019,12 @@ function executeMagic(caster, spell, target) {
             } else {
                 for (const t of targets) {
                     const result = calculateMagicDamage(caster, t, spell);
-                    const dmg = applyBarrierDamage(t, result.damage).damage;
+                    const critical = rollCritical(caster, t, result.damage);
+                    const dmg = applyBarrierDamage(t, critical.damage).damage;
                     t.hp = Math.max(0, t.hp - dmg);
-                    showDamagePopup(t.id, dmg, "damage");
+                    showDamagePopup(t.id, dmg, critical.isCritical ? "critical" : "damage");
                     flashUnitHit(t.id);
-                    addLog(`  ${t.name}に ${dmg} ダメージ`);
+                    addLog(`  ${t.name}に ${dmg} ダメージ${critical.isCritical ? ` 必殺！（${critical.roll}/${critical.rate}%）` : ""}${result.masteryNote}`);
                     if (t.hp <= 0) addLog(`  ${t.name}は倒れた！`);
                 }
                 showMessage("SYSTEM", `${caster.name}の${spell.name}！${targets.length}体を攻撃！`);
@@ -2166,13 +2210,15 @@ function startAllyPhase() {
  */
 function calculateBattlePrediction(attacker, target, atkSkillName, isMagic, spell) {
     // ── 攻撃側予測 ──
-    let hitRate, expDmg, effectDesc;
+    let hitRate, expDmg, effectDesc, critRate = 0, critDmg = 0;
     if (isMagic && spell) {
         hitRate    = getMagicHitResult(attacker, target, spell, attacker.spells?.[spell.id] ?? 5).rate;
         const barrier = (target.statusEffects || []).find(e => e.type === "barrier");
         if (spell.effectType === "magicDamage" || spell.effectType === "break") {
             const raw = calculateMagicDamage(attacker, target, spell).damage;
             expDmg     = barrier ? Math.max(0, raw - barrier.value) : raw;
+            critRate   = getCriticalRate(attacker, target);
+            critDmg    = barrier ? Math.max(0, criticalDamage(raw) - barrier.value) : criticalDamage(raw);
             effectDesc = `${expDmg}`;
         } else if (spell.effectType === "heal") {
             expDmg     = calcBattleStats(attacker).supportMagic + getSpellPower(spell);
@@ -2195,30 +2241,41 @@ function calculateBattlePrediction(attacker, target, atkSkillName, isMagic, spel
         const rawDmg  = calculatePhysicalDamage(attacker, target, { allowMartialArt: false }).damage;
         const barrier = (target.statusEffects || []).find(e => e.type === "barrier");
         expDmg     = barrier ? Math.max(0, rawDmg - barrier.value) : rawDmg;
+        critRate   = getCriticalRate(attacker, target);
+        critDmg    = barrier ? Math.max(0, criticalDamage(rawDmg) - barrier.value) : criticalDamage(rawDmg);
         effectDesc = `${expDmg}`;
     }
 
     // ── 反撃予測（共通） ──
     const counterRate = getCounterRate(target);
     const counterAvailable = target.hp > 0 && canCounter(target);
-    let ctrHitRate = 0, ctrEffectiveRate = 0, ctrExpDmg = 0;
+    let ctrHitRate = 0, ctrEffectiveRate = 0, ctrExpDmg = 0, ctrCritRate = 0, ctrCritDmg = 0;
     if (counterAvailable) {
         const ctrAtkStat = getAttackSkillVal(target).val;
-        const ctrEvade   = getEvadeSkillVal(attacker);
         ctrHitRate = getBattleHitResult(target, attacker, ctrAtkStat).rate;
         ctrEffectiveRate = Math.round(counterRate * ctrHitRate / 100);
-        ctrExpDmg  = calculatePhysicalDamage(target, attacker, { half: true, allowMartialArt: false }).damage;
+        const ctrRaw = calculatePhysicalDamage(target, attacker, { half: true, allowMartialArt: false }).damage;
+        const attackerBarrier = (attacker.statusEffects || []).find(e => e.type === "barrier");
+        ctrExpDmg = attackerBarrier ? Math.max(0, ctrRaw - attackerBarrier.value) : ctrRaw;
+        ctrCritRate = getCriticalRate(target, attacker);
+        ctrCritDmg = attackerBarrier
+            ? Math.max(0, criticalDamage(ctrRaw) - attackerBarrier.value)
+            : criticalDamage(ctrRaw);
     }
 
     return {
         hitRate,
         expDmg,
         effectDesc,
+        critRate,
+        critDmg,
         canCounter: counterAvailable,
         counterRate,
         ctrHitRate,
         ctrEffectiveRate,
         ctrExpDmg,
+        ctrCritRate,
+        ctrCritDmg,
     };
 }
 
@@ -2316,6 +2373,7 @@ function showBattlePreview(attacker, target, pred, actionLabel) {
     document.getElementById("vsActionName").textContent = actionLabel || "";
     document.getElementById("vsAtkHit").textContent = `${pred.hitRate}%`;
     document.getElementById("vsAtkDmg").textContent = pred.effectDesc || `~${pred.expDmg}`;
+    document.getElementById("vsAtkCrit").textContent = `${pred.critRate}%`;
 
     // ── 反撃予測 ──
     const ctrTag     = document.getElementById("vsCtrTag");
@@ -2326,12 +2384,14 @@ function showBattlePreview(attacker, target, pred, actionLabel) {
         defStatRow.style.opacity = "1";
         document.getElementById("vsDefHit").textContent = `${pred.ctrHitRate}%`;
         document.getElementById("vsDefDmg").textContent = `~${pred.ctrExpDmg}`;
+        document.getElementById("vsDefCrit").textContent = `${pred.ctrCritRate}%`;
     } else {
         ctrTag.textContent       = "反撃なし";
         ctrTag.style.opacity     = "0.5";
         defStatRow.style.opacity = "0.35";
         document.getElementById("vsDefHit").textContent = "―%";
         document.getElementById("vsDefDmg").textContent = "―";
+        document.getElementById("vsDefCrit").textContent = "―%";
     }
 
     // ── 確認ボタンのテキストを行動に合わせて更新 ──
@@ -2346,12 +2406,7 @@ function showBattlePreview(attacker, target, pred, actionLabel) {
 
 // ── VS パネル内ボタン（ページロード時に一度だけ登録） ──
 vsConfirmBtn.addEventListener("click", () => {
-    if (!_vsAttack) return;
-    const { attacker, target, isMagic, spell } = _vsAttack;
-    hideBattlePreview();
-    clearHighlights();
-    if (isMagic) executeMagic(attacker, spell, target);
-    else          executeAttack(attacker, target);
+    executePendingBattlePreview();
 });
 vsCancelBtn.addEventListener("click", () => {
     if (!_vsAttack) return;
@@ -2773,6 +2828,8 @@ function showForecastLayer(attacker, targets, skillName, isMagic, spell) {
             const rawDmg  = calculatePhysicalDamage(attacker, target, { allowMartialArt: false }).damage;
             const barrier = (target.statusEffects || []).find(e => e.type === "barrier");
             const expDmg  = barrier ? Math.max(0, rawDmg - barrier.value) : rawDmg;
+            const critRate = getCriticalRate(attacker, target);
+            const critDmg = barrier ? Math.max(0, criticalDamage(rawDmg) - barrier.value) : criticalDamage(rawDmg);
             const barrierNote = barrier ? `<span class="forecastNote">結界-${barrier.value}</span>` : "";
 
             // 反撃予測
@@ -2784,6 +2841,8 @@ function showForecastLayer(attacker, targets, skillName, isMagic, spell) {
             const ctrDmg     = counterPossible
                 ? calculatePhysicalDamage(target, attacker, { half: true, allowMartialArt: false }).damage
                 : 0;
+            const ctrCritRate = counterPossible ? getCriticalRate(target, attacker) : 0;
+            const ctrCritDmg = counterPossible ? criticalDamage(ctrDmg) : 0;
 
             body.innerHTML = `
                 <div class="forecastRow">
@@ -2793,6 +2852,10 @@ function showForecastLayer(attacker, targets, skillName, isMagic, spell) {
                     <span class="forecastSep">／</span>
                     <span class="forecastLabel">ダメ</span>
                     <span class="forecastVal dmg">${expDmg}</span>${barrierNote}
+                    <span class="forecastSep">／</span>
+                    <span class="forecastLabel">必殺</span>
+                    <span class="forecastVal crit">${critRate}%</span>
+                    <span class="forecastNote">時${critDmg}</span>
                 </div>
                 <div class="forecastRow">
                     <span class="forecastDir ctr">←</span>
@@ -2801,6 +2864,10 @@ function showForecastLayer(attacker, targets, skillName, isMagic, spell) {
                     <span class="forecastSep">／</span>
                     <span class="forecastLabel">被ダメ</span>
                     <span class="forecastVal cdmg">${ctrDmg}</span>
+                    <span class="forecastSep">／</span>
+                    <span class="forecastLabel">必殺</span>
+                    <span class="forecastVal crit">${counterPossible ? `${ctrCritRate}%` : "―"}</span>
+                    ${counterPossible ? `<span class="forecastNote">時${ctrCritDmg}</span>` : ""}
                 </div>
             `;
         } else if (isMagic && spell) {
@@ -2808,12 +2875,14 @@ function showForecastLayer(attacker, targets, skillName, isMagic, spell) {
             const successRate = getMagicHitResult(attacker, target, spell, attacker.spells?.[spell.id] ?? 5).rate;
             let effectHtml = "";
 
-            if (spell.effectType === "magicDamage") {
+            if (spell.effectType === "magicDamage" || spell.effectType === "break") {
                 const rawMdmg = calculateMagicDamage(attacker, target, spell).damage;
                 const barr2  = (target.statusEffects || []).find(e => e.type === "barrier");
                 const effMdmg = barr2 ? Math.max(0, rawMdmg - barr2.value) : rawMdmg;
+                const critRate = getCriticalRate(attacker, target);
+                const critDmg = barr2 ? Math.max(0, criticalDamage(rawMdmg) - barr2.value) : criticalDamage(rawMdmg);
                 const bNote   = barr2 ? `<span class="forecastNote">結界-${barr2.value}</span>` : "";
-                effectHtml = `<span class="forecastLabel">ダメ</span><span class="forecastVal dmg">${effMdmg}</span>${bNote}`;
+                effectHtml = `<span class="forecastLabel">ダメ</span><span class="forecastVal dmg">${effMdmg}</span>${bNote}<span class="forecastSep">／</span><span class="forecastLabel">必殺</span><span class="forecastVal crit">${critRate}%</span><span class="forecastNote">時${critDmg}</span>`;
             } else if (spell.effectType === "heal") {
                 const healAmt = calcBattleStats(attacker).supportMagic + getSpellPower(spell);
                 effectHtml = `<span class="forecastLabel">回復</span><span class="forecastVal hit">${healAmt}</span>`;
@@ -2882,8 +2951,54 @@ function showDamagePopup(unitId, value, type) {
     const topPct  = parseFloat(el.style.top);
     popup.style.left = `${leftPct}%`;
     popup.style.top  = `${topPct}%`;
-    unitLayer.appendChild(popup);
-    setTimeout(() => popup.remove(), 1200);
+    const displayDelay = type === "critical" ? 760 : 0;
+    setTimeout(() => {
+        if (gameMode !== "battle") return;
+        unitLayer.appendChild(popup);
+        setTimeout(() => popup.remove(), 1200);
+    }, displayDelay);
+}
+
+let criticalCutInTimer = null;
+let criticalCutInExitTimer = null;
+
+/** Brief portrait cut-in shared by physical, magic, and counter criticals. */
+function showCriticalCutIn(unit) {
+    if (!unit || !gameScreen) return;
+
+    document.getElementById("criticalCutIn")?.remove();
+    clearTimeout(criticalCutInTimer);
+    clearTimeout(criticalCutInExitTimer);
+
+    const layer = document.createElement("div");
+    const portrait = getPortraitSrc(unit) || unit.portraitImage || unit.tokenImage || "";
+    const side = unit.side === "enemy" ? "enemy" : "ally";
+
+    layer.id = "criticalCutIn";
+    layer.className = `criticalCutIn ${side}`;
+    layer.setAttribute("role", "status");
+    layer.setAttribute("aria-live", "assertive");
+    layer.setAttribute("aria-label", `${unit.name}の必殺`);
+    layer.innerHTML = `
+        <div class="criticalCutInBand">
+            <div class="criticalCutInPortrait" aria-hidden="true"></div>
+            <div class="criticalCutInCopy">
+                <small>CRITICAL STRIKE</small>
+                <strong>必殺</strong>
+                <span>${unit.name}</span>
+            </div>
+            <i class="criticalCutInEdge" aria-hidden="true"></i>
+        </div>`;
+
+    if (portrait) {
+        layer.querySelector(".criticalCutInPortrait").style.backgroundImage = `url("${portrait}")`;
+    }
+
+    gameScreen.appendChild(layer);
+    requestAnimationFrame(() => layer.classList.add("active"));
+
+    criticalCutInExitTimer = setTimeout(() => layer.classList.add("exit"), 820);
+    criticalCutInTimer = setTimeout(() => layer.remove(), 1100);
 }
 
 // =============================================
@@ -2896,6 +3011,27 @@ let enemyDeclarations = new Map();
 function clearDeclarationCells() {
     for (const cell of battleGrid.children) cell.classList.remove("declAttackCell");
     unitLayer.querySelectorAll(".declTargeted").forEach(el => el.classList.remove("declTargeted"));
+}
+
+/** Execute the forecasted action, then close the preview after processing finishes. */
+function executePendingBattlePreview() {
+    if (!_vsAttack) return;
+
+    const { attacker, target, isMagic, spell } = _vsAttack;
+    clearHighlights();
+
+    try {
+        if (isMagic) executeMagic(attacker, spell, target);
+        else executeAttack(attacker, target);
+    } catch (error) {
+        console.error("Battle execution failed", error);
+        hideBattlePreview();
+        addLog(`・戦闘処理エラー: ${error?.message || "不明なエラー"}`);
+        showMessage("SYSTEM", "攻撃処理中にエラーが発生しました。ログを確認してください。");
+        return;
+    }
+
+    hideBattlePreview();
 }
 
 function clearDeclarations() {
@@ -3740,10 +3876,11 @@ function renderLandscapeStatusSheet(unit, bs) {
           <div class="adventureMetrics battleStats">
             ${metric("力", bs.power)}${metric("魔力", bs.magic)}
             ${metric("技量", bs.technique)}${metric("物防", bs.armor)}
-            ${metric("魔防", bs.ward)}${metric("反撃", `${bs.counterRate}%`)}
+            ${metric("魔防", bs.ward)}${metric("反撃", `${getCounterRate(unit)}%`)}
             ${metric("移動", `${unit.move}マス`)}${metric("射程", `${unit.attackRange}マス`)}
             ${metric("基礎命中", bs.baseAccuracy)}${metric("基礎回避", bs.baseEvasion)}
             ${metric("最終回避", bs.evasion)}${metric("回避修練", evadeSkill)}
+            ${metric("必殺値", criticalValue(getEffectiveCourage(unit), unit.level))}${metric("必殺回避", criticalAvoidance(bs.raw.app))}
           </div>
           <div class="adventureBattleNote">
             <span>方針</span><b>${counterNames[unit.counterMode] || "自動選択"}</b>
@@ -3842,11 +3979,13 @@ function renderStatusTab(tabName) {
             ${sr("技量", bs.technique)}
             ${sr("物防", bs.armor)}
             ${sr("魔防", bs.ward)}
-            ${sr("反撃率", `${bs.counterRate}%`)}
+            ${sr("反撃率", `${getCounterRate(unit)}%`)}
             ${sr("基礎命中", bs.baseAccuracy)}
             ${sr("基礎回避", bs.baseEvasion)}
             ${sr("最終回避", bs.evasion)}
             ${sr("回避修練", getEvadeSkillVal(unit))}
+            ${sr("必殺値", criticalValue(getEffectiveCourage(unit), unit.level))}
+            ${sr("必殺回避", criticalAvoidance(raw.app))}
           </div>
         </div>`;
         return;

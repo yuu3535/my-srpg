@@ -9,6 +9,11 @@ const {
     baseEvasionRate,
     evasionScore,
     battleHitRate,
+    criticalValue,
+    criticalAvoidance,
+    criticalRate,
+    criticalDamage,
+    masteryDamageBonus,
     targetPriorityScore,
 } = require("../statConversion.js");
 const characters = require("../characters.js");
@@ -86,6 +91,20 @@ assert.equal(battleHitRate(guardStats, ringholmStats, 7, 9), 27, "forest guard -
 assert.equal(battleHitRate(calcBattleStats(canon.albas), ringholmStats, 9, 9), 56, "albas attack magic -> ringholm");
 assert.equal(battleHitRate({ raw: { dex: 1 } }, { raw: { str: 99, dex: 99, siz: 1 } }, 1, 10), 20, "hit floor");
 assert.equal(battleHitRate({ raw: { dex: 99 } }, { raw: { str: 1, dex: 1, siz: 30 } }, 10, 0), 95, "hit ceiling");
+assert.equal(criticalValue(90, 5), 45, "ringholm critical value");
+assert.equal(criticalValue(90, 1), 25, "level 1 critical penalty");
+assert.equal(criticalAvoidance(17), 34, "albas APP critical avoidance");
+assert.equal(criticalRate(90, 5, 17), 11, "ringholm critical -> albas");
+assert.equal(criticalRate(90, 5, 17, { critical: 10 }), 21, "killing intent bonus");
+assert.equal(criticalRate(65, 5, 16), 0, "albas base critical -> ringholm");
+assert.equal(criticalRate(65, 5, 16, { critical: 50 }), 50, "demon bloodline bonus");
+assert.equal(criticalRate(999, 5, 0), 95, "critical ceiling");
+assert.equal(criticalRate(0, 1, 99), 0, "critical floor");
+assert.equal(criticalDamage(16), 48, "critical triples final damage");
+assert.equal(masteryDamageBonus(2), 0, "mastery rank 2 has no damage bonus");
+assert.equal(masteryDamageBonus(3), 1, "mastery rank 3 damage bonus");
+assert.equal(masteryDamageBonus(6), 2, "mastery rank 6 damage bonus");
+assert.equal(masteryDamageBonus(9), 3, "mastery rank 9 damage bonus");
 assert.ok(targetPriorityScore(3, 17) < targetPriorityScore(3, 10), "higher APP draws attention at equal range");
 
 console.log("statConversion: all tests passed");

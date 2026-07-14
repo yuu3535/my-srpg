@@ -141,6 +141,29 @@ function battleHitRate(attackerStats, defenderStats, attackSkill, evadeSkill, mo
     return Math.min(95, Math.max(20, Math.round(rate)));
 }
 
+function criticalValue(courage, level = 1, bonus = 0) {
+    const levelModifier = (Number(level || 1) - 5) * 5;
+    return Math.floor(Number(courage || 0) / 2) + levelModifier + Number(bonus || 0);
+}
+
+function criticalAvoidance(app, bonus = 0) {
+    return Number(app || 0) * 2 + Number(bonus || 0);
+}
+
+function criticalRate(courage, level, defenderApp, modifiers = {}) {
+    const rate = criticalValue(courage, level, modifiers.critical || 0)
+        - criticalAvoidance(defenderApp, modifiers.criticalAvoidance || 0);
+    return Math.min(95, Math.max(0, Math.floor(rate)));
+}
+
+function criticalDamage(baseDamage, multiplier = 3) {
+    return Math.max(0, Math.floor(Number(baseDamage || 0) * Number(multiplier || 0)));
+}
+
+function masteryDamageBonus(rank) {
+    return Math.max(0, Math.min(3, Math.floor(Number(rank || 0) / 3)));
+}
+
 function targetPriorityScore(distance, app, attentionBonus = 0) {
     return Number(distance || 0) * 10 - Number(app || 10) - Number(attentionBonus || 0);
 }
@@ -159,6 +182,11 @@ if (typeof module !== "undefined") {
         baseEvasionRate,
         evasionScore,
         battleHitRate,
+        criticalValue,
+        criticalAvoidance,
+        criticalRate,
+        criticalDamage,
+        masteryDamageBonus,
         targetPriorityScore,
     };
 }
