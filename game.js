@@ -38,6 +38,8 @@ const forecastContent    = document.getElementById("forecastContent");
 const topPanelBg         = document.getElementById("topPanelBg");
 const homeScreen         = document.getElementById("homeScreen");
 const homeStartBtn       = document.getElementById("homeStartBtn");
+const debugStoryBattleBtn = document.getElementById("debugStoryBattleBtn");
+const debugTestBattleBtn  = document.getElementById("debugTestBattleBtn");
 const homeContinueBtn    = document.getElementById("homeContinueBtn");
 const homeSettingsBtn    = document.getElementById("homeSettingsBtn");
 const homeMenuCursor     = document.getElementById("homeMenuCursor");
@@ -5052,6 +5054,27 @@ homeContinueBtn.addEventListener("click", () => {
 
 homeSettingsBtn.addEventListener("click", () => {
     showMessage("SYSTEM", "設定は準備中です。");
+});
+
+function launchDebugBattle(battleId, source) {
+    if (!BATTLE_DEFINITIONS[battleId]) {
+        console.warn("Debug battle definition not found:", battleId);
+        return;
+    }
+    hideHomeScreen(() => {
+        partyState = createPartyState(CHARACTERS_DATA, calcBattleStats);
+        startBattleSession(battleId, { source });
+        setModeButtonActive("battle");
+        addLog(`・デバッグ起動 ${battleId}`);
+    });
+}
+
+debugStoryBattleBtn?.addEventListener("click", () => {
+    launchDebugBattle("battle_tutorial", "manual");
+});
+
+debugTestBattleBtn?.addEventListener("click", () => {
+    launchDebugBattle("battle_ch1", "test");
 });
 
 // =============================================
