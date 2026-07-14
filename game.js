@@ -138,6 +138,7 @@ let currentMapItems = []; // マップ上に配置されたアイテム { x, y, 
 let statusTargetId  = null; // ステータスモーダル表示対象
 let currentStatusTab = "basic";
 let _vsAttack = null; // VS確認待ち { attacker, target, isMagic, spell }
+let partyState = createPartyState(CHARACTERS_DATA, calcBattleStats);
 
 // =============================================
 // DB / MB テーブル計算
@@ -3323,6 +3324,9 @@ function checkVictoryCondition() {
 
     if (isBattleConditionMet(victory, aliveEnemies, aliveAllies)) {
         battleOver = true;
+        if (battleEntrySource === "scenario") {
+            updatePartyStateFromBattle(partyState, battleUnits);
+        }
         clearDeclarations();
         addLog("\n=== 勝利！ ===");
         showMessage("SYSTEM", "全ての敵を倒した！勝利！");
@@ -4267,20 +4271,30 @@ function setBattleMode(battleId) {
     const sourceData = def
         ? CHARACTERS_DATA.filter(c => def.unitIds.includes(c.id))
         : CHARACTERS_DATA;
+    const usePersistentParty = battleEntrySource === "scenario";
 
     // CHARACTERS_DATA をディープコピーして live データとして使用
-    // DB = STR+SIZ、MB = POW+INT をルルブ表から自動計算
     battleUnits = sourceData.map(c => {
         const pos = def?.positions?.[c.id] ?? { x: c.x, y: c.y };
-        const battleStats = calcBattleStats(c);
+        const partyMember = usePersistentParty ? partyState.members[c.id] : null;
+        const sourceCharacter = partyMember ? { ...c, level: partyMember.level } : c;
+        const battleStats = calcBattleStats(sourceCharacter);
+        const resources = getPartyBattleResources(
+            partyState,
+            sourceCharacter,
+            battleStats,
+            usePersistentParty && c.side === "ally"
+        );
         return {
-            ...c,
+            ...sourceCharacter,
             x: pos.x,
             y: pos.y,
-            hp: battleStats.hp,
+            level: resources.level,
+            hp: resources.hp,
             maxHp: battleStats.hp,
-            mp: battleStats.mp,
+            mp: resources.mp,
             maxMp: battleStats.mp,
+            items: resources.items,
             moved: false,
             acted: false,
             statusEffects: [],
@@ -4405,10 +4419,12 @@ function saveGame(slot) {
     const d = new Date();
     const savedAt = `${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
     localStorage.setItem(SL_KEY(slot), JSON.stringify({
+        saveVersion: 2,
         chapterId:  currentChapter.id,
         sceneIdx:   currentSceneIdx,
         bgSrc:      bgImage.getAttribute("src"),
         topBgSrc:   topPanelBg.getAttribute("src"),
+        partyState: clonePartyState(partyState),
         savedAt,
         preview:    currentChapter.title,
     }));
@@ -4421,6 +4437,7 @@ function loadGame(slot) {
     closeSaveLoadModal();
 
     const ch = CHAPTERS.find(c => c.id === data.chapterId);
+    partyState = createPartyState(CHARACTERS_DATA, calcBattleStats, data.partyState);
 
     // 背景を復元（保存データ優先、なければシーン履歴を遡る）
     if (data.bgSrc) {
@@ -4994,7 +5011,10 @@ function hideHomeScreen(callback) {
 }
 
 homeStartBtn.addEventListener("click", () => {
-    hideHomeScreen(() => startChapter("prologue"));
+    hideHomeScreen(() => {
+        partyState = createPartyState(CHARACTERS_DATA, calcBattleStats);
+        startChapter("prologue");
+    });
 });
 
 homeContinueBtn.addEventListener("click", () => {
