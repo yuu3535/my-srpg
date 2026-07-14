@@ -2795,6 +2795,7 @@ let enemyDeclarations = new Map();
 
 function clearDeclarationCells() {
     for (const cell of battleGrid.children) cell.classList.remove("declAttackCell");
+    unitLayer.querySelectorAll(".declTargeted").forEach(el => el.classList.remove("declTargeted"));
 }
 
 function clearDeclarations() {
@@ -2867,7 +2868,7 @@ function planEnemyActions() {
             enemyDeclarations.set(enemy.id, {
                 type: "attack",
                 dest,
-                targetCell: { x: target.x, y: target.y },
+                targetId: target.id,
                 targetName: target.name,
             });
         } else if (dest.x !== enemy.x || dest.y !== enemy.y) {
@@ -2880,22 +2881,22 @@ function planEnemyActions() {
     syncLandscapeBattleUi(selectedUnit);
 }
 
-/** 攻撃レーザー用：2点間を「上空に弧を描く」3次ベジェにする。
- *  座標系は 1セル=10 の等方ユニット（viewBox がマップ比率と一致している前提）。
- *  弧の高さは距離に比例させ（近距離は低いホップ、遠距離は高いアーチ）、
- *  idx で高さ・左右の膨らみをずらして複数レーザーの混線を防ぐ */
+/** 攻撃レーザー用：進行方向に対して横へ膨らむ3次ベジェ。
+ *  同じ対象へ複数の宣言が集まっても重ならないよう、idxごとに曲げる側と量をずらす。 */
 function declArcPath(x1, y1, x2, y2, idx) {
     const dx = x2 - x1, dy = y2 - y1;
-    const dist = Math.hypot(dx, dy);
-    const lift = Math.min(dist * 0.5 + idx * 4, 30);
-    // 膨らみの向きは進行方向から決める（交互だと隣のレーザーと交差しやすい）。
-    // 真下・真上への垂直レーザーだけ idx で左右に散らす
-    const bowDir = dx !== 0 ? Math.sign(dx) : (idx % 2 === 0 ? 1 : -1);
-    const bow = bowDir * Math.min(3 + dist * 0.12, 10);
-    const topY = Math.min(y1, y2) - lift;
-    const c1x = x1 + dx * 0.25 + bow;
-    const c2x = x1 + dx * 0.75 + bow * 0.4;
-    return `M ${x1} ${y1} C ${c1x} ${topY}, ${c2x} ${topY + lift * 0.3}, ${x2} ${y2}`;
+    const dist = Math.max(0.001, Math.hypot(dx, dy));
+    const nx = -dy / dist;
+    const ny = dx / dist;
+    const direction = idx % 2 === 0 ? -1 : 1;
+    const spread = Math.min(5 + dist * 0.18 + Math.floor(idx / 2) * 2, 16) * direction;
+    const clampX = v => Math.max(1, Math.min(GRID_COLS * 10 - 1, v));
+    const clampY = v => Math.max(1, Math.min(GRID_ROWS * 10 - 1, v));
+    const c1x = clampX(x1 + dx * 0.30 + nx * spread);
+    const c1y = clampY(y1 + dy * 0.30 + ny * spread);
+    const c2x = clampX(x1 + dx * 0.70 + nx * spread);
+    const c2y = clampY(y1 + dy * 0.70 + ny * spread);
+    return `M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`;
 }
 
 /** 宣言表示は「攻撃レーザーのみ」。
@@ -2917,23 +2918,61 @@ function renderDeclarations() {
     svg.setAttribute("preserveAspectRatio", "none");
     layer.appendChild(svg);
 
+    const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+    const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
+    marker.setAttribute("id", "declTargetArrow");
+    marker.setAttribute("viewBox", "0 0 8 8");
+    marker.setAttribute("refX", "6.5");
+    marker.setAttribute("refY", "4");
+    marker.setAttribute("markerWidth", "5");
+    marker.setAttribute("markerHeight", "5");
+    marker.setAttribute("orient", "auto");
+    const markerPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    markerPath.setAttribute("d", "M 0 0 L 8 4 L 0 8 L 2.2 4 Z");
+    markerPath.setAttribute("class", "declArrowHead");
+    marker.appendChild(markerPath);
+    defs.appendChild(marker);
+    svg.appendChild(defs);
+
     let idx = 0;
     for (const [id, decl] of enemyDeclarations) {
         const enemy = battleUnits.find(u => u.id === id && u.hp > 0);
         if (!enemy) continue;
-        if (decl.type !== "attack" || !decl.targetCell) continue;
+        if (decl.type !== "attack" || !decl.targetId) continue;
+        const target = battleUnits.find(u => u.id === decl.targetId && u.hp > 0 && u.side === "ally");
+        if (!target) continue;
 
-        // 始点は敵の「現在位置」。移動予定先(dest)から生やすと、
-        // 移動予告線を消した今は宙に浮いた場所から出て見える
+        document.getElementById(`unit_${target.id}`)?.classList.add("declTargeted");
+
+        const startX = cx(enemy.x), startY = cy(enemy.y);
+        const targetX = cx(target.x), targetY = cy(target.y);
+        const dx = targetX - startX, dy = targetY - startY;
+        const dist = Math.max(0.001, Math.hypot(dx, dy));
+        const pathStartX = startX + dx / dist * 2.8;
+        const pathStartY = startY + dy / dist * 2.8;
+        const pathEndX = targetX - dx / dist * 3.8;
+        const pathEndY = targetY - dy / dist * 3.8;
+        const pathData = declArcPath(pathStartX, pathStartY, pathEndX, pathEndY, idx);
+
+        const auraPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        auraPath.setAttribute("d", pathData);
+        auraPath.setAttribute("class", "declAttackAura");
+        auraPath.setAttribute("vector-effect", "non-scaling-stroke");
+        svg.appendChild(auraPath);
+
         const attackPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        attackPath.setAttribute("d", declArcPath(
-            cx(enemy.x), cy(enemy.y), cx(decl.targetCell.x), cy(decl.targetCell.y), idx));
+        attackPath.setAttribute("d", pathData);
         attackPath.setAttribute("class", "declAttackLine");
         attackPath.setAttribute("vector-effect", "non-scaling-stroke");
+        attackPath.setAttribute("marker-end", "url(#declTargetArrow)");
         svg.appendChild(attackPath);
 
-        const cell = getCell(decl.targetCell.y, decl.targetCell.x);
-        if (cell) cell.classList.add("declAttackCell");
+        const flowPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        flowPath.setAttribute("d", pathData);
+        flowPath.setAttribute("class", "declAttackFlow");
+        flowPath.setAttribute("vector-effect", "non-scaling-stroke");
+        flowPath.style.setProperty("--decl-delay", `${idx * -0.16}s`);
+        svg.appendChild(flowPath);
         idx++;
     }
 }
@@ -2953,13 +2992,45 @@ async function executeDeclaredAction(enemy, decl) {
         return;
     }
 
-    if (decl.dest && (decl.dest.x !== enemy.x || decl.dest.y !== enemy.y)) {
-        const occupied = battleUnits.find(u => u.hp > 0 && u.id !== enemy.id && u.x === decl.dest.x && u.y === decl.dest.y);
-        if (!occupied && !isTileBlocked(decl.dest.x, decl.dest.y)) {
-            enemy.x = decl.dest.x;
-            enemy.y = decl.dest.y;
+    let victim = null;
+    if (decl.type === "attack") {
+        victim = battleUnits.find(u => u.id === decl.targetId && u.hp > 0 && u.side === "ally") || null;
+        if (!victim) {
+            const aliveAllies = battleUnits.filter(u => u.side === "ally" && u.hp > 0);
+            victim = aliveAllies.reduce((best, u) => {
+                if (!best) return u;
+                const d = Math.abs(u.x - enemy.x) + Math.abs(u.y - enemy.y);
+                const bd = Math.abs(best.x - enemy.x) + Math.abs(best.y - enemy.y);
+                return d < bd ? u : best;
+            }, null);
+            if (victim) addLog(`・${enemy.name}は目標を ${victim.name} に切り替えた`);
+        }
+    }
+
+    let executionDest = decl.dest;
+    if (decl.type === "attack" && victim) {
+        const currentDist = Math.abs(victim.x - enemy.x) + Math.abs(victim.y - enemy.y);
+        if (currentDist > enemy.attackRange) {
+            const candidates = getMoveRange(enemy);
+            const best = candidates.reduce((choice, c) => {
+                const d = Math.abs(c.col - victim.x) + Math.abs(c.row - victim.y);
+                if (!choice || d < choice.distance) return { x: c.col, y: c.row, distance: d };
+                return choice;
+            }, null);
+            if (best && best.distance < currentDist) executionDest = { x: best.x, y: best.y };
+            else executionDest = { x: enemy.x, y: enemy.y };
+        } else {
+            executionDest = { x: enemy.x, y: enemy.y };
+        }
+    }
+
+    if (executionDest && (executionDest.x !== enemy.x || executionDest.y !== enemy.y)) {
+        const occupied = battleUnits.find(u => u.hp > 0 && u.id !== enemy.id && u.x === executionDest.x && u.y === executionDest.y);
+        if (!occupied && !isTileBlocked(executionDest.x, executionDest.y)) {
+            enemy.x = executionDest.x;
+            enemy.y = executionDest.y;
             enemy.moved = true;
-            addLog(`・${enemy.name}が予告どおり移動した`);
+            addLog(`・${enemy.name}が目標を追って移動した`);
             renderUnits();
             setUnitActing(enemy.id, true);
             await sleep(550);
@@ -2969,20 +3040,12 @@ async function executeDeclaredAction(enemy, decl) {
         }
     }
 
-    if (decl.type !== "attack" || !decl.targetCell) return;
+    if (decl.type !== "attack" || !victim) return;
 
-    const tc = decl.targetCell;
-    const dist = Math.abs(tc.x - enemy.x) + Math.abs(tc.y - enemy.y);
+    const dist = Math.abs(victim.x - enemy.x) + Math.abs(victim.y - enemy.y);
     if (dist > enemy.attackRange) {
-        addLog(`・${enemy.name}の攻撃は届かなかった`);
+        addLog(`・${enemy.name}は ${victim.name} に追いつけず攻撃できなかった`);
         await sleep(300);
-        return;
-    }
-
-    const victim = battleUnits.find(u => u.hp > 0 && u.side === "ally" && u.x === tc.x && u.y === tc.y);
-    if (!victim) {
-        addLog(`・${enemy.name}は予告地点を攻撃したが空振りした`);
-        await sleep(350);
         return;
     }
 
