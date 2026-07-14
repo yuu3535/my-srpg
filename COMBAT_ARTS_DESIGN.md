@@ -144,8 +144,12 @@ TRPGの4分類を、SRPGでは **操作の違い** で2系統に再編する。
 
 ## 7. データフォーマット案
 
+命名はSYNC_AGENDA.md §8で合意済み: `combatArts.js` / `passiveSkills.js` / `buildMilestones.js`。
+ルート直下・純粋データ（DOM/戦闘状態に触れない）・IDはASCII snake_case・`module.exports`付き。
+読込順は既存技能・魔法データの後、`game.js` の前。フック側は Codex が `battleHooks.js` を作る。
+
 ```js
-// arts.js（戦技）
+// combatArts.js（戦技）
 const COMBAT_ARTS = {
     soujin: {
         name: "双刎",
@@ -161,7 +165,7 @@ const COMBAT_ARTS = {
     },
 };
 
-// buildTree.js（マイルストーン分岐の定義）
+// buildMilestones.js（マイルストーン分岐の定義）
 const BUILD_MILESTONES = {
     刀剣: [
         { at: 6,  bonus: { hit: 5 },   art: "soujin" },      // 補正 or 双刎
@@ -213,6 +217,23 @@ v2のダメージ/ターン処理に以下の割り込み点（フック）を�
 - ✅ 敵にも戦技・スキルを持たせる（§5参照。宣言に戦技名を乗せる）
 - ✅ C型（確率発動）はFEスキル方式で採用。発動率＝ステータス由来%、予測パネルに表示
 - ✅ 習得はマイルストーン分岐選択（補正 or 習得の二者択一。§4参照）
+
+### すり合わせ合意（2026-07-14・SYNC_AGENDA.md にCodex回答済み）
+- ✅ 回避式は**暫定で現行維持**（命中側DEX×2）。最終裁定は実機プレイテスト後（命中率表を作って比較）
+- ✅ 勇気は `baseCourage`（正典値）と `currentCourage`（戦闘中0〜100）に分離。
+  「勇気を削る」戦技＝currentCourageデバフ。勇気ポイントの別ゲージは廃止し、
+  勇気コスト戦技も currentCourage を消費（大技を使うほど反撃しにくくなる）。
+  **ただし勇気コスト戦技は回復手段＋予測UI表示が揃うまで実装保留**
+- ✅ `skillRanks` ＝ **修練度1〜9の正典保存先**。TRPGの特技成功値は初期インポートのみ
+- ✅ partyState v2へ: learnedPassives / equippedPassives / buildChoices 追加（Codex担当）
+- ✅ フック11種は実装可能。ディスパッチャ集約・modifyPredictionは副作用禁止・
+  onDeclarationTargetedは宣言ID単位で冪等・turnStart/End＝ユニット単位
+- ✅ 実装順: 共通基盤（データ読込・装備枠・コスト支払・予測反映）→
+  使用回数管理 → 武器耐久の最小版（current/max・0で使用不可のみ）→ 必殺 → 陣シリーズ
+  ※物理戦技のデータ投入は耐久最小版の完成後
+- ✅ 分岐選択UIは**案A（拠点/育成画面に集約）**。節目到達時は通知のみ。
+  横画面ステータスシート＝確認、育成画面＝分岐比較・装備変更・振り直し、と責務分離
+- ✅ ファイル命名: combatArts.js / passiveSkills.js / buildMilestones.js（§7参照）
 
 ### 未決（次の相談ポイント）
 1. 装備枠の数（パッシブ3＋戦技3で仮置き）
