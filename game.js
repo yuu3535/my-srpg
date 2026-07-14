@@ -3922,6 +3922,7 @@ function enterScenarioLayout() {
     battleGrid.style.display  = "none";   // グリッド線を非表示
     unitLayer.style.display   = "none";   // ユニットトークンを非表示
     document.getElementById("declLayer")?.style.setProperty("display", "none");
+    requestAnimationFrame(scaleGame);
 }
 
 /** バトル用レイアウトに戻す */
@@ -3929,6 +3930,7 @@ function exitScenarioLayout() {
     battleGrid.style.display  = "";
     unitLayer.style.display   = "";
     document.getElementById("declLayer")?.style.removeProperty("display");
+    requestAnimationFrame(scaleGame);
 }
 
 /**
@@ -3941,6 +3943,19 @@ let _scenTapCount = 0, _scenTapTimer = null, _scenTapName = null;
 function updateScenarioCharLayer(speaker) {
     scenarioCharLayer.innerHTML = "";
     scenarioCharLayer.className = `count-${scenarioCharacters.length}`;
+    const speakerBadge = document.getElementById("scenarioSpeakerBadge");
+    const speakerPortrait = document.getElementById("scenarioSpeakerPortrait");
+    const speakerIndex = scenarioCharacters.findIndex(entry =>
+        (typeof entry === "string" ? entry : entry.name) === speaker
+    );
+    if (speakerBadge) {
+        speakerBadge.classList.toggle("hidden", speakerIndex < 0 || speaker === "──");
+        speakerBadge.dataset.side = speakerIndex >= Math.ceil(scenarioCharacters.length / 2)
+            ? "right"
+            : "left";
+        dialogueBox.dataset.speakerSide = speakerBadge.dataset.side;
+    }
+    if (speakerPortrait) speakerPortrait.style.backgroundImage = "";
     // localStorage 保存値（優先度最高）
     let savedScenAdj = {};
     try { savedScenAdj = JSON.parse(localStorage.getItem("scenarioPortraitAdj") || "{}"); } catch(e) {}
@@ -3972,8 +3987,19 @@ function updateScenarioCharLayer(speaker) {
             || savedScenAdj[name]?.bgPos
             || (typeof entry === "object" && entry.bgPos)
             || charData?.scenarioBgPos;
-        if (sBgSize) portrait.style.backgroundSize     = sBgSize;
+        if (sBgSize) {
+            const landscapeMatch = window.innerWidth > window.innerHeight
+                ? sBgSize.match(/^auto\s+(\d+(?:\.\d+)?)%$/)
+                : null;
+            portrait.style.backgroundSize = landscapeMatch
+                ? `auto ${Math.round(Number(landscapeMatch[1]) * 1.18)}%`
+                : sBgSize;
+        }
         if (sBgPos)  portrait.style.backgroundPosition = sBgPos;
+
+        if (name === speaker && speakerPortrait && image) {
+            speakerPortrait.style.backgroundImage = `url('${image}')`;
+        }
 
         // ── 5タップで立ち絵調整パネルを開く ──
         wrapper.addEventListener("click", (e) => {
@@ -4707,12 +4733,10 @@ function scaleGame() {
     const viewport = window.visualViewport || window;
     const viewportW = viewport.width || window.innerWidth;
     const viewportH = viewport.height || window.innerHeight;
-    const isLandscapeBattle = gameScreen.dataset.mode === "battle"
-        && viewportW > viewportH
-        && viewportW <= 1200;
-    const baseW = isLandscapeBattle ? 844 : 390;
-    const baseH = isLandscapeBattle ? 390 : 844;
-    const mobileReserve = !isLandscapeBattle && viewportW <= 480
+    const isLandscapeGame = viewportW > viewportH;
+    const baseW = isLandscapeGame ? 844 : 390;
+    const baseH = isLandscapeGame ? 390 : 844;
+    const mobileReserve = !isLandscapeGame && viewportW <= 480
         ? Math.min(36, Math.max(18, viewportH * 0.035))
         : 0;
     const s = Math.min(viewportW / baseW, (viewportH - mobileReserve) / baseH);

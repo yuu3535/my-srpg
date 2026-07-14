@@ -3963,3 +3963,248 @@ html, body {
     border-left: 3px solid rgba(238, 132, 106, 0.78);
     border-radius: 3px;
 }
+
+#scenarioSpeakerBadge {
+    display: none;
+}
+
+/* ============================================================
+   Scenario landscape layout
+   Stage, dialogue, and commands share one 844 x 390 play surface.
+============================================================ */
+@media (orientation: landscape) {
+    #gameScreen[data-mode="scenario"] {
+        --design-w: 844px;
+        --design-h: 390px;
+        --top-h: 390px;
+        width: var(--design-w);
+        height: var(--design-h);
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 164px;
+        grid-template-rows: 1fr;
+        align-items: stretch;
+        background: #070811;
+        border: 1px solid rgba(200,146,42,0.22);
+    }
+
+    #gameScreen[data-mode="scenario"]::before {
+        left: 14px;
+        top: auto;
+        bottom: 7px;
+        z-index: 32;
+        font-size: 7px;
+    }
+
+    #gameScreen[data-mode="scenario"] #topPanel {
+        grid-column: 1;
+        grid-row: 1;
+        width: 100%;
+        height: 100%;
+        border-right: 1px solid rgba(65,199,179,0.22);
+        border-bottom: 0;
+        box-shadow: inset -22px 0 32px rgba(0,0,0,0.32);
+    }
+
+    #gameScreen[data-mode="scenario"] #topPanelTint {
+        background:
+            linear-gradient(90deg, rgba(4,5,12,0.40), rgba(4,5,12,0.08) 48%, rgba(4,5,12,0.36)),
+            linear-gradient(180deg, rgba(4,5,12,0.12), rgba(4,5,12,0.46));
+    }
+
+    #gameScreen[data-mode="scenario"] #topTabs,
+    #gameScreen[data-mode="scenario"] #battleBoard,
+    #gameScreen[data-mode="scenario"] #landscapeBattleShell {
+        display: none;
+    }
+
+    #gameScreen[data-mode="scenario"] #scenarioCharLayer {
+        inset: 12px 12px 104px;
+        align-items: stretch;
+        justify-content: space-around;
+        gap: 8px;
+    }
+
+    #gameScreen[data-mode="scenario"] .scenarioChar,
+    #gameScreen[data-mode="scenario"] #scenarioCharLayer.count-3 .scenarioChar {
+        flex: 1 1 0;
+        max-width: 205px;
+        transform: translateY(4px);
+        transition: filter 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    #gameScreen[data-mode="scenario"] .scenarioChar.active,
+    #gameScreen[data-mode="scenario"] #scenarioCharLayer.count-3 .scenarioChar.active {
+        flex: 1.08 1 0;
+        max-width: 220px;
+        transform: translateY(0) scale(1.025);
+    }
+
+    #gameScreen[data-mode="scenario"] #dialogueBox {
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+        height: 96px;
+        padding: 12px 22px 10px 82px;
+        overflow: visible;
+        justify-content: flex-start;
+        background: linear-gradient(100deg, rgba(13,9,24,0.97), rgba(4,6,13,0.93) 56%, rgba(7,9,17,0.90));
+        border-top: 1px solid rgba(224,176,72,0.56);
+        border-bottom: 1px solid rgba(65,199,179,0.20);
+        box-shadow: inset 0 1px 0 rgba(255,232,160,0.06), 0 -8px 28px rgba(0,0,0,0.34);
+    }
+
+    #gameScreen[data-mode="scenario"] #dialogueBox::before {
+        content: "";
+        position: absolute;
+        left: 76px;
+        top: 12px;
+        bottom: 12px;
+        width: 2px;
+        background: linear-gradient(180deg, #e0b048, rgba(200,146,42,0.16));
+    }
+
+    #gameScreen[data-mode="scenario"] #dialogueBox[data-speaker-side="right"] {
+        padding-right: 82px;
+    }
+
+    #gameScreen[data-mode="scenario"] #dialogueBox[data-speaker-side="right"]::before {
+        left: auto;
+        right: 76px;
+    }
+
+    #gameScreen[data-mode="scenario"] #scenarioSpeakerBadge {
+        position: absolute;
+        left: -3px;
+        top: 10px;
+        width: 66px;
+        height: 66px;
+        display: block;
+        overflow: hidden;
+        transform: rotate(45deg);
+        background: #090a13;
+        border: 1px solid rgba(224,176,72,0.72);
+        box-shadow: inset 0 0 0 3px rgba(7,8,16,0.86), 4px 4px 14px rgba(0,0,0,0.48);
+    }
+
+    #gameScreen[data-mode="scenario"] #scenarioSpeakerBadge[data-side="right"] {
+        left: auto;
+        right: -3px;
+    }
+
+    #gameScreen[data-mode="scenario"] #scenarioSpeakerBadge.hidden {
+        display: none;
+    }
+
+    #gameScreen[data-mode="scenario"] #scenarioSpeakerPortrait {
+        position: absolute;
+        inset: -14px;
+        transform: rotate(-45deg);
+        background-repeat: no-repeat;
+        background-position: center top;
+        background-size: auto 300%;
+    }
+
+    #gameScreen[data-mode="scenario"] #nameText {
+        margin: 0 0 5px;
+        padding: 0 12px 2px 0;
+        background: transparent;
+        border-left: 0;
+        color: #f0d38c;
+        font-size: 12px;
+        letter-spacing: 0.16em;
+        line-height: 1.2;
+    }
+
+    #gameScreen[data-mode="scenario"] #messageText {
+        max-width: 58ch;
+        color: #eadfca;
+        font-size: 12px;
+        line-height: 1.55;
+        letter-spacing: 0.03em;
+    }
+
+    #gameScreen[data-mode="scenario"] #dialogueBox[data-scenario="active"]::after {
+        right: 12px;
+        bottom: 8px;
+    }
+
+    #gameScreen[data-mode="scenario"] #bottomPanel {
+        grid-column: 2;
+        grid-row: 1;
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        border-top: 0;
+        border-left: 1px solid rgba(200,146,42,0.28);
+        background: linear-gradient(150deg, rgba(27,12,39,0.94), rgba(5,6,13,0.98) 70%), var(--theme-stone);
+        box-shadow: inset 1px 0 0 rgba(255,232,160,0.05), -14px 0 28px rgba(0,0,0,0.28);
+    }
+
+    #gameScreen[data-mode="scenario"] #commandHeader {
+        height: 36px;
+        padding: 8px 12px 6px;
+        justify-content: flex-start;
+        color: rgba(224,189,115,0.70);
+        font-size: 9px;
+        letter-spacing: 0.22em;
+    }
+
+    #gameScreen[data-mode="scenario"] #commandHeader::before {
+        display: none;
+    }
+
+    #gameScreen[data-mode="scenario"] #commandList {
+        padding: 7px 8px 8px;
+        justify-content: flex-start;
+        overflow: hidden;
+    }
+
+    #gameScreen[data-mode="scenario"] .scenarioCmdGrid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 5px;
+        padding: 0;
+    }
+
+    #gameScreen[data-mode="scenario"] .commandItem {
+        min-height: 38px;
+        width: 100%;
+        aspect-ratio: auto;
+        padding: 0 18px;
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: 10px;
+        color: rgba(230,205,153,0.82);
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        background-color: rgba(38,14,53,0.72);
+        background-image: linear-gradient(90deg, rgba(92,34,100,0.36), rgba(26,11,39,0.30));
+        border: 1px solid rgba(200,146,42,0.24);
+        clip-path: polygon(9px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+    }
+
+    #gameScreen[data-mode="scenario"] .commandItem:hover,
+    #gameScreen[data-mode="scenario"] .commandItem:active {
+        color: #ffe2a0;
+        background-color: rgba(113,63,29,0.80);
+        transform: translateX(-2px) scale(0.99);
+    }
+
+    #gameScreen[data-mode="scenario"] .cmdIcon {
+        width: 14px;
+        height: 14px;
+    }
+
+    #gameScreen[data-mode="scenario"] .audioSliders {
+        margin-top: auto;
+        padding: 7px 2px 2px;
+        border-top: 1px solid rgba(200,146,42,0.16);
+    }
+
+    #gameScreen[data-mode="scenario"] .audioRow {
+        grid-template-columns: 10px 24px minmax(0, 1fr);
+        gap: 4px;
+        margin: 5px 0;
+    }
+}
