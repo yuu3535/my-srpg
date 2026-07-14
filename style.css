@@ -539,6 +539,19 @@ html, body {
     letter-spacing: 0.02em;
 }
 
+.dangerRangeBtn {
+    width: 48px;
+    font-size: 9px;
+    letter-spacing: 0.04em;
+}
+
+.dangerRangeBtn.active {
+    color: #ffc0ba;
+    background: linear-gradient(180deg, rgba(148,36,51,0.78), rgba(66,15,29,0.90));
+    border-color: rgba(244,92,96,0.82);
+    box-shadow: inset 0 1px 0 rgba(255,210,204,0.16);
+}
+
 #battleBoard.mapViewIso #battleCanvas {
     transform-origin: center center;
     filter: drop-shadow(0 18px 16px rgba(0,0,0,0.48));
@@ -639,6 +652,17 @@ html, body {
     background: rgba(255, 80, 80, 0.22);
     border-color: rgba(255, 100, 80, 0.5);
     cursor: pointer;
+}
+
+/* FE風：全敵の移動後攻撃範囲。行動ハイライトとは別レイヤーで重ねる。 */
+.gridCell.enemyDangerRange::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: linear-gradient(135deg, rgba(177,35,53,0.22), rgba(116,20,42,0.14));
+    box-shadow: inset 0 0 0 1px rgba(232,72,80,0.18);
 }
 
 #gameScreen .gridCell.highlightAttack.allyActionRange {
@@ -1874,6 +1898,330 @@ html, body {
 
 .hpBarFill.hp { background: linear-gradient(90deg, #c8922a, #f1d27a); }
 .hpBarFill.mp { background: linear-gradient(90deg, #3ecfb8, #7eeedd); }
+
+/* 横画面の詳細は、縦積みモーダルではなく一枚の冒険者シートとして表示する。 */
+@media (orientation: landscape) and (max-width: 1200px) {
+    #statusModalOverlay.landscapeSheetOpen {
+        position: fixed;
+        z-index: 80;
+        padding:
+            max(6px, env(safe-area-inset-top))
+            max(8px, env(safe-area-inset-right))
+            max(6px, env(safe-area-inset-bottom))
+            max(8px, env(safe-area-inset-left));
+        background: rgba(2, 3, 8, 0.88);
+        backdrop-filter: blur(3px);
+    }
+
+    #statusModalOverlay.landscapeSheetOpen #statusModal {
+        width: min(828px, calc(100vw - 16px));
+        height: min(374px, calc(100dvh - 12px));
+        border: 1px solid rgba(200,146,42,0.34);
+        border-top: 2px solid #d6a740;
+        background:
+            linear-gradient(100deg, rgba(25,12,39,0.34), transparent 28%),
+            linear-gradient(165deg, rgba(12,10,24,0.99), rgba(4,6,14,0.99));
+        box-shadow: 0 12px 46px rgba(0,0,0,0.88), inset 0 1px 0 rgba(255,232,160,0.08);
+    }
+
+    #statusModalOverlay.landscapeSheetOpen #statusModalHeader {
+        height: 34px;
+        padding: 4px 9px 4px 13px;
+        background: linear-gradient(90deg, rgba(56,21,71,0.56), rgba(7,8,17,0.16) 62%);
+        border-bottom-color: rgba(200,146,42,0.25);
+    }
+
+    #statusModalOverlay.landscapeSheetOpen #statusModalTitle {
+        color: #efd081;
+        font-size: 13px;
+        letter-spacing: 0.16em;
+    }
+
+    #statusModalOverlay.landscapeSheetOpen #closeStatusModal {
+        width: 26px;
+        height: 26px;
+        border: 0;
+        color: rgba(239,208,129,0.74);
+        font-size: 20px;
+    }
+
+    #statusModalOverlay.landscapeSheetOpen #statusTabs {
+        display: none;
+    }
+
+    #statusModalOverlay.landscapeSheetOpen #statusModalBody {
+        min-height: 0;
+        overflow: hidden;
+        padding: 0;
+    }
+
+    .adventureSheet {
+        height: 100%;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: 178px minmax(0, 1fr) minmax(0, 1fr) 34px 180px;
+        grid-template-rows: 146px minmax(0, 1fr);
+        grid-template-areas:
+            "identity vitals battle battle loadout"
+            "identity skills skills sigil magic";
+        color: #e8d5a4;
+        background:
+            linear-gradient(90deg, rgba(200,146,42,0.03) 1px, transparent 1px) 0 0 / 36px 100%,
+            linear-gradient(180deg, rgba(65,199,179,0.025), transparent 45%);
+    }
+
+    .adventureIdentity {
+        grid-area: identity;
+        min-width: 0;
+        display: grid;
+        grid-template-rows: minmax(0, 1fr) auto auto;
+        border-right: 1px solid rgba(200,146,42,0.32);
+        background: rgba(3,4,11,0.74);
+    }
+
+    .adventurePortrait {
+        min-height: 0;
+        background-color: rgba(3,4,10,0.72);
+        background-repeat: no-repeat;
+        filter: brightness(0.92) contrast(1.06);
+        box-shadow: inset -18px 0 30px rgba(6,5,14,0.52);
+    }
+
+    .adventureNameplate {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        padding: 6px 10px 5px;
+        border-top: 1px solid rgba(200,146,42,0.35);
+        border-bottom: 1px solid rgba(200,146,42,0.14);
+        background: linear-gradient(90deg, rgba(93,40,84,0.33), rgba(9,7,18,0.92));
+    }
+
+    .adventureNameplate strong {
+        color: #f3d58d;
+        font-size: 13px;
+        letter-spacing: 0.12em;
+    }
+
+    .adventureNameplate span {
+        color: rgba(224,189,115,0.62);
+        font-size: 8px;
+        letter-spacing: 0.12em;
+    }
+
+    .adventureProfile {
+        margin: 0;
+        padding: 5px 9px 7px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2px 8px;
+        font-size: 8px;
+    }
+
+    .adventureProfile div {
+        min-width: 0;
+        display: flex;
+        justify-content: space-between;
+        gap: 4px;
+        border-bottom: 1px solid rgba(200,146,42,0.09);
+    }
+
+    .adventureProfile dt { color: rgba(224,189,115,0.42); }
+    .adventureProfile dd {
+        margin: 0;
+        overflow: hidden;
+        color: #e5c981;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .adventureRuled {
+        min-width: 0;
+        min-height: 0;
+        padding: 7px 9px;
+        border-right: 1px solid rgba(200,146,42,0.16);
+        border-bottom: 1px solid rgba(200,146,42,0.18);
+        overflow: hidden;
+    }
+
+    .adventureRuled h3 {
+        margin: 0 0 6px;
+        padding: 0 0 4px 7px;
+        color: #d9aa4a;
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        border-left: 2px solid #c8922a;
+        border-bottom: 1px solid rgba(200,146,42,0.16);
+    }
+
+    .adventureRuled h3 span {
+        margin-left: 7px;
+        color: rgba(224,189,115,0.52);
+        font-size: 8px;
+        font-weight: 400;
+        letter-spacing: 0.12em;
+    }
+
+    .adventureVitals { grid-area: vitals; }
+    .adventureBattle { grid-area: battle; }
+    .adventureLoadout { grid-area: loadout; border-right: 0; }
+    .adventureSkills { grid-area: skills; }
+    .adventureMagic { grid-area: magic; border-right: 0; }
+
+    .adventureGauge {
+        display: grid;
+        grid-template-columns: 20px minmax(0, 1fr) 43px;
+        gap: 5px;
+        align-items: center;
+        margin: 5px 0;
+        font-size: 8px;
+    }
+
+    .adventureGauge > span { color: rgba(224,189,115,0.48); }
+    .adventureGauge > b { color: #ead393; text-align: right; font-size: 9px; }
+    .adventureGauge > i {
+        height: 4px;
+        overflow: hidden;
+        background: rgba(0,0,0,0.52);
+    }
+    .adventureGauge > i > em { display: block; height: 100%; }
+    .adventureGauge.hp > i > em { background: linear-gradient(90deg, #2cbf74, #5ae895); }
+    .adventureGauge.mp > i > em { background: linear-gradient(90deg, #2674c5, #62aaf0); }
+
+    .adventureMetrics {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0 10px;
+    }
+
+    .adventureMetric {
+        min-width: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        padding: 2px 3px;
+        border-bottom: 1px solid rgba(200,146,42,0.09);
+        font-size: 8px;
+    }
+
+    .adventureMetric span { color: rgba(224,189,115,0.43); }
+    .adventureMetric b { color: #ecd28e; font-size: 9px; }
+    .battleStats { margin-top: 1px; }
+
+    .adventureBattleNote {
+        display: grid;
+        grid-template-columns: auto 1fr auto 1fr;
+        gap: 3px 6px;
+        align-items: center;
+        margin-top: 5px;
+        padding-top: 4px;
+        border-top: 1px solid rgba(65,199,179,0.16);
+        font-size: 7px;
+    }
+
+    .adventureBattleNote span { color: rgba(83,210,191,0.48); }
+    .adventureBattleNote b {
+        min-width: 0;
+        overflow: hidden;
+        color: rgba(194,231,222,0.82);
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .adventureLoadoutBlock {
+        padding: 5px 3px;
+        border-bottom: 1px solid rgba(200,146,42,0.12);
+    }
+
+    .adventureLoadoutBlock span {
+        display: block;
+        margin-bottom: 2px;
+        color: rgba(224,189,115,0.42);
+        font-size: 7px;
+        letter-spacing: 0.12em;
+    }
+
+    .adventureLoadoutBlock b {
+        display: block;
+        overflow: hidden;
+        color: #e8ce8a;
+        font-size: 8px;
+        font-weight: 400;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .adventureList {
+        height: calc(100% - 22px);
+        min-height: 0;
+        overflow-y: auto;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-auto-rows: min-content;
+        column-gap: 10px;
+        align-content: start;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(200,146,42,0.34) transparent;
+    }
+
+    .adventureMagic .adventureList { grid-template-columns: 1fr; }
+
+    .adventureListRow {
+        min-width: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 4px;
+        align-items: baseline;
+        padding: 3px 3px;
+        border-bottom: 1px solid rgba(200,146,42,0.09);
+        font-size: 8px;
+    }
+
+    .adventureListRow span {
+        min-width: 0;
+        overflow: hidden;
+        color: rgba(238,218,164,0.84);
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .adventureListRow small {
+        display: none;
+        color: rgba(83,210,191,0.50);
+        font-size: 6px;
+    }
+
+    .adventureListRow b { color: #d7a94d; font-size: 8px; }
+    .adventureEmpty { color: rgba(224,189,115,0.35); font-size: 10px; }
+
+    .adventureSigil {
+        grid-area: sigil;
+        position: relative;
+        min-width: 34px;
+        overflow: hidden;
+        border-right: 1px solid rgba(200,146,42,0.20);
+        border-bottom: 1px solid rgba(200,146,42,0.18);
+        background: linear-gradient(180deg, rgba(65,199,179,0.04), rgba(70,25,83,0.20));
+    }
+
+    .adventureSigil::before,
+    .adventureSigil::after,
+    .adventureSigil span {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 17px;
+        height: 17px;
+        border: 1px solid rgba(200,146,42,0.30);
+        transform: translate(-50%, -50%) rotate(45deg);
+    }
+
+    .adventureSigil::before { margin-top: -26px; }
+    .adventureSigil::after { margin-top: 26px; }
+    .adventureSigil span { border-color: rgba(65,199,179,0.34); }
+}
 
 
 /* ============================================================
@@ -3121,6 +3469,10 @@ html, body {
 
     #gameScreen[data-mode="battle"] .mapViewBtn {
         width: 42px;
+    }
+
+    #gameScreen[data-mode="battle"] .dangerRangeBtn {
+        width: 48px;
     }
 }
 

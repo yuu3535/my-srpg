@@ -57,6 +57,7 @@ const landscapePhaseTitle  = document.getElementById("landscapePhaseTitle");
 const landscapeTurnChip    = document.getElementById("landscapeTurnChip");
 const landscapeHint        = document.getElementById("landscapeHint");
 const lsForecast           = document.getElementById("lsForecast");
+const dangerRangeToggle    = document.getElementById("dangerRangeToggle");
 const battleBoardHome      = battleBoard.parentNode;
 const battleBoardNext      = battleBoard.nextSibling;
 
@@ -256,6 +257,59 @@ function clearHighlights() {
     }
 }
 
+let enemyDangerVisible = false;
+
+function clearEnemyDangerRange() {
+    for (const cell of battleGrid.children) cell.classList.remove("enemyDangerRange");
+}
+
+/** 全敵について「移動後に攻撃可能なセル」の和集合を返す。 */
+function getEnemyDangerCells() {
+    const danger = new Set();
+    const enemies = battleUnits.filter(u => u.side === "enemy" && u.hp > 0);
+
+    for (const enemy of enemies) {
+        const origins = [{ x: enemy.x, y: enemy.y }];
+        for (const cell of getMoveRange(enemy)) origins.push({ x: cell.col, y: cell.row });
+
+        const range = Math.max(1, Number(enemy.attackRange) || 1);
+        for (const origin of origins) {
+            for (let dy = -range; dy <= range; dy++) {
+                for (let dx = -range; dx <= range; dx++) {
+                    const distance = Math.abs(dx) + Math.abs(dy);
+                    if (distance === 0 || distance > range) continue;
+                    const x = origin.x + dx;
+                    const y = origin.y + dy;
+                    if (x < 0 || x >= GRID_COLS || y < 0 || y >= GRID_ROWS) continue;
+                    if (isTileBlocked(x, y)) continue;
+                    danger.add(`${x},${y}`);
+                }
+            }
+        }
+    }
+    return danger;
+}
+
+function renderEnemyDangerRange() {
+    clearEnemyDangerRange();
+    if (!enemyDangerVisible || gameMode !== "battle") return;
+
+    for (const key of getEnemyDangerCells()) {
+        const [x, y] = key.split(",").map(Number);
+        getCell(y, x)?.classList.add("enemyDangerRange");
+    }
+}
+
+function setEnemyDangerVisible(visible) {
+    enemyDangerVisible = !!visible;
+    dangerRangeToggle?.classList.toggle("active", enemyDangerVisible);
+    dangerRangeToggle?.setAttribute("aria-pressed", enemyDangerVisible ? "true" : "false");
+    dangerRangeToggle?.setAttribute("title", enemyDangerVisible
+        ? "敵全体の危険域を隠す"
+        : "敵全体の危険域を表示");
+    renderEnemyDangerRange();
+}
+
 function getActionRangeClass(unit) {
     return unit?.side === "enemy" ? "enemyActionRange" : "allyActionRange";
 }
@@ -339,6 +393,7 @@ function renderUnits() {
     // 退避したポップアップを最前面に再追加
     livePopups.forEach(p => unitLayer.appendChild(p));
 
+    renderEnemyDangerRange();
     renderDeclarations();
 }
 
@@ -3556,6 +3611,110 @@ function closeStatus() {
     statusModalOverlay.classList.add("hidden");
 }
 
+function renderLandscapeStatusSheet(unit, bs) {
+    const pct = (cur, max) => max > 0
+        ? Math.max(0, Math.min(100, cur / max * 100))
+        : 0;
+    const metric = (label, value) => `
+        <div class="adventureMetric"><span>${label}</span><b>${value}</b></div>`;
+    const listRows = (entries, type) => {
+        if (!entries.length) return '<div class="adventureEmpty">―</div>';
+        return entries.map(([name, value]) => {
+            if (type === "spell") {
+                const spell = SPELLS_DATA[name];
+                const detail = spell ? `射程${spell.range ?? "―"} / MP ${spell.mpCost ?? "―"}` : "";
+                return `<div class="adventureListRow"><span>${name}</span><small>${detail}</small><b>${value}</b></div>`;
+            }
+            return `<div class="adventureListRow"><span>${name}</span><b>${value}</b></div>`;
+        }).join("");
+    };
+    const equipment = typeof unit.equipment === "string"
+        ? unit.equipment
+        : (unit.equipment?.weapon?.name || unit.weapon?.name || "未装備");
+    const itemNames = (unit.items || []).map(item => item?.name || item).filter(Boolean);
+    const statusNames = (unit.statusEffects || []).map(effect => effect?.name || effect?.id || effect).filter(Boolean);
+    const portrait = getPortraitSrc(unit) || unit.tokenImage || "";
+    const damaged = unit.maxHp > 0 && unit.hp / unit.maxHp <= 0.5;
+    const portraitSize = damaged
+        ? (unit.portraitDmgBgSize || unit.statusBgSize || unit.portraitBgSize || "cover")
+        : (unit.statusBgSize || unit.portraitBgSize || "cover");
+    const portraitPos = damaged
+        ? (unit.portraitDmgBgPos || unit.statusBgPos || unit.portraitBgPos || "center top")
+        : (unit.statusBgPos || unit.portraitBgPos || "center top");
+    const sideName = unit.side === "ally" ? "味方" : "敵対";
+    const counterNames = {
+        auto: "自動選択",
+        magic_first: "魔法優先",
+        physical_only: "物理のみ",
+        none: "反撃なし",
+    };
+
+    statusModalBody.innerHTML = `
+      <div class="adventureSheet">
+        <section class="adventureIdentity">
+          <div class="adventurePortrait" style="background-image:url('${portrait}');background-size:${portraitSize};background-position:${portraitPos}"></div>
+          <div class="adventureNameplate">
+            <strong>${unit.name}</strong><span>LV ${unit.level}</span>
+          </div>
+          <dl class="adventureProfile">
+            <div><dt>種族</dt><dd>${unit.race || "―"}</dd></div>
+            <div><dt>一族</dt><dd>${unit.clan || "―"}</dd></div>
+            <div><dt>所属</dt><dd>${sideName}</dd></div>
+            <div><dt>秘伝</dt><dd>${unit.secretArt || "―"}</dd></div>
+          </dl>
+        </section>
+
+        <section class="adventureVitals adventureRuled">
+          <h3>STATUS <span>能力値</span></h3>
+          <div class="adventureGauge hp">
+            <span>HP</span><i><em style="width:${pct(unit.hp, unit.maxHp)}%"></em></i><b>${unit.hp} / ${unit.maxHp}</b>
+          </div>
+          <div class="adventureGauge mp">
+            <span>MP</span><i><em style="width:${pct(unit.mp, unit.maxMp)}%"></em></i><b>${unit.mp} / ${unit.maxMp}</b>
+          </div>
+          <div class="adventureMetrics rawStats">
+            ${metric("STR", bs.raw.str)}${metric("CON", bs.raw.con)}
+            ${metric("DEX", bs.raw.dex)}${metric("POW", bs.raw.pow)}
+            ${metric("INT", bs.raw.int)}${metric("EDU", bs.raw.edu)}
+            ${metric("SIZ", bs.raw.siz)}${metric("勇気", bs.raw.courage)}
+          </div>
+        </section>
+
+        <section class="adventureBattle adventureRuled">
+          <h3>BATTLE <span>戦闘能力</span></h3>
+          <div class="adventureMetrics battleStats">
+            ${metric("力", bs.power)}${metric("魔力", bs.magic)}
+            ${metric("技", bs.technique)}${metric("守備", bs.armor)}
+            ${metric("魔防", bs.ward)}${metric("勇気", bs.valor)}
+            ${metric("移動", `${unit.move}マス`)}${metric("射程", `${unit.attackRange}マス`)}
+          </div>
+          <div class="adventureBattleNote">
+            <span>反撃</span><b>${counterNames[unit.counterMode] || "自動選択"}</b>
+            <span>状態</span><b>${statusNames.join("・") || "通常"}</b>
+          </div>
+        </section>
+
+        <section class="adventureLoadout adventureRuled">
+          <h3>LOADOUT <span>装備・所持品</span></h3>
+          <div class="adventureLoadoutBlock"><span>武器</span><b>${equipment || "未装備"}</b></div>
+          <div class="adventureLoadoutBlock"><span>所持品</span><b>${itemNames.join(" / ") || "なし"}</b></div>
+          <div class="adventureLoadoutBlock"><span>発作</span><b>${unit.seizureType || "なし"}</b></div>
+        </section>
+
+        <section class="adventureSkills adventureRuled">
+          <h3>SKILLS <span>特技・技能</span></h3>
+          <div class="adventureList">${listRows(Object.entries(unit.skills || {}), "skill")}</div>
+        </section>
+
+        <div class="adventureSigil" aria-hidden="true"><span></span></div>
+
+        <section class="adventureMagic adventureRuled">
+          <h3>MAGIC <span>魔法</span></h3>
+          <div class="adventureList">${listRows(Object.entries(unit.spells || {}), "spell")}</div>
+        </section>
+      </div>`;
+}
+
 function renderStatusTab(tabName) {
     currentStatusTab = tabName;
     // バトル中は live データ、それ以外は CHARACTERS_DATA から取得
@@ -3583,6 +3742,12 @@ function renderStatusTab(tabName) {
     };
     const bs = calcBattleStats(unit);
     const raw = bs.raw;
+
+    statusModalOverlay.classList.toggle("landscapeSheetOpen", isLandscapeBattleUi());
+    if (isLandscapeBattleUi()) {
+        renderLandscapeStatusSheet(unit, bs);
+        return;
+    }
 
     if (tabName === "basic") {
         statusModalBody.innerHTML = `
@@ -4075,6 +4240,7 @@ function setBattleMode(battleId) {
     selectedAttackSkill = null;
     hideBattlePreview();
     clearDeclarations();
+    setEnemyDangerVisible(false);
 
     const def = battleId && BATTLE_DEFINITIONS[battleId];
     setUiTheme(forcedUiTheme || def?.uiTheme || "orcus");
@@ -4493,6 +4659,13 @@ document.getElementById("mapZoomReset").addEventListener("click", e => {
 document.getElementById("mapViewToggle").addEventListener("click", e => {
     e.stopPropagation();
     setMapViewMode(mapViewMode === "iso" ? "top" : "iso");
+});
+dangerRangeToggle?.addEventListener("click", e => {
+    e.stopPropagation();
+    setEnemyDangerVisible(!enemyDangerVisible);
+    setLandscapeHint(enemyDangerVisible
+        ? "敵全体の移動後攻撃範囲を表示中。"
+        : "敵全体の危険域を非表示にしました。");
 });
 
 // =============================================
