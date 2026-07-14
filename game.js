@@ -90,7 +90,7 @@ const BATTLE_UTILITY_SKILLS = new Set([
 // 回避スキル名
 const EVADE_SKILL_NAME = "回避";
 
-// 戦闘ルールv2: "formula" はDEX・SIZ・技能式、"guaranteed" は命中確定。
+// 戦闘ルールv2: "formula" はSTR・DEX・SIZ・修練度式、"guaranteed" は命中確定。
 const BATTLE_HIT_MODE = "formula";
 
 // =============================================
@@ -969,7 +969,12 @@ function getBattleHitResult(attacker, defender, attackSkill, targetStunned = fal
     const defenderStats = calcBattleStats(defender);
     const evadeSkill = getEvadeSkillVal(defender);
     const accuracy = accuracyScore(attackerStats.raw.dex, attackSkill, getAccuracyStatusModifier(attacker));
-    const evasion = evasionScore(defenderStats.raw.dex, defenderStats.raw.siz, evadeSkill);
+    const evasion = evasionScore(
+        defenderStats.raw.str,
+        defenderStats.raw.dex,
+        defenderStats.raw.siz,
+        evadeSkill
+    );
     const rate = battleHitRate(attackerStats, defenderStats, attackSkill, evadeSkill, {
         accuracy: getAccuracyStatusModifier(attacker),
     });
@@ -1469,6 +1474,12 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
                     <b class="toAtk"><i>←</i><strong>${pred.canCounter ? ctrN : "─"}</strong><small>被</small></b>
                 </span>
                 <span>${pred.canCounter ? ctrN : "─"}</span><span>${pred.canCounter ? pred.ctrHitRate : "─"}</span>
+            </div>
+            <div class="lsFcCounterNote${pred.canCounter ? "" : " hidden"}">
+                <span>反撃発生 ${pred.counterRate}%</span>
+                <i>×</i>
+                <span>命中 ${pred.ctrHitRate}%</span>
+                <b>実効 ${pred.ctrEffectiveRate}%</b>
             </div>
             <div class="lsFcBars">
                 <div class="lsFcBar ally"><i style="width:${atkPct}%"></i></div>
@@ -2190,16 +2201,25 @@ function calculateBattlePrediction(attacker, target, atkSkillName, isMagic, spel
     // ── 反撃予測（共通） ──
     const counterRate = getCounterRate(target);
     const counterAvailable = target.hp > 0 && canCounter(target);
-    let ctrHitRate = 0, ctrExpDmg = 0;
+    let ctrHitRate = 0, ctrEffectiveRate = 0, ctrExpDmg = 0;
     if (counterAvailable) {
         const ctrAtkStat = getAttackSkillVal(target).val;
         const ctrEvade   = getEvadeSkillVal(attacker);
-        const counterHitRate = getBattleHitResult(target, attacker, ctrAtkStat).rate;
-        ctrHitRate = Math.round(counterRate * counterHitRate / 100);
+        ctrHitRate = getBattleHitResult(target, attacker, ctrAtkStat).rate;
+        ctrEffectiveRate = Math.round(counterRate * ctrHitRate / 100);
         ctrExpDmg  = calculatePhysicalDamage(target, attacker, { half: true, allowMartialArt: false }).damage;
     }
 
-    return { hitRate, expDmg, effectDesc, canCounter: counterAvailable, ctrHitRate, ctrExpDmg };
+    return {
+        hitRate,
+        expDmg,
+        effectDesc,
+        canCounter: counterAvailable,
+        counterRate,
+        ctrHitRate,
+        ctrEffectiveRate,
+        ctrExpDmg,
+    };
 }
 
 /** HP に応じた立ち絵 URL を返す（HP50%以下 & 被弾絵あり → 被弾絵） */
@@ -2301,7 +2321,7 @@ function showBattlePreview(attacker, target, pred, actionLabel) {
     const ctrTag     = document.getElementById("vsCtrTag");
     const defStatRow = document.getElementById("vsDefStatRow");
     if (pred.canCounter) {
-        ctrTag.textContent       = "反撃あり";
+        ctrTag.textContent       = `反撃 ${pred.counterRate}% / 実効 ${pred.ctrEffectiveRate}%`;
         ctrTag.style.opacity     = "1";
         defStatRow.style.opacity = "1";
         document.getElementById("vsDefHit").textContent = `${pred.ctrHitRate}%`;
@@ -3682,6 +3702,7 @@ function renderLandscapeStatusSheet(unit, bs) {
         physical_only: "物理のみ",
         none: "反撃なし",
     };
+    const evadeSkill = getEvadeSkillVal(unit);
 
     statusModalBody.innerHTML = `
       <div class="adventureSheet">
@@ -3721,6 +3742,8 @@ function renderLandscapeStatusSheet(unit, bs) {
             ${metric("技量", bs.technique)}${metric("物防", bs.armor)}
             ${metric("魔防", bs.ward)}${metric("反撃", `${bs.counterRate}%`)}
             ${metric("移動", `${unit.move}マス`)}${metric("射程", `${unit.attackRange}マス`)}
+            ${metric("基礎命中", bs.baseAccuracy)}${metric("基礎回避", bs.baseEvasion)}
+            ${metric("最終回避", bs.evasion)}${metric("回避修練", evadeSkill)}
           </div>
           <div class="adventureBattleNote">
             <span>方針</span><b>${counterNames[unit.counterMode] || "自動選択"}</b>
@@ -3820,6 +3843,10 @@ function renderStatusTab(tabName) {
             ${sr("物防", bs.armor)}
             ${sr("魔防", bs.ward)}
             ${sr("反撃率", `${bs.counterRate}%`)}
+            ${sr("基礎命中", bs.baseAccuracy)}
+            ${sr("基礎回避", bs.baseEvasion)}
+            ${sr("最終回避", bs.evasion)}
+            ${sr("回避修練", getEvadeSkillVal(unit))}
           </div>
         </div>`;
         return;
@@ -3865,10 +3892,29 @@ function showPhaseBanner(text) {
         banner.id = "phaseBanner";
         document.getElementById("gameScreen").appendChild(banner);
     }
-    banner.textContent = text;
+    const phaseMeta = text === "味方フェーズ"
+        ? { variant: "ally", eyebrow: `TURN ${turnCount} / ROYAL COMMAND`, title: "味方行動", sub: "ALLY PHASE" }
+        : text === "敵フェーズ"
+            ? { variant: "enemy", eyebrow: `TURN ${turnCount} / HOSTILE FORCE`, title: "敵軍行動", sub: "ENEMY PHASE" }
+            : text === "勝利！"
+                ? { variant: "victory", eyebrow: "BATTLE COMPLETE", title: "勝利", sub: "VICTORY" }
+                : { variant: "defeat", eyebrow: "BATTLE TERMINATED", title: text, sub: "DEFEAT" };
+
+    banner.dataset.variant = phaseMeta.variant;
+    banner.setAttribute("aria-label", text);
+    banner.innerHTML = `
+        <div class="phaseBannerRail" aria-hidden="true"><i></i><b></b><i></i></div>
+        <div class="phaseBannerCopy">
+            <span class="phaseBannerEyebrow">${phaseMeta.eyebrow}</span>
+            <strong>${phaseMeta.title}</strong>
+            <span class="phaseBannerSub">${phaseMeta.sub}</span>
+        </div>`;
+    banner.classList.remove("phaseBannerEnter");
+    void banner.offsetWidth;
+    banner.classList.add("phaseBannerEnter");
     banner.classList.remove("hidden");
     clearTimeout(banner._hideTimer);
-    banner._hideTimer = setTimeout(() => banner.classList.add("hidden"), 1400);
+    banner._hideTimer = setTimeout(() => banner.classList.add("hidden"), 1650);
 }
 
 function updatePhaseHeader() {

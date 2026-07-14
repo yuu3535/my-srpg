@@ -3,7 +3,10 @@ const {
     calcBattleStats,
     physicalDamage,
     magicalDamage,
+    baseAccuracyRate,
     accuracyScore,
+    evasionSizeModifier,
+    baseEvasionRate,
     evasionScore,
     battleHitRate,
     targetPriorityScore,
@@ -59,18 +62,30 @@ assert.equal(magicalDamage(calcBattleStats(canon.albas), calcBattleStats(canon.r
 assert.equal(magicalDamage(calcBattleStats(canon.ringholm), calcBattleStats(canon.albas), 3), 1,
     "ringholm magic -> albas respects minimum damage");
 assert.equal(calcBattleStats(canon.albas).supportMagic, 12, "support magic keeps compact effect scale");
-assert.equal(accuracyScore(22, 9), 89, "ringholm accuracy");
-assert.equal(evasionScore(22, 10, 9), 39, "ringholm evasion");
-assert.equal(evasionScore(17, 14, 5), 18, "forest guard evasion");
+assert.equal(baseAccuracyRate(22), 72, "ringholm base accuracy");
+assert.equal(accuracyScore(22, 9), 117, "ringholm accuracy");
+assert.equal(evasionSizeModifier(10), 2, "SIZ 10 receives a small evasion bonus");
+assert.equal(evasionSizeModifier(15), -8, "SIZ 15 receives an evasion penalty");
+assert.equal(evasionSizeModifier(1), 14, "small-size bonus is capped");
+assert.equal(evasionSizeModifier(30), -14, "large-size penalty is capped");
+assert.equal(baseEvasionRate(26, 22, 10), 52, "ringholm base evasion");
+assert.equal(evasionScore(26, 22, 10, 9), 75, "ringholm trained evasion");
+assert.equal(baseEvasionRate(18, 36, 15), 37, "albas base evasion");
+assert.equal(evasionScore(18, 36, 15, 0), 37, "albas canonical evasion");
+assert.equal(evasionScore(18, 36, 15, 9), 54, "albas evasion build stays below ringholm");
+assert.equal(evasionScore(18, 17, 14, 5), 38, "forest guard evasion");
+assert.equal(calcBattleStats(canon.ringholm).baseAccuracy, 72, "ringholm status base accuracy");
+assert.equal(calcBattleStats(canon.ringholm).baseEvasion, 52, "ringholm status base evasion");
+assert.equal(calcBattleStats(canon.ringholm).evasion, 75, "ringholm status trained evasion");
 
 const ringholmStats = calcBattleStats(canon.ringholm);
 const guard = characters.find(unit => unit.id === "forest_guard");
 const guardStats = calcBattleStats(guard);
-assert.equal(battleHitRate(ringholmStats, guardStats, 9, 5), 71, "ringholm -> forest guard");
-assert.equal(battleHitRate(guardStats, ringholmStats, 7, 9), 30, "forest guard -> ringholm");
-assert.equal(battleHitRate(calcBattleStats(canon.albas), ringholmStats, 9, 9), 78, "albas attack magic -> ringholm");
-assert.equal(battleHitRate({ raw: { dex: 1 } }, { raw: { dex: 99, siz: 1 } }, 1, 10), 20, "hit floor");
-assert.equal(battleHitRate({ raw: { dex: 99 } }, { raw: { dex: 1, siz: 1 } }, 10, 0), 95, "hit ceiling");
+assert.equal(battleHitRate(ringholmStats, guardStats, 9, 5), 79, "ringholm -> forest guard");
+assert.equal(battleHitRate(guardStats, ringholmStats, 7, 9), 27, "forest guard -> ringholm");
+assert.equal(battleHitRate(calcBattleStats(canon.albas), ringholmStats, 9, 9), 56, "albas attack magic -> ringholm");
+assert.equal(battleHitRate({ raw: { dex: 1 } }, { raw: { str: 99, dex: 99, siz: 1 } }, 1, 10), 20, "hit floor");
+assert.equal(battleHitRate({ raw: { dex: 99 } }, { raw: { str: 1, dex: 1, siz: 30 } }, 10, 0), 95, "hit ceiling");
 assert.ok(targetPriorityScore(3, 17) < targetPriorityScore(3, 10), "higher APP draws attention at equal range");
 
 console.log("statConversion: all tests passed");

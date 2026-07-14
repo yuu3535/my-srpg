@@ -62,6 +62,7 @@ function calcBattleStats(unit) {
         luckT: Math.floor(raw.luck / 10),
     };
     const hpSource = unit?.stats?.hp ?? unit?.maxHp ?? unit?.hp;
+    const evadeSkill = Number(unit?.skills?.["回避"] ?? unit?.skillRanks?.["回避"] ?? 0);
 
     return {
         ...out,
@@ -70,6 +71,9 @@ function calcBattleStats(unit) {
         mp: raw.pow,
         attention: raw.app,
         supportMagic: Math.floor(raw.pow / 3),
+        baseAccuracy: baseAccuracyRate(raw.dex),
+        baseEvasion: baseEvasionRate(raw.str, raw.dex, raw.siz),
+        evasion: evasionScore(raw.str, raw.dex, raw.siz, evadeSkill),
 
         // Compatibility aliases. Remove after all UI code uses the v2 names.
         power: out.atk,
@@ -94,14 +98,30 @@ function magicalDamage(attacker, defender, spellPower) {
     return Math.max(1, mag + Number(spellPower || 0) - res);
 }
 
-function accuracyScore(dex, skillValue, bonus = 0) {
-    return Number(dex || 0) * 2 + Number(skillValue || 0) * 5 + Number(bonus || 0);
+function baseAccuracyRate(dex) {
+    return 50 + Number(dex || 0);
 }
 
-function evasionScore(dex, siz, evadeSkill, bonus = 0) {
-    return Number(dex || 0) - Number(siz || 0)
-        + Number(evadeSkill || 0) * 3
-        + Number(bonus || 0);
+function accuracyScore(dex, skillValue, bonus = 0) {
+    return baseAccuracyRate(dex) + Number(skillValue || 0) * 5 + Number(bonus || 0);
+}
+
+function evasionSizeModifier(siz) {
+    return Math.max(-14, Math.min(14, (11 - Number(siz || 10)) * 2));
+}
+
+function baseEvasionRate(str, dex, siz) {
+    return Math.round(
+        Number(str || 0) * 1.5
+        + Number(dex || 0) * 0.5
+        + evasionSizeModifier(siz)
+    );
+}
+
+function evasionScore(str, dex, siz, evadeSkill, bonus = 0) {
+    const baseRate = baseEvasionRate(str, dex, siz);
+    const trainingMultiplier = 1 + Number(evadeSkill || 0) * 0.05;
+    return Math.round(baseRate * trainingMultiplier) + Number(bonus || 0);
 }
 
 function battleHitRate(attackerStats, defenderStats, attackSkill, evadeSkill, modifiers = {}) {
@@ -111,6 +131,7 @@ function battleHitRate(attackerStats, defenderStats, attackSkill, evadeSkill, mo
         modifiers.accuracy || 0
     );
     const evasion = evasionScore(
+        defenderStats?.raw?.str,
         defenderStats?.raw?.dex,
         defenderStats?.raw?.siz,
         evadeSkill,
@@ -132,7 +153,10 @@ if (typeof module !== "undefined") {
         calcBattleStats,
         physicalDamage,
         magicalDamage,
+        baseAccuracyRate,
         accuracyScore,
+        evasionSizeModifier,
+        baseEvasionRate,
         evasionScore,
         battleHitRate,
         targetPriorityScore,
