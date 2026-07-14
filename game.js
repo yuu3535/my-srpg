@@ -1323,7 +1323,7 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
         const src = getPortraitSrc(u) || u.tokenImage || "";
         return `<div class="lsFcBust${flip ? " flip" : ""}" style="${src ? `background-image:url('${src}')` : ""}"></div>`;
     };
-    const ctrWeapon = pred.canCounter ? (getAttackSkillVal(target).name || "反撃") : "─";
+    const ctrWeapon = pred.canCounter ? (getAttackSkillVal(target).name || "反撃") : "なし";
     const dmgDisp = pred.effectDesc || dmgN;
 
     lsForecast.innerHTML = `
@@ -1331,9 +1331,10 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
             ${bust(attacker, false)}
             <div class="lsFcMeta">
                 <div class="lsFcName">${attacker.name}</div>
-                <div class="lsFcClass">LV ${attacker.level}　${attacker.race || ""}</div>
-                <div class="lsFcWeaponTag">${actionLabel || "攻撃"}</div>
+                <div class="lsFcClass"><i></i>LV ${attacker.level}　${attacker.race || ""}</div>
+                <div class="lsFcSlot">${actionLabel || "攻撃"}</div>
             </div>
+            <span class="lsFcTerrain">平地</span>
         </div>
         <div class="lsFcTable">
             <div class="lsFcChipRow">
@@ -1342,12 +1343,15 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
             </div>
             <div class="lsFcHead">
                 <span>威力</span><span>命中</span>
-                <b>${attacker.hp}　HP　${target.hp}</b>
+                <b class="lsFcHpPlate">${attacker.hp}<em>HP</em>${target.hp}</b>
                 <span>命中</span><span>威力</span>
             </div>
             <div class="lsFcVals">
                 <span>${dmgDisp}</span><span>${pred.hitRate}</span>
-                <b class="lsFcDmgMid">${isDamage ? `→ -${dmgN}` : `→ ${pred.effectDesc}`}　${pred.canCounter ? `-${ctrN} ←` : "反撃なし"}</b>
+                <span class="lsFcExchange">
+                    <b class="toDef">⟍ ${isDamage ? `-${dmgN}` : pred.effectDesc}</b>
+                    <b class="toAtk">${pred.canCounter ? `-${ctrN}` : "0"} ⟍</b>
+                </span>
                 <span>${pred.canCounter ? pred.ctrHitRate : "─"}</span><span>${pred.canCounter ? ctrN : "─"}</span>
             </div>
             <div class="lsFcBars">
@@ -1361,9 +1365,10 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
             ${bust(target, true)}
             <div class="lsFcMeta">
                 <div class="lsFcName">${target.name}</div>
-                <div class="lsFcClass">LV ${target.level}　${target.race || ""}</div>
-                <div class="lsFcWeaponTag">${ctrWeapon}</div>
+                <div class="lsFcClass"><i></i>LV ${target.level}　${target.race || ""}</div>
+                <div class="lsFcSlot">${ctrWeapon}</div>
             </div>
+            <span class="lsFcTerrain">平地</span>
         </div>
     `;
     lsForecast.classList.remove("hidden");

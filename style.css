@@ -2581,124 +2581,169 @@ html, body {
         border-top: 1px solid rgba(200,146,42,0.18);
     }
 
-    /* ── FE風エンゲージ戦闘予測（フル幅バンド・左右バストアップ・斜め分割テーブル） ── */
+    /* ── FE風エンゲージ戦闘予測 ──
+       画面全幅の帯（左パネルも覆う）＋大きなバストアップ＋大きな名前、
+       クラスチップ・武器スロットバー・地形タグ、
+       中央は斜め分割テーブルにHPエンブレムと斜めのダメージ交換 */
     #lsForecast {
         position: absolute;
-        left: 158px;
+        left: 8px;
         right: 8px;
-        bottom: 26px;
-        height: 92px;
+        bottom: 24px;
+        height: 112px;
         z-index: 26;
         display: grid;
-        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        grid-template-columns: minmax(0, 1fr) 340px minmax(0, 1fr);
         align-items: end;
     }
 
     #lsForecast.hidden { display: none; }
 
-    /* ── 陣営帯：味方=青 / 敵=赤（外へフェード） ── */
+    /* ── 陣営帯：味方=青 / 敵=赤 ── */
     .lsFcSide {
         position: relative;
-        height: 76px;
+        height: 96px;
         min-width: 0;
         display: flex;
-        align-items: flex-end;
+        align-items: center;
     }
 
     .lsFcSide.allySide {
         background: linear-gradient(90deg,
-            rgba(14,38,66,0.94) 0%, rgba(18,52,88,0.80) 55%, rgba(18,52,88,0.10) 100%);
+            rgba(13,36,64,0.96) 0%, rgba(18,52,88,0.86) 60%, rgba(18,52,88,0.30) 100%);
         border-top: 1px solid rgba(120,180,240,0.50);
     }
 
     .lsFcSide.enemySide {
         flex-direction: row-reverse;
         background: linear-gradient(270deg,
-            rgba(66,16,18,0.94) 0%, rgba(96,26,28,0.80) 55%, rgba(96,26,28,0.10) 100%);
+            rgba(62,14,16,0.96) 0%, rgba(94,24,26,0.86) 60%, rgba(94,24,26,0.30) 100%);
         border-top: 1px solid rgba(240,130,110,0.45);
     }
 
-    /* 帯の上へはみ出す大きなバストアップ */
+    /* 帯の上へ大きくはみ出すバストアップ */
     .lsFcBust {
         position: absolute;
         bottom: 0;
-        left: 2px;
-        width: 104px;
-        height: 148px;
-        background-size: 200% auto;
+        left: 4px;
+        width: 118px;
+        height: 178px;
+        background-size: 210% auto;
         background-position: center 0%;
         background-repeat: no-repeat;
-        filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
+        filter: drop-shadow(0 4px 10px rgba(0,0,0,0.65));
         pointer-events: none;
     }
 
-    .lsFcSide.enemySide .lsFcBust { left: auto; right: 2px; }
+    .lsFcSide.enemySide .lsFcBust { left: auto; right: 4px; }
     .lsFcBust.flip { transform: scaleX(-1); }
 
     .lsFcMeta {
-        margin-left: 106px;
+        margin-left: 124px;
         min-width: 0;
-        padding: 6px 8px 7px;
+        padding: 4px 8px 6px;
     }
 
     .lsFcSide.enemySide .lsFcMeta {
         margin-left: 0;
-        margin-right: 106px;
+        margin-right: 124px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
         text-align: right;
     }
 
+    /* 大きな名前（省略しない） */
     .lsFcName {
         color: #fff;
-        font-size: 14px;
+        font-size: 17px;
         font-weight: 700;
-        letter-spacing: 0.14em;
-        text-shadow: 0 1px 4px rgba(0,0,0,0.9);
-        border-bottom: 1px solid rgba(255,255,255,0.40);
-        padding-bottom: 2px;
+        letter-spacing: 0.12em;
+        line-height: 1.2;
+        text-shadow: 0 2px 6px rgba(0,0,0,0.95);
         white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
     }
 
+    /* クラスチップ：菱形アイコン＋LV・種族 */
     .lsFcClass {
-        margin-top: 2px;
-        color: rgba(255,255,255,0.72);
-        font-size: 9px;
-        letter-spacing: 0.10em;
-        white-space: nowrap;
-    }
-
-    .lsFcWeaponTag {
-        display: inline-block;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
         margin-top: 4px;
         padding: 2px 10px 3px;
-        color: #f2ead8;
-        font-size: 10px;
+        color: rgba(255,255,255,0.88);
+        font-size: 9.5px;
         letter-spacing: 0.10em;
-        background: rgba(0,0,0,0.45);
-        border: 1px solid rgba(255,255,255,0.25);
+        background: rgba(0,0,0,0.48);
+        border: 1px solid rgba(255,255,255,0.22);
+        border-radius: 9px;
+        white-space: nowrap;
     }
 
-    /* ── 中央テーブル：斜め分割（左=青 / 右=赤） ── */
+    .lsFcClass i {
+        width: 7px;
+        height: 7px;
+        transform: rotate(45deg);
+        background: linear-gradient(135deg, #ffe2a0, #c8922a);
+        flex-shrink: 0;
+    }
+
+    /* 武器スロットバー */
+    .lsFcSlot {
+        display: block;
+        margin-top: 5px;
+        min-width: 110px;
+        padding: 3px 12px 4px;
+        color: #f2ead8;
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-align: center;
+        background: linear-gradient(180deg, rgba(28,30,44,0.92), rgba(12,13,22,0.94));
+        border: 1px solid rgba(200,190,160,0.35);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.10);
+        clip-path: polygon(7px 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 7px 100%, 0 50%);
+    }
+
+    /* 地形タグ（帯の下隅） */
+    .lsFcTerrain {
+        position: absolute;
+        bottom: 3px;
+        left: 6px;
+        padding: 1px 9px 2px;
+        color: rgba(255,255,255,0.75);
+        font-size: 8.5px;
+        letter-spacing: 0.18em;
+        background: rgba(0,0,0,0.55);
+        border-left: 2px solid rgba(120,180,240,0.6);
+    }
+
+    .lsFcSide.enemySide .lsFcTerrain {
+        left: auto;
+        right: 6px;
+        border-left: 0;
+        border-right: 2px solid rgba(240,130,110,0.6);
+    }
+
+    /* ── 中央テーブル：斜め分割 ── */
     .lsFcTable {
         position: relative;
-        width: 316px;
-        height: 92px;
+        width: 340px;
+        height: 112px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        padding: 8px 12px 8px;
-        background: linear-gradient(103deg,
-            rgba(20,44,74,0.96) 49.4%, rgba(78,22,24,0.96) 50.6%);
-        border: 1px solid rgba(225,230,240,0.30);
+        padding: 10px 14px 9px;
+        background: linear-gradient(102deg,
+            rgba(19,42,72,0.97) 49.3%, rgba(74,20,22,0.97) 50.7%);
+        border: 1px solid rgba(225,230,240,0.32);
         border-bottom: 2px solid rgba(240,244,255,0.55);
-        box-shadow: 0 10px 24px rgba(0,0,0,0.55);
+        box-shadow: 0 12px 28px rgba(0,0,0,0.60);
     }
 
-    /* 行動チップ（テーブル上辺に浮く） */
+    /* 行動チップ（テーブルの上に浮く・被らない高さ） */
     .lsFcChipRow {
         position: absolute;
-        top: -15px;
+        top: -34px;
         left: 50%;
         transform: translateX(-50%);
         display: flex;
@@ -2707,7 +2752,7 @@ html, body {
     }
 
     .lsFcChipRow button {
-        padding: 5px 16px 6px;
+        padding: 6px 18px 7px;
         clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
         border: 0;
         font-family: inherit;
@@ -2731,55 +2776,83 @@ html, body {
         box-shadow: inset 0 0 0 1px rgba(200,205,220,0.35);
     }
 
-    /* ヘッダ行：威力 命中 | HP | 命中 威力 */
+    /* ヘッダ行：威力 命中 | HPエンブレム | 命中 威力 */
     .lsFcHead,
     .lsFcVals {
         display: grid;
-        grid-template-columns: 34px 34px 1fr 34px 34px;
-        align-items: baseline;
+        grid-template-columns: 42px 42px 1fr 42px 42px;
+        align-items: center;
         text-align: center;
     }
 
     .lsFcHead {
-        margin-top: 4px;
-        color: rgba(255,255,255,0.68);
-        font-size: 9px;
-        letter-spacing: 0.12em;
+        color: rgba(255,255,255,0.72);
+        font-size: 9.5px;
+        letter-spacing: 0.14em;
     }
 
-    .lsFcHead b {
+    /* 中央の「28 HP 14」— HP は六角形エンブレム */
+    .lsFcHpPlate {
         color: #fff;
-        font-size: 11px;
-        letter-spacing: 0.10em;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
     }
 
+    .lsFcHpPlate em {
+        font-style: normal;
+        font-size: 9px;
+        letter-spacing: 0.10em;
+        color: #f5edd8;
+        padding: 3px 8px 4px;
+        background: rgba(10,12,20,0.85);
+        border: 1px solid rgba(230,220,190,0.55);
+        clip-path: polygon(22% 0, 78% 0, 100% 50%, 78% 100%, 22% 100%, 0 50%);
+    }
+
+    /* 数値行 */
     .lsFcVals {
         color: #fff;
-        font-size: 13px;
+        font-size: 16px;
         font-weight: 700;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.85);
     }
 
-    .lsFcDmgMid {
-        color: #ff8a7a;
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 0.06em;
-        text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+    /* 斜めのダメージ交換（FEのジグザグ矢印） */
+    .lsFcExchange {
+        position: relative;
+        height: 26px;
     }
+
+    .lsFcExchange b {
+        position: absolute;
+        font-size: 12px;
+        font-weight: 700;
+        color: #ff7a68;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.95);
+        white-space: nowrap;
+    }
+
+    .lsFcExchange .toDef { right: 8px; top: -4px; }
+    .lsFcExchange .toAtk { left: 8px; bottom: -4px; }
 
     /* ── 下段：戦闘後HPバー＋大きな数字 ── */
     .lsFcBars {
         display: grid;
-        grid-template-columns: 1fr 40px 40px 1fr;
+        grid-template-columns: 1fr 44px 44px 1fr;
         align-items: center;
         gap: 4px;
     }
 
     .lsFcBar {
-        height: 8px;
+        height: 9px;
         overflow: hidden;
-        background: rgba(0,0,0,0.6);
-        border: 1px solid rgba(255,255,255,0.28);
+        background: rgba(0,0,0,0.62);
+        border: 1px solid rgba(255,255,255,0.30);
     }
 
     .lsFcBar i {
@@ -2792,13 +2865,13 @@ html, body {
     .lsFcBar.enemy i { background: linear-gradient(270deg, #d84a40, #f08a70); float: right; }
 
     .lsFcAfter {
-        font-size: 19px;
+        font-size: 22px;
         font-weight: 700;
         text-align: center;
-        text-shadow: 0 1px 4px rgba(0,0,0,0.95);
+        text-shadow: 0 2px 5px rgba(0,0,0,0.95);
     }
 
-    .lsFcAfter.ally  { color: #cfe8ff; }
+    .lsFcAfter.ally  { color: #dceeff; }
     .lsFcAfter.enemy { color: #ffb0a0; }
 
     #gameScreen[data-mode="battle"] #mapZoomBtns {
