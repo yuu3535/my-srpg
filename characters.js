@@ -27,6 +27,7 @@ const CHARACTERS_DATA = [
         level: 5,
         hp: 23, maxHp: 23,
         mp: 28, maxMp: 28,
+        stats: { hp: { base: 12, gains: [2, 3, 3, 3] } },
 
         str: { base: 16, gains: [3, 3, 2, 2] },
         con: { base: 13, gains: [3, 1, 3, 3] },
@@ -34,7 +35,7 @@ const CHARACTERS_DATA = [
         pow: { base: 16, gains: [3, 3, 3, 3] },
         edu: { base: 14, gains: [2, 3, 2, 3] },
         int: { base: 14, gains: [3, 3, 3, 2] },
-        siz: 10,
+        siz: 10, app: 16,
         courage: 90, luck: 35,
 
         move: 3, attackRange: 1,
@@ -85,6 +86,7 @@ const CHARACTERS_DATA = [
         level: 4,
         hp: 22, maxHp: 22,
         mp: 26, maxMp: 26,
+        stats: { hp: { base: 13, gains: [3, 3, 3] } },
 
         str: { base: 14, gains: [3, 3, 2] },
         con: { base: 13, gains: [2, 3, 2] },
@@ -92,7 +94,7 @@ const CHARACTERS_DATA = [
         pow: { base: 18, gains: [3, 3, 2] },
         edu: { base: 16, gains: [3, 3, 2] },
         int: { base: 14, gains: [2, 2, 2] },
-        siz: 13,
+        siz: 13, app: 15,
         courage: 90, luck: 90,
 
         move: 3, attackRange: 1,
@@ -144,6 +146,7 @@ const CHARACTERS_DATA = [
         level: 5,
         hp: 28, maxHp: 28,
         mp: 36, maxMp: 36,
+        stats: { hp: { base: 18, gains: [2, 2, 3, 3] } },
 
         str: { base: 12, gains: [1, 2, 2, 1] },
         con: { base: 21, gains: [3, 1, 1, 3] },
@@ -151,7 +154,7 @@ const CHARACTERS_DATA = [
         pow: { base: 24, gains: [3, 3, 3, 3] },
         edu: { base: 18, gains: [2, 3, 3, 2] },
         int: { base: 16, gains: [2, 2, 3, 3] },
-        siz: 15,
+        siz: 15, app: 17,
         courage: 65, luck: 65,
 
         move: 3, attackRange: 1,
@@ -210,6 +213,7 @@ const CHARACTERS_DATA = [
         level: 1,
         hp: 13, maxHp: 13,
         mp: 18, maxMp: 18,
+        stats: { hp: { base: 13, gains: [3, 3, 3] } },
 
         str: { base: 14, gains: [3, 3, 2] },
         con: { base: 13, gains: [2, 3, 2] },
@@ -217,7 +221,7 @@ const CHARACTERS_DATA = [
         pow: { base: 18, gains: [3, 3, 2] },
         edu: { base: 16, gains: [3, 3, 2] },
         int: { base: 14, gains: [2, 2, 2] },
-        siz: 13,
+        siz: 13, app: 15,
         courage: 90, luck: 90,
 
         move: 3, attackRange: 1,
@@ -269,7 +273,7 @@ const CHARACTERS_DATA = [
         hp: 12, maxHp: 12,
         mp: 18, maxMp: 18,
 
-        str: 14, con: 12, dex: 18, pow: 18, edu: 16, int: 14, siz: 13,
+        str: 14, con: 12, dex: 18, pow: 18, edu: 16, int: 14, siz: 13, app: 15,
         courage: 90, luck: 90,
 
         move: 3, attackRange: 1,
@@ -326,7 +330,7 @@ const CHARACTERS_DATA = [
         hp: 14, maxHp: 14,
         mp: 8, maxMp: 8,
 
-        str: 18, con: 18, dex: 17, pow: 12, edu: 12, int: 12, siz: 14,
+        str: 18, con: 18, dex: 17, pow: 12, edu: 12, int: 12, siz: 14, app: 10,
         courage: 50, luck: 40,
 
         move: 3, attackRange: 1,
@@ -366,7 +370,7 @@ const CHARACTERS_DATA = [
         hp: 26, maxHp: 26,
         mp: 24, maxMp: 24,
 
-        str: 33, con: 26, dex: 26, pow: 17, edu: 23, int: 18, siz: 15,
+        str: 33, con: 26, dex: 26, pow: 17, edu: 23, int: 18, siz: 15, app: 10,
         courage: 60, luck: 25,
 
         move: 3, attackRange: 1,
@@ -415,7 +419,7 @@ const CHARACTERS_DATA = [
         hp: 24, maxHp: 24,
         mp: 27, maxMp: 27,
 
-        str: 30, con: 27, dex: 30, pow: 27, edu: 25, int: 19, siz: 15,
+        str: 30, con: 27, dex: 30, pow: 27, edu: 25, int: 19, siz: 15, app: 14,
         courage: 70, luck: 50,
 
         move: 3, attackRange: 1,
@@ -465,7 +469,7 @@ const CHARACTERS_DATA = [
         hp: 18, maxHp: 18,
         mp: 23, maxMp: 23,
 
-        str: 18, con: 20, dex: 21, pow: 23, edu: 20, int: 21, siz: 13,
+        str: 18, con: 20, dex: 21, pow: 23, edu: 20, int: 21, siz: 13, app: 13,
         courage: 70, luck: 90,
 
         move: 3, attackRange: 1,
@@ -505,3 +509,7 @@ const CHARACTERS_DATA = [
     },
 
 ];
+
+if (typeof module !== "undefined") {
+    module.exports = CHARACTERS_DATA;
+}

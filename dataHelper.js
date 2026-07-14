@@ -99,21 +99,6 @@ function parseCommandArray(commandArray) {
 //  戦闘ルールv2: TRPG正典ステータス → SRPG戦闘ステータス
 // ============================================================
 
-/**
- * Lv1初期値 + レベルアップ上昇値の形式を現在値に解決する。
- * 旧形式の数値ステータスもそのまま返す。
- * @param {number|{base:number,gains:number[]}} stat
- * @param {number} level
- * @returns {number}
- */
-function statAt(stat, level = 1) {
-  if (typeof stat === "number") return stat;
-  if (!stat || typeof stat.base !== "number") return 0;
-  const gains = Array.isArray(stat.gains) ? stat.gains : [];
-  const capped = Math.max(0, level - 1);
-  return stat.base + gains.slice(0, capped).reduce((sum, value) => sum + Number(value || 0), 0);
-}
-
 function fixedDiceValue(formula) {
   if (!formula || formula === "0" || formula === 0) return 0;
   let expr = String(formula).replace(/(\d+)d(\d+)/g, (_, n, m) =>
@@ -132,38 +117,6 @@ function stripBonusToken(formula, token) {
     .replace(new RegExp(`\\+?\\s*${token}`, "g"), "")
     .replace(new RegExp(`${token}\\s*\\+?`, "g"), "")
     .trim();
-}
-
-/**
- * v2戦闘計算用の派生ステータスを返す。
- * equipmentArmor/equipmentWard は今後の装備実装用の任意補正。
- * @param {object} unit
- */
-function calcBattleStats(unit) {
-  const level = unit?.level || 1;
-  const str = statAt(unit?.str, level);
-  const con = statAt(unit?.con, level);
-  const dex = statAt(unit?.dex, level);
-  const pow = statAt(unit?.pow, level);
-  const edu = statAt(unit?.edu, level);
-  const int = statAt(unit?.int, level);
-  const siz = statAt(unit?.siz, level);
-  const hp = statAt(unit?.maxHp ?? unit?.hp, level) || unit?.maxHp || unit?.hp || 1;
-  const courage = statAt(unit?.courage, level);
-  const luck = statAt(unit?.luck, level);
-
-  return {
-    raw: { str, con, dex, pow, edu, int, siz, courage, luck },
-    hp,
-    mp: pow,
-    power: Math.floor(str / 3),
-    magic: Math.floor(pow / 3),
-    technique: Math.floor(dex / 3),
-    armor: Math.floor(con / 8) + (unit?.equipmentArmor || 0),
-    ward: Math.floor((pow + int) / 16) + (unit?.equipmentWard || 0),
-    valor: Math.floor(courage / 10),
-    luckTokens: Math.floor(luck / 10),
-  };
 }
 
 function getWeaponPower(unit) {

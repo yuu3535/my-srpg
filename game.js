@@ -88,8 +88,8 @@ const BATTLE_UTILITY_SKILLS = new Set([
 // 回避スキル名
 const EVADE_SKILL_NAME = "回避";
 
-// 戦闘ルールv2: "guaranteed" は命中確定、"clamped" は対抗ロール20-95%。
-const BATTLE_HIT_MODE = "guaranteed";
+// 戦闘ルールv2: "formula" はDEX・SIZ・技能式、"guaranteed" は命中確定。
+const BATTLE_HIT_MODE = "formula";
 
 // =============================================
 // ゲームモード状態
@@ -947,29 +947,47 @@ function getEvadeSkillVal(unit) {
     return unit.skills[EVADE_SKILL_NAME] ?? 0;
 }
 
-/**
- * 対抗表による成功率を返す（1d100 <= 戻り値 で成功）
- * 成功率 = 50 + (能動 - 受動) × 5
- * 差が±10以上は自動成功(100) / 自動失敗(0)
- */
-function getOpposedRate(activeStat, passiveStat) {
-    const diff = activeStat - passiveStat;
-    if (diff >= 10) return 100;
-    if (diff <= -10) return 0;
-    return 50 + diff * 5;
-}
-
 function clampHitRate(rate) {
     return Math.max(20, Math.min(95, Math.round(rate)));
 }
 
-function getBattleHitResult(activeStat, passiveStat, targetStunned = false) {
+function getAccuracyStatusModifier(unit) {
+    return (unit.statusEffects || [])
+        .filter(effect => effect.type === "accuracyDown")
+        .reduce((sum, effect) => sum + Number(effect.value || 0) * 5, 0);
+}
+
+function getBattleHitResult(attacker, defender, attackSkill, targetStunned = false) {
     if (targetStunned || BATTLE_HIT_MODE === "guaranteed") {
         return { rate: 100, roll: null, isHit: true, note: targetStunned ? "スタン中：自動命中" : "v2命中確定" };
     }
-    const rate = clampHitRate(getOpposedRate(activeStat, passiveStat));
+    const attackerStats = calcBattleStats(attacker);
+    const defenderStats = calcBattleStats(defender);
+    const evadeSkill = getEvadeSkillVal(defender);
+    const accuracy = accuracyScore(attackerStats.raw.dex, attackSkill, getAccuracyStatusModifier(attacker));
+    const evasion = evasionScore(defenderStats.raw.dex, defenderStats.raw.siz, evadeSkill);
+    const rate = battleHitRate(attackerStats, defenderStats, attackSkill, evadeSkill, {
+        accuracy: getAccuracyStatusModifier(attacker),
+    });
     const roll = Math.floor(Math.random() * 100) + 1;
-    return { rate, roll, isHit: roll <= rate, note: `${roll}/${rate}%` };
+    return { rate, roll, isHit: roll <= rate, accuracy, evasion, note: `${roll}/${rate}%` };
+}
+
+const OFFENSIVE_MAGIC_EFFECTS = new Set([
+    "magicDamage", "areaDamage", "break", "stun", "accuracyDown",
+    "nightmare", "gravityField",
+]);
+
+function magicUsesAccuracyCheck(spell) {
+    return spell?.targetType === "enemy" || OFFENSIVE_MAGIC_EFFECTS.has(spell?.effectType);
+}
+
+function getMagicHitResult(caster, target, spell, successValue) {
+    if (!magicUsesAccuracyCheck(spell)) {
+        return { rate: 100, roll: null, isHit: true, note: "補助魔法：自動成功" };
+    }
+    const targetStunned = (target?.statusEffects || []).some(effect => effect.type === "stun");
+    return getBattleHitResult(caster, target, successValue, targetStunned);
 }
 
 function applyBarrierDamage(target, rawDmg, breakBarrier = false) {
@@ -1011,7 +1029,7 @@ function calculatePhysicalDamage(attacker, target, options = {}) {
         }
     }
 
-    const raw = Math.max(1, attackValue - defStats.armor);
+    const raw = physicalDamage({ atk: attackValue }, defStats, 0);
     const damage = options.half ? Math.max(1, Math.floor(raw / 2)) : raw;
     return { damage, raw, power: atkStats.power, weaponPower, armor: defStats.armor, artNote };
 }
@@ -1020,13 +1038,17 @@ function calculateMagicDamage(caster, target, spell, options = {}) {
     const atkStats = calcBattleStats(caster);
     const defStats = calcBattleStats(target);
     const spellPower = getSpellPower(spell);
-    const raw = Math.max(1, atkStats.magic + spellPower - defStats.ward);
+    const raw = magicalDamage(atkStats, defStats, spellPower);
     const damage = options.half ? Math.max(1, Math.floor(raw / 2)) : raw;
     return { damage, raw, magic: atkStats.magic, spellPower, ward: defStats.ward };
 }
 
-function canCounterByValor(unit) {
-    return calcBattleStats(unit).valor > 0;
+function getCounterRate(unit) {
+    return Math.max(0, Math.min(100, calcBattleStats(unit).counterRate));
+}
+
+function canCounter(unit) {
+    return (unit.counterMode ?? "auto") !== "none" && getCounterRate(unit) > 0;
 }
 
 function isLandscapeBattleUi() {
@@ -1124,7 +1146,7 @@ function renderLandscapeUnitPanel(unit = selectedUnit) {
             <div class="lsStatGrid">
                 <div><b>力</b><span>${stats.power}</span></div>
                 <div><b>魔力</b><span>${stats.magic}</span></div>
-                <div><b>守備</b><span>${stats.armor}</span></div>
+                <div><b>物防</b><span>${stats.armor}</span></div>
                 <div><b>魔防</b><span>${stats.ward}</span></div>
                 <div><b>移動</b><span>${unit.move}マス</span></div>
                 <div><b>状態</b><span>${unitStatusText(unit)}</span></div>
@@ -1555,7 +1577,7 @@ function resolveCounterAttack(originalAttacker, defender) {
 function executePhysicalCounter(counterAttacker, counterTarget) {
     const { val: atkVal, name: atkName } = getAttackSkillVal(counterAttacker);
     const evadeVal = getEvadeSkillVal(counterTarget);
-    const hit = getBattleHitResult(atkVal, evadeVal);
+    const hit = getBattleHitResult(counterAttacker, counterTarget, atkVal);
     addLog(`  物理反撃！${counterAttacker.name}【${atkName}${atkVal} vs 回避${evadeVal}】 ${hit.note} → ${hit.isHit ? "命中" : "失敗"}`);
     const isHit = hit.isHit;
     if (!isHit) return;
@@ -1565,7 +1587,7 @@ function executePhysicalCounter(counterAttacker, counterTarget) {
     counterTarget.hp = Math.max(0, counterTarget.hp - barrier.damage);
     showDamagePopup(counterTarget.id, barrier.damage, "counter");
     flashUnitHit(counterTarget.id);
-    addLog(`    ${barrier.damage}ダメージ（半分）${result.artNote}${barrier.note}（力${result.power}+武器${result.weaponPower}-守備${result.armor}）→ ${counterTarget.name} HP ${counterTarget.hp}/${counterTarget.maxHp}`);
+    addLog(`    ${barrier.damage}ダメージ（半分）${result.artNote}${barrier.note}（力${result.power}+武器${result.weaponPower}-物防${result.armor}）→ ${counterTarget.name} HP ${counterTarget.hp}/${counterTarget.maxHp}`);
     renderUnits();
     if (counterTarget.hp <= 0) addLog(`    ${counterTarget.name}は倒れた！`);
 }
@@ -1573,12 +1595,9 @@ function executePhysicalCounter(counterAttacker, counterTarget) {
 function executeMagicCounter(caster, target, spell, spellVal) {
     const mpCost  = rollDice(spell.mpCost || "1d6");
     caster.mp = Math.max(0, caster.mp - mpCost);
-    const successPct = spellVal * 10;
-    const roll = BATTLE_HIT_MODE === "guaranteed" ? null : Math.floor(Math.random() * 100) + 1;
-    const success = BATTLE_HIT_MODE === "guaranteed" || roll <= clampHitRate(successPct);
-    const successNote = BATTLE_HIT_MODE === "guaranteed" ? "v2確定" : `${roll}/${clampHitRate(successPct)}%`;
-    addLog(`  魔法反撃【${spell.name}】${caster.name}→${target.name} （${successNote}） MP-${mpCost} → ${success ? "成功" : "失敗"}`);
-    if (!success) return;
+    const hit = getMagicHitResult(caster, target, spell, spellVal);
+    addLog(`  魔法反撃【${spell.name}】${caster.name}→${target.name} （${hit.note}） MP-${mpCost} → ${hit.isHit ? "成功" : "失敗"}`);
+    if (!hit.isHit) return;
 
     const result = calculateMagicDamage(caster, target, spell, { half: true });
     const barrier = applyBarrierDamage(target, result.damage, spell.effectType === "break");
@@ -1620,7 +1639,7 @@ function resolvePhysicalHit(attacker, target, atkSkillName) {
     target.hp = Math.max(0, target.hp - actualDmg);
     showDamagePopup(target.id, actualDmg, "damage");
     flashUnitHit(target.id);
-    addLog(`  命中！${actualDmg}ダメージ${result.artNote}${barrier.note}（力${result.power}+武器${result.weaponPower}-守備${result.armor}）→ ${target.name} HP ${target.hp}/${target.maxHp}`);
+    addLog(`  命中！${actualDmg}ダメージ${result.artNote}${barrier.note}（力${result.power}+武器${result.weaponPower}-物防${result.armor}）→ ${target.name} HP ${target.hp}/${target.maxHp}`);
     showMessage("SYSTEM", `${attacker.name}の攻撃命中！${target.name}に ${actualDmg} ダメージ！`);
 
     // 気絶チェック：HPが一気に2以下に減った場合 CON×5% 失敗で戦闘不能
@@ -1639,10 +1658,16 @@ function resolvePhysicalHit(attacker, target, atkSkillName) {
     if (target.hp <= 0) addLog(`  ${target.name}は倒れた！`);
 
     // 反撃チェック：パッシブモードでは反撃しない
-    if (target.hp > 0 && !BATTLE_DEFINITIONS[currentBattleId]?.passive && canCounterByValor(target)) {
-        showMessage(target.name, "反撃！");
-        addLog(`  反撃チャンス！（勇気ゲージ${calcBattleStats(target).valor}）`);
-        resolveCounterAttack(attacker, target);
+    if (target.hp > 0 && !BATTLE_DEFINITIONS[currentBattleId]?.passive && canCounter(target)) {
+        const counterRate = getCounterRate(target);
+        const counterRoll = Math.floor(Math.random() * 100) + 1;
+        if (counterRoll <= counterRate) {
+            showMessage(target.name, "反撃！");
+            addLog(`  反撃発生！（勇気 ${counterRoll}/${counterRate}%）`);
+            resolveCounterAttack(attacker, target);
+        } else {
+            addLog(`  反撃せず（勇気 ${counterRoll}/${counterRate}%）`);
+        }
     }
 }
 
@@ -1667,7 +1692,7 @@ function executeAttack(attacker, target) {
     // スタン中の相手は回避不可
     const targetStunned = (target.statusEffects || []).some(e => e.type === "stun");
     const evadeStat = targetStunned ? 0 : getEvadeSkillVal(target);
-    const hit = getBattleHitResult(atkStat, evadeStat, targetStunned);
+    const hit = getBattleHitResult(attacker, target, atkStat, targetStunned);
     const isHit = hit.isHit;
 
     const rollNote = hit.note;
@@ -1689,7 +1714,7 @@ function executeThrow(attacker, target) {
     const throwStat = attacker.skills["投擲"] ?? 5;
     const targetStunned = (target.statusEffects || []).some(e => e.type === "stun");
     const evadeStat = targetStunned ? 0 : getEvadeSkillVal(target);
-    const hit = getBattleHitResult(throwStat, evadeStat, targetStunned);
+    const hit = getBattleHitResult(attacker, target, throwStat, targetStunned);
     const isHit = hit.isHit;
 
     const rollNote = hit.note;
@@ -1796,18 +1821,14 @@ function renderMagicCommands(unit) {
 
 function executeMagic(caster, spell, target) {
     const successVal = caster.spells[spell.id] ?? 5;
-    const successPct = successVal * 10;                       // 成功値×10 = 成功率%
-    const roll       = BATTLE_HIT_MODE === "guaranteed" ? null : Math.floor(Math.random() * 100) + 1;
-    const successRate = clampHitRate(successPct);
-    const success    = BATTLE_HIT_MODE === "guaranteed" || roll <= successRate;
-    const successNote = BATTLE_HIT_MODE === "guaranteed" ? "v2確定" : `${roll}/${successRate}%`;
+    const hit = getMagicHitResult(caster, target, spell, successVal);
 
     // MPコスト
     const mpCost = rollDice(spell.mpCost || "1d6");
     caster.mp    = Math.max(0, caster.mp - mpCost);
-    addLog(`・${caster.name}が ${spell.name} 使用（${successNote}）  MP-${mpCost}`);
+    addLog(`・${caster.name}が ${spell.name} 使用（${hit.note}）  MP-${mpCost}`);
 
-    if (!success) {
+    if (!hit.isHit) {
         addLog("  失敗！");
         showMessage("SYSTEM", `${caster.name}の${spell.name}は失敗した！`);
         endUnitTurn(caster);
@@ -1837,23 +1858,19 @@ function executeMagic(caster, spell, target) {
                 }
             }
 
-            // スペル固有の状態異常付与（10ダメ以上 + 幸運%成功）
+            // スペル固有の状態異常付与。命中後は追加抽選を重ねない。
             const dmgForCheck = result.damage; // 装甲前のダメージで判定
             if (dmgForCheck >= 10 && spell.statusEffect) {
-                const luckRate = caster.luck || 50;
-                const luckRoll = Math.floor(Math.random() * 100) + 1;
-                if (luckRoll <= luckRate) {
-                    target.statusEffects = target.statusEffects || [];
-                    if (spell.statusEffect === "burn") {
-                        const dur = rollDice("1d6");
-                        target.statusEffects.push({ type: "burn", duration: dur });
-                        addLog(`  火傷状態！（${dur}ターン）`);
-                    } else if (spell.statusEffect === "slow") {
-                        target.statusEffects.push({ type: "accuracyDown", value: -1, duration: 3 });
-                        addLog(`  ${target.name}の命中-1（氷：3ターン）`);
-                    } else if (spell.statusEffect === "knockback") {
-                        addLog(`  ${target.name}が吹き飛ばされた！（風）`);
-                    }
+                target.statusEffects = target.statusEffects || [];
+                if (spell.statusEffect === "burn") {
+                    const dur = rollDice("1d6");
+                    target.statusEffects.push({ type: "burn", duration: dur });
+                    addLog(`  火傷状態！（${dur}ターン）`);
+                } else if (spell.statusEffect === "slow") {
+                    target.statusEffects.push({ type: "accuracyDown", value: -1, duration: 3 });
+                    addLog(`  ${target.name}の命中-1（氷：3ターン）`);
+                } else if (spell.statusEffect === "knockback") {
+                    addLog(`  ${target.name}が吹き飛ばされた！（風）`);
                 }
             }
 
@@ -1861,7 +1878,7 @@ function executeMagic(caster, spell, target) {
             break;
         }
         case "heal": {
-            const healAmt = calcBattleStats(caster).magic + getSpellPower(spell);
+            const healAmt = calcBattleStats(caster).supportMagic + getSpellPower(spell);
             target.hp = Math.min(target.maxHp, target.hp + healAmt);
             showDamagePopup(target.id, healAmt, "heal");
             addLog(`  ${target.name}を ${healAmt} 回復（HP ${target.hp}/${target.maxHp}）`);
@@ -2136,14 +2153,14 @@ function calculateBattlePrediction(attacker, target, atkSkillName, isMagic, spel
     // ── 攻撃側予測 ──
     let hitRate, expDmg, effectDesc;
     if (isMagic && spell) {
-        hitRate    = BATTLE_HIT_MODE === "guaranteed" ? 100 : clampHitRate((attacker.spells?.[spell.id] ?? 5) * 10);
+        hitRate    = getMagicHitResult(attacker, target, spell, attacker.spells?.[spell.id] ?? 5).rate;
         const barrier = (target.statusEffects || []).find(e => e.type === "barrier");
         if (spell.effectType === "magicDamage" || spell.effectType === "break") {
             const raw = calculateMagicDamage(attacker, target, spell).damage;
             expDmg     = barrier ? Math.max(0, raw - barrier.value) : raw;
             effectDesc = `${expDmg}`;
         } else if (spell.effectType === "heal") {
-            expDmg     = calcBattleStats(attacker).magic + getSpellPower(spell);
+            expDmg     = calcBattleStats(attacker).supportMagic + getSpellPower(spell);
             effectDesc = `+${expDmg}`;
         } else if (spell.effectType === "barrier") {
             expDmg     = getSpellPower(spell);
@@ -2158,7 +2175,7 @@ function calculateBattlePrediction(attacker, target, atkSkillName, isMagic, spel
             : getAttackSkillVal(attacker).val;
         const stunned   = (target.statusEffects || []).some(e => e.type === "stun");
         const evadeStat = stunned ? 0 : getEvadeSkillVal(target);
-        hitRate = getBattleHitResult(atkStat, evadeStat, stunned).rate;
+        hitRate = getBattleHitResult(attacker, target, atkStat, stunned).rate;
 
         const rawDmg  = calculatePhysicalDamage(attacker, target, { allowMartialArt: false }).damage;
         const barrier = (target.statusEffects || []).find(e => e.type === "barrier");
@@ -2167,16 +2184,18 @@ function calculateBattlePrediction(attacker, target, atkSkillName, isMagic, spel
     }
 
     // ── 反撃予測（共通） ──
-    const canCounter = target.hp > 0 && (target.counterMode ?? "auto") !== "none" && canCounterByValor(target);
+    const counterRate = getCounterRate(target);
+    const counterAvailable = target.hp > 0 && canCounter(target);
     let ctrHitRate = 0, ctrExpDmg = 0;
-    if (canCounter) {
+    if (counterAvailable) {
         const ctrAtkStat = getAttackSkillVal(target).val;
         const ctrEvade   = getEvadeSkillVal(attacker);
-        ctrHitRate = getBattleHitResult(ctrAtkStat, ctrEvade).rate;
+        const counterHitRate = getBattleHitResult(target, attacker, ctrAtkStat).rate;
+        ctrHitRate = Math.round(counterRate * counterHitRate / 100);
         ctrExpDmg  = calculatePhysicalDamage(target, attacker, { half: true, allowMartialArt: false }).damage;
     }
 
-    return { hitRate, expDmg, effectDesc, canCounter, ctrHitRate, ctrExpDmg };
+    return { hitRate, expDmg, effectDesc, canCounter: counterAvailable, ctrHitRate, ctrExpDmg };
 }
 
 /** HP に応じた立ち絵 URL を返す（HP50%以下 & 被弾絵あり → 被弾絵） */
@@ -2725,7 +2744,7 @@ function showForecastLayer(attacker, targets, skillName, isMagic, spell) {
                 : getAttackSkillVal(attacker).val;
             const stunned  = (target.statusEffects || []).some(e => e.type === "stun");
             const evadeStat = stunned ? 0 : getEvadeSkillVal(target);
-            const hitRate   = getBattleHitResult(atkStat, evadeStat, stunned).rate;
+            const hitRate   = getBattleHitResult(attacker, target, atkStat, stunned).rate;
 
             const rawDmg  = calculatePhysicalDamage(attacker, target, { allowMartialArt: false }).damage;
             const barrier = (target.statusEffects || []).find(e => e.type === "barrier");
@@ -2735,8 +2754,10 @@ function showForecastLayer(attacker, targets, skillName, isMagic, spell) {
             // 反撃予測
             const ctrAtkStat = getAttackSkillVal(target).val;
             const ctrEvade   = getEvadeSkillVal(attacker);
-            const ctrChance  = canCounterByValor(target) ? getBattleHitResult(ctrAtkStat, ctrEvade).rate : 0;
-            const ctrDmg     = canCounterByValor(target)
+            const counterPossible = canCounter(target);
+            const ctrHitRate = counterPossible ? getBattleHitResult(target, attacker, ctrAtkStat).rate : 0;
+            const ctrChance  = Math.round(getCounterRate(target) * ctrHitRate / 100);
+            const ctrDmg     = counterPossible
                 ? calculatePhysicalDamage(target, attacker, { half: true, allowMartialArt: false }).damage
                 : 0;
 
@@ -2760,7 +2781,7 @@ function showForecastLayer(attacker, targets, skillName, isMagic, spell) {
             `;
         } else if (isMagic && spell) {
             // ── 魔法予測 ──
-            const successRate = BATTLE_HIT_MODE === "guaranteed" ? 100 : clampHitRate((attacker.spells?.[spell.id] ?? 5) * 10);
+            const successRate = getMagicHitResult(attacker, target, spell, attacker.spells?.[spell.id] ?? 5).rate;
             let effectHtml = "";
 
             if (spell.effectType === "magicDamage") {
@@ -2770,7 +2791,7 @@ function showForecastLayer(attacker, targets, skillName, isMagic, spell) {
                 const bNote   = barr2 ? `<span class="forecastNote">結界-${barr2.value}</span>` : "";
                 effectHtml = `<span class="forecastLabel">ダメ</span><span class="forecastVal dmg">${effMdmg}</span>${bNote}`;
             } else if (spell.effectType === "heal") {
-                const healAmt = calcBattleStats(attacker).magic + getSpellPower(spell);
+                const healAmt = calcBattleStats(attacker).supportMagic + getSpellPower(spell);
                 effectHtml = `<span class="forecastLabel">回復</span><span class="forecastVal hit">${healAmt}</span>`;
             } else if (spell.effectType === "barrier") {
                 const barrVal = getSpellPower(spell);
@@ -2870,6 +2891,17 @@ function getDeclLayer() {
     return layer;
 }
 
+function chooseEnemyTarget(enemy, allies) {
+    if (!allies.length) return null;
+    return allies.reduce((best, unit) => {
+        const distance = Math.abs(unit.x - enemy.x) + Math.abs(unit.y - enemy.y);
+        const bestDistance = Math.abs(best.x - enemy.x) + Math.abs(best.y - enemy.y);
+        const score = targetPriorityScore(distance, calcBattleStats(unit).raw.app, unit.attentionBonus || 0);
+        const bestScore = targetPriorityScore(bestDistance, calcBattleStats(best).raw.app, best.attentionBonus || 0);
+        return score < bestScore ? unit : best;
+    });
+}
+
 function planEnemyActions() {
     enemyDeclarations = new Map();
     if (!DECLARATION_MODE || battleOver || BATTLE_DEFINITIONS[currentBattleId]?.passive) {
@@ -2895,11 +2927,7 @@ function planEnemyActions() {
             continue;
         }
 
-        const target = aliveAllies.reduce((best, u) => {
-            const d = Math.abs(u.x - enemy.x) + Math.abs(u.y - enemy.y);
-            const bd = Math.abs(best.x - enemy.x) + Math.abs(best.y - enemy.y);
-            return d < bd ? u : best;
-        });
+        const target = chooseEnemyTarget(enemy, aliveAllies);
 
         let dest = { x: enemy.x, y: enemy.y };
         const distNow = Math.abs(target.x - enemy.x) + Math.abs(target.y - enemy.y);
@@ -3052,12 +3080,7 @@ async function executeDeclaredAction(enemy, decl) {
         victim = battleUnits.find(u => u.id === decl.targetId && u.hp > 0 && u.side === "ally") || null;
         if (!victim) {
             const aliveAllies = battleUnits.filter(u => u.side === "ally" && u.hp > 0);
-            victim = aliveAllies.reduce((best, u) => {
-                if (!best) return u;
-                const d = Math.abs(u.x - enemy.x) + Math.abs(u.y - enemy.y);
-                const bd = Math.abs(best.x - enemy.x) + Math.abs(best.y - enemy.y);
-                return d < bd ? u : best;
-            }, null);
+            victim = chooseEnemyTarget(enemy, aliveAllies);
             if (victim) addLog(`・${enemy.name}は目標を ${victim.name} に切り替えた`);
         }
     }
@@ -3107,13 +3130,10 @@ async function executeDeclaredAction(enemy, decl) {
     const { val: atkStat, name: atkSkillName } = getAttackSkillVal(enemy);
     const targetStunned = (victim.statusEffects || []).some(e => e.type === "stun");
     const evadeStat = targetStunned ? 0 : getEvadeSkillVal(victim);
-    const rate = targetStunned ? 100 : getOpposedRate(atkStat, evadeStat);
-    const roll = Math.floor(Math.random() * 100) + 1;
-    const isHit = roll <= rate;
-    const rollNote = targetStunned ? "スタン中：自動命中" : `${roll}/${rate}%`;
-    addLog(`・${enemy.name} → ${victim.name} 【${atkSkillName}${atkStat} vs 回避${evadeStat}】 ${rollNote} → ${isHit ? "命中" : "失敗"}`);
+    const hit = getBattleHitResult(enemy, victim, atkStat, targetStunned);
+    addLog(`・${enemy.name} → ${victim.name} 【${atkSkillName}${atkStat} vs 回避${evadeStat}】 ${hit.note} → ${hit.isHit ? "命中" : "失敗"}`);
 
-    if (isHit) {
+    if (hit.isHit) {
         flashUnitHit(victim.id);
         resolvePhysicalHit(enemy, victim, atkSkillName);
         checkVictoryCondition();
@@ -3168,7 +3188,7 @@ function tickStatusEffects(side) {
                 showDamagePopup(u.id, gDmg, "damage");
                 addLog(`  ${u.name}は重力場で ${gDmg} ダメージ`);
             } else if (e.type === "stun") {
-                const conRate  = (u.con || 10) * 3;
+                const conRate  = calcBattleStats(u).raw.con * 3;
                 const conCheck = Math.floor(Math.random() * 100) + 1;
                 if (conCheck <= conRate) {
                     addLog(`  ${u.name}はスタンから回復（CON×3%:${conRate}%）`);
@@ -3231,12 +3251,8 @@ async function enemyAction(enemy) {
         return;
     }
 
-    // 最近接の味方を探す
-    const target = aliveAllies.reduce((best, u) => {
-        const d  = Math.abs(u.x - enemy.x) + Math.abs(u.y - enemy.y);
-        const bd = Math.abs(best.x - enemy.x) + Math.abs(best.y - enemy.y);
-        return d < bd ? u : best;
-    });
+    // 距離を優先し、同程度ならAPP由来の注目度が高い味方を狙う。
+    const target = chooseEnemyTarget(enemy, aliveAllies);
 
     // 攻撃射程外なら移動
     const distNow = Math.abs(target.x - enemy.x) + Math.abs(target.y - enemy.y);
@@ -3267,13 +3283,10 @@ async function enemyAction(enemy) {
         const { val: atkStat, name: atkSkillName } = getAttackSkillVal(enemy);
         const targetStunned = (target.statusEffects || []).some(e => e.type === "stun");
         const evadeStat = targetStunned ? 0 : getEvadeSkillVal(target);
-        const rate      = targetStunned ? 100 : getOpposedRate(atkStat, evadeStat);
-        const roll      = Math.floor(Math.random() * 100) + 1;
-        const isHit     = roll <= rate;
-        const rollNote  = targetStunned ? "スタン中：自動命中" : `${roll}/${rate}%`;
-        addLog(`・${enemy.name} → ${target.name} 【${atkSkillName}${atkStat} vs 回避${evadeStat}】 ${rollNote} → ${isHit ? "命中" : "失敗"}`);
+        const hit = getBattleHitResult(enemy, target, atkStat, targetStunned);
+        addLog(`・${enemy.name} → ${target.name} 【${atkSkillName}${atkStat} vs 回避${evadeStat}】 ${hit.note} → ${hit.isHit ? "命中" : "失敗"}`);
 
-        if (isHit) {
+        if (hit.isHit) {
             flashUnitHit(target.id);            // 被弾フラッシュ
             resolvePhysicalHit(enemy, target, atkSkillName);
             checkVictoryCondition();
@@ -3676,7 +3689,7 @@ function renderLandscapeStatusSheet(unit, bs) {
             ${metric("STR", bs.raw.str)}${metric("CON", bs.raw.con)}
             ${metric("DEX", bs.raw.dex)}${metric("POW", bs.raw.pow)}
             ${metric("INT", bs.raw.int)}${metric("EDU", bs.raw.edu)}
-            ${metric("SIZ", bs.raw.siz)}${metric("勇気", bs.raw.courage)}
+            ${metric("SIZ", bs.raw.siz)}${metric("APP", bs.raw.app)}
           </div>
         </section>
 
@@ -3684,12 +3697,12 @@ function renderLandscapeStatusSheet(unit, bs) {
           <h3>BATTLE <span>戦闘能力</span></h3>
           <div class="adventureMetrics battleStats">
             ${metric("力", bs.power)}${metric("魔力", bs.magic)}
-            ${metric("技", bs.technique)}${metric("守備", bs.armor)}
-            ${metric("魔防", bs.ward)}${metric("勇気", bs.valor)}
+            ${metric("技量", bs.technique)}${metric("物防", bs.armor)}
+            ${metric("魔防", bs.ward)}${metric("反撃", `${bs.counterRate}%`)}
             ${metric("移動", `${unit.move}マス`)}${metric("射程", `${unit.attackRange}マス`)}
           </div>
           <div class="adventureBattleNote">
-            <span>反撃</span><b>${counterNames[unit.counterMode] || "自動選択"}</b>
+            <span>方針</span><b>${counterNames[unit.counterMode] || "自動選択"}</b>
             <span>状態</span><b>${statusNames.join("・") || "通常"}</b>
           </div>
         </section>
@@ -3772,7 +3785,7 @@ function renderStatusTab(tabName) {
             ${sr("STR", raw.str)}${sr("CON", raw.con)}
             ${sr("DEX", raw.dex)}${sr("POW", raw.pow)}
             ${sr("INT", raw.int)}${sr("EDU", raw.edu)}
-            ${sr("SIZ", raw.siz)}
+            ${sr("SIZ", raw.siz)}${sr("APP", raw.app)}
           </div>
         </div>
         <div class="statusSection">
@@ -3782,10 +3795,10 @@ function renderStatusTab(tabName) {
             ${sr("射程", unit.attackRange + " マス")}
             ${sr("力", bs.power)}
             ${sr("魔力", bs.magic)}
-            ${sr("技", bs.technique)}
-            ${sr("守備", bs.armor)}
+            ${sr("技量", bs.technique)}
+            ${sr("物防", bs.armor)}
             ${sr("魔防", bs.ward)}
-            ${sr("勇気", bs.valor)}
+            ${sr("反撃率", `${bs.counterRate}%`)}
           </div>
         </div>`;
         return;
