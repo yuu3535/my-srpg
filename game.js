@@ -1326,20 +1326,31 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
     const ctrWeapon = pred.canCounter ? (getAttackSkillVal(target).name || "反撃") : "なし";
     const dmgDisp = pred.effectDesc || dmgN;
 
+    // スキルチップ（FEのスキルアイコン列に相当。最大4つ）
+    const skillChips = u => Object.entries(u.skills || {}).slice(0, 4)
+        .map(([name, val]) => `<b class="lsFcSkillChip">${name}<em>${val}</em></b>`)
+        .join("");
+
+    // 片側ぶんの情報ブロック（名前・種族・戦技/武器スロット・スキル列）
+    const sideMeta = (u, weaponVal) => `
+        <div class="lsFcMeta">
+            <div class="lsFcNameRow"><span class="lsFcName">${u.name}</span><i class="lsFcCrest"></i></div>
+            <div class="lsFcClass">LV ${u.level}　${u.race || "―"}</div>
+            <div class="lsFcSlot"><em>戦技</em><span>─</span></div>
+            <div class="lsFcSlot"><em>武器</em><span>${weaponVal}</span></div>
+            <div class="lsFcSkills">${skillChips(u)}</div>
+        </div>`;
+
     lsForecast.innerHTML = `
         <div class="lsFcSide allySide">
             ${bust(attacker, false)}
-            <div class="lsFcMeta">
-                <div class="lsFcName">${attacker.name}</div>
-                <div class="lsFcClass"><i></i>LV ${attacker.level}　${attacker.race || ""}</div>
-                <div class="lsFcSlot">${actionLabel || "攻撃"}</div>
-            </div>
+            ${sideMeta(attacker, actionLabel || "攻撃")}
             <span class="lsFcTerrain">平地</span>
         </div>
         <div class="lsFcTable">
             <div class="lsFcChipRow">
                 <button id="lsFcCancel">キャンセル</button>
-                <button id="lsFcConfirm">${_vsAttack?.isMagic ? `${_vsAttack.spell.name} 使用` : "攻撃実行"}</button>
+                <button id="lsFcConfirm">実 行</button>
             </div>
             <div class="lsFcHead">
                 <span>威力</span><span>命中</span>
@@ -1363,11 +1374,7 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
         </div>
         <div class="lsFcSide enemySide">
             ${bust(target, true)}
-            <div class="lsFcMeta">
-                <div class="lsFcName">${target.name}</div>
-                <div class="lsFcClass"><i></i>LV ${target.level}　${target.race || ""}</div>
-                <div class="lsFcSlot">${ctrWeapon}</div>
-            </div>
+            ${sideMeta(target, ctrWeapon)}
             <span class="lsFcTerrain">平地</span>
         </div>
     `;
