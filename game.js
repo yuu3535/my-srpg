@@ -119,6 +119,7 @@ let scenarioActive    = false;  // シナリオ再生中か
 let currentChapter    = null;   // 現在の章データ
 let currentSceneIdx   = 0;      // 現在のシーンインデックス
 let fromScenario      = false;  // バトルがシナリオ経由か
+let battleEntrySource = "none"; // scenario | test | manual | bootstrap
 let scenarioCharacters = [];    // 現在ステージに立つキャラ [文字列 or {name,image}]
 
 // =============================================
@@ -3302,11 +3303,25 @@ async function enemyAction(enemy) {
 // =============================================
 // 勝敗判定
 // =============================================
+function isBattleConditionMet(condition, aliveEnemies, aliveAllies) {
+    switch (condition?.type) {
+        case "defeatAll":
+            return aliveEnemies.length === 0;
+        case "allAlliesDefeated":
+            return aliveAllies.length === 0;
+        default:
+            return false;
+    }
+}
+
 function checkVictoryCondition() {
     const aliveEnemies = battleUnits.filter(u => u.side === "enemy" && u.hp > 0);
     const aliveAllies  = battleUnits.filter(u => u.side === "ally"  && u.hp > 0);
+    const definition = BATTLE_DEFINITIONS[currentBattleId];
+    const victory = definition?.victory || { type: "defeatAll" };
+    const defeat = definition?.defeat || { type: "allAlliesDefeated" };
 
-    if (aliveEnemies.length === 0) {
+    if (isBattleConditionMet(victory, aliveEnemies, aliveAllies)) {
         battleOver = true;
         clearDeclarations();
         addLog("\n=== 勝利！ ===");
@@ -3319,7 +3334,7 @@ function checkVictoryCondition() {
         if (fromScenario) setTimeout(resumeScenarioAfterBattle, 2000);
         return;
     }
-    if (aliveAllies.length === 0) {
+    if (isBattleConditionMet(defeat, aliveEnemies, aliveAllies)) {
         battleOver = true;
         clearDeclarations();
         addLog("\n=== 敗北... ===");
@@ -4147,17 +4162,22 @@ function advanceScene() {
 }
 
 function playBattleScene(scene) {
+    if (!BATTLE_DEFINITIONS[scene.battleId]) {
+        console.warn("Battle definition not found:", scene.battleId);
+        showMessage("SYSTEM", `戦闘データ ${scene.battleId} が見つかりません。`);
+        advanceScene();
+        return;
+    }
     scenarioActive               = false;
-    fromScenario                 = true;
     dialogueBox.dataset.scenario = "";
     exitScenarioLayout();
-    currentBattleId = scene.battleId;
-    setBattleMode(scene.battleId);
+    startBattleSession(scene.battleId, { source: "scenario" });
 }
 
 function resumeScenarioAfterBattle() {
     if (!fromScenario) return;
     fromScenario   = false;
+    battleEntrySource = "none";
     scenarioActive = true;
     gameMode       = "scenario";
 
@@ -4202,46 +4222,25 @@ function setScenarioMode() {
     renderScenarioCommands();
 }
 
-// battleId → 参加ユニット・配置・背景の定義
-const BATTLE_DEFINITIONS = {
-    battle_tutorial: {
-        uiTheme: "orcus",
-        background: "背景/オルクス魔王城鍛錬場.png",
-        cols: 7,
-        rows: 8,
-        tiles: [],
-        passive: true, // チュートリアル：敵は行動・反撃しない
-        mapItems: [
-            { x: 3, y: 4, item: { id: "small_potion", name: "ポーション小", type: "heal", value: 5 } },
-        ],
-        unitIds: ["young_arshe", "young_karima", "gunter"],
-        positions: {
-            young_arshe:  { x: 2, y: 6 },
-            young_karima: { x: 4, y: 6 },
-            gunter:       { x: 3, y: 1 },
-        },
-    },
-    battle_ch1: {
-        uiTheme: "mixed",
-        background: "assets/background_forest.png",
-        cols: 12,
-        rows: 8,
-        tiles: [],
-        unitIds: ["ringholm", "arshe", "albas", "forest_guard", "dylan", "herel"],
-        positions: {
-            ringholm:     { x: 3, y: 6 },
-            arshe:        { x: 4, y: 6 },
-            albas:        { x: 5, y: 6 },
-            forest_guard: { x: 6, y: 1 },
-            dylan:        { x: 7, y: 1 },
-            herel:        { x: 8, y: 2 },
-        },
-    },
-};
+function startBattleSession(battleId, options = {}) {
+    const source = options.source || "manual";
+    if (!BATTLE_DEFINITIONS[battleId]) {
+        console.warn("Battle definition not found:", battleId);
+        showMessage("SYSTEM", `戦闘データ ${battleId} が見つかりません。`);
+        return false;
+    }
+
+    currentBattleId = battleId;
+    battleEntrySource = source;
+    fromScenario = source === "scenario";
+    setBattleMode(battleId);
+    return true;
+}
 
 function setBattleMode(battleId) {
     exitScenarioLayout();   // シナリオレイアウトが残っていたらリセット
     gameScreen.dataset.mode = "battle";
+    gameScreen.dataset.battleSource = battleEntrySource;
     switchTopLayer("battle");
     gameMode   = "battle";
     battleOver = false;
@@ -4533,7 +4532,10 @@ document.addEventListener("keydown", (e) => {
     if (!scenarioActive) return;
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); advanceScene(); }
 });
-battleModeButton.addEventListener("click", () => { setBattleMode(currentBattleId); setModeButtonActive("battle"); });
+battleModeButton.addEventListener("click", () => {
+    startBattleSession(currentBattleId, { source: "manual" });
+    setModeButtonActive("battle");
+});
 setModeButtonActive("scenario");
 
 topTabs.forEach(tab => {
@@ -5012,8 +5014,8 @@ homeSettingsBtn.addEventListener("click", () => {
 // 初期化
 // =============================================
 const bootBattleId = BATTLE_DEFINITIONS[initialBattleId] ? initialBattleId : currentBattleId;
-currentBattleId = bootBattleId;
-setBattleMode(currentBattleId);
+const bootSource = initialBattleId && BATTLE_DEFINITIONS[initialBattleId] ? "test" : "bootstrap";
+startBattleSession(bootBattleId, { source: bootSource });
 renderIdlePanel();
 buildLoadingScreen();  // ローディング画面を構築
 if (initialBattleId && BATTLE_DEFINITIONS[initialBattleId]) {
