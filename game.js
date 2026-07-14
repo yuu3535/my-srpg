@@ -1126,10 +1126,28 @@ function setLandscapeRailVisible(visible) {
     landscapeCommandPanel?.classList.toggle("railHidden", !visible);
 }
 
+function isLandscapeForecastOpen() {
+    return !!lsForecast && !lsForecast.classList.contains("hidden");
+}
+
+function setLandscapeForecastOpen(open) {
+    landscapeBattleShell?.classList.toggle("forecast-open", open);
+    gameScreen?.classList.toggle("forecast-open", open);
+    lsForecast?.setAttribute("aria-hidden", open ? "false" : "true");
+    if (open) setLandscapeRailVisible(false);
+    sizeLandscapeBattleCanvas();
+}
+
 function renderLandscapeCommandRail(unit = selectedUnit) {
     if (!landscapeCommandList) return;
     if (!isLandscapeBattleUi()) {
         landscapeCommandList.innerHTML = "";
+        return;
+    }
+
+    if (isLandscapeForecastOpen()) {
+        landscapeCommandList.innerHTML = "";
+        setLandscapeRailVisible(false);
         return;
     }
 
@@ -1326,59 +1344,67 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
     const ctrWeapon = pred.canCounter ? (getAttackSkillVal(target).name || "反撃") : "なし";
     const dmgDisp = pred.effectDesc || dmgN;
 
-    // スキルチップ（FEのスキルアイコン列に相当。最大4つ）
-    const skillChips = u => Object.entries(u.skills || {}).slice(0, 4)
-        .map(([name, val]) => `<b class="lsFcSkillChip">${name}<em>${val}</em></b>`)
-        .join("");
+    const equipmentName = u => {
+        if (typeof u.equipment === "string" && u.equipment.trim() && u.equipment !== "―") {
+            return u.equipment;
+        }
+        return u.equipment?.weapon?.name || u.weapon?.name || "未装備";
+    };
 
-    // 片側ぶんの情報ブロック（名前・種族・戦技/武器スロット・スキル列）
-    const sideMeta = (u, weaponVal) => `
+    // 予測画面では戦闘判断に必要な情報だけを出す。
+    // TRPG技能一覧は表示せず、装備武器と今回選んだ攻撃種別を分ける。
+    const sideMeta = (u, actionType, actionName) => `
         <div class="lsFcMeta">
             <div class="lsFcNameRow"><span class="lsFcName">${u.name}</span><i class="lsFcCrest"></i></div>
             <div class="lsFcClass">LV ${u.level}　${u.race || "―"}</div>
-            <div class="lsFcSlot"><em>戦技</em><span>─</span></div>
-            <div class="lsFcSlot"><em>武器</em><span>${weaponVal}</span></div>
-            <div class="lsFcSkills">${skillChips(u)}</div>
+            <div class="lsFcSlot"><em>武器</em><span>${equipmentName(u)}</span></div>
+            <div class="lsFcSlot action"><em>${actionType}</em><span>${actionName}</span></div>
         </div>`;
+
+    const attackerActionType = _vsAttack?.isMagic ? "魔法" : "武器種";
+    const attackerActionName = actionLabel || (_vsAttack?.isMagic ? _vsAttack?.spell?.name : getAttackSkillVal(attacker).name) || "攻撃";
+    const counterActionName = pred.canCounter ? ctrWeapon : "なし";
 
     lsForecast.innerHTML = `
         <div class="lsFcSide allySide">
             ${bust(attacker, false)}
-            ${sideMeta(attacker, actionLabel || "攻撃")}
+            ${sideMeta(attacker, attackerActionType, attackerActionName)}
             <span class="lsFcTerrain">平地</span>
         </div>
         <div class="lsFcTable">
             <div class="lsFcChipRow">
-                <button id="lsFcCancel">キャンセル</button>
-                <button id="lsFcConfirm">実 行</button>
+                <button type="button" id="lsFcCancel">キャンセル</button>
+                <button type="button" id="lsFcConfirm">実行</button>
             </div>
             <div class="lsFcHead">
-                <span>威力</span><span>命中</span>
-                <b class="lsFcHpPlate">${attacker.hp}<em>HP</em>${target.hp}</b>
                 <span>命中</span><span>威力</span>
+                <b class="lsFcHpPlate">${attacker.hp}<em>HP</em>${target.hp}</b>
+                <span>威力</span><span>命中</span>
             </div>
             <div class="lsFcVals">
-                <span>${dmgDisp}</span><span>${pred.hitRate}</span>
-                <span class="lsFcExchange">
-                    <b class="toDef">⟍ ${isDamage ? `-${dmgN}` : pred.effectDesc}</b>
-                    <b class="toAtk">${pred.canCounter ? `-${ctrN}` : "0"} ⟍</b>
+                <span>${pred.hitRate}</span><span>${dmgDisp}</span>
+                <span class="lsFcExchange" aria-label="与えるダメージと受けるダメージ">
+                    <b class="toDef"><small>与</small><strong>${isDamage ? dmgN : pred.effectDesc}</strong><i>→</i></b>
+                    <b class="toAtk"><i>←</i><strong>${pred.canCounter ? ctrN : "─"}</strong><small>被</small></b>
                 </span>
-                <span>${pred.canCounter ? pred.ctrHitRate : "─"}</span><span>${pred.canCounter ? ctrN : "─"}</span>
+                <span>${pred.canCounter ? ctrN : "─"}</span><span>${pred.canCounter ? pred.ctrHitRate : "─"}</span>
             </div>
             <div class="lsFcBars">
                 <div class="lsFcBar ally"><i style="width:${atkPct}%"></i></div>
                 <b class="lsFcAfter ally">${atkAfter}</b>
+                <span class="lsFcAfterLabel">戦闘後</span>
                 <b class="lsFcAfter enemy">${defAfter}</b>
                 <div class="lsFcBar enemy"><i style="width:${defPct}%"></i></div>
             </div>
         </div>
         <div class="lsFcSide enemySide">
             ${bust(target, true)}
-            ${sideMeta(target, ctrWeapon)}
+            ${sideMeta(target, "反撃", counterActionName)}
             <span class="lsFcTerrain">平地</span>
         </div>
     `;
     lsForecast.classList.remove("hidden");
+    setLandscapeForecastOpen(true);
 
     document.getElementById("lsFcConfirm").addEventListener("click", () => {
         if (!_vsAttack) return;
@@ -2574,6 +2600,7 @@ function showUnitPortraitAdjuster(unit) {
 function hideBattlePreview() {
     _vsAttack = null;
     lsForecast?.classList.add("hidden");
+    setLandscapeForecastOpen(false);
     if (gameMode === "battle") switchTopLayer("battle");
     syncLandscapeBattleUi(selectedUnit);
 }
