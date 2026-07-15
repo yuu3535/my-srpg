@@ -132,6 +132,7 @@ let selectedUnit        = null;
 let actionState         = null; // null | "moving" | "attacking" | "throwing" | "magic"
 let selectedSpell       = null;
 let selectedAttackSkill = null;
+let selectedCombatArtId = null;
 let turnPhase       = "ally"; // "ally" | "enemy"
 let turnCount       = 1;
 let battleOver      = false;
@@ -417,10 +418,11 @@ function onUnitClick(unit) {
                 const atkSkillName = selectedAttackSkill && selectedAttackSkill in (selectedUnit.skills || {})
                     ? selectedAttackSkill
                     : getAttackSkillVal(selectedUnit).name;
+                const actionLabel = getCombatArtData(selectedCombatArtId)?.name || atkSkillName;
                 // VS 予測パネルを出して確認待ちにする（即攻撃しない）
                 const pred = calculateBattlePrediction(selectedUnit, unit, atkSkillName, false, null);
                 _vsAttack = { attacker: selectedUnit, target: unit, isMagic: false, spell: null };
-                showBattlePreview(selectedUnit, unit, pred, atkSkillName);
+                showBattlePreview(selectedUnit, unit, pred, actionLabel);
             } else {
                 showMessage("SYSTEM", `${unit.name}は射程外です。`);
             }
@@ -612,15 +614,27 @@ function showAttackRadial(unit) {
             html: `${label}<span class="radialBtnSub">${val}</span>`,
             isBack: false,
         })),
+        ...getAvailableCombatArts(unit, "attack").map(art => {
+            const baseSkill = getAttackSkillVal(unit);
+            return {
+                label: art.name,
+                html: `${art.name}<span class="radialBtnSub">ART</span>`,
+                attackSkillName: baseSkill.name,
+                val: baseSkill.val,
+                combatArtId: art.id,
+                isBack: false,
+            };
+        }),
         { label: "戻る", html: `戻る<span class="radialBtnSub">BACK</span>`, isBack: true },
     ];
 
     const radius = Math.max(46, items.length * 9);
     buildRadialButtons(items, radius, (item) => {
         if (item.isBack) { hideForecastLayer(); renderBattleCommands(unit); return; }
-        selectedAttackSkill = item.label;
+        selectedAttackSkill = item.attackSkillName || item.label;
+        selectedCombatArtId = item.combatArtId || null;
         hideRadialMenu();
-        if (item.label === "投擲") {
+        if (selectedAttackSkill === "投擲") {
             const throwTargets = battleUnits.filter(u => {
                 if (u.side === unit.side || u.hp <= 0) return false;
                 const dx = u.x - unit.x, dy = u.y - unit.y;
@@ -794,6 +808,8 @@ function selectUnit(unit) {
     selectedUnit  = unit;
     actionState   = null;
     selectedSpell = null;
+    selectedAttackSkill = null;
+    selectedCombatArtId = null;
     clearHighlights();
 
     const el = document.getElementById(`unit_${unit.id}`);
@@ -814,6 +830,7 @@ function deselectUnit() {
     actionState         = null;
     selectedSpell       = null;
     selectedAttackSkill = null;
+    selectedCombatArtId = null;
     clearHighlights();
     hideRadialMenu();
     hideForecastLayer();
@@ -961,7 +978,7 @@ function getAccuracyStatusModifier(unit) {
         .reduce((sum, effect) => sum + Number(effect.value || 0) * 5, 0);
 }
 
-function getBattleHitResult(attacker, defender, attackSkill, targetStunned = false) {
+function getBattleHitResult(attacker, defender, attackSkill, targetStunned = false, options = {}) {
     if (targetStunned || BATTLE_HIT_MODE === "guaranteed") {
         return { rate: 100, roll: null, isHit: true, note: targetStunned ? "スタン中：自動命中" : "v2命中確定" };
     }
@@ -978,8 +995,16 @@ function getBattleHitResult(attacker, defender, attackSkill, targetStunned = fal
     const rate = battleHitRate(attackerStats, defenderStats, attackSkill, evadeSkill, {
         accuracy: getAccuracyStatusModifier(attacker),
     });
-    const roll = Math.floor(Math.random() * 100) + 1;
-    return { rate, roll, isHit: roll <= rate, accuracy, evasion, note: `${roll}/${rate}%` };
+    const shouldRoll = options.roll !== false;
+    const roll = shouldRoll ? Math.floor(Math.random() * 100) + 1 : null;
+    return {
+        rate,
+        roll,
+        isHit: shouldRoll ? roll <= rate : true,
+        accuracy,
+        evasion,
+        note: shouldRoll ? `${roll}/${rate}%` : `予測/${rate}%`,
+    };
 }
 
 const OFFENSIVE_MAGIC_EFFECTS = new Set([
@@ -991,12 +1016,12 @@ function magicUsesAccuracyCheck(spell) {
     return spell?.targetType === "enemy" || OFFENSIVE_MAGIC_EFFECTS.has(spell?.effectType);
 }
 
-function getMagicHitResult(caster, target, spell, successValue) {
+function getMagicHitResult(caster, target, spell, successValue, options = {}) {
     if (!magicUsesAccuracyCheck(spell)) {
         return { rate: 100, roll: null, isHit: true, note: "補助魔法：自動成功" };
     }
     const targetStunned = (target?.statusEffects || []).some(effect => effect.type === "stun");
-    return getBattleHitResult(caster, target, successValue, targetStunned);
+    return getBattleHitResult(caster, target, successValue, targetStunned, options);
 }
 
 function applyBarrierDamage(target, rawDmg, breakBarrier = false) {
@@ -1024,19 +1049,20 @@ function calculatePhysicalDamage(attacker, target, options = {}) {
     const atkStats = calcBattleStats(attacker);
     const defStats = calcBattleStats(target);
     const weaponPower = getWeaponPower(attacker);
-    const attackValue = atkStats.power + weaponPower;
+    const powerBonus = Number(options.powerBonus || 0);
+    const attackValue = atkStats.power + weaponPower + powerBonus;
     const masteryBonus = masteryDamageBonus(attacker.skills?.["武道"]);
     const artNote = masteryBonus > 0 ? `（武道+${masteryBonus}）` : "";
     const raw = physicalDamage({ atk: attackValue }, defStats, 0);
     const mastered = raw + masteryBonus;
     const damage = options.half ? Math.max(1, Math.floor(mastered / 2)) : mastered;
-    return { damage, raw: mastered, power: atkStats.power, weaponPower, armor: defStats.armor, masteryBonus, artNote };
+    return { damage, raw: mastered, power: atkStats.power, weaponPower, powerBonus, armor: defStats.armor, masteryBonus, artNote };
 }
 
 function calculateMagicDamage(caster, target, spell, options = {}) {
     const atkStats = calcBattleStats(caster);
     const defStats = calcBattleStats(target);
-    const spellPower = getSpellPower(spell);
+    const spellPower = getSpellPower(spell) + Number(options.magicPowerBonus || 0);
     const raw = magicalDamage(atkStats, defStats, spellPower);
     const masteryBonus = masteryDamageBonus(caster.skills?.["魔導"]);
     const mastered = raw + masteryBonus;
@@ -1086,6 +1112,210 @@ function rollCritical(attacker, defender, baseDamage) {
 function canCounter(unit) {
     return (unit.counterMode ?? "auto") !== "none" && getCounterRate(unit) > 0;
 }
+
+function getCombatArtData(artId) {
+    if (!artId || typeof COMBAT_ARTS === "undefined") return null;
+    return COMBAT_ARTS[artId] ? { id: artId, ...COMBAT_ARTS[artId] } : null;
+}
+
+function getAvailableCombatArts(unit, base = "attack") {
+    if (!unit || typeof COMBAT_ARTS === "undefined") return [];
+    const known = new Set([
+        ...(unit.learnedArts || []),
+        ...(unit.equippedArts || []),
+    ]);
+
+    for (const [id, art] of Object.entries(COMBAT_ARTS)) {
+        if (art.base !== base) continue;
+        const rank = Number(unit.skillRanks?.[art.track] ?? unit.skills?.[art.track] ?? 0);
+        if (rank >= 6) known.add(id);
+    }
+
+    return [...known]
+        .map(id => getCombatArtData(id))
+        .filter(art => art && art.base === base);
+}
+
+function previewBarrierDamage(target, rawDmg, breakBarrier = false) {
+    const barrier = (target.statusEffects || []).find(e => e.type === "barrier");
+    if (!barrier || barrier.value <= 0) {
+        return { damage: rawDmg, note: "" };
+    }
+    const absorbed = Math.min(barrier.value, rawDmg);
+    const damage = rawDmg - absorbed;
+    if (breakBarrier) return { damage, note: `（結界${absorbed}吸収→完全破壊）` };
+    if (barrier.value - absorbed <= 0) return { damage, note: `（結界${absorbed}吸収→砕け散った）` };
+    return { damage, note: `（結界${absorbed}吸収 残${barrier.value - absorbed}）` };
+}
+
+function createActionTargetResult(context, target) {
+    return {
+        context,
+        target,
+        hit: context.hit,
+        critical: null,
+        calculation: null,
+        barrier: null,
+        baseDamage: 0,
+        finalDamage: 0,
+        criticalDamage: 0,
+        actualDamage: 0,
+        baseAfterBarrier: 0,
+        critAfterBarrier: 0,
+        modifiers: {
+            finalDamageBonus: 0,
+            damageMultiplier: 1,
+            criticalAvoidanceBonus: 0,
+        },
+        notes: [],
+    };
+}
+
+function applyTargetDamageModifiers(context, targetResult, baseDamage) {
+    const actionBonus = Number(context.modifiers.finalDamageBonus || 0);
+    const targetBonus = Number(targetResult.modifiers.finalDamageBonus || 0);
+    const actionMult = Number(context.modifiers.damageMultiplier || 1);
+    const targetMult = Number(targetResult.modifiers.damageMultiplier || 1);
+    const adjusted = Math.floor((Number(baseDamage || 0) + actionBonus + targetBonus) * actionMult * targetMult);
+    return Math.max(0, adjusted);
+}
+
+function getContextCriticalRate(context, defender) {
+    const defenderApp = calcBattleStats(defender).raw.app;
+    return criticalRate(getEffectiveCourage(context.attacker), context.attacker.level, defenderApp, {
+        critical: Number(context.attacker.criticalBonus || 0)
+            + getCriticalStatusModifier(context.attacker, "criticalBonus")
+            + Number(context.modifiers.criticalBonus || 0),
+        criticalAvoidance: Number(defender.criticalAvoidanceBonus || 0)
+            + getCriticalStatusModifier(defender, "criticalAvoidance"),
+    });
+}
+
+function rollContextCritical(context, defender, baseDamage, shouldRoll) {
+    const rate = getContextCriticalRate(context, defender);
+    const critDamage = criticalDamage(baseDamage);
+    if (!shouldRoll) {
+        return { rate, roll: null, isCritical: false, damage: baseDamage, critDamage };
+    }
+    const roll = Math.floor(Math.random() * 100) + 1;
+    const isCritical = roll <= rate;
+    if (isCritical && !context.isPreview) showCriticalCutIn(context.attacker);
+    return {
+        rate,
+        roll,
+        isCritical,
+        damage: isCritical ? critDamage : baseDamage,
+        critDamage,
+    };
+}
+
+function completeDamageContext(context, targetResult, calculation, options = {}) {
+    targetResult.calculation = calculation;
+    targetResult.baseDamage = calculation.damage;
+    runBattleActionHooks("beforeDamaged", context, targetResult);
+
+    const finalBaseDamage = applyTargetDamageModifiers(context, targetResult, calculation.damage);
+    const critical = rollContextCritical(context, targetResult.target, finalBaseDamage, options.rollCritical !== false);
+    const finalDamage = critical.isCritical ? critical.damage : finalBaseDamage;
+    const barrier = options.commitBarrier
+        ? applyBarrierDamage(targetResult.target, finalDamage, !!options.breakBarrier)
+        : previewBarrierDamage(targetResult.target, finalDamage, !!options.breakBarrier);
+
+    targetResult.critical = critical;
+    targetResult.barrier = barrier;
+    targetResult.finalDamage = finalDamage;
+    targetResult.criticalDamage = critical.critDamage;
+    targetResult.actualDamage = barrier.damage;
+    targetResult.baseAfterBarrier = previewBarrierDamage(targetResult.target, finalBaseDamage, !!options.breakBarrier).damage;
+    targetResult.critAfterBarrier = previewBarrierDamage(targetResult.target, critical.critDamage, !!options.breakBarrier).damage;
+
+    context.critical = critical;
+    context.damage.baseDamage = targetResult.baseDamage;
+    context.damage.finalDamage = targetResult.finalDamage;
+    context.damage.criticalDamage = targetResult.criticalDamage;
+    context.damage.actualDamage = targetResult.actualDamage;
+    context.damage.baseAfterBarrier = targetResult.baseAfterBarrier;
+    context.damage.critAfterBarrier = targetResult.critAfterBarrier;
+    context.targetResults.push(targetResult);
+
+    return targetResult;
+}
+
+function createPhysicalActionContext(attacker, target, options = {}) {
+    const combatArt = getCombatArtData(options.combatArtId);
+    const context = options.context || createBattleActionContext({
+        attacker,
+        target,
+        targets: options.targets || [target],
+        actionType: options.actionType || "attack",
+        damageType: "physical",
+        isCounter: !!options.isCounter,
+        isPreview: !!options.isPreview,
+        combatArtId: combatArt?.id || null,
+        combatArt,
+        attackSkillName: options.attackSkillName || null,
+        attackSkillValue: options.attackSkillValue ?? null,
+        half: !!options.half,
+        hit: options.hit || null,
+    });
+    context.target = target;
+    if (!context.targets.includes(target)) context.targets.push(target);
+    if (!options.context) runBattleActionHooks("beforeAttack", context, { target });
+    const targetResult = createActionTargetResult(context, target);
+    const calculation = calculatePhysicalDamage(attacker, target, {
+        half: !!options.half,
+        powerBonus: context.modifiers.physicalPowerBonus,
+    });
+    return completeDamageContext(context, targetResult, calculation, options);
+}
+
+function createMagicActionContext(caster, target, spell, options = {}) {
+    const context = options.context || createBattleActionContext({
+        attacker: caster,
+        target,
+        targets: options.targets || [target],
+        actionType: "magic",
+        damageType: "magic",
+        isMagic: true,
+        isCounter: !!options.isCounter,
+        isPreview: !!options.isPreview,
+        spell,
+        half: !!options.half,
+        hit: options.hit || null,
+    });
+    context.target = target;
+    if (!context.targets.includes(target)) context.targets.push(target);
+    if (!options.context) runBattleActionHooks("beforeAttack", context, { target });
+    const targetResult = createActionTargetResult(context, target);
+    const calculation = calculateMagicDamage(caster, target, spell, {
+        half: !!options.half,
+        magicPowerBonus: context.modifiers.magicPowerBonus,
+    });
+    return completeDamageContext(context, targetResult, calculation, {
+        ...options,
+        breakBarrier: options.breakBarrier || spell?.effectType === "break",
+    });
+}
+
+function finishDamageHooks(context, targetResult, hpBefore) {
+    runBattleActionHooks("afterDamage", context, targetResult);
+    if (hpBefore > 0 && targetResult.target.hp <= 0) {
+        runBattleActionHooks("onKill", context, targetResult);
+    }
+    runBattleActionHooks("afterAttack", context, targetResult);
+}
+
+registerBattleActionHook("beforeAttack", {
+    id: "combatArt:ryoudan",
+    oncePerAction: true,
+    run(context) {
+        if (context.combatArtId !== "ryoudan" || context.damageType !== "physical") return false;
+        context.modifiers.physicalPowerBonus += 5;
+        context.usageCounts.ryoudan = (context.usageCounts.ryoudan || 0) + 1;
+        context.notes.push("両断:攻撃+5");
+        return true;
+    },
+});
 
 function isLandscapeBattleUi() {
     return gameMode === "battle"
@@ -1302,6 +1532,7 @@ function addLandscapeBackButton(unit) {
         actionState = null;
         selectedSpell = null;
         selectedAttackSkill = null;
+        selectedCombatArtId = null;
         clearHighlights();
         hideForecastLayer();
         renderBattleCommands(unit);
@@ -1332,6 +1563,7 @@ function renderLandscapeSubCommandRail(unit, kind) {
         if (atkSkills.length === 0) atkSkills.push({ label: "素手", val: 4 });
         atkSkills.forEach(item => addButton(item.label, String(item.val), () => {
             selectedAttackSkill = item.label;
+            selectedCombatArtId = null;
             if (item.label === "投擲") {
                 actionState = "throwing";
                 highlightThrowRange(unit);
@@ -1347,6 +1579,19 @@ function renderLandscapeSubCommandRail(unit, kind) {
             }
             syncLandscapeBattleUi(unit);
         }));
+        getAvailableCombatArts(unit, "attack").forEach(art => {
+            const baseSkill = getAttackSkillVal(unit);
+            addButton(art.name, "ART", () => {
+                selectedAttackSkill = baseSkill.name;
+                selectedCombatArtId = art.id;
+                actionState = "attacking";
+                highlightAttackRange(unit);
+                switchTopLayer("battle");
+                addLog(`・${unit.name}は戦技 ${art.name} を選択`);
+                setLandscapeHint(`${art.name}の対象を選択してください。`);
+                syncLandscapeBattleUi(unit);
+            });
+        });
         addLandscapeBackButton(unit);
         return;
     }
@@ -1619,9 +1864,18 @@ function executePhysicalCounter(counterAttacker, counterTarget) {
     const isHit = hit.isHit;
     if (!isHit) return;
 
-    const result = calculatePhysicalDamage(counterAttacker, counterTarget, { half: true });
-    const critical = rollCritical(counterAttacker, counterTarget, result.damage);
-    const barrier = applyBarrierDamage(counterTarget, critical.damage);
+    const targetResult = createPhysicalActionContext(counterAttacker, counterTarget, {
+        half: true,
+        isCounter: true,
+        hit,
+        attackSkillName: atkName,
+        attackSkillValue: atkVal,
+        commitBarrier: true,
+    });
+    const result = targetResult.calculation;
+    const critical = targetResult.critical;
+    const barrier = targetResult.barrier;
+    const hpBefore = counterTarget.hp;
     counterTarget.hp = Math.max(0, counterTarget.hp - barrier.damage);
     showDamagePopup(counterTarget.id, barrier.damage, critical.isCritical ? "critical" : "counter");
     flashUnitHit(counterTarget.id);
@@ -1629,6 +1883,7 @@ function executePhysicalCounter(counterAttacker, counterTarget) {
     addLog(`    ${barrier.damage}ダメージ（半分）${criticalNote}${result.artNote}${barrier.note}（力${result.power}+武器${result.weaponPower}-物防${result.armor}）→ ${counterTarget.name} HP ${counterTarget.hp}/${counterTarget.maxHp}`);
     renderUnits();
     if (counterTarget.hp <= 0) addLog(`    ${counterTarget.name}は倒れた！`);
+    finishDamageHooks(targetResult.context, targetResult, hpBefore);
 }
 
 function executeMagicCounter(caster, target, spell, spellVal) {
@@ -1638,9 +1893,17 @@ function executeMagicCounter(caster, target, spell, spellVal) {
     addLog(`  魔法反撃【${spell.name}】${caster.name}→${target.name} （${hit.note}） MP-${mpCost} → ${hit.isHit ? "成功" : "失敗"}`);
     if (!hit.isHit) return;
 
-    const result = calculateMagicDamage(caster, target, spell, { half: true });
-    const critical = rollCritical(caster, target, result.damage);
-    const barrier = applyBarrierDamage(target, critical.damage, spell.effectType === "break");
+    const targetResult = createMagicActionContext(caster, target, spell, {
+        half: true,
+        isCounter: true,
+        hit,
+        commitBarrier: true,
+        breakBarrier: spell.effectType === "break",
+    });
+    const result = targetResult.calculation;
+    const critical = targetResult.critical;
+    const barrier = targetResult.barrier;
+    const hpBefore = target.hp;
     target.hp = Math.max(0, target.hp - barrier.damage);
     showDamagePopup(target.id, barrier.damage, critical.isCritical ? "critical" : "counter");
     flashUnitHit(target.id);
@@ -1648,17 +1911,27 @@ function executeMagicCounter(caster, target, spell, spellVal) {
     addLog(`    ${barrier.damage}ダメージ（半分）${criticalNote}${result.masteryNote}${barrier.note}（魔力${result.magic}+呪文${result.spellPower}-魔防${result.ward}）→ ${target.name} HP ${target.hp}/${target.maxHp}`);
     renderUnits();
     if (target.hp <= 0) addLog(`    ${target.name}は倒れた！`);
+    finishDamageHooks(targetResult.context, targetResult, hpBefore);
 }
 
 /**
  * 命中後の物理ダメージ適用（武道補正・必殺・カウンター・装甲・気絶・反撃を処理）
  */
-function resolvePhysicalHit(attacker, target, atkSkillName) {
+function resolvePhysicalHit(attacker, target, atkSkillName, options = {}) {
     // カウンター状態：同じダメージを両者に与える
     if ((target.statusEffects || []).some(e => e.type === "counter")) {
-        const result = calculatePhysicalDamage(attacker, target);
-        const critical = rollCritical(attacker, target, result.damage);
-        const rawDmg = critical.damage;
+        const targetResult = createPhysicalActionContext(attacker, target, {
+            hit: options.hit || null,
+            attackSkillName: atkSkillName,
+            attackSkillValue: options.attackSkillValue ?? null,
+            combatArtId: options.combatArtId || null,
+            commitBarrier: false,
+        });
+        const result = targetResult.calculation;
+        const critical = targetResult.critical;
+        const rawDmg = targetResult.finalDamage;
+        const targetHpBefore = target.hp;
+        const attackerHpBefore = attacker.hp;
         // 攻撃側も同じダメージ
         attacker.hp = Math.max(0, attacker.hp - rawDmg);
         showDamagePopup(attacker.id, rawDmg, "damage");
@@ -1671,12 +1944,23 @@ function resolvePhysicalHit(attacker, target, atkSkillName) {
         renderUnits();
         if (target.hp   <= 0) addLog(`  ${target.name}は倒れた！`);
         if (attacker.hp <= 0) addLog(`  ${attacker.name}は倒れた！`);
+        finishDamageHooks(targetResult.context, targetResult, targetHpBefore);
+        if (attackerHpBefore > 0 && attacker.hp <= 0) {
+            runBattleActionHooks("onKill", targetResult.context, { ...targetResult, target: attacker });
+        }
         return;
     }
 
-    const result = calculatePhysicalDamage(attacker, target);
-    const critical = rollCritical(attacker, target, result.damage);
-    const barrier = applyBarrierDamage(target, critical.damage);
+    const targetResult = createPhysicalActionContext(attacker, target, {
+        hit: options.hit || null,
+        attackSkillName: atkSkillName,
+        attackSkillValue: options.attackSkillValue ?? null,
+        combatArtId: options.combatArtId || null,
+        commitBarrier: true,
+    });
+    const result = targetResult.calculation;
+    const critical = targetResult.critical;
+    const barrier = targetResult.barrier;
     const actualDmg = barrier.damage;
 
     const hpBefore = target.hp;
@@ -1703,6 +1987,7 @@ function resolvePhysicalHit(attacker, target, atkSkillName) {
 
     renderUnits();
     if (target.hp <= 0) addLog(`  ${target.name}は倒れた！`);
+    finishDamageHooks(targetResult.context, targetResult, hpBefore);
 
     // 反撃チェック：パッシブモードでは反撃しない
     if (target.hp > 0 && !BATTLE_DEFINITIONS[currentBattleId]?.passive && canCounter(target)) {
@@ -1734,7 +2019,9 @@ function executeAttack(attacker, target) {
     } else {
         ({ val: atkStat, name: atkSkillName } = getAttackSkillVal(attacker));
     }
+    const combatArtId = selectedCombatArtId;
     selectedAttackSkill = null;
+    selectedCombatArtId = null;
 
     // スタン中の相手は回避不可
     const targetStunned = (target.statusEffects || []).some(e => e.type === "stun");
@@ -1752,7 +2039,11 @@ function executeAttack(attacker, target) {
         return;
     }
 
-    resolvePhysicalHit(attacker, target, atkSkillName);
+    resolvePhysicalHit(attacker, target, atkSkillName, {
+        hit,
+        attackSkillValue: atkStat,
+        combatArtId,
+    });
     endUnitTurn(attacker);
     checkVictoryCondition();
 }
@@ -1774,7 +2065,10 @@ function executeThrow(attacker, target) {
         return;
     }
 
-    resolvePhysicalHit(attacker, target, "投擲");
+    resolvePhysicalHit(attacker, target, "投擲", {
+        hit,
+        attackSkillValue: throwStat,
+    });
     endUnitTurn(attacker);
     checkVictoryCondition();
 }
@@ -1884,9 +2178,13 @@ function executeMagic(caster, spell, target) {
 
     switch (spell.effectType) {
         case "magicDamage": {
-            const result = calculateMagicDamage(caster, target, spell);
-            const critical = rollCritical(caster, target, result.damage);
-            const barrier = applyBarrierDamage(target, critical.damage);
+            const targetResult = createMagicActionContext(caster, target, spell, {
+                hit,
+                commitBarrier: true,
+            });
+            const result = targetResult.calculation;
+            const critical = targetResult.critical;
+            const barrier = targetResult.barrier;
             const rawDmg = barrier.damage;
 
             const hpBefore = target.hp;
@@ -1926,6 +2224,7 @@ function executeMagic(caster, spell, target) {
             }
 
             if (target.hp <= 0) addLog(`  ${target.name}は倒れた！`);
+            finishDamageHooks(targetResult.context, targetResult, hpBefore);
             break;
         }
         case "heal": {
@@ -1964,11 +2263,17 @@ function executeMagic(caster, spell, target) {
         }
         case "break": {
             // 破壊魔法：ダメージを与えつつ結界を完全破壊（超過分はHPへ）
-            const result = calculateMagicDamage(caster, target, spell);
-            const critical = rollCritical(caster, target, result.damage);
-            const barrier = applyBarrierDamage(target, critical.damage, true);
+            const targetResult = createMagicActionContext(caster, target, spell, {
+                hit,
+                commitBarrier: true,
+                breakBarrier: true,
+            });
+            const result = targetResult.calculation;
+            const critical = targetResult.critical;
+            const barrier = targetResult.barrier;
             const dmgToHp = barrier.damage;
             const breakNote = barrier.note || "（結界なし）";
+            const hpBefore = target.hp;
             target.hp = Math.max(0, target.hp - dmgToHp);
             if (dmgToHp > 0) { showDamagePopup(target.id, dmgToHp, critical.isCritical ? "critical" : "damage"); flashUnitHit(target.id); }
             const criticalNote = critical.isCritical ? ` 必殺！（${critical.roll}/${critical.rate}%）` : "";
@@ -1977,6 +2282,7 @@ function executeMagic(caster, spell, target) {
                 ? `${caster.name}の${spell.name}必殺！結界を砕き${dmgToHp}ダメージ！`
                 : `${caster.name}の${spell.name}！結界を砕き${dmgToHp}ダメージ！`);
             if (target.hp <= 0) addLog(`  ${target.name}は倒れた！`);
+            finishDamageHooks(targetResult.context, targetResult, hpBefore);
             break;
         }
         case "stun": {
@@ -2017,15 +2323,25 @@ function executeMagic(caster, spell, target) {
                 addLog("  範囲内に敵がいない");
                 showMessage("SYSTEM", `${spell.name}が着弾したが対象がいない！`);
             } else {
+                let areaContext = null;
                 for (const t of targets) {
-                    const result = calculateMagicDamage(caster, t, spell);
-                    const critical = rollCritical(caster, t, result.damage);
-                    const dmg = applyBarrierDamage(t, critical.damage).damage;
+                    const targetResult = createMagicActionContext(caster, t, spell, {
+                        hit,
+                        targets,
+                        context: areaContext,
+                        commitBarrier: true,
+                    });
+                    areaContext = targetResult.context;
+                    const result = targetResult.calculation;
+                    const critical = targetResult.critical;
+                    const dmg = targetResult.actualDamage;
+                    const hpBefore = t.hp;
                     t.hp = Math.max(0, t.hp - dmg);
                     showDamagePopup(t.id, dmg, critical.isCritical ? "critical" : "damage");
                     flashUnitHit(t.id);
                     addLog(`  ${t.name}に ${dmg} ダメージ${critical.isCritical ? ` 必殺！（${critical.roll}/${critical.rate}%）` : ""}${result.masteryNote}`);
                     if (t.hp <= 0) addLog(`  ${t.name}は倒れた！`);
+                    finishDamageHooks(targetResult.context, targetResult, hpBefore);
                 }
                 showMessage("SYSTEM", `${caster.name}の${spell.name}！${targets.length}体を攻撃！`);
             }
@@ -2153,6 +2469,7 @@ function endUnitTurn(unit) {
     actionState         = null;
     selectedSpell       = null;
     selectedAttackSkill = null;
+    selectedCombatArtId = null;
     clearHighlights();
     hideForecastLayer();
     hideBattlePreview();
@@ -2212,13 +2529,19 @@ function calculateBattlePrediction(attacker, target, atkSkillName, isMagic, spel
     // ── 攻撃側予測 ──
     let hitRate, expDmg, effectDesc, critRate = 0, critDmg = 0;
     if (isMagic && spell) {
-        hitRate    = getMagicHitResult(attacker, target, spell, attacker.spells?.[spell.id] ?? 5).rate;
-        const barrier = (target.statusEffects || []).find(e => e.type === "barrier");
+        const hit = getMagicHitResult(attacker, target, spell, attacker.spells?.[spell.id] ?? 5, { roll: false });
+        hitRate = hit.rate;
         if (spell.effectType === "magicDamage" || spell.effectType === "break") {
-            const raw = calculateMagicDamage(attacker, target, spell).damage;
-            expDmg     = barrier ? Math.max(0, raw - barrier.value) : raw;
-            critRate   = getCriticalRate(attacker, target);
-            critDmg    = barrier ? Math.max(0, criticalDamage(raw) - barrier.value) : criticalDamage(raw);
+            const targetResult = createMagicActionContext(attacker, target, spell, {
+                hit,
+                isPreview: true,
+                rollCritical: false,
+                commitBarrier: false,
+                breakBarrier: spell.effectType === "break",
+            });
+            expDmg     = targetResult.baseAfterBarrier;
+            critRate   = targetResult.critical.rate;
+            critDmg    = targetResult.critAfterBarrier;
             effectDesc = `${expDmg}`;
         } else if (spell.effectType === "heal") {
             expDmg     = calcBattleStats(attacker).supportMagic + getSpellPower(spell);
@@ -2236,13 +2559,21 @@ function calculateBattlePrediction(attacker, target, atkSkillName, isMagic, spel
             : getAttackSkillVal(attacker).val;
         const stunned   = (target.statusEffects || []).some(e => e.type === "stun");
         const evadeStat = stunned ? 0 : getEvadeSkillVal(target);
-        hitRate = getBattleHitResult(attacker, target, atkStat, stunned).rate;
+        const hit = getBattleHitResult(attacker, target, atkStat, stunned, { roll: false });
+        hitRate = hit.rate;
 
-        const rawDmg  = calculatePhysicalDamage(attacker, target, { allowMartialArt: false }).damage;
-        const barrier = (target.statusEffects || []).find(e => e.type === "barrier");
-        expDmg     = barrier ? Math.max(0, rawDmg - barrier.value) : rawDmg;
-        critRate   = getCriticalRate(attacker, target);
-        critDmg    = barrier ? Math.max(0, criticalDamage(rawDmg) - barrier.value) : criticalDamage(rawDmg);
+        const targetResult = createPhysicalActionContext(attacker, target, {
+            hit,
+            isPreview: true,
+            rollCritical: false,
+            commitBarrier: false,
+            attackSkillName: atkSkillName,
+            attackSkillValue: atkStat,
+            combatArtId: selectedCombatArtId,
+        });
+        expDmg     = targetResult.baseAfterBarrier;
+        critRate   = targetResult.critical.rate;
+        critDmg    = targetResult.critAfterBarrier;
         effectDesc = `${expDmg}`;
     }
 
@@ -2252,15 +2583,21 @@ function calculateBattlePrediction(attacker, target, atkSkillName, isMagic, spel
     let ctrHitRate = 0, ctrEffectiveRate = 0, ctrExpDmg = 0, ctrCritRate = 0, ctrCritDmg = 0;
     if (counterAvailable) {
         const ctrAtkStat = getAttackSkillVal(target).val;
-        ctrHitRate = getBattleHitResult(target, attacker, ctrAtkStat).rate;
+        const ctrHit = getBattleHitResult(target, attacker, ctrAtkStat, false, { roll: false });
+        ctrHitRate = ctrHit.rate;
         ctrEffectiveRate = Math.round(counterRate * ctrHitRate / 100);
-        const ctrRaw = calculatePhysicalDamage(target, attacker, { half: true, allowMartialArt: false }).damage;
-        const attackerBarrier = (attacker.statusEffects || []).find(e => e.type === "barrier");
-        ctrExpDmg = attackerBarrier ? Math.max(0, ctrRaw - attackerBarrier.value) : ctrRaw;
-        ctrCritRate = getCriticalRate(target, attacker);
-        ctrCritDmg = attackerBarrier
-            ? Math.max(0, criticalDamage(ctrRaw) - attackerBarrier.value)
-            : criticalDamage(ctrRaw);
+        const ctrResult = createPhysicalActionContext(target, attacker, {
+            hit: ctrHit,
+            isPreview: true,
+            isCounter: true,
+            half: true,
+            rollCritical: false,
+            commitBarrier: false,
+            attackSkillValue: ctrAtkStat,
+        });
+        ctrExpDmg = ctrResult.baseAfterBarrier;
+        ctrCritRate = ctrResult.critical.rate;
+        ctrCritDmg = ctrResult.critAfterBarrier;
     }
 
     return {
@@ -2823,26 +3160,45 @@ function showForecastLayer(attacker, targets, skillName, isMagic, spell) {
                 : getAttackSkillVal(attacker).val;
             const stunned  = (target.statusEffects || []).some(e => e.type === "stun");
             const evadeStat = stunned ? 0 : getEvadeSkillVal(target);
-            const hitRate   = getBattleHitResult(attacker, target, atkStat, stunned).rate;
+            const hit = getBattleHitResult(attacker, target, atkStat, stunned, { roll: false });
+            const hitRate = hit.rate;
 
-            const rawDmg  = calculatePhysicalDamage(attacker, target, { allowMartialArt: false }).damage;
+            const targetResult = createPhysicalActionContext(attacker, target, {
+                hit,
+                isPreview: true,
+                rollCritical: false,
+                commitBarrier: false,
+                attackSkillName: skillName,
+                attackSkillValue: atkStat,
+                combatArtId: selectedCombatArtId,
+            });
+            const expDmg  = targetResult.baseAfterBarrier;
+            const critRate = targetResult.critical.rate;
+            const critDmg = targetResult.critAfterBarrier;
             const barrier = (target.statusEffects || []).find(e => e.type === "barrier");
-            const expDmg  = barrier ? Math.max(0, rawDmg - barrier.value) : rawDmg;
-            const critRate = getCriticalRate(attacker, target);
-            const critDmg = barrier ? Math.max(0, criticalDamage(rawDmg) - barrier.value) : criticalDamage(rawDmg);
             const barrierNote = barrier ? `<span class="forecastNote">結界-${barrier.value}</span>` : "";
 
             // 反撃予測
             const ctrAtkStat = getAttackSkillVal(target).val;
             const ctrEvade   = getEvadeSkillVal(attacker);
             const counterPossible = canCounter(target);
-            const ctrHitRate = counterPossible ? getBattleHitResult(target, attacker, ctrAtkStat).rate : 0;
+            const ctrHit = counterPossible ? getBattleHitResult(target, attacker, ctrAtkStat, false, { roll: false }) : null;
+            const ctrHitRate = counterPossible ? ctrHit.rate : 0;
             const ctrChance  = Math.round(getCounterRate(target) * ctrHitRate / 100);
-            const ctrDmg     = counterPossible
-                ? calculatePhysicalDamage(target, attacker, { half: true, allowMartialArt: false }).damage
-                : 0;
-            const ctrCritRate = counterPossible ? getCriticalRate(target, attacker) : 0;
-            const ctrCritDmg = counterPossible ? criticalDamage(ctrDmg) : 0;
+            const ctrResult = counterPossible
+                ? createPhysicalActionContext(target, attacker, {
+                    hit: ctrHit,
+                    isPreview: true,
+                    isCounter: true,
+                    half: true,
+                    rollCritical: false,
+                    commitBarrier: false,
+                    attackSkillValue: ctrAtkStat,
+                })
+                : null;
+            const ctrDmg     = ctrResult ? ctrResult.baseAfterBarrier : 0;
+            const ctrCritRate = ctrResult ? ctrResult.critical.rate : 0;
+            const ctrCritDmg = ctrResult ? ctrResult.critAfterBarrier : 0;
 
             body.innerHTML = `
                 <div class="forecastRow">
@@ -2872,15 +3228,22 @@ function showForecastLayer(attacker, targets, skillName, isMagic, spell) {
             `;
         } else if (isMagic && spell) {
             // ── 魔法予測 ──
-            const successRate = getMagicHitResult(attacker, target, spell, attacker.spells?.[spell.id] ?? 5).rate;
+            const successRate = getMagicHitResult(attacker, target, spell, attacker.spells?.[spell.id] ?? 5, { roll: false }).rate;
             let effectHtml = "";
 
             if (spell.effectType === "magicDamage" || spell.effectType === "break") {
-                const rawMdmg = calculateMagicDamage(attacker, target, spell).damage;
+                const magicHit = getMagicHitResult(attacker, target, spell, attacker.spells?.[spell.id] ?? 5, { roll: false });
+                const magicResult = createMagicActionContext(attacker, target, spell, {
+                    hit: magicHit,
+                    isPreview: true,
+                    rollCritical: false,
+                    commitBarrier: false,
+                    breakBarrier: spell.effectType === "break",
+                });
                 const barr2  = (target.statusEffects || []).find(e => e.type === "barrier");
-                const effMdmg = barr2 ? Math.max(0, rawMdmg - barr2.value) : rawMdmg;
-                const critRate = getCriticalRate(attacker, target);
-                const critDmg = barr2 ? Math.max(0, criticalDamage(rawMdmg) - barr2.value) : criticalDamage(rawMdmg);
+                const effMdmg = magicResult.baseAfterBarrier;
+                const critRate = magicResult.critical.rate;
+                const critDmg = magicResult.critAfterBarrier;
                 const bNote   = barr2 ? `<span class="forecastNote">結界-${barr2.value}</span>` : "";
                 effectHtml = `<span class="forecastLabel">ダメ</span><span class="forecastVal dmg">${effMdmg}</span>${bNote}<span class="forecastSep">／</span><span class="forecastLabel">必殺</span><span class="forecastVal crit">${critRate}%</span><span class="forecastNote">時${critDmg}</span>`;
             } else if (spell.effectType === "heal") {
