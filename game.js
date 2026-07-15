@@ -2106,7 +2106,10 @@ function executeMagicCounter(caster, target, spell, spellVal) {
     caster.mp = Math.max(0, caster.mp - mpCost);
     const hit = getMagicHitResult(caster, target, spell, spellVal, { isCounter: true });
     addLog(`  魔法反撃【${spell.name}】${caster.name}→${target.name} （${hit.note}） MP-${mpCost} → ${hit.isHit ? "成功" : "失敗"}`);
-    if (!hit.isHit) return;
+    if (!hit.isHit) {
+        showDamagePopup(target.id, 0, "miss");
+        return;
+    }
 
     const targetResult = createMagicActionContext(caster, target, spell, {
         half: true,
@@ -2385,6 +2388,7 @@ function executeMagic(caster, spell, target) {
     addLog(`・${caster.name}が ${spell.name} 使用（${hit.note}）  MP-${mpCost}`);
 
     if (!hit.isHit) {
+        showDamagePopup(target.id, 0, "miss");
         addLog("  失敗！");
         showMessage("SYSTEM", `${caster.name}の${spell.name}は失敗した！`);
         endUnitTurn(caster);
