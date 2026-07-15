@@ -94,6 +94,7 @@ const IMPLEMENTED_COMBAT_ART_IDS = new Set([
 
 const IMPLEMENTED_PASSIVE_SKILL_IDS = new Set([
     "sakki",
+    "chuuseishin",
 ]);
 
 // 回避スキル名
@@ -1026,6 +1027,21 @@ function getPassiveEvasionModifier(attacker, defender, options = {}) {
     return 0;
 }
 
+function hasNearbySameSideUnit(unit, range) {
+    if (!unit || !Array.isArray(battleUnits)) return false;
+    return battleUnits.some(other => {
+        if (!other || other.id === unit.id || other.side !== unit.side || other.hp <= 0) return false;
+        return Math.abs(other.x - unit.x) + Math.abs(other.y - unit.y) <= range;
+    });
+}
+
+function getDerivedPassiveStatBonus(unit) {
+    if (unitHasPassiveSkill(unit, "chuuseishin") && hasNearbySameSideUnit(unit, 2)) {
+        return Number(getPassiveSkillData("chuuseishin")?.effect?.derivedStatBonus || 3);
+    }
+    return 0;
+}
+
 function getBattleHitResult(attacker, defender, attackSkill, targetStunned = false, options = {}) {
     if (targetStunned || BATTLE_HIT_MODE === "guaranteed") {
         return { rate: 100, roll: null, isHit: true, note: targetStunned ? "スタン中：自動命中" : "v2命中確定" };
@@ -1034,9 +1050,11 @@ function getBattleHitResult(attacker, defender, attackSkill, targetStunned = fal
     const defenderStats = calcBattleStats(defender);
     const evadeSkill = getEvadeSkillVal(defender);
     const accuracyModifier = getAccuracyStatusModifier(attacker)
-        + getPassiveAccuracyModifier(attacker, defender, options);
+        + getPassiveAccuracyModifier(attacker, defender, options)
+        + getDerivedPassiveStatBonus(attacker);
     const evasionModifier = getEvasionStatusModifier(defender)
-        + getPassiveEvasionModifier(attacker, defender, options);
+        + getPassiveEvasionModifier(attacker, defender, options)
+        + getDerivedPassiveStatBonus(defender);
     const accuracy = accuracyScore(attackerStats.raw.dex, attackSkill, accuracyModifier);
     const evasion = evasionScore(
         defenderStats.raw.str,
@@ -1104,25 +1122,34 @@ function calculatePhysicalDamage(attacker, target, options = {}) {
     const defStats = calcBattleStats(target);
     const weaponPower = getWeaponPower(attacker);
     const powerBonus = Number(options.powerBonus || 0);
-    const attackValue = atkStats.power + weaponPower + powerBonus;
+    const attackerDerivedBonus = getDerivedPassiveStatBonus(attacker);
+    const defenderDerivedBonus = getDerivedPassiveStatBonus(target);
+    const attackValue = atkStats.power + weaponPower + powerBonus + attackerDerivedBonus;
+    const armorValue = defStats.armor + defenderDerivedBonus;
     const masteryBonus = masteryDamageBonus(attacker.skills?.["武道"]);
     const artNote = masteryBonus > 0 ? `（武道+${masteryBonus}）` : "";
-    const raw = physicalDamage({ atk: attackValue }, defStats, 0);
+    const raw = physicalDamage({ atk: attackValue }, { def: armorValue }, 0);
     const mastered = raw + masteryBonus;
     const damage = options.half ? Math.max(1, Math.floor(mastered / 2)) : mastered;
-    return { damage, raw: mastered, power: atkStats.power, weaponPower, powerBonus, armor: defStats.armor, masteryBonus, artNote };
+    return { damage, raw: mastered, power: atkStats.power + attackerDerivedBonus, weaponPower, powerBonus, armor: armorValue, masteryBonus, artNote };
 }
 
 function calculateMagicDamage(caster, target, spell, options = {}) {
     const atkStats = calcBattleStats(caster);
     const defStats = calcBattleStats(target);
+    const casterDerivedBonus = getDerivedPassiveStatBonus(caster);
+    const targetDerivedBonus = getDerivedPassiveStatBonus(target);
     const spellPower = getSpellPower(spell) + Number(options.magicPowerBonus || 0);
-    const raw = magicalDamage(atkStats, defStats, spellPower);
+    const raw = magicalDamage(
+        { mag: atkStats.magic + casterDerivedBonus },
+        { res: defStats.ward + targetDerivedBonus },
+        spellPower
+    );
     const masteryBonus = masteryDamageBonus(caster.skills?.["魔導"]);
     const mastered = raw + masteryBonus;
     const damage = options.half ? Math.max(1, Math.floor(mastered / 2)) : mastered;
     const masteryNote = masteryBonus > 0 ? `（魔導+${masteryBonus}）` : "";
-    return { damage, raw: mastered, magic: atkStats.magic, spellPower, ward: defStats.ward, masteryBonus, masteryNote };
+    return { damage, raw: mastered, magic: atkStats.magic + casterDerivedBonus, spellPower, ward: defStats.ward + targetDerivedBonus, masteryBonus, masteryNote };
 }
 
 function getCounterRate(unit) {

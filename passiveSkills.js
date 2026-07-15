@@ -21,6 +21,15 @@ const PASSIVE_SKILLS = {
         effect: { hitBonus: 10, targetEvasionPenalty: 10, critBonus: 10 },
         desc: "自分から攻撃した時、命中+10、相手の回避-10、必殺+10。反撃不可効果は未実装。",
     },
+    chuuseishin: {
+        name: "忠誠心",
+        track: "固有",
+        trigger: "modifyPrediction",
+        condition: { allyWithin: 2 },
+        chance: null,
+        effect: { derivedStatBonus: 3 },
+        desc: "2マス以内に味方がいる場合、戦闘中の派生戦闘値+3。",
+    },
 
     // ── 回避トラック ──────────────────────────────
     seizon_honnou: {

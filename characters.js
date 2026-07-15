@@ -454,6 +454,8 @@ const CHARACTERS_DATA = [
 
         seizureType: "なし",
         secretArt: "なし",
+        learnedPassives: ["chuuseishin"],
+        equippedPassives: ["chuuseishin"],
         counterMode: "auto",
         statusEffects: [],
     },

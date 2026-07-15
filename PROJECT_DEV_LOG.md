@@ -204,3 +204,34 @@ Codex / Claude Code が途中から参加しても、前回までの成果、残
 - `殺気` の「勇気差で相手の反撃不可」は未実装
 - `忠誠心` は未実装。2マス以内に味方がいる場合の派生戦闘値+3として実装予定
 - パッシブの命中補正は `getBattleHitResult` に寄せたが、今後 `BattleActionContext` 側へさらに集約する余地がある
+## 2026-07-15 追加4
+
+### 今日の成果
+
+- パッシブ「忠誠心」を最小実装した
+  - `passiveSkills.js` に `chuuseishin` を追加
+  - ギュンターへ `learnedPassives / equippedPassives` として付与
+  - 2マス以内に同陣営の生存ユニットがいる場合、戦闘中の派生戦闘値へ+3を加える
+- 補正対象は現時点では以下に限定した
+  - 物理攻撃値
+  - 魔法攻撃値
+  - 物防
+  - 魔防
+  - 命中計算の補正
+  - 回避計算の補正
+- 生のTRPG原値は書き換えず、戦闘計算時だけ `getDerivedPassiveStatBonus()` で足す形にした
+
+### 検証
+
+- `node --check game.js`
+- `node --check characters.js`
+- `node --check passiveSkills.js`
+- `node tests/battleHooks.test.js`
+- `node tests/statConversion.test.js`
+- `node tests/partyState.test.js`
+
+### 残課題
+
+- 「忠誠心」の+3を命中/回避へそのまま足すか、DEX/STR相当として変換するかは実戦テストで再確認する
+- 位置依存パッシブの単体テストは `game.js` から戦闘計算を切り出してから追加する
+- 次の候補は「絶影」または「忠誠心」のUI表示/発動ログ整理
