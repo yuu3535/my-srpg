@@ -144,3 +144,37 @@ Codex / Claude Code が途中から参加しても、前回までの成果、残
 - 両断以外の `絶影 / 殺気 / 忠誠心` は未実装。Context が安定したら1つずつ追加して検証する
 - 戦技コストの武器耐久、使用回数、装備枠、習得/装備UIは未接続
 - `beforeDamaged` 系パッシブの確率抽選、効果時間、重複ルールはまだ実装前
+## 2026-07-15 追加2
+
+### 今日の成果
+
+- `partyState.js` に戦技・パッシブ・ビルド選択の永続保存枠を追加した
+  - `learnedArts`
+  - `equippedArts`
+  - `learnedPassives`
+  - `equippedPassives`
+  - `buildChoices`
+- 戦闘開始時に、partyState 側の戦技・パッシブ情報を live unit へ渡すようにした
+- `絶影` を最小実装した
+  - `IMPLEMENTED_COMBAT_ART_IDS` に `zetsuei` を追加
+  - `beforeAttack` フックで `evasionUp` 状態を付与
+  - 効果は「発動ターン中、回避+20」
+  - `cost.uses` を見て戦闘中3回までの使用回数を管理
+- `evasionUp` を命中率計算へ反映した
+  - 戦闘予測、実戦闘ともに `getBattleHitResult` 経由で同じ補正を読む
+- 横画面/旧UIの特技コマンドに `base: "self"` の戦技を出せる入口を追加した
+
+### 検証
+
+- `node --check game.js`
+- `node --check partyState.js`
+- `node tests/partyState.test.js`
+- `node tests/battleHooks.test.js`
+- `node tests/statConversion.test.js`
+
+### 残課題
+
+- `絶影` のログ文言は安全優先で仮。後で世界観に合う表記へ整える
+- `絶影` の使用回数をUI上で `残り2/3` のように見せる表示は未実装
+- `殺気`、`忠誠心` は未実装。次は1つずつフックに載せる
+- 旧UI/横画面UIで特技表示ロジックがまだ重複しているため、後で共通化する

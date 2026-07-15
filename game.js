@@ -89,6 +89,7 @@ const BATTLE_UTILITY_SKILLS = new Set([
 
 const IMPLEMENTED_COMBAT_ART_IDS = new Set([
     "ryoudan",
+    "zetsuei",
 ]);
 
 const IMPLEMENTED_PASSIVE_SKILL_IDS = new Set([]);
@@ -687,6 +688,7 @@ function showSkillRadial(unit) {
 
     const utilityEntries = Object.entries(unit.skills || {})
         .filter(([name]) => BATTLE_UTILITY_SKILLS.has(name));
+    const selfArts = getAvailableCombatArts(unit, "self");
 
     const items = [
         ...utilityEntries.map(([name, val]) => ({
@@ -698,11 +700,21 @@ function showSkillRadial(unit) {
         })),
         { label: "戻る", html: `戻る<span class="radialBtnSub">BACK</span>`, isBack: true },
     ];
+    items.splice(items.length - 1, 0, ...selfArts.map(art => ({
+        label: art.name,
+        html: `${art.name}<span class="radialBtnSub">ART</span>`,
+        combatArtId: art.id,
+        isBack: false,
+    })));
 
     const radius = Math.max(50, items.length * 10);
     buildRadialButtons(items, radius, (item) => {
         if (item.isBack) { renderBattleCommands(unit); return; }
         hideRadialMenu();
+        if (item.combatArtId) {
+            executeSelfCombatArt(unit, item.combatArtId);
+            return;
+        }
         executeSkill(unit, item.skillName, item.val, item.skillName);
     });
 }
@@ -984,6 +996,12 @@ function getAccuracyStatusModifier(unit) {
         .reduce((sum, effect) => sum + Number(effect.value || 0) * 5, 0);
 }
 
+function getEvasionStatusModifier(unit) {
+    return (unit.statusEffects || [])
+        .filter(effect => effect.type === "evasionUp" || effect.type === "evasionBonus")
+        .reduce((sum, effect) => sum + Number(effect.value || 0), 0);
+}
+
 function getBattleHitResult(attacker, defender, attackSkill, targetStunned = false, options = {}) {
     if (targetStunned || BATTLE_HIT_MODE === "guaranteed") {
         return { rate: 100, roll: null, isHit: true, note: targetStunned ? "スタン中：自動命中" : "v2命中確定" };
@@ -996,10 +1014,12 @@ function getBattleHitResult(attacker, defender, attackSkill, targetStunned = fal
         defenderStats.raw.str,
         defenderStats.raw.dex,
         defenderStats.raw.siz,
-        evadeSkill
+        evadeSkill,
+        getEvasionStatusModifier(defender)
     );
     const rate = battleHitRate(attackerStats, defenderStats, attackSkill, evadeSkill, {
         accuracy: getAccuracyStatusModifier(attacker),
+        evasion: getEvasionStatusModifier(defender),
     });
     const shouldRoll = options.roll !== false;
     const roll = shouldRoll ? Math.floor(Math.random() * 100) + 1 : null;
@@ -1329,6 +1349,63 @@ registerBattleActionHook("beforeAttack", {
     },
 });
 
+registerBattleActionHook("beforeAttack", {
+    id: "combatArt:zetsuei",
+    oncePerAction: true,
+    run(context) {
+        if (context.combatArtId !== "zetsuei" || context.actionType !== "self") return false;
+        const unit = context.attacker;
+        if (!unit) return false;
+        const bonus = Number(context.combatArt?.effect?.evasionBonus ?? 20);
+        const duration = Number(context.combatArt?.effect?.duration ?? 1);
+        unit.statusEffects = (unit.statusEffects || [])
+            .filter(effect => effect.source !== "combatArt:zetsuei");
+        unit.statusEffects.push({
+            type: "evasionUp",
+            value: bonus,
+            duration,
+            source: "combatArt:zetsuei",
+            name: context.combatArt?.name || "zetsuei",
+        });
+        context.usageCounts.zetsuei = (context.usageCounts.zetsuei || 0) + 1;
+        context.notes.push(`zetsuei:evasion+${bonus}`);
+        return true;
+    },
+});
+
+function executeSelfCombatArt(unit, artId) {
+    const art = getCombatArtData(artId);
+    if (!unit || !art || art.base !== "self" || !isCombatArtImplemented(art.id)) return false;
+    const maxUses = Number(art.cost?.uses || 0);
+    const used = Number(unit.combatArtUses?.[art.id] || 0);
+    if (maxUses > 0 && used >= maxUses) {
+        showMessage("SYSTEM", `${art.name}: no uses left`);
+        addLog(`・${unit.name} cannot use ${art.name}: ${used}/${maxUses}`);
+        return false;
+    }
+
+    const context = createBattleActionContext({
+        attacker: unit,
+        target: unit,
+        targets: [unit],
+        actionType: "self",
+        damageType: "support",
+        combatArtId: art.id,
+        combatArt: art,
+    });
+    runBattleActionHooks("beforeAttack", context, { target: unit });
+    runBattleActionHooks("afterAttack", context, { target: unit });
+    if (maxUses > 0) {
+        unit.combatArtUses = unit.combatArtUses || {};
+        unit.combatArtUses[art.id] = used + 1;
+    }
+    addLog(`・${unit.name} uses ${art.name}`);
+    showMessage("SYSTEM", `${unit.name}: ${art.name}`);
+    renderUnits();
+    endUnitTurn(unit);
+    return true;
+}
+
 function isLandscapeBattleUi() {
     return gameMode === "battle"
         && gameScreen.dataset.mode === "battle"
@@ -1378,7 +1455,7 @@ function sizeLandscapeBattleCanvas() {
 function unitStatusText(unit) {
     if (!unit.statusEffects || unit.statusEffects.length === 0) return "通常";
     const nm = { burn:"火傷", stun:"スタン", barrier:"結界", counter:"カウンター",
-                 accuracyDown:"命中低下", gravityField:"重力場", support:"強化" };
+                 accuracyDown:"命中低下", gravityField:"重力場", support:"強化", evasionUp:"回避↑" };
     return unit.statusEffects.map(e => nm[e.type] || e.type).join(" ");
 }
 
@@ -1611,10 +1688,14 @@ function renderLandscapeSubCommandRail(unit, kind) {
     if (kind === "skill") {
         const entries = Object.entries(unit.skills || {})
             .filter(([name]) => BATTLE_UTILITY_SKILLS.has(name));
-        if (entries.length === 0) addButton("使える特技なし", "", () => {});
+        const selfArts = getAvailableCombatArts(unit, "self");
+        if (entries.length === 0 && selfArts.length === 0) addButton("使える特技なし", "", () => {});
         entries.forEach(([name, val]) => addButton(name, String(val), () => {
             hideRadialMenu();
             executeSkill(unit, name, val, name);
+        }));
+        selfArts.forEach(art => addButton(art.name, "ART", () => {
+            executeSelfCombatArt(unit, art.id);
         }));
         addLandscapeBackButton(unit);
         return;
@@ -2411,8 +2492,9 @@ function renderSkillCommands(unit) {
 
     const utilityEntries = Object.entries(unit.skills || {})
         .filter(([name]) => BATTLE_UTILITY_SKILLS.has(name));
+    const selfArts = getAvailableCombatArts(unit, "self");
 
-    if (utilityEntries.length === 0) {
+    if (utilityEntries.length === 0 && selfArts.length === 0) {
         const empty = document.createElement("div");
         empty.style.cssText = "padding:0.5em 0.9em; color:var(--text-dim); font-size:12px;";
         empty.textContent = "使える特技がない";
@@ -2426,6 +2508,7 @@ function renderSkillCommands(unit) {
         btn.addEventListener("click", () => executeSkill(unit, skillName, val, skillName));
         commandList.appendChild(btn);
     }
+    appendSelfCombatArtCommands(unit);
 
     const backBtn = document.createElement("button");
     backBtn.className   = "commandItem";
@@ -2436,6 +2519,16 @@ function renderSkillCommands(unit) {
         renderBattleCommands(unit);
     });
     commandList.appendChild(backBtn);
+}
+
+function appendSelfCombatArtCommands(unit) {
+    for (const art of getAvailableCombatArts(unit, "self")) {
+        const btn = document.createElement("button");
+        btn.className = "commandItem";
+        btn.textContent = art.name;
+        btn.addEventListener("click", () => executeSelfCombatArt(unit, art.id));
+        commandList.appendChild(btn);
+    }
 }
 
 function executeSkill(unit, skillId, successVal, displayName) {
@@ -3904,7 +3997,7 @@ function renderBattleCommands(unit) {
     const statusStr = (() => {
         if (!unit.statusEffects || unit.statusEffects.length === 0) return "―";
         const nm = { burn:"火傷", stun:"スタン", barrier:"結界", counter:"カウンター",
-                     accuracyDown:"命中↓", gravityField:"重力場", support:"強化" };
+                     accuracyDown:"命中↓", gravityField:"重力場", support:"強化", evasionUp:"回避↑" };
         return unit.statusEffects.map(e => nm[e.type] || e.type).join(" ");
     })();
     const _portraitSrc = getPortraitSrc(unit);
@@ -3997,7 +4090,7 @@ function renderEnemyInfoPanel(unit) {
     const statusStr = (() => {
         if (!unit.statusEffects || unit.statusEffects.length === 0) return "―";
         const nm = { burn:"火傷", stun:"スタン", barrier:"結界", counter:"カウンター",
-                     accuracyDown:"命中↓", gravityField:"重力場", support:"強化" };
+                     accuracyDown:"命中↓", gravityField:"重力場", support:"強化", evasionUp:"回避↑" };
         return unit.statusEffects.map(e => nm[e.type] || e.type).join(" ");
     })();
     const _portraitSrc = getPortraitSrc(unit);
@@ -4943,6 +5036,12 @@ function setBattleMode(battleId) {
             mp: resources.mp,
             maxMp: battleStats.mp,
             items: resources.items,
+            learnedArts: resources.learnedArts,
+            equippedArts: resources.equippedArts,
+            learnedPassives: resources.learnedPassives,
+            equippedPassives: resources.equippedPassives,
+            buildChoices: resources.buildChoices,
+            combatArtUses: {},
             moved: false,
             acted: false,
             statusEffects: [],

@@ -43,4 +43,29 @@ assert.equal(state.members.ringholm.items.length, 1, "save snapshot does not sha
 const legacyLoaded = createPartyState(characters, calcBattleStats, null);
 assert.equal(legacyLoaded.members.albas.hp, 28, "legacy save fallback creates defaults");
 
+const loadedBuild = createPartyState(characters, calcBattleStats, {
+    members: {
+        ringholm: {
+            learnedArts: ["ryoudan"],
+            equippedArts: ["ryoudan"],
+            learnedPassives: ["zanshin"],
+            equippedPassives: ["zanshin"],
+            buildChoices: { evasion: "zetsuei" },
+        },
+    },
+});
+assert.deepEqual(loadedBuild.members.ringholm.learnedArts, ["ryoudan"], "learned arts are restored");
+assert.deepEqual(loadedBuild.members.ringholm.equippedArts, ["ryoudan"], "equipped arts are restored");
+assert.deepEqual(loadedBuild.members.ringholm.learnedPassives, ["zanshin"], "learned passives are restored");
+assert.deepEqual(loadedBuild.members.ringholm.equippedPassives, ["zanshin"], "equipped passives are restored");
+assert.equal(loadedBuild.members.ringholm.buildChoices.evasion, "zetsuei", "build choices are restored");
+
+const buildSnapshot = clonePartyState(loadedBuild);
+buildSnapshot.members.ringholm.equippedPassives.push("copy_test");
+buildSnapshot.members.ringholm.buildChoices.evasion = "copy_changed";
+assert.deepEqual(loadedBuild.members.ringholm.equippedPassives, ["zanshin"],
+    "save snapshot does not share passive arrays");
+assert.equal(loadedBuild.members.ringholm.buildChoices.evasion, "zetsuei",
+    "save snapshot does not share build choices");
+
 console.log("partyState: all tests passed");

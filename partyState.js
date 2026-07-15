@@ -10,6 +10,10 @@ function clonePartyItems(items) {
         : [];
 }
 
+function cloneStringList(values) {
+    return Array.isArray(values) ? [...values] : [];
+}
+
 function clampPartyResource(value, fallback, max) {
     const resolved = Number.isFinite(Number(value)) ? Number(value) : fallback;
     return Math.max(0, Math.min(max, Math.floor(resolved)));
@@ -35,8 +39,13 @@ function createPartyState(characters, statCalculator, savedState = null) {
             mp: clampPartyResource(saved.mp, stats.mp, stats.mp),
             items: clonePartyItems(saved.items ?? character.items),
             skillRanks: { ...(saved.skillRanks || {}) },
-            learnedArts: Array.isArray(saved.learnedArts) ? [...saved.learnedArts] : [],
-            equippedArts: Array.isArray(saved.equippedArts) ? [...saved.equippedArts] : [],
+            learnedArts: cloneStringList(saved.learnedArts ?? character.learnedArts),
+            equippedArts: cloneStringList(saved.equippedArts ?? character.equippedArts),
+            learnedPassives: cloneStringList(saved.learnedPassives ?? character.learnedPassives),
+            equippedPassives: cloneStringList(saved.equippedPassives ?? character.equippedPassives),
+            buildChoices: saved.buildChoices && typeof saved.buildChoices === "object"
+                ? { ...saved.buildChoices }
+                : { ...(character.buildChoices || {}) },
         };
     }
 
@@ -51,6 +60,11 @@ function getPartyBattleResources(partyState, character, battleStats, enabled) {
             hp: battleStats.hp,
             mp: battleStats.mp,
             items: clonePartyItems(character.items),
+            learnedArts: cloneStringList(character.learnedArts),
+            equippedArts: cloneStringList(character.equippedArts),
+            learnedPassives: cloneStringList(character.learnedPassives),
+            equippedPassives: cloneStringList(character.equippedPassives),
+            buildChoices: { ...(character.buildChoices || {}) },
         };
     }
 
@@ -59,6 +73,11 @@ function getPartyBattleResources(partyState, character, battleStats, enabled) {
         hp: Math.max(1, clampPartyResource(member.hp, battleStats.hp, battleStats.hp)),
         mp: clampPartyResource(member.mp, battleStats.mp, battleStats.mp),
         items: clonePartyItems(member.items),
+        learnedArts: cloneStringList(member.learnedArts),
+        equippedArts: cloneStringList(member.equippedArts),
+        learnedPassives: cloneStringList(member.learnedPassives),
+        equippedPassives: cloneStringList(member.equippedPassives),
+        buildChoices: { ...(member.buildChoices || {}) },
     };
 }
 
@@ -72,6 +91,11 @@ function updatePartyStateFromBattle(partyState, battleUnits) {
         member.hp = Math.max(0, Math.floor(unit.hp));
         member.mp = Math.max(0, Math.floor(unit.mp));
         member.items = clonePartyItems(unit.items);
+        member.learnedArts = cloneStringList(unit.learnedArts);
+        member.equippedArts = cloneStringList(unit.equippedArts);
+        member.learnedPassives = cloneStringList(unit.learnedPassives);
+        member.equippedPassives = cloneStringList(unit.equippedPassives);
+        member.buildChoices = { ...(unit.buildChoices || {}) };
     }
     return partyState;
 }
@@ -84,8 +108,11 @@ function clonePartyState(partyState) {
             ...member,
             items: clonePartyItems(member.items),
             skillRanks: { ...(member.skillRanks || {}) },
-            learnedArts: [...(member.learnedArts || [])],
-            equippedArts: [...(member.equippedArts || [])],
+            learnedArts: cloneStringList(member.learnedArts),
+            equippedArts: cloneStringList(member.equippedArts),
+            learnedPassives: cloneStringList(member.learnedPassives),
+            equippedPassives: cloneStringList(member.equippedPassives),
+            buildChoices: { ...(member.buildChoices || {}) },
         };
     }
     return { version: PARTY_STATE_VERSION, members };
