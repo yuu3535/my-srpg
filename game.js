@@ -3205,10 +3205,10 @@ function showUnitPortraitAdjuster(unit) {
         switchTopLayer(prevLayer);
     }
 
-    // ── オーバーレイ（battleBoard だけ覆う） ──
+    // ── オーバーレイ（gameScreen 全体に重ねる） ──
     const overlay = document.createElement("div");
     overlay.id = "unitAdjOverlay";
-    overlay.style.cssText = "position:absolute;inset:0;z-index:300;background:rgba(5,3,15,0.82);pointer-events:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;";
+    overlay.style.cssText = "position:absolute;inset:0;z-index:80;background:rgba(5,3,15,0.82);pointer-events:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:0;box-sizing:border-box;";
     overlay.addEventListener("click", e => { if (e.target === overlay) closeAdj(); });
 
     // ── スライダーボックス ──
@@ -3301,6 +3301,13 @@ function showUnitPortraitAdjuster(unit) {
         const s = state[idx];
         const applyFn = () => {
             if (idx !== 3) document.querySelector("#criticalCutIn.debugPreview")?.remove();
+            const isCriticalTab = idx === 3;
+            overlay.classList.toggle("criticalPreviewing", isCriticalTab);
+            overlay.style.justifyContent = isCriticalTab ? "flex-end" : "center";
+            overlay.style.alignItems = isCriticalTab ? "flex-end" : "center";
+            overlay.style.padding = isCriticalTab ? "0 14px 14px 0" : "0";
+            overlay.style.background = isCriticalTab ? "rgba(5,3,15,0.26)" : "rgba(5,3,15,0.82)";
+            box.style.maxWidth = isCriticalTab ? "300px" : "320px";
             if (idx < 2) output.textContent = applyToVS(idx);
             else if (idx === 2) output.textContent = applyToStatus();
             else output.textContent = applyToCriticalCutIn();
@@ -3313,7 +3320,7 @@ function showUnitPortraitAdjuster(unit) {
     switchTab(0);
 
     overlay.appendChild(box);
-    document.getElementById("battleBoard").appendChild(overlay);
+    gameScreen.appendChild(overlay);
 }
 
 {
