@@ -3176,8 +3176,6 @@ function showUnitPortraitAdjuster(unit) {
         layer.className = `criticalCutIn ${side} active debugPreview`;
         layer.setAttribute("aria-hidden", "true");
         layer.innerHTML = `
-            <i class="criticalCutInLightning top" aria-hidden="true"></i>
-            <i class="criticalCutInLightning bottom" aria-hidden="true"></i>
             <div class="criticalCutInBand">
                 <div class="criticalCutInPortrait" aria-hidden="true"></div>
                 <div class="criticalCutInCopy">
@@ -3678,8 +3676,6 @@ function showCriticalCutIn(unit) {
     layer.setAttribute("aria-live", "assertive");
     layer.setAttribute("aria-label", `${unit.name}の必殺`);
     layer.innerHTML = `
-        <i class="criticalCutInLightning top" aria-hidden="true"></i>
-        <i class="criticalCutInLightning bottom" aria-hidden="true"></i>
         <div class="criticalCutInBand">
             <div class="criticalCutInPortrait" aria-hidden="true"></div>
             <div class="criticalCutInCopy">
