@@ -3562,6 +3562,20 @@ html, body {
     .lsFcCounterNote i { color: rgba(224,189,115,0.38); font-style: normal; }
     .lsFcCounterNote b { color: #e7c57c; font-weight: 700; }
 
+    .lsFcEffectNote {
+        min-height: 10px;
+        color: rgba(97,223,205,0.72);
+        font-size: 7.5px;
+        line-height: 1;
+        letter-spacing: 0.08em;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .lsFcEffectNote.hidden { visibility: hidden; }
+
     /* 斜めのダメージ交換 */
     .lsFcExchange {
         display: flex;

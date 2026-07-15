@@ -1907,6 +1907,10 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
     const attackerActionType = activeCombatArt ? "戦技" : (_vsAttack?.isMagic ? "魔法" : "武器種");
     const attackerActionName = activeCombatArt?.name || actionLabel || (_vsAttack?.isMagic ? _vsAttack?.spell?.name : getAttackSkillVal(attacker).name) || "攻撃";
     const counterActionName = pred.canCounter ? ctrWeapon : "なし";
+    const effectNoteHtml = [pred.effectNotes, pred.counterNotes]
+        .filter(Boolean)
+        .map(note => note.replace(/^\s*\[|\]\s*$/g, ""))
+        .join(" / ");
 
     lsForecast.innerHTML = `
         <div class="lsFcSide allySide">
@@ -1938,6 +1942,7 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
                 <span>命中 ${pred.ctrHitRate}%</span>
                 <b>実効 ${pred.ctrEffectiveRate}%</b>
             </div>
+            <div class="lsFcEffectNote${effectNoteHtml ? "" : " hidden"}">${effectNoteHtml || "—"}</div>
             <div class="lsFcBars">
                 <div class="lsFcBar ally"><i style="width:${atkPct}%"></i></div>
                 <b class="lsFcAfter ally">${atkAfter}</b>
@@ -2725,6 +2730,7 @@ function startAllyPhase() {
 function calculateBattlePrediction(attacker, target, atkSkillName, isMagic, spell) {
     // ── 攻撃側予測 ──
     let hitRate, expDmg, effectDesc, critRate = 0, critDmg = 0;
+    let effectNotes = "";
     if (isMagic && spell) {
         const hit = getMagicHitResult(attacker, target, spell, attacker.spells?.[spell.id] ?? 5, { roll: false });
         hitRate = hit.rate;
@@ -2740,6 +2746,7 @@ function calculateBattlePrediction(attacker, target, atkSkillName, isMagic, spel
             critRate   = targetResult.critical.rate;
             critDmg    = targetResult.critAfterBarrier;
             effectDesc = `${expDmg}`;
+            effectNotes = formatActionContextNotes(targetResult.context);
         } else if (spell.effectType === "heal") {
             expDmg     = calcBattleStats(attacker).supportMagic + getSpellPower(spell);
             effectDesc = `+${expDmg}`;
@@ -2772,12 +2779,13 @@ function calculateBattlePrediction(attacker, target, atkSkillName, isMagic, spel
         critRate   = targetResult.critical.rate;
         critDmg    = targetResult.critAfterBarrier;
         effectDesc = `${expDmg}`;
+        effectNotes = formatActionContextNotes(targetResult.context);
     }
 
     // ── 反撃予測（共通） ──
     const counterRate = getCounterRate(target);
     const counterAvailable = target.hp > 0 && canCounter(target);
-    let ctrHitRate = 0, ctrEffectiveRate = 0, ctrExpDmg = 0, ctrCritRate = 0, ctrCritDmg = 0;
+    let ctrHitRate = 0, ctrEffectiveRate = 0, ctrExpDmg = 0, ctrCritRate = 0, ctrCritDmg = 0, counterNotes = "";
     if (counterAvailable) {
         const ctrAtkStat = getAttackSkillVal(target).val;
         const ctrHit = getBattleHitResult(target, attacker, ctrAtkStat, false, { roll: false, isCounter: true });
@@ -2795,6 +2803,7 @@ function calculateBattlePrediction(attacker, target, atkSkillName, isMagic, spel
         ctrExpDmg = ctrResult.baseAfterBarrier;
         ctrCritRate = ctrResult.critical.rate;
         ctrCritDmg = ctrResult.critAfterBarrier;
+        counterNotes = formatActionContextNotes(ctrResult.context);
     }
 
     return {
@@ -2803,6 +2812,7 @@ function calculateBattlePrediction(attacker, target, atkSkillName, isMagic, spel
         effectDesc,
         critRate,
         critDmg,
+        effectNotes,
         canCounter: counterAvailable,
         counterRate,
         ctrHitRate,
@@ -2810,6 +2820,7 @@ function calculateBattlePrediction(attacker, target, atkSkillName, isMagic, spel
         ctrExpDmg,
         ctrCritRate,
         ctrCritDmg,
+        counterNotes,
     };
 }
 

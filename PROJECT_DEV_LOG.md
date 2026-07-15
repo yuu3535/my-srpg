@@ -204,6 +204,26 @@ Codex / Claude Code が途中から参加しても、前回までの成果、残
 - `殺気` の「勇気差で相手の反撃不可」は未実装
 - `忠誠心` は未実装。2マス以内に味方がいる場合の派生戦闘値+3として実装予定
 - パッシブの命中補正は `getBattleHitResult` に寄せたが、今後 `BattleActionContext` 側へさらに集約する余地がある
+## 2026-07-15 追加6
+
+### 今日の成果
+
+- 戦闘予測データに `effectNotes / counterNotes` を返すようにした
+- 横画面戦闘予測UIに、発動予定の戦技/パッシブ補正を1行タグとして表示するようにした
+- 予測と実ログが同じ `BattleActionContext.notes` を参照する形になり、補正の追跡がしやすくなった
+
+### 検証
+
+- `node --check game.js`
+- `node tests/battleHooks.test.js`
+- `node tests/statConversion.test.js`
+- `node tests/partyState.test.js`
+
+### 残課題
+
+- 旧topLayer予測パネルにも同じ補正タグを出すか検討する
+- 表示名は内部ID寄りなので、UI文言として「両断 攻撃+5」「殺気 必殺+10」のように整える
+
 ## 2026-07-15 追加5
 
 ### 今日の成果
