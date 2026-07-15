@@ -1401,7 +1401,17 @@ function finishDamageHooks(context, targetResult, hpBefore) {
 
 function formatActionContextNotes(context) {
     const notes = Array.isArray(context?.notes) ? context.notes.filter(Boolean) : [];
-    return notes.length ? ` [${notes.join(", ")}]` : "";
+    const labels = notes.map(formatActionEffectNoteLabel);
+    return labels.length ? ` [${labels.join(", ")}]` : "";
+}
+
+function formatActionEffectNoteLabel(note) {
+    if (note === "sakki:crit+10") return "殺気:必殺+10";
+    if (note.startsWith("zetsuei:evasion+")) return `絶影:回避+${note.split("+")[1]}`;
+    if (note.startsWith("chuuseishin:attacker+")) return `忠誠心:攻撃側+${note.split("+")[1]}`;
+    if (note.startsWith("chuuseishin:defender+")) return `忠誠心:防御側+${note.split("+")[1]}`;
+    if (note.startsWith("ryoudan:power+")) return `両断:攻撃+${note.split("+")[1]}`;
+    return note;
 }
 
 registerBattleActionHook("beforeAttack", {
@@ -1411,7 +1421,7 @@ registerBattleActionHook("beforeAttack", {
         if (context.combatArtId !== "ryoudan" || context.damageType !== "physical") return false;
         context.modifiers.physicalPowerBonus += 5;
         context.usageCounts.ryoudan = (context.usageCounts.ryoudan || 0) + 1;
-        context.notes.push("両断:攻撃+5");
+        context.notes.push("ryoudan:power+5");
         return true;
     },
 });

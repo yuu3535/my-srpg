@@ -204,6 +204,26 @@ Codex / Claude Code が途中から参加しても、前回までの成果、残
 - `殺気` の「勇気差で相手の反撃不可」は未実装
 - `忠誠心` は未実装。2マス以内に味方がいる場合の派生戦闘値+3として実装予定
 - パッシブの命中補正は `getBattleHitResult` に寄せたが、今後 `BattleActionContext` 側へさらに集約する余地がある
+## 2026-07-15 追加7
+
+### 今日の成果
+
+- BattleActionContext の内部メモを、ログ/UI表示時に日本語ラベルへ変換する `formatActionEffectNoteLabel()` を追加した
+- `ryoudan:power+5` などの内部IDを、表示時は「両断:攻撃+5」のように読める形へ整えた
+- 両断の内部メモも他の効果と同じID形式へ統一した
+
+### 検証
+
+- `node --check game.js`
+- `node tests/battleHooks.test.js`
+- `node tests/statConversion.test.js`
+- `node tests/partyState.test.js`
+
+### 残課題
+
+- 効果メモの表示名は今後増える戦技/パッシブに合わせてテーブル化する
+- UI表示では最終的に「補正」欄として専用デザインへ寄せる
+
 ## 2026-07-15 追加6
 
 ### 今日の成果
