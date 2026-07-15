@@ -1414,6 +1414,11 @@ function formatActionEffectNoteLabel(note) {
     return note;
 }
 
+function renderForecastEffectNote(context) {
+    const text = formatActionContextNotes(context).replace(/^\s*\[|\]\s*$/g, "");
+    return text ? `<div class="forecastEffectNote">${text}</div>` : "";
+}
+
 registerBattleActionHook("beforeAttack", {
     id: "combatArt:ryoudan",
     oncePerAction: true,
@@ -3394,6 +3399,7 @@ function showForecastLayer(attacker, targets, skillName, isMagic, spell) {
             const expDmg  = targetResult.baseAfterBarrier;
             const critRate = targetResult.critical.rate;
             const critDmg = targetResult.critAfterBarrier;
+            const effectNote = renderForecastEffectNote(targetResult.context);
             const barrier = (target.statusEffects || []).find(e => e.type === "barrier");
             const barrierNote = barrier ? `<span class="forecastNote">結界-${barrier.value}</span>` : "";
 
@@ -3418,6 +3424,7 @@ function showForecastLayer(attacker, targets, skillName, isMagic, spell) {
             const ctrDmg     = ctrResult ? ctrResult.baseAfterBarrier : 0;
             const ctrCritRate = ctrResult ? ctrResult.critical.rate : 0;
             const ctrCritDmg = ctrResult ? ctrResult.critAfterBarrier : 0;
+            const ctrEffectNote = ctrResult ? renderForecastEffectNote(ctrResult.context) : "";
 
             body.innerHTML = `
                 <div class="forecastRow">
@@ -3444,11 +3451,14 @@ function showForecastLayer(attacker, targets, skillName, isMagic, spell) {
                     <span class="forecastVal crit">${counterPossible ? `${ctrCritRate}%` : "―"}</span>
                     ${counterPossible ? `<span class="forecastNote">時${ctrCritDmg}</span>` : ""}
                 </div>
+                ${effectNote}
+                ${ctrEffectNote}
             `;
         } else if (isMagic && spell) {
             // ── 魔法予測 ──
             const successRate = getMagicHitResult(attacker, target, spell, attacker.spells?.[spell.id] ?? 5, { roll: false }).rate;
             let effectHtml = "";
+            let magicEffectNote = "";
 
             if (spell.effectType === "magicDamage" || spell.effectType === "break") {
                 const magicHit = getMagicHitResult(attacker, target, spell, attacker.spells?.[spell.id] ?? 5, { roll: false });
@@ -3464,6 +3474,7 @@ function showForecastLayer(attacker, targets, skillName, isMagic, spell) {
                 const critRate = magicResult.critical.rate;
                 const critDmg = magicResult.critAfterBarrier;
                 const bNote   = barr2 ? `<span class="forecastNote">結界-${barr2.value}</span>` : "";
+                magicEffectNote = renderForecastEffectNote(magicResult.context);
                 effectHtml = `<span class="forecastLabel">ダメ</span><span class="forecastVal dmg">${effMdmg}</span>${bNote}<span class="forecastSep">／</span><span class="forecastLabel">必殺</span><span class="forecastVal crit">${critRate}%</span><span class="forecastNote">時${critDmg}</span>`;
             } else if (spell.effectType === "heal") {
                 const healAmt = calcBattleStats(attacker).supportMagic + getSpellPower(spell);
@@ -3483,6 +3494,7 @@ function showForecastLayer(attacker, targets, skillName, isMagic, spell) {
                     <span class="forecastSep">／</span>
                     ${effectHtml}
                 </div>
+                ${magicEffectNote}
             `;
         }
     }

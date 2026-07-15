@@ -204,6 +204,26 @@ Codex / Claude Code が途中から参加しても、前回までの成果、残
 - `殺気` の「勇気差で相手の反撃不可」は未実装
 - `忠誠心` は未実装。2マス以内に味方がいる場合の派生戦闘値+3として実装予定
 - パッシブの命中補正は `getBattleHitResult` に寄せたが、今後 `BattleActionContext` 側へさらに集約する余地がある
+## 2026-07-15 追加8
+
+### 今日の成果
+
+- 旧topLayerの戦闘予測カードにも、BattleActionContext由来の補正タグを表示するようにした
+- 物理攻撃、反撃、魔法攻撃の予測カードで「両断」「殺気」「忠誠心」などの発動予定を確認できる
+- 横画面UIと旧予測UIのどちらでも、補正の理由を追跡できるようになった
+
+### 検証
+
+- `node --check game.js`
+- `node tests/battleHooks.test.js`
+- `node tests/statConversion.test.js`
+- `node tests/partyState.test.js`
+
+### 残課題
+
+- 予測タグの見た目は暫定。最終UIでは戦技/パッシブ専用の小さな紋章タグに寄せる
+- 発動効果が増えたら、表示順と省略ルールを決める
+
 ## 2026-07-15 追加7
 
 ### 今日の成果
