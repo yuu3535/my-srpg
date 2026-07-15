@@ -87,6 +87,12 @@ const BATTLE_UTILITY_SKILLS = new Set([
     "応急手当", "医学", "戦闘指揮", "目星", "集中", "挑発", "庇う"
 ]);
 
+const IMPLEMENTED_COMBAT_ART_IDS = new Set([
+    "ryoudan",
+]);
+
+const IMPLEMENTED_PASSIVE_SKILL_IDS = new Set([]);
+
 // 回避スキル名
 const EVADE_SKILL_NAME = "回避";
 
@@ -1118,6 +1124,10 @@ function getCombatArtData(artId) {
     return COMBAT_ARTS[artId] ? { id: artId, ...COMBAT_ARTS[artId] } : null;
 }
 
+function isCombatArtImplemented(artId) {
+    return IMPLEMENTED_COMBAT_ART_IDS.has(artId);
+}
+
 function getAvailableCombatArts(unit, base = "attack") {
     if (!unit || typeof COMBAT_ARTS === "undefined") return [];
     const known = new Set([
@@ -1126,12 +1136,14 @@ function getAvailableCombatArts(unit, base = "attack") {
     ]);
 
     for (const [id, art] of Object.entries(COMBAT_ARTS)) {
+        if (!isCombatArtImplemented(id)) continue;
         if (art.base !== base) continue;
         const rank = Number(unit.skillRanks?.[art.track] ?? unit.skills?.[art.track] ?? 0);
         if (rank >= 6) known.add(id);
     }
 
     return [...known]
+        .filter(id => isCombatArtImplemented(id))
         .map(id => getCombatArtData(id))
         .filter(art => art && art.base === base);
 }
@@ -1719,8 +1731,9 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
             <div class="lsFcSlot action"><em>${actionType}</em><span>${actionName}</span></div>
         </div>`;
 
-    const attackerActionType = _vsAttack?.isMagic ? "魔法" : "武器種";
-    const attackerActionName = actionLabel || (_vsAttack?.isMagic ? _vsAttack?.spell?.name : getAttackSkillVal(attacker).name) || "攻撃";
+    const activeCombatArt = getCombatArtData(selectedCombatArtId);
+    const attackerActionType = activeCombatArt ? "戦技" : (_vsAttack?.isMagic ? "魔法" : "武器種");
+    const attackerActionName = activeCombatArt?.name || actionLabel || (_vsAttack?.isMagic ? _vsAttack?.spell?.name : getAttackSkillVal(attacker).name) || "攻撃";
     const counterActionName = pred.canCounter ? ctrWeapon : "なし";
 
     lsForecast.innerHTML = `
@@ -3119,7 +3132,8 @@ function showForecastLayer(attacker, targets, skillName, isMagic, spell) {
     forecastContent.innerHTML = "";
 
     // ヘッダー
-    const label = isMagic ? (spell?.name || "魔法") : (skillName || "攻撃");
+    const activeCombatArt = !isMagic ? getCombatArtData(selectedCombatArtId) : null;
+    const label = activeCombatArt?.name || (isMagic ? (spell?.name || "魔法") : (skillName || "攻撃"));
     const hdr = document.createElement("div");
     hdr.className = "forecastHeader";
     hdr.textContent = `${attacker.name}  ─  ${label}`;
@@ -4164,6 +4178,52 @@ function closeStatus() {
     statusModalOverlay.classList.add("hidden");
 }
 
+function getMagicRangeSummary(unit) {
+    const ranges = Object.keys(unit?.spells || {})
+        .map(name => SPELLS_DATA[name]?.range)
+        .filter(range => typeof range === "number" && Number.isFinite(range));
+    if (!ranges.length) return "";
+    const min = Math.min(...ranges);
+    const max = Math.max(...ranges);
+    return min === max ? `${max}` : `${min}-${max}`;
+}
+
+function getActionRangeSummary(unit) {
+    const move = Number(unit?.move) || 0;
+    const normalRange = Number(unit?.attackRange) || 1;
+    const magicRange = getMagicRangeSummary(unit);
+    const parts = [`移動 ${move}`, `通常 ${normalRange}`];
+    if (magicRange) parts.push(`魔法 ${magicRange}`);
+    return parts.join(" / ");
+}
+
+function getCombatArtSummary(unit, base = "attack") {
+    const arts = getAvailableCombatArts(unit, base);
+    if (!arts.length) return "なし";
+    return arts.map(art => art.name).join(" / ");
+}
+
+function getPassiveSkillData(skillId) {
+    if (!skillId || typeof PASSIVE_SKILLS === "undefined") return null;
+    return PASSIVE_SKILLS[skillId] ? { id: skillId, ...PASSIVE_SKILLS[skillId] } : null;
+}
+
+function isPassiveSkillImplemented(skillId) {
+    return IMPLEMENTED_PASSIVE_SKILL_IDS.has(skillId);
+}
+
+function getAvailablePassiveSkills(unit) {
+    if (!unit || typeof PASSIVE_SKILLS === "undefined") return [];
+    const known = new Set([
+        ...(unit.learnedPassives || []),
+        ...(unit.equippedPassives || []),
+    ]);
+    return [...known]
+        .filter(id => isPassiveSkillImplemented(id))
+        .map(id => getPassiveSkillData(id))
+        .filter(Boolean);
+}
+
 function renderLandscapeStatusSheet(unit, bs) {
     const pct = (cur, max) => max > 0
         ? Math.max(0, Math.min(100, cur / max * 100))
@@ -4180,6 +4240,15 @@ function renderLandscapeStatusSheet(unit, bs) {
             }
             return `<div class="adventureListRow"><span>${name}</span><b>${value}</b></div>`;
         }).join("");
+    };
+    const abilityRows = (items, emptyText = "なし") => {
+        if (!items.length) return `<div class="adventureEmpty">${emptyText}</div>`;
+        return items.map(item => `
+            <div class="adventureListRow ability">
+              <span>${item.name}</span>
+              <small>${item.desc || item.track || ""}</small>
+              <b>${item.category || item.track || ""}</b>
+            </div>`).join("");
     };
     const equipment = typeof unit.equipment === "string"
         ? unit.equipment
@@ -4201,8 +4270,6 @@ function renderLandscapeStatusSheet(unit, bs) {
         physical_only: "物理のみ",
         none: "反撃なし",
     };
-    const evadeSkill = getEvadeSkillVal(unit);
-
     statusModalBody.innerHTML = `
       <div class="adventureSheet">
         <section class="adventureIdentity">
@@ -4219,31 +4286,27 @@ function renderLandscapeStatusSheet(unit, bs) {
         </section>
 
         <section class="adventureVitals adventureRuled">
-          <h3>STATUS <span>能力値</span></h3>
+          <h3>VITAL <span>基礎情報</span></h3>
           <div class="adventureGauge hp">
             <span>HP</span><i><em style="width:${pct(unit.hp, unit.maxHp)}%"></em></i><b>${unit.hp} / ${unit.maxHp}</b>
           </div>
           <div class="adventureGauge mp">
             <span>MP</span><i><em style="width:${pct(unit.mp, unit.maxMp)}%"></em></i><b>${unit.mp} / ${unit.maxMp}</b>
           </div>
-          <div class="adventureMetrics rawStats">
-            ${metric("STR", bs.raw.str)}${metric("CON", bs.raw.con)}
-            ${metric("DEX", bs.raw.dex)}${metric("POW", bs.raw.pow)}
-            ${metric("INT", bs.raw.int)}${metric("EDU", bs.raw.edu)}
-            ${metric("SIZ", bs.raw.siz)}${metric("APP", bs.raw.app)}
+          <div class="adventureMetrics coreStats">
+            ${metric("勇気", `${getEffectiveCourage(unit)}%`)}${metric("運", bs.raw.luck)}
+            ${metric("魅力", bs.raw.app)}${metric("体格", bs.raw.siz)}
           </div>
         </section>
 
         <section class="adventureBattle adventureRuled">
           <h3>BATTLE <span>戦闘能力</span></h3>
           <div class="adventureMetrics battleStats">
-            ${metric("力", bs.power)}${metric("魔力", bs.magic)}
-            ${metric("技量", bs.technique)}${metric("物防", bs.armor)}
-            ${metric("魔防", bs.ward)}${metric("反撃", `${getCounterRate(unit)}%`)}
-            ${metric("移動", `${unit.move}マス`)}${metric("射程", `${unit.attackRange}マス`)}
-            ${metric("基礎命中", bs.baseAccuracy)}${metric("基礎回避", bs.baseEvasion)}
-            ${metric("最終回避", bs.evasion)}${metric("回避修練", evadeSkill)}
-            ${metric("必殺値", criticalValue(getEffectiveCourage(unit), unit.level))}${metric("必殺回避", criticalAvoidance(bs.raw.app))}
+            ${metric("物攻", bs.power)}${metric("魔攻", bs.magic)}
+            ${metric("物防", bs.armor)}${metric("魔防", bs.ward)}
+            ${metric("命中基礎", bs.baseAccuracy)}${metric("回避基礎", bs.baseEvasion)}
+            ${metric("回避最終", bs.evasion)}${metric("反撃率", `${getCounterRate(unit)}%`)}
+            ${metric("必殺", criticalValue(getEffectiveCourage(unit), unit.level))}${metric("必殺耐性", criticalAvoidance(bs.raw.app))}
           </div>
           <div class="adventureBattleNote">
             <span>方針</span><b>${counterNames[unit.counterMode] || "自動選択"}</b>
@@ -4252,15 +4315,27 @@ function renderLandscapeStatusSheet(unit, bs) {
         </section>
 
         <section class="adventureLoadout adventureRuled">
-          <h3>LOADOUT <span>装備・所持品</span></h3>
+          <h3>LOADOUT <span>装備・行動</span></h3>
           <div class="adventureLoadoutBlock"><span>武器</span><b>${equipment || "未装備"}</b></div>
+          <div class="adventureLoadoutBlock"><span>行動</span><b>${getActionRangeSummary(unit)}</b></div>
           <div class="adventureLoadoutBlock"><span>所持品</span><b>${itemNames.join(" / ") || "なし"}</b></div>
           <div class="adventureLoadoutBlock"><span>発作</span><b>${unit.seizureType || "なし"}</b></div>
         </section>
 
         <section class="adventureSkills adventureRuled">
-          <h3>SKILLS <span>特技・技能</span></h3>
+          <h3>TRAINING <span>修練度</span></h3>
           <div class="adventureList">${listRows(Object.entries(unit.skills || {}), "skill")}</div>
+        </section>
+
+        <section class="adventureBuild adventureRuled">
+          <div class="adventureBuildPane">
+            <h3>ARTS <span>戦技</span></h3>
+            <div class="adventureList">${abilityRows(getAvailableCombatArts(unit), "なし")}</div>
+          </div>
+          <div class="adventureBuildPane">
+            <h3>PASSIVE <span>スキル</span></h3>
+            <div class="adventureList">${abilityRows(getAvailablePassiveSkills(unit), "なし")}</div>
+          </div>
         </section>
 
         <div class="adventureSigil" aria-hidden="true"><span></span></div>
@@ -4324,31 +4399,28 @@ function renderStatusTab(tabName) {
           ${hpBar("mp", "MP", unit.mp, unit.maxMp)}
         </div>
         <div class="statusSection">
-          <h3>能力値</h3>
+          <h3>基礎情報</h3>
           <div class="statusGrid">
-            ${sr("STR", raw.str)}${sr("CON", raw.con)}
-            ${sr("DEX", raw.dex)}${sr("POW", raw.pow)}
-            ${sr("INT", raw.int)}${sr("EDU", raw.edu)}
-            ${sr("SIZ", raw.siz)}${sr("APP", raw.app)}
+            ${sr("勇気", `${getEffectiveCourage(unit)}%`)}
+            ${sr("運", raw.luck)}
+            ${sr("魅力", raw.app)}
+            ${sr("体格", raw.siz)}
           </div>
         </div>
         <div class="statusSection">
           <h3>戦闘基本</h3>
           <div class="statusGrid">
-            ${sr("移動", unit.move + " マス")}
-            ${sr("射程", unit.attackRange + " マス")}
-            ${sr("力", bs.power)}
-            ${sr("魔力", bs.magic)}
-            ${sr("技量", bs.technique)}
+            ${sr("物攻", bs.power)}
+            ${sr("魔攻", bs.magic)}
             ${sr("物防", bs.armor)}
             ${sr("魔防", bs.ward)}
+            ${sr("命中基礎", bs.baseAccuracy)}
+            ${sr("回避基礎", bs.baseEvasion)}
+            ${sr("回避最終", bs.evasion)}
             ${sr("反撃率", `${getCounterRate(unit)}%`)}
-            ${sr("基礎命中", bs.baseAccuracy)}
-            ${sr("基礎回避", bs.baseEvasion)}
-            ${sr("最終回避", bs.evasion)}
-            ${sr("回避修練", getEvadeSkillVal(unit))}
-            ${sr("必殺値", criticalValue(getEffectiveCourage(unit), unit.level))}
-            ${sr("必殺回避", criticalAvoidance(raw.app))}
+            ${sr("必殺", criticalValue(getEffectiveCourage(unit), unit.level))}
+            ${sr("必殺耐性", criticalAvoidance(raw.app))}
+            ${sr("戦技", getCombatArtSummary(unit))}
           </div>
         </div>`;
         return;
@@ -4367,7 +4439,7 @@ function renderStatusTab(tabName) {
         const empty = '<div class="statRow"><span class="statVal">―</span></div>';
         statusModalBody.innerHTML = `
         <div class="statusSection">
-          <h3>特技</h3>
+          <h3>修練度</h3>
           <div class="statusGrid">${skillLines || empty}</div>
         </div>
         <div class="statusSection">
