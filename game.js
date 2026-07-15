@@ -143,6 +143,7 @@ let actionState         = null; // null | "moving" | "attacking" | "throwing" | 
 let selectedSpell       = null;
 let selectedAttackSkill = null;
 let selectedCombatArtId = null;
+let pendingMoveUndo     = null;
 let turnPhase       = "ally"; // "ally" | "enemy"
 let turnCount       = 1;
 let battleOver      = false;
@@ -905,10 +906,12 @@ function highlightMoveRange(unit) {
 }
 
 function moveUnit(unit, row, col) {
+    const origin = { id: unit.id, x: unit.x, y: unit.y };
     addLog(`・${unit.name} (${unit.x},${unit.y})→(${col},${row}) に移動`);
     unit.x = col;
     unit.y = row;
     unit.moved = true;
+    pendingMoveUndo = { ...origin, pickedItem: null };
     clearHighlights();
     actionState = null;
     renderUnits();
@@ -920,6 +923,7 @@ function moveUnit(unit, row, col) {
         const picked = currentMapItems.splice(pickedIdx, 1)[0];
         if (!unit.items) unit.items = [];
         unit.items.push(picked.item);
+        pendingMoveUndo.pickedItem = { x: col, y: row, item: picked.item };
         renderMapItems();
         showMessage("SYSTEM", `${unit.name}は ${picked.item.name} を拾った！`);
         addLog(`・${unit.name}は ${picked.item.name} を拾った`);
@@ -1631,11 +1635,12 @@ function renderLandscapeHeader() {
 
 function getLandscapeCommands(unit) {
     const commands = [];
+    if (canUndoMove(unit)) commands.push({ label: "戻る", active: true });
     if (!unit.acted) commands.push({ label: "攻撃", active: actionState === "attacking" || actionState === "throwing" });
     if (!unit.acted && Object.keys(unit.spells || {}).length > 0) commands.push({ label: "魔法", active: actionState === "magic" });
     if (!unit.acted && Object.keys(unit.skills || {}).some(s => BATTLE_UTILITY_SKILLS.has(s))) commands.push({ label: "特技" });
     if ((unit.items?.length ?? 0) > 0) commands.push({ label: "持ち物" });
-    commands.push({ label: "待機" });
+    if (!unit.acted) commands.push({ label: "待機" });
     commands.push({ label: "詳細" });
     return commands;
 }
@@ -1690,7 +1695,12 @@ function renderLandscapeCommandRail(unit = selectedUnit) {
     }
 
     // モーダル型：行動できるユニットを選んでいない間は針ごと隠す
-    if (!unit || battleOver || turnPhase !== "ally" || unit.side !== "ally") {
+    if (!unit
+        || unit !== selectedUnit
+        || battleOver
+        || turnPhase !== "ally"
+        || unit.side !== "ally"
+        || (unit.moved && unit.acted)) {
         landscapeCommandList.innerHTML = "";
         setLandscapeRailVisible(false);
         return;
@@ -2642,6 +2652,43 @@ function appendSelfCombatArtCommands(unit) {
     }
 }
 
+function canUndoMove(unit) {
+    return !!unit
+        && !!pendingMoveUndo
+        && pendingMoveUndo.id === unit.id
+        && unit.moved
+        && !unit.acted
+        && turnPhase === "ally"
+        && unit.side === "ally";
+}
+
+function undoLastMove(unit) {
+    if (!canUndoMove(unit)) return false;
+    const undo = pendingMoveUndo;
+    if (undo.pickedItem && Array.isArray(unit.items)) {
+        const itemIndex = unit.items.lastIndexOf(undo.pickedItem.item);
+        if (itemIndex !== -1) unit.items.splice(itemIndex, 1);
+        currentMapItems.push({
+            x: undo.pickedItem.x,
+            y: undo.pickedItem.y,
+            item: undo.pickedItem.item,
+        });
+        renderMapItems();
+    }
+    addLog(`・${unit.name}は移動を取り消した`);
+    unit.x = undo.x;
+    unit.y = undo.y;
+    unit.moved = false;
+    pendingMoveUndo = null;
+    actionState = "moving";
+    clearHighlights();
+    renderUnits();
+    highlightMoveRange(unit);
+    setLandscapeHint(`${unit.name}の移動を取り消しました。移動先を選び直せます。`);
+    syncLandscapeBattleUi(unit);
+    return true;
+}
+
 function executeSkill(unit, skillId, successVal, displayName) {
     const successPct = successVal * 10;                       // 成功値×10 = 成功率%
     const roll       = Math.floor(Math.random() * 100) + 1;  // 1d100
@@ -2674,6 +2721,7 @@ function executeSkill(unit, skillId, successVal, displayName) {
 // ターン管理
 // =============================================
 function endUnitTurn(unit) {
+    if (pendingMoveUndo?.id === unit?.id) pendingMoveUndo = null;
     unit.moved = true;
     unit.acted = true;
 
@@ -2711,6 +2759,7 @@ function startAllyPhase() {
     turnPhase  = "ally";
     battleOver = false;
     turnCount++;
+    pendingMoveUndo = null;
     addLog(`\n── ターン ${turnCount} 開始 ──`);
     addLog("　味方フェーズ");
     showMessage("SYSTEM", `ターン ${turnCount}：味方フェーズ`);
@@ -4302,6 +4351,11 @@ function renderIdlePanel() {
 }
 
 function handleBattleCommand(unit, label) {
+    const labelText = String(label || "");
+    if (canUndoMove(unit) && (labelText === "戻る" || labelText.includes("戻"))) {
+        undoLastMove(unit);
+        return;
+    }
     switch (label) {
         case "移動":
             if (unit.moved) { showMessage("SYSTEM", "すでに移動済みです。"); return; }
