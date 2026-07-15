@@ -70,6 +70,8 @@ const CHARACTERS_DATA = [
 
         seizureType: "破壊衝動",
         secretArt: "黒炎",
+        learnedPassives: ["sakki"],
+        equippedPassives: ["sakki"],
         counterMode: "auto",      // 期待値で物理/魔法を自動選択
         statusEffects: [],
     },

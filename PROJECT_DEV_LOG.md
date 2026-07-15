@@ -178,3 +178,29 @@ Codex / Claude Code が途中から参加しても、前回までの成果、残
 - `絶影` の使用回数をUI上で `残り2/3` のように見せる表示は未実装
 - `殺気`、`忠誠心` は未実装。次は1つずつフックに載せる
 - 旧UI/横画面UIで特技表示ロジックがまだ重複しているため、後で共通化する
+## 2026-07-15 追加3
+
+### 今日の成果
+
+- Excelの `戦技案.xlsx` を読み取り、`殺気` と `忠誠心` の原案を確認した
+- `殺気` を最小実装した
+  - `passiveSkills.js` に `sakki` を追加
+  - リングホルムの `learnedPassives / equippedPassives` に `sakki` を追加
+  - 本体の `IMPLEMENTED_PASSIVE_SKILL_IDS` に `sakki` を追加
+  - 能動攻撃時のみ、命中+10・対象回避-10・必殺+10を反映
+  - 反撃時には発動しないよう `isCounter` を反撃命中計算へ渡した
+
+### 検証
+
+- `node --check game.js`
+- `node --check characters.js`
+- `node --check passiveSkills.js`
+- `node tests/battleHooks.test.js`
+- `node tests/statConversion.test.js`
+- `node tests/partyState.test.js`
+
+### 残課題
+
+- `殺気` の「勇気差で相手の反撃不可」は未実装
+- `忠誠心` は未実装。2マス以内に味方がいる場合の派生戦闘値+3として実装予定
+- パッシブの命中補正は `getBattleHitResult` に寄せたが、今後 `BattleActionContext` 側へさらに集約する余地がある

@@ -92,7 +92,9 @@ const IMPLEMENTED_COMBAT_ART_IDS = new Set([
     "zetsuei",
 ]);
 
-const IMPLEMENTED_PASSIVE_SKILL_IDS = new Set([]);
+const IMPLEMENTED_PASSIVE_SKILL_IDS = new Set([
+    "sakki",
+]);
 
 // 回避スキル名
 const EVADE_SKILL_NAME = "回避";
@@ -1002,6 +1004,28 @@ function getEvasionStatusModifier(unit) {
         .reduce((sum, effect) => sum + Number(effect.value || 0), 0);
 }
 
+function unitHasPassiveSkill(unit, skillId) {
+    return getAvailablePassiveSkills(unit).some(skill => skill.id === skillId);
+}
+
+function canUseVoluntaryPassive(options = {}) {
+    return !options.isCounter;
+}
+
+function getPassiveAccuracyModifier(attacker, defender, options = {}) {
+    if (unitHasPassiveSkill(attacker, "sakki") && canUseVoluntaryPassive(options)) {
+        return Number(getPassiveSkillData("sakki")?.effect?.hitBonus || 10);
+    }
+    return 0;
+}
+
+function getPassiveEvasionModifier(attacker, defender, options = {}) {
+    if (unitHasPassiveSkill(attacker, "sakki") && canUseVoluntaryPassive(options)) {
+        return -Number(getPassiveSkillData("sakki")?.effect?.targetEvasionPenalty || 10);
+    }
+    return 0;
+}
+
 function getBattleHitResult(attacker, defender, attackSkill, targetStunned = false, options = {}) {
     if (targetStunned || BATTLE_HIT_MODE === "guaranteed") {
         return { rate: 100, roll: null, isHit: true, note: targetStunned ? "スタン中：自動命中" : "v2命中確定" };
@@ -1009,17 +1033,21 @@ function getBattleHitResult(attacker, defender, attackSkill, targetStunned = fal
     const attackerStats = calcBattleStats(attacker);
     const defenderStats = calcBattleStats(defender);
     const evadeSkill = getEvadeSkillVal(defender);
-    const accuracy = accuracyScore(attackerStats.raw.dex, attackSkill, getAccuracyStatusModifier(attacker));
+    const accuracyModifier = getAccuracyStatusModifier(attacker)
+        + getPassiveAccuracyModifier(attacker, defender, options);
+    const evasionModifier = getEvasionStatusModifier(defender)
+        + getPassiveEvasionModifier(attacker, defender, options);
+    const accuracy = accuracyScore(attackerStats.raw.dex, attackSkill, accuracyModifier);
     const evasion = evasionScore(
         defenderStats.raw.str,
         defenderStats.raw.dex,
         defenderStats.raw.siz,
         evadeSkill,
-        getEvasionStatusModifier(defender)
+        evasionModifier
     );
     const rate = battleHitRate(attackerStats, defenderStats, attackSkill, evadeSkill, {
-        accuracy: getAccuracyStatusModifier(attacker),
-        evasion: getEvasionStatusModifier(defender),
+        accuracy: accuracyModifier,
+        evasion: evasionModifier,
     });
     const shouldRoll = options.roll !== false;
     const roll = shouldRoll ? Math.floor(Math.random() * 100) + 1 : null;
@@ -1376,6 +1404,17 @@ registerBattleActionHook("beforeAttack", {
         });
         context.usageCounts.zetsuei = (context.usageCounts.zetsuei || 0) + 1;
         context.notes.push(`zetsuei:evasion+${bonus}`);
+        return true;
+    },
+});
+
+registerBattleActionHook("beforeAttack", {
+    id: "passive:sakki",
+    oncePerAction: true,
+    run(context) {
+        if (!unitHasPassiveSkill(context.attacker, "sakki") || !canUseVoluntaryPassive(context)) return false;
+        context.modifiers.criticalBonus += Number(getPassiveSkillData("sakki")?.effect?.critBonus || 10);
+        context.notes.push("sakki:crit+10");
         return true;
     },
 });
@@ -1960,7 +1999,7 @@ function resolveCounterAttack(originalAttacker, defender) {
 function executePhysicalCounter(counterAttacker, counterTarget) {
     const { val: atkVal, name: atkName } = getAttackSkillVal(counterAttacker);
     const evadeVal = getEvadeSkillVal(counterTarget);
-    const hit = getBattleHitResult(counterAttacker, counterTarget, atkVal);
+    const hit = getBattleHitResult(counterAttacker, counterTarget, atkVal, false, { isCounter: true });
     addLog(`  物理反撃！${counterAttacker.name}【${atkName}${atkVal} vs 回避${evadeVal}】 ${hit.note} → ${hit.isHit ? "命中" : "失敗"}`);
     const isHit = hit.isHit;
     if (!isHit) return;
@@ -1990,7 +2029,7 @@ function executePhysicalCounter(counterAttacker, counterTarget) {
 function executeMagicCounter(caster, target, spell, spellVal) {
     const mpCost  = rollDice(spell.mpCost || "1d6");
     caster.mp = Math.max(0, caster.mp - mpCost);
-    const hit = getMagicHitResult(caster, target, spell, spellVal);
+    const hit = getMagicHitResult(caster, target, spell, spellVal, { isCounter: true });
     addLog(`  魔法反撃【${spell.name}】${caster.name}→${target.name} （${hit.note}） MP-${mpCost} → ${hit.isHit ? "成功" : "失敗"}`);
     if (!hit.isHit) return;
 
@@ -2696,7 +2735,7 @@ function calculateBattlePrediction(attacker, target, atkSkillName, isMagic, spel
     let ctrHitRate = 0, ctrEffectiveRate = 0, ctrExpDmg = 0, ctrCritRate = 0, ctrCritDmg = 0;
     if (counterAvailable) {
         const ctrAtkStat = getAttackSkillVal(target).val;
-        const ctrHit = getBattleHitResult(target, attacker, ctrAtkStat, false, { roll: false });
+        const ctrHit = getBattleHitResult(target, attacker, ctrAtkStat, false, { roll: false, isCounter: true });
         ctrHitRate = ctrHit.rate;
         ctrEffectiveRate = Math.round(counterRate * ctrHitRate / 100);
         const ctrResult = createPhysicalActionContext(target, attacker, {
@@ -3296,7 +3335,7 @@ function showForecastLayer(attacker, targets, skillName, isMagic, spell) {
             const ctrAtkStat = getAttackSkillVal(target).val;
             const ctrEvade   = getEvadeSkillVal(attacker);
             const counterPossible = canCounter(target);
-            const ctrHit = counterPossible ? getBattleHitResult(target, attacker, ctrAtkStat, false, { roll: false }) : null;
+            const ctrHit = counterPossible ? getBattleHitResult(target, attacker, ctrAtkStat, false, { roll: false, isCounter: true }) : null;
             const ctrHitRate = counterPossible ? ctrHit.rate : 0;
             const ctrChance  = Math.round(getCounterRate(target) * ctrHitRate / 100);
             const ctrResult = counterPossible
