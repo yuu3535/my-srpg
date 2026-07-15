@@ -60,6 +60,11 @@ assert.deepEqual(loadedBuild.members.ringholm.learnedPassives, ["zanshin"], "lea
 assert.deepEqual(loadedBuild.members.ringholm.equippedPassives, ["zanshin"], "equipped passives are restored");
 assert.equal(loadedBuild.members.ringholm.buildChoices.evasion, "zetsuei", "build choices are restored");
 
+const buildResources = getPartyBattleResources(loadedBuild, ringholm, ringholmStats, true);
+assert.deepEqual(buildResources.equippedArts, ["ryoudan"], "battle resources carry equipped arts");
+assert.deepEqual(buildResources.equippedPassives, ["zanshin"], "battle resources carry equipped passives");
+assert.equal(buildResources.buildChoices.evasion, "zetsuei", "battle resources carry build choices");
+
 const buildSnapshot = clonePartyState(loadedBuild);
 buildSnapshot.members.ringholm.equippedPassives.push("copy_test");
 buildSnapshot.members.ringholm.buildChoices.evasion = "copy_changed";

@@ -702,7 +702,7 @@ function showSkillRadial(unit) {
     ];
     items.splice(items.length - 1, 0, ...selfArts.map(art => ({
         label: art.name,
-        html: `${art.name}<span class="radialBtnSub">ART</span>`,
+        html: `${art.name}<span class="radialBtnSub">${getCombatArtUseText(unit, art)}</span>`,
         combatArtId: art.id,
         isBack: false,
     })));
@@ -1166,6 +1166,13 @@ function getAvailableCombatArts(unit, base = "attack") {
         .filter(id => isCombatArtImplemented(id))
         .map(id => getCombatArtData(id))
         .filter(art => art && art.base === base);
+}
+
+function getCombatArtUseText(unit, art) {
+    const maxUses = Number(art?.cost?.uses || 0);
+    if (maxUses <= 0) return "ART";
+    const used = Number(unit?.combatArtUses?.[art.id] || 0);
+    return `${Math.max(0, maxUses - used)}/${maxUses}`;
 }
 
 function previewBarrierDamage(target, rawDmg, breakBarrier = false) {
@@ -1694,7 +1701,7 @@ function renderLandscapeSubCommandRail(unit, kind) {
             hideRadialMenu();
             executeSkill(unit, name, val, name);
         }));
-        selfArts.forEach(art => addButton(art.name, "ART", () => {
+        selfArts.forEach(art => addButton(art.name, getCombatArtUseText(unit, art), () => {
             executeSelfCombatArt(unit, art.id);
         }));
         addLandscapeBackButton(unit);
@@ -2525,7 +2532,7 @@ function appendSelfCombatArtCommands(unit) {
     for (const art of getAvailableCombatArts(unit, "self")) {
         const btn = document.createElement("button");
         btn.className = "commandItem";
-        btn.textContent = art.name;
+        btn.textContent = `${art.name}（${getCombatArtUseText(unit, art)}）`;
         btn.addEventListener("click", () => executeSelfCombatArt(unit, art.id));
         commandList.appendChild(btn);
     }
