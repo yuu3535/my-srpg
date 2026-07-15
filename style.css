@@ -3942,6 +3942,32 @@ html, body {
     100% { opacity: 0; transform: translate3d(12px, -50%, 0); }
 }
 
+#criticalCutIn.debugPreview::before {
+    opacity: 0.72;
+}
+
+#criticalCutIn.debugPreview .criticalCutInBand {
+    animation: none !important;
+    opacity: 1;
+    transform: translate3d(0, -50%, 0);
+}
+
+#criticalCutIn.debugPreview .criticalCutInPortrait {
+    animation: none !important;
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1.04);
+}
+
+#criticalCutIn.debugPreview.enemy .criticalCutInPortrait {
+    transform: translate3d(0, 0, 0) scaleX(-1.04) scaleY(1.04);
+}
+
+#criticalCutIn.debugPreview .criticalCutInCopy {
+    animation: none !important;
+    opacity: 1;
+    transform: translate3d(0, -50%, 0);
+}
+
 @media (prefers-reduced-motion: reduce) {
     #criticalCutIn.active .criticalCutInBand,
     #criticalCutIn.active .criticalCutInPortrait,

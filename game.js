@@ -3059,7 +3059,8 @@ function loadPortraitAdj(units) {
         const saved = JSON.parse(localStorage.getItem("portraitAdj") || "{}");
         const KEYS = ["portraitBgSize","portraitBgPos",
                       "portraitDmgBgSize","portraitDmgBgPos",
-                      "statusBgSize","statusBgPos"];
+                      "statusBgSize","statusBgPos",
+                      "criticalCutInBgSize","criticalCutInBgPos"];
         units.forEach(u => {
             if (saved[u.id]) {
                 KEYS.forEach(k => { if (saved[u.id][k] != null) u[k] = saved[u.id][k]; });
@@ -3098,11 +3099,14 @@ function showUnitPortraitAdjuster(unit) {
         { label:"ステータス", sk:"statusBgSize",        pk:"statusBgPos",
           imgSrc: unit.portraitImage || "",
           fallbackSK:"portraitBgSize", fallbackPK:"portraitBgPos" },
+        { label:"必殺", sk:"criticalCutInBgSize", pk:"criticalCutInBgPos",
+          imgSrc: getPortraitSrc(unit) || unit.portraitImage || unit.tokenImage || "",
+          defaultSize:"176%", defaultPos:"center -52px" },
     ];
 
     const state = CTX.map(c => {
-        const rawSize = unit[c.sk] || (c.fallbackSK && unit[c.fallbackSK]) || "280%";
-        const rawPos  = unit[c.pk] || (c.fallbackPK && unit[c.fallbackPK]) || "center top";
+        const rawSize = unit[c.sk] || (c.fallbackSK && unit[c.fallbackSK]) || c.defaultSize || "280%";
+        const rawPos  = unit[c.pk] || (c.fallbackPK && unit[c.fallbackPK]) || c.defaultPos || "center top";
         const pos = parsePos(rawPos);
         return { size: parseFloat(rawSize) || 280, posX: pos.x, posY: pos.y };
     });
@@ -3158,8 +3162,43 @@ function showUnitPortraitAdjuster(unit) {
         return `${CTX[2].sk}:"${s.size}%", ${CTX[2].pk}:"${xStr} ${yStr}"`;
     }
 
+    function applyToCriticalCutIn() {
+        const s = state[3];
+        const xStr = s.posX === 50 ? "center" : `${s.posX}%`;
+        const yStr = s.posY === 0  ? "top"    : `${s.posY}px`;
+        document.getElementById("criticalCutIn")?.remove();
+        clearTimeout(criticalCutInTimer);
+        clearTimeout(criticalCutInExitTimer);
+
+        const side = unit.side === "enemy" ? "enemy" : "ally";
+        const layer = document.createElement("div");
+        layer.id = "criticalCutIn";
+        layer.className = `criticalCutIn ${side} active debugPreview`;
+        layer.setAttribute("aria-hidden", "true");
+        layer.innerHTML = `
+            <div class="criticalCutInBand">
+                <div class="criticalCutInPortrait" aria-hidden="true"></div>
+                <div class="criticalCutInCopy">
+                    <small>CRITICAL PREVIEW</small>
+                    <strong>必殺</strong>
+                    <span>${unit.name}</span>
+                </div>
+                <i class="criticalCutInEdge" aria-hidden="true"></i>
+            </div>`;
+
+        const portraitEl = layer.querySelector(".criticalCutInPortrait");
+        if (portraitEl && CTX[3].imgSrc) {
+            portraitEl.style.backgroundImage = `url("${CTX[3].imgSrc}")`;
+            portraitEl.style.backgroundSize = `${s.size}%`;
+            portraitEl.style.backgroundPosition = `${xStr} ${yStr}`;
+        }
+        gameScreen.appendChild(layer);
+        return `${CTX[3].sk}:"${s.size}%", ${CTX[3].pk}:"${xStr} ${yStr}"`;
+    }
+
     function closeAdj() {
         overlay.remove();
+        document.querySelector("#criticalCutIn.debugPreview")?.remove();
         // vsMiddle の visibility を戻す
         const mid = document.getElementById("vsMiddle");
         if (mid) mid.style.visibility = "";
@@ -3261,7 +3300,10 @@ function showUnitPortraitAdjuster(unit) {
         slidersWrap.innerHTML = "";
         const s = state[idx];
         const applyFn = () => {
-            output.textContent = idx < 2 ? applyToVS(idx) : applyToStatus();
+            if (idx !== 3) document.querySelector("#criticalCutIn.debugPreview")?.remove();
+            if (idx < 2) output.textContent = applyToVS(idx);
+            else if (idx === 2) output.textContent = applyToStatus();
+            else output.textContent = applyToCriticalCutIn();
         };
         slidersWrap.appendChild(_adjSlider("size",  80,  600, 5,  s.size, v => { s.size = v; applyFn(); }));
         slidersWrap.appendChild(_adjSlider("x %",  -20,  120, 1,  s.posX, v => { s.posX = v; applyFn(); }));
@@ -3638,7 +3680,10 @@ function showCriticalCutIn(unit) {
         </div>`;
 
     if (portrait) {
-        layer.querySelector(".criticalCutInPortrait").style.backgroundImage = `url("${portrait}")`;
+        const portraitEl = layer.querySelector(".criticalCutInPortrait");
+        portraitEl.style.backgroundImage = `url("${portrait}")`;
+        portraitEl.style.backgroundSize = unit.criticalCutInBgSize || "176%";
+        portraitEl.style.backgroundPosition = unit.criticalCutInBgPos || "center -52px";
     }
 
     gameScreen.appendChild(layer);
