@@ -3760,6 +3760,7 @@ html, body {
     overflow: hidden;
     pointer-events: none;
     isolation: isolate;
+    --critical-band-height: clamp(118px, 42%, 178px);
 }
 
 #criticalCutIn::before {
@@ -3779,7 +3780,7 @@ html, body {
     left: -4%;
     right: -4%;
     top: 50%;
-    height: clamp(118px, 42%, 178px);
+    height: var(--critical-band-height);
     overflow: hidden;
     color: #f3dfad;
     background:
@@ -3865,9 +3866,11 @@ html, body {
     filter: blur(1px);
 }
 
-.criticalCutInLightning.top { top: -2px; }
+.criticalCutInLightning.top {
+    top: calc(50% - var(--critical-band-height) / 2 - 14px);
+}
 .criticalCutInLightning.bottom {
-    bottom: -3px;
+    top: calc(50% + var(--critical-band-height) / 2 - 12px);
     transform: scaleY(-1);
 }
 
