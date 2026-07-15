@@ -1399,6 +1399,11 @@ function finishDamageHooks(context, targetResult, hpBefore) {
     runBattleActionHooks("afterAttack", context, targetResult);
 }
 
+function formatActionContextNotes(context) {
+    const notes = Array.isArray(context?.notes) ? context.notes.filter(Boolean) : [];
+    return notes.length ? ` [${notes.join(", ")}]` : "";
+}
+
 registerBattleActionHook("beforeAttack", {
     id: "combatArt:ryoudan",
     oncePerAction: true,
@@ -1446,6 +1451,19 @@ registerBattleActionHook("beforeAttack", {
     },
 });
 
+registerBattleActionHook("beforeAttack", {
+    id: "passive:chuuseishin",
+    oncePerAction: true,
+    run(context) {
+        const attackerBonus = getDerivedPassiveStatBonus(context.attacker);
+        const defenderBonus = getDerivedPassiveStatBonus(context.target);
+        if (!attackerBonus && !defenderBonus) return false;
+        if (attackerBonus) context.notes.push(`chuuseishin:attacker+${attackerBonus}`);
+        if (defenderBonus) context.notes.push(`chuuseishin:defender+${defenderBonus}`);
+        return true;
+    },
+});
+
 function executeSelfCombatArt(unit, artId) {
     const art = getCombatArtData(artId);
     if (!unit || !art || art.base !== "self" || !isCombatArtImplemented(art.id)) return false;
@@ -1472,7 +1490,7 @@ function executeSelfCombatArt(unit, artId) {
         unit.combatArtUses = unit.combatArtUses || {};
         unit.combatArtUses[art.id] = used + 1;
     }
-    addLog(`・${unit.name} uses ${art.name}`);
+    addLog(`・${unit.name} uses ${art.name}${formatActionContextNotes(context)}`);
     showMessage("SYSTEM", `${unit.name}: ${art.name}`);
     renderUnits();
     endUnitTurn(unit);
@@ -2047,7 +2065,7 @@ function executePhysicalCounter(counterAttacker, counterTarget) {
     showDamagePopup(counterTarget.id, barrier.damage, critical.isCritical ? "critical" : "counter");
     flashUnitHit(counterTarget.id);
     const criticalNote = critical.isCritical ? ` 必殺！（${critical.roll}/${critical.rate}%）` : "";
-    addLog(`    ${barrier.damage}ダメージ（半分）${criticalNote}${result.artNote}${barrier.note}（力${result.power}+武器${result.weaponPower}-物防${result.armor}）→ ${counterTarget.name} HP ${counterTarget.hp}/${counterTarget.maxHp}`);
+    addLog(`    ${barrier.damage}ダメージ（半分）${criticalNote}${result.artNote}${barrier.note}${formatActionContextNotes(targetResult.context)}（力${result.power}+武器${result.weaponPower}-物防${result.armor}）→ ${counterTarget.name} HP ${counterTarget.hp}/${counterTarget.maxHp}`);
     renderUnits();
     if (counterTarget.hp <= 0) addLog(`    ${counterTarget.name}は倒れた！`);
     finishDamageHooks(targetResult.context, targetResult, hpBefore);
@@ -2075,7 +2093,7 @@ function executeMagicCounter(caster, target, spell, spellVal) {
     showDamagePopup(target.id, barrier.damage, critical.isCritical ? "critical" : "counter");
     flashUnitHit(target.id);
     const criticalNote = critical.isCritical ? ` 必殺！（${critical.roll}/${critical.rate}%）` : "";
-    addLog(`    ${barrier.damage}ダメージ（半分）${criticalNote}${result.masteryNote}${barrier.note}（魔力${result.magic}+呪文${result.spellPower}-魔防${result.ward}）→ ${target.name} HP ${target.hp}/${target.maxHp}`);
+    addLog(`    ${barrier.damage}ダメージ（半分）${criticalNote}${result.masteryNote}${barrier.note}${formatActionContextNotes(targetResult.context)}（魔力${result.magic}+呪文${result.spellPower}-魔防${result.ward}）→ ${target.name} HP ${target.hp}/${target.maxHp}`);
     renderUnits();
     if (target.hp <= 0) addLog(`    ${target.name}は倒れた！`);
     finishDamageHooks(targetResult.context, targetResult, hpBefore);
@@ -2106,7 +2124,7 @@ function resolvePhysicalHit(attacker, target, atkSkillName, options = {}) {
         target.hp   = Math.max(0, target.hp - rawDmg);
         showDamagePopup(target.id, rawDmg, "damage");
         const criticalNote = critical.isCritical ? ` 必殺！（${critical.roll}/${critical.rate}%）` : "";
-        addLog(`  カウンター発動！${rawDmg}ダメージ${criticalNote}${result.artNote} → ${target.name} HP ${target.hp}/${target.maxHp} / ${attacker.name} HP ${attacker.hp}/${attacker.maxHp}`);
+        addLog(`  カウンター発動！${rawDmg}ダメージ${criticalNote}${result.artNote}${formatActionContextNotes(targetResult.context)} → ${target.name} HP ${target.hp}/${target.maxHp} / ${attacker.name} HP ${attacker.hp}/${attacker.maxHp}`);
         showMessage("SYSTEM", `${target.name}のカウンター！お互いに ${rawDmg} ダメージ！`);
         renderUnits();
         if (target.hp   <= 0) addLog(`  ${target.name}は倒れた！`);
@@ -2135,7 +2153,7 @@ function resolvePhysicalHit(attacker, target, atkSkillName, options = {}) {
     showDamagePopup(target.id, actualDmg, critical.isCritical ? "critical" : "damage");
     flashUnitHit(target.id);
     const criticalNote = critical.isCritical ? ` 必殺！（${critical.roll}/${critical.rate}%）` : "";
-    addLog(`  命中！${actualDmg}ダメージ${criticalNote}${result.artNote}${barrier.note}（力${result.power}+武器${result.weaponPower}-物防${result.armor}）→ ${target.name} HP ${target.hp}/${target.maxHp}`);
+    addLog(`  命中！${actualDmg}ダメージ${criticalNote}${result.artNote}${barrier.note}${formatActionContextNotes(targetResult.context)}（力${result.power}+武器${result.weaponPower}-物防${result.armor}）→ ${target.name} HP ${target.hp}/${target.maxHp}`);
     showMessage("SYSTEM", critical.isCritical
         ? `${attacker.name}の必殺！${target.name}に ${actualDmg} ダメージ！`
         : `${attacker.name}の攻撃命中！${target.name}に ${actualDmg} ダメージ！`);
@@ -2359,7 +2377,7 @@ function executeMagic(caster, spell, target) {
             showDamagePopup(target.id, rawDmg, critical.isCritical ? "critical" : "damage");
             flashUnitHit(target.id);
             const criticalNote = critical.isCritical ? ` 必殺！（${critical.roll}/${critical.rate}%）` : "";
-            addLog(`  命中！${rawDmg}ダメージ${criticalNote}${result.masteryNote}${barrier.note}（魔力${result.magic}+呪文${result.spellPower}-魔防${result.ward}）→ ${target.name} HP ${target.hp}/${target.maxHp}`);
+            addLog(`  命中！${rawDmg}ダメージ${criticalNote}${result.masteryNote}${barrier.note}${formatActionContextNotes(targetResult.context)}（魔力${result.magic}+呪文${result.spellPower}-魔防${result.ward}）→ ${target.name} HP ${target.hp}/${target.maxHp}`);
             showMessage("SYSTEM", critical.isCritical
                 ? `${caster.name}の${spell.name}必殺！${target.name}に ${rawDmg} ダメージ！`
                 : `${caster.name}の${spell.name}命中！${target.name}に ${rawDmg} ダメージ！`);
@@ -2444,7 +2462,7 @@ function executeMagic(caster, spell, target) {
             target.hp = Math.max(0, target.hp - dmgToHp);
             if (dmgToHp > 0) { showDamagePopup(target.id, dmgToHp, critical.isCritical ? "critical" : "damage"); flashUnitHit(target.id); }
             const criticalNote = critical.isCritical ? ` 必殺！（${critical.roll}/${critical.rate}%）` : "";
-            addLog(`  破壊！${critical.damage}ダメージ${criticalNote}${result.masteryNote}${breakNote}（魔力${result.magic}+呪文${result.spellPower}-魔防${result.ward}） → ${target.name} HP ${target.hp}/${target.maxHp}`);
+            addLog(`  破壊！${critical.damage}ダメージ${criticalNote}${result.masteryNote}${breakNote}${formatActionContextNotes(targetResult.context)}（魔力${result.magic}+呪文${result.spellPower}-魔防${result.ward}） → ${target.name} HP ${target.hp}/${target.maxHp}`);
             showMessage("SYSTEM", critical.isCritical
                 ? `${caster.name}の${spell.name}必殺！結界を砕き${dmgToHp}ダメージ！`
                 : `${caster.name}の${spell.name}！結界を砕き${dmgToHp}ダメージ！`);
@@ -2506,7 +2524,7 @@ function executeMagic(caster, spell, target) {
                     t.hp = Math.max(0, t.hp - dmg);
                     showDamagePopup(t.id, dmg, critical.isCritical ? "critical" : "damage");
                     flashUnitHit(t.id);
-                    addLog(`  ${t.name}に ${dmg} ダメージ${critical.isCritical ? ` 必殺！（${critical.roll}/${critical.rate}%）` : ""}${result.masteryNote}`);
+                    addLog(`  ${t.name}に ${dmg} ダメージ${critical.isCritical ? ` 必殺！（${critical.roll}/${critical.rate}%）` : ""}${result.masteryNote}${formatActionContextNotes(targetResult.context)}`);
                     if (t.hp <= 0) addLog(`  ${t.name}は倒れた！`);
                     finishDamageHooks(targetResult.context, targetResult, hpBefore);
                 }

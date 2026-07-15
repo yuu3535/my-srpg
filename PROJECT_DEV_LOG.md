@@ -204,6 +204,27 @@ Codex / Claude Code が途中から参加しても、前回までの成果、残
 - `殺気` の「勇気差で相手の反撃不可」は未実装
 - `忠誠心` は未実装。2マス以内に味方がいる場合の派生戦闘値+3として実装予定
 - パッシブの命中補正は `getBattleHitResult` に寄せたが、今後 `BattleActionContext` 側へさらに集約する余地がある
+## 2026-07-15 追加5
+
+### 今日の成果
+
+- BattleActionContext の `notes` を戦闘ログへ表示するための `formatActionContextNotes()` を追加した
+- 通常攻撃、反撃、魔法、破壊、範囲魔法、自己戦技のログに発動メモを差し込んだ
+- 「両断」「絶影」「殺気」「忠誠心」の発動や補正が、実戦闘ログ上でも追跡しやすくなった
+- `忠誠心` は発動条件を満たした時に `chuuseishin:attacker+3` / `chuuseishin:defender+3` としてContextへメモを残すようにした
+
+### 検証
+
+- `node --check game.js`
+- `node tests/battleHooks.test.js`
+- `node tests/statConversion.test.js`
+- `node tests/partyState.test.js`
+
+### 残課題
+
+- ログ文言はまだ内部ID寄りなので、最終的には世界観に合わせた日本語表示へ整える
+- 戦闘予測パネルにも発動予定の戦技/パッシブ名を出すか検討する
+
 ## 2026-07-15 追加4
 
 ### 今日の成果
