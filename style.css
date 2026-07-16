@@ -180,38 +180,48 @@ html, body {
 #scenarioCharLayer {
     position: absolute;
     inset: 0;
-    display: flex;
-    align-items: stretch;       /* 子を全高に引き伸ばす */
-    justify-content: space-evenly;
+    display: block;
     overflow: hidden;
     pointer-events: none;
+    isolation: isolate;
+    z-index: 1;
 }
 
-/* 1キャラのラッパー */
+/* 立ち絵は区画分割せず、独立レイヤーとして互いに重ねる */
 .scenarioChar {
-    position: relative;
-    flex: 1;
-    max-width: 185px;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 46%;
+    max-width: none;
+    z-index: 1;
     pointer-events: auto; /* 5タップ調整パネル用にクリックを受け取る */
     /* 非話者：色はそのまま、少し暗く（影にいる感じ） */
     filter: brightness(0.72);
-    transition: filter 0.3s, flex 0.3s;
+    transform: translateY(4px) scale(0.985);
+    transition: filter 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* 話者：明るく鮮やか＋ゴールドの光 */
 .scenarioChar.active {
+    z-index: 4;
     filter: brightness(1.05) saturate(1.15) drop-shadow(0 2px 14px rgba(200,146,42,0.30));
+    transform: translateY(0) scale(1.025);
 }
 
-/* 3人表示時: 話者を少し広く、脇役を少し詰める */
-#scenarioCharLayer.count-3 .scenarioChar {
-    flex: 0.8;
-    max-width: 138px;
-}
-#scenarioCharLayer.count-3 .scenarioChar.active {
-    flex: 1.4;
-    max-width: 162px;
-}
+/* 人数ごとの立ち位置。描画領域は重なり、話者だけが前面へ出る。 */
+#scenarioCharLayer.count-1 .scenarioChar { left: 27%; }
+#scenarioCharLayer.count-2 .scenarioChar:nth-child(1) { left: 3%; }
+#scenarioCharLayer.count-2 .scenarioChar:nth-child(2) { right: 3%; }
+#scenarioCharLayer.count-3 .scenarioChar:nth-child(1) { left: -2%; }
+#scenarioCharLayer.count-3 .scenarioChar:nth-child(2) { left: 27%; }
+#scenarioCharLayer.count-3 .scenarioChar:nth-child(3) { right: -2%; }
+#scenarioCharLayer.count-4 .scenarioChar { width: 36%; }
+#scenarioCharLayer.count-4 .scenarioChar:nth-child(1) { left: -3%; }
+#scenarioCharLayer.count-4 .scenarioChar:nth-child(2) { left: 20%; }
+#scenarioCharLayer.count-4 .scenarioChar:nth-child(3) { left: 43%; }
+#scenarioCharLayer.count-4 .scenarioChar:nth-child(4) { right: -2%; }
 
 /* 立ち絵本体（背景画像で描画） */
 .scenarioCharPortrait {
@@ -276,6 +286,7 @@ html, body {
 /* ── テキストボックス（最前面・下部グラデ） ── */
 #dialogueBox {
     position: absolute;
+    z-index: 6;
     bottom: 0;
     left: 0;
     right: 0;
@@ -4746,25 +4757,6 @@ html, body {
 
     #gameScreen[data-mode="scenario"] #scenarioCharLayer {
         inset: 12px 12px 104px;
-        align-items: stretch;
-        justify-content: space-around;
-        gap: 8px;
-    }
-
-    #gameScreen[data-mode="scenario"] .scenarioChar,
-    #gameScreen[data-mode="scenario"] #scenarioCharLayer.count-3 .scenarioChar {
-        flex: 1 1 0;
-        max-width: 205px;
-        transform: translateY(4px);
-        transition: filter 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-                    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    #gameScreen[data-mode="scenario"] .scenarioChar.active,
-    #gameScreen[data-mode="scenario"] #scenarioCharLayer.count-3 .scenarioChar.active {
-        flex: 1.08 1 0;
-        max-width: 220px;
-        transform: translateY(0) scale(1.025);
     }
 
     #gameScreen[data-mode="scenario"] #dialogueBox {
