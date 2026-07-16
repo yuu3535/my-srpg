@@ -4889,9 +4889,14 @@ function exitScenarioLayout() {
 // シナリオ立ち絵5タップ検出用
 let _scenTapCount = 0, _scenTapTimer = null, _scenTapName = null;
 
+function getScenarioPortraitStorageKey(image, name) {
+    return image ? image.split(/[?#]/)[0] : name;
+}
+
 function updateScenarioCharLayer(speaker) {
     scenarioCharLayer.innerHTML = "";
     scenarioCharLayer.className = `count-${scenarioCharacters.length}`;
+    const motionOffset = `${-(performance.now() / 1000).toFixed(3)}s`;
     const speakerBadge = document.getElementById("scenarioSpeakerBadge");
     const speakerPortrait = document.getElementById("scenarioSpeakerPortrait");
     const speakerIndex = scenarioCharacters.findIndex(entry =>
@@ -4925,15 +4930,29 @@ function updateScenarioCharLayer(speaker) {
         portrait.className = "scenarioCharPortrait";
         if (image) portrait.style.backgroundImage = `url('${image}')`;
 
+        const portraitSway = document.createElement("div");
+        portraitSway.className = "scenarioCharMotionSway";
+        const portraitBreath = document.createElement("div");
+        portraitBreath.className = "scenarioCharMotionBreath";
+        wrapper.style.setProperty("--scenario-motion-offset", motionOffset);
+
         // 優先順: localStorage(画像パスキー) > localStorage(キャラ名キー・全表情共通) > entry.bgSize > CHARACTERS_DATA
         // ※ 旧バージョンはキャラ名キーで保存していたので後方互換として両方チェック
-        const adjKey  = image || name;
+        const adjKey  = getScenarioPortraitStorageKey(image, name);
+        const framingRevision = typeof entry === "object" ? entry.framingRevision : "";
+        const framingRevisionKey = `scenarioPortraitFramingRevision:${adjKey}`;
+        if (framingRevision && localStorage.getItem(framingRevisionKey) !== framingRevision) {
+            delete savedScenAdj[adjKey];
+            localStorage.setItem("scenarioPortraitAdj", JSON.stringify(savedScenAdj));
+            localStorage.setItem(framingRevisionKey, framingRevision);
+        }
+        const legacyNameAdj = framingRevision ? null : savedScenAdj[name];
         const sBgSize = savedScenAdj[adjKey]?.bgSize
-            || savedScenAdj[name]?.bgSize
+            || legacyNameAdj?.bgSize
             || (typeof entry === "object" && entry.bgSize)
             || charData?.scenarioBgSize;
         const sBgPos  = savedScenAdj[adjKey]?.bgPos
-            || savedScenAdj[name]?.bgPos
+            || legacyNameAdj?.bgPos
             || (typeof entry === "object" && entry.bgPos)
             || charData?.scenarioBgPos;
         if (sBgSize) {
@@ -4965,7 +4984,9 @@ function updateScenarioCharLayer(speaker) {
             _scenTapTimer = setTimeout(() => { _scenTapCount = 0; _scenTapName = null; }, 800);
         });
 
-        wrapper.appendChild(portrait);
+        portraitBreath.appendChild(portrait);
+        portraitSway.appendChild(portraitBreath);
+        wrapper.appendChild(portraitSway);
         scenarioCharLayer.appendChild(wrapper);
     });
 }
@@ -4975,9 +4996,9 @@ function updateScenarioCharLayer(speaker) {
 // =============================================
 function showScenarioPortraitAdjuster(name, image, portraitEl) {
     // キー：画像パスがあれば画像パス、なければキャラ名（表情ごとに独立保存）
-    const adjKey = image || name;
+    const adjKey = getScenarioPortraitStorageKey(image, name);
     // 表情名をタイトルに表示（例: "笑顔_transparent.png" → "笑顔"）
-    const exprMatch = image?.match(/\/([^/]+)_transparent\.png$/);
+    const exprMatch = image?.match(/\/([^/?#]+)_transparent\.png(?:[?#].*)?$/);
     const exprLabel = exprMatch ? ` (${exprMatch[1]})` : "";
 
     // 現在の値を読み込む（localStorage > CSSから取得）

@@ -231,7 +231,7 @@ const CHARACTERS_DATA = [
         moved: false, acted: false,
         char: "ア",
         tokenImage: "立ち絵AI生成/幼少期アルシェドット.png",
-        portraitImage: "立ち絵AI生成/幼少期アルシェ1.png",
+        portraitImage: "立ち絵透過済み/幼少期アルシェ1_transparent.png?v=20260717a",
         portraitBgSize: "300%",  portraitBgPos: "60% top",
         portraitDmgBgSize: "250%", portraitDmgBgPos: "46% 5px",
         statusBgSize: "300%", statusBgPos: "60% top",
@@ -283,11 +283,11 @@ const CHARACTERS_DATA = [
         moved: false, acted: false,
         char: "カ",
         tokenImage: "立ち絵AI生成/幼少期カリマドット.png",
-        portraitImage: "立ち絵AI生成/幼少期カリマ1.png",
+        portraitImage: "立ち絵透過済み/幼少期カリマ1_transparent.png?v=20260717a",
         portraitBgSize: "300%",  portraitBgPos: "55% top",
         portraitDmgBgSize: "250%", portraitDmgBgPos: "50% 5px",
         statusBgSize: "300%", statusBgPos: "55% top",
-        portraitImageDamaged: "立ち絵AI生成/幼少期カリマ1.png",
+        portraitImageDamaged: "立ち絵透過済み/幼少期カリマ1_transparent.png?v=20260717a",
 
         spells: {
             加速: 9,
@@ -429,11 +429,11 @@ const CHARACTERS_DATA = [
         moved: false, acted: false,
         char: "ギ",
         tokenImage: "立ち絵AI生成/ギュンタードット絵.png",
-        portraitImage: "立ち絵AI生成/ギュンター立ち絵.png",
+        portraitImage: "立ち絵透過済み/ギュンター立ち絵_transparent.png?v=20260717a",
         portraitBgSize: "280%",  portraitBgPos: "center top",
         portraitDmgBgSize: "280%", portraitDmgBgPos: "center top",
         statusBgSize: "280%", statusBgPos: "center top",
-        portraitImageDamaged: "立ち絵AI生成/ギュンター立ち絵.png",
+        portraitImageDamaged: "立ち絵透過済み/ギュンター立ち絵_transparent.png?v=20260717a",
 
         spells: {
             転移: 9,

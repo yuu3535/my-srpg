@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>タップ透過 — 立ち絵仕上げツール</title>
+<style>
+  :root{
+    --bg:#14151d; --panel:#1d1f2b; --panel2:#252838;
+    --gold:#c9a35a; --gold-dim:#8a7344; --star:#6b8fd4;
+    --text:#e8e6df; --muted:#9a97a8; --line:#33364a;
+    --restore:#7dbf8e;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%; overflow:hidden;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;
+    display:flex; flex-direction:column;
+  }
+  header{
+    display:flex; align-items:baseline; gap:10px;
+    padding:10px 14px 8px; border-bottom:1px solid var(--line);
+    flex:none;
+  }
+  header h1{
+    font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
+    font-size:17px; font-weight:600; letter-spacing:.14em; color:var(--gold);
+  }
+  header .sub{font-size:11px; color:var(--muted); letter-spacing:.05em;}
+
+  /* ==== ツールバー ==== */
+  #bar{
+    flex:none; display:flex; flex-wrap:wrap; gap:8px; align-items:center;
+    padding:8px 12px; background:var(--panel); border-bottom:1px solid var(--line);
+  }
+  .seg{display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+  .seg button{
+    background:transparent; color:var(--muted); border:none;
+    padding:7px 12px; font-size:12.5px; cursor:pointer; white-space:nowrap;
+  }
+  .seg button.on{background:var(--gold); color:#1a1408; font-weight:600;}
+  .seg button.on.green{background:var(--restore); color:#0d1a10;}
+  .ctrl{display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--muted);}
+  .ctrl input[type=range]{width:88px; accent-color:var(--gold);}
+  .ctrl output{color:var(--text); min-width:2em; text-align:right; font-variant-numeric:tabular-nums;}
+  .btn{
+    background:var(--panel2); color:var(--text); border:1px solid var(--line);
+    border-radius:8px; padding:7px 12px; font-size:12.5px; cursor:pointer; white-space:nowrap;
+  }
+  .btn:disabled{opacity:.35; cursor:default;}
+  .btn.gold{background:var(--gold); border-color:var(--gold); color:#1a1408; font-weight:600;}
+  .spacer{flex:1;}
+
+  /* ==== キャンバス領域 ==== */
+  #stage{
+    flex:1; position:relative; overflow:hidden; touch-action:none;
+    background:#0e0f15;
+  }
+  #stage.bg-dark #canvasWrap{background:#232028;}
+  #stage.bg-checker #canvasWrap{
+    background:
+      repeating-conic-gradient(#c8c8c8 0% 25%, #a0a0a0 0% 50%) 0 0/24px 24px;
+  }
+  #stage.bg-white #canvasWrap{background:#ffffff;}
+  #canvasWrap{
+    position:absolute; transform-origin:0 0;
+    box-shadow:0 0 0 1px var(--line), 0 12px 40px rgba(0,0,0,.5);
+  }
+  canvas{display:block; image-rendering:pixelated;}
+  #brushCursor{
+    position:absolute; border:1.5px solid var(--gold); border-radius:50%;
+    pointer-events:none; display:none; transform:translate(-50%,-50%);
+    mix-blend-mode:difference;
+  }
+
+  /* ==== ドロップ受け ==== */
+  #drop{
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:14px; text-align:center;
+    color:var(--muted); font-size:14px; line-height:1.9; padding:20px;
+  }
+  #drop .star{font-size:34px; color:var(--star);}
+  #drop.hidden{display:none;}
+  #drop strong{color:var(--gold); font-weight:600;}
+  #drop.dragover{background:rgba(107,143,212,.08); outline:2px dashed var(--star); outline-offset:-14px;}
+
+  /* ==== ステータス ==== */
+  #status{
+    flex:none; display:flex; gap:14px; align-items:center;
+    padding:6px 14px; font-size:11px; color:var(--muted);
+    background:var(--panel); border-top:1px solid var(--line);
+    letter-spacing:.03em;
+  }
+  #status b{color:var(--gold); font-weight:600;}
+  #toast{
+    position:absolute; left:50%; bottom:52px; transform:translateX(-50%);
+    background:var(--panel2); border:1px solid var(--gold-dim); color:var(--text);
+    padding:8px 16px; border-radius:20px; font-size:12.5px;
+    opacity:0; transition:opacity .25s; pointer-events:none; white-space:nowrap;
+  }
+  #toast.show{opacity:1;}
+  input[type=file]{display:none;}
+  @media (max-width:640px){
+    .ctrl input[type=range]{width:64px;}
+    header .sub{display:none;}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>タップ透過</h1>
+  <span class="sub">残った白ポチを、突いて消す仕上げ小筆</span>
+</header>
+
+<div id="bar">
+  <div class="seg" id="modeSeg">
+    <button data-mode="wand" class="on">魔法の杖</button>
+    <button data-mode="erase">消しゴム</button>
+    <button data-mode="restore">復元</button>
+    <button data-mode="pan">移動</button>
+  </div>
+  <label class="ctrl" id="tolCtrl">許容量
+    <input type="range" id="tol" min="1" max="80" value="24">
+    <output id="tolOut">24</output>
+  </label>
+  <label class="ctrl" id="sizeCtrl" style="display:none">サイズ
+    <input type="range" id="size" min="2" max="80" value="16">
+    <output id="sizeOut">16</output>
+  </label>
+  <div class="seg" id="bgSeg">
+    <button data-bg="dark" class="on">濃色</button>
+    <button data-bg="checker">市松</button>
+    <button data-bg="white">白</button>
+  </div>
+  <label class="ctrl">縁色 <input type="color" id="edgeColor" value="#1e2440"
+    style="width:26px;height:22px;border:1px solid var(--line);border-radius:5px;background:none;padding:0;cursor:pointer"></label>
+  <div class="seg" id="edgeSeg">
+    <button data-o="0.5" data-c="1.0">縁・標準</button>
+    <button data-o="1.0" data-c="2.5">線画仕上げ</button>
+    <button data-o="1.5" data-c="3.5">線画・太</button>
+  </div>
+  <span class="spacer"></span>
+  <button class="btn" id="undoBtn" disabled>← 戻す</button>
+  <button class="btn" id="redoBtn" disabled>進む →</button>
+  <button class="btn" id="openBtn">画像を開く</button>
+  <button class="btn gold" id="saveBtn" disabled>PNG保存</button>
+</div>
+
+<div id="stage" class="bg-dark">
+  <div id="canvasWrap"><canvas id="cv"></canvas></div>
+  <div id="brushCursor"></div>
+  <div id="drop">
+    <div class="star">✦</div>
+    <div>
+      透過処理済みのPNGをここに<strong>ドロップ</strong><br>
+      またはタップしてファイルを選択<br>
+      <span style="font-size:12px">貼り付け（Ctrl+V）にも対応</span>
+    </div>
+  </div>
+  <div id="toast"></div>
+</div>
+
+<div id="status">
+  <span id="stZoom">拡大 —</span>
+  <span id="stInfo">画像未読込</span>
+  <span class="spacer" style="flex:1"></span>
+  <span>ホイール/ピンチで拡大 ・ 2本指または「移動」でパン</span>
+</div>
+
+<input type="file" id="file" accept="image/png,image/webp,image/*">
+
+<script>
+'use strict';
+/* ============================================================
+   タップ透過 — 仕上げ用の局所透過ツール
+   ・魔法の杖: タップ点とつながる同系色だけをアルファ0に（境界1pxフェザー）
+   ・消しゴム/復元: ブラシでアルファを削る/読込時の状態に戻す
+   ・アンドゥは差分（インデックス＋旧アルファ）方式で軽量
+============================================================ */
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d', {willReadFrequently:true});
+const wrap = document.getElementById('canvasWrap');
+const stage = document.getElementById('stage');
+const drop = document.getElementById('drop');
+const brushCursor = document.getElementById('brushCursor');
+
+let img = null;          // ImageData（編集対象）
+let baseAlpha = null;    // 読込時のアルファ（復元用）
+let W = 0, H = 0;
+let fileName = 'tachie';
+let view = {x:40, y:20, s:1};
+let mode = 'wand';
+let tol = 24, brush = 16;
+const undoStack = [], redoStack = [];
+const MAX_UNDO = 40;
+
+/* ---------- 読み込み ---------- */
+const fileInput = document.getElementById('file');
+document.getElementById('openBtn').onclick = () => fileInput.click();
+drop.onclick = () => fileInput.click();
+fileInput.onchange = e => { if(e.target.files[0]) loadFile(e.target.files[0]); };
+
+['dragover','dragleave','drop'].forEach(ev => stage.addEventListener(ev, e => {
+  e.preventDefault();
+  if(ev==='dragover') drop.classList.add('dragover');
+  else drop.classList.remove('dragover');
+  if(ev==='drop' && e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+}));
+window.addEventListener('paste', e => {
+  for(const item of e.clipboardData.items)
+    if(item.type.startsWith('image/')) return loadFile(item.getAsFile());
+});
+
+function loadFile(file){
+  fileName = (file.name || 'tachie').replace(/\.[^.]+$/, '');
+  const url = URL.createObjectURL(file);
+  const im = new Image();
+  im.onload = () => {
+    W = im.naturalWidth; H = im.naturalHeight;
+    cv.width = W; cv.height = H;
+    ctx.drawImage(im, 0, 0);
+    img = ctx.getImageData(0, 0, W, H);
+    baseAlpha = new Uint8ClampedArray(W*H);
+    for(let i=0;i<W*H;i++) baseAlpha[i] = img.data[i*4+3];
+    undoStack.length = redoStack.length = 0;
+    updateUndoBtns();
+    drop.classList.add('hidden');
+    document.getElementById('saveBtn').disabled = false;
+    fitView();
+    paint();
+    setInfo(`${W}×${H}px を読込`);
+    URL.revokeObjectURL(url);
+  };
+  im.src = url;
+}
+
+/* ---------- 描画・ビュー ---------- */
+function paint(){ ctx.putImageData(img, 0, 0); }
+function applyView(){
+  wrap.style.transform = `translate(${view.x}px,${view.y}px) scale(${view.s})`;
+  document.getElementById('stZoom').textContent = `拡大 ${(view.s*100)|0}%`;
+}
+function fitView(){
+  const r = stage.getBoundingClientRect();
+  view.s = Math.min((r.width-40)/W, (r.height-40)/H, 1);
+  view.x = (r.width - W*view.s)/2;
+  view.y = (r.height - H*view.s)/2;
+  applyView();
+}
+function toImage(clientX, clientY){
+  const r = stage.getBoundingClientRect();
+  return {
+    x: Math.floor((clientX - r.left - view.x) / view.s),
+    y: Math.floor((clientY - r.top  - view.y) / view.s)
+  };
+}
+
+/* ---------- アンドゥ（差分方式） ---------- */
+function pushUndo(idxArr, oldAlphaArr, label){
+  undoStack.push({idx:idxArr, alpha:oldAlphaArr, label});
+  if(undoStack.length > MAX_UNDO) undoStack.shift();
+  redoStack.length = 0;
+  updateUndoBtns();
+}
+function applyDiff(diff, useOld){
+  const d = img.data;
+  if(diff.kind === 'rgba'){
+    const cur = new Uint8ClampedArray(diff.idx.length*4);
+    const srcArr = useOld ? diff.alpha : diff.newAlpha;
+    for(let k=0;k<diff.idx.length;k++){
+      const i = diff.idx[k]*4;
+      cur[k*4]=d[i]; cur[k*4+1]=d[i+1]; cur[k*4+2]=d[i+2]; cur[k*4+3]=d[i+3];
+      d[i]=srcArr[k*4]; d[i+1]=srcArr[k*4+1]; d[i+2]=srcArr[k*4+2]; d[i+3]=srcArr[k*4+3];
+    }
+    return cur;
+  }
+  const cur = new Uint8ClampedArray(diff.idx.length);
+  for(let k=0;k<diff.idx.length;k++){
+    const i = diff.idx[k];
+    cur[k] = d[i*4+3];
+    d[i*4+3] = useOld ? diff.alpha[k] : diff.newAlpha[k];
+  }
+  return cur;
+}
+document.getElementById('undoBtn').onclick = () => {
+  const diff = undoStack.pop(); if(!diff) return;
+  diff.newAlpha = applyDiff(diff, true);
+  redoStack.push(diff); paint(); updateUndoBtns();
+  toast(`${diff.label} を取り消し`);
+};
+document.getElementById('redoBtn').onclick = () => {
+  const diff = redoStack.pop(); if(!diff) return;
+  applyDiff(diff, false);
+  undoStack.push(diff); paint(); updateUndoBtns();
+};
+function updateUndoBtns(){
+  document.getElementById('undoBtn').disabled = !undoStack.length;
+  document.getElementById('redoBtn').disabled = !redoStack.length;
+}
+
+/* ---------- 魔法の杖（局所フラッドフィル） ---------- */
+function wand(px, py){
+  if(px<0||py<0||px>=W||py>=H) return;
+  const d = img.data;
+  const seed = (py*W+px);
+  if(d[seed*4+3] === 0){ toast('そこはもう透明です'); return; }
+  const sr=d[seed*4], sg=d[seed*4+1], sb=d[seed*4+2];
+  const tol2 = tol*tol*3;
+  const visited = new Uint8Array(W*H);
+  const stack = [seed];
+  visited[seed] = 1;
+  const hit = [];
+  while(stack.length){
+    const i = stack.pop();
+    const r=d[i*4], g=d[i*4+1], b=d[i*4+2];
+    const dr=r-sr, dg=g-sg, db=b-sb;
+    if(dr*dr+dg*dg+db*db > tol2 || d[i*4+3]===0) continue;
+    hit.push(i);
+    const x=i%W, y=(i/W)|0;
+    if(x>0   && !visited[i-1]){visited[i-1]=1; stack.push(i-1);}
+    if(x<W-1 && !visited[i+1]){visited[i+1]=1; stack.push(i+1);}
+    if(y>0   && !visited[i-W]){visited[i-W]=1; stack.push(i-W);}
+    if(y<H-1 && !visited[i+W]){visited[i+W]=1; stack.push(i+W);}
+  }
+  if(!hit.length){ toast('近い色が見つかりません（許容量を上げてみて）'); return; }
+  // 対象マーク
+  const mark = new Uint8Array(W*H);
+  for(const i of hit) mark[i] = 1;
+  // 差分記録 → アルファ0、境界1pxは半透明フェザー
+  const idx = new Uint32Array(hit.length);
+  const old = new Uint8ClampedArray(hit.length);
+  for(let k=0;k<hit.length;k++){
+    const i = hit[k];
+    idx[k]=i; old[k]=d[i*4+3];
+    const x=i%W, y=(i/W)|0;
+    const edge = (x>0&&!mark[i-1])||(x<W-1&&!mark[i+1])||(y>0&&!mark[i-W])||(y<H-1&&!mark[i+W]);
+    d[i*4+3] = edge ? Math.min(d[i*4+3], 70) : 0;
+  }
+  pushUndo(idx, old, '魔法の杖');
+  paint();
+  toast(`${hit.length}px を透過`);
+}
+
+/* ---------- 線画仕上げ（シルエットに沿って縁を描く） ---------- */
+function distTo(target){  // 各画素からtarget=trueの最近傍までの距離(チャンファー近似)
+  const d = new Float32Array(W*H).fill(1e9);
+  for(let i=0;i<W*H;i++) if(target[i]) d[i]=0;
+  const SQ = 1.41421356;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+    const i=y*W+x; let v=d[i];
+    if(x>0) v=Math.min(v,d[i-1]+1);
+    if(y>0){ v=Math.min(v,d[i-W]+1);
+      if(x>0)   v=Math.min(v,d[i-W-1]+SQ);
+      if(x<W-1) v=Math.min(v,d[i-W+1]+SQ); }
+    d[i]=v;
+  }
+  for(let y=H-1;y>=0;y--)for(let x=W-1;x>=0;x--){
+    const i=y*W+x; let v=d[i];
+    if(x<W-1) v=Math.min(v,d[i+1]+1);
+    if(y<H-1){ v=Math.min(v,d[i+W]+1);
+      if(x<W-1) v=Math.min(v,d[i+W+1]+SQ);
+      if(x>0)   v=Math.min(v,d[i+W-1]+SQ); }
+    d[i]=v;
+  }
+  return d;
+}
+function lineart(outline, cover){
+  if(!img) return;
+  const d = img.data;
+  const hex = document.getElementById('edgeColor').value;
+  const lr=parseInt(hex.slice(1,3),16), lg=parseInt(hex.slice(3,5),16), lb=parseInt(hex.slice(5,7),16);
+  const solid = new Uint8Array(W*H), open_ = new Uint8Array(W*H);
+  for(let i=0;i<W*H;i++){ if(d[i*4+3]>128) solid[i]=1; else open_[i]=1; }
+  const dOut = distTo(solid);   // 外側画素→シルエットまでの距離
+  const dIn  = distTo(open_);   // 内側画素→境界までの距離
+  const idx=[], old=[];
+  const rec = i => { idx.push(i); const p=i*4; old.push(d[p],d[p+1],d[p+2],d[p+3]); };
+  for(let i=0;i<W*H;i++){
+    const p=i*4;
+    if(!solid[i] && dOut[i] <= outline+0.5){       // 外側の縁
+      rec(i);
+      d[p]=lr; d[p+1]=lg; d[p+2]=lb;
+      d[p+3]=Math.max(d[p+3], Math.min(1, outline+0.5-dOut[i])*255);
+    } else if(solid[i] && dIn[i] <= cover){        // 内側の塗り潰し帯
+      rec(i);
+      d[p]=lr; d[p+1]=lg; d[p+2]=lb;
+    } else if(solid[i] && dIn[i] <= cover+1.0){    // 馴染ませグラデ
+      rec(i);
+      const k = 0.49*Math.min(1, cover+1.0-dIn[i]);
+      d[p]  = d[p]*(1-k)+lr*k;
+      d[p+1]= d[p+1]*(1-k)+lg*k;
+      d[p+2]= d[p+2]*(1-k)+lb*k;
+    }
+  }
+  pushUndo(Uint32Array.from(idx), Uint8ClampedArray.from(old), '線画仕上げ');
+  undoStack[undoStack.length-1].kind = 'rgba';
+  paint();
+  toast(`縁を描きました 外${outline}px/内${cover}px（⟲で戻せます）`);
+}
+document.getElementById('edgeSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  if(!img){ toast('先に画像を開いてください'); return; }
+  lineart(+b.dataset.o, +b.dataset.c);
+});
+
+/* ---------- ブラシ（消しゴム / 復元） ---------- */
+let strokeIdx = null, strokeOld = null, strokeMark = null;
+function beginStroke(){
+  strokeIdx = []; strokeOld = [];
+  strokeMark = new Uint8Array(W*H);
+}
+function stampBrush(px, py, restore){
+  const d = img.data;
+  const r = brush/2, r2 = r*r;
+  const x0=Math.max(0,Math.floor(px-r)), x1=Math.min(W-1,Math.ceil(px+r));
+  const y0=Math.max(0,Math.floor(py-r)), y1=Math.min(H-1,Math.ceil(py+r));
+  for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){
+    const dx=x-px, dy=y-py;
+    if(dx*dx+dy*dy > r2) continue;
+    const i = y*W+x;
+    if(strokeMark[i]) continue;
+    strokeMark[i]=1;
+    strokeIdx.push(i); strokeOld.push(d[i*4+3]);
+    d[i*4+3] = restore ? baseAlpha[i] : 0;
+  }
+  paint();
+}
+function endStroke(label){
+  if(strokeIdx && strokeIdx.length)
+    pushUndo(Uint32Array.from(strokeIdx), Uint8ClampedArray.from(strokeOld), label);
+  strokeIdx = strokeOld = strokeMark = null;
+}
+
+/* ---------- 入力（ポインタ・ピンチ） ---------- */
+const pointers = new Map();
+let pinchBase = null, panBase = null, drawing = false;
+
+stage.addEventListener('pointerdown', e => {
+  if(!img) return;
+  stage.setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+  if(pointers.size === 2){
+    // ピンチ開始（描画は中断）
+    if(drawing){ endStroke(mode==='erase'?'消しゴム':'復元'); drawing=false; }
+    const [a,b] = [...pointers.values()];
+    pinchBase = {
+      d: Math.hypot(a.x-b.x, a.y-b.y),
+      cx:(a.x+b.x)/2, cy:(a.y+b.y)/2,
+      view:{...view}
+    };
+    return;
+  }
+  if(mode === 'pan'){
+    panBase = {x:e.clientX, y:e.clientY, view:{...view}};
+  } else if(mode === 'wand'){
+    const p = toImage(e.clientX, e.clientY);
+    wand(p.x, p.y);
+  } else {
+    drawing = true;
+    beginStroke();
+    const p = toImage(e.clientX, e.clientY);
+    stampBrush(p.x, p.y, mode==='restore');
+  }
+});
+stage.addEventListener('pointermove', e => {
+  if(pointers.has(e.pointerId)) pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+  // ブラシカーソル
+  if((mode==='erase'||mode==='restore') && img){
+    brushCursor.style.display='block';
+    brushCursor.style.left = e.clientX - stage.getBoundingClientRect().left + 'px';
+    brushCursor.style.top  = e.clientY - stage.getBoundingClientRect().top + 'px';
+    brushCursor.style.width = brushCursor.style.height = brush*view.s + 'px';
+  } else brushCursor.style.display='none';
+
+  if(pointers.size === 2 && pinchBase){
+    const [a,b] = [...pointers.values()];
+    const d = Math.hypot(a.x-b.x, a.y-b.y);
+    const cx=(a.x+b.x)/2, cy=(a.y+b.y)/2;
+    const scale = Math.min(16, Math.max(.05, pinchBase.view.s * d/pinchBase.d));
+    const k = scale/pinchBase.view.s;
+    const r = stage.getBoundingClientRect();
+    view.s = scale;
+    view.x = (cx-r.left) - k*((pinchBase.cx-r.left) - pinchBase.view.x) + (cx-pinchBase.cx)*0;
+    view.y = (cy-r.top)  - k*((pinchBase.cy-r.top)  - pinchBase.view.y);
+    applyView();
+    return;
+  }
+  if(panBase){
+    view.x = panBase.view.x + (e.clientX - panBase.x);
+    view.y = panBase.view.y + (e.clientY - panBase.y);
+    applyView();
+  } else if(drawing){
+    const p = toImage(e.clientX, e.clientY);
+    stampBrush(p.x, p.y, mode==='restore');
+  }
+});
+['pointerup','pointercancel'].forEach(ev => stage.addEventListener(ev, e => {
+  pointers.delete(e.pointerId);
+  if(pointers.size < 2) pinchBase = null;
+  panBase = null;
+  if(drawing && pointers.size===0){
+    endStroke(mode==='erase'?'消しゴム':'復元');
+    drawing = false;
+  }
+}));
+stage.addEventListener('wheel', e => {
+  if(!img) return;
+  e.preventDefault();
+  const r = stage.getBoundingClientRect();
+  const k = e.deltaY < 0 ? 1.15 : 1/1.15;
+  const ns = Math.min(16, Math.max(.05, view.s*k));
+  const kk = ns/view.s;
+  view.x = (e.clientX-r.left) - kk*((e.clientX-r.left)-view.x);
+  view.y = (e.clientY-r.top)  - kk*((e.clientY-r.top)-view.y);
+  view.s = ns;
+  applyView();
+}, {passive:false});
+
+/* ---------- ツールバー ---------- */
+document.getElementById('modeSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  mode = b.dataset.mode;
+  [...e.currentTarget.children].forEach(x => {
+    x.classList.toggle('on', x===b);
+    x.classList.toggle('green', x===b && mode==='restore');
+  });
+  document.getElementById('tolCtrl').style.display = mode==='wand' ? '' : 'none';
+  document.getElementById('sizeCtrl').style.display = (mode==='erase'||mode==='restore') ? '' : 'none';
+});
+document.getElementById('bgSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  stage.className = 'bg-' + b.dataset.bg;
+  [...e.currentTarget.children].forEach(x => x.classList.toggle('on', x===b));
+});
+const tolEl = document.getElementById('tol'), sizeEl = document.getElementById('size');
+tolEl.oninput = () => { tol = +tolEl.value; document.getElementById('tolOut').textContent = tol; };
+sizeEl.oninput = () => { brush = +sizeEl.value; document.getElementById('sizeOut').textContent = brush; };
+
+/* ---------- 保存 ---------- */
+document.getElementById('saveBtn').onclick = () => {
+  paint();
+  cv.toBlob(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = fileName + '_fixed.png';
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+    toast('保存しました');
+  }, 'image/png');
+};
+
+/* ---------- 表示ユーティリティ ---------- */
+let toastTimer = null;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 1800);
+}
+function setInfo(msg){ document.getElementById('stInfo').textContent = msg; }
+
+window.addEventListener('resize', () => { if(img) applyView(); });
+/* キーボードショートカット */
+window.addEventListener('keydown', e => {
+  if((e.ctrlKey||e.metaKey) && e.key==='z'){ e.preventDefault();
+    (e.shiftKey ? document.getElementById('redoBtn') : document.getElementById('undoBtn')).click(); }
+  if(e.key==='w') document.querySelector('[data-mode=wand]').click();
+  if(e.key==='e') document.querySelector('[data-mode=erase]').click();
+  if(e.key==='r') document.querySelector('[data-mode=restore]').click();
+  if(e.key===' '){ e.preventDefault(); document.querySelector('[data-mode=pan]').click(); }
+});
+</script>
+</body>
+</html>

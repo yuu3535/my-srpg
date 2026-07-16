@@ -17,18 +17,29 @@
 // =============================================
 
 // ── 立ち絵パス定数（プロローグ用） ──────────────────────────
-// ※ tachie_clear.py で透過処理済み（立ち絵透過済み/ フォルダ）
+// ※ 立ち絵スタジオで透過処理済み（立ち絵透過済み/ フォルダ）
 // bgSize / bgPos はシナリオ立ち絵のトリミング設定（entry.bgSize が CHARACTERS_DATA より優先）
+const _SCENARIO_PORTRAIT_REV = "20260717a";
+const _scenarioPortraitAsset = path => `${path}?v=${_SCENARIO_PORTRAIT_REV}`;
 // ギュンター：大人・基準
-const _G  = { name: "ギュンター", image: "立ち絵透過済み/ギュンター立ち絵_transparent.png",
+const _G  = { name: "ギュンター", image: _scenarioPortraitAsset("立ち絵透過済み/ギュンター立ち絵_transparent.png"),
               bgSize: "auto 230%", bgPos: "center top" };
-// アルシェ：少年。140%でちょうど上半身〜太ももくらい表示
-const _AE = (e) => ({ name: "アルシェ", image: `立ち絵透過済み/アルシェ幼少期表情/${e}_transparent.png`,
-                      bgSize: "auto 140%", bgPos: "center top" });
+// アルシェ：少年。会話画面では顔と上半身を主役にし、脚は画面外へ逃がす
+const _ALCHE_EXPRESSION_FRAMING = {
+    // 右へ伸ばした手を切らずに見せる
+    "呆れ": { bgPos: "60% top", framingRevision: "20260717-hand" },
+};
+const _AE = (e) => ({
+    name: "アルシェ",
+    image: _scenarioPortraitAsset(`立ち絵透過済み/アルシェ幼少期表情/${e}_transparent.png`),
+    bgSize: "auto 175%",
+    bgPos: "center top",
+    ...(_ALCHE_EXPRESSION_FRAMING[e] || {}),
+});
 const _A  = _AE("元気");   // デフォルト表情
-// カリマ：少年・アルシェより少し小さめ
-const _K  = { name: "カリマ", image: "立ち絵透過済み/カリマ幼少期表情/ChatGPT Image 2026年5月29日 01_46_01_transparent.png",
-              bgSize: "auto 145%", bgPos: "center top" };
+// カリマ：少年。アルシェと同程度の顔サイズに揃える
+const _K  = { name: "カリマ", image: _scenarioPortraitAsset("立ち絵透過済み/カリマ幼少期表情/ChatGPT Image 2026年5月29日 01_46_01_transparent.png"),
+              bgSize: "auto 178%", bgPos: "center top" };
 const _CH = { name: "???",  image: "" };   // 後編の謎キャラ（未設定）
 
 const CHAPTERS = [
@@ -216,7 +227,7 @@ const CHAPTERS = [
                 text: "（じっと周囲を見渡す）",
                 setCharacters: [
                     "リングホルム",
-                    { name: "アルシェ", image: "立ち絵透過済み/幼少期アルシェ1_transparent.png" },
+                    { name: "アルシェ", image: _scenarioPortraitAsset("立ち絵透過済み/幼少期アルシェ1_transparent.png") },
                 ],
             },
             {
@@ -240,7 +251,7 @@ const CHAPTERS = [
                 text: "うん。",
                 setCharacters: [
                     "リングホルム",
-                    { name: "アルシェ", image: "立ち絵透過済み/幼少期アルシェ1_transparent.png" },
+                    { name: "アルシェ", image: _scenarioPortraitAsset("立ち絵透過済み/幼少期アルシェ1_transparent.png") },
                 ],
             },
         ],
