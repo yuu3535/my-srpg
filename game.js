@@ -1071,7 +1071,9 @@ function getBattleHitResult(attacker, defender, attackSkill, targetStunned = fal
         evasion: evasionModifier,
     });
     const shouldRoll = options.roll !== false;
-    const roll = shouldRoll ? Math.floor(Math.random() * 100) + 1 : null;
+    const roll = shouldRoll
+        ? (options.rollSource?.nextPercent("hit") ?? Math.floor(Math.random() * 100) + 1)
+        : null;
     return {
         rate,
         roll,
@@ -1197,6 +1199,122 @@ function canCounter(unit) {
     return (unit.counterMode ?? "auto") !== "none" && getCounterRate(unit) > 0;
 }
 
+const LIVE_PHYSICAL_SHADOW_HISTORY_LIMIT = 50;
+const livePhysicalShadowComparisonHistory = [];
+
+function getLivePhysicalShadowComparisonHistory() {
+    return livePhysicalShadowComparisonHistory.slice();
+}
+
+function startLivePhysicalShadowSession(attacker, target, attackSkillName, attackSkillValue, combatArtId) {
+    try {
+        const session = beginLivePhysicalShadowComparison({
+            actor: attacker,
+            target,
+            attackSkillName,
+            attackSkillValue,
+            combatArtId,
+            weaponPower: getWeaponPower(attacker),
+            battleHitMode: BATTLE_HIT_MODE,
+        });
+        return session.eligible ? { session, targetHpBefore: target.hp } : null;
+    } catch (error) {
+        console.warn("[combat-shadow] comparison setup skipped", error);
+        return null;
+    }
+}
+
+function buildLegacyPhysicalShadowResult(hit, targetHpBefore, outcome = null) {
+    if (!hit.isHit) {
+        return {
+            hit: { rate: hit.rate, roll: hit.roll, isHit: false },
+            critical: null,
+            damage: {
+                attackValue: null,
+                armorValue: null,
+                base: 0,
+                masteryBonus: 0,
+                normal: 0,
+                critical: 0,
+                applied: 0,
+            },
+            incapacitation: null,
+            commands: [],
+            summary: { targetHpAfter: targetHpBefore },
+        };
+    }
+
+    const targetResult = outcome.targetResult;
+    const calculation = targetResult.calculation;
+    const critical = targetResult.critical;
+    const masteryBonus = Number(calculation.masteryBonus || 0);
+    const commands = [{
+        type: "setHp",
+        unitId: targetResult.target.id,
+        from: targetHpBefore,
+        to: outcome.hpAfterDamage,
+        reason: "physicalDamage",
+    }];
+    if (outcome.incapacitation?.triggered) {
+        commands.push({
+            type: "setHp",
+            unitId: targetResult.target.id,
+            from: outcome.hpAfterDamage,
+            to: 0,
+            reason: "incapacitation",
+        });
+    }
+
+    return {
+        hit: { rate: hit.rate, roll: hit.roll, isHit: true },
+        critical: {
+            rate: critical.rate,
+            roll: critical.roll,
+            isCritical: critical.isCritical,
+        },
+        damage: {
+            attackValue: Number(calculation.power || 0)
+                + Number(calculation.weaponPower || 0)
+                + Number(calculation.powerBonus || 0),
+            armorValue: Number(calculation.armor || 0),
+            base: Math.max(0, Number(calculation.raw || 0) - masteryBonus),
+            masteryBonus,
+            normal: targetResult.baseAfterBarrier,
+            critical: targetResult.critAfterBarrier,
+            applied: outcome.actualDamage,
+        },
+        incapacitation: outcome.incapacitation,
+        commands,
+        summary: { targetHpAfter: outcome.targetHpAfter },
+    };
+}
+
+function finishLivePhysicalShadowSession(activeComparison, hit, outcome = null) {
+    if (!activeComparison) return;
+    try {
+        const legacyResult = buildLegacyPhysicalShadowResult(
+            hit,
+            activeComparison.targetHpBefore,
+            outcome
+        );
+        const comparison = finishLivePhysicalShadowComparison(
+            activeComparison.session,
+            legacyResult
+        );
+        livePhysicalShadowComparisonHistory.push(comparison);
+        if (livePhysicalShadowComparisonHistory.length > LIVE_PHYSICAL_SHADOW_HISTORY_LIMIT) {
+            livePhysicalShadowComparisonHistory.shift();
+        }
+        if (comparison.matches) {
+            console.debug("[combat-shadow] legacy/shadow match", comparison);
+        } else {
+            console.warn("[combat-shadow] legacy/shadow difference", comparison);
+        }
+    } catch (error) {
+        console.warn("[combat-shadow] comparison failed without changing the legacy result", error);
+    }
+}
+
 function getCombatArtData(artId) {
     if (!artId || typeof COMBAT_ARTS === "undefined") return null;
     return COMBAT_ARTS[artId] ? { id: artId, ...COMBAT_ARTS[artId] } : null;
@@ -1288,13 +1406,13 @@ function getContextCriticalRate(context, defender) {
     });
 }
 
-function rollContextCritical(context, defender, baseDamage, shouldRoll) {
+function rollContextCritical(context, defender, baseDamage, shouldRoll, rollSource = null) {
     const rate = getContextCriticalRate(context, defender);
     const critDamage = criticalDamage(baseDamage);
     if (!shouldRoll) {
         return { rate, roll: null, isCritical: false, damage: baseDamage, critDamage };
     }
-    const roll = Math.floor(Math.random() * 100) + 1;
+    const roll = rollSource?.nextPercent("critical") ?? Math.floor(Math.random() * 100) + 1;
     const isCritical = roll <= rate;
     if (isCritical && !context.isPreview) showCriticalCutIn(context.attacker);
     return {
@@ -1312,7 +1430,13 @@ function completeDamageContext(context, targetResult, calculation, options = {})
     runBattleActionHooks("beforeDamaged", context, targetResult);
 
     const finalBaseDamage = applyTargetDamageModifiers(context, targetResult, calculation.damage);
-    const critical = rollContextCritical(context, targetResult.target, finalBaseDamage, options.rollCritical !== false);
+    const critical = rollContextCritical(
+        context,
+        targetResult.target,
+        finalBaseDamage,
+        options.rollCritical !== false,
+        options.rollSource || null
+    );
     const finalDamage = critical.isCritical ? critical.damage : finalBaseDamage;
     const barrier = options.commitBarrier
         ? applyBarrierDamage(targetResult.target, finalDamage, !!options.breakBarrier)
@@ -2141,6 +2265,7 @@ function resolvePhysicalHit(attacker, target, atkSkillName, options = {}) {
             attackSkillValue: options.attackSkillValue ?? null,
             combatArtId: options.combatArtId || null,
             commitBarrier: false,
+            rollSource: options.rollSource || null,
         });
         const result = targetResult.calculation;
         const critical = targetResult.critical;
@@ -2172,6 +2297,7 @@ function resolvePhysicalHit(attacker, target, atkSkillName, options = {}) {
         attackSkillValue: options.attackSkillValue ?? null,
         combatArtId: options.combatArtId || null,
         commitBarrier: true,
+        rollSource: options.rollSource || null,
     });
     const result = targetResult.calculation;
     const critical = targetResult.critical;
@@ -2180,6 +2306,7 @@ function resolvePhysicalHit(attacker, target, atkSkillName, options = {}) {
 
     const hpBefore = target.hp;
     target.hp = Math.max(0, target.hp - actualDmg);
+    const hpAfterDamage = target.hp;
     showDamagePopup(target.id, actualDmg, critical.isCritical ? "critical" : "damage");
     flashUnitHit(target.id);
     const criticalNote = critical.isCritical ? ` 必殺！（${critical.roll}/${critical.rate}%）` : "";
@@ -2189,10 +2316,14 @@ function resolvePhysicalHit(attacker, target, atkSkillName, options = {}) {
         : `${attacker.name}の攻撃命中！${target.name}に ${actualDmg} ダメージ！`);
 
     // 気絶チェック：HPが一気に2以下に減った場合 CON×5% 失敗で戦闘不能
+    let incapacitation = null;
     if (hpBefore > 2 && target.hp <= 2 && target.hp > 0) {
         const conRate  = calcBattleStats(target).raw.con * 5;
-        const conCheck = Math.floor(Math.random() * 100) + 1;
-        if (conCheck > conRate) {
+        const conCheck = options.rollSource?.nextPercent("incapacitation")
+            ?? Math.floor(Math.random() * 100) + 1;
+        const triggered = conCheck > conRate;
+        incapacitation = { rate: conRate, roll: conCheck, triggered };
+        if (triggered) {
             target.hp = 0;
             addLog(`  ${target.name}は気絶した！（CON×5%:${conRate}% 失敗:${conCheck}）`);
         } else {
@@ -2205,10 +2336,12 @@ function resolvePhysicalHit(attacker, target, atkSkillName, options = {}) {
     finishDamageHooks(targetResult.context, targetResult, hpBefore);
 
     // 反撃チェック：パッシブモードでは反撃しない
+    let counterTriggered = false;
     if (target.hp > 0 && !BATTLE_DEFINITIONS[currentBattleId]?.passive && canCounter(target)) {
         const counterRate = getCounterRate(target);
         const counterRoll = Math.floor(Math.random() * 100) + 1;
         if (counterRoll <= counterRate) {
+            counterTriggered = true;
             showMessage(target.name, "反撃！");
             addLog(`  反撃発生！（勇気 ${counterRoll}/${counterRate}%）`);
             resolveCounterAttack(attacker, target);
@@ -2216,6 +2349,16 @@ function resolvePhysicalHit(attacker, target, atkSkillName, options = {}) {
             addLog(`  反撃せず（勇気 ${counterRoll}/${counterRate}%）`);
         }
     }
+
+    return {
+        targetResult,
+        hpBefore,
+        hpAfterDamage,
+        targetHpAfter: target.hp,
+        actualDamage: actualDmg,
+        incapacitation,
+        counterTriggered,
+    };
 }
 
 function executeAttack(attacker, target) {
@@ -2235,13 +2378,22 @@ function executeAttack(attacker, target) {
         ({ val: atkStat, name: atkSkillName } = getAttackSkillVal(attacker));
     }
     const combatArtId = selectedCombatArtId;
+    const liveShadowComparison = startLivePhysicalShadowSession(
+        attacker,
+        target,
+        atkSkillName,
+        atkStat,
+        combatArtId
+    );
     selectedAttackSkill = null;
     selectedCombatArtId = null;
 
     // スタン中の相手は回避不可
     const targetStunned = (target.statusEffects || []).some(e => e.type === "stun");
     const evadeStat = targetStunned ? 0 : getEvadeSkillVal(target);
-    const hit = getBattleHitResult(attacker, target, atkStat, targetStunned);
+    const hit = getBattleHitResult(attacker, target, atkStat, targetStunned, {
+        rollSource: liveShadowComparison?.session.rollSource || null,
+    });
     const isHit = hit.isHit;
 
     const rollNote = hit.note;
@@ -2250,15 +2402,20 @@ function executeAttack(attacker, target) {
     if (!isHit) {
         showDamagePopup(target.id, 0, "miss");
         showMessage("SYSTEM", `${attacker.name}の攻撃は外れた！`);
+        finishLivePhysicalShadowSession(liveShadowComparison, hit);
         endUnitTurn(attacker);
         return;
     }
 
-    resolvePhysicalHit(attacker, target, atkSkillName, {
+    const physicalOutcome = resolvePhysicalHit(attacker, target, atkSkillName, {
         hit,
         attackSkillValue: atkStat,
         combatArtId,
+        rollSource: liveShadowComparison?.session.rollSource || null,
     });
+    if (!physicalOutcome?.counterTriggered) {
+        finishLivePhysicalShadowSession(liveShadowComparison, hit, physicalOutcome);
+    }
     endUnitTurn(attacker);
     checkVictoryCondition();
 }

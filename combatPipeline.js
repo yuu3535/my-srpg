@@ -1,23 +1,21 @@
 // =====================================================================
 // combatPipeline.js - Shadow-only combat pipeline prototype
 //
-// This module is intentionally not connected to game.js or index.html.
+// The live game may call this module for read-only shadow comparison.
 // It models the current single-target basic physical attack without
-// mutating live battle units.
+// mutating live battle units or deciding the real battle result.
 // =====================================================================
 
 const CombatStatRules = typeof module !== "undefined" && module.exports
     ? require("./statConversion.js")
     : globalThis;
 
-const {
-    calcBattleStats,
-    physicalDamage,
-    battleHitRate,
-    criticalRate,
-    criticalDamage,
-    masteryDamageBonus,
-} = CombatStatRules;
+const combatPipelineCalcBattleStats = CombatStatRules.calcBattleStats;
+const combatPipelinePhysicalDamage = CombatStatRules.physicalDamage;
+const combatPipelineBattleHitRate = CombatStatRules.battleHitRate;
+const combatPipelineCriticalRate = CombatStatRules.criticalRate;
+const combatPipelineCriticalDamage = CombatStatRules.criticalDamage;
+const combatPipelineMasteryDamageBonus = CombatStatRules.masteryDamageBonus;
 
 const COMBAT_PIPELINE_VERSION = 1;
 const BASIC_PHYSICAL_ACTION = "basicPhysical";
@@ -135,8 +133,8 @@ function createBattleContext(input = {}) {
     if (actor.id !== request.actorId) throw new Error("BattleContext actor does not match the request");
     if (target.id !== request.targetIds[0]) throw new Error("BattleContext target does not match the request");
 
-    const actorStats = calcBattleStats(actor);
-    const targetStats = calcBattleStats(target);
+    const actorStats = combatPipelineCalcBattleStats(actor);
+    const targetStats = combatPipelineCalcBattleStats(target);
     const weaponPower = Number.isFinite(Number(input.weaponPower))
         ? Number(input.weaponPower)
         : Number(actor.weaponPower ?? 3);
@@ -245,7 +243,7 @@ function runPureResolverHooks(phase, hooks, context, current) {
 }
 
 function getEffectiveCourage(unit) {
-    const stats = calcBattleStats(unit);
+    const stats = combatPipelineCalcBattleStats(unit);
     return Math.max(0, Number(stats.raw.courage || 0) - Number(unit.battleCourageLoss || 0));
 }
 
@@ -291,7 +289,7 @@ function resolveShadowPhysicalAttack(context, options = {}) {
     const guaranteedHit = context.rules.battleHitMode === "guaranteed";
     const hitRate = guaranteedHit
         ? 100
-        : battleHitRate(
+        : combatPipelineBattleHitRate(
             context.actorStats,
             context.targetStats,
             context.request.attackSkillValue,
@@ -343,8 +341,8 @@ function resolveShadowPhysicalAttack(context, options = {}) {
         + context.rules.actorDerivedBonus
         + modifiers.physicalPowerBonus;
     const armorValue = context.targetStats.armor + context.rules.targetDerivedBonus;
-    const baseBeforeMastery = physicalDamage({ atk: attackValue }, { def: armorValue }, 0);
-    const masteryBonus = masteryDamageBonus(context.actor.skills?.["武道"]);
+    const baseBeforeMastery = combatPipelinePhysicalDamage({ atk: attackValue }, { def: armorValue }, 0);
+    const masteryBonus = combatPipelineMasteryDamageBonus(context.actor.skills?.["武道"]);
     const calculatedDamage = baseBeforeMastery + masteryBonus;
     const beforeDamage = runPureResolverHooks("beforeDamage", options.hooks, context, {
         calculatedDamage,
@@ -360,7 +358,7 @@ function resolveShadowPhysicalAttack(context, options = {}) {
         0,
         Math.floor((calculatedDamage + modifiers.finalDamageBonus) * modifiers.damageMultiplier)
     );
-    const resolvedCriticalRate = criticalRate(
+    const resolvedCriticalRate = combatPipelineCriticalRate(
         getEffectiveCourage(context.actor),
         context.actor.level,
         context.targetStats.raw.app,
@@ -371,7 +369,7 @@ function resolveShadowPhysicalAttack(context, options = {}) {
     );
     const criticalRoll = rollSource.nextPercent("critical");
     const isCritical = criticalRoll <= resolvedCriticalRate;
-    const calculatedCriticalDamage = criticalDamage(normalDamage);
+    const calculatedCriticalDamage = combatPipelineCriticalDamage(normalDamage);
     const appliedDamage = isCritical ? calculatedCriticalDamage : normalDamage;
     const hpAfterDamage = Math.max(0, context.target.hp - appliedDamage);
 
