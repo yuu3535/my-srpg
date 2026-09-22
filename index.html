@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=M+PLUS+1:wght@300;400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=scenario-portrait-layers-1" />
+    <link rel="stylesheet" href="style.css?v=landscape-only-1" />
 </head>
 
 <body>
@@ -226,21 +226,17 @@
         <!-- ローディング画面 -->
         <div id="loadingScreen"></div>
 
-        <!-- ステータスモーダル -->
-        <div id="statusModalOverlay" class="hidden">
-            <div id="statusModal">
-                <div id="statusModalHeader">
-                    <span id="statusModalTitle">ステータス</span>
-                    <button id="closeStatusModal">×</button>
-                </div>
-                <div id="statusTabs">
-                    <button class="statusTab active" data-tab="basic">基本</button>
-                    <button class="statusTab" data-tab="skills">スキル</button>
-                </div>
-                <div id="statusModalBody"></div>
-            </div>
-        </div>
+    </div>
 
+    <!-- ゲームの拡大縮小・クリッピングから独立したステータス画面 -->
+    <div id="statusModalOverlay" class="hidden">
+        <div id="statusModal" role="dialog" aria-modal="true" aria-labelledby="statusModalTitle">
+            <div id="statusModalHeader">
+                <span id="statusModalTitle">ステータス</span>
+                <button id="closeStatusModal" type="button" aria-label="ステータスを閉じる">×</button>
+            </div>
+            <div id="statusModalBody" tabindex="0" role="region" aria-label="キャラクター能力詳細"></div>
+        </div>
     </div>
 
     <script src="characters.js?v=transparent-portraits-2"></script>
@@ -255,7 +251,7 @@
     <script src="battleDefinitions.js?v=battle-entry-1"></script>
     <script src="partyState.js?v=party-state-1"></script>
     <script src="scenario.js?v=transparent-portraits-5"></script>
-    <script src="game.js?v=transparent-portraits-5"></script>
+    <script src="game.js?v=landscape-only-1"></script>
 </body>
 
 </html>

@@ -17,9 +17,9 @@
     --text-main:   #deb96a;
     --text-sub:    rgba(210, 175, 100, 0.75);
     --text-dim:    rgba(180, 150, 80, 0.45);
-    /* デザイン基準サイズ（390×844 = iPhone 14相当） */
-    --design-w:    390px;
-    --design-h:    844px;
+    /* 横画面専用のデザイン基準サイズ */
+    --design-w:    844px;
+    --design-h:    390px;
     --top-h:       237px;   /* 844 × 0.281 */
     --bottom-h:    258px;   /* ユニット情報カード（全行表示）に必要な高さ */
     --grid-size:   349px;   /* 844 - 237 - 258 = 349。下パネルを切らさない */
@@ -2129,9 +2129,9 @@ html, body {
 .hpBarFill.hp { background: linear-gradient(90deg, #c8922a, #f1d27a); }
 .hpBarFill.mp { background: linear-gradient(90deg, #3ecfb8, #7eeedd); }
 
-/* 横画面の詳細は、縦積みモーダルではなく一枚の冒険者シートとして表示する。 */
-@media (orientation: landscape) and (max-width: 1200px) {
-    #statusModalOverlay.landscapeSheetOpen {
+/* 承認済みの冒険者シートの意匠を、戦闘UIの表示条件に依存させない。 */
+@media all {
+    #statusModalOverlay {
         position: fixed;
         z-index: 80;
         padding:
@@ -2143,7 +2143,7 @@ html, body {
         backdrop-filter: blur(3px);
     }
 
-    #statusModalOverlay.landscapeSheetOpen #statusModal {
+    #statusModalOverlay #statusModal {
         width: min(828px, calc(100vw - 16px));
         height: min(374px, calc(100dvh - 12px));
         border: 1px solid rgba(200,146,42,0.34);
@@ -2154,20 +2154,20 @@ html, body {
         box-shadow: 0 12px 46px rgba(0,0,0,0.88), inset 0 1px 0 rgba(255,232,160,0.08);
     }
 
-    #statusModalOverlay.landscapeSheetOpen #statusModalHeader {
+    #statusModalOverlay #statusModalHeader {
         height: 34px;
         padding: 4px 9px 4px 13px;
         background: linear-gradient(90deg, rgba(56,21,71,0.56), rgba(7,8,17,0.16) 62%);
         border-bottom-color: rgba(200,146,42,0.25);
     }
 
-    #statusModalOverlay.landscapeSheetOpen #statusModalTitle {
+    #statusModalOverlay #statusModalTitle {
         color: #efd081;
         font-size: 13px;
         letter-spacing: 0.16em;
     }
 
-    #statusModalOverlay.landscapeSheetOpen #closeStatusModal {
+    #statusModalOverlay #closeStatusModal {
         width: 26px;
         height: 26px;
         border: 0;
@@ -2175,11 +2175,11 @@ html, body {
         font-size: 20px;
     }
 
-    #statusModalOverlay.landscapeSheetOpen #statusTabs {
+    #statusModalOverlay #statusTabs {
         display: none;
     }
 
-    #statusModalOverlay.landscapeSheetOpen #statusModalBody {
+    #statusModalOverlay #statusModalBody {
         min-height: 0;
         overflow: hidden;
         padding: 0;
@@ -2507,6 +2507,26 @@ html, body {
 }
 
 
+/* ゲーム本体とは別に828×374のシート全体を拡縮し、元の比率を保つ。 */
+#statusModalOverlay {
+    font-family: "Noto Serif JP", "Yu Mincho", "Hiragino Mincho ProN", serif;
+}
+#statusModalOverlay #statusModal {
+    width: 828px;
+    height: 374px;
+    flex-shrink: 0;
+    transform: scale(var(--status-sheet-scale, 1));
+    transform-origin: center;
+}
+#statusModalOverlay #statusModalBody { overscroll-behavior: contain; }
+#statusModal :focus-visible { outline: 1px solid var(--gold); outline-offset: -2px; }
+#closeStatusModal:active { transform: scale(0.98); }
+.adventureList { padding-right: 3px; }
+.adventureVitals, .adventureBattle, .adventureLoadout {
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(200,146,42,0.34) transparent;
+}
 /* ============================================================
    ユニット情報カード（下部パネル選択時）
 ============================================================ */
@@ -2795,7 +2815,8 @@ html, body {
     display: none;
 }
 
-@media (orientation: landscape) {
+/* 端末の向きに関係なく横画面レイアウトを維持する。 */
+@media all {
     #gameScreen[data-mode="battle"] {
         --design-w: 844px;
         --design-h: 390px;
@@ -4414,7 +4435,8 @@ html, body {
     transform: translateY(1px) scale(0.98);
 }
 
-@media (orientation: landscape) {
+/* 端末の向きに関係なく横画面レイアウトを維持する。 */
+@media all {
     #gameScreen[data-mode="battle"] #homeScreen #debugBattleMenu,
     #gameScreen[data-mode="scenario"] #homeScreen #debugBattleMenu {
         left: 14px;
@@ -4710,7 +4732,8 @@ html, body {
    Scenario landscape layout
    Stage, dialogue, and commands share one 844 x 390 play surface.
 ============================================================ */
-@media (orientation: landscape) {
+/* 端末の向きに関係なく横画面レイアウトを維持する。 */
+@media all {
     #gameScreen[data-mode="scenario"] {
         --design-w: 844px;
         --design-h: 390px;

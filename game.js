@@ -23,7 +23,6 @@ const statusModalOverlay = document.getElementById("statusModalOverlay");
 const statusModalTitle   = document.getElementById("statusModalTitle");
 const statusModalBody    = document.getElementById("statusModalBody");
 const closeStatusModal   = document.getElementById("closeStatusModal");
-const statusTabs         = document.querySelectorAll(".statusTab");
 const phaseLabel         = document.getElementById("phaseLabel");
 const turnLabel          = document.getElementById("turnLabel");
 // 新UIパーツ（縦画面デュアルレイヤー）
@@ -150,7 +149,7 @@ let battleOver      = false;
 let currentBattleId = "battle_tutorial"; // 現在の戦闘ID（初期値はチュートリアル）
 let currentMapItems = []; // マップ上に配置されたアイテム { x, y, item: {id,name,type,value} }
 let statusTargetId  = null; // ステータスモーダル表示対象
-let currentStatusTab = "basic";
+let statusReturnFocus = null;
 let _vsAttack = null; // VS確認待ち { attacker, target, isMagic, spell }
 let partyState = createPartyState(CHARACTERS_DATA, calcBattleStats);
 
@@ -1518,9 +1517,7 @@ function executeSelfCombatArt(unit, artId) {
 
 function isLandscapeBattleUi() {
     return gameMode === "battle"
-        && gameScreen.dataset.mode === "battle"
-        && window.innerWidth > window.innerHeight
-        && window.innerWidth <= 1200;
+        && gameScreen.dataset.mode === "battle";
 }
 
 function syncLandscapeBattleMount() {
@@ -4496,13 +4493,32 @@ function showItemRadial(unit) {
 // =============================================
 function openStatusModal(unitId, tab = "basic") {
     statusTargetId = unitId;
-    currentStatusTab = tab;
+    statusReturnFocus = document.activeElement;
+    renderStatusModal();
     statusModalOverlay.classList.remove("hidden");
-    renderStatusTab(currentStatusTab);
+    gameScreen.inert = true;
+    fitStatusSheet();
+    statusModalBody.scrollTop = 0;
+    closeStatusModal.focus({ preventScroll: true });
+    // 旧UIの「特技」「魔法」から開いた場合も対応する欄へ案内する。
+    const section = tab === "magic" ? ".adventureMagic" : tab === "battle" ? ".adventureSkills" : null;
+    if (section) statusModalBody.querySelector(section)?.scrollIntoView({ block: "nearest" });
+}
+
+// 独立したモーダルの表示領域から拡大率を計算する。戦闘画面の幅制限は使わない。
+function fitStatusSheet() {
+    if (statusModalOverlay.classList.contains("hidden")) return;
+    const style = getComputedStyle(statusModalOverlay);
+    const width = statusModalOverlay.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    const height = statusModalOverlay.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+    const scale = Math.max(0.1, Math.min(width / 828, height / 374, 1.75));
+    statusModalOverlay.style.setProperty("--status-sheet-scale", scale);
 }
 
 function closeStatus() {
     statusModalOverlay.classList.add("hidden");
+    gameScreen.inert = false;
+    if (statusReturnFocus?.isConnected) statusReturnFocus.focus({ preventScroll: true });
 }
 
 function getMagicRangeSummary(unit) {
@@ -4551,19 +4567,19 @@ function getAvailablePassiveSkills(unit) {
         .filter(Boolean);
 }
 
-function renderLandscapeStatusSheet(unit, bs) {
+function renderStatusSheet(unit, bs) {
     const pct = (cur, max) => max > 0
         ? Math.max(0, Math.min(100, cur / max * 100))
         : 0;
     const metric = (label, value) => `
         <div class="adventureMetric"><span>${label}</span><b>${value}</b></div>`;
     const listRows = (entries, type) => {
-        if (!entries.length) return '<div class="adventureEmpty">―</div>';
+        if (!entries.length) return `<div class="adventureEmpty">${type === "spell" ? "習得している魔法はありません" : "修練情報はありません"}</div>`;
         return entries.map(([name, value]) => {
             if (type === "spell") {
                 const spell = SPELLS_DATA[name];
                 const detail = spell ? `射程${spell.range ?? "―"} / MP ${spell.mpCost ?? "―"}` : "";
-                return `<div class="adventureListRow"><span>${name}</span><small>${detail}</small><b>${value}</b></div>`;
+                return `<div class="adventureListRow spell"><span>${name}</span><small>${detail}</small><b>${value}</b></div>`;
             }
             return `<div class="adventureListRow"><span>${name}</span><b>${value}</b></div>`;
         }).join("");
@@ -4600,7 +4616,7 @@ function renderLandscapeStatusSheet(unit, bs) {
     statusModalBody.innerHTML = `
       <div class="adventureSheet">
         <section class="adventureIdentity">
-          <div class="adventurePortrait" style="background-image:url('${portrait}');background-size:${portraitSize};background-position:${portraitPos}"></div>
+          <div class="adventurePortrait" role="img" aria-label="${unit.name}の立ち絵" style="background-image:url('${portrait}');background-size:${portraitSize};background-position:${portraitPos}"></div>
           <div class="adventureNameplate">
             <strong>${unit.name}</strong><span>LV ${unit.level}</span>
           </div>
@@ -4651,17 +4667,17 @@ function renderLandscapeStatusSheet(unit, bs) {
 
         <section class="adventureSkills adventureRuled">
           <h3>TRAINING <span>修練度</span></h3>
-          <div class="adventureList">${listRows(Object.entries(unit.skills || {}), "skill")}</div>
+          <div class="adventureList" tabindex="0" role="region" aria-label="修練度一覧">${listRows(Object.entries(unit.skills || {}), "skill")}</div>
         </section>
 
         <section class="adventureBuild adventureRuled">
           <div class="adventureBuildPane">
             <h3>ARTS <span>戦技</span></h3>
-            <div class="adventureList">${abilityRows(getAvailableCombatArts(unit), "なし")}</div>
+            <div class="adventureList" tabindex="0" role="region" aria-label="戦技一覧">${abilityRows(getAvailableCombatArts(unit), "なし")}</div>
           </div>
           <div class="adventureBuildPane">
             <h3>PASSIVE <span>スキル</span></h3>
-            <div class="adventureList">${abilityRows(getAvailablePassiveSkills(unit), "なし")}</div>
+            <div class="adventureList" tabindex="0" role="region" aria-label="スキル一覧">${abilityRows(getAvailablePassiveSkills(unit), "なし")}</div>
           </div>
         </section>
 
@@ -4669,118 +4685,22 @@ function renderLandscapeStatusSheet(unit, bs) {
 
         <section class="adventureMagic adventureRuled">
           <h3>MAGIC <span>魔法</span></h3>
-          <div class="adventureList">${listRows(Object.entries(unit.spells || {}), "spell")}</div>
+          <div class="adventureList" tabindex="0" role="region" aria-label="魔法一覧">${listRows(Object.entries(unit.spells || {}), "spell")}</div>
         </section>
       </div>`;
 }
 
-function renderStatusTab(tabName) {
-    currentStatusTab = tabName;
-    // バトル中は live データ、それ以外は CHARACTERS_DATA から取得
-    const unit = battleUnits.length > 0
-        ? (battleUnits.find(u => u.id === statusTargetId) || CHARACTERS_DATA.find(c => c.id === statusTargetId))
-        : CHARACTERS_DATA.find(c => c.id === statusTargetId);
-    if (!unit) return;
-
-    statusTabs.forEach(tab => {
-        tab.classList.toggle("active", tab.dataset.tab === tabName);
-    });
+function renderStatusModal() {
+    // 戦闘中の現在値を優先する。表示形式は画面幅や戦闘UIの種類に依存させない。
+    const unit = battleUnits.find(u => u.id === statusTargetId)
+        || CHARACTERS_DATA.find(c => c.id === statusTargetId);
+    if (!unit) {
+        statusModalTitle.textContent = "ステータス";
+        statusModalBody.innerHTML = '<p class="adventureEmpty" role="alert">キャラクター情報を取得できません。閉じて選び直してください。</p>';
+        return;
+    }
     statusModalTitle.textContent = `${unit.name} ― ステータス`;
-
-    const sr = (label, val) =>
-        `<div class="statRow"><span class="statLabel">${label}</span><span class="statVal">${val}</span></div>`;
-    const hpBar = (cls, name, cur, max) => {
-        const pct = max > 0 ? Math.max(0, Math.min(100, cur / max * 100)) : 0;
-        return `<div class="hpBarWrap">
-          <div class="hpBarLabel">
-            <span class="hpBarLabelName">${name}</span>
-            <span class="hpBarLabelVal">${cur} / ${max}</span>
-          </div>
-          <div class="hpBarTrack"><div class="hpBarFill ${cls}" style="width:${pct}%"></div></div>
-        </div>`;
-    };
-    const bs = calcBattleStats(unit);
-    const raw = bs.raw;
-
-    statusModalOverlay.classList.toggle("landscapeSheetOpen", isLandscapeBattleUi());
-    if (isLandscapeBattleUi()) {
-        renderLandscapeStatusSheet(unit, bs);
-        return;
-    }
-
-    if (tabName === "basic") {
-        statusModalBody.innerHTML = `
-        <div class="statusSection">
-          <h3>基本情報</h3>
-          <div class="statusGrid">
-            ${sr("Name", unit.name)}
-            ${sr("種族", unit.race || "―")}
-            ${sr("一族", unit.clan || "―")}
-            ${sr("所属", unit.side === "ally" ? "味方" : "敵")}
-            ${sr("Lv", unit.level)}
-          </div>
-        </div>
-        <div class="statusSection">
-          <h3>HP / MP</h3>
-          ${hpBar("hp", "HP", unit.hp, unit.maxHp)}
-          ${hpBar("mp", "MP", unit.mp, unit.maxMp)}
-        </div>
-        <div class="statusSection">
-          <h3>基礎情報</h3>
-          <div class="statusGrid">
-            ${sr("勇気", `${getEffectiveCourage(unit)}%`)}
-            ${sr("運", raw.luck)}
-            ${sr("魅力", raw.app)}
-            ${sr("体格", raw.siz)}
-          </div>
-        </div>
-        <div class="statusSection">
-          <h3>戦闘基本</h3>
-          <div class="statusGrid">
-            ${sr("物攻", bs.power)}
-            ${sr("魔攻", bs.magic)}
-            ${sr("物防", bs.armor)}
-            ${sr("魔防", bs.ward)}
-            ${sr("命中基礎", bs.baseAccuracy)}
-            ${sr("回避基礎", bs.baseEvasion)}
-            ${sr("回避最終", bs.evasion)}
-            ${sr("反撃率", `${getCounterRate(unit)}%`)}
-            ${sr("必殺", criticalValue(getEffectiveCourage(unit), unit.level))}
-            ${sr("必殺耐性", criticalAvoidance(raw.app))}
-            ${sr("戦技", getCombatArtSummary(unit))}
-          </div>
-        </div>`;
-        return;
-    }
-    if (tabName === "skills") {
-        const skillLines = Object.entries(unit.skills || {})
-            .map(([name, v]) => sr(name, v)).join("");
-        const spellLines = Object.entries(unit.spells || {}).map(([name, v]) => {
-            const sp = SPELLS_DATA[name];
-            const range = typeof sp?.range === "number" ? sp.range : "―";
-            return `<div class="statRow">
-              <span class="statLabel">${name}</span>
-              <span class="statVal">${v}&nbsp;<span style="font-size:10px;opacity:0.6;font-weight:normal">射程${range}</span></span>
-            </div>`;
-        }).join("");
-        const empty = '<div class="statRow"><span class="statVal">―</span></div>';
-        statusModalBody.innerHTML = `
-        <div class="statusSection">
-          <h3>修練度</h3>
-          <div class="statusGrid">${skillLines || empty}</div>
-        </div>
-        <div class="statusSection">
-          <h3>魔法</h3>
-          <div class="statusGrid">${spellLines || empty}</div>
-        </div>
-        <div class="statusSection">
-          <h3>その他</h3>
-          <div class="statusGrid wide">
-            ${sr("発作タイプ", unit.seizureType || "―")}
-            ${sr("秘伝", unit.secretArt || "―")}
-          </div>
-        </div>`;
-    }
+    renderStatusSheet(unit, calcBattleStats(unit));
 }
 
 // =============================================
@@ -4956,9 +4876,7 @@ function updateScenarioCharLayer(speaker) {
             || (typeof entry === "object" && entry.bgPos)
             || charData?.scenarioBgPos;
         if (sBgSize) {
-            const landscapeMatch = window.innerWidth > window.innerHeight
-                ? sBgSize.match(/^auto\s+(\d+(?:\.\d+)?)%$/)
-                : null;
+            const landscapeMatch = sBgSize.match(/^auto\s+(\d+(?:\.\d+)?)%$/);
             portrait.style.backgroundSize = landscapeMatch
                 ? `auto ${Math.round(Number(landscapeMatch[1]) * 1.18)}%`
                 : sBgSize;
@@ -5566,8 +5484,24 @@ statusModalOverlay.addEventListener("click", e => {
     if (e.target === statusModalOverlay) closeStatus();
 });
 
-statusTabs.forEach(tab => {
-    tab.addEventListener("click", () => renderStatusTab(tab.dataset.tab));
+// モーダル表示中は背景へのキー入力を止め、フォーカスを画面内に保つ。
+statusModalOverlay.addEventListener("keydown", e => {
+    e.stopPropagation();
+    if (e.key === "Escape") {
+        e.preventDefault();
+        closeStatus();
+    } else if (e.key === "Tab") {
+        const focusable = [...statusModalOverlay.querySelectorAll('button, [tabindex="0"]')];
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus({ preventScroll: true });
+        } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus({ preventScroll: true });
+        }
+    }
 });
 
 // =============================================
@@ -5703,21 +5637,17 @@ dangerRangeToggle?.addEventListener("click", e => {
 });
 
 // =============================================
-// スケール調整（デザインサイズ390×844を画面にフィット）
+// スケール調整（横画面844×390を比率を保って画面にフィット）
 // =============================================
 function scaleGame() {
     const viewport = window.visualViewport || window;
     const viewportW = viewport.width || window.innerWidth;
     const viewportH = viewport.height || window.innerHeight;
-    const isLandscapeGame = viewportW > viewportH;
-    const baseW = isLandscapeGame ? 844 : 390;
-    const baseH = isLandscapeGame ? 390 : 844;
-    const mobileReserve = !isLandscapeGame && viewportW <= 480
-        ? Math.min(36, Math.max(18, viewportH * 0.035))
-        : 0;
-    const s = Math.min(viewportW / baseW, (viewportH - mobileReserve) / baseH);
+    // 縦長ウィンドウでも縦配置へ切り替えず、横長のゲーム画面を中央に収める。
+    const s = Math.min(viewportW / 844, viewportH / 390);
     document.getElementById("gameScreen").style.transform = `scale(${s})`;
     syncLandscapeBattleUi(selectedUnit);
+    fitStatusSheet();
 }
 window.addEventListener("resize", scaleGame);
 window.visualViewport?.addEventListener("resize", scaleGame);

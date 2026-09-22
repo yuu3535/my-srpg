@@ -9,6 +9,8 @@ JavaScript / HTML / CSS製の自作シミュレーションRPG(ビルドツー�
 GitHub Pagesで公開中: https://yuu3535.github.io/my-srpg/
 
 - UIカラーテーマ: ヴァイオレット × ゴールド × アンバー
+- 画面は横画面専用（2026-09-21 原作者指定）。縦長ウィンドウでも横長比率を維持し、ホーム・会話・戦闘・ステータスを縦配置へ切り替えない。
+- UI意匠は `1efae8f` の横画面ステータスシートを基準にする（2026-09-21 原作者確認）。黒紫の下地・紫の帯・金の細罫線・明朝体・控えめな紋章を維持し、可読性改善を理由に汎用ダッシュボード風へ変更しない。詳細は `PROJECT_CONSTITUTION.md` の「UIの意匠基準」を参照。
 - エントリポイント: `index.html`
 - 主要スクリプト: `game.js`(本体)、`characters.js`、`skills.js`、`magics.js`、`spells.js`、`scenario.js`、`dataHelper.js`
 - スタイル: `style.css`
