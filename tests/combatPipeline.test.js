@@ -15,6 +15,8 @@ const {
     resolveShadowPhysicalAttack,
     compareShadowPlanToLegacy,
 } = require("../combatPipeline.js");
+const { executeBattlePlanOnClones } = require("../cloneBattleExecutor.js");
+const CHARACTERS_DATA = require("../characters.js");
 
 function makeUnit(overrides = {}) {
     return {
@@ -102,8 +104,17 @@ function resolveLegacyPilotAttack({ actor, target, request, weaponPower }, rolls
         return {
             hit: { rate: hitRate, roll: hitRoll, isHit: false },
             critical: null,
-            damage: { normal: 0, critical: 0, applied: 0 },
+            damage: {
+                attackValue: null,
+                armorValue: null,
+                base: 0,
+                masteryBonus: 0,
+                normal: 0,
+                critical: 0,
+                applied: 0,
+            },
             incapacitation: null,
+            commands: [],
             summary: { targetHpAfter: target.hp },
         };
     }
@@ -111,7 +122,8 @@ function resolveLegacyPilotAttack({ actor, target, request, weaponPower }, rolls
     const attackValue = actorStats.power + weaponPower;
     const armorValue = targetStats.armor;
     const base = physicalDamage({ atk: attackValue }, { def: armorValue }, 0);
-    const normalDamage = base + masteryDamageBonus(actor.skills["武道"]);
+    const masteryBonus = masteryDamageBonus(actor.skills["武道"]);
+    const normalDamage = base + masteryBonus;
     const resolvedCriticalRate = criticalRate(
         Math.max(0, actorStats.raw.courage - Number(actor.battleCourageLoss || 0)),
         actor.level,
@@ -127,24 +139,45 @@ function resolveLegacyPilotAttack({ actor, target, request, weaponPower }, rolls
     const appliedDamage = isCritical ? resolvedCriticalDamage : normalDamage;
     let targetHpAfter = Math.max(0, target.hp - appliedDamage);
     let incapacitation = null;
+    const commands = [{
+        type: "setHp",
+        unitId: target.id,
+        from: target.hp,
+        to: targetHpAfter,
+        reason: "physicalDamage",
+    }];
 
     if (target.hp > 2 && targetHpAfter <= 2 && targetHpAfter > 0) {
         const rate = targetStats.raw.con * 5;
         const roll = nextRoll();
         const triggered = roll > rate;
         incapacitation = { rate, roll, triggered };
-        if (triggered) targetHpAfter = 0;
+        if (triggered) {
+            commands.push({
+                type: "setHp",
+                unitId: target.id,
+                from: targetHpAfter,
+                to: 0,
+                reason: "incapacitation",
+            });
+            targetHpAfter = 0;
+        }
     }
 
     return {
         hit: { rate: hitRate, roll: hitRoll, isHit: true },
         critical: { rate: resolvedCriticalRate, roll: criticalRoll, isCritical },
         damage: {
+            attackValue,
+            armorValue,
+            base,
+            masteryBonus,
             normal: normalDamage,
             critical: resolvedCriticalDamage,
             applied: appliedDamage,
         },
         incapacitation,
+        commands,
         summary: { targetHpAfter },
     };
 }
@@ -161,11 +194,21 @@ function assertLegacyParity(fixture, rolls) {
         weaponPower: fixture.context.rules.weaponPower,
     }, rolls);
     const differences = compareShadowPlanToLegacy(plan, legacy);
+    const cloneExecution = executeBattlePlanOnClones(plan, [fixture.actor, fixture.target]);
+    const executedTarget = cloneExecution.units.find(unit => unit.id === fixture.target.id);
 
     assert.deepEqual(differences, [], `shadow and legacy results differ: ${JSON.stringify(differences)}`);
+    assert.equal(cloneExecution.ok, true, "eligible shadow plan executes on clones");
+    assert.equal(executedTarget.hp, plan.summary.targetHpAfter, "clone HP matches the BattlePlan summary");
+    assert.equal(executedTarget.hp, legacy.summary.targetHpAfter, "clone HP matches the legacy result");
+    assert.deepEqual(
+        cloneExecution.appliedCommands.map(entry => entry.index),
+        plan.commands.map((_, index) => index),
+        "clone executor preserves BattlePlan command order"
+    );
     assert.deepEqual(fixture.actor, actorBefore, "shadow resolver does not mutate the live actor");
     assert.deepEqual(fixture.target, targetBefore, "shadow resolver does not mutate the live target");
-    return { plan, source };
+    return { plan, source, legacy, cloneExecution };
 }
 
 {
@@ -231,10 +274,12 @@ function assertLegacyParity(fixture, rolls) {
         },
         weaponPower: 0,
     });
-    const { plan, source } = assertLegacyParity(fixture, [1, 100, 60]);
+    const { plan, source, cloneExecution } = assertLegacyParity(fixture, [1, 100, 60]);
     assert.deepEqual(plan.incapacitation, { rate: 50, roll: 60, triggered: true });
     assert.equal(plan.summary.targetHpAfter, 0, "failed CON check records incapacitation");
     assert.equal(source.getConsumedCount(), 3, "incapacitation consumes a third fixed roll");
+    assert.deepEqual(plan.commands.map(command => command.reason), ["physicalDamage", "incapacitation"]);
+    assert.deepEqual(cloneExecution.appliedCommands.map(command => command.reason), ["physicalDamage", "incapacitation"]);
 }
 
 {
@@ -272,6 +317,111 @@ function assertLegacyParity(fixture, rolls) {
     const plan = resolveShadowPhysicalAttack(context, { rollSource: createFixedRollSource([]) });
     assert.equal(plan.eligible, false, "unsupported passive effects stay on the legacy path");
     assert.ok(plan.ineligibilityReasons.includes("actor-passives"));
+    const execution = executeBattlePlanOnClones(plan, [actor, target]);
+    assert.equal(execution.ok, false, "ineligible plans are not executed on clones");
+    assert.equal(execution.reason, "ineligible-plan");
+}
+
+{
+    const fixture = createFixture();
+    const plan = resolveShadowPhysicalAttack(fixture.context, {
+        rollSource: createFixedRollSource([1, 100]),
+    });
+    const staleTarget = structuredClone(fixture.target);
+    staleTarget.hp -= 1;
+    const staleTargetBefore = structuredClone(staleTarget);
+    const execution = executeBattlePlanOnClones(plan, [fixture.actor, staleTarget]);
+
+    assert.equal(execution.ok, false, "stale clone state stops execution");
+    assert.equal(execution.reason, "state-mismatch");
+    assert.equal(execution.commandIndex, 0);
+    assert.equal(execution.expected, fixture.target.hp);
+    assert.equal(execution.actual, staleTarget.hp);
+    assert.equal(execution.appliedCommands.length, 0, "failed execution commits no commands");
+    assert.deepEqual(staleTarget, staleTargetBefore, "failed execution does not mutate its source unit");
+}
+
+{
+    const actor = makeUnit({ id: "actor" });
+    const target = makeUnit({ id: "target", side: "enemy", hp: 6, maxHp: 6 });
+    const targetBefore = structuredClone(target);
+    const inconsistentPlan = {
+        eligible: true,
+        commands: [
+            { type: "setHp", unitId: "target", from: 6, to: 2, reason: "physicalDamage" },
+            { type: "setHp", unitId: "target", from: 1, to: 0, reason: "incapacitation" },
+        ],
+    };
+    const execution = executeBattlePlanOnClones(inconsistentPlan, [actor, target]);
+    const returnedTarget = execution.units.find(unit => unit.id === target.id);
+
+    assert.equal(execution.ok, false, "a mismatch in a later command stops execution");
+    assert.equal(execution.reason, "state-mismatch");
+    assert.equal(execution.commandIndex, 1, "commands are validated in their original order");
+    assert.equal(execution.expected, 1);
+    assert.equal(execution.actual, 2);
+    assert.equal(returnedTarget.hp, 6, "a later failure rolls back earlier clone changes");
+    assert.deepEqual(target, targetBefore, "rollback does not mutate its source unit");
+}
+
+{
+    const sourceActor = CHARACTERS_DATA.find(unit => unit.id === "arshe");
+    const sourceTarget = CHARACTERS_DATA.find(unit => unit.id === "forest_guard");
+    const sourceActorBefore = structuredClone(sourceActor);
+    const sourceTargetBefore = structuredClone(sourceTarget);
+    const actor = {
+        ...structuredClone(sourceActor),
+        learnedPassives: [],
+        equippedPassives: [],
+        statusEffects: [],
+    };
+    const target = {
+        ...structuredClone(sourceTarget),
+        learnedPassives: [],
+        equippedPassives: [],
+        statusEffects: [],
+    };
+    const request = createBattleActionRequest({
+        id: "request:real-arshe-vs-forest-guard",
+        actorId: actor.id,
+        targetId: target.id,
+        attackSkillName: "武器",
+        attackSkillValue: actor.skills["武器"],
+    });
+    const context = createBattleContext({ request, actor, target, weaponPower: 3 });
+    const fixture = { actor, target, request, context };
+    const { plan, cloneExecution } = assertLegacyParity(fixture, [1, 100]);
+    const executedTarget = cloneExecution.units.find(unit => unit.id === target.id);
+
+    assert.deepEqual({
+        attackValue: plan.damage.attackValue,
+        armorValue: plan.damage.armorValue,
+        masteryBonus: plan.damage.masteryBonus,
+        hitRate: plan.hit.rate,
+        normalDamage: plan.damage.normal,
+        criticalRate: plan.critical.rate,
+        criticalDamage: plan.damage.critical,
+        commands: plan.commands,
+        executedHp: executedTarget.hp,
+    }, {
+        attackValue: 25,
+        armorValue: 16,
+        masteryBonus: 2,
+        hitRate: 70,
+        normalDamage: 11,
+        criticalRate: 20,
+        criticalDamage: 33,
+        commands: [{
+            type: "setHp",
+            unitId: "forest_guard",
+            from: 14,
+            to: 3,
+            reason: "physicalDamage",
+        }],
+        executedHp: 3,
+    }, "real character data remains characterized");
+    assert.deepEqual(sourceActor, sourceActorBefore, "characters.js actor data is unchanged");
+    assert.deepEqual(sourceTarget, sourceTargetBefore, "characters.js target data is unchanged");
 }
 
 console.log("combatPipeline: shadow/legacy parity tests passed");
