@@ -98,8 +98,8 @@ const TRIAL_PROFILES = Object.freeze({
 
 /*
  * 表示用の兵種データ（仮）
- *   兵種: 各キャラ兵種表 - 各キャラ兵種適正.csv の「◎（加入時の最初の兵種）」
- *   兵種スキル: 各キャラ兵種表 - 兵種スキル.csv
+ *   兵種: Regarding character growth rates, skills, and combat arts/各キャラ兵種表 - 各キャラ兵種適正.csv の「◎（加入時の最初の兵種）」
+ *   兵種スキル: 同フォルダの 各キャラ兵種表 - 兵種スキル.csv
  *   兵種Lvは未実装のため、表示上は TRIAL_CLASS_LEVEL とする
  */
 const TRIAL_CLASS_LEVEL = 1;
