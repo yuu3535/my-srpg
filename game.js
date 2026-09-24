@@ -1963,8 +1963,8 @@ function getLandscapeCommands(unit) {
     const commands = [];
     if (canUndoMove(unit)) commands.push({ label: "戻る", active: true });
     if (!unit.acted) commands.push({ label: "攻撃", active: actionState === "attacking" || actionState === "throwing" });
-    if (!unit.acted && Object.keys(unit.spells || {}).length > 0) commands.push({ label: "魔法", active: actionState === "magic" });
-    if (!unit.acted && Object.keys(unit.skills || {}).some(s => BATTLE_UTILITY_SKILLS.has(s))) commands.push({ label: "特技" });
+    // 魔法・特技のコマンドは廃止（原作者方針 2026-09-25）。
+    // 特技は戦技へ移し、魔法は戦技で得る魔法か、魔導書（武器）の装備で使う予定
     if ((unit.items?.length ?? 0) > 0) commands.push({ label: "持ち物" });
     if (!unit.acted) commands.push({ label: "待機" });
     commands.push({ label: "詳細" });
@@ -2219,7 +2219,7 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
     if (landscapeCommandList) landscapeCommandList.innerHTML = "";
     setLandscapeRailVisible(false);   // 予測モーダル表示中は針を隠す
 
-    // 戦闘後HPの予測（FE風の下段バーに使う）。
+    // 戦闘後HPの予測（予測枠のHP表示に使う）。
     // effectDesc は通常攻撃でも常に入るため、ダメージ系かは effectType で判定する
     const isDamage = !_vsAttack?.isMagic
         || ["magicDamage", "break"].includes(_vsAttack?.spell?.effectType);
@@ -2229,88 +2229,54 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
     const counterHits = pred.counterFollowUp ? 2 : 1;
     const defAfter = isDamage ? Math.max(0, target.hp - dmgN * attackerHits) : target.hp;
     const atkAfter = Math.max(0, attacker.hp - ctrN * counterHits);
-    const atkPct = attacker.maxHp ? atkAfter / attacker.maxHp * 100 : 0;
-    const defPct = target.maxHp   ? defAfter / target.maxHp   * 100 : 0;
-
-    const bust = (u, flip) => {
-        const src = getPortraitSrc(u) || u.tokenImage || "";
-        return `<div class="lsFcBust${flip ? " flip" : ""}" style="${src ? `background-image:url('${src}')` : ""}"></div>`;
-    };
-    const ctrWeapon = pred.canCounter ? (getAttackSkillVal(target).name || "反撃") : "なし";
     const dmgDisp = pred.effectDesc || dmgN;
     const counterDmgDisp = pred.canCounter ? `${ctrN}${pred.counterFollowUp ? "×2" : ""}` : "─";
 
-    const equipmentName = u => {
-        if (typeof u.equipment === "string" && u.equipment.trim() && u.equipment !== "―") {
-            return u.equipment;
-        }
-        return u.equipment?.weapon?.name || u.weapon?.name || "未装備";
-    };
-
-    // 予測画面では戦闘判断に必要な情報だけを出す。
-    // TRPG技能一覧は表示せず、装備武器と今回選んだ攻撃種別を分ける。
-    const sideMeta = (u, actionType, actionName) => `
-        <div class="lsFcMeta">
-            <div class="lsFcNameRow"><span class="lsFcName">${u.name}</span><i class="lsFcCrest"></i></div>
-            <div class="lsFcClass">${formatUnitLevelLabel(u)}　${u.race || "―"}</div>
-            <div class="lsFcSlot"><em>武器</em><span>${equipmentName(u)}</span></div>
-            <div class="lsFcSlot action"><em>${actionType}</em><span>${actionName}</span></div>
-        </div>`;
-
     const activeCombatArt = getCombatArtData(selectedCombatArtId);
-    const attackerActionType = activeCombatArt ? "戦技" : (_vsAttack?.isMagic ? "魔法" : "武器種");
-    const attackerActionName = activeCombatArt?.name || actionLabel || (_vsAttack?.isMagic ? _vsAttack?.spell?.name : getAttackSkillVal(attacker).name) || "攻撃";
-    const counterActionName = pred.canCounter ? ctrWeapon : "なし";
     const effectNoteHtml = [pred.effectNotes, pred.counterNotes]
         .filter(Boolean)
         .map(note => note.replace(/^\s*\[|\]\s*$/g, ""))
         .join(" / ");
 
+    // 参考UI（マップ背景イメージたたき台）の戦闘予測：上部中央の小さな枠
+    const face = (u, cls) => {
+        const src = getPortraitSrc(u) || u.tokenImage || "";
+        const style = src
+            ? `background-image:url('${src}');background-size:${u.portraitBgSize || "cover"};background-position:${u.portraitBgPos || "center top"}`
+            : "";
+        return `<i class="refFcFace ${cls}" style="${style}"></i>`;
+    };
+    const counterRow = pred.canCounter
+        ? `<div class="counter"><dt>反撃</dt><dd>${counterDmgDisp}<small>命中${pred.ctrHitRate}%・発生${pred.counterRate}%</small></dd></div>`
+        : "";
     lsForecast.innerHTML = `
-        <div class="lsFcSide allySide">
-            ${bust(attacker, false)}
-            ${sideMeta(attacker, attackerActionType, attackerActionName)}
-            <span class="lsFcTerrain">平地</span>
-        </div>
-        <div class="lsFcTable">
-            <div class="lsFcChipRow">
+        <div class="refFc">
+            <div class="refFcHead"><i class="refFcIcon" aria-hidden="true"></i><span>戦闘予測</span><em>${activeCombatArt?.name || actionLabel || "攻撃"}</em></div>
+            <div class="refFcHp">
+                ${face(attacker, "ally")}
+                <div class="refFcHpNums">
+                    <b class="ally">${atkAfter}</b>
+                    <i aria-hidden="true">▶</i>
+                    <b class="enemy">${defAfter}</b>
+                    <small>HP</small>
+                </div>
+                ${face(target, "enemy")}
+            </div>
+            <dl class="refFcRows">
+                <div><dt>攻撃</dt><dd>${isDamage ? dmgDisp : pred.effectDesc}</dd></div>
+                <div><dt>命中</dt><dd>${pred.hitRate}%</dd></div>
+                <div><dt>必殺</dt><dd>${isDamage ? `${pred.critRate}%` : "─"}</dd></div>
+                ${counterRow}
+            </dl>
+            ${effectNoteHtml ? `<div class="refFcNote">${effectNoteHtml}</div>` : ""}
+            <div class="refFcBtns">
                 <button type="button" id="lsFcCancel">キャンセル</button>
                 <button type="button" id="lsFcConfirm">実行</button>
             </div>
-            <div class="lsFcHead">
-                <span>命中</span><span>威力</span><span>必殺</span>
-                <b class="lsFcHpPlate">${attacker.hp}<em>HP</em>${target.hp}</b>
-                <span>必殺</span><span>威力</span><span>命中</span>
-            </div>
-            <div class="lsFcVals">
-                <span>${pred.hitRate}</span><span>${dmgDisp}</span><span class="lsFcCrit">${isDamage ? pred.critRate : "─"}</span>
-                <span class="lsFcExchange" aria-label="与えるダメージと受けるダメージ">
-                    <b class="toDef"><small>与</small><strong>${isDamage ? dmgDisp : pred.effectDesc}</strong><i>→</i></b>
-                    <b class="toAtk"><i>←</i><strong>${counterDmgDisp}</strong><small>被</small></b>
-                </span>
-                <span class="lsFcCrit">${pred.canCounter ? pred.ctrCritRate : "─"}</span><span>${counterDmgDisp}</span><span>${pred.canCounter ? pred.ctrHitRate : "─"}</span>
-            </div>
-            <div class="lsFcCounterNote${pred.canCounter ? "" : " hidden"}">
-                <span>反撃発生 ${pred.counterRate}%</span>
-                <i>×</i>
-                <span>命中 ${pred.ctrHitRate}%</span>
-                <b>実効 ${pred.ctrEffectiveRate}%</b>
-            </div>
-            <div class="lsFcEffectNote${effectNoteHtml ? "" : " hidden"}">${effectNoteHtml || "—"}</div>
-            <div class="lsFcBars">
-                <div class="lsFcBar ally"><i style="width:${atkPct}%"></i></div>
-                <b class="lsFcAfter ally">${atkAfter}</b>
-                <span class="lsFcAfterLabel">戦闘後</span>
-                <b class="lsFcAfter enemy">${defAfter}</b>
-                <div class="lsFcBar enemy"><i style="width:${defPct}%"></i></div>
-            </div>
-        </div>
-        <div class="lsFcSide enemySide">
-            ${bust(target, true)}
-            ${sideMeta(target, "反撃", counterActionName)}
-            <span class="lsFcTerrain">平地</span>
         </div>
     `;
+    // 攻撃対象を隠さないよう、対象が盤面の上半分にいるときは枠を下に出す
+    lsForecast.classList.toggle("atBottom", target.y < GRID_ROWS / 2);
     lsForecast.classList.remove("hidden");
     setLandscapeForecastOpen(true);
 

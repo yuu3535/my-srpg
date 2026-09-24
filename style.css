@@ -5276,3 +5276,141 @@ html, body {
 
 /* 下端の説明帯を全幅にしたため、画面下の飾り文字は戦闘中は出さない */
 #gameScreen[data-mode="battle"]::before { display: none; }
+
+/* ── 戦闘予測：参考UIどおり上部中央の小さな枠（配色は従来の黒紫・金） ──
+   予測中も左右の一覧・ユニット欄は隠さず、盤面の大きさも変えない */
+#landscapeBattleShell.forecast-open::after { display: none; }
+#landscapeBattleShell.forecast-open #landscapeUnitPanel,
+#landscapeBattleShell.forecast-open #landscapeRoster {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    pointer-events: auto;
+}
+#landscapeBattleShell.forecast-open #landscapeBattlefield {
+    grid-column: 2;
+    box-shadow: inset 0 0 35px rgba(0,0,0,0.50), 0 0 28px rgba(42,20,66,0.40);
+}
+#landscapeBattleShell.forecast-open #landscapeBattlefield::after { opacity: 1; }
+
+#gameScreen[data-mode="battle"] #lsForecast {
+    position: absolute;
+    top: 40px;
+    left: calc(58px + (100% - 58px - 168px) / 2);
+    right: auto;
+    bottom: auto;
+    width: 236px;
+    height: auto;
+    transform: translateX(-50%);
+    display: block;
+    z-index: 26;
+}
+#gameScreen[data-mode="battle"] #lsForecast.hidden { display: none; }
+
+.refFc {
+    background: linear-gradient(180deg, rgba(22,12,34,0.95), rgba(8,6,16,0.94));
+    border: 1px solid rgba(200,146,42,0.42);
+    box-shadow: inset 0 1px 0 rgba(255,232,160,0.10), 0 6px 18px rgba(0,0,0,0.55);
+    animation: refFcIn 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes refFcIn {
+    from { transform: translateY(-4px); opacity: 0; }
+    to   { transform: none; opacity: 1; }
+}
+.refFcHead {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    color: #ecd28e;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    border-bottom: 1px solid rgba(200,146,42,0.24);
+}
+.refFcHead em {
+    margin-left: auto;
+    color: rgba(224,189,115,0.62);
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+}
+.refFcIcon {
+    width: 9px;
+    height: 9px;
+    transform: rotate(45deg);
+    border: 1px solid rgba(224,176,72,0.75);
+    background: rgba(82,18,98,0.8);
+}
+.refFcHp {
+    display: grid;
+    grid-template-columns: 46px minmax(0, 1fr) 46px;
+    align-items: stretch;
+    height: 44px;
+    border-bottom: 1px solid rgba(200,146,42,0.18);
+}
+.refFcFace { background-repeat: no-repeat; background-color: rgba(0,0,0,0.25); }
+.refFcFace.enemy { transform: scaleX(-1); }
+.refFcHpNums {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding-bottom: 6px;
+}
+.refFcHpNums b {
+    min-width: 30px;
+    text-align: center;
+    color: #f4e6c0;
+    font-size: 20px;
+    line-height: 1;
+    padding-bottom: 3px;
+}
+.refFcHpNums b.ally  { border-bottom: 2px solid rgba(65,199,179,0.85); }
+.refFcHpNums b.enemy { border-bottom: 2px solid rgba(229,110,78,0.85); }
+.refFcHpNums i { color: rgba(236,210,142,0.85); font-style: normal; font-size: 9px; }
+.refFcHpNums small {
+    position: absolute;
+    left: 50%;
+    bottom: 2px;
+    transform: translateX(-50%);
+    color: rgba(224,189,115,0.6);
+    font-size: 7px;
+    letter-spacing: 0.1em;
+}
+.refFcRows { margin: 0; padding: 4px 10px 4px 54px; }
+.refFcRows > div {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    align-items: baseline;
+    padding: 1px 0;
+}
+.refFcRows dt { color: rgba(224,189,115,0.72); font-size: 10px; letter-spacing: 0.1em; }
+.refFcRows dd { margin: 0; color: #f4e6c0; font-size: 12px; text-align: right; }
+.refFcRows dd small { display: block; color: rgba(224,189,115,0.55); font-size: 8px; }
+.refFcRows > .counter { margin-top: 2px; padding-top: 3px; border-top: 1px dashed rgba(200,146,42,0.2); }
+.refFcNote { padding: 0 10px 4px; color: rgba(97,223,205,0.8); font-size: 8px; }
+.refFcBtns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+    padding: 5px 8px 7px;
+    border-top: 1px solid rgba(200,146,42,0.18);
+}
+.refFcBtns button {
+    min-height: 24px;
+    font-family: inherit;
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    color: rgba(224,189,115,0.85);
+    background: linear-gradient(180deg, rgba(82,18,98,0.8), rgba(22,8,35,0.9));
+    border: 1px solid rgba(200,146,42,0.36);
+    cursor: pointer;
+}
+.refFcBtns #lsFcConfirm {
+    color: #ffe2a0;
+    background: linear-gradient(180deg, rgba(130,73,28,0.9), rgba(78,39,18,0.9));
+    border-color: rgba(224,176,72,0.7);
+}
+.refFcBtns button:active { transform: translateY(1px); }
+#gameScreen[data-mode="battle"] #lsForecast.atBottom { top: auto; bottom: 30px; }
