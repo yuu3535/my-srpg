@@ -64,7 +64,8 @@
 
 ## `docs` 外に残している文書
 
-- [`../CLAUDE.md`](../CLAUDE.md)：AI作業環境向けの特別な指示。場所を変えない。
+- [`../AGENTS.md`](../AGENTS.md)：Codex / Claude Code 共通のAI作業指示。場所を変えない。
+- [`../CLAUDE.md`](../CLAUDE.md)：`AGENTS.md` を読み込んだうえでのClaude Code固有の補足。場所を変えない。
 - [`../PROJECT_CONSTITUTION.md`](../PROJECT_CONSTITUTION.md)：ゲーム全体の最上位方針。見失わないようルートに残す。
 - [`../採用版md/README.md`](../採用版md/README.md)：採用済みの能力値・成長率資料。検討中の設計資料と区別する。
 - `output/`、`outputs/`：生成した報告書や出力物。
