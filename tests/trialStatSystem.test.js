@@ -12,6 +12,13 @@ const {
     TRIAL_LOADOUT_SLOT_COUNTS,
     trialSkillLoadoutFor,
     trialMagicMenuFor,
+    TRIAL_CAUSE_ABILITIES,
+    TRIAL_PERSONAL_SKILLS,
+    trialPhysicalArtsFor,
+    trialLoadoutStatBonus,
+    trialAuraModifiers,
+    trialAttackModifiers,
+    trialAbilityChance,
 } = require("../trialStatSystem.js");
 
 const P = TRIAL_PROFILES;
@@ -110,10 +117,56 @@ assert.equal(ringLoadout.classUnique.length, TRIAL_LOADOUT_SLOT_COUNTS.classUniq
 assert.deepEqual(ringLoadout.causeSkills.map(skill => skill?.name), ["黒の一族", "死神", "カウンター"]);
 assert.deepEqual(ringLoadout.combatArts.map(art => art?.name), ["召喚「ヒトダマ」", "円舞", "復讐", undefined]);
 
-// 専用兵種予定4人の因果Lv50能力は、因果3枠ではなく兵種固有枠へ入る。
+// 専用兵種予定4人の因果Lv50能力は、因果3枠には入らない。兵種固有枠に置けるのは専用兵種のときだけ
+// （SKILL_LOADOUT_RULES §5）。試験では最初の兵種のため、兵種固有枠は空き
 const karimaFinal = trialSkillLoadoutFor("young_karima", 50);
-assert.equal(karimaFinal.classUnique[0].name, "神炎の器");
+assert.equal(karimaFinal.classUnique[0], null);
 assert.equal(karimaFinal.causeSkills.some(skill => skill?.name === "神炎の器"), false);
+assert.equal(TRIAL_CAUSE_ABILITIES.young_karima.find(a => a.level === 50).type, "exclusive");
+
+// 兵種表CSVから作ったデータ: 最初の兵種、個人スキル、戦技の種類、能力値上昇の読み取り
+assert.deepEqual(TRIAL_UNIT_CLASS.ringholm, { name: "ならずもの", line: "戦列下級" });
+assert.deepEqual(TRIAL_UNIT_CLASS.albas, { name: "ロード", line: "術軍師上級" });
+assert.equal(TRIAL_PERSONAL_SKILLS.ringholm.name, "殺気");
+assert.equal(TRIAL_PERSONAL_SKILLS.young_karima.name, "双蛇の逆針");
+assert.match(TRIAL_PERSONAL_SKILLS.albas.desc, /自分から攻撃したとき/);   // 原作者回答（案A）で上書き
+assert.equal(TRIAL_CAUSE_ABILITIES.arshe.find(a => a.name === "両断").artKind, "physicalArt");
+assert.equal(TRIAL_CAUSE_ABILITIES.albas.find(a => a.name === "生命吸収").artKind, "exclusiveArt");
+assert.deepEqual(TRIAL_CAUSE_ABILITIES.albas.find(a => a.level === 50).statBonus, { hp: 10, mag: 10, tec: 10, cha: 10 });
+assert.deepEqual(TRIAL_CLASS_SKILLS["術軍師上級"].map(s => s[1]), ["威光", "魅力+10", "詠唱破棄", "導きの神髄"]);
+assert.equal(TRIAL_CLASS_SKILLS["術下級"].length, 3);   // 兵種Lv10の習得枠は空欄
+// 兵種Lv15なら通常兵種スキルの能力値上昇が乗る（戦列下級のHP+5）。戦技型の兵種能力は通常枠に入れない
+assert.equal(trialLoadoutStatBonus("ringholm", 30).hp, 0);
+assert.equal(trialSkillLoadoutFor("albas", 30, 15).classSkills.some(s => s?.name === "威光"), false);
+assert.equal(trialSkillLoadoutFor("ringholm", 30, 15).classSkills[0].name, "HP+5");
+
+// 物理の戦技は攻撃コマンド側。効果未実装のものは implemented=false
+assert.deepEqual(trialPhysicalArtsFor("ringholm", 30).map(a => [a.name, a.implemented]),
+    [["円舞", false], ["復讐", true]]);
+assert.deepEqual(trialPhysicalArtsFor("arshe", 25).map(a => a.name), ["両断"]);
+
+// 周囲の能力: 死神（敵の命中・回避-10）、王威（味方の命中・回避・必殺耐性+10）
+const auraUnits = [
+    { id: "ringholm", side: "ally", x: 0, y: 0, hp: 10, abilityNames: ["死神"] },
+    { id: "albas", side: "ally", x: 5, y: 5, hp: 10, abilityNames: ["王威"] },
+    { id: "arshe", side: "ally", x: 5, y: 6, hp: 10, abilityNames: [] },
+    { id: "dylan", side: "enemy", x: 0, y: 3, hp: 10, abilityNames: [] },
+];
+const [ring, alb, ars, dyl] = auraUnits;
+assert.equal(trialAuraModifiers(dyl, ring, auraUnits).accuracy, -10);           // 死神の近くの敵は命中-10
+assert.equal(trialAuraModifiers(ring, dyl, auraUnits).accuracy, 10);            // 死神の近くの敵は回避-10
+// 死神の近くの敵が、王威の近くの味方を狙う: 死神-10と王威-10が重なる
+assert.deepEqual([trialAuraModifiers(dyl, ars, auraUnits).accuracy, trialAuraModifiers(dyl, ars, auraUnits).critGuard], [-20, 10]);
+assert.equal(trialAuraModifiers({ id: "herel", side: "enemy", x: 9, y: 9, hp: 10 }, alb, auraUnits).accuracy, 0); // 王威は本人には効かない
+
+// 野望・一族スキル
+assert.deepEqual(trialAttackModifiers(["野望"], [], {}).accuracy, 10);
+assert.equal(trialAttackModifiers(["野望"], [], { isCounter: true }).accuracy, 0);
+assert.equal(trialAttackModifiers([], ["野望"], { isCounter: true }).accuracy, -10);
+assert.equal(trialAttackModifiers(["黒の一族"], [], { isMagic: true, spellId: "火" }).damageMultiplier, 1.5);
+assert.equal(trialAttackModifiers(["黒の一族"], [], { isMagic: true, spellId: "氷" }).damageMultiplier, 1);
+assert.equal(trialAbilityChance("野望", { cha: 38 }), 76);
+assert.equal(trialAbilityChance("カウンター", { hp: 30, def: 26 }, { maxHp: 30 }), 14);
 
 // 仮の敵プロフィールも同じ枠数を返し、未設定を勝手に能力なしと確定しない。
 const guardLoadout = trialSkillLoadoutFor("forest_guard", 10);

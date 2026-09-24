@@ -97,33 +97,54 @@ const TRIAL_PROFILES = Object.freeze({
 });
 
 /*
- * 表示用の兵種データ（仮）
- *   兵種: Regarding character growth rates, skills, and combat arts/各キャラ兵種表 - 各キャラ兵種適正.csv の「◎（加入時の最初の兵種）」
- *   兵種スキル: 同フォルダの 各キャラ兵種表 - 兵種スキル.csv
- *   兵種Lvは未実装のため、表示上は TRIAL_CLASS_LEVEL とする
+ * スキル・戦技・兵種のデータは abilityData.js（兵種表CSVから自動生成）を正本として使う。
+ *   兵種: 各キャラ兵種適正.csv の「◎（加入時の最初の兵種）」
+ *   兵種スキル: 兵種スキル.csv ／ 個人スキル・因果スキル・戦技: 因果スキル_戦技.csv
+ *   兵種Lvは未実装のため、試験では TRIAL_CLASS_LEVEL とする
  */
+const TRIAL_ABILITY_DATA = typeof ABILITY_DATA !== "undefined"
+    ? ABILITY_DATA
+    : (typeof require === "function" ? require("./abilityData.js").ABILITY_DATA : null);
+
 const TRIAL_CLASS_LEVEL = 1;
 
-const TRIAL_CLASS_SKILLS = Object.freeze({
-    "戦列下級": [
-        ["兵種Lv5",  "HP+5",   "最大HP+5"],
-        ["兵種Lv10", "深呼吸", "勇気が減っているとき、2ターンごとに勇気+5"],
-        ["兵種Lv15", "武道",   "技÷2%で物理攻撃の威力2倍"],
-        ["マスター", "戦上手", "武器装備時HP+5（この兵種のみ）"],
-    ],
-    "術軍師上級": [
-        ["兵種Lv5",  "威光",       "魅力÷2%で発動、力・魔攻の威力1.5倍（戦技）"],
-        ["兵種Lv10", "魅力+10",    "魅力+10"],
-        ["兵種Lv15", "詠唱破棄",   "魔法使用時、消費MP半減"],
-        ["マスター", "導きの神髄", "魅力+5、魔攻+5（この兵種のみ）"],
-    ],
+// 試験用ユニット → 兵種表CSVのキャラクター名
+const TRIAL_ABILITY_SOURCE = Object.freeze({
+    ringholm: "リングホルム",
+    arshe: "アルシェ",
+    albas: "アルバス",
+    young_karima: "カリマ",
 });
 
+// 専用兵種を持つ4人。因果Lv50スキルは因果スキル枠ではなく、専用兵種の兵種固有枠へ入る（SKILL_LOADOUT_RULES §5）
+const TRIAL_EXCLUSIVE_CLASS_OWNERS = new Set(["アルシェ", "リングホルム", "アルバス", "カリマ"]);
+
+/** 兵種スキル表を [習得条件, 名前, 説明, 種類, 能力値上昇] の並びにする（空欄の習得枠は除く） */
+const TRIAL_CLASS_SKILLS = Object.freeze(Object.fromEntries(
+    Object.entries(TRIAL_ABILITY_DATA?.classLines || {}).map(([slot, line]) => [
+        slot,
+        line.skills
+            .filter(Boolean)
+            .map(skill => [
+                skill.need === "master" ? "マスター" : `兵種Lv${skill.need}`,
+                skill.name,
+                skill.desc,
+                skill.kind,
+                skill.statBonus,
+            ]),
+    ])
+));
+
+function trialInitialClassFor(characterName) {
+    const classes = TRIAL_ABILITY_DATA?.characterClasses?.[characterName] || [];
+    const initial = classes.find(cls => cls.initial);
+    return initial ? { name: initial.name, line: initial.slot } : null;
+}
+
+// 敵3体は兵種表に載っていないため仮の兵種
 const TRIAL_UNIT_CLASS = Object.freeze({
-    ringholm:     { name: "ならずもの", line: "戦列下級" },
-    arshe:        { name: "王子",       line: "戦列下級" },
-    young_karima: { name: "王子",       line: "戦列下級" },
-    albas:        { name: "ロード",     line: "術軍師上級" },
+    ...Object.fromEntries(Object.entries(TRIAL_ABILITY_SOURCE)
+        .map(([unitId, name]) => [unitId, trialInitialClassFor(name) || { name: "未設定", line: null }])),
     forest_guard: { name: "戦士（仮）", line: "戦列下級" },
     dylan:        { name: "未設定",     line: null },
     herel:        { name: "未設定",     line: null },
@@ -138,83 +159,45 @@ const TRIAL_LOADOUT_SLOT_COUNTS = Object.freeze({
     combatArts: 4,
 });
 
-// 個人スキルは外せない固定枠。アルバスの「野望」は、CSVより新しい
-// WORK_MEMO_2026-09-25 の原作者回答（案A）を優先している。
-const TRIAL_PERSONAL_SKILLS = Object.freeze({
-    arshe: {
-        name: "双蛇の逆針",
-        desc: "味方の撃破や攻撃失敗の後、一手単位で行動を巻き戻す。残り回数の機能は未実装。",
-    },
-    ringholm: {
-        name: "殺気",
-        desc: "自分から攻撃したとき、命中+10・相手の回避-10・必殺+10。",
-    },
-    albas: {
-        name: "野望",
-        desc: "自分から攻撃したとき、魅力×2%で敵の反撃を封じる。ほかの補正の適用場面は確認中。",
-    },
-    young_karima: {
-        name: "双蛇の逆針",
-        desc: "味方の撃破や攻撃失敗の後、一手単位で行動を巻き戻す。残り回数の機能は未実装。",
-    },
+// CSVの効果文より新しい原作者回答で上書きするもの
+const TRIAL_PERSONAL_SKILL_OVERRIDES = Object.freeze({
+    // 野望: 反撃封じはアルバスから攻撃するときに、敵の反撃を封じる（WORK_MEMO_2026-09-25 原作者回答・案A）
+    "野望": "自分から攻撃したとき、魅力×2%で敵の反撃を封じる。相手の命中−10・相手の回避−10・必殺+10",
 });
 
-// 因果スキル・戦技は修正版CSVから表示に必要な項目だけを転記する。
-// Lv50の専用能力は因果3枠ではなく、現在兵種限定の兵種固有枠へ入る。
-const TRIAL_CAUSE_ABILITIES = Object.freeze({
-    arshe: Object.freeze([
-        { level: 5,  type: "skill", name: "黒陽の加護", desc: "獲得兵種経験値1.5倍" },
-        { level: 10, type: "art",   name: "両断", desc: "物理攻撃1.5倍" },
-        { level: 15, type: "skill", name: "祈り", desc: "戦闘中1度、幸運%でHP1を残す" },
-        { level: 20, type: "art",   name: "破壊", desc: "魔法攻撃時に装甲を破壊" },
-        { level: 25, type: "skill", name: "デュアル+", desc: "デュアル発生率+5" },
-        { level: 30, type: "skill", name: "カウンター", desc: "被ダメージの半分を相手へ返すことがある" },
-        { level: 35, type: "art",   name: "落雷", desc: "雷撃と追撃・反撃・移動封じ" },
-        { level: 40, type: "art",   name: "封印", desc: "射程内の敵1体の移動を封じる" },
-        { level: 45, type: "art",   name: "万雷", desc: "直線3マスを巻き込む雷撃" },
-        { level: 50, type: "exclusive", name: "奈落の王", desc: "力・魔攻・速さ・魅力+10" },
-    ]),
-    ringholm: Object.freeze([
-        { level: 5,  type: "skill", name: "黒の一族", desc: "火魔法の命中+20・ダメージ1.5倍" },
-        { level: 10, type: "art",   name: "召喚「ヒトダマ」", desc: "幻獣ヒトダマを2ターンで召喚" },
-        { level: 15, type: "art",   name: "円舞", desc: "隣接するすべての敵へ物理攻撃" },
-        { level: 20, type: "skill", name: "死神", desc: "周囲の敵の回避・命中-10、速さ-5" },
-        { level: 25, type: "skill", name: "カウンター", desc: "被ダメージの半分を相手へ返すことがある" },
-        { level: 30, type: "art",   name: "復讐", desc: "減少HPを攻撃威力へ加算" },
-        { level: 35, type: "skill", name: "戦闘指揮", desc: "指揮したターンの味方戦闘値+5" },
-        { level: 40, type: "art",   name: "月詠", desc: "周囲5マスの敵HPを20%削る" },
-        { level: 45, type: "skill", name: "剣の舞", desc: "剣装備時、力・魔攻・命中+10" },
-        { level: 50, type: "exclusive", name: "勇者の器", desc: "力・技・速さ・魅力+10" },
-    ]),
-    albas: Object.freeze([
-        { level: 5,  type: "art",   name: "破壊", desc: "魔法攻撃時に装甲を破壊" },
-        { level: 10, type: "skill", name: "詠唱破棄", desc: "確率で魔法武器耐久・MP消費なし" },
-        { level: 15, type: "art",   name: "回復", desc: "回復魔法の回復量×3" },
-        { level: 20, type: "skill", name: "王威", desc: "周囲の味方の回避・命中・必殺耐性+10" },
-        { level: 25, type: "art",   name: "加速", desc: "自分または味方1人を再行動させる" },
-        { level: 30, type: "skill", name: "魔法射程+1", desc: "魔法の射程+1" },
-        { level: 35, type: "art",   name: "転移", desc: "味方を指定位置へ移動させる" },
-        { level: 40, type: "art",   name: "生命吸収", desc: "周囲の敵HPを削り、自身のHP・MPを回復" },
-        { level: 45, type: "skill", name: "魔神の器", desc: "魔法装備時、魔攻・魔防・命中+10" },
-        { level: 50, type: "exclusive", name: "破滅の王", desc: "HP・魔攻・技・魅力+10" },
-    ]),
-    young_karima: Object.freeze([
-        { level: 5,  type: "skill", name: "白陽の加護", desc: "獲得兵種経験値1.5倍" },
-        { level: 10, type: "art",   name: "結界", desc: "自分または味方1人へ装甲を与える" },
-        { level: 15, type: "skill", name: "祈り", desc: "戦闘中1度、幸運%でHP1を残す" },
-        { level: 20, type: "art",   name: "破壊", desc: "魔法攻撃時に装甲を破壊" },
-        { level: 25, type: "skill", name: "デュアル+", desc: "デュアル発生率+5" },
-        { level: 30, type: "skill", name: "アシスト", desc: "隣接する味方の命中・必殺+5" },
-        { level: 35, type: "art",   name: "虚像", desc: "相手の命中-20" },
-        { level: 40, type: "art",   name: "封印", desc: "射程内の敵1体の移動を封じる" },
-        { level: 45, type: "art",   name: "落雷", desc: "雷撃と追撃・反撃・移動封じ" },
-        { level: 50, type: "exclusive", name: "神炎の器", desc: "防御・魔防・速さ・魅力+10" },
-    ]),
-});
+const TRIAL_PERSONAL_SKILLS = Object.freeze(Object.fromEntries(
+    Object.entries(TRIAL_ABILITY_SOURCE).map(([unitId, name]) => {
+        const personal = TRIAL_ABILITY_DATA?.causeTable?.[name]?.personal;
+        if (!personal) return [unitId, null];
+        return [unitId, {
+            name: personal.name,
+            desc: TRIAL_PERSONAL_SKILL_OVERRIDES[personal.name] || personal.desc,
+        }];
+    })
+));
+
+/**
+ * 因果Lvで習得する能力。type は表示と枠分けに使う。
+ *   skill: 因果スキル枠 / art: 戦技枠（artKind に physicalArt・magicArt など）/ exclusive: 兵種固有枠へ入るLv50スキル
+ */
+const TRIAL_CAUSE_ABILITIES = Object.freeze(Object.fromEntries(
+    Object.entries(TRIAL_ABILITY_SOURCE).map(([unitId, name]) => {
+        const abilities = TRIAL_ABILITY_DATA?.causeTable?.[name]?.abilities || [];
+        return [unitId, Object.freeze(abilities.map(ability => ({
+            level: ability.level,
+            type: ability.kind !== "skill" ? "art"
+                : (ability.level === 50 && TRIAL_EXCLUSIVE_CLASS_OWNERS.has(name)) ? "exclusive"
+                : "skill",
+            artKind: ability.kind !== "skill" ? ability.kind : null,
+            name: ability.name,
+            desc: ability.desc,
+            statBonus: ability.statBonus || null,
+        })))];
+    })
+));
 
 // 魔法戦技 → 既存の魔法データ（spells.js）の対応（たたき台・未採用）。
 // 魔法コマンドは「セットした魔法戦技」と「装備した魔導書」の魔法を選ぶ入口（原作者方針 2026-09-25）。
-// 戦技の独自効果（破壊の装甲破壊、回復の回復量×3など）は未実装で、対応する魔法をそのまま使う。
 // 万雷は対応する魔法がないため、まだ魔法コマンドに出さない。
 const TRIAL_MAGIC_ART_SPELLS = Object.freeze({
     "破壊": "破壊",
@@ -225,8 +208,12 @@ const TRIAL_MAGIC_ART_SPELLS = Object.freeze({
     "加速": "加速",
     "転移": "転移",
     "回復": "治癒",
+    "悪夢": "悪夢",
     "召喚「ヒトダマ」": "ヒトダマ",
 });
+
+// 物理の戦技のうち、試験の戦闘で効果を実装済みのもの（game.js の [trial] 戦技フック）
+const TRIAL_IMPLEMENTED_PHYSICAL_ARTS = new Set(["両断", "復讐", "大振り", "破天", "奇襲"]);
 
 // 仮の魔導書（1人1冊）。武器・魔導書の装備欄ができるまでの試験用。
 // どのキャラに何の魔導書を持たせるかは原作者が決める（ここは Claude Code の仮置き）
@@ -236,11 +223,19 @@ const TRIAL_GRIMOIRES = Object.freeze({
     young_karima: { name: "治癒の魔導書", spell: "治癒" },
 });
 
+/** 戦技を魔法コマンド側・攻撃コマンド側のどちらに出すか */
+function trialArtCommand(art) {
+    if (!art) return null;
+    if (art.artKind === "magicArt" || art.name === "鎌風") return "magic";
+    if (art.artKind === "exclusiveArt") return "special";   // 月詠・生命吸収（範囲の割合ダメージ。未実装）
+    return "attack";
+}
+
 /** 試験用ユニットの魔法コマンドの中身（セット中の魔法戦技 → 魔導書の順） */
 function trialMagicMenuFor(unitId, causeLevel) {
     const loadout = trialSkillLoadoutFor(unitId, causeLevel);
     const menu = loadout.combatArts
-        .filter(art => art && TRIAL_MAGIC_ART_SPELLS[art.name])
+        .filter(art => art && trialArtCommand(art) === "magic" && TRIAL_MAGIC_ART_SPELLS[art.name])
         .map(art => ({ name: art.name, spell: TRIAL_MAGIC_ART_SPELLS[art.name], source: "戦技" }));
     const grimoire = TRIAL_GRIMOIRES[unitId];
     if (grimoire && !menu.some(item => item.spell === grimoire.spell)) {
@@ -249,27 +244,41 @@ function trialMagicMenuFor(unitId, causeLevel) {
     return menu;
 }
 
+/** 攻撃コマンドに出す物理の戦技（implemented=false は効果未実装で選べない） */
+function trialPhysicalArtsFor(unitId, causeLevel) {
+    return trialSkillLoadoutFor(unitId, causeLevel).combatArts
+        .filter(art => art && trialArtCommand(art) === "attack")
+        .map(art => ({ name: art.name, desc: art.desc, implemented: TRIAL_IMPLEMENTED_PHYSICAL_ARTS.has(art.name) }));
+}
+
 function trialFillLoadoutSlots(items, count) {
     return Array.from({ length: count }, (_, index) => items[index] || null);
 }
 
 /**
- * 試験画面用の読み取り専用セット内容。
- * セット変更機能が未実装のため、習得順に空き枠へ入れる表示例とする。
- * 戦闘効果には接続せず、画面構成を確認するためだけに使う。
+ * 試験画面・試験戦闘のセット内容。
+ * セット変更機能が未実装のため、習得順に空き枠へ入れる。
  */
 function trialSkillLoadoutFor(unitId, causeLevel, classLevel = TRIAL_CLASS_LEVEL) {
     const cls = TRIAL_UNIT_CLASS[unitId] || { line: null };
     const classLearned = (cls.line ? TRIAL_CLASS_SKILLS[cls.line] || [] : [])
         .filter(([need]) => need !== "マスター" && classLevel >= Number(need.replace("兵種Lv", "")))
-        .map(([need, name, desc]) => ({ name, desc, source: need }));
+        .map(([need, name, desc, kind, statBonus]) => ({ name, desc, source: need, kind, statBonus }));
     const causeLearned = (TRIAL_CAUSE_ABILITIES[unitId] || [])
         .filter(ability => ability.level <= Number(causeLevel || 1));
+    // 専用兵種のLv50スキルは、専用兵種が現在兵種のときだけ兵種固有枠に置ける（試験では最初の兵種のため置かない）
     const exclusive = causeLearned.find(ability => ability.type === "exclusive") || null;
+    const inExclusiveClass = cls.line === "専用兵種";
     return {
         personal: TRIAL_PERSONAL_SKILLS[unitId] || null,
-        classSkills: trialFillLoadoutSlots(classLearned, TRIAL_LOADOUT_SLOT_COUNTS.classSkills),
-        classUnique: trialFillLoadoutSlots(exclusive ? [exclusive] : [], TRIAL_LOADOUT_SLOT_COUNTS.classUnique),
+        classSkills: trialFillLoadoutSlots(
+            classLearned.filter(skill => skill.kind !== "art"),
+            TRIAL_LOADOUT_SLOT_COUNTS.classSkills
+        ),
+        classUnique: trialFillLoadoutSlots(
+            exclusive && inExclusiveClass ? [exclusive] : [],
+            TRIAL_LOADOUT_SLOT_COUNTS.classUnique
+        ),
         causeSkills: trialFillLoadoutSlots(
             causeLearned.filter(ability => ability.type === "skill"),
             TRIAL_LOADOUT_SLOT_COUNTS.causeSkills
@@ -279,6 +288,100 @@ function trialSkillLoadoutFor(unitId, causeLevel, classLevel = TRIAL_CLASS_LEVEL
             TRIAL_LOADOUT_SLOT_COUNTS.combatArts
         ),
     };
+}
+
+/** セット中の能力の名前（個人スキルを含む）。戦闘効果の判定に使う */
+function trialAbilityNamesFor(unitId, causeLevel) {
+    const loadout = trialSkillLoadoutFor(unitId, causeLevel);
+    return [
+        loadout.personal,
+        ...loadout.classSkills,
+        ...loadout.classUnique,
+        ...loadout.causeSkills,
+        ...loadout.combatArts,
+    ].filter(Boolean).map(item => item.name);
+}
+
+/** セット中のスキルの無条件の能力値上昇（「技・魅力+10」など）を合計する */
+function trialLoadoutStatBonus(unitId, causeLevel) {
+    const loadout = trialSkillLoadoutFor(unitId, causeLevel);
+    const total = Object.fromEntries(TRIAL_STAT_KEYS.map(key => [key, 0]));
+    for (const item of [...loadout.classSkills, ...loadout.classUnique, ...loadout.causeSkills]) {
+        for (const [key, value] of Object.entries(item?.statBonus || {})) total[key] += value;
+    }
+    return total;
+}
+
+// ── 試験戦闘のスキル効果（純粋な判定。game.js の [trial] から呼ぶ） ──
+
+const TRIAL_CLAN_ELEMENTS = Object.freeze({
+    "黒の一族": "火", "白の一族": "氷", "黄の一族": "土", "翠の一族": "風",
+});
+
+function trialDistance(a, b) {
+    return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+}
+
+/**
+ * 周囲に効く能力（死神・王威）による補正。
+ *   units: { id, side, x, y, hp, abilityNames: string[] } の配列
+ *   返り値 accuracy: 攻撃側の命中率に足す値 / critGuard: 防御側の必殺耐性に足す値
+ *   死神の「速さ−5」は未実装
+ */
+function trialAuraModifiers(attacker, defender, units) {
+    const result = { accuracy: 0, critGuard: 0, notes: [] };
+    const living = (units || []).filter(u => u && u.hp > 0);
+    const owners = name => living.filter(u => (u.abilityNames || []).includes(name));
+    for (const owner of owners("死神")) {
+        if (owner.side !== attacker.side && trialDistance(owner, attacker) <= 4) {
+            result.accuracy -= 10; result.notes.push("死神:命中-10");
+        }
+        if (owner.side !== defender.side && trialDistance(owner, defender) <= 4) {
+            result.accuracy += 10; result.notes.push("死神:回避-10");
+        }
+    }
+    for (const owner of owners("王威")) {
+        if (owner.side === attacker.side && owner.id !== attacker.id && trialDistance(owner, attacker) <= 4) {
+            result.accuracy += 10; result.notes.push("王威:命中+10");
+        }
+        if (owner.side === defender.side && owner.id !== defender.id && trialDistance(owner, defender) <= 4) {
+            result.accuracy -= 10; result.critGuard += 10; result.notes.push("王威:回避+10");
+        }
+    }
+    return result;
+}
+
+/**
+ * 攻撃ごとの能力補正（野望・一族スキル）。殺気は既存の passiveSkills.js で処理する。
+ *   options: { isCounter, isMagic, spellId }
+ */
+function trialAttackModifiers(attackerNames, defenderNames, options = {}) {
+    const result = { accuracy: 0, critical: 0, damageMultiplier: 1, notes: [] };
+    const has = (names, name) => (names || []).includes(name);
+    if (has(attackerNames, "野望") && !options.isCounter) {
+        result.accuracy += 10; result.critical += 10; result.notes.push("野望:命中+10・必殺+10");
+    }
+    // 野望の「相手の命中−10」: アルバスから仕掛けた戦闘で、相手の反撃の命中を下げる
+    if (has(defenderNames, "野望") && options.isCounter) {
+        result.accuracy -= 10; result.notes.push("野望:相手の命中-10");
+    }
+    if (options.isMagic) {
+        for (const [clan, element] of Object.entries(TRIAL_CLAN_ELEMENTS)) {
+            if (has(attackerNames, clan) && options.spellId === element) {
+                result.accuracy += 20; result.damageMultiplier *= 1.5; result.notes.push(`${clan}:命中+20・1.5倍`);
+            }
+        }
+    }
+    return result;
+}
+
+/** 確率で発動するスキルの発動率（%） */
+function trialAbilityChance(name, stats, extra = {}) {
+    if (name === "野望") return Math.min(100, stats.cha * 2);                       // 反撃封じ
+    if (name === "カウンター") return Math.floor((Number(extra.maxHp || stats.hp) + stats.def) / 4);
+    if (name === "祈り") return Math.min(100, Number(extra.luck || 0));
+    if (name === "詠唱破棄") return Math.floor((stats.mag + stats.res) / 4);         // 因果スキル版
+    return 0;
 }
 
 /**
@@ -380,6 +483,15 @@ if (typeof module !== "undefined") {
         TRIAL_MAGIC_ART_SPELLS,
         TRIAL_GRIMOIRES,
         trialMagicMenuFor,
+        TRIAL_ABILITY_SOURCE,
+        TRIAL_IMPLEMENTED_PHYSICAL_ARTS,
+        trialArtCommand,
+        trialPhysicalArtsFor,
+        trialAbilityNamesFor,
+        trialLoadoutStatBonus,
+        trialAuraModifiers,
+        trialAttackModifiers,
+        trialAbilityChance,
         trialDerivedValues,
         trialGrowthBonus,
         trialCauseLevelFor,
