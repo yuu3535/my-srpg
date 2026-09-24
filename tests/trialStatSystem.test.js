@@ -31,6 +31,22 @@ assert.deepEqual(trialStatsAt(P.ringholm, 40),
 assert.deepEqual(trialStatsAt(P.albas, 40),
     { hp: 45, atk: 29, def: 34, mag: 56, res: 52, tec: 44, spd: 32, cha: 45 });
 
+// 幼カリマ: TRPG Lv1 だが causeLevel の指定で因果Lv25（採用版§6.2の成長率、幸運・勇気補正+4%）
+assert.equal(trialGrowthBonus(P.young_karima), 4);
+assert.equal(trialCauseLevelFor(P.young_karima), 25);
+assert.deepEqual(trialStatsAt(P.young_karima, 40),
+    { hp: 35, atk: 35, def: 32, mag: 45, res: 44, tec: 38, spd: 40, cha: 42 });
+
+// 試験用バトルの定義（シナリオ本編の battle_ch1 には目印を付けない）
+const battles = require("../battleDefinitions.js");
+const { TRIAL_RULES_ID } = require("../trialStatSystem.js");
+assert.equal(battles.battle_trial_adopted.trialRules, TRIAL_RULES_ID);
+assert.equal(battles.battle_ch1.trialRules, undefined);
+assert.equal(battles.battle_tutorial.trialRules, undefined);
+for (const id of battles.battle_trial_adopted.unitIds) {
+    assert.ok(P[id], `試験用バトルの ${id} に試験プロフィールがある`);
+}
+
 // Lv1は基礎値そのもの
 assert.deepEqual(trialStatsAt(P.albas, 1), P.albas.base);
 

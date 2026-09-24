@@ -40,6 +40,28 @@ const BATTLE_DEFINITIONS = Object.freeze({
             herel:        { x: 8, y: 2 },
         },
     },
+    // 採用版ステータスの試験専用（trial/adopted-stats）。DEBUGの「テスト戦闘」だけから起動する。
+    // battle_ch1 と同じ構成に幼カリマを加えた。シナリオ本編からは参照しない。
+    battle_trial_adopted: {
+        uiTheme: "mixed",
+        background: "assets/background_forest.png",
+        cols: 12,
+        rows: 8,
+        tiles: [],
+        trialRules: "adopted-stats-v1",
+        victory: { type: "defeatAll" },
+        defeat: { type: "allAlliesDefeated" },
+        unitIds: ["ringholm", "arshe", "albas", "young_karima", "forest_guard", "dylan", "herel"],
+        positions: {
+            ringholm:     { x: 3, y: 6 },
+            arshe:        { x: 4, y: 6 },
+            albas:        { x: 5, y: 6 },
+            young_karima: { x: 6, y: 6 },
+            forest_guard: { x: 6, y: 1 },
+            dylan:        { x: 7, y: 1 },
+            herel:        { x: 8, y: 2 },
+        },
+    },
 });
 
 if (typeof module !== "undefined") {

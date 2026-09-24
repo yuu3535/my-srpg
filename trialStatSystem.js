@@ -22,6 +22,9 @@ const TRIAL_FOLLOW_UP_SPEED_GAP = 5;
 // TRPGレベル → 試験で使う因果Lv（原作者指定 2026-09-24）
 const TRIAL_CAUSE_LEVEL_BY_TRPG_LEVEL = Object.freeze({ 1: 1, 2: 10, 3: 20, 4: 25, 5: 30 });
 
+// 試験用の計算を適用する戦闘の目印（battleDefinitions.js の trialRules）
+const TRIAL_RULES_ID = "adopted-stats-v1";
+
 /*
  * 試験用プロフィール
  *   base   : 因果Lv1基礎値（HPは試験用の案②＝TRPG Lv1 HP x 1）
@@ -49,6 +52,15 @@ const TRIAL_PROFILES = Object.freeze({
         base:   { hp: 13, atk: 14, def: 13, mag: 18, res: 15, tec: 9,  spd: 10, cha: 15 },
         growth: { hp: 70, atk: 60, def: 55, mag: 55, res: 50, tec: 70, spd: 70, cha: 60 },
         caps:   { hp: 122, atk: 90, def: 108, mag: 104, res: 106, tec: 87, spd: 71, cha: 102 },
+        luck: 90, courage: 90, siz: 13,
+    },
+    young_karima: {
+        // 幼カリマ（TRPG Lv1）は因果Lv1だと検証にならないため、原作者指示
+        // 「弱すぎる場合は因果Lvを上げる」に従い、アルシェと同じ因果Lv25で扱う
+        name: "カリマ", race: "ヒト", trpgLevel: 1, causeLevel: 25,
+        base:   { hp: 12, atk: 14, def: 13, mag: 18, res: 15, tec: 9,  spd: 11, cha: 15 },
+        growth: { hp: 55, atk: 50, def: 45, mag: 65, res: 70, tec: 70, spd: 70, cha: 65 },
+        caps:   { hp: 122, atk: 86, def: 108, mag: 106, res: 100, tec: 86, spd: 96, cha: 101 },
         luck: 90, courage: 90, siz: 13,
     },
     albas: {
@@ -89,8 +101,9 @@ function trialGrowthBonus(profile) {
     return Math.floor((Number(profile.luck || 0) + Number(profile.courage || 0)) / 40);
 }
 
-/** TRPGレベルから試験用の因果Lvを求める */
+/** 試験用の因果Lv。causeLevel の指定があれば優先し、なければTRPGレベルの対応表で求める */
 function trialCauseLevelFor(profile) {
+    if (Number.isInteger(profile.causeLevel)) return profile.causeLevel;
     return TRIAL_CAUSE_LEVEL_BY_TRPG_LEVEL[profile.trpgLevel] ?? 1;
 }
 
@@ -149,6 +162,7 @@ if (typeof module !== "undefined") {
         TRIAL_WEAPON_POWER,
         TRIAL_FOLLOW_UP_SPEED_GAP,
         TRIAL_CAUSE_LEVEL_BY_TRPG_LEVEL,
+        TRIAL_RULES_ID,
         TRIAL_PROFILES,
         trialGrowthBonus,
         trialCauseLevelFor,

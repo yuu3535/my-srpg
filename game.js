@@ -1051,8 +1051,11 @@ function getDerivedPassiveStatBonus(unit) {
 //   trialStatSystem.js の換算・命中・ダメージ・必殺・追撃を適用する。
 //   シナリオ本編の戦闘には影響しない。
 // =============================================
-function isTrialBattleSession() {
-    return battleEntrySource === "test" && typeof TRIAL_PROFILES !== "undefined";
+function isTrialBattleSession(battleId) {
+    // テスト戦闘として起動し、かつ戦闘定義に試験ルールの目印がある場合だけ
+    return battleEntrySource === "test"
+        && typeof TRIAL_RULES_ID !== "undefined"
+        && BATTLE_DEFINITIONS[battleId]?.trialRules === TRIAL_RULES_ID;
 }
 
 // 試験用プロフィールが別キャラの見た目・持ち物を借りるときに差し替える項目
@@ -5541,7 +5544,7 @@ function setBattleMode(battleId) {
         };
     });
     // [trial] テスト戦闘だけ、採用版ステータスの試験用プロフィールを適用する
-    if (isTrialBattleSession()) {
+    if (isTrialBattleSession(battleId)) {
         for (const unit of battleUnits) applyTrialProfile(unit);
         for (const unit of battleUnits) {
             if (!unit.trialStats) continue;
@@ -6309,7 +6312,8 @@ debugStoryBattleBtn?.addEventListener("click", () => {
 });
 
 debugTestBattleBtn?.addEventListener("click", () => {
-    launchDebugBattle("battle_ch1", "test");
+    // [trial] 採用版ステータスの試験専用バトル（カリマを含む4人）
+    launchDebugBattle(BATTLE_DEFINITIONS.battle_trial_adopted ? "battle_trial_adopted" : "battle_ch1", "test");
 });
 
 // =============================================

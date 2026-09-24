@@ -47,6 +47,7 @@
 | ディラン | 竜人。SIZ増加後（HP23・SIZ25）を標準戦闘状態として換算。成長率は「物理最高峰」の仮値（合計385%） |
 | ヘレル | TRPGシートから換算。成長率は魔法型の仮値（合計395%） |
 | 森の番人 | TRPGシートがないため、`characters.js` の値をLv1基礎値として換算した一般兵。成長率は仮値（合計325%）、能力上限は一律99 |
+| カリマ（追加） | 原作者の依頼（2026-09-24）でテスト戦闘に追加。採用版v1.5の幼カリマの値を使い、TRPG Lv1だと因果Lv1で検証にならないため、原作者指示「弱すぎる場合は因果Lvを上げる」に従いアルシェと同じ因果Lv25にした（`causeLevel: 25`）。シミュレーターの表（付録）には含めていない |
 
 敵3体の成長率は採用版に存在しない。**結果は、この仮の成長率に強く左右される**（後述）。
 
@@ -170,7 +171,10 @@
 ## ゲームコードへの影響
 
 - 変更は `trial/adopted-stats` ブランチのみ。`main`・`refactor/combat-pipeline` には入っていない。
-- 試験用の計算は、`battleEntrySource === "test"`（DEBUGの「テスト戦闘」、またはURLでテスト戦闘を直接起動した場合）で、`TRIAL_PROFILES` に定義のあるユニット同士の戦闘だけに適用される。
+- 試験用の計算は、`battleEntrySource === "test"` で起動し、かつ戦闘定義に `trialRules: "adopted-stats-v1"` の目印がある戦闘だけに適用される（2026-09-24 追記。Codexレビューの安全境界の指摘に対応）。
+  - 試験専用の戦闘 `battle_trial_adopted` を `battleDefinitions.js` に追加した（`battle_ch1` と同じ構成＋幼カリマ）。DEBUGの「テスト戦闘」はこの戦闘を起動する。
+  - `battle_ch1` はシナリオ本編と共用のため目印を付けない。URLで `?battle=battle_ch1` を直接起動しても試験モードにならないことを確認した。
+  - 試験専用戦闘の全ユニットに試験プロフィールがあることを `tests/trialStatSystem.test.js` で確認している。
 - `game.js` の変更点（すべて `[trial]` 印付き）:
   - `isTrialBattleSession` / `applyTrialProfile` / `isTrialPair` / `trialFollowUpAvailable` / `runTrialFollowUp` を追加。
   - `calcBattleStats` を、試験用ユニットのときだけ試験用の値を返す関数で包んだ。
