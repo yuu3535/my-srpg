@@ -1963,10 +1963,11 @@ function getLandscapeCommands(unit) {
     const commands = [];
     if (canUndoMove(unit)) commands.push({ label: "戻る", active: true });
     if (!unit.acted) commands.push({ label: "攻撃", active: actionState === "attacking" || actionState === "throwing" });
-    // 魔法コマンドは、セットした魔法戦技（と装備した魔導書の魔法）を選ぶ入口にする予定（原作者方針 2026-09-25）。
-    // 魔法戦技のデータができるまでは、従来の魔法一覧を仮に出す
-    if (!unit.acted && Object.keys(unit.spells || {}).length > 0) commands.push({ label: "魔法", active: actionState === "magic" });
-    // 特技のコマンドは廃止し、戦技へ移す（原作者方針 2026-09-25）
+    // 魔法コマンドは、セットした魔法戦技と装備した魔導書の魔法を選ぶ入口（原作者方針 2026-09-25）。
+    // 試験用ユニットはその形（getLandscapeMagicEntries）、ほかは従来の魔法一覧を仮に出す
+    if (!unit.acted && getLandscapeMagicEntries(unit).length > 0) commands.push({ label: "魔法", active: actionState === "magic" });
+    // 特技のコマンドは廃止し、戦技へ移す（原作者方針 2026-09-25）。自己強化の戦技はここから使う
+    if (!unit.acted && getAvailableCombatArts(unit, "self").length > 0) commands.push({ label: "戦技" });
     if ((unit.items?.length ?? 0) > 0) commands.push({ label: "持ち物" });
     if (!unit.acted) commands.push({ label: "待機" });
     commands.push({ label: "詳細" });
@@ -2046,6 +2047,7 @@ function renderLandscapeCommandRail(unit = selectedUnit) {
             if (!unit || cmd.disabled) return;
             const label = cmd.label === "持ち物" ? "アイテム"
                         : cmd.label === "詳細" ? "ステータス"
+                        : cmd.label === "戦技" ? "特技"
                         : cmd.label;
             handleBattleCommand(unit, label);
             if (!["攻撃", "魔法", "特技", "アイテム"].includes(label)) {
@@ -2055,6 +2057,18 @@ function renderLandscapeCommandRail(unit = selectedUnit) {
         landscapeCommandList.appendChild(btn);
     });
     applyLandscapeRailArc();
+}
+
+/** 魔法コマンドの中身。試験用ユニットは「魔法戦技＋魔導書」、ほかは従来の魔法一覧 */
+function getLandscapeMagicEntries(unit) {
+    if (unit?.trialStats && typeof trialMagicMenuFor === "function") {
+        return trialMagicMenuFor(unit.id, unit.trialLevel)
+            .filter(item => SPELLS_DATA[item.spell])
+            .map(item => ({ id: item.spell, label: item.name, sub: item.source === "魔導書" ? "装備" : "戦技" }));
+    }
+    return Object.entries(unit?.spells || {})
+        .filter(([id]) => SPELLS_DATA[id])
+        .map(([id, val]) => ({ id, label: SPELLS_DATA[id].name, sub: String(val) }));
 }
 
 function addLandscapeBackButton(unit) {
@@ -2130,14 +2144,9 @@ function renderLandscapeSubCommandRail(unit, kind) {
     }
 
     if (kind === "skill") {
-        const entries = Object.entries(unit.skills || {})
-            .filter(([name]) => BATTLE_UTILITY_SKILLS.has(name));
+        // 特技（TRPG技能）は廃止。戦技コマンドとして自己強化の戦技だけを出す
         const selfArts = getAvailableCombatArts(unit, "self");
-        if (entries.length === 0 && selfArts.length === 0) addButton("使える特技なし", "", () => {});
-        entries.forEach(([name, val]) => addButton(name, String(val), () => {
-            hideRadialMenu();
-            executeSkill(unit, name, val, name);
-        }));
+        if (selfArts.length === 0) addButton("使える戦技なし", "", () => {});
         selfArts.forEach(art => addButton(art.name, getCombatArtUseText(unit, art), () => {
             executeSelfCombatArt(unit, art.id);
         }));
@@ -2146,10 +2155,9 @@ function renderLandscapeSubCommandRail(unit, kind) {
     }
 
     if (kind === "magic") {
-        const entries = Object.entries(unit.spells || {}).filter(([id]) => SPELLS_DATA[id]);
-        entries.forEach(([id, val]) => {
+        getLandscapeMagicEntries(unit).forEach(({ id, label, sub }) => {
             const sp = SPELLS_DATA[id];
-            addButton(sp.name, String(val), () => {
+            addButton(label, sub, () => {
                 if (sp.range === null) {
                     clearHighlights();
                     addLog(`・${unit.name}は ${sp.name} を使用`);
@@ -3195,7 +3203,8 @@ function calculateBattlePrediction(attacker, target, atkSkillName, isMagic, spel
 
     // ── 反撃予測（共通） ──
     const counterRate = getCounterRate(target);
-    const counterAvailable = target.hp > 0 && canCounter(target);
+    // 魔法攻撃は実際の戦闘で反撃を受けないため（executeMagic に反撃処理がない）、予測でも反撃なしにする
+    const counterAvailable = !isMagic && target.hp > 0 && canCounter(target);
     const counterFollowUp = !isMagic && counterAvailable && trialFollowUpAvailable(target, attacker);
     let ctrHitRate = 0, ctrEffectiveRate = 0, ctrExpDmg = 0, ctrCritRate = 0, ctrCritDmg = 0, counterNotes = "";
     if (counterAvailable) {
@@ -4791,7 +4800,7 @@ function handleBattleCommand(unit, label) {
             actionState = null;
             clearHighlights();
             showSkillRadial(unit);
-            addLog(`・${unit.name}は特技を選択`);
+            addLog(`・${unit.name}は戦技を選択`);
             break;
         case "ステータス":
             clearHighlights();

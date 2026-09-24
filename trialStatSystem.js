@@ -212,6 +212,43 @@ const TRIAL_CAUSE_ABILITIES = Object.freeze({
     ]),
 });
 
+// 魔法戦技 → 既存の魔法データ（spells.js）の対応（たたき台・未採用）。
+// 魔法コマンドは「セットした魔法戦技」と「装備した魔導書」の魔法を選ぶ入口（原作者方針 2026-09-25）。
+// 戦技の独自効果（破壊の装甲破壊、回復の回復量×3など）は未実装で、対応する魔法をそのまま使う。
+// 万雷は対応する魔法がないため、まだ魔法コマンドに出さない。
+const TRIAL_MAGIC_ART_SPELLS = Object.freeze({
+    "破壊": "破壊",
+    "落雷": "落雷",
+    "封印": "封印",
+    "結界": "結界",
+    "虚像": "虚像",
+    "加速": "加速",
+    "転移": "転移",
+    "回復": "治癒",
+    "召喚「ヒトダマ」": "ヒトダマ",
+});
+
+// 仮の魔導書（1人1冊）。武器・魔導書の装備欄ができるまでの試験用。
+// どのキャラに何の魔導書を持たせるかは原作者が決める（ここは Claude Code の仮置き）
+const TRIAL_GRIMOIRES = Object.freeze({
+    ringholm:     { name: "火の魔導書",   spell: "火" },   // 黒の一族（火魔法強化）に合わせた
+    arshe:        { name: "火の魔導書",   spell: "火" },
+    young_karima: { name: "治癒の魔導書", spell: "治癒" },
+});
+
+/** 試験用ユニットの魔法コマンドの中身（セット中の魔法戦技 → 魔導書の順） */
+function trialMagicMenuFor(unitId, causeLevel) {
+    const loadout = trialSkillLoadoutFor(unitId, causeLevel);
+    const menu = loadout.combatArts
+        .filter(art => art && TRIAL_MAGIC_ART_SPELLS[art.name])
+        .map(art => ({ name: art.name, spell: TRIAL_MAGIC_ART_SPELLS[art.name], source: "戦技" }));
+    const grimoire = TRIAL_GRIMOIRES[unitId];
+    if (grimoire && !menu.some(item => item.spell === grimoire.spell)) {
+        menu.push({ name: grimoire.name, spell: grimoire.spell, source: "魔導書" });
+    }
+    return menu;
+}
+
 function trialFillLoadoutSlots(items, count) {
     return Array.from({ length: count }, (_, index) => items[index] || null);
 }
@@ -340,6 +377,9 @@ if (typeof module !== "undefined") {
         TRIAL_PERSONAL_SKILLS,
         TRIAL_CAUSE_ABILITIES,
         trialSkillLoadoutFor,
+        TRIAL_MAGIC_ART_SPELLS,
+        TRIAL_GRIMOIRES,
+        trialMagicMenuFor,
         trialDerivedValues,
         trialGrowthBonus,
         trialCauseLevelFor,

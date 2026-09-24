@@ -11,6 +11,7 @@ const {
     trialCanFollowUp,
     TRIAL_LOADOUT_SLOT_COUNTS,
     trialSkillLoadoutFor,
+    trialMagicMenuFor,
 } = require("../trialStatSystem.js");
 
 const P = TRIAL_PROFILES;
@@ -119,6 +120,14 @@ const guardLoadout = trialSkillLoadoutFor("forest_guard", 10);
 assert.equal(guardLoadout.personal, null);
 assert.equal(guardLoadout.causeSkills.length, 3);
 assert.equal(guardLoadout.combatArts.length, 4);
+
+// 魔法コマンド: セット中の魔法戦技 → 魔導書の順。物理戦技は出さない
+assert.deepEqual(trialMagicMenuFor("albas", 30).map(m => [m.name, m.spell, m.source]),
+    [["破壊", "破壊", "戦技"], ["回復", "治癒", "戦技"], ["加速", "加速", "戦技"]]);
+assert.deepEqual(trialMagicMenuFor("ringholm", 30).map(m => m.name), ["召喚「ヒトダマ」", "火の魔導書"]);
+assert.deepEqual(trialMagicMenuFor("young_karima", 25).map(m => m.name), ["結界", "破壊", "治癒の魔導書"]);
+assert.equal(trialMagicMenuFor("arshe", 25).some(m => m.name === "両断"), false);
+assert.deepEqual(trialMagicMenuFor("dylan", 25), []);
 
 // 追撃: 速さ差5以上
 assert.equal(trialCanFollowUp({ spd: 30 }, { spd: 25 }), true);
