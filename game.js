@@ -1963,8 +1963,10 @@ function getLandscapeCommands(unit) {
     const commands = [];
     if (canUndoMove(unit)) commands.push({ label: "戻る", active: true });
     if (!unit.acted) commands.push({ label: "攻撃", active: actionState === "attacking" || actionState === "throwing" });
-    // 魔法・特技のコマンドは廃止（原作者方針 2026-09-25）。
-    // 特技は戦技へ移し、魔法は戦技で得る魔法か、魔導書（武器）の装備で使う予定
+    // 魔法コマンドは、セットした魔法戦技（と装備した魔導書の魔法）を選ぶ入口にする予定（原作者方針 2026-09-25）。
+    // 魔法戦技のデータができるまでは、従来の魔法一覧を仮に出す
+    if (!unit.acted && Object.keys(unit.spells || {}).length > 0) commands.push({ label: "魔法", active: actionState === "magic" });
+    // 特技のコマンドは廃止し、戦技へ移す（原作者方針 2026-09-25）
     if ((unit.items?.length ?? 0) > 0) commands.push({ label: "持ち物" });
     if (!unit.acted) commands.push({ label: "待機" });
     commands.push({ label: "詳細" });
