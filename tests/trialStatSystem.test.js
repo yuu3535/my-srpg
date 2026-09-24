@@ -81,6 +81,24 @@ assert.equal(trialCriticalRate(ring40, 90, albas40, 10), 20); // 補正
 // 勇気が減ると必殺率も下がる
 assert.ok(trialCriticalRate(ring40, 40, albas40) < trialCriticalRate(ring40, 90, albas40));
 
+// ステータス画面の戦闘値: 命中値 - 回避値 が命中率の式と一致する
+const {
+    trialDerivedValues, TRIAL_UNIT_CLASS, TRIAL_CLASS_SKILLS,
+} = require("../trialStatSystem.js");
+const ring40d = trialDerivedValues(ring40, P.ringholm.siz, 90);
+const albas40d = trialDerivedValues(albas40, P.albas.siz, 65);
+assert.equal(ring40d.hit - albas40d.evade, trialHitRate(ring40, albas40, P.albas.siz));
+assert.equal(ring40d.crit - albas40d.critGuard, trialCriticalRate(ring40, 90, albas40));
+assert.equal(ring40d.followUp, ring40.spd - 5);
+assert.equal(trialDerivedValues(ring40, 10, 150).counter, 100); // 反撃率は0〜100%
+
+// 試験プロフィールのキャラは全員、兵種の表示データを持つ
+for (const id of Object.keys(P)) {
+    const cls = TRIAL_UNIT_CLASS[id];
+    assert.ok(cls, `${id} の兵種表示データ`);
+    if (cls.line) assert.ok(TRIAL_CLASS_SKILLS[cls.line], `${cls.line} の兵種スキル`);
+}
+
 // 追撃: 速さ差5以上
 assert.equal(trialCanFollowUp({ spd: 30 }, { spd: 25 }), true);
 assert.equal(trialCanFollowUp({ spd: 29 }, { spd: 25 }), false);

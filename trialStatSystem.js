@@ -96,6 +96,60 @@ const TRIAL_PROFILES = Object.freeze({
     },
 });
 
+/*
+ * 表示用の兵種データ（仮）
+ *   兵種: 各キャラ兵種表 - 各キャラ兵種適正.csv の「◎（加入時の最初の兵種）」
+ *   兵種スキル: 各キャラ兵種表 - 兵種スキル.csv
+ *   兵種Lvは未実装のため、表示上は TRIAL_CLASS_LEVEL とする
+ */
+const TRIAL_CLASS_LEVEL = 1;
+
+const TRIAL_CLASS_SKILLS = Object.freeze({
+    "戦列下級": [
+        ["兵種Lv5",  "HP+5",   "最大HP+5"],
+        ["兵種Lv10", "深呼吸", "勇気が減っているとき、2ターンごとに勇気+5"],
+        ["兵種Lv15", "武道",   "技÷2%で物理攻撃の威力2倍"],
+        ["マスター", "戦上手", "武器装備時HP+5（この兵種のみ）"],
+    ],
+    "術軍師上級": [
+        ["兵種Lv5",  "威光",       "魅力÷2%で発動、力・魔攻の威力1.5倍（戦技）"],
+        ["兵種Lv10", "魅力+10",    "魅力+10"],
+        ["兵種Lv15", "詠唱破棄",   "魔法使用時、消費MP半減"],
+        ["マスター", "導きの神髄", "魅力+5、魔攻+5（この兵種のみ）"],
+    ],
+});
+
+const TRIAL_UNIT_CLASS = Object.freeze({
+    ringholm:     { name: "ならずもの", line: "戦列下級" },
+    arshe:        { name: "王子",       line: "戦列下級" },
+    young_karima: { name: "王子",       line: "戦列下級" },
+    albas:        { name: "ロード",     line: "術軍師上級" },
+    forest_guard: { name: "戦士（仮）", line: "戦列下級" },
+    dylan:        { name: "未設定",     line: null },
+    herel:        { name: "未設定",     line: null },
+});
+
+/**
+ * ステータス画面に出す戦闘値。
+ *   命中率 = 命中値 - 相手の回避値（5〜100%）
+ *   必殺率 = 必殺値 - 相手の必殺耐性
+ *   追撃   = 速さの差が TRIAL_FOLLOW_UP_SPEED_GAP 以上
+ */
+function trialDerivedValues(stats, siz, currentCourage) {
+    const courage = Math.max(0, Math.min(100, Number(currentCourage || 0)));
+    const sizeMod = trialSizeEvasionModifier(siz);
+    return {
+        hit: Math.round(60 + stats.tec * 2.5),
+        evade: Math.round(stats.spd * 2.5 + sizeMod),
+        crit: stats.tec + Math.floor(courage / 5),
+        critGuard: stats.cha,
+        followUp: stats.spd - TRIAL_FOLLOW_UP_SPEED_GAP,
+        followedBy: stats.spd + TRIAL_FOLLOW_UP_SPEED_GAP,
+        counter: courage,
+        sizeMod,
+    };
+}
+
 /** 幸運・勇気の成長率補正（採用版§6.1）。最大勇気を使う */
 function trialGrowthBonus(profile) {
     return Math.floor((Number(profile.luck || 0) + Number(profile.courage || 0)) / 40);
@@ -164,6 +218,10 @@ if (typeof module !== "undefined") {
         TRIAL_CAUSE_LEVEL_BY_TRPG_LEVEL,
         TRIAL_RULES_ID,
         TRIAL_PROFILES,
+        TRIAL_CLASS_LEVEL,
+        TRIAL_CLASS_SKILLS,
+        TRIAL_UNIT_CLASS,
+        trialDerivedValues,
         trialGrowthBonus,
         trialCauseLevelFor,
         trialStatsAt,

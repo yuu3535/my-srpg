@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=M+PLUS+1:wght@300;400;700&display=swap" rel="stylesheet">
     <!-- 本番と同じシートの意匠（1efae8f基準）をそのまま使う -->
-    <link rel="stylesheet" href="../style.css" />
+    <link rel="stylesheet" href="../style.css?v=trial-stats-4" />
     <style>
         /* =========================================================
            見本ページ専用。本番のステータスシートの外枠・配置・意匠は
@@ -65,30 +65,6 @@
             background: transparent;
         }
 
-        /* ── 能力値・戦闘値の2段構成（BATTLE欄の中身） ── */
-        .protoAbility {
-            display: grid;
-            grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-            gap: 0 9px;
-        }
-        .protoAbility > div + div {
-            border-left: 1px solid rgba(200,146,42,0.14);
-            padding-left: 8px;
-        }
-        .protoAbility h4 {
-            margin: 0 0 2px;
-            font-size: 7px;
-            font-weight: 400;
-            letter-spacing: 0.12em;
-            color: rgba(83,210,191,0.62);
-        }
-        .protoCombat.adventureMetrics { grid-template-columns: 1fr; }
-        .adventureMetric small {
-            margin-left: 2px;
-            color: rgba(224,189,115,0.34);
-            font-size: 7px;
-            font-weight: 400;
-        }
         /* 読み方（シートの外、下に置く） */
         .protoLegend {
             position: fixed;
@@ -107,26 +83,7 @@
         }
         .protoLegend b { color: #ecd28e; font-weight: 400; }
 
-        /* ── 兵種スキル（TRAINING欄の置き換え） ── */
-        .protoClassHead {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            margin: 2px 0 4px;
-            padding-bottom: 3px;
-            border-bottom: 1px solid rgba(200,146,42,0.12);
-            font-size: 8px;
-        }
-        .protoClassHead b { color: #ecd28e; font-size: 9px; }
-        .protoClassHead span { color: rgba(224,189,115,0.43); }
-        .adventureListRow.protoLocked span,
-        .adventureListRow.protoLocked small { opacity: 0.55; }
-        .adventureListRow.protoMaster b { color: rgba(83,210,191,0.8); }
-        /* 名前 ｜ 説明（省略表示）｜ 習得条件 を1行に収める */
-        .adventureSkills .adventureListRow.protoClassRow {
-            grid-template-columns: auto minmax(0, 1fr) auto;
-            gap: 6px;
-        }
+        /* 能力値・戦闘値・兵種スキルの欄の CSS は style.css の [trial] 節にある */
     </style>
 </head>
 <body>
@@ -176,38 +133,9 @@
     <script src="../spells.js"></script>
     <script src="../combatArts.js"></script>
     <script src="../passiveSkills.js"></script>
-    <script src="../trialStatSystem.js"></script>
+    <script src="../trialStatSystem.js?v=trial-stats-4"></script>
     <script>
-    // =========================================================
-    //  見本用のデータ（仮）
-    //  兵種: 各キャラ兵種表 - 各キャラ兵種適正.csv の「◎（加入時の最初の兵種）」
-    //  兵種スキル: 各キャラ兵種表 - 兵種スキル.csv
-    //  兵種Lv・装備は未実装のため仮表示
-    // =========================================================
-    const CLASS_SKILLS = {
-        "戦列下級": [
-            ["兵種Lv5",  "HP+5",   "最大HP+5"],
-            ["兵種Lv10", "深呼吸", "勇気が減っているとき、2ターンごとに勇気+5"],
-            ["兵種Lv15", "武道",   "技÷2%で物理攻撃の威力2倍"],
-            ["マスター", "戦上手", "武器装備時HP+5（この兵種のみ）"],
-        ],
-        "術軍師上級": [
-            ["兵種Lv5",  "威光",       "魅力÷2%で発動、力・魔攻の威力1.5倍（戦技）"],
-            ["兵種Lv10", "魅力+10",    "魅力+10"],
-            ["兵種Lv15", "詠唱破棄",   "魔法使用時、消費MP半減"],
-            ["マスター", "導きの神髄", "魅力+5、魔攻+5（この兵種のみ）"],
-        ],
-    };
-    const UNIT_CLASS = {
-        ringholm:     { name: "ならずもの", line: "戦列下級" },
-        arshe:        { name: "王子",       line: "戦列下級" },
-        young_karima: { name: "王子",       line: "戦列下級" },
-        albas:        { name: "ロード",     line: "術軍師上級" },
-        forest_guard: { name: "戦士（仮）", line: "戦列下級" },
-        dylan:        { name: "未設定",     line: null },
-        herel:        { name: "未設定",     line: null },
-    };
-    const PROTO_CLASS_LEVEL = 1; // 兵種Lvは未実装。見本では1として表示
+    // 兵種・兵種スキル・戦闘値は trialStatSystem.js の共通データ（ゲームのテスト戦闘と同じ）を使う
 
     const $ = id => document.getElementById(id);
     const unitSelect = $("protoUnit");
@@ -234,21 +162,6 @@
         return CHARACTERS_DATA.find(c => c.id === id) || {};
     }
 
-    // 命中値・回避値は、命中率 = 命中値 - 回避値（5〜100%）となるよう分けたもの
-    function derived(stats, profile, courage) {
-        const sizeMod = trialSizeEvasionModifier(profile.siz);
-        return {
-            hit: Math.round(60 + stats.tec * 2.5),
-            evade: Math.round(stats.spd * 2.5 + sizeMod),
-            crit: stats.tec + Math.floor(courage / 5),
-            critGuard: stats.cha,
-            followUp: stats.spd - TRIAL_FOLLOW_UP_SPEED_GAP,
-            followedBy: stats.spd + TRIAL_FOLLOW_UP_SPEED_GAP,
-            counter: Math.max(0, Math.min(100, courage)),
-            sizeMod,
-        };
-    }
-
     function render() {
         const profile = TRIAL_PROFILES[state.id];
         // 別キャラの見た目・持ち物を借りるプロフィール（例: アルシェ → 幼アルシェ）
@@ -256,8 +169,8 @@
         const stats = trialStatsAt(profile, state.level);
         const hp = state.hpPlan === 1 ? stats.hp + profile.base.hp : stats.hp;
         const hpCap = profile.caps.hp;
-        const d = derived(stats, profile, state.courage);
-        const cls = UNIT_CLASS[state.id];
+        const d = trialDerivedValues(stats, profile.siz, state.courage);
+        const cls = TRIAL_UNIT_CLASS[state.id];
         const bonus = trialGrowthBonus(profile);
 
         const cap = key => state.caps ? `<small>/${profile.caps[key]}</small>` : "";
@@ -284,13 +197,13 @@
             ? passives.map(p => `<div class="adventureListRow ability"><span>${p.name}</span><small>${p.desc || ""}</small><b>${p.track || ""}</b></div>`).join("")
             : `<div class="adventureEmpty">なし</div>`;
 
-        const classSkills = cls.line ? CLASS_SKILLS[cls.line] : null;
+        const classSkills = cls.line ? TRIAL_CLASS_SKILLS[cls.line] : null;
         const classRows = classSkills
             ? classSkills.map(([need, name, desc]) => {
                 const master = need === "マスター";
                 const need_lv = master ? Infinity : Number(need.replace("兵種Lv", ""));
-                const locked = PROTO_CLASS_LEVEL < need_lv;
-                return `<div class="adventureListRow ability protoClassRow${locked ? " protoLocked" : ""}${master ? " protoMaster" : ""}" title="${name}：${desc}"><span>${name}</span><small>${desc}</small><b>${need}</b></div>`;
+                const locked = TRIAL_CLASS_LEVEL < need_lv;
+                return `<div class="adventureListRow ability trialClassRow${locked ? " trialLocked" : ""}${master ? " trialMaster" : ""}" title="${name}：${desc}"><span>${name}</span><small>${desc}</small><b>${need}</b></div>`;
             }).join("")
             : `<div class="adventureEmpty">兵種が未設定です</div>`;
 
@@ -330,10 +243,10 @@
 
         <section class="adventureBattle adventureRuled">
           <h3>ABILITY <span>能力値・戦闘値</span></h3>
-          <div class="protoAbility">
+          <div class="trialAbility">
             <div>
               <h4>能力値</h4>
-              <div class="adventureMetrics battleStats protoStats">
+              <div class="adventureMetrics battleStats">
                 ${metric("力", stats.atk, cap("atk"))}${metric("魔攻", stats.mag, cap("mag"))}
                 ${metric("防御", stats.def, cap("def"))}${metric("魔防", stats.res, cap("res"))}
                 ${metric("技", stats.tec, cap("tec"))}${metric("速さ", stats.spd, cap("spd"))}
@@ -342,7 +255,7 @@
             </div>
             <div>
               <h4>戦闘値</h4>
-              <div class="adventureMetrics protoCombat">
+              <div class="adventureMetrics trialCombat">
                 ${metric("命中値", d.hit, "", `60＋技${stats.tec}×2.5`)}
                 ${metric("回避値", d.evade, "", `速さ${stats.spd}×2.5＋体格補正${d.sizeMod}`)}
                 ${metric("必殺値", d.crit, "", `技${stats.tec}＋現在の勇気${state.courage}÷5`)}
@@ -363,7 +276,7 @@
 
         <section class="adventureSkills adventureRuled">
           <h3>CLASS <span>兵種スキル</span></h3>
-          <div class="protoClassHead"><b>${cls.name}</b><span>${cls.line || "―"}　兵種Lv ${cls.line ? PROTO_CLASS_LEVEL : "―"}</span></div>
+          <div class="trialClassHead"><b>${cls.name}</b><span>${cls.line || "―"}　兵種Lv ${cls.line ? TRIAL_CLASS_LEVEL : "―"}</span></div>
           <div class="adventureList" tabindex="0" role="region" aria-label="兵種スキル一覧">${classRows}</div>
         </section>
 

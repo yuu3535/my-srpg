@@ -4950,3 +4950,51 @@ html, body {
         margin: 5px 0;
     }
 }
+
+/* ============================================================
+   [trial] 採用版ステータスの試験用ステータスシート（trial/adopted-stats）
+   試験用ユニット（テスト戦闘）のシートと prototypes/adopted_status_sheet_prototype.html で使う。
+   シートの外枠・配置・意匠は既存の .adventure* をそのまま使う。
+   ============================================================ */
+.trialAbility {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: 0 9px;
+}
+.trialAbility > div + div {
+    border-left: 1px solid rgba(200,146,42,0.14);
+    padding-left: 8px;
+}
+.trialAbility h4 {
+    margin: 0 0 2px;
+    font-size: 7px;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    color: rgba(83,210,191,0.62);
+}
+.trialCombat.adventureMetrics { grid-template-columns: 1fr; }
+.adventureMetric small {
+    margin-left: 2px;
+    color: rgba(224,189,115,0.34);
+    font-size: 7px;
+    font-weight: 400;
+}
+.trialClassHead {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin: 2px 0 4px;
+    padding-bottom: 3px;
+    border-bottom: 1px solid rgba(200,146,42,0.12);
+    font-size: 8px;
+}
+.trialClassHead b { color: #ecd28e; font-size: 9px; }
+.trialClassHead span { color: rgba(224,189,115,0.43); }
+.adventureListRow.trialLocked span,
+.adventureListRow.trialLocked small { opacity: 0.55; }
+.adventureListRow.trialMaster b { color: rgba(83,210,191,0.8); }
+/* 名前 ｜ 説明（省略表示）｜ 習得条件 を1行に収める */
+.adventureSkills .adventureListRow.trialClassRow {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 6px;
+}

@@ -4885,7 +4885,141 @@ function getAvailablePassiveSkills(unit) {
         .filter(Boolean);
 }
 
+/**
+ * [trial] 試験用ユニットのステータスシート（prototypes/adopted_status_sheet_prototype.html と同じ構成）。
+ * 外枠・配置・意匠は既存の .adventure* をそのまま使い、中身だけを採用版ステータスへ入れ替える。
+ */
+function renderTrialStatusSheet(unit) {
+    const profile = TRIAL_PROFILES[unit.id];
+    const stats = unit.trialStats;
+    const courage = getEffectiveCourage(unit);
+    const d = trialDerivedValues(stats, unit.trialSiz, courage);
+    const cls = TRIAL_UNIT_CLASS[unit.id] || { name: "未設定", line: null };
+    const pct = (cur, max) => max > 0 ? Math.max(0, Math.min(100, cur / max * 100)) : 0;
+    const metric = (label, value, extra = "", tip = "") =>
+        `<div class="adventureMetric"${tip ? ` title="${tip}"` : ""}><span>${label}</span><b>${value}${extra}</b></div>`;
+    const abilityRows = (items, emptyText) => items.length
+        ? items.map(item => `
+            <div class="adventureListRow ability">
+              <span>${item.name}</span>
+              <small>${item.desc || item.track || ""}</small>
+              <b>${item.category || item.track || ""}</b>
+            </div>`).join("")
+        : `<div class="adventureEmpty">${emptyText}</div>`;
+    const spellRows = Object.entries(unit.spells || {}).map(([name, value]) => {
+        const spell = SPELLS_DATA[name];
+        const detail = spell ? `射程${spell.range ?? "―"} / MP ${spell.mpCost ?? "―"}` : "";
+        return `<div class="adventureListRow spell"><span>${name}</span><small>${detail}</small><b>${value}</b></div>`;
+    }).join("") || `<div class="adventureEmpty">習得している魔法はありません</div>`;
+    const classSkills = cls.line ? TRIAL_CLASS_SKILLS[cls.line] : null;
+    const classRows = classSkills
+        ? classSkills.map(([need, name, desc]) => {
+            const master = need === "マスター";
+            const locked = master || TRIAL_CLASS_LEVEL < Number(need.replace("兵種Lv", ""));
+            return `<div class="adventureListRow ability trialClassRow${locked ? " trialLocked" : ""}${master ? " trialMaster" : ""}" title="${name}：${desc}"><span>${name}</span><small>${desc}</small><b>${need}</b></div>`;
+        }).join("")
+        : `<div class="adventureEmpty">兵種が未設定です</div>`;
+    const statusNames = (unit.statusEffects || []).map(effect => effect?.name || effect?.id || effect).filter(Boolean);
+    const portrait = getPortraitSrc(unit) || unit.tokenImage || "";
+    const damaged = unit.maxHp > 0 && unit.hp / unit.maxHp <= 0.5;
+    const portraitSize = damaged
+        ? (unit.portraitDmgBgSize || unit.statusBgSize || unit.portraitBgSize || "cover")
+        : (unit.statusBgSize || unit.portraitBgSize || "cover");
+    const portraitPos = damaged
+        ? (unit.portraitDmgBgPos || unit.statusBgPos || unit.portraitBgPos || "center top")
+        : (unit.statusBgPos || unit.portraitBgPos || "center top");
+
+    statusModalBody.innerHTML = `
+      <div class="adventureSheet">
+        <section class="adventureIdentity">
+          <div class="adventurePortrait" role="img" aria-label="${unit.name}の立ち絵" style="background-image:url('${portrait}');background-size:${portraitSize};background-position:${portraitPos}"></div>
+          <div class="adventureNameplate">
+            <strong>${unit.name}</strong><span>${formatUnitLevelLabel(unit)}</span>
+          </div>
+          <dl class="adventureProfile">
+            <div><dt>種族</dt><dd>${profile.race || unit.race || "―"}</dd></div>
+            <div><dt>一族</dt><dd>${unit.clan || "―"}</dd></div>
+            <div><dt>兵種</dt><dd>${cls.name}</dd></div>
+            <div><dt>秘伝</dt><dd>${unit.secretArt || "―"}</dd></div>
+          </dl>
+        </section>
+
+        <section class="adventureVitals adventureRuled">
+          <h3>VITAL <span>基礎情報</span></h3>
+          <div class="adventureGauge hp">
+            <span>HP</span><i><em style="width:${pct(unit.hp, unit.maxHp)}%"></em></i><b>${unit.hp} / ${unit.maxHp}</b>
+          </div>
+          <div class="adventureGauge mp">
+            <span>MP</span><i><em style="width:${pct(unit.mp, unit.maxMp)}%"></em></i><b>${unit.mp} / ${unit.maxMp}</b>
+          </div>
+          <div class="adventureMetrics coreStats">
+            ${metric("勇気", courage, `<small>/${profile.courage}</small>`)}${metric("幸運", profile.luck)}
+            ${metric("反撃率", `${getCounterRate(unit)}%`)}${metric("成長補正", `+${trialGrowthBonus(profile)}%`)}
+          </div>
+        </section>
+
+        <section class="adventureBattle adventureRuled">
+          <h3>ABILITY <span>能力値・戦闘値</span></h3>
+          <div class="trialAbility">
+            <div>
+              <h4>能力値</h4>
+              <div class="adventureMetrics battleStats">
+                ${metric("力", stats.atk)}${metric("魔攻", stats.mag)}
+                ${metric("防御", stats.def)}${metric("魔防", stats.res)}
+                ${metric("技", stats.tec)}${metric("速さ", stats.spd)}
+                ${metric("魅力", stats.cha)}${metric("HP", unit.maxHp)}
+              </div>
+            </div>
+            <div>
+              <h4>戦闘値</h4>
+              <div class="adventureMetrics trialCombat">
+                ${metric("命中値", d.hit, "", `60＋技${stats.tec}×2.5。命中率＝命中値−相手の回避値`)}
+                ${metric("回避値", d.evade, "", `速さ${stats.spd}×2.5＋体格補正${d.sizeMod}`)}
+                ${metric("必殺値", d.crit, "", `技${stats.tec}＋現在の勇気${courage}÷5。必殺率＝必殺値−相手の必殺耐性`)}
+                ${metric("必殺耐性", d.critGuard, "", `魅力${stats.cha}`)}
+                ${metric("追撃", `速さ${d.followUp}以下へ`, "", `速さの差が${TRIAL_FOLLOW_UP_SPEED_GAP}以上で追撃`)}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="adventureLoadout adventureRuled">
+          <h3>LOADOUT <span>装備・行動</span></h3>
+          <div class="adventureLoadoutBlock"><span>武器</span><b>仮の武器（中威力${TRIAL_WEAPON_POWER.mid}）</b></div>
+          <div class="adventureLoadoutBlock"><span>行動</span><b>${getActionRangeSummary(unit)}</b></div>
+          <div class="adventureLoadoutBlock"><span>状態</span><b>${statusNames.join("・") || "通常"}</b></div>
+          <div class="adventureLoadoutBlock"><span>被追撃</span><b>速さ${d.followedBy}以上の相手</b></div>
+          <div class="adventureLoadoutBlock"><span>発作</span><b>${unit.seizureType || "なし"}</b></div>
+        </section>
+
+        <section class="adventureSkills adventureRuled">
+          <h3>CLASS <span>兵種スキル</span></h3>
+          <div class="trialClassHead"><b>${cls.name}</b><span>${cls.line || "―"}　兵種Lv ${cls.line ? TRIAL_CLASS_LEVEL : "―"}</span></div>
+          <div class="adventureList" tabindex="0" role="region" aria-label="兵種スキル一覧">${classRows}</div>
+        </section>
+
+        <section class="adventureBuild adventureRuled">
+          <div class="adventureBuildPane">
+            <h3>ARTS <span>戦技</span></h3>
+            <div class="adventureList" tabindex="0" role="region" aria-label="戦技一覧">${abilityRows(getAvailableCombatArts(unit), "なし")}</div>
+          </div>
+          <div class="adventureBuildPane">
+            <h3>PASSIVE <span>スキル</span></h3>
+            <div class="adventureList" tabindex="0" role="region" aria-label="スキル一覧">${abilityRows(getAvailablePassiveSkills(unit), "なし")}</div>
+          </div>
+        </section>
+
+        <div class="adventureSigil" aria-hidden="true"><span></span></div>
+
+        <section class="adventureMagic adventureRuled">
+          <h3>MAGIC <span>魔法</span></h3>
+          <div class="adventureList" tabindex="0" role="region" aria-label="魔法一覧">${spellRows}</div>
+        </section>
+      </div>`;
+}
+
 function renderStatusSheet(unit, bs) {
+    if (unit?.trialStats) return renderTrialStatusSheet(unit); // [trial]
     const pct = (cur, max) => max > 0
         ? Math.max(0, Math.min(100, cur / max * 100))
         : 0;
