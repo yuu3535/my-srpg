@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>採用版ステータス画面 見本</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=M+PLUS+1:wght@300;400;700&display=swap" rel="stylesheet">
+    <!-- 本番と同じシートの意匠（1efae8f基準）をそのまま使う -->
+    <link rel="stylesheet" href="../style.css" />
+    <style>
+        /* =========================================================
+           見本ページ専用。本番のステータスシートの外枠・配置・意匠は
+           style.css のものをそのまま使い、中身の項目だけを入れ替える。
+           ========================================================= */
+        html, body {
+            margin: 0;
+            height: 100%;
+            background: #06050c;
+            color: var(--text-main);
+            font-family: "Noto Serif JP", "Yu Mincho", serif;
+            overflow: hidden;
+        }
+
+        /* ── 見本の操作バー ── */
+        .protoBar {
+            position: fixed;
+            inset: 0 0 auto 0;
+            height: 46px;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            padding: 0 16px;
+            background: linear-gradient(180deg, rgba(26,16,42,0.98), rgba(12,9,22,0.98));
+            border-bottom: 1px solid rgba(200,146,42,0.28);
+            font-size: 12px;
+            z-index: 60;
+            white-space: nowrap;
+        }
+        .protoBar .protoTitle { color: var(--gold); font-weight: 700; letter-spacing: 0.08em; }
+        .protoBar label { display: flex; align-items: center; gap: 6px; color: var(--text-sub); }
+        .protoBar select, .protoBar input[type="number"] {
+            background: rgba(0,0,0,0.5);
+            color: #ecd28e;
+            border: 1px solid rgba(200,146,42,0.35);
+            font: inherit;
+            padding: 2px 4px;
+        }
+        .protoBar input[type="number"] { width: 46px; }
+        .protoBar input[type="range"] { width: 110px; accent-color: var(--gold); }
+        .protoBar b { color: #ecd28e; min-width: 2.2em; display: inline-block; text-align: right; }
+        .protoBar .protoNote { margin-left: auto; color: var(--text-dim); font-size: 11px; }
+
+        /* ── シートを置く舞台（本番の #statusModalOverlay をそのまま置く） ── */
+        .protoStage {
+            position: fixed;
+            inset: 46px 0 0 0;
+        }
+        .protoStage #statusModalOverlay {
+            position: absolute;
+            inset: 0;
+            box-sizing: border-box;
+            padding: 10px 12px 56px; /* 下は読み方の欄の分をあける */
+            background: transparent;
+        }
+
+        /* ── 能力値・戦闘値の2段構成（BATTLE欄の中身） ── */
+        .protoAbility {
+            display: grid;
+            grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+            gap: 0 9px;
+        }
+        .protoAbility > div + div {
+            border-left: 1px solid rgba(200,146,42,0.14);
+            padding-left: 8px;
+        }
+        .protoAbility h4 {
+            margin: 0 0 2px;
+            font-size: 7px;
+            font-weight: 400;
+            letter-spacing: 0.12em;
+            color: rgba(83,210,191,0.62);
+        }
+        .protoCombat.adventureMetrics { grid-template-columns: 1fr; }
+        .adventureMetric small {
+            margin-left: 2px;
+            color: rgba(224,189,115,0.34);
+            font-size: 7px;
+            font-weight: 400;
+        }
+        /* 読み方（シートの外、下に置く） */
+        .protoLegend {
+            position: fixed;
+            left: 50%;
+            bottom: 10px;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 22px;
+            padding: 6px 16px;
+            background: rgba(12,9,22,0.92);
+            border: 1px solid rgba(200,146,42,0.2);
+            font-size: 12px;
+            color: rgba(194,231,222,0.72);
+            white-space: nowrap;
+            z-index: 60;
+        }
+        .protoLegend b { color: #ecd28e; font-weight: 400; }
+
+        /* ── 兵種スキル（TRAINING欄の置き換え） ── */
+        .protoClassHead {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin: 2px 0 4px;
+            padding-bottom: 3px;
+            border-bottom: 1px solid rgba(200,146,42,0.12);
+            font-size: 8px;
+        }
+        .protoClassHead b { color: #ecd28e; font-size: 9px; }
+        .protoClassHead span { color: rgba(224,189,115,0.43); }
+        .adventureListRow.protoLocked span,
+        .adventureListRow.protoLocked small { opacity: 0.55; }
+        .adventureListRow.protoMaster b { color: rgba(83,210,191,0.8); }
+        /* 名前 ｜ 説明（省略表示）｜ 習得条件 を1行に収める */
+        .adventureSkills .adventureListRow.protoClassRow {
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            gap: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="protoBar">
+        <span class="protoTitle">採用版ステータス画面 見本</span>
+        <label>キャラ
+            <select id="protoUnit"></select>
+        </label>
+        <label>因果Lv
+            <input id="protoLevel" type="range" min="1" max="60" step="1" />
+            <input id="protoLevelNum" type="number" min="1" max="200" />
+        </label>
+        <label>現在の勇気
+            <input id="protoCourage" type="range" min="0" max="100" step="1" />
+            <b id="protoCourageNum"></b>
+        </label>
+        <label><input id="protoCaps" type="checkbox" /> 能力上限を表示</label>
+        <label>HP
+            <select id="protoHpPlan">
+                <option value="2">案②（×1）</option>
+                <option value="1">案①（×2）</option>
+            </select>
+        </label>
+        <span class="protoNote">データ: 採用版v1.5 ／ 式: 試験ブランチ基準（未採用）</span>
+    </div>
+
+    <div class="protoStage">
+        <div id="statusModalOverlay">
+            <div id="statusModal" role="dialog" aria-modal="true" aria-labelledby="statusModalTitle">
+                <div id="statusModalHeader">
+                    <span id="statusModalTitle">ステータス</span>
+                    <button id="closeStatusModal" type="button" aria-label="ステータスを閉じる">×</button>
+                </div>
+                <div id="statusModalBody" tabindex="0" role="region" aria-label="キャラクター能力詳細"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="protoLegend">
+        <span><b>命中率</b> ＝ 命中値 − 相手の回避値（5〜100%）</span>
+        <span><b>必殺率</b> ＝ 必殺値 − 相手の必殺耐性</span>
+        <span><b>追撃</b> ＝ 速さの差が5以上</span>
+        <span><b>反撃率</b> ＝ 現在の勇気%</span>
+    </div>
+
+    <script src="../characters.js"></script>
+    <script src="../spells.js"></script>
+    <script src="../combatArts.js"></script>
+    <script src="../passiveSkills.js"></script>
+    <script src="../trialStatSystem.js"></script>
+    <script>
+    // =========================================================
+    //  見本用のデータ（仮）
+    //  兵種: 各キャラ兵種表 - 各キャラ兵種適正.csv の「◎（加入時の最初の兵種）」
+    //  兵種スキル: 各キャラ兵種表 - 兵種スキル.csv
+    //  兵種Lv・装備は未実装のため仮表示
+    // =========================================================
+    const CLASS_SKILLS = {
+        "戦列下級": [
+            ["兵種Lv5",  "HP+5",   "最大HP+5"],
+            ["兵種Lv10", "深呼吸", "勇気が減っているとき、2ターンごとに勇気+5"],
+            ["兵種Lv15", "武道",   "技÷2%で物理攻撃の威力2倍"],
+            ["マスター", "戦上手", "武器装備時HP+5（この兵種のみ）"],
+        ],
+        "術軍師上級": [
+            ["兵種Lv5",  "威光",       "魅力÷2%で発動、力・魔攻の威力1.5倍（戦技）"],
+            ["兵種Lv10", "魅力+10",    "魅力+10"],
+            ["兵種Lv15", "詠唱破棄",   "魔法使用時、消費MP半減"],
+            ["マスター", "導きの神髄", "魅力+5、魔攻+5（この兵種のみ）"],
+        ],
+    };
+    const UNIT_CLASS = {
+        ringholm:     { name: "ならずもの", line: "戦列下級" },
+        arshe:        { name: "王子",       line: "戦列下級" },
+        albas:        { name: "ロード",     line: "術軍師上級" },
+        forest_guard: { name: "戦士（仮）", line: "戦列下級" },
+        dylan:        { name: "未設定",     line: null },
+        herel:        { name: "未設定",     line: null },
+    };
+    const PROTO_CLASS_LEVEL = 1; // 兵種Lvは未実装。見本では1として表示
+
+    const $ = id => document.getElementById(id);
+    const unitSelect = $("protoUnit");
+    const levelRange = $("protoLevel");
+    const levelNum = $("protoLevelNum");
+    const courageRange = $("protoCourage");
+    const courageNum = $("protoCourageNum");
+    const capsCheck = $("protoCaps");
+    const hpPlanSelect = $("protoHpPlan");
+    const overlay = $("statusModalOverlay");
+    const title = $("statusModalTitle");
+    const body = $("statusModalBody");
+
+    const state = { id: "ringholm", level: 30, courage: 90, caps: false, hpPlan: 2 };
+
+    for (const [id, profile] of Object.entries(TRIAL_PROFILES)) {
+        const option = document.createElement("option");
+        option.value = id;
+        option.textContent = profile.name;
+        unitSelect.appendChild(option);
+    }
+
+    function character(id) {
+        return CHARACTERS_DATA.find(c => c.id === id) || {};
+    }
+
+    // 命中値・回避値は、命中率 = 命中値 - 回避値（5〜100%）となるよう分けたもの
+    function derived(stats, profile, courage) {
+        const sizeMod = trialSizeEvasionModifier(profile.siz);
+        return {
+            hit: Math.round(60 + stats.tec * 2.5),
+            evade: Math.round(stats.spd * 2.5 + sizeMod),
+            crit: stats.tec + Math.floor(courage / 5),
+            critGuard: stats.cha,
+            followUp: stats.spd - TRIAL_FOLLOW_UP_SPEED_GAP,
+            followedBy: stats.spd + TRIAL_FOLLOW_UP_SPEED_GAP,
+            counter: Math.max(0, Math.min(100, courage)),
+            sizeMod,
+        };
+    }
+
+    function render() {
+        const profile = TRIAL_PROFILES[state.id];
+        const src = character(state.id);
+        const stats = trialStatsAt(profile, state.level);
+        const hp = state.hpPlan === 1 ? stats.hp + profile.base.hp : stats.hp;
+        const hpCap = profile.caps.hp;
+        const d = derived(stats, profile, state.courage);
+        const cls = UNIT_CLASS[state.id];
+        const bonus = trialGrowthBonus(profile);
+
+        const cap = key => state.caps ? `<small>/${profile.caps[key]}</small>` : "";
+        const metric = (label, value, extra = "", tip = "") =>
+            `<div class="adventureMetric"${tip ? ` title="${tip}"` : ""}><span>${label}</span><b>${value}${extra}</b></div>`;
+        const pct = (cur, max) => max > 0 ? Math.max(0, Math.min(100, cur / max * 100)) : 0;
+
+        const portrait = src.portraitImage ? `../${src.portraitImage}` : (src.tokenImage ? `../${src.tokenImage}` : "");
+        const portraitSize = src.statusBgSize || src.portraitBgSize || "cover";
+        const portraitPos = src.statusBgPos || src.portraitBgPos || "center top";
+
+        const spells = Object.entries(src.spells || {});
+        const spellRows = spells.length
+            ? spells.map(([name, value]) => {
+                const spell = SPELLS_DATA[name];
+                const detail = spell ? `射程${spell.range ?? "―"} / MP ${spell.mpCost ?? "―"}` : "";
+                return `<div class="adventureListRow spell"><span>${name}</span><small>${detail}</small><b>${value}</b></div>`;
+            }).join("")
+            : `<div class="adventureEmpty">習得している魔法はありません</div>`;
+
+        const passives = [...new Set([...(src.learnedPassives || []), ...(src.equippedPassives || [])])]
+            .map(id => PASSIVE_SKILLS[id]).filter(Boolean);
+        const passiveRows = passives.length
+            ? passives.map(p => `<div class="adventureListRow ability"><span>${p.name}</span><small>${p.desc || ""}</small><b>${p.track || ""}</b></div>`).join("")
+            : `<div class="adventureEmpty">なし</div>`;
+
+        const classSkills = cls.line ? CLASS_SKILLS[cls.line] : null;
+        const classRows = classSkills
+            ? classSkills.map(([need, name, desc]) => {
+                const master = need === "マスター";
+                const need_lv = master ? Infinity : Number(need.replace("兵種Lv", ""));
+                const locked = PROTO_CLASS_LEVEL < need_lv;
+                return `<div class="adventureListRow ability protoClassRow${locked ? " protoLocked" : ""}${master ? " protoMaster" : ""}" title="${name}：${desc}"><span>${name}</span><small>${desc}</small><b>${need}</b></div>`;
+            }).join("")
+            : `<div class="adventureEmpty">兵種が未設定です</div>`;
+
+        const ranges = spells.map(([name]) => SPELLS_DATA[name]?.range).filter(r => typeof r === "number");
+        const magicRange = ranges.length ? (Math.min(...ranges) === Math.max(...ranges) ? `${Math.max(...ranges)}` : `${Math.min(...ranges)}-${Math.max(...ranges)}`) : "";
+        const action = [`移動 ${src.move ?? 3}`, `通常 ${src.attackRange ?? 1}`, ...(magicRange ? [`魔法 ${magicRange}`] : [])].join(" / ");
+
+        title.textContent = `${profile.name} ― ステータス`;
+        body.innerHTML = `
+      <div class="adventureSheet">
+        <section class="adventureIdentity">
+          <div class="adventurePortrait" role="img" aria-label="${profile.name}の立ち絵" style="background-image:url('${portrait}');background-size:${portraitSize};background-position:${portraitPos}"></div>
+          <div class="adventureNameplate">
+            <strong>${profile.name}</strong><span>因果Lv ${state.level}</span>
+          </div>
+          <dl class="adventureProfile">
+            <div><dt>種族</dt><dd>${profile.race || "―"}</dd></div>
+            <div><dt>一族</dt><dd>${src.clan || "―"}</dd></div>
+            <div><dt>兵種</dt><dd>${cls.name}</dd></div>
+            <div><dt>秘伝</dt><dd>${src.secretArt || "―"}</dd></div>
+          </dl>
+        </section>
+
+        <section class="adventureVitals adventureRuled">
+          <h3>VITAL <span>基礎情報</span></h3>
+          <div class="adventureGauge hp">
+            <span>HP</span><i><em style="width:${pct(hp, hp)}%"></em></i><b>${hp} / ${hp}</b>
+          </div>
+          <div class="adventureGauge mp">
+            <span>MP</span><i><em style="width:100%"></em></i><b>${src.maxMp ?? "―"} / ${src.maxMp ?? "―"}</b>
+          </div>
+          <div class="adventureMetrics coreStats">
+            ${metric("勇気", `${state.courage}`, `<small>/${profile.courage}</small>`)}${metric("幸運", profile.luck)}
+            ${metric("反撃率", `${d.counter}%`)}${metric("成長補正", `+${bonus}%`)}
+          </div>
+        </section>
+
+        <section class="adventureBattle adventureRuled">
+          <h3>ABILITY <span>能力値・戦闘値</span></h3>
+          <div class="protoAbility">
+            <div>
+              <h4>能力値</h4>
+              <div class="adventureMetrics battleStats protoStats">
+                ${metric("力", stats.atk, cap("atk"))}${metric("魔攻", stats.mag, cap("mag"))}
+                ${metric("防御", stats.def, cap("def"))}${metric("魔防", stats.res, cap("res"))}
+                ${metric("技", stats.tec, cap("tec"))}${metric("速さ", stats.spd, cap("spd"))}
+                ${metric("魅力", stats.cha, cap("cha"))}${metric("HP", hp, state.caps ? `<small>/${hpCap}</small>` : "")}
+              </div>
+            </div>
+            <div>
+              <h4>戦闘値</h4>
+              <div class="adventureMetrics protoCombat">
+                ${metric("命中値", d.hit, "", `60＋技${stats.tec}×2.5`)}
+                ${metric("回避値", d.evade, "", `速さ${stats.spd}×2.5＋体格補正${d.sizeMod}`)}
+                ${metric("必殺値", d.crit, "", `技${stats.tec}＋現在の勇気${state.courage}÷5`)}
+                ${metric("必殺耐性", d.critGuard, "", `魅力${stats.cha}`)}
+                ${metric("追撃", `速さ${d.followUp}以下へ`, "", `自分の速さ${stats.spd}−5`)}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="adventureLoadout adventureRuled">
+          <h3>LOADOUT <span>装備・行動</span></h3>
+          <div class="adventureLoadoutBlock"><span>武器</span><b>仮の武器（中威力6）</b></div>
+          <div class="adventureLoadoutBlock"><span>行動</span><b>${action}</b></div>
+          <div class="adventureLoadoutBlock"><span>被追撃</span><b>速さ${d.followedBy}以上の相手</b></div>
+          <div class="adventureLoadoutBlock"><span>発作</span><b>${src.seizureType || "なし"}</b></div>
+        </section>
+
+        <section class="adventureSkills adventureRuled">
+          <h3>CLASS <span>兵種スキル</span></h3>
+          <div class="protoClassHead"><b>${cls.name}</b><span>${cls.line || "―"}　兵種Lv ${cls.line ? PROTO_CLASS_LEVEL : "―"}</span></div>
+          <div class="adventureList" tabindex="0" role="region" aria-label="兵種スキル一覧">${classRows}</div>
+        </section>
+
+        <section class="adventureBuild adventureRuled">
+          <div class="adventureBuildPane">
+            <h3>ARTS <span>戦技</span></h3>
+            <div class="adventureList" tabindex="0" role="region" aria-label="戦技一覧"><div class="adventureEmpty">固有戦技・兵種戦技は今後追加</div></div>
+          </div>
+          <div class="adventureBuildPane">
+            <h3>PASSIVE <span>スキル</span></h3>
+            <div class="adventureList" tabindex="0" role="region" aria-label="スキル一覧">${passiveRows}</div>
+          </div>
+        </section>
+
+        <div class="adventureSigil" aria-hidden="true"><span></span></div>
+
+        <section class="adventureMagic adventureRuled">
+          <h3>MAGIC <span>魔法</span></h3>
+          <div class="adventureList" tabindex="0" role="region" aria-label="魔法一覧">${spellRows}</div>
+        </section>
+      </div>`;
+    }
+
+    // 本番の fitStatusSheet と同じ考え方で、828×374 のシートを舞台に合わせて拡縮する
+    function fit() {
+        const style = getComputedStyle(overlay);
+        const width = overlay.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+        const height = overlay.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+        const scale = Math.max(0.1, Math.min(width / 828, height / 374, 1.75));
+        overlay.style.setProperty("--status-sheet-scale", scale);
+    }
+
+    function syncControls() {
+        const profile = TRIAL_PROFILES[state.id];
+        unitSelect.value = state.id;
+        levelRange.value = Math.min(60, state.level);
+        levelNum.value = state.level;
+        courageRange.max = profile.courage; // 勇気は最大値（TRPGの値）を超えない
+        courageRange.value = state.courage;
+        courageNum.textContent = `${state.courage}/${profile.courage}`;
+    }
+
+    unitSelect.addEventListener("change", () => {
+        state.id = unitSelect.value;
+        const profile = TRIAL_PROFILES[state.id];
+        state.level = trialCauseLevelFor(profile);
+        state.courage = profile.courage;
+        syncControls(); render();
+    });
+    levelRange.addEventListener("input", () => { state.level = Number(levelRange.value); syncControls(); render(); });
+    levelNum.addEventListener("change", () => {
+        state.level = Math.max(1, Math.min(200, Number(levelNum.value) || 1));
+        syncControls(); render();
+    });
+    courageRange.addEventListener("input", () => { state.courage = Number(courageRange.value); syncControls(); render(); });
+    capsCheck.addEventListener("change", () => { state.caps = capsCheck.checked; render(); });
+    hpPlanSelect.addEventListener("change", () => { state.hpPlan = Number(hpPlanSelect.value); render(); });
+    window.addEventListener("resize", fit);
+
+    syncControls();
+    render();
+    fit();
+    </script>
+</body>
+</html>
