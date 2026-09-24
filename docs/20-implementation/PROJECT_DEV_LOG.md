@@ -191,7 +191,7 @@ Codex / Claude Code が途中から参加しても、前回までの成果、残
 - `PROJECT_CONSTITUTION.md` を作成した
   - このゲームの最上位方針
   - スマホ操作、SRPG快適性、TRPGらしさ、世界観、品質基準を明文化
-- `TRPG_SRPG_DESIGN_THINKING.md` を作成した
+- `docs/10-design/battle/TRPG_SRPG_DESIGN_THINKING.md` を作成した
   - 反証エージェント
   - 発想・レビュー観点
   - Codex / Claude に投げるための設計テンプレ
@@ -208,7 +208,7 @@ Codex / Claude Code が途中から参加しても、前回までの成果、残
 ### 次回の優先候補
 
 - スマホ実機で `視点` ボタンを触り、2D / 斜め表示の操作感を確認する
-- `PROJECT_CONSTITUTION.md` と `TRPG_SRPG_DESIGN_THINKING.md` を前提に、スマホ戦闘UIを反証・発想レビューする
+- `PROJECT_CONSTITUTION.md` と `docs/10-design/battle/TRPG_SRPG_DESIGN_THINKING.md` を前提に、スマホ戦闘UIを反証・発想レビューする
 - マップ表示改善案を 3 から 5 個出して比較する
   - 縦画面2D改善
   - 疑似3D強化

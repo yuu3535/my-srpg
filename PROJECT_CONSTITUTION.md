@@ -49,11 +49,11 @@ Codex / Claude Code は、設計・実装・レビューで迷った時に、こ
 
 ## 参照する設計メモ
 
-- `TRPG_SRPG_DESIGN_THINKING.md`
+- `docs/10-design/battle/TRPG_SRPG_DESIGN_THINKING.md`
   - TRPG x SRPG の反証エージェント、提案前チェック、実装前チェック
-- `WORLD_UI_DIRECTION_MEMO.md`
+- `docs/10-design/ui/WORLD_UI_DIRECTION_MEMO.md`
   - 世界観、UIトーン、オルクス/アルストロの雰囲気
-- `DEVELOPMENT_REVIEW_MEMO.md`
+- `docs/40-reviews/DEVELOPMENT_REVIEW_MEMO.md`
   - 既存コードの注意点、今後やるべきこと、資産になりそうな部分
 
 ## 最後の確認

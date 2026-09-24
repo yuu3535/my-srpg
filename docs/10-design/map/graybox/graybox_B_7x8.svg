@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="650" viewBox="0 0 900 650">
+  <defs>
+    <pattern id="grid7" width="64" height="64" patternUnits="userSpaceOnUse">
+      <rect width="64" height="64" fill="#f4efe4" stroke="#8a7f70" stroke-width="2"/>
+    </pattern>
+  </defs>
+  <rect width="900" height="650" fill="#25272c"/>
+  <text x="80" y="43" fill="#f2eee5" font-family="Geist, Arial, sans-serif" font-size="26" font-weight="700">B案・7×8 操作確認盤面</text>
+  <text x="80" y="66" fill="#b9b4aa" font-family="Geist, Arial, sans-serif" font-size="15">論理座標図／表示時は斜め見下ろし</text>
+  <rect x="80" y="80" width="448" height="512" fill="url(#grid7)" stroke="#d1b46e" stroke-width="4"/>
+
+  <g fill="#b9b4aa" font-family="Geist Mono, Consolas, monospace" font-size="14" text-anchor="middle">
+    <text x="112" y="75">0</text><text x="176" y="75">1</text><text x="240" y="75">2</text>
+    <text x="304" y="75">3</text><text x="368" y="75">4</text><text x="432" y="75">5</text><text x="496" y="75">6</text>
+  </g>
+  <g fill="#b9b4aa" font-family="Geist Mono, Consolas, monospace" font-size="14" text-anchor="end">
+    <text x="72" y="118">0</text><text x="72" y="182">1</text><text x="72" y="246">2</text><text x="72" y="310">3</text>
+    <text x="72" y="374">4</text><text x="72" y="438">5</text><text x="72" y="502">6</text><text x="72" y="566">7</text>
+  </g>
+
+  <g fill="#5c5146" stroke="#3d3731" stroke-width="3">
+    <rect x="151" y="216" width="50" height="48" rx="5"/>
+    <rect x="407" y="216" width="50" height="48" rx="5"/>
+    <rect x="151" y="344" width="50" height="48" rx="5"/>
+    <rect x="407" y="344" width="50" height="48" rx="5"/>
+  </g>
+  <g fill="#f4efe4" font-family="Geist, Arial, sans-serif" font-size="18" font-weight="700" text-anchor="middle">
+    <text x="176" y="247">X</text><text x="432" y="247">X</text><text x="176" y="375">X</text><text x="432" y="375">X</text>
+  </g>
+
+  <g fill="#a75357" stroke="#73383b" stroke-width="4">
+    <circle cx="176" cy="176" r="21"/><circle cx="304" cy="176" r="21"/><circle cx="432" cy="176" r="21"/>
+  </g>
+  <g fill="#3e79ad" stroke="#28577e" stroke-width="4">
+    <circle cx="176" cy="496" r="21"/><circle cx="304" cy="496" r="21"/><circle cx="432" cy="496" r="21"/>
+  </g>
+  <path d="M304 346 L320 368 L304 390 L288 368 Z" fill="#c59a3d" stroke="#7f642b" stroke-width="3"/>
+
+  <g font-family="Geist, Arial, sans-serif">
+    <text x="574" y="110" fill="#f2eee5" font-size="21" font-weight="700">狙い</text>
+    <text x="574" y="142" fill="#d5d0c6" font-size="17">・選択と移動の確認</text>
+    <text x="574" y="171" fill="#d5d0c6" font-size="17">・中央と左右の進路</text>
+    <text x="574" y="200" fill="#d5d0c6" font-size="17">・障害物越しの視認性</text>
+    <text x="574" y="229" fill="#d5d0c6" font-size="17">・移動力3の初回接敵</text>
+
+    <text x="574" y="286" fill="#f2eee5" font-size="21" font-weight="700">凡例</text>
+    <circle cx="592" cy="326" r="14" fill="#3e79ad"/><text x="620" y="332" fill="#d5d0c6" font-size="17">味方仮配置</text>
+    <circle cx="592" cy="366" r="14" fill="#a75357"/><text x="620" y="372" fill="#d5d0c6" font-size="17">敵仮配置</text>
+    <rect x="578" y="394" width="28" height="28" rx="4" fill="#5c5146"/><text x="620" y="415" fill="#d5d0c6" font-size="17">通行不可</text>
+    <path d="M592 438 L606 456 L592 474 L578 456 Z" fill="#c59a3d"/><text x="620" y="462" fill="#d5d0c6" font-size="17">仮アイテム</text>
+
+    <text x="574" y="527" fill="#d1b46e" font-size="18" font-weight="700">比較上の位置づけ</text>
+    <text x="574" y="556" fill="#d5d0c6" font-size="16">最初に操作の迷いを除く盤面。</text>
+    <text x="574" y="581" fill="#d5d0c6" font-size="16">戦術の深さは意図的に抑える。</text>
+  </g>
+</svg>

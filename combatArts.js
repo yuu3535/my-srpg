@@ -1,7 +1,7 @@
 // ============================================================
 //  combatArts.js ― 戦技データ（純粋データ・DOM/戦闘状態に触れない）
 //
-//  設計: COMBAT_ARTS_DESIGN.md §7 / 原案: §11（戦技案.xlsx）
+//  設計: docs/10-design/battle/COMBAT_ARTS_DESIGN.md §7 / 原案: §11（戦技案.xlsx）
 //  読込順: 技能・魔法データの後、game.js の前
 //
 //  base : どのコマンドの派生か

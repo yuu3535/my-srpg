@@ -1,7 +1,7 @@
 // ============================================================
 //  passiveSkills.js ― パッシブスキルデータ（純粋データ）
 //
-//  設計: COMBAT_ARTS_DESIGN.md §7 / 原案: §11（戦技案.xlsx）
+//  設計: docs/10-design/battle/COMBAT_ARTS_DESIGN.md §7 / 原案: §11（戦技案.xlsx）
 //  trigger : battleHooks のフック名（§8）
 //  chance  : C型（確率発動）の発動率式。calcBattleStats の
 //            v2名（atk/mag/def/res）または raw 値を参照する。

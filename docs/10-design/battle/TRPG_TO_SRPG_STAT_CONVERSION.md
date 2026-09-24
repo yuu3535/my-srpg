@@ -398,7 +398,7 @@ Dual攻撃の初期処理案は次のとおりです。
 - `statConversion.js`
 - `tests/statConversion.test.js`
 - `characters.js`
-- `BATTLE_RULES_V2.md`
+- `docs/10-design/battle/BATTLE_RULES_V2.md`
 - `output/pdf/srpg_basic_stats_design.md`
 - `output/pdf/メイン3人_初期ステータスと成長率_仮案記録_2026-09-21.md`
 - `CharaStatus/幼アルシェ.txt`

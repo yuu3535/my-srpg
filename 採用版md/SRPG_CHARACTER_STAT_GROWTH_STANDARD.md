@@ -8,7 +8,7 @@
 
 ゲームコードへの実装仕様そのものではないが、今後 `statConversion.js`、キャラクターデータ、成長処理、セーブ形式を変更するときの正典とする。既存コードにはまだ反映していない。
 
-過去資料 `TRPG_TO_SRPG_STAT_CONVERSION.md` v0.3 には、リングホルムとアルバスのTRPG Lv5資料をそのまま加入時能力へ換算する旧案が残っている。メイン3人の因果Lv1基礎値と個人成長については、本書を新しい基準として優先する。
+過去資料 `docs/10-design/battle/TRPG_TO_SRPG_STAT_CONVERSION.md` v0.3 には、リングホルムとアルバスのTRPG Lv5資料をそのまま加入時能力へ換算する旧案が残っている。メイン3人の因果Lv1基礎値と個人成長については、本書を新しい基準として優先する。
 
 ### 状態の読み方
 
@@ -332,8 +332,8 @@ HPはTRPGの基本HP式と、SRPGのHP2倍換算を同じ順番で上限へ適�
 
 ## 13. 参照資料
 
-- `TRPG_TO_SRPG_STAT_CONVERSION.md` v0.3
-- `trpg_to_srpg_damage_design.md`
+- `docs/10-design/battle/TRPG_TO_SRPG_STAT_CONVERSION.md` v0.3
+- `docs/10-design/battle/trpg_to_srpg_damage_design.md`
 - `output/pdf/自作SRPG_ゲームシステム方針_2026-09-21.md`
 - `output/pdf/メイン3人_初期ステータスと成長率_仮案記録_2026-09-21.md`
 - `CharaStatus/幼アルシェ.txt`

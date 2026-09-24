@@ -1,7 +1,7 @@
 // ============================================================
 //  buildMilestones.js ― 修練度トラック定義（純粋データ）
 //
-//  設計: COMBAT_ARTS_DESIGN.md §4・§11 / SYNC_AGENDA.md §3
+//  設計: docs/10-design/battle/COMBAT_ARTS_DESIGN.md §4・§11 / docs/30-planning/SYNC_AGENDA.md §3
 //  各特技は修練度1〜9のトラックを持ち、1段=1取得スロット。
 //
 //  ranks[n] の形:

@@ -3,7 +3,7 @@
 TRPG版スキル資料（`RPGパロまとめ/rurubu5/スキル/スキル.pdf`・全29p）をSRPGへ翻訳するための設計メモ。
 2026-07-14時点の叩き台。決定事項ではなく、各項目に選択肢と推奨案を併記する。
 
-関連: `BATTLE_RULES_V2.md` / `PROJECT_CONSTITUTION.md` / `TRPG_SRPG_DESIGN_THINKING.md`
+関連: `docs/10-design/battle/BATTLE_RULES_V2.md` / `PROJECT_CONSTITUTION.md` / `docs/10-design/battle/TRPG_SRPG_DESIGN_THINKING.md`
 
 ---
 
@@ -144,7 +144,7 @@ TRPGの4分類を、SRPGでは **操作の違い** で2系統に再編する。
 
 ## 7. データフォーマット案
 
-命名はSYNC_AGENDA.md §8で合意済み: `combatArts.js` / `passiveSkills.js` / `buildMilestones.js`。
+命名は `docs/30-planning/SYNC_AGENDA.md` §8で合意済み: `combatArts.js` / `passiveSkills.js` / `buildMilestones.js`。
 ルート直下・純粋データ（DOM/戦闘状態に触れない）・IDはASCII snake_case・`module.exports`付き。
 読込順は既存技能・魔法データの後、`game.js` の前。フック側は Codex が `battleHooks.js` を作る。
 
@@ -218,7 +218,7 @@ v2のダメージ/ターン処理に以下の割り込み点（フック）を�
 - ✅ C型（確率発動）はFEスキル方式で採用。発動率＝ステータス由来%、予測パネルに表示
 - ✅ 習得はマイルストーン分岐選択（補正 or 習得の二者択一。§4参照）
 
-### すり合わせ合意（2026-07-14・SYNC_AGENDA.md にCodex回答済み）
+### すり合わせ合意（2026-07-14・`docs/30-planning/SYNC_AGENDA.md` にCodex回答済み）
 - ✅ 回避式は**暫定で現行維持**（命中側DEX×2）。最終裁定は実機プレイテスト後（命中率表を作って比較）
 - ✅ 勇気は `baseCourage`（正典値）と `currentCourage`（戦闘中0〜100）に分離。
   「勇気を削る」戦技＝currentCourageデバフ。勇気ポイントの別ゲージは廃止し、

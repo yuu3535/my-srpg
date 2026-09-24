@@ -52,15 +52,15 @@
 
 - `PROJECT_CONSTITUTION.md`
   - 判断に迷った時の憲法。特にスマホ操作感、世界観、SRPG快適性の優先順位が重要。
-- `COMBAT_ARTS_DESIGN.md`
+- `docs/10-design/battle/COMBAT_ARTS_DESIGN.md`
   - 戦技・修練度・魔法修練度・パッシブの方針。
-- `BATTLE_RULES_V2.md`
+- `docs/10-design/battle/BATTLE_RULES_V2.md`
   - TRPG原値を使ったFE型の戦闘式の設計メモ。
-- `PROJECT_DEV_LOG.md`
+- `docs/20-implementation/PROJECT_DEV_LOG.md`
   - その日に何をしたか、次に何を見るべきかのログ。
-- `NEXT_ACTION_QUEUE.md`
+- `docs/30-planning/NEXT_ACTION_QUEUE.md`
   - 次回作業の優先順位リスト。
-- `SYNC_AGENDA.md`
+- `docs/30-planning/SYNC_AGENDA.md`
   - Claude/Codex間の仕様すり合わせメモ。
 
 ## 要注意コード
@@ -174,5 +174,5 @@ HTML/CSSの構造が安定してから着手する。
 - 迷ったら `PROJECT_CONSTITUTION.md` を優先する。
 - スマホ横画面の遊びやすさを最優先にする。
 - 予測と実戦闘の数値経路を分けない。
-- Claude/Codex間で責務が重複しそうな時は、先にこのメモか `SYNC_AGENDA.md` に残す。
+- Claude/Codex間で責務が重複しそうな時は、先にこのメモか `docs/30-planning/SYNC_AGENDA.md` に残す。
 - 大改修は必ず小さいコミットに分ける。

@@ -1,7 +1,7 @@
 # すり合わせアジェンダ（Claude → Codex）
 
 作成: 2026-07-14 / Claude Code
-目的: 戦技・スキル実装（COMBAT_ARTS_DESIGN.md）に向けて、v2実装との認識齟齬を潰す。
+目的: 戦技・スキル実装（`docs/10-design/battle/COMBAT_ARTS_DESIGN.md`）に向けて、v2実装との認識齟齬を潰す。
 **各項目の「回答」欄に直接書き込んで、このファイルをコミットしてください。**
 原作者も交えて決めるべき項目には ★ を付けてある。
 
@@ -42,7 +42,7 @@ v2で courage は counterRate（反撃率）に転用された。
 - 確認: `skillRanks` のスケールは修練度1〜9を想定してよいか？（現行の特技成功値と同一か別物か）
 - 回答: 追加に賛成。`learnedPassives / equippedPassives / buildChoices`を全メンバーに必ず持たせ、`clonePartyState()`と旧セーブ補完、テストを同時更新する。スキーマ変更時は`PARTY_STATE_VERSION`を2へ上げる。`skillRanks`は**修練度1〜9の正典保存先**とする。TRPG既存キャラの特技成功値は初期インポート値として修練度へ写せるが、戦闘中の技能値オブジェクトとは分離し、以後の育成・振り直しは`skillRanks`だけを更新する。これにより原作キャラ資産を引き継ぎつつ、装備・状態異常などの一時補正を成長値へ混ぜない。
 
-## 4. フック実装の可否（COMBAT_ARTS_DESIGN.md §8）
+## 4. フック実装の可否（`docs/10-design/battle/COMBAT_ARTS_DESIGN.md` §8）
 
 パッシブ発動用の割り込み点。v2のダメージ/ターン処理に組み込めるか、命名含めて確認したい:
 
@@ -68,7 +68,7 @@ onDeclarationTargeted / modifyPrediction`
 
 ## 6. 命中乱数の方針との整合
 
-NEXT_ACTION_QUEUE.md に「命中乱数をどこまで確定寄りにするか」が保留事項としてあったが、
+`docs/30-planning/NEXT_ACTION_QUEUE.md` に「命中乱数をどこまで確定寄りにするか」が保留事項としてあったが、
 v2は `BATTLE_HIT_MODE = "formula"`（乱数あり）になった。この保留は解決済みという理解でよいか？
 （設計側は「確率は予測パネルに表示して計算できる運にする」方針で書いている）
 
@@ -94,6 +94,6 @@ v2は `BATTLE_HIT_MODE = "formula"`（乱数あり）になった。この保留
 ---
 
 ## 参照ドキュメント
-- `COMBAT_ARTS_DESIGN.md` … 戦技・スキル設計（§10=v2整合メモ、§11=原作者の戦技原案）
-- `BATTLE_RULES_V2.md` … 戦闘ルールv2
+- `docs/10-design/battle/COMBAT_ARTS_DESIGN.md` … 戦技・スキル設計（§10=v2整合メモ、§11=原作者の戦技原案）
+- `docs/10-design/battle/BATTLE_RULES_V2.md` … 戦闘ルールv2
 - 原案の一次ソース: `戦技案.xlsx`（未追跡。内容は設計書§11に転記済み）
