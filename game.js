@@ -1045,6 +1045,68 @@ function getDerivedPassiveStatBonus(unit) {
     return 0;
 }
 
+// =============================================
+// [trial] 採用版ステータス試験（trial/adopted-stats ブランチ専用）
+//   テスト戦闘（battleEntrySource === "test"）のユニットだけに
+//   trialStatSystem.js の換算・命中・ダメージ・必殺・追撃を適用する。
+//   シナリオ本編の戦闘には影響しない。
+// =============================================
+function isTrialBattleSession() {
+    return battleEntrySource === "test" && typeof TRIAL_PROFILES !== "undefined";
+}
+
+function applyTrialProfile(unit) {
+    const profile = TRIAL_PROFILES[unit.id];
+    if (!profile) return;
+    const level = trialCauseLevelFor(profile);
+    const stats = trialStatsAt(profile, level);
+    unit.trialLevel = level;
+    unit.trialStats = stats;
+    unit.trialSiz = profile.siz;
+    unit.hp = stats.hp;
+    unit.maxHp = stats.hp;
+}
+
+function isTrialPair(a, b) {
+    return !!(a?.trialStats && b?.trialStats);
+}
+
+// 試験用ユニットは、表示・AI・予測でも試験用の値を使う
+const legacyCalcBattleStats = calcBattleStats;
+calcBattleStats = function trialAwareCalcBattleStats(unit) {
+    const base = legacyCalcBattleStats(unit);
+    const t = unit?.trialStats;
+    if (!t) return base;
+    return {
+        ...base,
+        atk: t.atk, mag: t.mag, def: t.def, res: t.res, hp: t.hp,
+        power: t.atk, magic: t.mag, armor: t.def, ward: t.res, technique: t.tec,
+        trial: t,
+    };
+};
+
+function trialFollowUpAvailable(attacker, target) {
+    return isTrialPair(attacker, target) && attacker.hp > 0 && target.hp > 0
+        && trialCanFollowUp(attacker.trialStats, target.trialStats);
+}
+
+/** [trial] 攻撃側の追撃（速さ差5以上）。追撃には反撃しない */
+function runTrialFollowUp(attacker, target, atkStat, atkSkillName) {
+    if (!trialFollowUpAvailable(attacker, target)) return;
+    const targetStunned = (target.statusEffects || []).some(e => e.type === "stun");
+    const hit = getBattleHitResult(attacker, target, atkStat, targetStunned);
+    addLog(`・追撃！${attacker.name} → ${target.name} ${hit.note} → ${hit.isHit ? "命中" : "失敗"}`);
+    if (!hit.isHit) {
+        showDamagePopup(target.id, 0, "miss");
+        return;
+    }
+    resolvePhysicalHit(attacker, target, atkSkillName, {
+        hit,
+        attackSkillValue: atkStat,
+        skipCounter: true,
+    });
+}
+
 function getBattleHitResult(attacker, defender, attackSkill, targetStunned = false, options = {}) {
     if (targetStunned || BATTLE_HIT_MODE === "guaranteed") {
         return { rate: 100, roll: null, isHit: true, note: targetStunned ? "スタン中：自動命中" : "v2命中確定" };
@@ -1066,10 +1128,14 @@ function getBattleHitResult(attacker, defender, attackSkill, targetStunned = fal
         evadeSkill,
         evasionModifier
     );
-    const rate = battleHitRate(attackerStats, defenderStats, attackSkill, evadeSkill, {
-        accuracy: accuracyModifier,
-        evasion: evasionModifier,
-    });
+    const rate = isTrialPair(attacker, defender)
+        // [trial] 60 + (技 - 速さ) x 2.5 - 体格回避補正 + 既存の状態・パッシブ補正
+        ? trialHitRate(attacker.trialStats, defender.trialStats, defender.trialSiz,
+            accuracyModifier - evasionModifier)
+        : battleHitRate(attackerStats, defenderStats, attackSkill, evadeSkill, {
+            accuracy: accuracyModifier,
+            evasion: evasionModifier,
+        });
     const shouldRoll = options.roll !== false;
     const roll = shouldRoll
         ? (options.rollSource?.nextPercent("hit") ?? Math.floor(Math.random() * 100) + 1)
@@ -1122,6 +1188,19 @@ function applyBarrierDamage(target, rawDmg, breakBarrier = false) {
     return { damage, note: `（装甲${absorbed}吸収 残${barrier.value}）` };
 }
 
+/** ログ用のダメージ式表記（[trial] 試験用の式はその形で表示） */
+function formatPhysicalFormula(result) {
+    return result.trial
+        ? `（[試験] 武器${result.weaponPower}+(力${result.power + (result.powerBonus || 0)}-防御${result.armor})÷2）`
+        : `（力${result.power}+武器${result.weaponPower}-物防${result.armor}）`;
+}
+
+function formatMagicFormula(result) {
+    return result.trial
+        ? `（[試験] 呪文${result.spellPower}+(魔攻${result.magic}-魔防${result.ward})÷2）`
+        : `（魔力${result.magic}+呪文${result.spellPower}-魔防${result.ward}）`;
+}
+
 function calculatePhysicalDamage(attacker, target, options = {}) {
     const atkStats = calcBattleStats(attacker);
     const defStats = calcBattleStats(target);
@@ -1129,6 +1208,15 @@ function calculatePhysicalDamage(attacker, target, options = {}) {
     const powerBonus = Number(options.powerBonus || 0);
     const attackerDerivedBonus = getDerivedPassiveStatBonus(attacker);
     const defenderDerivedBonus = getDerivedPassiveStatBonus(target);
+    if (isTrialPair(attacker, target)) {
+        // [trial] max(1, round(武器威力 + (力 - 防御) / 2))、武器は仮の中威力
+        const trialWeapon = TRIAL_WEAPON_POWER.mid;
+        const trialAttack = attacker.trialStats.atk + powerBonus + attackerDerivedBonus;
+        const trialArmor = target.trialStats.def + defenderDerivedBonus;
+        const trialRaw = trialDamage(trialAttack, trialArmor, trialWeapon);
+        const trialDealt = options.half ? Math.max(1, Math.floor(trialRaw / 2)) : trialRaw;
+        return { trial: true, damage: trialDealt, raw: trialRaw, power: trialAttack - powerBonus, weaponPower: trialWeapon, powerBonus, armor: trialArmor, masteryBonus: 0, artNote: "" };
+    }
     const attackValue = atkStats.power + weaponPower + powerBonus + attackerDerivedBonus;
     const armorValue = defStats.armor + defenderDerivedBonus;
     const masteryBonus = masteryDamageBonus(attacker.skills?.["武道"]);
@@ -1144,6 +1232,15 @@ function calculateMagicDamage(caster, target, spell, options = {}) {
     const defStats = calcBattleStats(target);
     const casterDerivedBonus = getDerivedPassiveStatBonus(caster);
     const targetDerivedBonus = getDerivedPassiveStatBonus(target);
+    if (isTrialPair(caster, target)) {
+        // [trial] max(1, round(武器威力 + (魔攻 - 魔防) / 2))、呪文は仮の中威力
+        const trialPower = TRIAL_WEAPON_POWER.mid + Number(options.magicPowerBonus || 0);
+        const trialMagic = caster.trialStats.mag + casterDerivedBonus;
+        const trialWard = target.trialStats.res + targetDerivedBonus;
+        const trialRaw = trialDamage(trialMagic, trialWard, trialPower);
+        const trialDealt = options.half ? Math.max(1, Math.floor(trialRaw / 2)) : trialRaw;
+        return { trial: true, damage: trialDealt, raw: trialRaw, magic: trialMagic, spellPower: trialPower, ward: trialWard, masteryBonus: 0, masteryNote: "" };
+    }
     const spellPower = getSpellPower(spell) + Number(options.magicPowerBonus || 0);
     const raw = magicalDamage(
         { mag: atkStats.magic + casterDerivedBonus },
@@ -1173,6 +1270,12 @@ function getCriticalStatusModifier(unit, type) {
 }
 
 function getCriticalRate(attacker, defender) {
+    if (isTrialPair(attacker, defender)) {
+        // [trial] 技 + floor(現在の勇気 / 5) - 相手の魅力 + 補正
+        return trialCriticalRate(attacker.trialStats, getEffectiveCourage(attacker), defender.trialStats,
+            Number(attacker.criticalBonus || 0) + getCriticalStatusModifier(attacker, "criticalBonus")
+            - Number(defender.criticalAvoidanceBonus || 0) - getCriticalStatusModifier(defender, "criticalAvoidance"));
+    }
     const defenderApp = calcBattleStats(defender).raw.app;
     return criticalRate(getEffectiveCourage(attacker), attacker.level, defenderApp, {
         critical: Number(attacker.criticalBonus || 0)
@@ -1207,6 +1310,8 @@ function getLivePhysicalShadowComparisonHistory() {
 }
 
 function startLivePhysicalShadowSession(attacker, target, attackSkillName, attackSkillValue, combatArtId) {
+    // [trial] 試験用の式は旧処理と一致しないため、シャドウ比較を行わない
+    if (isTrialPair(attacker, target)) return null;
     try {
         const session = beginLivePhysicalShadowComparison({
             actor: attacker,
@@ -1396,6 +1501,15 @@ function applyTargetDamageModifiers(context, targetResult, baseDamage) {
 }
 
 function getContextCriticalRate(context, defender) {
+    if (isTrialPair(context.attacker, defender)) {
+        // [trial] 技 + floor(現在の勇気 / 5) - 相手の魅力 + 補正（殺気などのパッシブ補正を含む）
+        return trialCriticalRate(context.attacker.trialStats, getEffectiveCourage(context.attacker), defender.trialStats,
+            Number(context.attacker.criticalBonus || 0)
+            + getCriticalStatusModifier(context.attacker, "criticalBonus")
+            + Number(context.modifiers.criticalBonus || 0)
+            - Number(defender.criticalAvoidanceBonus || 0)
+            - getCriticalStatusModifier(defender, "criticalAvoidance"));
+    }
     const defenderApp = calcBattleStats(defender).raw.app;
     return criticalRate(getEffectiveCourage(context.attacker), context.attacker.level, defenderApp, {
         critical: Number(context.attacker.criticalBonus || 0)
@@ -2216,7 +2330,7 @@ function executePhysicalCounter(counterAttacker, counterTarget) {
     showDamagePopup(counterTarget.id, barrier.damage, critical.isCritical ? "critical" : "counter");
     flashUnitHit(counterTarget.id);
     const criticalNote = critical.isCritical ? ` 必殺！（${critical.roll}/${critical.rate}%）` : "";
-    addLog(`    ${barrier.damage}ダメージ（半分）${criticalNote}${result.artNote}${barrier.note}${formatActionContextNotes(targetResult.context)}（力${result.power}+武器${result.weaponPower}-物防${result.armor}）→ ${counterTarget.name} HP ${counterTarget.hp}/${counterTarget.maxHp}`);
+    addLog(`    ${barrier.damage}ダメージ（半分）${criticalNote}${result.artNote}${barrier.note}${formatActionContextNotes(targetResult.context)}${formatPhysicalFormula(result)}→ ${counterTarget.name} HP ${counterTarget.hp}/${counterTarget.maxHp}`);
     renderUnits();
     if (counterTarget.hp <= 0) addLog(`    ${counterTarget.name}は倒れた！`);
     finishDamageHooks(targetResult.context, targetResult, hpBefore);
@@ -2247,7 +2361,7 @@ function executeMagicCounter(caster, target, spell, spellVal) {
     showDamagePopup(target.id, barrier.damage, critical.isCritical ? "critical" : "counter");
     flashUnitHit(target.id);
     const criticalNote = critical.isCritical ? ` 必殺！（${critical.roll}/${critical.rate}%）` : "";
-    addLog(`    ${barrier.damage}ダメージ（半分）${criticalNote}${result.masteryNote}${barrier.note}${formatActionContextNotes(targetResult.context)}（魔力${result.magic}+呪文${result.spellPower}-魔防${result.ward}）→ ${target.name} HP ${target.hp}/${target.maxHp}`);
+    addLog(`    ${barrier.damage}ダメージ（半分）${criticalNote}${result.masteryNote}${barrier.note}${formatActionContextNotes(targetResult.context)}${formatMagicFormula(result)}→ ${target.name} HP ${target.hp}/${target.maxHp}`);
     renderUnits();
     if (target.hp <= 0) addLog(`    ${target.name}は倒れた！`);
     finishDamageHooks(targetResult.context, targetResult, hpBefore);
@@ -2310,7 +2424,7 @@ function resolvePhysicalHit(attacker, target, atkSkillName, options = {}) {
     showDamagePopup(target.id, actualDmg, critical.isCritical ? "critical" : "damage");
     flashUnitHit(target.id);
     const criticalNote = critical.isCritical ? ` 必殺！（${critical.roll}/${critical.rate}%）` : "";
-    addLog(`  命中！${actualDmg}ダメージ${criticalNote}${result.artNote}${barrier.note}${formatActionContextNotes(targetResult.context)}（力${result.power}+武器${result.weaponPower}-物防${result.armor}）→ ${target.name} HP ${target.hp}/${target.maxHp}`);
+    addLog(`  命中！${actualDmg}ダメージ${criticalNote}${result.artNote}${barrier.note}${formatActionContextNotes(targetResult.context)}${formatPhysicalFormula(result)}→ ${target.name} HP ${target.hp}/${target.maxHp}`);
     showMessage("SYSTEM", critical.isCritical
         ? `${attacker.name}の必殺！${target.name}に ${actualDmg} ダメージ！`
         : `${attacker.name}の攻撃命中！${target.name}に ${actualDmg} ダメージ！`);
@@ -2337,7 +2451,7 @@ function resolvePhysicalHit(attacker, target, atkSkillName, options = {}) {
 
     // 反撃チェック：パッシブモードでは反撃しない
     let counterTriggered = false;
-    if (target.hp > 0 && !BATTLE_DEFINITIONS[currentBattleId]?.passive && canCounter(target)) {
+    if (!options.skipCounter && target.hp > 0 && !BATTLE_DEFINITIONS[currentBattleId]?.passive && canCounter(target)) {
         const counterRate = getCounterRate(target);
         const counterRoll = Math.floor(Math.random() * 100) + 1;
         if (counterRoll <= counterRate) {
@@ -2345,6 +2459,11 @@ function resolvePhysicalHit(attacker, target, atkSkillName, options = {}) {
             showMessage(target.name, "反撃！");
             addLog(`  反撃発生！（勇気 ${counterRoll}/${counterRate}%）`);
             resolveCounterAttack(attacker, target);
+            // [trial] 防御側が速さ差5以上で速ければ、反撃がもう一度出る
+            if (trialFollowUpAvailable(target, attacker)) {
+                addLog(`  反撃の追撃！（${target.name}の速さが上回る）`);
+                resolveCounterAttack(attacker, target);
+            }
         } else {
             addLog(`  反撃せず（勇気 ${counterRoll}/${counterRate}%）`);
         }
@@ -2403,7 +2522,9 @@ function executeAttack(attacker, target) {
         showDamagePopup(target.id, 0, "miss");
         showMessage("SYSTEM", `${attacker.name}の攻撃は外れた！`);
         finishLivePhysicalShadowSession(liveShadowComparison, hit);
+        runTrialFollowUp(attacker, target, atkStat, atkSkillName); // [trial] 外れても追撃は出る
         endUnitTurn(attacker);
+        checkVictoryCondition();
         return;
     }
 
@@ -2416,6 +2537,7 @@ function executeAttack(attacker, target) {
     if (!physicalOutcome?.counterTriggered) {
         finishLivePhysicalShadowSession(liveShadowComparison, hit, physicalOutcome);
     }
+    runTrialFollowUp(attacker, target, atkStat, atkSkillName); // [trial]
     endUnitTurn(attacker);
     checkVictoryCondition();
 }
@@ -2565,7 +2687,7 @@ function executeMagic(caster, spell, target) {
             showDamagePopup(target.id, rawDmg, critical.isCritical ? "critical" : "damage");
             flashUnitHit(target.id);
             const criticalNote = critical.isCritical ? ` 必殺！（${critical.roll}/${critical.rate}%）` : "";
-            addLog(`  命中！${rawDmg}ダメージ${criticalNote}${result.masteryNote}${barrier.note}${formatActionContextNotes(targetResult.context)}（魔力${result.magic}+呪文${result.spellPower}-魔防${result.ward}）→ ${target.name} HP ${target.hp}/${target.maxHp}`);
+            addLog(`  命中！${rawDmg}ダメージ${criticalNote}${result.masteryNote}${barrier.note}${formatActionContextNotes(targetResult.context)}${formatMagicFormula(result)}→ ${target.name} HP ${target.hp}/${target.maxHp}`);
             showMessage("SYSTEM", critical.isCritical
                 ? `${caster.name}の${spell.name}必殺！${target.name}に ${rawDmg} ダメージ！`
                 : `${caster.name}の${spell.name}命中！${target.name}に ${rawDmg} ダメージ！`);
@@ -2650,7 +2772,7 @@ function executeMagic(caster, spell, target) {
             target.hp = Math.max(0, target.hp - dmgToHp);
             if (dmgToHp > 0) { showDamagePopup(target.id, dmgToHp, critical.isCritical ? "critical" : "damage"); flashUnitHit(target.id); }
             const criticalNote = critical.isCritical ? ` 必殺！（${critical.roll}/${critical.rate}%）` : "";
-            addLog(`  破壊！${critical.damage}ダメージ${criticalNote}${result.masteryNote}${breakNote}${formatActionContextNotes(targetResult.context)}（魔力${result.magic}+呪文${result.spellPower}-魔防${result.ward}） → ${target.name} HP ${target.hp}/${target.maxHp}`);
+            addLog(`  破壊！${critical.damage}ダメージ${criticalNote}${result.masteryNote}${breakNote}${formatActionContextNotes(targetResult.context)}${formatMagicFormula(result)} → ${target.name} HP ${target.hp}/${target.maxHp}`);
             showMessage("SYSTEM", critical.isCritical
                 ? `${caster.name}の${spell.name}必殺！結界を砕き${dmgToHp}ダメージ！`
                 : `${caster.name}の${spell.name}！結界を砕き${dmgToHp}ダメージ！`);
@@ -3001,6 +3123,7 @@ function calculateBattlePrediction(attacker, target, atkSkillName, isMagic, spel
         critRate   = targetResult.critical.rate;
         critDmg    = targetResult.critAfterBarrier;
         effectDesc = `${expDmg}`;
+        if (trialFollowUpAvailable(attacker, target)) effectDesc += "×2"; // [trial] 追撃
         effectNotes = formatActionContextNotes(targetResult.context);
     }
 
@@ -4152,6 +4275,11 @@ async function executeDeclaredAction(enemy, decl) {
         checkVictoryCondition();
         await sleep(700);
     }
+    if (trialFollowUpAvailable(enemy, victim)) { // [trial]
+        runTrialFollowUp(enemy, victim, atkStat, atkSkillName);
+        checkVictoryCondition();
+        await sleep(700);
+    }
 }
 
 async function startEnemyPhase() {
@@ -4304,6 +4432,11 @@ async function enemyAction(enemy) {
             resolvePhysicalHit(enemy, target, atkSkillName);
             checkVictoryCondition();
             await sleep(700);                   // ダメージ表示を見せる間
+        }
+        if (trialFollowUpAvailable(enemy, target)) { // [trial]
+            runTrialFollowUp(enemy, target, atkStat, atkSkillName);
+            checkVictoryCondition();
+            await sleep(700);
         }
     }
 
@@ -5382,6 +5515,16 @@ function setBattleMode(battleId) {
             battleStats,
         };
     });
+    // [trial] テスト戦闘だけ、採用版ステータスの試験用プロフィールを適用する
+    if (isTrialBattleSession()) {
+        for (const unit of battleUnits) applyTrialProfile(unit);
+        for (const unit of battleUnits) {
+            if (!unit.trialStats) continue;
+            unit.battleStats = calcBattleStats(unit);
+            unit.physicalBonus = `力${unit.trialStats.atk}`;
+            unit.magicBonus = `魔${unit.trialStats.mag}`;
+        }
+    }
     loadPortraitAdj(battleUnits); // 保存済みの位置調整を反映
 
     unitLayer.style.display         = "block";
@@ -5390,6 +5533,12 @@ function setBattleMode(battleId) {
 
     clearLog();
     addLog("── バトル開始 ──");
+    if (battleUnits.some(unit => unit.trialStats)) { // [trial]
+        addLog("　[試験] 採用版ステータス（" + battleUnits
+            .filter(unit => unit.trialStats)
+            .map(unit => `${unit.name} 因果Lv${unit.trialLevel}`)
+            .join("、") + "）");
+    }
     addLog("　ターン 1 ─ 味方フェーズ");
     showMessage("SYSTEM", "バトル開始！ユニットを選択してください。");
     showPhaseBanner("味方フェーズ");
