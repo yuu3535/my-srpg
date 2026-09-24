@@ -34,6 +34,7 @@ GitHub Pagesで公開中: https://yuu3535.github.io/my-srpg/
 - JavaScript / HTML / CSS。ビルドツール・フレームワークなしでブラウザから直接実行する（GitHub Pagesでそのまま動く構成を維持）。
 - エントリポイント: `index.html`。通常の `<script>` で順に読み込み、最後が `game.js`。
   - データ: `characters.js`、`skills.js`、`magics.js`（原作資料寄り）、`spells.js`（実戦闘で使う魔法データ）、`combatArts.js`、`passiveSkills.js`、`battleDefinitions.js`
+  - `abilityData.js`（兵種・兵種スキル・個人スキル・因果スキル・戦技）は `Regarding character growth rates, skills, and combat arts/` のCSVから `py -3.12 tools/build_ability_data.py` で自動生成する。手で直さず、CSVを直して再生成する。
   - 戦闘基盤: `battleHooks.js`、`statConversion.js`、`combatPipeline.js`、`combatShadowComparison.js`
   - その他: `dataHelper.js`、`partyState.js`、`scenario.js`
   - 本体: `game.js`（戦闘・UI・シナリオ・ホームが同居する大きなファイル。大改造は避け、機能単位で小さく触る）
