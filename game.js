@@ -1055,9 +1055,29 @@ function isTrialBattleSession() {
     return battleEntrySource === "test" && typeof TRIAL_PROFILES !== "undefined";
 }
 
+// 試験用プロフィールが別キャラの見た目・持ち物を借りるときに差し替える項目
+const TRIAL_BORROWED_FIELDS = [
+    "char", "tokenImage", "portraitImage", "portraitImageDamaged",
+    "portraitBgSize", "portraitBgPos", "portraitDmgBgSize", "portraitDmgBgPos",
+    "statusBgSize", "statusBgPos", "clan", "seizureType", "secretArt",
+];
+
 function applyTrialProfile(unit) {
     const profile = TRIAL_PROFILES[unit.id];
     if (!profile) return;
+    const source = profile.sourceCharacterId
+        ? CHARACTERS_DATA.find(c => c.id === profile.sourceCharacterId)
+        : null;
+    if (source) {
+        for (const key of TRIAL_BORROWED_FIELDS) {
+            if (source[key] !== undefined) unit[key] = source[key];
+        }
+        unit.spells = { ...source.spells };
+        unit.skills = { ...source.skills };
+        unit.maxMp = legacyCalcBattleStats(source).mp;
+        unit.mp = unit.maxMp;
+        unit.trialSourceId = source.id;
+    }
     const level = trialCauseLevelFor(profile);
     const stats = trialStatsAt(profile, level);
     unit.trialLevel = level;
@@ -1065,6 +1085,11 @@ function applyTrialProfile(unit) {
     unit.trialSiz = profile.siz;
     unit.hp = stats.hp;
     unit.maxHp = stats.hp;
+}
+
+/** レベル表示（[trial] 試験用ユニットは因果Lvで表示） */
+function formatUnitLevelLabel(unit) {
+    return unit?.trialLevel ? `因果Lv ${unit.trialLevel}` : `LV ${unit?.level ?? 1}`;
 }
 
 function isTrialPair(a, b) {
@@ -1840,7 +1865,7 @@ function renderLandscapeUnitPanel(unit = selectedUnit) {
     landscapeUnitContent.innerHTML = `
         <div class="lsUnitPortrait" style="${src ? `background-image:url('${src}')` : ""}"></div>
         <div class="lsUnitBody">
-            <div class="lsUnitName"><b>${unit.name}</b><span>LV ${unit.level}</span></div>
+            <div class="lsUnitName"><b>${unit.name}</b><span>${formatUnitLevelLabel(unit)}</span></div>
             <div class="lsBarRow"><span>HP</span><div class="lsBar hp"><i style="width:${hpPct}%"></i></div><b>${unit.hp}/${unit.maxHp}</b></div>
             <div class="lsBarRow"><span>MP</span><div class="lsBar mp"><i style="width:${mpPct}%"></i></div><b>${unit.mp}/${unit.maxMp}</b></div>
             <div class="lsStatGrid">
@@ -4908,7 +4933,7 @@ function renderStatusSheet(unit, bs) {
         <section class="adventureIdentity">
           <div class="adventurePortrait" role="img" aria-label="${unit.name}の立ち絵" style="background-image:url('${portrait}');background-size:${portraitSize};background-position:${portraitPos}"></div>
           <div class="adventureNameplate">
-            <strong>${unit.name}</strong><span>LV ${unit.level}</span>
+            <strong>${unit.name}</strong><span>${formatUnitLevelLabel(unit)}</span>
           </div>
           <dl class="adventureProfile">
             <div><dt>種族</dt><dd>${unit.race || "―"}</dd></div>

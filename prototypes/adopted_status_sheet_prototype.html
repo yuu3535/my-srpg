@@ -250,7 +250,8 @@
 
     function render() {
         const profile = TRIAL_PROFILES[state.id];
-        const src = character(state.id);
+        // 別キャラの見た目・持ち物を借りるプロフィール（例: アルシェ → 幼アルシェ）
+        const src = character(profile.sourceCharacterId || state.id);
         const stats = trialStatsAt(profile, state.level);
         const hp = state.hpPlan === 1 ? stats.hp + profile.base.hp : stats.hp;
         const hpCap = profile.caps.hp;

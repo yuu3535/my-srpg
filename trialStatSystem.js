@@ -29,7 +29,8 @@ const TRIAL_CAUSE_LEVEL_BY_TRPG_LEVEL = Object.freeze({ 1: 1, 2: 10, 3: 20, 4: 2
  *   caps   : 能力上限（HP上限は採用版どおり x 2 の式）
  *   siz    : 命中式の体格補正用
  *   trpgLevel : 試験で使う因果Lvの決定元
- *   sourceId  : ゲーム側 characters.js の id
+ *   sourceCharacterId : 表示（画像）と持ち物（魔法・技能・秘伝など）を借りる
+ *               characters.js の id。省略時はゲーム側のユニットのまま
  *
  *   敵3体（森の番人・ディラン・ヘレル）の個人成長率は採用版に無いため、試験用の仮値。
  */
@@ -42,8 +43,9 @@ const TRIAL_PROFILES = Object.freeze({
         luck: 35, courage: 90, siz: 10,
     },
     arshe: {
-        // ゲーム側の arshe（TRPG Lv4）を、採用版の幼アルシェの値で因果Lv25として扱う
-        name: "アルシェ", race: "ヒト", trpgLevel: 4,
+        // ゲーム側の arshe（TRPG Lv4）を、採用版の幼アルシェの値で因果Lv25として扱う。
+        // 画像・魔法・技能などの表示と持ち物も幼アルシェ（young_arshe）のものを使う
+        name: "アルシェ", race: "ヒト", trpgLevel: 4, sourceCharacterId: "young_arshe",
         base:   { hp: 13, atk: 14, def: 13, mag: 18, res: 15, tec: 9,  spd: 10, cha: 15 },
         growth: { hp: 70, atk: 60, def: 55, mag: 55, res: 50, tec: 70, spd: 70, cha: 60 },
         caps:   { hp: 122, atk: 90, def: 108, mag: 104, res: 106, tec: 87, spd: 71, cha: 102 },
