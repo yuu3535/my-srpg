@@ -57,6 +57,9 @@ const landscapeCommandPanel = document.getElementById("landscapeCommandPanel");
 const landscapePhaseTitle  = document.getElementById("landscapePhaseTitle");
 const landscapeTurnChip    = document.getElementById("landscapeTurnChip");
 const landscapeHint        = document.getElementById("landscapeHint");
+const landscapeVictory     = document.getElementById("landscapeVictory");
+const landscapeRosterTurn  = document.getElementById("landscapeRosterTurn");
+const landscapeRosterList  = document.getElementById("landscapeRosterList");
 const lsForecast           = document.getElementById("lsForecast");
 const dangerRangeToggle    = document.getElementById("dangerRangeToggle");
 const battleBoardHome      = battleBoard.parentNode;
@@ -1817,9 +1820,9 @@ function sizeLandscapeBattleCanvas() {
         battleCanvas.style.top    = "";
         return;
     }
-    // コマンドはモーダル型オーバーレイになったため、マップは左パネル以外を広く使える
-    // 844 - 左パネル150 - gap/padding ≒ 660、390 - 上下帯 ≒ 300
-    const availW = 650, availH = 300;
+    // マップ領域の実寸（拡大縮小前の値）に合わせる。取れないときは従来の目安値
+    const availW = landscapeBattlefield?.offsetWidth  || 650;
+    const availH = landscapeBattlefield?.offsetHeight || 300;
     const inset = 32; // battleGrid の上下左右 16px ずつ（セルを正方形に保つため差し引く）
     const ratio = GRID_COLS / GRID_ROWS;
     let innerH = availH - inset, innerW = innerH * ratio;
@@ -1853,7 +1856,7 @@ function activateLandscapeDefaultMove(unit) {
     selectedAttackSkill = null;
     hideForecastLayer();
     highlightMoveRange(unit);
-    setLandscapeHint(`${unit.name}の移動先を選べます。行動するなら右のコマンドを選んでください。`);
+    setLandscapeHint(`${unit.name}の移動先を選べます。行動するなら下のコマンドを選んでください。`);
     return true;
 }
 
@@ -1907,6 +1910,53 @@ function renderLandscapeHeader() {
     landscapePhaseTitle.textContent = battleOver ? "戦闘終了" : phase;
     const declCount = enemyDeclarations?.size || 0;
     landscapeTurnChip.textContent = `TURN ${turnCount}　敵行動予告 ${declCount}`;
+    if (landscapeVictory) {
+        landscapeVictory.innerHTML = `<em>勝利条件</em><span>${getVictoryConditionText(BATTLE_DEFINITIONS[currentBattleId])}</span>`;
+    }
+    if (landscapeRosterTurn) landscapeRosterTurn.innerHTML = `<small>TURN</small><b>${turnCount}</b>`;
+}
+
+/** 勝利条件の表示文。battleDefinitions の victory.type から作る */
+function getVictoryConditionText(def) {
+    const type = def?.victory?.type;
+    if (type === "defeatAll") return "すべての敵を撃破する";
+    return def?.victory?.text || "―";
+}
+
+/** 左端の味方一覧：盤面から探さずに選べて、行動済みかどうかが一目で分かる */
+function renderLandscapeRoster() {
+    if (!landscapeRosterList) return;
+    if (!isLandscapeBattleUi()) {
+        landscapeRosterList.innerHTML = "";
+        return;
+    }
+    const allies = battleUnits.filter(u => u.side === "ally");
+    landscapeRosterList.innerHTML = "";
+    allies.forEach(unit => {
+        const defeated = unit.hp <= 0;
+        const done = !defeated && unit.moved && unit.acted;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "lsRosterUnit"
+            + (unit === selectedUnit ? " selected" : "")
+            + (done ? " done" : "")
+            + (defeated ? " defeated" : "");
+        const state = defeated ? "戦闘不能" : done ? "行動済み" : "未行動";
+        btn.title = `${unit.name}（${state}）`;
+        btn.setAttribute("aria-label", `${unit.name}、${state}`);
+        const src = getPortraitSrc(unit) || unit.tokenImage || "";
+        btn.innerHTML = `
+            <i class="lsRosterFace" style="${src ? `background-image:url('${src}');background-size:${unit.portraitBgSize || "cover"};background-position:${unit.portraitBgPos || "center top"}` : ""}"></i>
+            <span class="lsRosterHp"><em style="width:${unit.maxHp ? Math.max(0, Math.min(100, unit.hp / unit.maxHp * 100)) : 0}%"></em></span>
+            ${done ? `<span class="lsRosterMark">済</span>` : ""}`;
+        btn.disabled = defeated;
+        btn.addEventListener("click", () => {
+            // 攻撃・魔法の対象選択中は、一覧から別の味方へ切り替えない
+            if (battleOver || !["moving", null, undefined].includes(actionState)) return;
+            onUnitClick(unit);
+        });
+        landscapeRosterList.appendChild(btn);
+    });
 }
 
 function getLandscapeCommands(unit) {
@@ -2284,6 +2334,7 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
 function syncLandscapeBattleUi(unit = selectedUnit) {
     syncLandscapeBattleMount();
     renderLandscapeHeader();
+    renderLandscapeRoster();
     renderLandscapeUnitPanel(unit);
     renderLandscapeCommandRail(unit);
 }

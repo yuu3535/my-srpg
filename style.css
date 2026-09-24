@@ -5105,3 +5105,174 @@ html, body {
 .trialLoadoutList.classSlots { grid-template-columns: 1fr 1fr; gap: 1px 2px; }
 .trialLoadoutList.classSlots .trialLoadoutSlot { grid-template-columns: 9px minmax(0, 1fr); }
 .trialLoadoutList.classSlots .trialLoadoutSlot > i { display: none; }
+
+/* ============================================================
+   [layout-ref] 参考UI（マップ背景イメージたたき台）の配置に寄せた戦闘画面
+   左: 味方一覧 ／ 中央: 盤面 ／ 右: ユニット情報 ／ 下: 横並びのコマンド
+   配色と意匠は従来どおり（黒紫・金の細罫線・明朝体）
+============================================================ */
+#gameScreen[data-mode="battle"] #landscapeBattleShell.active {
+    grid-template-columns: 46px minmax(0, 1fr) 156px;
+    grid-template-rows: 32px minmax(0, 1fr) 40px 18px;
+}
+
+#landscapeTopStrip { grid-column: 1 / 4; grid-row: 1; justify-content: flex-start; gap: 10px; }
+#landscapeTurnChip { margin-left: auto; }
+
+#landscapeVictory {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    color: rgba(236,210,142,0.9);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+}
+#landscapeVictory em {
+    padding: 2px 7px;
+    color: #61dfcd;
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    background: rgba(65,199,179,0.10);
+    border: 1px solid rgba(65,199,179,0.35);
+}
+
+/* ── 左端：味方一覧 ── */
+#landscapeRoster {
+    grid-column: 1;
+    grid-row: 2 / 4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-height: 0;
+    padding: 4px 0;
+    overflow: hidden;
+    background: linear-gradient(180deg, rgba(7,8,16,0.92), rgba(3,4,10,0.86));
+    border: 1px solid rgba(200,146,42,0.26);
+    box-shadow: inset 0 1px 0 rgba(255,232,160,0.08);
+    transition: opacity 0.18s ease;
+}
+#landscapeRosterTurn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1;
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(200,146,42,0.22);
+    width: 34px;
+}
+#landscapeRosterTurn small { color: rgba(224,189,115,0.55); font-size: 7px; letter-spacing: 0.12em; }
+#landscapeRosterTurn b { color: #ecd28e; font-size: 15px; font-weight: 700; }
+#landscapeRosterList {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+.lsRosterUnit {
+    position: relative;
+    flex: none;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    overflow: hidden;
+    cursor: pointer;
+    background: #140b1f;
+    border: 1px solid rgba(200,146,42,0.34);
+    transition: transform 0.12s ease, border-color 0.12s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+.lsRosterUnit:active { transform: scale(0.96); }
+.lsRosterFace {
+    position: absolute;
+    inset: 0;
+    background-repeat: no-repeat;
+    transition: filter 0.18s ease;
+}
+.lsRosterHp {
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    bottom: 2px;
+    height: 2px;
+    background: rgba(0,0,0,0.65);
+}
+.lsRosterHp em { display: block; height: 100%; background: #59e48c; }
+.lsRosterUnit.selected {
+    border-color: #ecd28e;
+    box-shadow: inset 0 0 0 1px rgba(236,210,142,0.55), 0 0 6px rgba(200,146,42,0.35);
+}
+.lsRosterUnit.done .lsRosterFace { filter: grayscale(0.9) brightness(0.5); }
+.lsRosterMark {
+    position: absolute;
+    top: 1px;
+    right: 2px;
+    color: #ecd28e;
+    font-size: 8px;
+    font-weight: 700;
+    text-shadow: 0 0 3px #000, 0 0 2px #000;
+}
+.lsRosterUnit.defeated { opacity: 0.28; cursor: default; }
+
+/* ── 右：ユニット情報 ── */
+#landscapeUnitPanel { grid-column: 3; grid-row: 2 / 4; }
+#landscapeBattleShell.forecast-open #landscapeUnitPanel { transform: translateX(10px); }
+
+/* ── 中央：盤面（下のコマンド帯のぶんを空ける） ── */
+#landscapeBattlefield { grid-column: 2; grid-row: 2; }
+#landscapeBattleShell.forecast-open #landscapeBattlefield { grid-column: 1 / 4; }
+#landscapeBattleShell.forecast-open #landscapeRoster { opacity: 0; visibility: hidden; pointer-events: none; }
+
+#landscapeHint { grid-column: 1 / 4; grid-row: 4; padding: 3px 8px; font-size: 9px; }
+
+/* ── 下：横並びのコマンド ── */
+#landscapeCommandPanel {
+    left: 58px;
+    right: 168px;
+    top: auto;
+    bottom: 30px;
+    width: auto;
+    height: 40px;
+    justify-content: center;
+    background: none;
+}
+#landscapeCommandList {
+    width: auto;
+    display: flex;
+    gap: 5px;
+    padding: 0;
+    margin: 0;
+}
+.lsCommandBtn,
+.lsCommandBtn.active,
+.lsCommandBtn:active {
+    transform: none;
+}
+.lsCommandBtn {
+    width: auto;
+    min-width: 64px;
+    min-height: 34px;
+    padding: 6px 12px;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-indent: 0.16em;
+    background: linear-gradient(180deg, rgba(82,18,98,0.86), rgba(22,8,35,0.92));
+    border: 1px solid rgba(200,146,42,0.36);
+    border-top-color: rgba(224,176,72,0.62);
+    animation: lsCommandRise 0.22s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation-delay: var(--tick-delay, 0s);
+}
+.lsCommandBtn:active { transform: translateY(1px); }
+.lsCommandBtn::before { display: none; }
+@keyframes lsCommandRise {
+    from { transform: translateY(6px); opacity: 0; }
+    to   { transform: none; opacity: 1; }
+}
+
+/* 下端の説明帯を全幅にしたため、画面下の飾り文字は戦闘中は出さない */
+#gameScreen[data-mode="battle"]::before { display: none; }
