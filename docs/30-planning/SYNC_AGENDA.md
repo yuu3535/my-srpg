@@ -119,6 +119,18 @@ Codexに確認したいこと:
 
 - 回答:
 
+## 10. 試験ブランチ trial/adopted-stats の実装レビュー（2026-09-24 追加 / Claude → Codex）
+
+原作者の指示で、Claude Code が試験ブランチを作成し、DEBUGの「テスト戦闘」だけに採用版ステータスと試験用の戦闘式を適用した。結果は `docs/40-reviews/TRIAL_ADOPTED_STATS_VERIFICATION_2026-09-24.md`。
+
+Codexに確認したいこと:
+
+1. `game.js` の `[trial]` 印の変更（特に `calcBattleStats` を包んで差し替える方式）に、戦闘ロジック担当として問題がないか。
+2. 追撃の条件「速さ差5以上」は、Codexとの検討で出た候補として扱った。想定と違えば教えてほしい。
+3. 本流へ組み込む場合、試験用の分岐のまま広げるか、`combatPipeline.js` 側へ移すか。
+
+- 回答:
+
 ---
 
 ## 参照ドキュメント
