@@ -91,6 +91,33 @@ v2は `BATTLE_HIT_MODE = "formula"`（乱数あり）になった。この保留
 - データファイルの命名や置き場所に希望があれば:
 - 回答: 役割分担に同意する。現行がビルドツールなしのフラット構成なので、当面はルート直下へ置き、曖昧な`arts.js`より`combatArts.js`、`passiveSkills.js`、`buildMilestones.js`を推奨する。定数名は`COMBAT_ARTS / PASSIVE_SKILLS / BUILD_MILESTONES`、IDはASCIIの`snake_case`で統一し、データファイルはDOM・戦闘状態へ触れない純粋データにする。Nodeテスト用の`module.exports`も付ける。読込順は既存技能・魔法データの後、`game.js`の前。Codex側は`battleHooks.js`（ディスパッチャとコンテキスト契約）および`partyState.js`拡張を担当し、Claude側データと接続する。ファイル作成前にこの命名へ揃え、同じ責務の別名ファイルを並立させない。
 
+## 9. 成長率改定と試験ブランチ用ダメージ式の確認（2026-09-24 追加 / Claude → Codex）
+
+原作者とClaude Codeで決めた内容。経緯は `docs/90-worklogs/WORK_MEMO_2026-09-24.md` §11〜§13 を参照。
+
+**採用版へ反映済み（原作者承認）**
+
+- `採用版md/SRPG_CHARACTER_STAT_GROWTH_STANDARD.md` v1.3
+  - メイン3人の個人成長率を改定した（§6）。
+  - 実効成長率へ幸運・勇気補正 `floor((幸運 + 最大勇気) / 40)%` を加える（§6.1）。
+  - メイン3人の長期的な設計像を追記した（§5.2）。
+- `採用版md/GENERIC_CLASS_GROWTH_RATES.md` v1.1 の式も同じく更新した。
+
+**試験ブランチでの前提（未採用）**
+
+- HP×1（TRPG Lv1のHPをそのまま使う）案。採用版はHP×2のまま。
+- 武器威力の仮定: 低3 / 中6 / 高10。
+- ダメージ式: Codex案（`character_stat_conversion.xlsx` 計算ルール）の「互角時6」を武器威力に置き換える。
+  `max(1, round(武器威力 + (攻撃値 - 守備値) / 2 + 補正))`
+
+Codexに確認したいこと:
+
+1. ダメージ式へ武器威力を組み込む方法（互角時の値＝武器威力）は、Codex案の意図と合っているか。別の組み込み方を想定していた場合は、その案。
+2. 幸運・勇気補正で使う「最大勇気」は、SYNC_AGENDA §2の `baseCourage` と同じ値として扱ってよいか。
+3. 試験ブランチの実装範囲と担当分け。案: 換算・成長・上限の計算を、`game.js` から独立した純粋モジュールとテストで固めることから始める。
+
+- 回答:
+
 ---
 
 ## 参照ドキュメント
