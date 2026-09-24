@@ -8,8 +8,8 @@
 
 | ファイル | 内容 | 状態 |
 | --- | --- | --- |
-| `SRPG_CHARACTER_STAT_GROWTH_STANDARD.md` | 基本8ステ、因果Lv1基礎値、個人成長率、能力上限、因果Lv上限なし、因果Lvと兵種Lvの責務分離 | 採用版 v1.2 |
-| `GENERIC_CLASS_GROWTH_RATES.md` | 汎用兵種の兵種成長率補正と合算規則 | 採用版 v1.0 |
+| `SRPG_CHARACTER_STAT_GROWTH_STANDARD.md` | 基本8ステ、因果Lv1基礎値、個人成長率、幸運・勇気の成長率補正、能力上限、因果Lv上限なし、因果Lvと兵種Lvの責務分離、メイン3人の設計像 | 採用版 v1.3 |
+| `GENERIC_CLASS_GROWTH_RATES.md` | 汎用兵種の兵種成長率補正と合算規則 | 採用版 v1.1 |
 
 ## このフォルダへまだ入れないもの
 
