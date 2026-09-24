@@ -9,6 +9,8 @@ const {
     trialDamage,
     trialCriticalRate,
     trialCanFollowUp,
+    TRIAL_LOADOUT_SLOT_COUNTS,
+    trialSkillLoadoutFor,
 } = require("../trialStatSystem.js");
 
 const P = TRIAL_PROFILES;
@@ -98,6 +100,25 @@ for (const id of Object.keys(P)) {
     assert.ok(cls, `${id} の兵種表示データ`);
     if (cls.line) assert.ok(TRIAL_CLASS_SKILLS[cls.line], `${cls.line} の兵種スキル`);
 }
+
+// 採用済みのセット枠。ステータス画面は空き枠も含めて固定数を返す。
+const ringLoadout = trialSkillLoadoutFor("ringholm", 30);
+assert.equal(ringLoadout.personal.name, "殺気");
+assert.equal(ringLoadout.classSkills.length, TRIAL_LOADOUT_SLOT_COUNTS.classSkills);
+assert.equal(ringLoadout.classUnique.length, TRIAL_LOADOUT_SLOT_COUNTS.classUnique);
+assert.deepEqual(ringLoadout.causeSkills.map(skill => skill?.name), ["黒の一族", "死神", "カウンター"]);
+assert.deepEqual(ringLoadout.combatArts.map(art => art?.name), ["召喚「ヒトダマ」", "円舞", "復讐", undefined]);
+
+// 専用兵種予定4人の因果Lv50能力は、因果3枠ではなく兵種固有枠へ入る。
+const karimaFinal = trialSkillLoadoutFor("young_karima", 50);
+assert.equal(karimaFinal.classUnique[0].name, "神炎の器");
+assert.equal(karimaFinal.causeSkills.some(skill => skill?.name === "神炎の器"), false);
+
+// 仮の敵プロフィールも同じ枠数を返し、未設定を勝手に能力なしと確定しない。
+const guardLoadout = trialSkillLoadoutFor("forest_guard", 10);
+assert.equal(guardLoadout.personal, null);
+assert.equal(guardLoadout.causeSkills.length, 3);
+assert.equal(guardLoadout.combatArts.length, 4);
 
 // 追撃: 速さ差5以上
 assert.equal(trialCanFollowUp({ spd: 30 }, { spd: 25 }), true);

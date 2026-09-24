@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=M+PLUS+1:wght@300;400;700&display=swap" rel="stylesheet">
     <!-- 本番と同じシートの意匠（1efae8f基準）をそのまま使う -->
-    <link rel="stylesheet" href="../style.css?v=trial-stats-4" />
+    <link rel="stylesheet" href="../style.css?v=trial-stats-7" />
     <style>
         /* =========================================================
            見本ページ専用。本番のステータスシートの外枠・配置・意匠は
@@ -133,7 +133,7 @@
     <script src="../spells.js"></script>
     <script src="../combatArts.js"></script>
     <script src="../passiveSkills.js"></script>
-    <script src="../trialStatSystem.js?v=trial-stats-5"></script>
+    <script src="../trialStatSystem.js?v=trial-stats-7"></script>
     <script>
     // 兵種・兵種スキル・戦闘値は trialStatSystem.js の共通データ（ゲームのテスト戦闘と同じ）を使う
 
@@ -171,12 +171,25 @@
         const hpCap = profile.caps.hp;
         const d = trialDerivedValues(stats, profile.siz, state.courage);
         const cls = TRIAL_UNIT_CLASS[state.id];
+        const loadout = trialSkillLoadoutFor(state.id, state.level, TRIAL_CLASS_LEVEL);
         const bonus = trialGrowthBonus(profile);
 
         const cap = key => state.caps ? `<small>/${profile.caps[key]}</small>` : "";
         const metric = (label, value, extra = "", tip = "") =>
             `<div class="adventureMetric"${tip ? ` title="${tip}"` : ""}><span>${label}</span><b>${value}${extra}</b></div>`;
         const pct = (cur, max) => max > 0 ? Math.max(0, Math.min(100, cur / max * 100)) : 0;
+        const slotRows = (items, type) => items.map((item, index) => `
+            <div class="trialLoadoutSlot${item ? "" : " empty"}${type === "unique" ? " unique" : ""}"${item?.desc ? ` title="${item.name}：${item.desc}"` : ""}>
+              <em>${type === "unique" ? "固" : index + 1}</em>
+              <span><b>${item?.name || "空き枠"}</b><small>${item?.desc || "セットされていません"}</small></span>
+              <i>${item ? (item.source || (item.level ? `Lv${item.level}` : "SET")) : "EMPTY"}</i>
+            </div>`).join("");
+        const personal = loadout.personal;
+        const personalRow = `
+            <div class="trialPersonalSkill${personal ? "" : " empty"}"${personal?.desc ? ` title="${personal.name}：${personal.desc}"` : ""}>
+              <span><b>${personal?.name || "未設定"}</b><small>${personal?.desc || "試験用の敵ユニットには個人スキルが設定されていません"}</small></span>
+              <i>固定</i>
+            </div>`;
 
         const portrait = src.portraitImage ? `../${src.portraitImage}` : (src.tokenImage ? `../${src.tokenImage}` : "");
         const portraitSize = src.statusBgSize || src.portraitBgSize || "cover";
@@ -190,22 +203,6 @@
                 return `<div class="adventureListRow spell"><span>${name}</span><small>${detail}</small><b>${value}</b></div>`;
             }).join("")
             : `<div class="adventureEmpty">習得している魔法はありません</div>`;
-
-        const passives = [...new Set([...(src.learnedPassives || []), ...(src.equippedPassives || [])])]
-            .map(id => PASSIVE_SKILLS[id]).filter(Boolean);
-        const passiveRows = passives.length
-            ? passives.map(p => `<div class="adventureListRow ability"><span>${p.name}</span><small>${p.desc || ""}</small><b>${p.track || ""}</b></div>`).join("")
-            : `<div class="adventureEmpty">なし</div>`;
-
-        const classSkills = cls.line ? TRIAL_CLASS_SKILLS[cls.line] : null;
-        const classRows = classSkills
-            ? classSkills.map(([need, name, desc]) => {
-                const master = need === "マスター";
-                const need_lv = master ? Infinity : Number(need.replace("兵種Lv", ""));
-                const locked = TRIAL_CLASS_LEVEL < need_lv;
-                return `<div class="adventureListRow ability trialClassRow${locked ? " trialLocked" : ""}${master ? " trialMaster" : ""}" title="${name}：${desc}"><span>${name}</span><small>${desc}</small><b>${need}</b></div>`;
-            }).join("")
-            : `<div class="adventureEmpty">兵種が未設定です</div>`;
 
         const ranges = spells.map(([name]) => SPELLS_DATA[name]?.range).filter(r => typeof r === "number");
         const magicRange = ranges.length ? (Math.min(...ranges) === Math.max(...ranges) ? `${Math.max(...ranges)}` : `${Math.min(...ranges)}-${Math.max(...ranges)}`) : "";
@@ -275,19 +272,23 @@
         </section>
 
         <section class="adventureSkills adventureRuled">
-          <h3>CLASS <span>兵種スキル</span></h3>
+          <h3>SKILL <span>固定・兵種セット</span></h3>
           <div class="trialClassHead"><b>${cls.name}</b><span>${cls.line || "―"}　兵種Lv ${cls.line ? TRIAL_CLASS_LEVEL : "―"}</span></div>
-          <div class="adventureList" tabindex="0" role="region" aria-label="兵種スキル一覧">${classRows}</div>
+          ${personalRow}
+          <div class="trialSlotCaption"><span>通常兵種</span><b>4枠</b></div>
+          <div class="trialLoadoutList classSlots" role="list" aria-label="通常兵種スキル4枠">${slotRows(loadout.classSkills, "class")}</div>
+          <div class="trialSlotCaption unique"><span>兵種固有</span><b>1枠</b></div>
+          <div class="trialLoadoutList" role="list" aria-label="兵種固有1枠">${slotRows(loadout.classUnique, "unique")}</div>
         </section>
 
         <section class="adventureBuild adventureRuled">
           <div class="adventureBuildPane">
-            <h3>ARTS <span>戦技</span></h3>
-            <div class="adventureList" tabindex="0" role="region" aria-label="戦技一覧"><div class="adventureEmpty">固有戦技・兵種戦技は今後追加</div></div>
+            <h3>CAUSE <span>因果スキル・3枠</span></h3>
+            <div class="trialLoadoutList cause" role="list" aria-label="因果スキル3枠">${slotRows(loadout.causeSkills, "cause")}</div>
           </div>
           <div class="adventureBuildPane">
-            <h3>PASSIVE <span>スキル</span></h3>
-            <div class="adventureList" tabindex="0" role="region" aria-label="スキル一覧">${passiveRows}</div>
+            <h3>ARTS <span>戦技・4枠</span></h3>
+            <div class="trialLoadoutList arts" role="list" aria-label="戦技4枠">${slotRows(loadout.combatArts, "art")}</div>
           </div>
         </section>
 

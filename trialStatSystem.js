@@ -129,6 +129,121 @@ const TRIAL_UNIT_CLASS = Object.freeze({
     herel:        { name: "未設定",     line: null },
 });
 
+// 採用済みのセット枠。試験画面では「装備中の枠」を見るだけとし、
+// 習得一覧や付け替え操作は拠点の育成画面へ分離する。
+const TRIAL_LOADOUT_SLOT_COUNTS = Object.freeze({
+    classSkills: 4,
+    classUnique: 1,
+    causeSkills: 3,
+    combatArts: 4,
+});
+
+// 個人スキルは外せない固定枠。アルバスの「野望」は、CSVより新しい
+// WORK_MEMO_2026-09-25 の原作者回答（案A）を優先している。
+const TRIAL_PERSONAL_SKILLS = Object.freeze({
+    arshe: {
+        name: "双蛇の逆針",
+        desc: "味方の撃破や攻撃失敗の後、一手単位で行動を巻き戻す。残り回数の機能は未実装。",
+    },
+    ringholm: {
+        name: "殺気",
+        desc: "自分から攻撃したとき、命中+10・相手の回避-10・必殺+10。",
+    },
+    albas: {
+        name: "野望",
+        desc: "自分から攻撃したとき、魅力×2%で敵の反撃を封じる。ほかの補正の適用場面は確認中。",
+    },
+    young_karima: {
+        name: "双蛇の逆針",
+        desc: "味方の撃破や攻撃失敗の後、一手単位で行動を巻き戻す。残り回数の機能は未実装。",
+    },
+});
+
+// 因果スキル・戦技は修正版CSVから表示に必要な項目だけを転記する。
+// Lv50の専用能力は因果3枠ではなく、現在兵種限定の兵種固有枠へ入る。
+const TRIAL_CAUSE_ABILITIES = Object.freeze({
+    arshe: Object.freeze([
+        { level: 5,  type: "skill", name: "黒陽の加護", desc: "獲得兵種経験値1.5倍" },
+        { level: 10, type: "art",   name: "両断", desc: "物理攻撃1.5倍" },
+        { level: 15, type: "skill", name: "祈り", desc: "戦闘中1度、幸運%でHP1を残す" },
+        { level: 20, type: "art",   name: "破壊", desc: "魔法攻撃時に装甲を破壊" },
+        { level: 25, type: "skill", name: "デュアル+", desc: "デュアル発生率+5" },
+        { level: 30, type: "skill", name: "カウンター", desc: "被ダメージの半分を相手へ返すことがある" },
+        { level: 35, type: "art",   name: "落雷", desc: "雷撃と追撃・反撃・移動封じ" },
+        { level: 40, type: "art",   name: "封印", desc: "射程内の敵1体の移動を封じる" },
+        { level: 45, type: "art",   name: "万雷", desc: "直線3マスを巻き込む雷撃" },
+        { level: 50, type: "exclusive", name: "奈落の王", desc: "力・魔攻・速さ・魅力+10" },
+    ]),
+    ringholm: Object.freeze([
+        { level: 5,  type: "skill", name: "黒の一族", desc: "火魔法の命中+20・ダメージ1.5倍" },
+        { level: 10, type: "art",   name: "召喚「ヒトダマ」", desc: "幻獣ヒトダマを2ターンで召喚" },
+        { level: 15, type: "art",   name: "円舞", desc: "隣接するすべての敵へ物理攻撃" },
+        { level: 20, type: "skill", name: "死神", desc: "周囲の敵の回避・命中-10、速さ-5" },
+        { level: 25, type: "skill", name: "カウンター", desc: "被ダメージの半分を相手へ返すことがある" },
+        { level: 30, type: "art",   name: "復讐", desc: "減少HPを攻撃威力へ加算" },
+        { level: 35, type: "skill", name: "戦闘指揮", desc: "指揮したターンの味方戦闘値+5" },
+        { level: 40, type: "art",   name: "月詠", desc: "周囲5マスの敵HPを20%削る" },
+        { level: 45, type: "skill", name: "剣の舞", desc: "剣装備時、力・魔攻・命中+10" },
+        { level: 50, type: "exclusive", name: "勇者の器", desc: "力・技・速さ・魅力+10" },
+    ]),
+    albas: Object.freeze([
+        { level: 5,  type: "art",   name: "破壊", desc: "魔法攻撃時に装甲を破壊" },
+        { level: 10, type: "skill", name: "詠唱破棄", desc: "確率で魔法武器耐久・MP消費なし" },
+        { level: 15, type: "art",   name: "回復", desc: "回復魔法の回復量×3" },
+        { level: 20, type: "skill", name: "王威", desc: "周囲の味方の回避・命中・必殺耐性+10" },
+        { level: 25, type: "art",   name: "加速", desc: "自分または味方1人を再行動させる" },
+        { level: 30, type: "skill", name: "魔法射程+1", desc: "魔法の射程+1" },
+        { level: 35, type: "art",   name: "転移", desc: "味方を指定位置へ移動させる" },
+        { level: 40, type: "art",   name: "生命吸収", desc: "周囲の敵HPを削り、自身のHP・MPを回復" },
+        { level: 45, type: "skill", name: "魔神の器", desc: "魔法装備時、魔攻・魔防・命中+10" },
+        { level: 50, type: "exclusive", name: "破滅の王", desc: "HP・魔攻・技・魅力+10" },
+    ]),
+    young_karima: Object.freeze([
+        { level: 5,  type: "skill", name: "白陽の加護", desc: "獲得兵種経験値1.5倍" },
+        { level: 10, type: "art",   name: "結界", desc: "自分または味方1人へ装甲を与える" },
+        { level: 15, type: "skill", name: "祈り", desc: "戦闘中1度、幸運%でHP1を残す" },
+        { level: 20, type: "art",   name: "破壊", desc: "魔法攻撃時に装甲を破壊" },
+        { level: 25, type: "skill", name: "デュアル+", desc: "デュアル発生率+5" },
+        { level: 30, type: "skill", name: "アシスト", desc: "隣接する味方の命中・必殺+5" },
+        { level: 35, type: "art",   name: "虚像", desc: "相手の命中-20" },
+        { level: 40, type: "art",   name: "封印", desc: "射程内の敵1体の移動を封じる" },
+        { level: 45, type: "art",   name: "落雷", desc: "雷撃と追撃・反撃・移動封じ" },
+        { level: 50, type: "exclusive", name: "神炎の器", desc: "防御・魔防・速さ・魅力+10" },
+    ]),
+});
+
+function trialFillLoadoutSlots(items, count) {
+    return Array.from({ length: count }, (_, index) => items[index] || null);
+}
+
+/**
+ * 試験画面用の読み取り専用セット内容。
+ * セット変更機能が未実装のため、習得順に空き枠へ入れる表示例とする。
+ * 戦闘効果には接続せず、画面構成を確認するためだけに使う。
+ */
+function trialSkillLoadoutFor(unitId, causeLevel, classLevel = TRIAL_CLASS_LEVEL) {
+    const cls = TRIAL_UNIT_CLASS[unitId] || { line: null };
+    const classLearned = (cls.line ? TRIAL_CLASS_SKILLS[cls.line] || [] : [])
+        .filter(([need]) => need !== "マスター" && classLevel >= Number(need.replace("兵種Lv", "")))
+        .map(([need, name, desc]) => ({ name, desc, source: need }));
+    const causeLearned = (TRIAL_CAUSE_ABILITIES[unitId] || [])
+        .filter(ability => ability.level <= Number(causeLevel || 1));
+    const exclusive = causeLearned.find(ability => ability.type === "exclusive") || null;
+    return {
+        personal: TRIAL_PERSONAL_SKILLS[unitId] || null,
+        classSkills: trialFillLoadoutSlots(classLearned, TRIAL_LOADOUT_SLOT_COUNTS.classSkills),
+        classUnique: trialFillLoadoutSlots(exclusive ? [exclusive] : [], TRIAL_LOADOUT_SLOT_COUNTS.classUnique),
+        causeSkills: trialFillLoadoutSlots(
+            causeLearned.filter(ability => ability.type === "skill"),
+            TRIAL_LOADOUT_SLOT_COUNTS.causeSkills
+        ),
+        combatArts: trialFillLoadoutSlots(
+            causeLearned.filter(ability => ability.type === "art"),
+            TRIAL_LOADOUT_SLOT_COUNTS.combatArts
+        ),
+    };
+}
+
 /**
  * ステータス画面に出す戦闘値。
  *   命中率 = 命中値 - 相手の回避値（5〜100%）
@@ -221,6 +336,10 @@ if (typeof module !== "undefined") {
         TRIAL_CLASS_LEVEL,
         TRIAL_CLASS_SKILLS,
         TRIAL_UNIT_CLASS,
+        TRIAL_LOADOUT_SLOT_COUNTS,
+        TRIAL_PERSONAL_SKILLS,
+        TRIAL_CAUSE_ABILITIES,
+        trialSkillLoadoutFor,
         trialDerivedValues,
         trialGrowthBonus,
         trialCauseLevelFor,

@@ -1195,6 +1195,12 @@ function getMagicHitResult(caster, target, spell, successValue, options = {}) {
     return getBattleHitResult(caster, target, successValue, targetStunned, options);
 }
 
+/** [trial] 旧技能値ではなく、実際に使った新命中率を戦闘ログへ出す。 */
+function formatBattleHitCheck(attacker, defender, hit, legacyText) {
+    if (!isTrialPair(attacker, defender)) return `${legacyText} ${hit.note}`;
+    return `【命中率 ${hit.rate}%】 判定 ${hit.note}`;
+}
+
 function applyBarrierDamage(target, rawDmg, breakBarrier = false) {
     const barrier = (target.statusEffects || []).find(e => e.type === "barrier");
     if (!barrier || barrier.value <= 0) {
@@ -1864,6 +1870,18 @@ function renderLandscapeUnitPanel(unit = selectedUnit) {
     const src = getPortraitSrc(unit) || unit.tokenImage || "";
     const stats = calcBattleStats(unit);
     const declLabel = unit.side === "enemy" ? getDeclarationLabel(enemyDeclarations.get(unit.id)) : null;
+    const statGrid = unit.trialStats
+        ? [
+            ["力", stats.power], ["魔攻", stats.magic],
+            ["防御", stats.armor], ["魔防", stats.ward],
+            ["技", unit.trialStats.tec], ["速さ", unit.trialStats.spd],
+            ["移動", `${unit.move}マス`], ["状態", unitStatusText(unit)],
+        ]
+        : [
+            ["力", stats.power], ["魔力", stats.magic],
+            ["物防", stats.armor], ["魔防", stats.ward],
+            ["移動", `${unit.move}マス`], ["状態", unitStatusText(unit)],
+        ];
     landscapeUnitEmpty.style.display = "none";
     landscapeUnitContent.innerHTML = `
         <div class="lsUnitPortrait" style="${src ? `background-image:url('${src}')` : ""}"></div>
@@ -1872,12 +1890,7 @@ function renderLandscapeUnitPanel(unit = selectedUnit) {
             <div class="lsBarRow"><span>HP</span><div class="lsBar hp"><i style="width:${hpPct}%"></i></div><b>${unit.hp}/${unit.maxHp}</b></div>
             <div class="lsBarRow"><span>MP</span><div class="lsBar mp"><i style="width:${mpPct}%"></i></div><b>${unit.mp}/${unit.maxMp}</b></div>
             <div class="lsStatGrid">
-                <div><b>力</b><span>${stats.power}</span></div>
-                <div><b>魔力</b><span>${stats.magic}</span></div>
-                <div><b>物防</b><span>${stats.armor}</span></div>
-                <div><b>魔防</b><span>${stats.ward}</span></div>
-                <div><b>移動</b><span>${unit.move}マス</span></div>
-                <div><b>状態</b><span>${unitStatusText(unit)}</span></div>
+                ${statGrid.map(([label, value]) => `<div><b>${label}</b><span>${value}</span></div>`).join("")}
             </div>
             ${declLabel ? `<div class="lsPrediction">TARGET: ${declLabel}</div>` : ""}
         </div>
@@ -2162,8 +2175,10 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
         || ["magicDamage", "break"].includes(_vsAttack?.spell?.effectType);
     const dmgN = Number(pred.expDmg) || 0;
     const ctrN = pred.canCounter ? (Number(pred.ctrExpDmg) || 0) : 0;
-    const defAfter = isDamage ? Math.max(0, target.hp - dmgN) : target.hp;
-    const atkAfter = Math.max(0, attacker.hp - ctrN);
+    const attackerHits = pred.attackerFollowUp ? 2 : 1;
+    const counterHits = pred.counterFollowUp ? 2 : 1;
+    const defAfter = isDamage ? Math.max(0, target.hp - dmgN * attackerHits) : target.hp;
+    const atkAfter = Math.max(0, attacker.hp - ctrN * counterHits);
     const atkPct = attacker.maxHp ? atkAfter / attacker.maxHp * 100 : 0;
     const defPct = target.maxHp   ? defAfter / target.maxHp   * 100 : 0;
 
@@ -2173,6 +2188,7 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
     };
     const ctrWeapon = pred.canCounter ? (getAttackSkillVal(target).name || "反撃") : "なし";
     const dmgDisp = pred.effectDesc || dmgN;
+    const counterDmgDisp = pred.canCounter ? `${ctrN}${pred.counterFollowUp ? "×2" : ""}` : "─";
 
     const equipmentName = u => {
         if (typeof u.equipment === "string" && u.equipment.trim() && u.equipment !== "―") {
@@ -2186,7 +2202,7 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
     const sideMeta = (u, actionType, actionName) => `
         <div class="lsFcMeta">
             <div class="lsFcNameRow"><span class="lsFcName">${u.name}</span><i class="lsFcCrest"></i></div>
-            <div class="lsFcClass">LV ${u.level}　${u.race || "―"}</div>
+            <div class="lsFcClass">${formatUnitLevelLabel(u)}　${u.race || "―"}</div>
             <div class="lsFcSlot"><em>武器</em><span>${equipmentName(u)}</span></div>
             <div class="lsFcSlot action"><em>${actionType}</em><span>${actionName}</span></div>
         </div>`;
@@ -2219,10 +2235,10 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
             <div class="lsFcVals">
                 <span>${pred.hitRate}</span><span>${dmgDisp}</span><span class="lsFcCrit">${isDamage ? pred.critRate : "─"}</span>
                 <span class="lsFcExchange" aria-label="与えるダメージと受けるダメージ">
-                    <b class="toDef"><small>与</small><strong>${isDamage ? dmgN : pred.effectDesc}</strong><i>→</i></b>
-                    <b class="toAtk"><i>←</i><strong>${pred.canCounter ? ctrN : "─"}</strong><small>被</small></b>
+                    <b class="toDef"><small>与</small><strong>${isDamage ? dmgDisp : pred.effectDesc}</strong><i>→</i></b>
+                    <b class="toAtk"><i>←</i><strong>${counterDmgDisp}</strong><small>被</small></b>
                 </span>
-                <span class="lsFcCrit">${pred.canCounter ? pred.ctrCritRate : "─"}</span><span>${pred.canCounter ? ctrN : "─"}</span><span>${pred.canCounter ? pred.ctrHitRate : "─"}</span>
+                <span class="lsFcCrit">${pred.canCounter ? pred.ctrCritRate : "─"}</span><span>${counterDmgDisp}</span><span>${pred.canCounter ? pred.ctrHitRate : "─"}</span>
             </div>
             <div class="lsFcCounterNote${pred.canCounter ? "" : " hidden"}">
                 <span>反撃発生 ${pred.counterRate}%</span>
@@ -2338,7 +2354,8 @@ function executePhysicalCounter(counterAttacker, counterTarget) {
     const { val: atkVal, name: atkName } = getAttackSkillVal(counterAttacker);
     const evadeVal = getEvadeSkillVal(counterTarget);
     const hit = getBattleHitResult(counterAttacker, counterTarget, atkVal, false, { isCounter: true });
-    addLog(`  物理反撃！${counterAttacker.name}【${atkName}${atkVal} vs 回避${evadeVal}】 ${hit.note} → ${hit.isHit ? "命中" : "失敗"}`);
+    const hitCheck = formatBattleHitCheck(counterAttacker, counterTarget, hit, `【${atkName}${atkVal} vs 回避${evadeVal}】`);
+    addLog(`  物理反撃！${counterAttacker.name} ${hitCheck} → ${hit.isHit ? "命中" : "失敗"}`);
     const isHit = hit.isHit;
     if (!isHit) return;
 
@@ -2543,8 +2560,8 @@ function executeAttack(attacker, target) {
     });
     const isHit = hit.isHit;
 
-    const rollNote = hit.note;
-    addLog(`・${attacker.name} → ${target.name} 【${atkSkillName}${atkStat} vs 回避${evadeStat}】 ${rollNote} → ${isHit ? "命中" : "失敗"}`);
+    const hitCheck = formatBattleHitCheck(attacker, target, hit, `【${atkSkillName}${atkStat} vs 回避${evadeStat}】`);
+    addLog(`・${attacker.name} → ${target.name} ${hitCheck} → ${isHit ? "命中" : "失敗"}`);
 
     if (!isHit) {
         showDamagePopup(target.id, 0, "miss");
@@ -2577,8 +2594,8 @@ function executeThrow(attacker, target) {
     const hit = getBattleHitResult(attacker, target, throwStat, targetStunned);
     const isHit = hit.isHit;
 
-    const rollNote = hit.note;
-    addLog(`・${attacker.name} 投擲 → ${target.name} 【投擲${throwStat} vs 回避${evadeStat}】 ${rollNote} → ${isHit ? "命中" : "失敗"}`);
+    const hitCheck = formatBattleHitCheck(attacker, target, hit, `【投擲${throwStat} vs 回避${evadeStat}】`);
+    addLog(`・${attacker.name} 投擲 → ${target.name} ${hitCheck} → ${isHit ? "命中" : "失敗"}`);
 
     if (!isHit) {
         showDamagePopup(target.id, 0, "miss");
@@ -3103,6 +3120,8 @@ function calculateBattlePrediction(attacker, target, atkSkillName, isMagic, spel
     // ── 攻撃側予測 ──
     let hitRate, expDmg, effectDesc, critRate = 0, critDmg = 0;
     let effectNotes = "";
+    // [trial] 追撃・反撃の追撃は物理の交戦でだけ実行されるため、予測も物理に限る
+    const attackerFollowUp = !isMagic && trialFollowUpAvailable(attacker, target);
     if (isMagic && spell) {
         const hit = getMagicHitResult(attacker, target, spell, attacker.spells?.[spell.id] ?? 5, { roll: false });
         hitRate = hit.rate;
@@ -3151,13 +3170,14 @@ function calculateBattlePrediction(attacker, target, atkSkillName, isMagic, spel
         critRate   = targetResult.critical.rate;
         critDmg    = targetResult.critAfterBarrier;
         effectDesc = `${expDmg}`;
-        if (trialFollowUpAvailable(attacker, target)) effectDesc += "×2"; // [trial] 追撃
+        if (attackerFollowUp) effectDesc += "×2"; // [trial] 追撃
         effectNotes = formatActionContextNotes(targetResult.context);
     }
 
     // ── 反撃予測（共通） ──
     const counterRate = getCounterRate(target);
     const counterAvailable = target.hp > 0 && canCounter(target);
+    const counterFollowUp = !isMagic && counterAvailable && trialFollowUpAvailable(target, attacker);
     let ctrHitRate = 0, ctrEffectiveRate = 0, ctrExpDmg = 0, ctrCritRate = 0, ctrCritDmg = 0, counterNotes = "";
     if (counterAvailable) {
         const ctrAtkStat = getAttackSkillVal(target).val;
@@ -3194,6 +3214,8 @@ function calculateBattlePrediction(attacker, target, atkSkillName, isMagic, spel
         ctrCritRate,
         ctrCritDmg,
         counterNotes,
+        attackerFollowUp,
+        counterFollowUp,
     };
 }
 
@@ -3301,7 +3323,7 @@ function showBattlePreview(attacker, target, pred, actionLabel) {
         ctrTag.style.opacity     = "1";
         defStatRow.style.opacity = "1";
         document.getElementById("vsDefHit").textContent = `${pred.ctrHitRate}%`;
-        document.getElementById("vsDefDmg").textContent = `~${pred.ctrExpDmg}`;
+        document.getElementById("vsDefDmg").textContent = `~${pred.ctrExpDmg}${pred.counterFollowUp ? "×2" : ""}`;
         document.getElementById("vsDefCrit").textContent = `${pred.ctrCritRate}%`;
     } else {
         ctrTag.textContent       = "反撃なし";
@@ -4295,7 +4317,8 @@ async function executeDeclaredAction(enemy, decl) {
     const targetStunned = (victim.statusEffects || []).some(e => e.type === "stun");
     const evadeStat = targetStunned ? 0 : getEvadeSkillVal(victim);
     const hit = getBattleHitResult(enemy, victim, atkStat, targetStunned);
-    addLog(`・${enemy.name} → ${victim.name} 【${atkSkillName}${atkStat} vs 回避${evadeStat}】 ${hit.note} → ${hit.isHit ? "命中" : "失敗"}`);
+    const hitCheck = formatBattleHitCheck(enemy, victim, hit, `【${atkSkillName}${atkStat} vs 回避${evadeStat}】`);
+    addLog(`・${enemy.name} → ${victim.name} ${hitCheck} → ${hit.isHit ? "命中" : "失敗"}`);
 
     if (hit.isHit) {
         flashUnitHit(victim.id);
@@ -4453,7 +4476,8 @@ async function enemyAction(enemy) {
         const targetStunned = (target.statusEffects || []).some(e => e.type === "stun");
         const evadeStat = targetStunned ? 0 : getEvadeSkillVal(target);
         const hit = getBattleHitResult(enemy, target, atkStat, targetStunned);
-        addLog(`・${enemy.name} → ${target.name} 【${atkSkillName}${atkStat} vs 回避${evadeStat}】 ${hit.note} → ${hit.isHit ? "命中" : "失敗"}`);
+        const hitCheck = formatBattleHitCheck(enemy, target, hit, `【${atkSkillName}${atkStat} vs 回避${evadeStat}】`);
+        addLog(`・${enemy.name} → ${target.name} ${hitCheck} → ${hit.isHit ? "命中" : "失敗"}`);
 
         if (hit.isHit) {
             flashUnitHit(target.id);            // 被弾フラッシュ
@@ -4526,6 +4550,24 @@ function checkVictoryCondition() {
 // コマンドパネル
 // =============================================
 
+function renderCompactBattleStatRows(unit) {
+    const stats = calcBattleStats(unit);
+    const pairs = unit.trialStats
+        ? [["力", stats.power, "魔攻", stats.magic], ["防御", stats.armor, "速さ", unit.trialStats.spd]]
+        : [["力", stats.power, "魔力", stats.magic]];
+    return pairs.map(([leftLabel, leftValue, rightLabel, rightValue]) => `
+        <div class="unitInfoSubPair">
+            <div class="unitInfoSubItem">
+                <span class="unitInfoSubLabel">${leftLabel}</span>
+                <span class="unitInfoSubValue">${leftValue}</span>
+            </div>
+            <div class="unitInfoSubItem">
+                <span class="unitInfoSubLabel">${rightLabel}</span>
+                <span class="unitInfoSubValue">${rightValue}</span>
+            </div>
+        </div>`).join("");
+}
+
 function renderBattleCommands(unit) {
     commandHeader.textContent = `${unit.name}  Lv ${unit.level}`;
     commandInfo.innerHTML     = "";   // textContent="" は空テキストノードを残すため innerHTML で確実に空にする
@@ -4568,16 +4610,7 @@ function renderBattleCommands(unit) {
             </div>
             <div class="unitInfoDivider"></div>
             <div class="unitInfoSubRow">
-                <div class="unitInfoSubPair">
-                    <div class="unitInfoSubItem">
-                        <span class="unitInfoSubLabel">力</span>
-                        <span class="unitInfoSubValue">${calcBattleStats(unit).power}</span>
-                    </div>
-                    <div class="unitInfoSubItem">
-                        <span class="unitInfoSubLabel">魔力</span>
-                        <span class="unitInfoSubValue">${calcBattleStats(unit).magic}</span>
-                    </div>
-                </div>
+                ${renderCompactBattleStatRows(unit)}
                 <div class="unitInfoSubItem">
                     <span class="unitInfoSubLabel">装備</span>
                     <span class="unitInfoSubValue unitInfoEquip">${unit.equipment || "―"}</span>
@@ -4661,16 +4694,7 @@ function renderEnemyInfoPanel(unit) {
             </div>
             <div class="unitInfoDivider"></div>
             <div class="unitInfoSubRow">
-                <div class="unitInfoSubPair">
-                    <div class="unitInfoSubItem">
-                        <span class="unitInfoSubLabel">力</span>
-                        <span class="unitInfoSubValue">${calcBattleStats(unit).power}</span>
-                    </div>
-                    <div class="unitInfoSubItem">
-                        <span class="unitInfoSubLabel">魔力</span>
-                        <span class="unitInfoSubValue">${calcBattleStats(unit).magic}</span>
-                    </div>
-                </div>
+                ${renderCompactBattleStatRows(unit)}
                 <div class="unitInfoSubItem">
                     <span class="unitInfoSubLabel">装備</span>
                     <span class="unitInfoSubValue unitInfoEquip">${unit.equipment || "―"}</span>
@@ -4895,30 +4919,27 @@ function renderTrialStatusSheet(unit) {
     const courage = getEffectiveCourage(unit);
     const d = trialDerivedValues(stats, unit.trialSiz, courage);
     const cls = TRIAL_UNIT_CLASS[unit.id] || { name: "未設定", line: null };
+    const loadout = trialSkillLoadoutFor(unit.id, unit.trialLevel, TRIAL_CLASS_LEVEL);
     const pct = (cur, max) => max > 0 ? Math.max(0, Math.min(100, cur / max * 100)) : 0;
     const metric = (label, value, extra = "", tip = "") =>
         `<div class="adventureMetric"${tip ? ` title="${tip}"` : ""}><span>${label}</span><b>${value}${extra}</b></div>`;
-    const abilityRows = (items, emptyText) => items.length
-        ? items.map(item => `
-            <div class="adventureListRow ability">
-              <span>${item.name}</span>
-              <small>${item.desc || item.track || ""}</small>
-              <b>${item.category || item.track || ""}</b>
-            </div>`).join("")
-        : `<div class="adventureEmpty">${emptyText}</div>`;
+    const slotRows = (items, type) => items.map((item, index) => `
+        <div class="trialLoadoutSlot${item ? "" : " empty"}${type === "unique" ? " unique" : ""}"${item?.desc ? ` title="${item.name}：${item.desc}"` : ""}>
+          <em>${type === "unique" ? "固" : index + 1}</em>
+          <span><b>${item?.name || "空き枠"}</b><small>${item?.desc || "セットされていません"}</small></span>
+          <i>${item ? (item.source || (item.level ? `Lv${item.level}` : "SET")) : "EMPTY"}</i>
+        </div>`).join("");
+    const personal = loadout.personal;
+    const personalRow = `
+        <div class="trialPersonalSkill${personal ? "" : " empty"}"${personal?.desc ? ` title="${personal.name}：${personal.desc}"` : ""}>
+          <span><b>${personal?.name || "未設定"}</b><small>${personal?.desc || "試験用の敵ユニットには個人スキルが設定されていません"}</small></span>
+          <i>固定</i>
+        </div>`;
     const spellRows = Object.entries(unit.spells || {}).map(([name, value]) => {
         const spell = SPELLS_DATA[name];
         const detail = spell ? `射程${spell.range ?? "―"} / MP ${spell.mpCost ?? "―"}` : "";
         return `<div class="adventureListRow spell"><span>${name}</span><small>${detail}</small><b>${value}</b></div>`;
     }).join("") || `<div class="adventureEmpty">習得している魔法はありません</div>`;
-    const classSkills = cls.line ? TRIAL_CLASS_SKILLS[cls.line] : null;
-    const classRows = classSkills
-        ? classSkills.map(([need, name, desc]) => {
-            const master = need === "マスター";
-            const locked = master || TRIAL_CLASS_LEVEL < Number(need.replace("兵種Lv", ""));
-            return `<div class="adventureListRow ability trialClassRow${locked ? " trialLocked" : ""}${master ? " trialMaster" : ""}" title="${name}：${desc}"><span>${name}</span><small>${desc}</small><b>${need}</b></div>`;
-        }).join("")
-        : `<div class="adventureEmpty">兵種が未設定です</div>`;
     const statusNames = (unit.statusEffects || []).map(effect => effect?.name || effect?.id || effect).filter(Boolean);
     const portrait = getPortraitSrc(unit) || unit.tokenImage || "";
     const damaged = unit.maxHp > 0 && unit.hp / unit.maxHp <= 0.5;
@@ -4993,19 +5014,23 @@ function renderTrialStatusSheet(unit) {
         </section>
 
         <section class="adventureSkills adventureRuled">
-          <h3>CLASS <span>兵種スキル</span></h3>
+          <h3>SKILL <span>固定・兵種セット</span></h3>
           <div class="trialClassHead"><b>${cls.name}</b><span>${cls.line || "―"}　兵種Lv ${cls.line ? TRIAL_CLASS_LEVEL : "―"}</span></div>
-          <div class="adventureList" tabindex="0" role="region" aria-label="兵種スキル一覧">${classRows}</div>
+          ${personalRow}
+          <div class="trialSlotCaption"><span>通常兵種</span><b>4枠</b></div>
+          <div class="trialLoadoutList classSlots" role="list" aria-label="通常兵種スキル4枠">${slotRows(loadout.classSkills, "class")}</div>
+          <div class="trialSlotCaption unique"><span>兵種固有</span><b>1枠</b></div>
+          <div class="trialLoadoutList" role="list" aria-label="兵種固有1枠">${slotRows(loadout.classUnique, "unique")}</div>
         </section>
 
         <section class="adventureBuild adventureRuled">
           <div class="adventureBuildPane">
-            <h3>ARTS <span>戦技</span></h3>
-            <div class="adventureList" tabindex="0" role="region" aria-label="戦技一覧">${abilityRows(getAvailableCombatArts(unit), "なし")}</div>
+            <h3>CAUSE <span>因果スキル・3枠</span></h3>
+            <div class="trialLoadoutList cause" role="list" aria-label="因果スキル3枠">${slotRows(loadout.causeSkills, "cause")}</div>
           </div>
           <div class="adventureBuildPane">
-            <h3>PASSIVE <span>スキル</span></h3>
-            <div class="adventureList" tabindex="0" role="region" aria-label="スキル一覧">${abilityRows(getAvailablePassiveSkills(unit), "なし")}</div>
+            <h3>ARTS <span>戦技・4枠</span></h3>
+            <div class="trialLoadoutList arts" role="list" aria-label="戦技4枠">${slotRows(loadout.combatArts, "art")}</div>
           </div>
         </section>
 

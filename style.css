@@ -4990,11 +4990,114 @@ html, body {
 }
 .trialClassHead b { color: #ecd28e; font-size: 9px; }
 .trialClassHead span { color: rgba(224,189,115,0.43); }
-.adventureListRow.trialLocked span,
-.adventureListRow.trialLocked small { opacity: 0.55; }
-.adventureListRow.trialMaster b { color: rgba(83,210,191,0.8); }
-/* 名前 ｜ 説明（省略表示）｜ 習得条件 を1行に収める */
-.adventureSkills .adventureListRow.trialClassRow {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 6px;
+
+/* 個人スキルはセット枠とは別の、外せない銘板として見せる。 */
+.trialPersonalSkill {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 5px;
+    align-items: center;
+    margin-bottom: 4px;
+    padding: 3px 5px 4px;
+    border: 1px solid rgba(214,167,64,0.45);
+    border-left: 3px solid #d6a740;
+    background: linear-gradient(90deg, rgba(100,42,55,0.42), rgba(34,14,47,0.42));
+    box-shadow: inset 0 1px 0 rgba(255,232,160,0.08);
 }
+.trialPersonalSkill > span,
+.trialLoadoutSlot > span { min-width: 0; }
+.trialPersonalSkill b,
+.trialPersonalSkill small,
+.trialLoadoutSlot b,
+.trialLoadoutSlot small {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.trialPersonalSkill b { color: #f1d48d; font-size: 8px; line-height: 1.25; }
+.trialPersonalSkill small { color: rgba(238,218,164,0.6); font-size: 6.5px; line-height: 1.25; }
+.trialPersonalSkill > i {
+    padding: 2px 4px;
+    color: #170d1e;
+    font-size: 6px;
+    font-style: normal;
+    font-weight: 700;
+    letter-spacing: 0.10em;
+    background: #d6a740;
+}
+.trialPersonalSkill.empty { opacity: 0.56; }
+
+.trialSlotCaption {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 2px 1px 1px;
+    color: rgba(224,189,115,0.50);
+    font-size: 6px;
+    letter-spacing: 0.11em;
+}
+.trialSlotCaption b { color: rgba(224,189,115,0.68); font-size: 6px; }
+.trialSlotCaption.unique { color: rgba(83,210,191,0.62); }
+
+.trialLoadoutList {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1px;
+    min-height: 0;
+}
+.trialLoadoutSlot {
+    min-width: 0;
+    min-height: 17px;
+    display: grid;
+    grid-template-columns: 14px minmax(0, 1fr) auto;
+    gap: 4px;
+    align-items: center;
+    padding: 1px 3px;
+    border-left: 2px solid rgba(111,72,135,0.82);
+    background: linear-gradient(90deg, rgba(70,31,86,0.32), rgba(8,7,17,0.24));
+}
+.trialLoadoutSlot > em {
+    color: rgba(224,189,115,0.45);
+    font-size: 6px;
+    font-style: normal;
+    text-align: center;
+}
+.trialLoadoutSlot b { color: rgba(238,218,164,0.88); font-size: 7.5px; line-height: 1.2; }
+.trialLoadoutSlot small { color: rgba(83,210,191,0.62); font-size: 6.5px; line-height: 1.2; }
+.trialLoadoutSlot > i {
+    color: rgba(224,189,115,0.46);
+    font-size: 6px;
+    font-style: normal;
+    letter-spacing: 0.05em;
+}
+.trialLoadoutSlot.empty {
+    border-left-color: rgba(200,146,42,0.16);
+    background: rgba(255,255,255,0.012);
+    box-shadow: inset 0 0 0 1px rgba(200,146,42,0.07);
+}
+.trialLoadoutSlot.empty b,
+.trialLoadoutSlot.empty small,
+.trialLoadoutSlot.empty > i { color: rgba(224,189,115,0.24); }
+.trialLoadoutSlot.unique {
+    border-left-color: rgba(83,210,191,0.72);
+    background: linear-gradient(90deg, rgba(29,84,82,0.25), rgba(8,7,17,0.24));
+}
+
+.adventureBuildPane .trialLoadoutList {
+    gap: 1px;
+    align-content: start;
+}
+/* 因果3枠・戦技4枠は、名前と説明を1行に並べて欄の高さに収める */
+.adventureBuildPane .trialLoadoutSlot > span {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+}
+.adventureBuildPane .trialLoadoutSlot b { flex: none; max-width: 55%; }
+.adventureBuildPane .trialLoadoutSlot small { flex: 1 1 auto; min-width: 0; }
+.adventureBuildPane .trialLoadoutSlot { min-height: 13px; }
+/* 通常兵種4枠は2列にして、兵種固有枠までSKILL欄に収める */
+.trialLoadoutList.classSlots { grid-template-columns: 1fr 1fr; gap: 1px 2px; }
+.trialLoadoutList.classSlots .trialLoadoutSlot { grid-template-columns: 9px minmax(0, 1fr); }
+.trialLoadoutList.classSlots .trialLoadoutSlot > i { display: none; }
