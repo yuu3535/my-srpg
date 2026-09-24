@@ -170,13 +170,13 @@ def on_page(canvas, doc):
     canvas.line(18 * mm, 13 * mm, A4[0] - 18 * mm, 13 * mm)
     canvas.setFont("JP", 7.5)
     canvas.setFillColor(MUTED)
-    canvas.drawString(18 * mm, 9 * mm, "自作SRPG　ステータス換算と成長 採用プランまとめ（採用版md v1.4 準拠）")
+    canvas.drawString(18 * mm, 9 * mm, "自作SRPG　ステータス換算と成長 採用プランまとめ（採用版md v1.5 準拠）")
     canvas.drawRightString(A4[0] - 18 * mm, 9 * mm, f"{doc.page}")
     canvas.restoreState()
 
 
 doc = SimpleDocTemplate(str(OUT), pagesize=A4, leftMargin=18 * mm, rightMargin=18 * mm, topMargin=16 * mm,
                         bottomMargin=19 * mm, title="SRPGステータス換算と成長 採用プランまとめ",
-                        author="自作SRPGプロジェクト", subject="採用版md v1.4 の要約")
+                        author="自作SRPGプロジェクト", subject="採用版md v1.5 の要約")
 doc.build(story, onFirstPage=on_page, onLaterPages=on_page)
 print("written", OUT)
