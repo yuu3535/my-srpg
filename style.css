@@ -5018,13 +5018,17 @@ html, body {
 .trialPersonalSkill b { color: #f1d48d; font-size: 8px; line-height: 1.25; }
 .trialPersonalSkill small { color: rgba(238,218,164,0.6); font-size: 6.5px; line-height: 1.25; }
 .trialPersonalSkill > i {
-    padding: 2px 4px;
-    color: #170d1e;
+    color: rgba(214,167,64,0.62);
     font-size: 6px;
     font-style: normal;
-    font-weight: 700;
-    letter-spacing: 0.10em;
-    background: #d6a740;
+    letter-spacing: 0.14em;
+}
+
+/* 試験版のシートは MAGIC 欄を置かず、LOADOUT を右列の上下に通す */
+.trialSheet {
+    grid-template-areas:
+        "identity vitals battle battle loadout"
+        "identity skills build sigil loadout";
 }
 .trialPersonalSkill.empty { opacity: 0.56; }
 

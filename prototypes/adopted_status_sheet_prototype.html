@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=M+PLUS+1:wght@300;400;700&display=swap" rel="stylesheet">
     <!-- 本番と同じシートの意匠（1efae8f基準）をそのまま使う -->
-    <link rel="stylesheet" href="../style.css?v=trial-stats-7" />
+    <link rel="stylesheet" href="../style.css?v=trial-stats-8" />
     <style>
         /* =========================================================
            見本ページ専用。本番のステータスシートの外枠・配置・意匠は
@@ -133,7 +133,7 @@
     <script src="../spells.js"></script>
     <script src="../combatArts.js"></script>
     <script src="../passiveSkills.js"></script>
-    <script src="../trialStatSystem.js?v=trial-stats-7"></script>
+    <script src="../trialStatSystem.js?v=trial-stats-8"></script>
     <script>
     // 兵種・兵種スキル・戦闘値は trialStatSystem.js の共通データ（ゲームのテスト戦闘と同じ）を使う
 
@@ -188,7 +188,7 @@
         const personalRow = `
             <div class="trialPersonalSkill${personal ? "" : " empty"}"${personal?.desc ? ` title="${personal.name}：${personal.desc}"` : ""}>
               <span><b>${personal?.name || "未設定"}</b><small>${personal?.desc || "試験用の敵ユニットには個人スキルが設定されていません"}</small></span>
-              <i>固定</i>
+              <i>個人スキル</i>
             </div>`;
 
         const portrait = src.portraitImage ? `../${src.portraitImage}` : (src.tokenImage ? `../${src.tokenImage}` : "");
@@ -196,21 +196,13 @@
         const portraitPos = src.statusBgPos || src.portraitBgPos || "center top";
 
         const spells = Object.entries(src.spells || {});
-        const spellRows = spells.length
-            ? spells.map(([name, value]) => {
-                const spell = SPELLS_DATA[name];
-                const detail = spell ? `射程${spell.range ?? "―"} / MP ${spell.mpCost ?? "―"}` : "";
-                return `<div class="adventureListRow spell"><span>${name}</span><small>${detail}</small><b>${value}</b></div>`;
-            }).join("")
-            : `<div class="adventureEmpty">習得している魔法はありません</div>`;
-
         const ranges = spells.map(([name]) => SPELLS_DATA[name]?.range).filter(r => typeof r === "number");
         const magicRange = ranges.length ? (Math.min(...ranges) === Math.max(...ranges) ? `${Math.max(...ranges)}` : `${Math.min(...ranges)}-${Math.max(...ranges)}`) : "";
         const action = [`移動 ${src.move ?? 3}`, `通常 ${src.attackRange ?? 1}`, ...(magicRange ? [`魔法 ${magicRange}`] : [])].join(" / ");
 
         title.textContent = `${profile.name} ― ステータス`;
         body.innerHTML = `
-      <div class="adventureSheet">
+      <div class="adventureSheet trialSheet">
         <section class="adventureIdentity">
           <div class="adventurePortrait" role="img" aria-label="${profile.name}の立ち絵" style="background-image:url('${portrait}');background-size:${portraitSize};background-position:${portraitPos}"></div>
           <div class="adventureNameplate">
@@ -257,7 +249,6 @@
                 ${metric("回避値", d.evade, "", `速さ${stats.spd}×2.5＋体格補正${d.sizeMod}`)}
                 ${metric("必殺値", d.crit, "", `技${stats.tec}＋現在の勇気${state.courage}÷5`)}
                 ${metric("必殺耐性", d.critGuard, "", `魅力${stats.cha}`)}
-                ${metric("追撃", `速さ${d.followUp}以下へ`, "", `自分の速さ${stats.spd}−5`)}
               </div>
             </div>
           </div>
@@ -267,12 +258,11 @@
           <h3>LOADOUT <span>装備・行動</span></h3>
           <div class="adventureLoadoutBlock"><span>武器</span><b>仮の武器（中威力6）</b></div>
           <div class="adventureLoadoutBlock"><span>行動</span><b>${action}</b></div>
-          <div class="adventureLoadoutBlock"><span>被追撃</span><b>速さ${d.followedBy}以上の相手</b></div>
           <div class="adventureLoadoutBlock"><span>発作</span><b>${src.seizureType || "なし"}</b></div>
         </section>
 
         <section class="adventureSkills adventureRuled">
-          <h3>SKILL <span>固定・兵種セット</span></h3>
+          <h3>SKILL <span>個人・兵種スキル</span></h3>
           <div class="trialClassHead"><b>${cls.name}</b><span>${cls.line || "―"}　兵種Lv ${cls.line ? TRIAL_CLASS_LEVEL : "―"}</span></div>
           ${personalRow}
           <div class="trialSlotCaption"><span>通常兵種</span><b>4枠</b></div>
@@ -294,10 +284,6 @@
 
         <div class="adventureSigil" aria-hidden="true"><span></span></div>
 
-        <section class="adventureMagic adventureRuled">
-          <h3>MAGIC <span>魔法</span></h3>
-          <div class="adventureList" tabindex="0" role="region" aria-label="魔法一覧">${spellRows}</div>
-        </section>
       </div>`;
     }
 

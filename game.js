@@ -4933,13 +4933,8 @@ function renderTrialStatusSheet(unit) {
     const personalRow = `
         <div class="trialPersonalSkill${personal ? "" : " empty"}"${personal?.desc ? ` title="${personal.name}：${personal.desc}"` : ""}>
           <span><b>${personal?.name || "未設定"}</b><small>${personal?.desc || "試験用の敵ユニットには個人スキルが設定されていません"}</small></span>
-          <i>固定</i>
+          <i>個人スキル</i>
         </div>`;
-    const spellRows = Object.entries(unit.spells || {}).map(([name, value]) => {
-        const spell = SPELLS_DATA[name];
-        const detail = spell ? `射程${spell.range ?? "―"} / MP ${spell.mpCost ?? "―"}` : "";
-        return `<div class="adventureListRow spell"><span>${name}</span><small>${detail}</small><b>${value}</b></div>`;
-    }).join("") || `<div class="adventureEmpty">習得している魔法はありません</div>`;
     const statusNames = (unit.statusEffects || []).map(effect => effect?.name || effect?.id || effect).filter(Boolean);
     const portrait = getPortraitSrc(unit) || unit.tokenImage || "";
     const damaged = unit.maxHp > 0 && unit.hp / unit.maxHp <= 0.5;
@@ -4951,7 +4946,7 @@ function renderTrialStatusSheet(unit) {
         : (unit.statusBgPos || unit.portraitBgPos || "center top");
 
     statusModalBody.innerHTML = `
-      <div class="adventureSheet">
+      <div class="adventureSheet trialSheet">
         <section class="adventureIdentity">
           <div class="adventurePortrait" role="img" aria-label="${unit.name}の立ち絵" style="background-image:url('${portrait}');background-size:${portraitSize};background-position:${portraitPos}"></div>
           <div class="adventureNameplate">
@@ -4998,7 +4993,6 @@ function renderTrialStatusSheet(unit) {
                 ${metric("回避値", d.evade, "", `速さ${stats.spd}×2.5＋体格補正${d.sizeMod}`)}
                 ${metric("必殺値", d.crit, "", `技${stats.tec}＋現在の勇気${courage}÷5。必殺率＝必殺値−相手の必殺耐性`)}
                 ${metric("必殺耐性", d.critGuard, "", `魅力${stats.cha}`)}
-                ${metric("追撃", `速さ${d.followUp}以下へ`, "", `速さの差が${TRIAL_FOLLOW_UP_SPEED_GAP}以上で追撃`)}
               </div>
             </div>
           </div>
@@ -5009,12 +5003,11 @@ function renderTrialStatusSheet(unit) {
           <div class="adventureLoadoutBlock"><span>武器</span><b>仮の武器（中威力${TRIAL_WEAPON_POWER.mid}）</b></div>
           <div class="adventureLoadoutBlock"><span>行動</span><b>${getActionRangeSummary(unit)}</b></div>
           <div class="adventureLoadoutBlock"><span>状態</span><b>${statusNames.join("・") || "通常"}</b></div>
-          <div class="adventureLoadoutBlock"><span>被追撃</span><b>速さ${d.followedBy}以上の相手</b></div>
           <div class="adventureLoadoutBlock"><span>発作</span><b>${unit.seizureType || "なし"}</b></div>
         </section>
 
         <section class="adventureSkills adventureRuled">
-          <h3>SKILL <span>固定・兵種セット</span></h3>
+          <h3>SKILL <span>個人・兵種スキル</span></h3>
           <div class="trialClassHead"><b>${cls.name}</b><span>${cls.line || "―"}　兵種Lv ${cls.line ? TRIAL_CLASS_LEVEL : "―"}</span></div>
           ${personalRow}
           <div class="trialSlotCaption"><span>通常兵種</span><b>4枠</b></div>
@@ -5035,11 +5028,6 @@ function renderTrialStatusSheet(unit) {
         </section>
 
         <div class="adventureSigil" aria-hidden="true"><span></span></div>
-
-        <section class="adventureMagic adventureRuled">
-          <h3>MAGIC <span>魔法</span></h3>
-          <div class="adventureList" tabindex="0" role="region" aria-label="魔法一覧">${spellRows}</div>
-        </section>
       </div>`;
 }
 
