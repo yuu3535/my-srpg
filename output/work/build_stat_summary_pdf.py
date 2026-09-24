@@ -69,9 +69,9 @@ def make_table(rows, aligns):
     widths = [unit(min(max(text_len(r[i]) for r in rows), 44)) for i in range(n)]
     if num_cols:
         body_need = max(text_len(r[i]) for r in body for i in num_cols)
-        head_need = max(min(text_len(head[i]), 6) for i in num_cols)  # 長い見出しは折り返す
         for i in num_cols:
-            widths[i] = unit(max(body_need, head_need))
+            # 中身の最大幅を基準に、見出しは10文字幅まで折り返さずに収める
+            widths[i] = unit(max(body_need, min(text_len(head[i]), 10)))
     total = sum(widths)
     if total > PAGE_W:
         # 長い説明文の列（16文字幅超）だけを縮める
@@ -170,13 +170,13 @@ def on_page(canvas, doc):
     canvas.line(18 * mm, 13 * mm, A4[0] - 18 * mm, 13 * mm)
     canvas.setFont("JP", 7.5)
     canvas.setFillColor(MUTED)
-    canvas.drawString(18 * mm, 9 * mm, "自作SRPG　ステータス換算と成長 採用プランまとめ（採用版md v1.3 準拠）")
+    canvas.drawString(18 * mm, 9 * mm, "自作SRPG　ステータス換算と成長 採用プランまとめ（採用版md v1.4 準拠）")
     canvas.drawRightString(A4[0] - 18 * mm, 9 * mm, f"{doc.page}")
     canvas.restoreState()
 
 
 doc = SimpleDocTemplate(str(OUT), pagesize=A4, leftMargin=18 * mm, rightMargin=18 * mm, topMargin=16 * mm,
                         bottomMargin=19 * mm, title="SRPGステータス換算と成長 採用プランまとめ",
-                        author="自作SRPGプロジェクト", subject="採用版md v1.3 の要約")
+                        author="自作SRPGプロジェクト", subject="採用版md v1.4 の要約")
 doc.build(story, onFirstPage=on_page, onLaterPages=on_page)
 print("written", OUT)

@@ -97,7 +97,7 @@ v2は `BATTLE_HIT_MODE = "formula"`（乱数あり）になった。この保留
 
 **採用版へ反映済み（原作者承認）**
 
-- `採用版md/SRPG_CHARACTER_STAT_GROWTH_STANDARD.md` v1.3
+- `採用版md/SRPG_CHARACTER_STAT_GROWTH_STANDARD.md` v1.4（v1.3で成長率を改定、v1.4でHP換算を検討中2案として追記）
   - メイン3人の個人成長率を改定した（§6）。
   - 実効成長率へ幸運・勇気補正 `floor((幸運 + 最大勇気) / 40)%` を加える（§6.1）。
   - メイン3人の長期的な設計像を追記した（§5.2）。
@@ -105,7 +105,7 @@ v2は `BATTLE_HIT_MODE = "formula"`（乱数あり）になった。この保留
 
 **試験ブランチでの前提（未採用）**
 
-- HP×1（TRPG Lv1のHPをそのまま使う）案。採用版はHP×2のまま。
+- HP換算は採用版v1.4で「検討中（2案）」とした（§4.3）。案①TRPG HP×2、案②TRPG HP×1（HP上限は現行のまま）。試験ブランチでは案②を試す。
 - 武器威力の仮定: 低3 / 中6 / 高10。
 - ダメージ式: Codex案（`character_stat_conversion.xlsx` 計算ルール）の「互角時6」を武器威力に置き換える。
   `max(1, round(武器威力 + (攻撃値 - 守備値) / 2 + 補正))`
