@@ -11,3 +11,18 @@ __pycache__/
 
 # 人手仕上げ前の立ち絵素材
 立ち絵透過下処理/
+
+# Unity prototype generated folders
+unity-prototype/[Ll]ibrary/
+unity-prototype/[Tt]emp/
+unity-prototype/[Oo]bj/
+unity-prototype/[Ll]ogs/
+unity-prototype/[Uu]ser[Ss]ettings/
+unity-prototype/[Bb]uild/
+unity-prototype/[Bb]uilds/
+unity-prototype/MemoryCaptures/
+unity-prototype/Recordings/
+
+# Unity Pipeline transient assets
+unity-prototype/Assets/Settings/Pipeline/Resources/RuntimePipelineConfig.asset*
+unity-prototype/Assets/Settings/Pipeline/Resources/RuntimePipelineBuildInfo.asset*
