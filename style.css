@@ -6527,3 +6527,147 @@ html, body {
 @keyframes lsMovePending { from { opacity: 0.7; } to { opacity: 1; } }
 /* 選んだユニットが隠れないよう盤面を動かすとき */
 #battleCanvas.autoPanning { transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* ============================================================
+   [status-sheet2] ステータス一覧の整え（原作者 2026-09-25）
+   見出しにキャラの切り替えと「一覧／詳細」。一覧は名前だけ、説明は詳細で読む
+============================================================ */
+#statusModalOverlay #statusModalHeader {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+#statusModalOverlay #statusModalTitle {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex: none;
+}
+#statusModalTitle em {
+    color: rgba(214,167,64,0.62);
+    font-size: 8px;
+    font-style: normal;
+    letter-spacing: 0.34em;
+}
+#statusModalTitle span {
+    color: #efd081;
+    font-size: 12px;
+    letter-spacing: 0.24em;
+}
+#statusHeaderTools {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.statusFaces {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding-left: 14px;
+    border-left: 1px solid rgba(200,146,42,0.25);
+}
+.statusFace {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    overflow: hidden;
+    background: #140b1f;
+    border: 1px solid rgba(200,146,42,0.28);
+    opacity: 0.62;
+    cursor: pointer;
+    transition: opacity 0.15s ease, border-color 0.15s ease;
+}
+.statusFace i { display: block; width: 100%; height: 100%; background-repeat: no-repeat; }
+.statusFace:hover { opacity: 0.9; }
+.statusFace.active {
+    opacity: 1;
+    border-color: #efd081;
+    box-shadow: 0 0 0 1px rgba(239,208,129,0.25);
+}
+.statusFace:active { transform: translateY(1px); }
+.statusViews {
+    display: flex;
+    gap: 2px;
+    margin-left: auto;
+}
+.statusViews button {
+    padding: 3px 10px 4px;
+    color: rgba(224,189,115,0.5);
+    font-family: inherit;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    background: none;
+    border: 0;
+    border-bottom: 1px solid transparent;
+    cursor: pointer;
+}
+.statusViews button.active {
+    color: #efd081;
+    border-bottom-color: #d6a740;
+}
+.statusViews button:hover { color: rgba(239,208,129,0.85); }
+
+/* 基礎情報: EXP を足し、4つの値を1行に */
+.adventureGauge.exp > i > em { background: linear-gradient(90deg, #6a3a9c, #a97ee0); }
+.adventureGauge.exp > b { color: rgba(224,189,115,0.4); }
+.trialSheet .adventureMetrics.coreStats { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 6px; }
+.trialSheet .coreStats .adventureMetric { flex-direction: column; align-items: flex-start; gap: 1px; padding: 3px 3px 2px; white-space: nowrap; }
+.trialSheet .coreStats .adventureMetric b { font-size: 10px; }
+.trialSheet .adventureGauge { margin: 3px 0; }
+
+/* 一覧のスキル・戦技: 名前だけ。押すと詳細 */
+.trialLoadoutSlot.tapDetail,
+.trialPersonalSkill.tapDetail { cursor: pointer; transition: background 0.15s ease; }
+.trialLoadoutSlot.tapDetail:hover,
+.trialPersonalSkill.tapDetail:hover { background: linear-gradient(90deg, rgba(110,52,130,0.42), rgba(8,7,17,0.24)); }
+.trialLoadoutSlot.tapDetail:focus-visible,
+.trialPersonalSkill.tapDetail:focus-visible { outline: 1px solid #d6a740; outline-offset: -1px; }
+.adventureBuildPane .trialLoadoutSlot b { max-width: none; }
+
+/* 詳細: 説明を全文で読む */
+.trialDetailSheet {
+    grid-template-columns: 178px minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-areas: "identity skills arts";
+}
+.trialDetailPane { min-height: 0; display: flex; flex-direction: column; }
+.trialDetailPane:nth-of-type(2) { grid-area: skills; }
+.trialDetailPane:nth-of-type(3) { grid-area: arts; border-right: 0; }
+.trialDetailList {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    display: grid;
+    align-content: start;
+    gap: 2px;
+}
+.trialDetailRow {
+    display: grid;
+    grid-template-columns: 16px minmax(0, 1fr);
+    gap: 6px;
+    padding: 4px 5px 5px 3px;
+    border-left: 2px solid rgba(111,72,135,0.82);
+    background: linear-gradient(90deg, rgba(70,31,86,0.28), rgba(8,7,17,0.2));
+}
+.trialDetailRow.focus {
+    border-left-color: #d6a740;
+    background: linear-gradient(90deg, rgba(130,73,28,0.34), rgba(8,7,17,0.2));
+}
+.trialDetailRow > div { min-width: 0; }
+.trialDetailRow b { color: rgba(238,218,164,0.95); font-size: 8.5px; }
+.trialDetailRow i {
+    margin-left: 6px;
+    color: rgba(83,210,191,0.62);
+    font-size: 6.5px;
+    font-style: normal;
+    letter-spacing: 0.08em;
+}
+.trialDetailRow p {
+    margin: 2px 0 0;
+    color: rgba(226,212,180,0.82);
+    font-size: 7.5px;
+    line-height: 1.6;
+}

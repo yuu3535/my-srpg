@@ -6307,6 +6307,8 @@ function showItemRadial(unit) {
 // =============================================
 function openStatusModal(unitId, tab = "basic") {
     statusTargetId = unitId;
+    statusView = "sheet";
+    statusFocusAbility = null;
     statusReturnFocus = document.activeElement;
     renderStatusModal();
     statusModalOverlay.classList.remove("hidden");
@@ -6395,17 +6397,18 @@ function renderTrialStatusSheet(unit) {
     const pct = (cur, max) => max > 0 ? Math.max(0, Math.min(100, cur / max * 100)) : 0;
     const metric = (label, value, extra = "", tip = "") =>
         `<div class="adventureMetric"${tip ? ` title="${tip}"` : ""}><span>${label}</span><b>${value}${extra}</b></div>`;
+    // 一覧は名前だけを出し、押すと「詳細」で説明の全文を読む（原作者 2026-09-25: 文字が収まらない）
     const slotRows = (items, type) => items.map((item, index) => `
-        <div class="trialLoadoutSlot${item ? "" : " empty"}${type === "unique" ? " unique" : ""}"${item?.desc ? ` title="${item.name}：${item.desc}"` : ""}>
+        <div class="trialLoadoutSlot${item ? " tapDetail" : " empty"}${type === "unique" ? " unique" : ""}"${item ? ` data-ability="${item.name}" role="button" tabindex="0" title="押すと詳細"` : ""}>
           ${item ? abilityIconHtml(item.name, type === "art" ? "active" : abilityFrameKind(item), "slot") : `<em>${type === "unique" ? "固" : index + 1}</em>`}
-          <span><b>${item?.name || "空き枠"}</b><small>${item?.desc || "セットされていません"}</small></span>
+          <span><b>${item?.name || "空き枠"}</b></span>
           <i>${item ? (item.source || (item.level ? `Lv${item.level}` : "SET")) : "EMPTY"}</i>
         </div>`).join("");
     const personal = loadout.personal;
     const personalRow = `
-        <div class="trialPersonalSkill${personal ? "" : " empty"}"${personal?.desc ? ` title="${personal.name}：${personal.desc}"` : ""}>
+        <div class="trialPersonalSkill${personal ? " tapDetail" : " empty"}"${personal ? ` data-ability="${personal.name}" role="button" tabindex="0" title="押すと詳細"` : ""}>
           ${personal ? abilityIconHtml(personal.name, "personal", "slot") : ""}
-          <span><b>${personal?.name || "未設定"}</b><small>${personal?.desc || "試験用の敵ユニットには個人スキルが設定されていません"}</small></span>
+          <span><b>${personal?.name || "未設定"}</b></span>
           <i>個人スキル</i>
         </div>`;
     const statusNames = (unit.statusEffects || []).map(effect => effect?.name || effect?.id || effect).filter(Boolean);
@@ -6441,8 +6444,11 @@ function renderTrialStatusSheet(unit) {
           <div class="adventureGauge mp">
             <span>MP</span><i><em style="width:${pct(unit.mp, unit.maxMp)}%"></em></i><b>${unit.mp} / ${unit.maxMp}</b>
           </div>
+          <div class="adventureGauge exp" title="EXPの仕組みは未定">
+            <span>EXP</span><i><em style="width:0%"></em></i><b>―</b>
+          </div>
           <div class="adventureMetrics coreStats">
-            ${metric("勇気", courage, `<small>/${profile.courage}</small>`)}${metric("幸運", profile.luck)}
+            ${metric("勇気", courage, `<small>/${profile.courage}</small>`)}${metric("運", profile.luck)}
             ${metric("反撃率", `${getCounterRate(unit)}%`)}${metric("成長補正", `+${trialGrowthBonus(profile)}%`)}
           </div>
         </section>
@@ -6503,6 +6509,69 @@ function renderTrialStatusSheet(unit) {
 
         <div class="adventureSigil" aria-hidden="true"><span></span></div>
       </div>`;
+    bindStatusAbilityDetail();
+}
+
+/** 一覧のスキル・戦技を押すと、詳細でその説明を開く */
+function bindStatusAbilityDetail() {
+    statusModalBody.querySelectorAll("[data-ability]").forEach(el => {
+        const open = () => {
+            statusView = "detail";
+            statusFocusAbility = el.dataset.ability;
+            renderStatusModal();
+        };
+        el.addEventListener("click", open);
+        el.addEventListener("keydown", e => {
+            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
+        });
+    });
+}
+
+/**
+ * [trial] ステータスの「詳細」: スキル・戦技の説明を全文で並べる（一覧と同じ意匠）
+ */
+function renderTrialStatusDetail(unit) {
+    const profile = TRIAL_PROFILES[unit.id] || {};
+    const cls = TRIAL_UNIT_CLASS[unit.id] || { name: "未設定", line: null };
+    const loadout = trialSkillLoadoutFor(unit.id, unit.trialAbilityLevel, TRIAL_CLASS_LEVEL, unit.trialLoadoutSelection || null);
+    const portrait = getPortraitSrc(unit) || unit.tokenImage || "";
+    const row = (item, frameKind, tag) => item ? `
+        <div class="trialDetailRow${item.name === statusFocusAbility ? " focus" : ""}" data-name="${item.name}">
+          ${abilityIconHtml(item.name, frameKind, "slot")}
+          <div><b>${item.name}</b><i>${tag}${item.level ? `・Lv${item.level}` : ""}</i><p>${item.desc || "説明はまだありません。"}</p></div>
+        </div>` : "";
+    const skills = [
+        row(loadout.personal, "personal", "個人スキル"),
+        ...loadout.classSkills.map(s => row(s, "passive", "兵種スキル")),
+        ...loadout.classUnique.map(s => row(s, "passive", "兵種固有")),
+        ...loadout.causeSkills.map(s => row(s, "passive", "因果スキル")),
+    ].join("") || `<div class="adventureEmpty">セットされたスキルはありません</div>`;
+    const arts = loadout.combatArts.map(s => row(s, "active", "戦技")).join("")
+        || `<div class="adventureEmpty">セットされた戦技はありません</div>`;
+    statusModalBody.innerHTML = `
+      <div class="adventureSheet trialDetailSheet">
+        <section class="adventureIdentity">
+          <div class="adventurePortrait" role="img" aria-label="${unit.name}の立ち絵" style="background-image:url('${portrait}');background-size:${unit.statusBgSize || unit.portraitBgSize || "cover"};background-position:${unit.statusBgPos || unit.portraitBgPos || "center top"}"></div>
+          <div class="adventureNameplate">
+            <strong>${unit.name}</strong><span>${formatUnitLevelLabel(unit)}</span>
+          </div>
+          <dl class="adventureProfile">
+            <div><dt>種族</dt><dd>${profile.race || unit.race || "―"}</dd></div>
+            <div><dt>一族</dt><dd>${unit.clan || "―"}</dd></div>
+            <div><dt>兵種</dt><dd>${cls.name}</dd></div>
+            <div><dt>秘伝</dt><dd>${unit.secretArt || "―"}</dd></div>
+          </dl>
+        </section>
+        <section class="trialDetailPane adventureRuled">
+          <h3>SKILL <span>スキルの詳細</span></h3>
+          <div class="trialDetailList" tabindex="0">${skills}</div>
+        </section>
+        <section class="trialDetailPane adventureRuled">
+          <h3>ARTS <span>戦技の詳細</span></h3>
+          <div class="trialDetailList" tabindex="0">${arts}</div>
+        </section>
+      </div>`;
+    statusModalBody.querySelector(".trialDetailRow.focus")?.scrollIntoView({ block: "nearest" });
 }
 
 function renderStatusSheet(unit, bs) {
@@ -6638,8 +6707,62 @@ function renderStatusModal() {
         statusModalBody.innerHTML = '<p class="adventureEmpty" role="alert">キャラクター情報を取得できません。閉じて選び直してください。</p>';
         return;
     }
-    statusModalTitle.textContent = `${unit.name} ― ステータス`;
-    renderStatusSheet(unit, calcBattleStats(unit));
+    renderStatusHeader(unit);
+    if (unit.trialStats && statusView === "detail") renderTrialStatusDetail(unit);
+    else renderStatusSheet(unit, calcBattleStats(unit));
+}
+
+// 一覧（ひと目で確認）／詳細（スキル・戦技の説明）。原作者 2026-09-25
+let statusView = "sheet";
+let statusFocusAbility = null;
+
+/** ステータスで切り替えられるキャラ（同じ陣営） */
+function statusRosterUnits(unit) {
+    return battleUnits.filter(u => u.side === unit.side && (u.hp > 0 || u.side === "ally"));
+}
+
+function switchStatusUnit(delta) {
+    const unit = battleUnits.find(u => u.id === statusTargetId);
+    if (!unit) return;
+    const list = statusRosterUnits(unit);
+    const next = list[(list.indexOf(unit) + delta + list.length) % list.length];
+    if (next && next !== unit) {
+        statusTargetId = next.id;
+        statusFocusAbility = null;
+        renderStatusModal();
+    }
+}
+
+/** 見出し: 左に「ステータス」、中央にキャラの顔（押すと切り替え）、右に「一覧／詳細」 */
+function renderStatusHeader(unit) {
+    statusModalTitle.innerHTML = `<em>STATUS</em><span>ステータス</span>`;
+    let tools = document.getElementById("statusHeaderTools");
+    if (!tools) {
+        tools = document.createElement("div");
+        tools.id = "statusHeaderTools";
+        closeStatusModal.parentNode.insertBefore(tools, closeStatusModal);
+    }
+    const faces = battleUnits.includes(unit) ? statusRosterUnits(unit).map(u => {
+        const src = getPortraitSrc(u) || u.tokenImage || "";
+        const face = src ? `background-image:url('${src}');background-size:${u.portraitBgSize || "cover"};background-position:${u.portraitBgPos || "center top"}` : "";
+        return `<button type="button" class="statusFace${u === unit ? " active" : ""}" data-unit="${u.id}" aria-label="${u.name}" title="${u.name}"><i style="${face}"></i></button>`;
+    }).join("") : "";
+    const views = unit.trialStats ? `
+        <div class="statusViews" role="tablist">
+          <button type="button" role="tab" class="${statusView === "sheet" ? "active" : ""}" data-view="sheet">一覧</button>
+          <button type="button" role="tab" class="${statusView === "detail" ? "active" : ""}" data-view="detail">詳細</button>
+        </div>` : "";
+    tools.innerHTML = `<div class="statusFaces" aria-label="キャラの切り替え（←→キーでも切り替え）">${faces}</div>${views}`;
+    tools.querySelectorAll(".statusFace").forEach(btn => btn.addEventListener("click", () => {
+        statusTargetId = btn.dataset.unit;
+        statusFocusAbility = null;
+        renderStatusModal();
+    }));
+    tools.querySelectorAll("[data-view]").forEach(btn => btn.addEventListener("click", () => {
+        statusView = btn.dataset.view;
+        statusFocusAbility = null;
+        renderStatusModal();
+    }));
 }
 
 // =============================================
@@ -7455,6 +7578,10 @@ statusModalOverlay.addEventListener("keydown", e => {
     if (e.key === "Escape") {
         e.preventDefault();
         closeStatus();
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        // 左右キーでキャラを切り替える
+        e.preventDefault();
+        switchStatusUnit(e.key === "ArrowLeft" ? -1 : 1);
     } else if (e.key === "Tab") {
         const focusable = [...statusModalOverlay.querySelectorAll('button, [tabindex="0"]')];
         const first = focusable[0];
