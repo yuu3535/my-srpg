@@ -6671,3 +6671,232 @@ html, body {
     font-size: 7.5px;
     line-height: 1.6;
 }
+
+/* ============================================================
+   [hud-sheet] 戦闘画面のまわりをステータス一覧と同じ意匠に揃える（原作者 2026-09-25）
+   細い金の罫線・金の縦線の見出し・英字の小見出し。光沢のある素材の枠は使わない
+============================================================ */
+/* ── 左上: フェーズと勝利条件 ── */
+#gameScreen[data-mode="battle"] #landscapeTopStrip {
+    align-items: stretch;
+    gap: 0;
+    height: 30px;
+    background: linear-gradient(90deg, rgba(56,21,71,0.62), rgba(7,8,17,0.34) 46%, transparent 72%);
+    border-bottom: 1px solid rgba(200,146,42,0.22);
+}
+#gameScreen[data-mode="battle"] #landscapePhaseTitle {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+    padding: 0 14px 0 10px;
+    color: #efd081;
+    background: none;
+    border: 0;
+    border-left: 2px solid #d6a740;
+    border-image: none;
+    box-shadow: none;
+    line-height: 1.1;
+}
+#landscapePhaseTitle em {
+    color: rgba(214,167,64,0.62);
+    font-size: 6.5px;
+    font-style: normal;
+    font-weight: 400;
+    letter-spacing: 0.34em;
+}
+#landscapePhaseTitle b { font-size: 13px; font-weight: 600; letter-spacing: 0.2em; }
+#landscapePhaseTitle.enemy { border-left-color: #c95a4a; }
+#landscapePhaseTitle.enemy b { color: #f0a27f; }
+#landscapePhaseTitle.enemy em { color: rgba(229,110,78,0.7); }
+#gameScreen[data-mode="battle"] #landscapeVictory {
+    align-self: center;
+    gap: 8px;
+    padding-left: 14px;
+    border-left: 1px solid rgba(200,146,42,0.25);
+    color: #e8d5a4;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+}
+#gameScreen[data-mode="battle"] #landscapeVictory em {
+    padding: 0;
+    color: rgba(224,189,115,0.5);
+    font-size: 8px;
+    letter-spacing: 0.2em;
+    background: none;
+    border: 0;
+}
+/* ── 右上: TURN と敵行動予告 ── */
+#gameScreen[data-mode="battle"] #landscapeTurnChip {
+    align-self: center;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-right: 8px;
+    padding: 0;
+    background: none;
+    border: 0;
+    color: #e8d5a4;
+}
+#landscapeTurnChip span { display: flex; align-items: baseline; gap: 5px; }
+#landscapeTurnChip em {
+    color: rgba(224,189,115,0.5);
+    font-size: 7.5px;
+    font-style: normal;
+    letter-spacing: 0.24em;
+}
+#landscapeTurnChip b { color: #efd081; font-size: 14px; font-weight: 600; }
+#landscapeTurnChip span.decl b { color: #f0a27f; font-size: 12px; }
+
+/* ── 左: 味方一覧（素材の枠をやめ、細い罫線に） ── */
+#gameScreen[data-mode="battle"] #landscapeRoster {
+    border: 0;
+    border-image: none;
+    border-right: 1px solid rgba(200,146,42,0.25);
+    background: linear-gradient(180deg, rgba(7,8,16,0.82), rgba(3,4,10,0.6));
+    padding-top: 6px;
+}
+#gameScreen[data-mode="battle"] #landscapeRosterTurn { display: none; }   /* TURN は右上に一本化 */
+
+/* ── 下: 説明・ログ ── */
+#gameScreen[data-mode="battle"] #landscapeHint {
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    color: rgba(232,213,164,0.78);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    background: linear-gradient(90deg, rgba(7,8,17,0.78), rgba(7,8,17,0.3) 60%, transparent);
+    border-top: 1px solid rgba(200,146,42,0.2);
+    border-left: 2px solid rgba(214,167,64,0.55);
+}
+
+/* ============================================================
+   戦闘予測: ステータス一覧と同じ意匠（安っぽく見えた素材の枠・丸いボタンをやめる）
+============================================================ */
+#gameScreen[data-mode="battle"] #lsForecast,
+#gameScreen[data-mode="battle"] #lsForecast.atBottom { width: 232px; }
+#gameScreen[data-mode="battle"] .refFc {
+    background: linear-gradient(165deg, rgba(14,11,26,0.97), rgba(4,6,14,0.97));
+    border: 1px solid rgba(200,146,42,0.32);
+    border-top: 2px solid #d6a740;
+    border-image: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,232,160,0.06);
+}
+#gameScreen[data-mode="battle"] .refFc.readOnly { border-top-color: #c95a4a; }
+#gameScreen[data-mode="battle"] .refFc .refFcHead {
+    gap: 8px;
+    padding: 4px 8px 3px;
+    border-bottom: 1px solid rgba(200,146,42,0.18);
+}
+#gameScreen[data-mode="battle"] .refFc .refFcHead > span {
+    padding-left: 6px;
+    color: #efd081;
+    font-size: 8.5px;
+    letter-spacing: 0.24em;
+    border-left: 2px solid #d6a740;
+}
+#gameScreen[data-mode="battle"] .refFc .refFcHead em { color: rgba(232,213,164,0.86); font-size: 9px; font-style: normal; }
+/* 攻撃の切り替え: 丸いボタンをやめ、文字の矢印に */
+#gameScreen[data-mode="battle"] .refFcSwitch { gap: 2px; margin-left: auto; }
+#gameScreen[data-mode="battle"] .refFcSwitch button {
+    width: auto;
+    height: auto;
+    padding: 0 4px;
+    color: rgba(239,208,129,0.75);
+    font-size: 12px;
+    line-height: 1;
+    background: none;
+    border: 0;
+    border-radius: 0;
+}
+#gameScreen[data-mode="battle"] .refFcSwitch button:hover { color: #ffe2a0; }
+#gameScreen[data-mode="battle"] .refFcSwitch small { color: rgba(224,189,115,0.45); font-size: 7px; }
+/* HP バー: 一覧のゲージと同じ細い線 */
+#gameScreen[data-mode="battle"] .refFcBar {
+    height: 3px;
+    margin: 2px 4px 4px;
+    background: rgba(0,0,0,0.55);
+    box-shadow: none;
+}
+#gameScreen[data-mode="battle"] .refFcBar .lost { background: rgba(236,210,142,0.22); }
+#gameScreen[data-mode="battle"] .refFcBar .after { background: linear-gradient(90deg, #2cbf74, #5ae895); }
+#gameScreen[data-mode="battle"] .refFcBar.enemy .after { background: linear-gradient(90deg, #b8423c, #e0645a); }
+/* 反撃の説明・スキルの効果: はみ出さずに折り返す */
+#gameScreen[data-mode="battle"] .refFcCounter {
+    padding: 3px 8px;
+    color: rgba(232,213,164,0.72);
+    font-size: 7.5px;
+    line-height: 1.45;
+    text-align: left;
+    white-space: normal;
+    border-top: 1px solid rgba(200,146,42,0.14);
+}
+#gameScreen[data-mode="battle"] .refFc .refFcNote {
+    padding: 0 8px 3px;
+    color: rgba(83,210,191,0.78);
+    font-size: 7px;
+    line-height: 1.45;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+}
+/* ボタン: 戻る＝細い罫線、実行＝落ち着いた金の帯 */
+#gameScreen[data-mode="battle"] .refFc .refFcBtns {
+    grid-template-columns: 1fr 1.6fr;
+    gap: 6px;
+    padding: 5px 8px 7px;
+    border-top: 1px solid rgba(200,146,42,0.14);
+}
+#gameScreen[data-mode="battle"] .refFc .refFcBtns #lsFcCancel,
+#gameScreen[data-mode="battle"] .refFc .refFcBtns #lsFcConfirm {
+    min-height: 20px;
+    padding: 0 6px;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.24em;
+    border-image: none;
+    border-radius: 0;
+    box-shadow: none;
+    clip-path: none;
+    filter: none;
+}
+#gameScreen[data-mode="battle"] .refFc .refFcBtns #lsFcCancel {
+    color: rgba(224,189,115,0.75);
+    background: transparent;
+    border: 1px solid rgba(200,146,42,0.3);
+}
+#gameScreen[data-mode="battle"] .refFc .refFcBtns #lsFcConfirm {
+    color: #ffe2a0;
+    background: linear-gradient(90deg, rgba(120,66,26,0.9), rgba(70,34,16,0.9));
+    border: 1px solid rgba(224,176,72,0.7);
+}
+#gameScreen[data-mode="battle"] .refFc .refFcBtns #lsFcConfirm i { background: #efd081; }
+#gameScreen[data-mode="battle"] .refFc .refFcBtns #lsFcCancel:hover { color: #efd081; border-color: rgba(224,176,72,0.6); }
+#gameScreen[data-mode="battle"] .refFc .refFcBtns #lsFcConfirm:hover { background: linear-gradient(90deg, rgba(140,80,30,0.95), rgba(84,42,18,0.95)); }
+
+/* ── コマンド一覧・ユニットカード・武器カードも同じ意匠に（素材の枠をやめる） ── */
+#gameScreen[data-mode="battle"] #landscapeCommandList.menu,
+#gameScreen[data-mode="battle"] .lcCard,
+#gameScreen[data-mode="battle"] .lcWeapon {
+    background: linear-gradient(165deg, rgba(14,11,26,0.95), rgba(4,6,14,0.95));
+    border: 1px solid rgba(200,146,42,0.32);
+    border-top: 2px solid #d6a740;
+    border-image: none;
+    box-shadow: 0 10px 26px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,232,160,0.06);
+}
+#gameScreen[data-mode="battle"] #landscapeCommandList.menu { padding: 3px; }
+#gameScreen[data-mode="battle"] .lcCard { height: 78px; }
+#gameScreen[data-mode="battle"] .lcCard.enemy { border-top-color: #c95a4a; }
+#gameScreen[data-mode="battle"] .lcWeapon { padding: 4px 8px 5px; }
+#gameScreen[data-mode="battle"] .lsMenuItem.active {
+    background: linear-gradient(90deg, rgba(90,40,110,0.75), rgba(40,16,58,0.2));
+    box-shadow: inset 2px 0 0 #d6a740;
+}
+#gameScreen[data-mode="battle"] .lsMenuItem.active::before { display: none; }
+#gameScreen[data-mode="battle"] .lsMenuTitle {
+    background: none;
+    border-left: 2px solid #d6a740;
+    border-bottom: 1px solid rgba(200,146,42,0.2);
+    color: #efd081;
+}

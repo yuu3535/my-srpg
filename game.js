@@ -2616,10 +2616,13 @@ function setLandscapeHint(text) {
 
 function renderLandscapeHeader() {
     if (!landscapePhaseTitle || !landscapeTurnChip) return;
-    const phase = turnPhase === "ally" ? "味方フェーズ" : "敵フェーズ";
-    landscapePhaseTitle.textContent = battleOver ? "戦闘終了" : phase;
+    // ステータス一覧と同じ意匠: 英字の小見出し＋日本語（原作者 2026-09-25）
+    const phase = battleOver ? { en: "BATTLE END", ja: "戦闘終了" }
+        : turnPhase === "ally" ? { en: "ALLY PHASE", ja: "味方フェーズ" } : { en: "ENEMY PHASE", ja: "敵フェーズ" };
+    landscapePhaseTitle.innerHTML = `<em>${phase.en}</em><b>${phase.ja}</b>`;
+    landscapePhaseTitle.classList.toggle("enemy", !battleOver && turnPhase !== "ally");
     const declCount = enemyDeclarations?.size || 0;
-    landscapeTurnChip.textContent = `TURN ${turnCount}　敵行動予告 ${declCount}`;
+    landscapeTurnChip.innerHTML = `<span><em>TURN</em><b>${turnCount}</b></span><span class="decl"><em>敵行動予告</em><b>${declCount}</b></span>`;
     if (landscapeVictory) {
         landscapeVictory.innerHTML = `<em>勝利条件</em><span>${getVictoryConditionText(BATTLE_DEFINITIONS[currentBattleId])}</span>`;
     }
