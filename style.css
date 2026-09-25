@@ -6926,3 +6926,59 @@ html, body {
 
 /* 斜め見下ろし: キャラの絵は奥のマスにかぶるのでクリックを受けない（立っているマスで受ける） */
 #battleBoard.mapIsoTrue .battleUnit { pointer-events: none; }
+
+/* ============================================================
+   [ui-ordered] 発注書で作った素材（原作者 2026-09-26: 実際の大きさで試す）
+   A1・A2（ChatGPT）: 光沢なしの基本パネル。上辺だけ太い金の線（敵は赤）
+   A3・A4（ChatGPT）: 見出しの金の縦線・中央に菱形の区切り線
+   D4（Codex）: 選択中の味方の枠
+   書き出しは tools/build_ui_assets.py（ORDERED_ASSETS）
+============================================================ */
+#gameScreen[data-mode="battle"] #landscapeCommandList.menu,
+#gameScreen[data-mode="battle"] .lcCard,
+#gameScreen[data-mode="battle"] .lcWeapon,
+#gameScreen[data-mode="battle"] .refFc {
+    background: none;
+    border-style: solid;
+    border-color: transparent;
+    border-width: 10px 7px 7px 7px;
+    border-image: url("assets/ui/panel_a1.png") 34 26 26 26 fill / 10px 7px 7px 7px stretch;
+}
+#gameScreen[data-mode="battle"] .lcCard.enemy,
+#gameScreen[data-mode="battle"] .refFc.readOnly {
+    border-color: transparent;
+    border-image-source: url("assets/ui/panel_a2.png");
+}
+#gameScreen[data-mode="battle"] #landscapeCommandList.menu { padding: 0 1px 1px; }
+#gameScreen[data-mode="battle"] .lcCard { height: 86px; }
+#gameScreen[data-mode="battle"] .lcWeapon { padding: 0 5px 2px; }
+
+/* 見出しの金の縦線（A3） */
+#gameScreen[data-mode="battle"] #landscapePhaseTitle,
+#gameScreen[data-mode="battle"] .refFc .refFcHead > span {
+    border-left: 0;
+    padding-left: 10px;
+    background: url("assets/ui/heading_bar.png") left center / auto 100% no-repeat;
+}
+#gameScreen[data-mode="battle"] .lsMenuTitle {
+    border-left: 0;
+    padding-left: 12px;
+    background:
+        url("assets/ui/heading_bar.png") 3px center / auto 90% no-repeat,
+        linear-gradient(90deg, rgba(98,30,120,0.85), rgba(58,20,84,0.3));
+}
+
+/* 区切り線（A4） */
+#gameScreen[data-mode="battle"] .refFc .refFcHead {
+    border-bottom: 0;
+    padding-bottom: 6px;
+    background: url("assets/ui/separator_a4.png") center bottom / 100% 6px no-repeat;
+}
+#gameScreen[data-mode="battle"] .lsMenuBack {
+    border-top: 0;
+    padding-top: 5px;
+    background: url("assets/ui/separator_a4.png") center top / 100% 6px no-repeat;
+}
+
+/* 選択中の味方の枠（D4・Codex）は、実際の大きさ（1マス約36px）では線が0.4px程度になり見えなかったため、
+   線を太くした版が届くまで従来の枠を使う（assets/ui/select_ally_v2.png は書き出し済み） */
