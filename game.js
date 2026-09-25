@@ -388,6 +388,7 @@ function renderUnits() {
         const cellH = 100 / GRID_ROWS;
         el.style.left = `${(unit.x + 0.5) * cellW - 6}%`;
         el.style.top  = `${(unit.y + 0.5) * cellH - 6.5}%`;
+        if (lsIso) positionIsoUnit(el, unit);   // 斜め見下ろしのときは菱形のマスの中心に立たせる
 
         // 自分のフェーズ中のみ行動済み表示（他フェーズでは暗くしない）
         if (unit.moved && unit.acted && unit.side === turnPhase) el.classList.add("unitDone");
@@ -528,6 +529,15 @@ function onUnitClick(unit) {
 }
 
 function onCellClick(row, col) {
+    // 斜め見下ろしでは、キャラの絵が奥のマスにかぶるため絵はクリックを受けない。
+    // キャラの立っているマスを押したら、そのキャラを押したことにする
+    if (lsIso) {
+        const occupant = battleUnits.find(u => u.hp > 0 && !u.briefingBench && u.x === col && u.y === row);
+        if (occupant) {
+            onUnitClick(occupant);
+            return;
+        }
+    }
     // 出撃準備中は戦闘の操作をしない（マップ・配置では出撃位置の入れ替えだけ）
     if (typeof isBriefingActive === "function" && isBriefingActive()) {
         if (typeof briefingMapCellClick === "function") briefingMapCellClick(row, col);
@@ -2443,6 +2453,11 @@ function syncLandscapeBattleMount() {
  *  縦画面時は CSS に戻す */
 function sizeLandscapeBattleCanvas() {
     if (!battleCanvas) return;
+    if (isIsoViewActive()) {
+        sizeIsoBattleCanvas();
+        return;
+    }
+    clearIsoLayout();
     if (!isLandscapeBattleUi()) {
         battleCanvas.style.width  = "";
         battleCanvas.style.height = "";
@@ -2464,6 +2479,111 @@ function sizeLandscapeBattleCanvas() {
     battleCanvas.style.height = `${Math.round(h)}px`;
     battleCanvas.style.left   = `${Math.round(safe.left + (availW - w) / 2)}px`;
     battleCanvas.style.top    = `${Math.round(safe.top + (availH - h) / 2)}px`;
+}
+
+// ── 斜め見下ろし（アイソメトリック）の表示（原作者 2026-09-26: たたき台のマップの見た目を試す） ──
+//   盤面（マス目・範囲・行動予告の線）は、平らな盤面を45度回して縦を半分に潰す変形で菱形にする。
+//   クリックの当たり判定はブラウザが変形に合わせる。キャラは傾けずに立たせ、菱形のマスの中心に計算で置く。
+//   背景には、同じマス目に合わせて描いたマップ絵（battleDefinitions の isoView）を敷く
+let lsIso = null;   // { s: 1マスの一辺, cx, cy: 盤面の中心, gridW, gridH }
+
+function currentIsoView() {
+    return BATTLE_DEFINITIONS[currentBattleId]?.isoView || null;
+}
+
+function isIsoViewActive() {
+    return isLandscapeBattleUi() && mapViewMode === "iso" && !!currentIsoView();
+}
+
+/** マス(col,row)の中心の位置（battleCanvas の中の座標） */
+function isoCellCenter(col, row) {
+    const { s, cx, cy, gridW, gridH } = lsIso;
+    const gx = (col + 0.5) * s - gridW / 2;
+    const gy = (row + 0.5) * s - gridH / 2;
+    return { x: cx + (gx - gy) * Math.SQRT1_2, y: cy + (gx + gy) * Math.SQRT1_2 * 0.5 };
+}
+
+function sizeIsoBattleCanvas() {
+    const view = currentIsoView();
+    const safe = { top: 34, right: 8, bottom: 20, left: 52 };
+    const availW = (landscapeBattlefield?.offsetWidth || 844) - safe.left - safe.right;
+    const availH = (landscapeBattlefield?.offsetHeight || 390) - safe.top - safe.bottom;
+    const n = GRID_COLS + GRID_ROWS;
+    const c = Math.SQRT1_2;
+    // 菱形の盤面の外枠は 横 n·s·c、縦 n·s·c/2。上にキャラの頭のぶん（1マス）を足す
+    const s = Math.max(12, Math.min(availW / (n * c), availH / (n * c / 2 + 1)));
+    const w = n * s * c;
+    const h = n * s * c / 2 + s;
+    const gridW = GRID_COLS * s;
+    const gridH = GRID_ROWS * s;
+    const cx = w / 2;
+    const cy = s + (n * s * c / 2) / 2;
+    lsIso = { s, cx, cy, gridW, gridH };
+    battleBoard.classList.add("mapIsoTrue");
+    battleCanvas.style.width = `${Math.round(w)}px`;
+    battleCanvas.style.height = `${Math.round(h)}px`;
+    battleCanvas.style.left = `${Math.round(safe.left + (availW - w) / 2)}px`;
+    battleCanvas.style.top = `${Math.round(safe.top + (availH - h) / 2)}px`;
+    for (const layer of [battleGrid, document.getElementById("declLayer")]) {
+        if (!layer) continue;
+        Object.assign(layer.style, {
+            left: `${cx - gridW / 2}px`, top: `${cy - gridH / 2}px`, right: "auto", bottom: "auto",
+            width: `${gridW}px`, height: `${gridH}px`,
+            transformOrigin: "50% 50%", transform: "rotateX(60deg) rotateZ(45deg)",
+        });
+    }
+    Object.assign(unitLayer.style, { left: "0px", top: "0px", right: "auto", bottom: "auto", width: `${w}px`, height: `${h}px` });
+    // マップ絵: 絵の上の菱形の大きさと、マス(0,0)の上の頂点を盤面に合わせる
+    let image = document.getElementById("isoMapImage");
+    if (!image) {
+        image = document.createElement("img");
+        image.id = "isoMapImage";
+        image.alt = "";
+        battleCanvas.insertBefore(image, battleCanvas.firstChild);
+    }
+    const k = s * Math.SQRT2 / view.tileW;
+    const topX = cx + (-gridW / 2 + gridH / 2) * c;
+    const topY = cy - (gridW + gridH) / 2 * c * 0.5;
+    if (!image.src.endsWith(encodeURI(view.image))) image.src = view.image;
+    Object.assign(image.style, {
+        display: "block",
+        left: `${topX - view.originX * k}px`, top: `${topY - view.originY * k}px`,
+        width: `${view.width * k}px`, height: `${view.height * k}px`,
+    });
+    positionIsoUnits();
+}
+
+function clearIsoLayout() {
+    if (!lsIso && !battleBoard?.classList.contains("mapIsoTrue")) return;
+    lsIso = null;
+    battleBoard.classList.remove("mapIsoTrue");
+    for (const layer of [battleGrid, document.getElementById("declLayer"), unitLayer]) {
+        if (!layer) continue;
+        for (const key of ["left", "top", "right", "bottom", "width", "height", "transform", "transformOrigin"]) layer.style[key] = "";
+    }
+    const image = document.getElementById("isoMapImage");
+    if (image) image.style.display = "none";
+}
+
+/** キャラを菱形のマスの中心に立たせる。奥（x+yが小さい）ほど後ろに描く */
+function positionIsoUnit(el, unit) {
+    if (!lsIso || !el) return;
+    const { s } = lsIso;
+    const width = s * 1.3;
+    const height = s * 1.5;
+    const p = isoCellCenter(unit.x, unit.y);
+    Object.assign(el.style, {
+        width: `${width}px`, height: `${height}px`,
+        left: `${p.x - width / 2}px`, top: `${p.y - height + s * 0.22}px`,
+        zIndex: String(10 + unit.x + unit.y),
+    });
+}
+
+function positionIsoUnits() {
+    if (!lsIso) return;
+    for (const unit of battleUnits) {
+        positionIsoUnit(document.getElementById(`unit_${unit.id}`), unit);
+    }
 }
 
 function unitStatusText(unit) {
@@ -7308,6 +7428,12 @@ function setBattleMode(battleId) {
 
     const def = battleId && BATTLE_DEFINITIONS[battleId];
     setUiTheme(forcedUiTheme || def?.uiTheme || "orcus");
+    if (def?.isoView) {   // 斜め見下ろしのマップ絵がある戦闘は、斜め見下ろしで始める
+        mapViewMode = "iso";
+        battleBoard.classList.add("mapViewIso");
+        const viewButton = document.getElementById("mapViewToggle");
+        if (viewButton) viewButton.textContent = "2D";
+    }
     currentMapItems = (def?.mapItems || []).map(mi => ({ ...mi, item: { ...mi.item } }));
     createGrid(def?.cols ?? 10, def?.rows ?? 10, def?.tiles ?? []);
     if (def?.background) {
@@ -7683,7 +7809,8 @@ let mapViewMode = "top";
 const MAP_ZOOM_MIN = 0.6, MAP_ZOOM_MAX = 4.0;
 
 function applyMapTransform() {
-    const viewTransform = mapViewMode === "iso"
+    // isoView のある戦闘は盤面だけを変形するので、全体を傾けない
+    const viewTransform = mapViewMode === "iso" && !(typeof currentIsoView === "function" && currentIsoView())
         ? "perspective(520px) rotateX(48deg) rotateZ(-8deg) scale(1.16)"
         : "";
     battleCanvas.style.transform =
@@ -7695,6 +7822,11 @@ function setMapViewMode(mode) {
     battleBoard.classList.toggle("mapViewIso", mapViewMode === "iso");
     document.getElementById("mapViewToggle").textContent = mapViewMode === "iso" ? "2D" : "視点";
     applyMapTransform();
+    // isoView のある戦闘は、盤面とキャラを置き直す
+    if (typeof currentIsoView === "function" && currentIsoView() && gameMode === "battle") {
+        sizeLandscapeBattleCanvas();
+        renderUnits();
+    }
 }
 
 /** cx,cy は battleBoard 左上基準のズーム中心 */

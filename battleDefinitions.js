@@ -49,6 +49,10 @@ const BATTLE_DEFINITIONS = Object.freeze({
         rows: 8,
         tiles: [],
         trialRules: "adopted-stats-v1",
+        // 斜め見下ろし（アイソメトリック）の表示の試し（原作者 2026-09-26）。
+        //   image: マス目に合わせて描いたマップ絵 / tileW: 絵の上の菱形1マスの横幅(px) / originX・originY: マス(0,0)の菱形の上の頂点
+        //   width・height: 絵の大きさ。値は tools/make_iso_map.py が出す。「視点」ボタンで真上からの表示に切り替えられる
+        isoView: { image: "assets/maps/iso_trial_12x8.png", tileW: 128, originX: 608, originY: 96, width: 1472, height: 880 },
         // 出撃ルール（機能の確認用の仮の値。本編の値はシナリオを作る段階で決める）
         //   forced: 必ず出撃するキャラ / max: 最大出撃人数 / deployTiles: 出撃位置に使えるマス（省略時は味方の初期位置）
         sortie: {

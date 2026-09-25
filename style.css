@@ -6900,3 +6900,29 @@ html, body {
     border-bottom: 1px solid rgba(200,146,42,0.2);
     color: #efd081;
 }
+
+/* ============================================================
+   [iso] 斜め見下ろしの表示（isoView のある戦闘）
+   盤面は game.js の sizeIsoBattleCanvas が変形する。マップ絵は盤面の下に敷く
+============================================================ */
+#isoMapImage {
+    position: absolute;
+    z-index: 0;
+    display: none;
+    max-width: none;
+    pointer-events: none;
+    user-select: none;
+}
+#battleBoard.mapIsoTrue #battleCanvas { filter: none; }
+#battleBoard.mapIsoTrue #battleGrid { border: 0; background: none; }
+#gameScreen #battleBoard.mapIsoTrue .gridCell { border-color: rgba(255, 244, 214, 0.1); }
+#gameScreen #battleBoard.mapIsoTrue .gridCell:not(.highlightMove):not(.highlightAttack):not(.highlightTransfer):not(.enemyDangerRange) { background-color: transparent; }
+#battleBoard.mapIsoTrue .battleUnit { justify-content: flex-end; }
+#battleBoard.mapIsoTrue .battleUnit img { max-height: 100%; }
+
+/* 斜め見下ろしでは地の絵が明るいので、移動範囲を濃くする */
+#gameScreen #battleBoard.mapIsoTrue .gridCell.highlightMove:not(.enemyActionRange) { background-color: rgba(70, 150, 255, 0.42); border-color: rgba(150, 205, 255, 0.75); }
+#gameScreen #battleBoard.mapIsoTrue .gridCell.highlightMove.enemyActionRange { background-color: rgba(255, 96, 70, 0.4); }
+
+/* 斜め見下ろし: キャラの絵は奥のマスにかぶるのでクリックを受けない（立っているマスで受ける） */
+#battleBoard.mapIsoTrue .battleUnit { pointer-events: none; }
