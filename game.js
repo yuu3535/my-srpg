@@ -1239,6 +1239,130 @@ function trialPlanEnv() {
     };
 }
 
+/** [trial] ダメージのある行動（武器・物理の戦技・攻撃魔法）か。計画で処理する対象 */
+function trialIsPlannedAttack(attacker, target, isMagic, spell) {
+    return isTrialPair(attacker, target)
+        && (!isMagic || TRIAL_DAMAGING_SPELL_TYPES.has(spell?.effectType));
+}
+
+function trialPlanNotes(notes) {
+    const list = (notes || []).filter(Boolean);
+    return list.length ? ` [${list.join(", ")}]` : "";
+}
+
+function trialPlanFormula(step) {
+    const f = step.formula || {};
+    return step.kind === "weapon"
+        ? `（[試験] 武器${f.power}+(力${f.attack}-防御${f.armor})÷2）`
+        : `（[試験] 呪文${f.power}+(魔攻${f.magic}-魔防${f.ward})÷2）`;
+}
+
+/**
+ * [trial] 1回の交戦を、計画（battlePlan.js）どおりに戦闘中のユニットへ反映する。
+ * 予測と同じ計算を本物の乱数で行うため、予測と実際がずれない。
+ */
+function trialExecuteExchange(attacker, defender, action) {
+    const plan = bpPlanExchange(trialPlanSnapshot(attacker), trialPlanSnapshot(defender), action, trialPlanEnv(), bpRandomRolls());
+    const unitsById = { [attacker.id]: attacker, [defender.id]: defender };
+    for (const step of plan.steps) {
+        if (step.type === "counterCheck") {
+            const who = unitsById[step.actorId];
+            if (step.reason) addLog(`  反撃なし（${who.name}：${step.reason}）`);
+            else if (step.courageRoll > step.courageRate) addLog(`  反撃せず（勇気 ${step.courageRoll}/${step.courageRate}%）`);
+            else if (step.seal?.active) addLog(`  野望：${who.name}の反撃を封じた（${step.seal.roll}/${step.seal.chance}%）`);
+            else {
+                showMessage(who.name, "反撃！");
+                addLog(`  反撃発生！（勇気 ${step.courageRoll}/${step.courageRate}%）`);
+            }
+            continue;
+        }
+        trialApplyStrike(step, unitsById[step.actorId], unitsById[step.targetId]);
+    }
+    renderUnits();
+    return plan;
+}
+
+function trialApplyStrike(step, actor, target) {
+    const spell = step.spellId ? (trialGrimoireSpell(actor.trialEquippedItem)?.id === step.spellId
+        ? trialGrimoireSpell(actor.trialEquippedItem) : SPELLS_DATA[step.spellId]) : null;
+    const spellName = spell?.name || step.spellId || "";
+    const hitNote = step.hitRoll === null ? "必中" : `${step.hitRoll}/${step.hitRate}%`;
+    const result = step.hit ? "命中" : "失敗";
+    const indent = step.role === "counter" || step.role === "counterFollowUp" ? "    " : "  ";
+
+    if (step.quickCast?.active) addLog(`${indent}詠唱破棄！MP消費なし（${step.quickCast.roll}/${step.quickCast.chance}%）`);
+    if (typeof step.actorMpAfter === "number") actor.mp = step.actorMpAfter;
+    const mpNote = typeof step.mpCost === "number" ? `  MP-${step.mpCost}` : "";
+    if (step.role === "attack") {
+        addLog(step.kind === "weapon"
+            ? `・${actor.name} → ${target.name} 【命中率 ${step.hitRate}%】 判定 ${hitNote} → ${result}`
+            : `・${actor.name}が ${spellName} 使用（${hitNote}）${mpNote} → ${result}`);
+    } else if (step.role === "followUp") {
+        addLog(`・追撃！${actor.name} → ${target.name}${step.kind === "weapon" ? "" : `【${spellName}】`} ${hitNote}${mpNote} → ${result}`);
+    } else {
+        if (step.role === "counterFollowUp") addLog(`  反撃の追撃！（${actor.name}の速さが上回る）`);
+        addLog(step.kind === "weapon"
+            ? `  物理反撃！${actor.name} 【命中率 ${step.hitRate}%】 判定 ${hitNote} → ${result}`
+            : `  魔法反撃【${spellName}】${actor.name}→${target.name} （${hitNote}）${mpNote} → ${result}`);
+    }
+
+    if (!step.hit) {
+        showDamagePopup(target.id, 0, "miss");
+        return;
+    }
+
+    if (step.crit) showCriticalCutIn(actor);
+    // 結界（装甲）
+    let barrierNote = "";
+    if (step.barrier) {
+        const barrier = (target.statusEffects || []).find(effect => effect.type === "barrier");
+        if (barrier) {
+            if (step.barrier.broken) target.statusEffects = target.statusEffects.filter(effect => effect !== barrier);
+            else barrier.value = step.barrier.remaining;
+        }
+        barrierNote = step.barrier.broken ? `（結界${step.barrier.absorbed}吸収→砕け散った）` : `（結界${step.barrier.absorbed}吸収 残${step.barrier.remaining}）`;
+    }
+    target.hp = step.targetHpAfter;
+    const isCounter = step.role === "counter" || step.role === "counterFollowUp";
+    showDamagePopup(target.id, step.dealt, step.crit ? "critical" : isCounter ? "counter" : "damage");
+    flashUnitHit(target.id);
+    const critNote = step.crit ? ` 必殺！（${step.critRoll}/${step.critRate}%）` : "";
+    addLog(`${indent}${step.dealt}ダメージ${isCounter ? "（半分）" : ""}${critNote}${barrierNote}${trialPlanNotes(step.notes)}${trialPlanFormula(step)}→ ${target.name} HP ${target.hp}/${target.maxHp}`);
+
+    if (step.status) {
+        target.statusEffects = target.statusEffects || [];
+        if (step.status.type === "burn") {
+            target.statusEffects.push({ type: "burn", duration: step.status.duration });
+            addLog(`${indent}火傷状態！（${step.status.duration}ターン）`);
+        } else if (step.status.type === "accuracyDown") {
+            target.statusEffects.push({ type: "accuracyDown", value: -1, duration: step.status.duration });
+            addLog(`${indent}${target.name}の命中-1（${step.status.duration}ターン）`);
+        } else if (step.status.type === "knockback") {
+            addLog(`${indent}${target.name}が吹き飛ばされた！（風）`);
+        }
+    }
+    if (step.prayer) {
+        target.trialPrayerUsed = true;
+        addLog(step.prayer.saved
+            ? `${indent}祈り！${target.name}はHP1で踏みとどまった（${step.prayer.roll}/${step.prayer.chance}%）`
+            : `${indent}祈りは届かなかった（${step.prayer.roll}/${step.prayer.chance}%）`);
+    }
+    if (target.hp <= 0) addLog(`${indent}${target.name}は倒れた！`);
+    if (step.reflect?.damage > 0) {
+        actor.hp = step.reflect.actorHpAfter;
+        showDamagePopup(actor.id, step.reflect.damage, "damage");
+        addLog(`${indent}カウンター！${target.name}が${step.reflect.damage}ダメージを返した（${step.reflect.roll}/${step.reflect.chance}%） → ${actor.name} HP ${actor.hp}/${actor.maxHp}`);
+        if (step.reflect.prayer) {
+            actor.trialPrayerUsed = true;
+            addLog(step.reflect.prayer.saved
+                ? `${indent}祈り！${actor.name}はHP1で踏みとどまった（${step.reflect.prayer.roll}/${step.reflect.prayer.chance}%）`
+                : `${indent}祈りは届かなかった（${step.reflect.prayer.roll}/${step.reflect.prayer.chance}%）`);
+        }
+        if (actor.hp <= 0) addLog(`${indent}${actor.name}は倒れた！`);
+    }
+    renderUnits();
+}
+
 /** [trial] 敵が魔導書を装備していれば、その魔法で攻撃する（MPが足りなければ攻撃しない） */
 function trialEnemyGrimoireSpell(enemy) {
     if (!enemy?.trialStats || trialItemKind(enemy.trialEquippedItem) !== "grimoire") return null;
@@ -1251,45 +1375,9 @@ async function trialEnemyCastGrimoire(enemy, victim, spell) {
         await sleep(300);
         return;
     }
-    executeMagic(enemy, spell, victim);
+    trialExecuteExchange(enemy, victim, { kind: "grimoire", spell });
     checkVictoryCondition();
     await sleep(700);
-}
-
-/**
- * [trial] 反撃の処理（物理攻撃・魔法攻撃の共通）。反撃が起きたら true。
- *   1. 今の装備の射程・MPで反撃できるか 2. 勇気%で反撃が起きるか 3. 野望で封じられないか
- *   4. 装備に応じて武器か魔導書で反撃し、速さ差5以上なら反撃の追撃
- */
-function trialRunCounterPhase(attacker, target) {
-    const plan = trialCounterFor(target, attacker);
-    if (!plan.canCounter) {
-        addLog(`  反撃なし（${target.name}：${plan.reason}）`);
-        return false;
-    }
-    const counterRate = getCounterRate(target);
-    const counterRoll = Math.floor(Math.random() * 100) + 1;
-    if (counterRoll > counterRate) {
-        addLog(`  反撃せず（勇気 ${counterRoll}/${counterRate}%）`);
-        return false;
-    }
-    const ambition = trialRollAbility(attacker, "野望");
-    if (ambition.active) {
-        addLog(`  野望：${target.name}の反撃を封じた（${ambition.roll}/${ambition.chance}%）`);
-        return false;
-    }
-    showMessage(target.name, "反撃！");
-    addLog(`  反撃発生！（勇気 ${counterRoll}/${counterRate}%）`);
-    const strike = () => plan.kind === "grimoire"
-        ? executeMagicCounter(target, attacker, plan.spell, target.spells?.[plan.spell.id] ?? 5)
-        : executePhysicalCounter(target, attacker);
-    strike();
-    // 防御側が速さ差5以上で速ければ、反撃がもう一度出る（MP不足などで反撃できなくなっていれば出ない）
-    if (attacker.hp > 0 && target.hp > 0 && trialFollowUpAvailable(target, attacker) && trialCounterFor(target, attacker).canCounter) {
-        addLog(`  反撃の追撃！（${target.name}の速さが上回る）`);
-        strike();
-    }
-    return true;
 }
 
 /** レベル表示（[trial] 試験用ユニットは因果Lvで表示） */
@@ -1321,22 +1409,6 @@ function trialFollowUpAvailable(attacker, target) {
 }
 
 /** [trial] 攻撃側の追撃（速さ差5以上）。追撃には反撃しない */
-function runTrialFollowUp(attacker, target, atkStat, atkSkillName) {
-    if (!trialFollowUpAvailable(attacker, target)) return;
-    const targetStunned = (target.statusEffects || []).some(e => e.type === "stun");
-    const hit = getBattleHitResult(attacker, target, atkStat, targetStunned);
-    addLog(`・追撃！${attacker.name} → ${target.name} ${hit.note} → ${hit.isHit ? "命中" : "失敗"}`);
-    if (!hit.isHit) {
-        showDamagePopup(target.id, 0, "miss");
-        return;
-    }
-    resolvePhysicalHit(attacker, target, atkSkillName, {
-        hit,
-        attackSkillValue: atkStat,
-        skipCounter: true,
-    });
-}
-
 function getBattleHitResult(attacker, defender, attackSkill, targetStunned = false, options = {}) {
     if (targetStunned || BATTLE_HIT_MODE === "guaranteed") {
         return { rate: 100, roll: null, isHit: true, note: targetStunned ? "スタン中：自動命中" : "v2命中確定" };
@@ -2002,13 +2074,6 @@ registerBattleActionHook("beforeAttack", {
     },
 });
 
-/** [trial] 魔法攻撃への反撃（試験用ユニット同士。反撃の可否は防御側の装備の射程で決まる） */
-function trialMagicCounter(caster, target) {
-    if (!isTrialPair(caster, target) || target.hp <= 0 || caster.hp <= 0) return false;
-    if (BATTLE_DEFINITIONS[currentBattleId]?.passive || !canCounter(target)) return false;
-    return trialRunCounterPhase(caster, target);
-}
-
 /** [trial] 祈り: 戦闘中1度だけ、HPが0になったとき幸運%でHP1で耐える（撃破の表示より前に判定する） */
 function trialTryPrayer(unit) {
     if (!unit || unit.hp > 0 || unit.trialPrayerUsed || !trialHasAbility(unit, "祈り")) return;
@@ -2022,31 +2087,6 @@ function trialTryPrayer(unit) {
         addLog(`  祈りは届かなかった（${prayer.roll}/${prayer.chance}%）`);
     }
 }
-
-// [trial] 被弾後: カウンター（被ダメージの半分を返す）
-registerBattleActionHook("afterDamage", {
-    id: "trial:afterDamage",
-    run(context, targetResult) {
-        const attacker = context.attacker;
-        const target = targetResult?.target;
-        if (context.isPreview || !isTrialPair(attacker, target)) return false;
-        const dealt = Number(targetResult.actualDamage || 0);
-        if (dealt > 0 && target.hp > 0 && attacker.hp > 0 && !context.trialReflected) {
-            const counter = trialRollAbility(target, "カウンター");
-            if (counter.active) {
-                context.trialReflected = true;
-                const back = Math.max(1, Math.floor(dealt / 2));
-                attacker.hp = Math.max(0, attacker.hp - back);
-                showDamagePopup(attacker.id, back, "damage");
-                addLog(`  カウンター！${target.name}が${back}ダメージを返した（${counter.roll}/${counter.chance}%） → ${attacker.name} HP ${attacker.hp}/${attacker.maxHp}`);
-                trialTryPrayer(attacker);
-                if (attacker.hp <= 0) addLog(`  ${attacker.name}は倒れた！`);
-                renderUnits();
-            }
-        }
-        return true;
-    },
-});
 
 function executeSelfCombatArt(unit, artId) {
     const art = getCombatArtData(artId);
@@ -2558,8 +2598,10 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
     const ctrN = pred.canCounter ? (Number(pred.ctrExpDmg) || 0) : 0;
     const counterHits = pred.counterFollowUp ? 2 : 1;
     const followUpN = pred.attackerFollowUp ? (Number(pred.followUpDmg) || dmgN) : 0;
-    const defAfter = isDamage ? Math.max(0, target.hp - dmgN - followUpN) : target.hp;
-    const atkAfter = Math.max(0, attacker.hp - ctrN * counterHits);
+    const defAfter = typeof pred.defenderHpAfter === "number" ? pred.defenderHpAfter
+        : isDamage ? Math.max(0, target.hp - dmgN - followUpN) : target.hp;
+    const atkAfter = typeof pred.attackerHpAfter === "number" ? pred.attackerHpAfter
+        : Math.max(0, attacker.hp - ctrN * counterHits);
     const dmgDisp = pred.effectDesc || dmgN;
     const counterDmgDisp = pred.canCounter ? `${ctrN}${pred.counterFollowUp ? "×2" : ""}` : "─";
 
@@ -2854,25 +2896,15 @@ function resolvePhysicalHit(attacker, target, atkSkillName, options = {}) {
 
     // 反撃チェック：パッシブモードでは反撃しない
     let counterTriggered = false;
-    if (!options.skipCounter && target.hp > 0 && !BATTLE_DEFINITIONS[currentBattleId]?.passive && canCounter(target)
-        && isTrialPair(attacker, target)) {
-        counterTriggered = trialRunCounterPhase(attacker, target);   // [trial]
-    } else if (!options.skipCounter && target.hp > 0 && !BATTLE_DEFINITIONS[currentBattleId]?.passive && canCounter(target)) {
+    // 試験用ユニット同士の反撃は交戦の計画（trialExecuteExchange）で処理するため、ここは旧方式だけ
+    if (!options.skipCounter && target.hp > 0 && !BATTLE_DEFINITIONS[currentBattleId]?.passive && canCounter(target)) {
         const counterRate = getCounterRate(target);
         const counterRoll = Math.floor(Math.random() * 100) + 1;
-        const ambition = counterRoll <= counterRate ? trialRollAbility(attacker, "野望") : { active: false };
-        if (ambition.active) {
-            addLog(`  野望：${target.name}の反撃を封じた（${ambition.roll}/${ambition.chance}%）`);
-        } else if (counterRoll <= counterRate) {
+        if (counterRoll <= counterRate) {
             counterTriggered = true;
             showMessage(target.name, "反撃！");
             addLog(`  反撃発生！（勇気 ${counterRoll}/${counterRate}%）`);
             resolveCounterAttack(attacker, target);
-            // [trial] 防御側が速さ差5以上で速ければ、反撃がもう一度出る
-            if (trialFollowUpAvailable(target, attacker)) {
-                addLog(`  反撃の追撃！（${target.name}の速さが上回る）`);
-                resolveCounterAttack(attacker, target);
-            }
         } else {
             addLog(`  反撃せず（勇気 ${counterRoll}/${counterRate}%）`);
         }
@@ -2910,6 +2942,14 @@ function executeAttack(attacker, target) {
     if (attacker.trialStats && trialItemKind(attacker.trialEquippedItem) !== "weapon") {
         attacker.trialEquippedItem = trialCarriedWeapon(trialGearOf(attacker)) ?? attacker.trialEquippedItem;
     }
+    if (isTrialPair(attacker, target)) {   // [trial] 交戦の計画で処理
+        selectedAttackSkill = null;
+        selectedCombatArtId = null;
+        trialExecuteExchange(attacker, target, trialPlanAction(false, null, combatArtId));
+        endUnitTurn(attacker);
+        checkVictoryCondition();
+        return;
+    }
     const liveShadowComparison = startLivePhysicalShadowSession(
         attacker,
         target,
@@ -2936,7 +2976,6 @@ function executeAttack(attacker, target) {
         showDamagePopup(target.id, 0, "miss");
         showMessage("SYSTEM", `${attacker.name}の攻撃は外れた！`);
         finishLivePhysicalShadowSession(liveShadowComparison, hit);
-        if (combatArtId !== "trial:奇襲") runTrialFollowUp(attacker, target, atkStat, atkSkillName); // [trial] 外れても追撃は出る
         endUnitTurn(attacker);
         checkVictoryCondition();
         return;
@@ -2951,7 +2990,6 @@ function executeAttack(attacker, target) {
     if (!physicalOutcome?.counterTriggered) {
         finishLivePhysicalShadowSession(liveShadowComparison, hit, physicalOutcome);
     }
-    if (combatArtId !== "trial:奇襲") runTrialFollowUp(attacker, target, atkStat, atkSkillName); // [trial]
     endUnitTurn(attacker);
     checkVictoryCondition();
 }
@@ -3070,6 +3108,12 @@ function renderMagicCommands(unit) {
 
 function executeMagic(caster, spell, target) {
     if (spell?.trialItemId && caster.trialStats) caster.trialEquippedItem = spell.trialItemId;   // [trial] 魔導書に持ち替え
+    if (trialIsPlannedAttack(caster, target, true, spell)) {   // [trial] 交戦の計画で処理
+        trialExecuteExchange(caster, target, trialPlanAction(true, spell, null));
+        endUnitTurn(caster);
+        checkVictoryCondition();
+        return;
+    }
     const successVal = caster.spells[spell.id] ?? 5;
     const hit = getMagicHitResult(caster, target, spell, successVal);
 
@@ -3142,7 +3186,6 @@ function executeMagic(caster, spell, target) {
 
             if (target.hp <= 0) addLog(`  ${target.name}は倒れた！`);
             finishDamageHooks(targetResult.context, targetResult, hpBefore);
-            trialMagicCounter(caster, target);   // [trial] 魔法攻撃も反撃の対象
             break;
         }
         case "heal": {
@@ -3202,7 +3245,6 @@ function executeMagic(caster, spell, target) {
             trialTryPrayer(target); // [trial] 祈り
             if (target.hp <= 0) addLog(`  ${target.name}は倒れた！`);
             finishDamageHooks(targetResult.context, targetResult, hpBefore);
-            trialMagicCounter(caster, target);   // [trial] 魔法攻撃も反撃の対象
             break;
         }
         case "stun": {
@@ -3498,6 +3540,59 @@ function startAllyPhase() {
  * isMagic=true の場合は spell を参照
  */
 function calculateBattlePrediction(attacker, target, atkSkillName, isMagic, spell) {
+    if (trialIsPlannedAttack(attacker, target, isMagic, spell)) return trialPlanPrediction(attacker, target, isMagic, spell);
+    return legacyBattlePrediction(attacker, target, atkSkillName, isMagic, spell);
+}
+
+/**
+ * [trial] 戦闘予測を交戦の計画（見込み）から作る。表示側が使う形は従来の予測と同じ。
+ * 見込み: 攻撃は命中・必殺なし・反撃は起きる（できるなら）
+ */
+function trialPlanPrediction(attacker, target, isMagic, spell) {
+    // 実行時の持ち替えを予測にも反映する
+    const snapshot = trialPlanSnapshot(attacker);
+    if (isMagic && spell?.trialItemId) {
+        snapshot.equippedItem = spell.trialItemId;
+        snapshot.grimoireSpell = trialGrimoireSpell(spell.trialItemId);
+    } else if (!isMagic && trialItemKind(snapshot.equippedItem) !== "weapon") {
+        snapshot.equippedItem = trialCarriedWeapon(trialGearOf(attacker)) ?? snapshot.equippedItem;
+    }
+    const f = bpForecast(snapshot, trialPlanSnapshot(target), trialPlanAction(isMagic, spell, selectedCombatArtId), trialPlanEnv());
+    const first = f.first;
+    const barrierValue = (target.statusEffects || []).find(effect => effect.type === "barrier")?.value || 0;
+    const effectDesc = f.followUp
+        ? (f.followUp.dealt === first.dealt ? `${first.dealt}×2` : `${first.dealt}+${f.followUp.dealt}`)
+        : `${first.dealt}`;
+    const check = f.counterCheck;
+    const sealChance = check?.seal?.chance || 0;
+    const counterRate = check && !check.reason ? Math.round(check.courageRate * (100 - sealChance) / 100) : 0;
+    const counter = f.counter;
+    return {
+        hitRate: first.hitRate,
+        expDmg: first.dealt,
+        effectDesc,
+        critRate: first.critRate,
+        critDmg: Math.max(0, first.critDamage - barrierValue),
+        effectNotes: trialPlanNotes(first.notes),
+        canCounter: !!counter,
+        counterRate,
+        ctrHitRate: counter?.hitRate || 0,
+        ctrEffectiveRate: counter ? Math.round(counterRate * counter.hitRate / 100) : 0,
+        ctrExpDmg: counter?.dealt || 0,
+        ctrCritRate: counter?.critRate || 0,
+        ctrCritDmg: counter?.critDamage || 0,
+        counterNotes: counter ? trialPlanNotes(counter.notes) : "",
+        attackerFollowUp: !!f.followUp,
+        followUpDmg: f.followUp?.dealt || 0,
+        counterFollowUp: !!f.counterFollowUp,
+        counterLabel: check?.label || "",
+        counterBlockedReason: check?.reason || "",
+        attackerHpAfter: f.attackerHpAfter,
+        defenderHpAfter: f.defenderHpAfter,
+    };
+}
+
+function legacyBattlePrediction(attacker, target, atkSkillName, isMagic, spell) {
     // ── 攻撃側予測 ──
     let hitRate, expDmg, effectDesc, critRate = 0, critDmg = 0, followUpDmg = 0;
     let effectNotes = "";
@@ -4740,6 +4835,13 @@ async function executeDeclaredAction(enemy, decl) {
         return;
     }
 
+    if (isTrialPair(enemy, victim)) {   // [trial] 交戦の計画で処理
+        trialExecuteExchange(enemy, victim, { kind: "weapon" });
+        checkVictoryCondition();
+        await sleep(700);
+        return;
+    }
+
     const { val: atkStat, name: atkSkillName } = getAttackSkillVal(enemy);
     const targetStunned = (victim.statusEffects || []).some(e => e.type === "stun");
     const evadeStat = targetStunned ? 0 : getEvadeSkillVal(victim);
@@ -4750,11 +4852,6 @@ async function executeDeclaredAction(enemy, decl) {
     if (hit.isHit) {
         flashUnitHit(victim.id);
         resolvePhysicalHit(enemy, victim, atkSkillName);
-        checkVictoryCondition();
-        await sleep(700);
-    }
-    if (trialFollowUpAvailable(enemy, victim)) { // [trial]
-        runTrialFollowUp(enemy, victim, atkStat, atkSkillName);
         checkVictoryCondition();
         await sleep(700);
     }
@@ -4901,6 +4998,10 @@ async function enemyAction(enemy) {
     const enemySpell = trialEnemyGrimoireSpell(enemy);   // [trial] 魔導書を装備した敵は魔法で攻撃
     if (distAfter <= enemy.attackRange && enemySpell) {
         await trialEnemyCastGrimoire(enemy, target, enemySpell);
+    } else if (distAfter <= enemy.attackRange && isTrialPair(enemy, target)) {   // [trial] 交戦の計画で処理
+        trialExecuteExchange(enemy, target, { kind: "weapon" });
+        checkVictoryCondition();
+        await sleep(700);
     } else if (distAfter <= enemy.attackRange) {
         const { val: atkStat, name: atkSkillName } = getAttackSkillVal(enemy);
         const targetStunned = (target.statusEffects || []).some(e => e.type === "stun");
@@ -4914,11 +5015,6 @@ async function enemyAction(enemy) {
             resolvePhysicalHit(enemy, target, atkSkillName);
             checkVictoryCondition();
             await sleep(700);                   // ダメージ表示を見せる間
-        }
-        if (trialFollowUpAvailable(enemy, target)) { // [trial]
-            runTrialFollowUp(enemy, target, atkStat, atkSkillName);
-            checkVictoryCondition();
-            await sleep(700);
         }
     }
 
