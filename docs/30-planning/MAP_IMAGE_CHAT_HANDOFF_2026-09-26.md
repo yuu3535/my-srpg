@@ -27,6 +27,10 @@
 8. docs/30-planning/ART_PRODUCTION_BRIEF_2026-09-26.md
 9. docs/90-worklogs/ の最新作業メモ
 
+次に実制作へ進む際は、以下のフォルダも確認してください。
+C:\Users\jade-\Desktop\自作srpg 2\原作trpgシナリオ新生・百年戦争編
+ここには原作シナリオと背景フルセットが入っています。内容確認と制作への反映は、マップ画像制作を再開する回に行ってください。
+
 現在の決定事項は、スマホ横画面、Unity、2:1アイソメトリック、1マス128×64pxです。
 最初のM1盤面は12×8で、下絵は assets/maps/iso_trial_12x8_guide.png です。
 
