@@ -1,10 +1,16 @@
 fileFormatVersion: 2
-guid: fe5a9e7f86d10a542a231096a73de0a9
+guid: 34faa40838379b2449e12ba16d612aa2
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -1576646844948739934
-    second: young_karima_0
+      213: 8437561740527331524
+    second: f_17_0
+  - first:
+      213: -4676435455322160504
+    second: f_17_1
+  - first:
+      213: -2848189977229673343
+    second: f_17_2
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -50,7 +56,7 @@ TextureImporter:
   spriteExtrude: 1
   spriteMeshType: 0
   alignment: 9
-  spritePivot: {x: 0.5, y: 0.02}
+  spritePivot: {x: 0.5, y: 0}
   spritePixelsToUnits: 100
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
@@ -72,7 +78,7 @@ TextureImporter:
   platformSettings:
   - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 1024
+    maxTextureSize: 512
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 0
@@ -113,13 +119,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: young_karima_0
+      name: f_17_0
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 1254
-        height: 1254
+        x: 10
+        y: 27
+        width: 141
+        height: 200
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +134,52 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 2a807964c00ae1ae0800000000000000
-      internalID: -1576646844948739934
+      spriteID: 4c8ee8ae2bd381570800000000000000
+      internalID: 8437561740527331524
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: f_17_1
+      rect:
+        serializedVersion: 2
+        x: 85
+        y: 220
+        width: 14
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8820b7eeab6f91fb0800000000000000
+      internalID: -4676435455322160504
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: f_17_2
+      rect:
+        serializedVersion: 2
+        x: 8
+        y: 161
+        width: 22
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 18cb56a5e423978d0800000000000000
+      internalID: -2848189977229673343
       vertices: []
       indices: 
       edges: []
@@ -148,7 +198,9 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      young_karima_0: -1576646844948739934
+      f_17_0: 8437561740527331524
+      f_17_1: -4676435455322160504
+      f_17_2: -2848189977229673343
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
