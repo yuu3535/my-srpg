@@ -349,6 +349,12 @@ function renderUnits() {
         el.id = `unit_${unit.id}`;
         el.dataset.id = unit.id;
 
+        // 駒の台座（TRPGの駒のように台座に立たせる。縁は味方＝青、敵＝赤。原作者 2026-09-26 案1）
+        const base = document.createElement("i");
+        base.className = "unitBase";
+        base.setAttribute("aria-hidden", "true");
+        el.appendChild(base);
+
         if (unit.tokenImage) {
             const img = document.createElement("img");
             img.src = unit.tokenImage;

@@ -6982,3 +6982,28 @@ html, body {
 
 /* 選択中の味方の枠（D4・Codex）は、実際の大きさ（1マス約36px）では線が0.4px程度になり見えなかったため、
    線を太くした版が届くまで従来の枠を使う（assets/ui/select_ally_v2.png は書き出し済み） */
+
+/* ============================================================
+   [unit-base] 駒の台座（原作者のTRPGの動画の表現・2026-09-26 案1）
+   縁（と側面）は陣営の色: 味方＝青、敵＝赤。天面は草地。キャラの絵の後ろに置く
+============================================================ */
+.battleUnit .unitBase {
+    --base-rim: #4d8cff;
+    --base-side: #2c5bc0;
+    position: absolute;
+    left: 50%;
+    bottom: 1%;
+    width: 74%;
+    aspect-ratio: 2.3;
+    z-index: -1;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: radial-gradient(ellipse at 50% 38%, #5a8a44, #2f4d27 72%);
+    border: 2px solid var(--base-rim);
+    box-shadow: 0 4px 0 0 var(--base-side), 0 6px 6px rgba(0, 0, 0, 0.55);
+    pointer-events: none;
+}
+.battleUnit.enemyUnit .unitBase {
+    --base-rim: #e5483c;
+    --base-side: #a32a22;
+}
