@@ -5776,3 +5776,75 @@ html, body {
 }
 .brfItemTake i { font-style: normal; font-size: 9px; color: rgba(224,189,115,0.7); }
 .brfItemEquip:active, .brfItemStore:active, .brfItemTake:active { transform: translateY(1px); }
+
+/* ── 戦闘予測（コンパクト版）: 攻撃側と受ける側を左右に並べ、受ける側の頭上に出す ── */
+#gameScreen[data-mode="battle"] #lsForecast,
+#gameScreen[data-mode="battle"] #lsForecast.atBottom {
+    right: auto;
+    bottom: auto;
+    width: 200px;
+    transform: translateX(-50%);
+}
+.refFc .refFcHead { padding: 3px 7px; font-size: 9px; }
+.refFc .refFcHead em { font-size: 8px; }
+.refFc.readOnly { border-color: rgba(229,110,78,0.6); }
+.refFc.readOnly .refFcHead span { color: #f0a27f; }
+.refFcGrid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 40px minmax(0, 1fr);
+    align-items: center;
+    row-gap: 1px;
+    padding: 4px 6px 3px;
+}
+.refFcName {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    padding-bottom: 3px;
+    border-bottom: 2px solid rgba(65,199,179,0.7);
+}
+.refFcName.enemy { border-bottom-color: rgba(229,110,78,0.75); }
+.refFcName.right { justify-content: flex-end; }
+.refFcName b {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: #f4e6c0;
+    font-size: 10px;
+}
+.refFcGrid .refFcFace { flex: none; width: 20px; height: 20px; background-repeat: no-repeat; border: 1px solid rgba(200,146,42,0.4); }
+.refFcGrid .k { text-align: center; color: rgba(224,189,115,0.62); font-size: 8px; letter-spacing: 0.08em; }
+.refFcGrid .v { text-align: center; color: #f4e6c0; font-size: 11px; line-height: 1.35; }
+.refFcGrid .v i { margin: 0 2px; color: rgba(224,189,115,0.6); font-style: normal; font-size: 7px; }
+.refFcGrid .v strong { color: #ffe2a0; font-weight: 700; }
+.refFcCounter {
+    padding: 2px 7px 3px;
+    text-align: center;
+    color: rgba(224,189,115,0.75);
+    font-size: 8px;
+    border-top: 1px dashed rgba(200,146,42,0.2);
+}
+.refFc .refFcNote {
+    padding: 0 7px 3px;
+    font-size: 7px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.refFc .refFcBtns { padding: 4px 6px 5px; gap: 4px; }
+.refFc .refFcBtns button { min-height: 20px; font-size: 10px; }
+
+/* 戦闘予測をさらに低く（盤面を隠さないため） */
+.refFc .refFcHead { padding: 2px 6px; font-size: 8px; }
+.refFcGrid { padding: 2px 6px 1px; row-gap: 0; }
+.refFcName { padding-bottom: 2px; }
+.refFcName b { font-size: 9px; }
+.refFcGrid .refFcFace { width: 16px; height: 16px; }
+.refFcGrid .v { font-size: 10px; line-height: 1.25; }
+.refFcGrid .k { font-size: 7px; }
+.refFcCounter { padding: 1px 6px 2px; font-size: 7px; }
+.refFc .refFcNote { padding: 0 6px 2px; font-size: 6.5px; }
+.refFc .refFcBtns { padding: 3px 6px 4px; }
+.refFc .refFcBtns button { min-height: 17px; font-size: 9px; letter-spacing: 0.12em; }

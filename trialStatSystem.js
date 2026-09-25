@@ -471,20 +471,21 @@ function trialAuraModifiers(attacker, defender, units) {
     const result = { accuracy: 0, critGuard: 0, notes: [] };
     const living = (units || []).filter(u => u && u.hp > 0);
     const owners = name => living.filter(u => (u.abilityNames || []).includes(name));
+    const who = owner => owner.name || owner.id;
     for (const owner of owners("死神")) {
         if (owner.side !== attacker.side && trialDistance(owner, attacker) <= 4) {
-            result.accuracy -= 10; result.notes.push("死神:命中-10");
+            result.accuracy -= 10; result.notes.push(`${who(owner)}の死神:命中-10`);
         }
         if (owner.side !== defender.side && trialDistance(owner, defender) <= 4) {
-            result.accuracy += 10; result.notes.push("死神:回避-10");
+            result.accuracy += 10; result.notes.push(`${who(owner)}の死神:相手の回避-10`);
         }
     }
     for (const owner of owners("王威")) {
         if (owner.side === attacker.side && owner.id !== attacker.id && trialDistance(owner, attacker) <= 4) {
-            result.accuracy += 10; result.notes.push("王威:命中+10");
+            result.accuracy += 10; result.notes.push(`${who(owner)}の王威:命中+10`);
         }
         if (owner.side === defender.side && owner.id !== defender.id && trialDistance(owner, defender) <= 4) {
-            result.accuracy -= 10; result.critGuard += 10; result.notes.push("王威:回避+10");
+            result.accuracy -= 10; result.critGuard += 10; result.notes.push(`${who(owner)}の王威:相手の回避・必殺耐性+10`);
         }
     }
     return result;

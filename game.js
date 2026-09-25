@@ -1381,6 +1381,7 @@ async function trialEnemyCastGrimoire(enemy, victim, spell) {
         await sleep(300);
         return;
     }
+    await trialShowEnemyForecast(enemy, victim, true, spell);
     trialExecuteExchange(enemy, victim, { kind: "grimoire", spell });
     checkVictoryCondition();
     await sleep(700);
@@ -2591,15 +2592,22 @@ function renderLandscapeSubCommandRail(unit, kind) {
     }
 }
 
-function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
+/**
+ * 戦闘予測（攻撃側・受ける側それぞれの HP・ダメージ・命中・必殺）。攻撃を受ける側の頭上に出す。
+ *   options.readOnly: 敵の攻撃のとき（ボタンなし・見るだけ）
+ *   options.isMagic / options.spell: 省略時は選んでいる攻撃（_vsAttack）から
+ */
+function renderLandscapeBattlePreview(attacker, target, pred, actionLabel, options = {}) {
     if (!lsForecast) return;
-    if (landscapeCommandList) landscapeCommandList.innerHTML = "";
-    setLandscapeRailVisible(false);   // 予測モーダル表示中は針を隠す
+    const readOnly = !!options.readOnly;
+    if (!readOnly) {
+        if (landscapeCommandList) landscapeCommandList.innerHTML = "";
+        setLandscapeRailVisible(false);   // 予測モーダル表示中はコマンドを隠す
+    }
 
-    // 戦闘後HPの予測（予測枠のHP表示に使う）。
-    // effectDesc は通常攻撃でも常に入るため、ダメージ系かは effectType で判定する
-    const isDamage = !_vsAttack?.isMagic
-        || ["magicDamage", "break"].includes(_vsAttack?.spell?.effectType);
+    const isMagic = options.isMagic ?? !!_vsAttack?.isMagic;
+    const spell = options.spell ?? _vsAttack?.spell;
+    const isDamage = !isMagic || ["magicDamage", "break"].includes(spell?.effectType);
     const dmgN = Number(pred.expDmg) || 0;
     const ctrN = pred.canCounter ? (Number(pred.ctrExpDmg) || 0) : 0;
     const counterHits = pred.counterFollowUp ? 2 : 1;
@@ -2608,74 +2616,125 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
         : isDamage ? Math.max(0, target.hp - dmgN - followUpN) : target.hp;
     const atkAfter = typeof pred.attackerHpAfter === "number" ? pred.attackerHpAfter
         : Math.max(0, attacker.hp - ctrN * counterHits);
-    const dmgDisp = pred.effectDesc || dmgN;
+    const dmgDisp = isDamage ? (pred.effectDesc || dmgN) : (pred.effectDesc || "─");
     const counterDmgDisp = pred.canCounter ? `${ctrN}${pred.counterFollowUp ? "×2" : ""}` : "─";
 
-    const activeCombatArt = getCombatArtData(selectedCombatArtId);
-    const effectNoteHtml = [pred.effectNotes, pred.counterNotes]
+    const activeCombatArt = readOnly ? null : getCombatArtData(selectedCombatArtId);
+    const noteText = [pred.effectNotes, pred.counterNotes ? `反撃: ${pred.counterNotes.replace(/^\s*\[|\]\s*$/g, "")}` : ""]
         .filter(Boolean)
         .map(note => note.replace(/^\s*\[|\]\s*$/g, ""))
         .join(" / ");
 
-    // 参考UI（マップ背景イメージたたき台）の戦闘予測：上部中央の小さな枠
-    const face = (u, cls) => {
+    const face = u => {
         const src = getPortraitSrc(u) || u.tokenImage || "";
         const style = src
             ? `background-image:url('${src}');background-size:${u.portraitBgSize || "cover"};background-position:${u.portraitBgPos || "center top"}`
             : "";
-        return `<i class="refFcFace ${cls}" style="${style}"></i>`;
+        return `<i class="refFcFace" style="${style}"></i>`;
     };
-    const counterRow = pred.canCounter
-        ? `<div class="counter"><dt>反撃</dt><dd>${counterDmgDisp}<small>${pred.counterLabel ? `${pred.counterLabel}・` : ""}命中${pred.ctrHitRate}%・発生${pred.counterRate}%</small></dd></div>`
-        : pred.counterBlockedReason
-            ? `<div class="counter"><dt>反撃</dt><dd>─<small>${pred.counterBlockedReason}</small></dd></div>`
-            : "";
+    const hp = (before, after) => after === before ? `${before}` : `${before}<i>▶</i><strong>${after}</strong>`;
+    const counterInfo = pred.canCounter
+        ? `反撃 ${pred.counterRate}%${pred.counterLabel ? `（${pred.counterLabel}）` : ""}`
+        : pred.counterBlockedReason ? `反撃なし（${pred.counterBlockedReason}）` : isDamage ? "反撃なし" : "";
+
     lsForecast.innerHTML = `
-        <div class="refFc">
-            <div class="refFcHead"><i class="refFcIcon" aria-hidden="true"></i><span>戦闘予測</span><em>${activeCombatArt?.name || actionLabel || "攻撃"}</em></div>
-            <div class="refFcHp">
-                ${face(attacker, "ally")}
-                <div class="refFcHpNums">
-                    <b class="ally">${atkAfter}</b>
-                    <i aria-hidden="true">▶</i>
-                    <b class="enemy">${defAfter}</b>
-                    <small>HP</small>
-                </div>
-                ${face(target, "enemy")}
+        <div class="refFc${readOnly ? " readOnly" : ""}">
+            <div class="refFcHead"><span>${readOnly ? "敵の攻撃" : "戦闘予測"}</span><em>${activeCombatArt?.name || actionLabel || "攻撃"}</em></div>
+            <div class="refFcGrid">
+                <div class="refFcName ${attacker.side}">${face(attacker)}<b>${attacker.name}</b></div>
+                <span></span>
+                <div class="refFcName ${target.side} right"><b>${target.name}</b>${face(target)}</div>
+                <span class="v">${hp(attacker.hp, atkAfter)}</span><span class="k">HP</span><span class="v">${hp(target.hp, defAfter)}</span>
+                <span class="v">${dmgDisp}</span><span class="k">ダメージ</span><span class="v">${counterDmgDisp}</span>
+                <span class="v">${pred.hitRate}%</span><span class="k">命中</span><span class="v">${pred.canCounter ? `${pred.ctrHitRate}%` : "─"}</span>
+                <span class="v">${isDamage ? `${pred.critRate}%` : "─"}</span><span class="k">必殺</span><span class="v">${pred.canCounter ? `${pred.ctrCritRate}%` : "─"}</span>
             </div>
-            <dl class="refFcRows">
-                <div><dt>攻撃</dt><dd>${isDamage ? dmgDisp : pred.effectDesc}</dd></div>
-                <div><dt>命中</dt><dd>${pred.hitRate}%</dd></div>
-                <div><dt>必殺</dt><dd>${isDamage ? `${pred.critRate}%` : "─"}</dd></div>
-                ${counterRow}
-            </dl>
-            ${effectNoteHtml ? `<div class="refFcNote">${effectNoteHtml}</div>` : ""}
-            <div class="refFcBtns">
+            ${counterInfo ? `<div class="refFcCounter">${counterInfo}</div>` : ""}
+            ${noteText ? `<div class="refFcNote" title="${noteText}">${noteText}</div>` : ""}
+            ${readOnly ? "" : `<div class="refFcBtns">
                 <button type="button" id="lsFcCancel">キャンセル</button>
                 <button type="button" id="lsFcConfirm">実行</button>
-            </div>
+            </div>`}
         </div>
     `;
-    // 攻撃対象を隠さないよう、対象が盤面の上半分にいるときは枠を下に出す
-    lsForecast.classList.toggle("atBottom", target.y < GRID_ROWS / 2);
     lsForecast.classList.remove("hidden");
     setLandscapeForecastOpen(true);
+    positionLandscapeForecast(target);
 
+    if (readOnly) {
+        setLandscapeHint(!actionLabel || actionLabel === "攻撃"
+            ? `${attacker.name}が${target.name}を攻撃しようとしている`
+            : `${attacker.name}が${target.name}に${actionLabel}を使おうとしている`);
+        return;
+    }
     document.getElementById("lsFcConfirm").addEventListener("click", () => {
         executePendingBattlePreview();
     });
     document.getElementById("lsFcCancel").addEventListener("click", () => {
         if (!_vsAttack) return;
-        const { isMagic } = _vsAttack;
+        const { isMagic: cancelMagic } = _vsAttack;
         hideBattlePreview();
         actionState = null;
         clearHighlights();
         if (selectedUnit) {
-            if (isMagic) renderLandscapeSubCommandRail(selectedUnit, "magic");
+            if (cancelMagic) renderLandscapeSubCommandRail(selectedUnit, "magic");
             else renderLandscapeSubCommandRail(selectedUnit, "attack");
         }
     });
     setLandscapeHint(`${target.name}への${actionLabel || "攻撃"}を実行しますか。`);
+}
+
+/** 戦闘予測の枠を、攻撃を受ける側の頭上に置く（上に入らなければ足元の下） */
+function positionLandscapeForecast(target) {
+    const shell = landscapeBattleShell;
+    const unitEl = document.getElementById(`unit_${target.id}`);
+    if (!shell || !unitEl || !lsForecast) return;
+    const shellRect = shell.getBoundingClientRect();
+    const unitRect = unitEl.getBoundingClientRect();
+    const scale = shellRect.width / (shell.offsetWidth || shellRect.width) || 1;
+    const boxWidth = lsForecast.offsetWidth;
+    const boxHeight = lsForecast.offsetHeight;
+    const shellWidth = shell.offsetWidth;
+    const shellHeight = shell.offsetHeight;
+    const centerX = (unitRect.left + unitRect.width / 2 - shellRect.left) / scale;
+    const centerY = (unitRect.top + unitRect.height / 2 - shellRect.top) / scale;
+    const unitTop = (unitRect.top - shellRect.top) / scale;
+    const unitBottom = (unitRect.bottom - shellRect.top) / scale;
+    const unitLeft = (unitRect.left - shellRect.left) / scale;
+    const unitRight = (unitRect.right - shellRect.left) / scale;
+    const gap = 6;
+    const clampX = x => Math.max(6 + boxWidth / 2, Math.min(shellWidth - 6 - boxWidth / 2, x));
+    const clampY = y => Math.max(6, Math.min(shellHeight - boxHeight - 6, y));
+    let left;
+    let top;
+    if (unitTop - boxHeight - gap >= 36) {
+        // 頭上
+        left = clampX(centerX);
+        top = unitTop - boxHeight - gap;
+    } else if (unitRight + gap + boxWidth <= shellWidth - 6) {
+        // 頭上に入らなければ右横
+        left = unitRight + gap + boxWidth / 2;
+        top = clampY(centerY - boxHeight / 2);
+    } else if (unitLeft - gap - boxWidth >= 6) {
+        // 右にも入らなければ左横
+        left = unitLeft - gap - boxWidth / 2;
+        top = clampY(centerY - boxHeight / 2);
+    } else {
+        left = clampX(centerX);
+        top = clampY(unitBottom + gap);
+    }
+    lsForecast.style.left = `${Math.round(left)}px`;
+    lsForecast.style.top = `${Math.round(top)}px`;
+}
+
+/** [trial] 敵の攻撃の前に、戦闘予測を見るだけで表示する */
+async function trialShowEnemyForecast(enemy, victim, isMagic, spell) {
+    if (!isTrialPair(enemy, victim)) return;
+    const pred = trialPlanPrediction(enemy, victim, isMagic, spell);
+    renderLandscapeBattlePreview(enemy, victim, pred, isMagic ? (spell?.name || "魔法") : "攻撃", { readOnly: true, isMagic, spell });
+    await sleep(1400);
+    lsForecast?.classList.add("hidden");
+    setLandscapeForecastOpen(false);
 }
 
 function syncLandscapeBattleUi(unit = selectedUnit) {
@@ -4894,6 +4953,7 @@ async function executeDeclaredAction(enemy, decl) {
     }
 
     if (isTrialPair(enemy, victim)) {   // [trial] 交戦の計画で処理
+        await trialShowEnemyForecast(enemy, victim, false, null);
         trialExecuteExchange(enemy, victim, { kind: "weapon" });
         checkVictoryCondition();
         await sleep(700);
@@ -5057,6 +5117,7 @@ async function enemyAction(enemy) {
     if (distAfter <= enemy.attackRange && enemySpell) {
         await trialEnemyCastGrimoire(enemy, target, enemySpell);
     } else if (distAfter <= enemy.attackRange && isTrialPair(enemy, target)) {   // [trial] 交戦の計画で処理
+        await trialShowEnemyForecast(enemy, target, false, null);
         trialExecuteExchange(enemy, target, { kind: "weapon" });
         checkVictoryCondition();
         await sleep(700);
