@@ -64,8 +64,7 @@ const roles = plan => plan.steps.map(step => step.type === "strike" ? step.role 
     // 1B: 最初の攻撃が外れても反撃する。2A: 外れても追撃する
     const missed = bpPlanExchange(fast, slow, weapon, {}, bpFixedRolls([
         99,      // hit（外れ）
-        10,      // counter（勇気60以下で反撃）
-        10, 99,  // 反撃の hit（命中35%）・crit
+        10, 99,  // 反撃の hit（命中35%）・crit（反撃は射程内なら必ず起きる）
         50, 99,  // 追撃の hit・crit
     ]));
     assert.deepEqual(roles(missed), ["attack", "check:true", "counter", "followUp"]);
@@ -74,8 +73,12 @@ const roles = plan => plan.steps.map(step => step.type === "strike" ? step.role 
     assert.equal(missed.steps[3].hit, true);
 
     // 反撃の追撃（防御側が速い）
-    const counterFollow = bpPlanExchange(slow, fast, weapon, {}, bpFixedRolls([10, 99, 10, 50, 99, 50, 99]));   // 遅い側の命中は35%
+    const counterFollow = bpPlanExchange(slow, fast, weapon, {}, bpFixedRolls([10, 99, 50, 99, 50, 99]));   // 遅い側の命中は35%
     assert.deepEqual(roles(counterFollow), ["attack", "check:true", "counter", "counterFollowUp"]);
+
+    // 反撃は勇気に関係なく、射程内なら必ず起きる（原作者 2026-09-25: FE式）
+    const timid = unit("timid", { side: "enemy", x: 1, courage: 0 });
+    assert.deepEqual(roles(bpPlanExchange(fast, timid, weapon, {}, bpFixedRolls([99, 99, 99, 99, 99, 99]))).slice(0, 3), ["attack", "check:true", "counter"]);
 
     // 3B: 魔導書の魔法も追撃する
     const book = { kind: "grimoire", spell: FIRE };
@@ -110,7 +113,7 @@ const roles = plan => plan.steps.map(step => step.type === "strike" ? step.role 
     assert.equal(bpPlanExchange(sword, unit("bare", { x: 0, y: 1, equippedItem: null })).steps[1].reason, "装備なし");
     // 野望: 反撃を封じる
     const albas = unit("albas", { abilityNames: ["野望"], stats: { hp: 30, atk: 30, def: 20, mag: 30, res: 20, tec: 20, spd: 20, cha: 40 } });
-    const sealed = bpPlanExchange(albas, unit("e", { side: "enemy", x: 1 }), weapon, {}, bpFixedRolls([50, 99, 10, 30]));
+    const sealed = bpPlanExchange(albas, unit("e", { side: "enemy", x: 1 }), weapon, {}, bpFixedRolls([50, 99, 30]));
     assert.equal(sealed.steps[1].seal.active, true);
     assert.equal(sealed.steps.some(step => step.role === "counter"), false);
 }
@@ -184,7 +187,7 @@ const roles = plan => plan.steps.map(step => step.type === "strike" ? step.role 
     assert.equal(sealed.steps[1].reason, "封じられている");
     assert.equal(sealed.defender.statusEffects.some(e => e.type === "sealed"), true);
     // 封じが外れれば反撃の判定をする
-    const notSealed = bpPlanExchange(caster, foe, { kind: "magicArt", artName: "落雷", spell: LIGHTNING }, {}, bpFixedRolls([50, 99, 50, 10, 50, 99]));
+    const notSealed = bpPlanExchange(caster, foe, { kind: "magicArt", artName: "落雷", spell: LIGHTNING }, {}, bpFixedRolls([50, 99, 50, 50, 99]));
     assert.equal(notSealed.steps[1].ok, true);
     // 予測の見込みでは封じは起きない（反撃ありで見積もる）が、補正の欄に発動率を出す
     assert.ok(bpForecast(caster, foe, { kind: "magicArt", artName: "落雷", spell: LIGHTNING }).first.notes.includes("落雷:封じ20%"));

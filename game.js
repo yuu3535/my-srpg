@@ -1318,11 +1318,10 @@ function trialExecuteExchange(attacker, defender, action) {
         if (step.type === "counterCheck") {
             const who = unitsById[step.actorId];
             if (step.reason) addLog(`  反撃なし（${who.name}：${step.reason}）`);
-            else if (step.courageRoll > step.courageRate) addLog(`  反撃せず（勇気 ${step.courageRoll}/${step.courageRate}%）`);
             else if (step.seal?.active) addLog(`  野望：${who.name}の反撃を封じた（${step.seal.roll}/${step.seal.chance}%）`);
             else {
                 showMessage(who.name, "反撃！");
-                addLog(`  反撃発生！（勇気 ${step.courageRoll}/${step.courageRate}%）`);
+                addLog(`  反撃！（${who.name}・${step.label}）`);
             }
             continue;
         }
@@ -1860,8 +1859,9 @@ function calculateMagicDamage(caster, target, spell, options = {}) {
     return { damage, raw: mastered, magic: atkStats.magic + casterDerivedBonus, spellPower, ward: defStats.ward + targetDerivedBonus, masteryBonus, masteryNote };
 }
 
+/** 反撃が起きる確率。射程内なら必ず反撃する（原作者 2026-09-25: 勇気%の確率発動をやめ、FE式に） */
 function getCounterRate(unit) {
-    return Math.max(0, Math.min(100, getEffectiveCourage(unit)));
+    return 100;
 }
 
 function getEffectiveCourage(unit) {
@@ -3306,9 +3306,9 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel, optio
         const afterPct = Math.max(0, Math.min(100, after / max * 100));
         return `<span class="refFcBar ${u.side}"><i class="lost" style="width:${nowPct}%"></i><i class="after" style="width:${afterPct}%"></i></span>`;
     };
-    // 反撃は勇気%で起きるかどうかが決まる（起きれば右列の命中・ダメージで攻撃してくる）
+    // 反撃は射程内なら必ず起きる（原作者 2026-09-25）。野望で封じる確率があるときだけ確率を出す
     const counterInfo = pred.canCounter
-        ? `反撃してくる確率 ${pred.counterRate}%${pred.counterLabel ? `・${pred.counterLabel}` : ""}`
+        ? `反撃あり${pred.counterLabel ? `・${pred.counterLabel}` : ""}${pred.counterRate < 100 ? `（野望で封じられなければ・${pred.counterRate}%）` : ""}`
         : pred.counterBlockedReason ? `反撃なし（${pred.counterBlockedReason}）` : isDamage ? "反撃なし" : "";
 
     lsForecast.innerHTML = `
@@ -3714,7 +3714,7 @@ function resolvePhysicalHit(attacker, target, atkSkillName, options = {}) {
         if (counterRoll <= counterRate) {
             counterTriggered = true;
             showMessage(target.name, "反撃！");
-            addLog(`  反撃発生！（勇気 ${counterRoll}/${counterRate}%）`);
+            addLog(`  反撃！（${target.name}）`);
             resolveCounterAttack(attacker, target);
         } else {
             addLog(`  反撃せず（勇気 ${counterRoll}/${counterRate}%）`);
@@ -4424,7 +4424,7 @@ function trialPlanPrediction(attacker, target, isMagic, spell) {
         : `${first.dealt}`;
     const check = f.counterCheck;
     const sealChance = check?.seal?.chance || 0;
-    const counterRate = check && !check.reason ? Math.round(check.courageRate * (100 - sealChance) / 100) : 0;
+    const counterRate = check && !check.reason ? 100 - sealChance : 0;
     const counter = f.counter;
     return {
         hitRate: first.hitRate,
@@ -6452,7 +6452,7 @@ function renderTrialStatusSheet(unit) {
           </div>
           <div class="adventureMetrics coreStats">
             ${metric("勇気", courage, `<small>/${profile.courage}</small>`)}${metric("運", profile.luck)}
-            ${metric("反撃率", `${getCounterRate(unit)}%`)}${metric("成長補正", `+${trialGrowthBonus(profile)}%`)}
+            ${metric("体格", unit.trialSiz ?? "―")}${metric("成長補正", `+${trialGrowthBonus(profile)}%`)}
           </div>
         </section>
 

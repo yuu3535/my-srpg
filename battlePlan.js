@@ -387,17 +387,14 @@ function bpPlanExchange(attackerSnapshot, defenderSnapshot, action, env = {}, ro
         } else if (!plan.canCounter) {
             steps.push({ type: "counterCheck", ok: false, reason: plan.reason, actorId: defender.id, label: plan.label });
         } else {
-            const courageRate = Math.max(0, Math.min(100, Number(defender.courage || 0)));
-            const courageRoll = rolls.percent("counter");
-            const check = { type: "counterCheck", ok: false, actorId: defender.id, label: plan.label, courageRate, courageRoll };
-            if (courageRoll <= courageRate) {
-                if (bpHas(attacker, "野望")) {
-                    const sealChance = bpAbilityChance("野望", attacker.stats);
-                    const sealRoll = rolls.percent("seal");
-                    check.seal = { roll: sealRoll, chance: sealChance, active: sealRoll <= sealChance };
-                }
-                check.ok = !check.seal?.active;
+            // 射程内なら必ず反撃する（FE式。原作者 2026-09-25: 勇気%の確率発動はやめる）。野望だけが確率で封じる
+            const check = { type: "counterCheck", ok: false, actorId: defender.id, label: plan.label };
+            if (bpHas(attacker, "野望")) {
+                const sealChance = bpAbilityChance("野望", attacker.stats);
+                const sealRoll = rolls.percent("seal");
+                check.seal = { roll: sealRoll, chance: sealChance, active: sealRoll <= sealChance };
             }
+            check.ok = !check.seal?.active;
             steps.push(check);
             if (check.ok) {
                 counterAction = plan.action;
@@ -504,7 +501,7 @@ function bpScoreAttack(forecast, defenderHp, attackerHp) {
 
     const check = forecast.counterCheck;
     const counterChance = check && !check.reason
-        ? Math.max(0, Math.min(100, check.courageRate)) / 100 * (1 - (check.seal?.chance || 0) / 100)
+        ? 1 - (check.seal?.chance || 0) / 100
         : 0;
     const counter = forecast.counter;
     const counterFollowUp = forecast.counterFollowUp;
