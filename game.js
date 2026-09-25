@@ -271,7 +271,7 @@ function getCell(row, col) {
 
 function clearHighlights() {
     for (const cell of battleGrid.children) {
-        cell.classList.remove("highlightMove", "highlightAttack", "allyActionRange", "enemyActionRange", "highlightTransfer");
+        cell.classList.remove("highlightMove", "highlightAttack", "allyActionRange", "enemyActionRange", "highlightTransfer", "cellMovePending");
     }
 }
 
@@ -566,7 +566,19 @@ function onCellClick(row, col) {
         showMessage("SYSTEM", "そのマスには別のユニットがいます。");
         return;
     }
+    // タッチ操作ではカーソルを乗せられないので、1回目で移動先に印を出し、同じマスをもう一度押すと移動する（原作者 2026-09-25）
+    if (landscapeNeedsMoveConfirm() && !cell.classList.contains("cellMovePending")) {
+        battleGrid.querySelectorAll(".cellMovePending").forEach(c => c.classList.remove("cellMovePending"));
+        cell.classList.add("cellMovePending");
+        setLandscapeHint("もう一度押すと、ここへ移動します。");
+        return;
+    }
     moveUnit(selectedUnit, row, col);
+}
+
+/** 移動先を2回押しで決めるか（カーソルを乗せられないタッチ操作のとき） */
+function landscapeNeedsMoveConfirm() {
+    return isLandscapeBattleUi() && !!window.matchMedia?.("(hover: none)").matches;
 }
 
 // =============================================
@@ -3413,6 +3425,67 @@ function syncLandscapeBattleUi(unit = selectedUnit) {
     renderLandscapeRoster();
     renderLandscapeUnitPanel(unit);
     renderLandscapeCommandRail(unit);
+    keepLandscapeUnitVisible(unit);
+}
+
+/**
+ * 選んだユニットが、左下のカード・右のコマンド一覧・上の帯・左の一覧に隠れていたら、
+ * 盤面を動かして見える位置に出す（原作者 2026-09-25）
+ */
+let lsPanFrame = 0;
+let lsPanKey = "";
+function keepLandscapeUnitVisible(unit) {
+    if (!isLandscapeBattleUi() || !unit || gameMode !== "battle" || typeof mapPanX === "undefined") return;
+    // 選び直したとき・移動したときだけ動かす（自分で動かした盤面を引き戻さない）
+    const key = `${unit.id}:${unit.x},${unit.y}`;
+    if (key === lsPanKey) return;
+    lsPanKey = key;
+    // カードや一覧が出る動き（約0.2秒）が終わってから位置を測る
+    clearTimeout(lsPanFrame);
+    lsPanFrame = setTimeout(() => {
+        const unitEl = document.getElementById(`unit_${unit.id}`);
+        const shell = landscapeBattleShell;
+        if (!unitEl || !shell) return;
+        const shellRect = shell.getBoundingClientRect();
+        const scale = shellRect.width / (shell.offsetWidth || shellRect.width) || 1;
+        const u = unitEl.getBoundingClientRect();
+        const margin = 8 * scale;
+        const blockers = [
+            ...document.querySelectorAll("#landscapeUnitContent > *"),
+            landscapeCommandList,
+            document.getElementById("landscapeRoster"),
+            document.getElementById("landscapeTopStrip"),
+        ].filter(el => el && el.offsetParent !== null && getComputedStyle(el).visibility !== "hidden")
+            .map(el => el.getBoundingClientRect())
+            .filter(r => r.width > 0 && r.height > 0);
+        const hits = blockers.filter(r => u.left < r.right && u.right > r.left && u.top < r.bottom && u.bottom > r.top);
+        if (!hits.length) return;
+        // いちばん少ない動きで外に出す向きを選ぶ（上下左右）
+        let dx = 0;
+        let dy = 0;
+        for (const r of hits) {
+            const moves = [
+                { dx: 0, dy: r.top - margin - u.bottom },    // 上へ
+                { dx: 0, dy: r.bottom + margin - u.top },    // 下へ
+                { dx: r.left - margin - u.right, dy: 0 },    // 左へ
+                { dx: r.right + margin - u.left, dy: 0 },    // 右へ
+            ].filter(m => {
+                const top = u.top + m.dy;
+                const bottom = u.bottom + m.dy;
+                const left = u.left + m.dx;
+                const right = u.right + m.dx;
+                return top >= shellRect.top && bottom <= shellRect.bottom && left >= shellRect.left && right <= shellRect.right;
+            });
+            const best = moves.sort((a, b) => Math.hypot(a.dx, a.dy) - Math.hypot(b.dx, b.dy))[0];
+            if (best && Math.hypot(best.dx, best.dy) > Math.hypot(dx, dy)) ({ dx, dy } = best);
+        }
+        if (!dx && !dy) return;
+        battleCanvas.classList.add("autoPanning");
+        mapPanX += dx / scale;
+        mapPanY += dy / scale;
+        applyMapTransform();
+        setTimeout(() => battleCanvas.classList.remove("autoPanning"), 320);
+    }, 260);
 }
 
 // =============================================
