@@ -6527,3 +6527,181 @@ html, body {
 @keyframes lsMovePending { from { opacity: 0.7; } to { opacity: 1; } }
 /* 選んだユニットが隠れないよう盤面を動かすとき */
 #battleCanvas.autoPanning { transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* ============================================================
+   [status-tabs] タブ式のステータス画面（UI案1枚目の形。原作者 2026-09-25）
+   左: 顔一覧 ／ 中央: 立ち絵と名札 ／ 右: タブと中身。枠は assets/ui/ の素材
+============================================================ */
+#statusModalBody:has(.stSheet) { padding: 0; overflow: hidden; }
+.stSheet {
+    display: grid;
+    grid-template-columns: 50px 236px minmax(0, 1fr);
+    height: 100%;
+    min-height: 0;
+}
+.stRoster {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 2px;
+    overflow-y: auto;
+    scrollbar-width: none;
+    border: 5px solid transparent;
+    border-image: url("assets/ui/list_cell.png") 22 fill / 8px stretch;
+}
+.stRosterFace {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    overflow: hidden;
+    background: #140b1f;
+    border: 1px solid rgba(200,146,42,0.4);
+    cursor: pointer;
+}
+.stRosterFace i { display: block; width: 100%; height: 100%; background-repeat: no-repeat; }
+.stRosterFace.active { border-color: #9fd0ff; box-shadow: 0 0 6px rgba(120,190,255,0.7); }
+.stRosterFace:active { transform: scale(0.95); }
+
+.stPortrait { position: relative; overflow: hidden; }
+.stPortraitArt { position: absolute; inset: 0; background-repeat: no-repeat; }
+.stPortrait::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0;
+    height: 45%;
+    background: linear-gradient(180deg, transparent, rgba(6,4,14,0.92));
+    pointer-events: none;
+}
+.stNameplate {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    gap: 2px 8px;
+    padding: 2px 6px;
+    border: 8px solid transparent;
+    border-image: url("assets/ui/panel_small.png") 22 fill / 8px stretch;
+}
+.stNameplate strong { color: #f3e2b6; font-size: 18px; letter-spacing: 0.14em; }
+.stNameplate span { color: rgba(224,189,115,0.8); font-size: 10px; }
+.stNameplate em { grid-column: 1 / -1; display: flex; align-items: center; gap: 5px; color: rgba(236,210,142,0.85); font-size: 10px; font-style: normal; }
+.stNameplate em i { width: 6px; height: 6px; transform: rotate(45deg); background: #c8922a; }
+
+.stMain { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: 6px 8px 8px 6px; }
+.stTabs { display: flex; gap: 2px; }
+.stTab {
+    flex: 1;
+    min-width: 0;
+    height: 28px;
+    padding: 0;
+    color: rgba(224,189,115,0.65);
+    font-family: inherit;
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    background: none;
+    border: 6px solid transparent;
+    border-image: url("assets/ui/tab_off.png") 18 28 fill / 6px 10px stretch;
+    cursor: pointer;
+}
+.stTab.active {
+    color: #ffe2a0;
+    border-image-source: url("assets/ui/tab_on.png");
+}
+.stTab:active { transform: translateY(1px); }
+.stContent {
+    flex: 1;
+    min-height: 0;
+    margin-top: 3px;
+    padding: 0 6px 2px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    color: #eadfc4;
+    font-size: 11px;
+    border: 12px solid transparent;
+    border-image: url("assets/ui/panel_large.png") 26 fill / 12px stretch;
+}
+.stCols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.stHead {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin: 3px 0 3px;
+    padding-left: 6px;
+    color: #ecd28e;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    border-left: 2px solid #c8922a;
+}
+.stHead small { color: rgba(224,189,115,0.5); font-size: 8.5px; font-weight: 400; letter-spacing: 0.06em; }
+.stNote { margin: 2px 0 6px; color: rgba(224,189,115,0.5); font-size: 8.5px; }
+
+.stGauge { display: grid; grid-template-columns: 30px minmax(0, 1fr) 62px; align-items: center; gap: 6px; margin-bottom: 5px; }
+.stGauge > span { color: rgba(224,189,115,0.75); font-size: 10px; }
+.stGauge > b { color: #f3e2b6; font-size: 13px; text-align: right; }
+.stGauge > b small { color: rgba(224,189,115,0.55); font-size: 9px; }
+.stGaugeBar { position: relative; height: 12px; background: url("assets/ui/gauge_base.png") center / 100% 100% no-repeat; }
+.stGaugeBar i { position: absolute; inset: 0; background: url("assets/ui/gauge_green.png") center / 100% 100% no-repeat; }
+.stGauge.mp .stGaugeBar i { background-image: url("assets/ui/gauge_blue.png"); }
+.stGauge.exp .stGaugeBar i { background-image: url("assets/ui/gauge_blue.png"); filter: hue-rotate(45deg); }
+
+.stRows { display: grid; gap: 1px; margin: 0; }
+.stRow { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 3px 2px; border-bottom: 1px solid rgba(224,176,72,0.12); }
+.stRow dt { color: rgba(224,189,115,0.72); font-size: 10.5px; }
+.stRow dd { margin: 0; color: #f3e2b6; font-size: 12px; text-align: right; }
+.stRow dd small { color: rgba(224,189,115,0.55); font-size: 9px; }
+.stRow[title] { cursor: help; }
+
+.stStats { display: grid; gap: 3px; margin: 0; }
+.stStat { display: grid; grid-template-columns: 36px minmax(0, 1fr) 58px; align-items: center; gap: 6px; }
+.stStat dt { color: rgba(224,189,115,0.75); font-size: 10.5px; }
+.stStat dd { margin: 0; color: #f3e2b6; font-size: 12px; text-align: right; }
+.stStat dd small { color: rgba(224,189,115,0.5); font-size: 9px; }
+.stStatBar { height: 4px; background: rgba(0,0,0,0.55); border: 1px solid rgba(224,176,72,0.2); }
+.stStatBar i { display: block; height: 100%; background: linear-gradient(90deg, #8a5a1c, #e0b050); }
+
+.stClassHead { display: flex; align-items: baseline; gap: 10px; margin: 0 0 2px; }
+.stClassHead b { color: #ecd28e; font-size: 13px; letter-spacing: 0.12em; }
+.stClassHead span { color: rgba(224,189,115,0.6); font-size: 9.5px; }
+.stSlotGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+.stSlotGrid.one { grid-template-columns: 1fr; }
+.stSlot {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px;
+    min-height: 28px;
+    padding: 1px 6px;
+    background: rgba(20,10,32,0.55);
+    border: 1px solid rgba(224,176,72,0.16);
+}
+.stSlot.empty { opacity: 0.5; }
+.stSlot .abIcon.stSlotIcon, .stSlot > .stSlotIcon { width: 26px; height: 26px; }
+.stSlot > span:not(.abIcon) { display: flex; flex-direction: column; min-width: 0; }
+.stSlot b { color: #f3e2b6; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stSlot small { color: rgba(224,189,115,0.6); font-size: 8.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stSlot > i { color: rgba(224,189,115,0.5); font-size: 8px; font-style: normal; }
+
+.stChips { display: flex; flex-wrap: wrap; gap: 4px; }
+.stChips span { padding: 3px 8px; color: #f3e2b6; font-size: 11px; background: rgba(40,16,58,0.7); border: 1px solid rgba(224,176,72,0.3); }
+.stChips small { margin-left: 5px; color: rgba(224,189,115,0.55); font-size: 8.5px; }
+.stChips em { color: rgba(224,189,115,0.5); font-style: normal; }
+
+.stWeapon { padding: 4px 8px; background: rgba(20,10,32,0.55); border: 1px solid rgba(224,176,72,0.2); }
+.stWeaponName { display: flex; align-items: center; gap: 6px; padding-bottom: 4px; margin-bottom: 2px; border-bottom: 1px solid rgba(224,176,72,0.25); color: #ecd28e; }
+.stWeaponName b { font-size: 13px; }
+.stWeaponName small { margin-left: auto; color: rgba(224,189,115,0.6); font-size: 9px; }
+.stWeapon.none .stWeaponName small { color: #e08a70; }
+.stItems { display: grid; gap: 3px; margin: 0; padding: 0; list-style: none; }
+.stItems li { display: flex; align-items: center; gap: 6px; min-height: 24px; padding: 2px 8px; color: #f3e2b6; background: rgba(20,10,32,0.55); border: 1px solid rgba(224,176,72,0.16); }
+.stItems li.empty { color: rgba(224,189,115,0.35); }
+.stItems li.equipped { border-color: rgba(224,176,72,0.55); }
+.stItems li small { margin-left: auto; color: #ecd28e; font-size: 8.5px; }
+.stBio p { margin: 0; color: #eadfc4; font-size: 11px; line-height: 1.8; }
