@@ -271,7 +271,7 @@ function getCell(row, col) {
 
 function clearHighlights() {
     for (const cell of battleGrid.children) {
-        cell.classList.remove("highlightMove", "highlightAttack", "allyActionRange", "enemyActionRange");
+        cell.classList.remove("highlightMove", "highlightAttack", "allyActionRange", "enemyActionRange", "highlightTransfer");
     }
 }
 
@@ -429,6 +429,21 @@ function onUnitClick(unit) {
     }
     if (gameMode !== "battle" || battleOver) return;
 
+    // ── [trial] 転移: 1段階目は味方を選ぶ。2段階目でユニットを押したら、そのマスは使えない ──
+    if (actionState === "trialTransferAlly" && trialTransferState) {
+        trialPickTransferAlly(unit);
+        return;
+    }
+    if (actionState === "trialTransferTile" && trialTransferState) {
+        if (unit === trialTransferState.ally) {
+            // 選び直し: もう一度味方を選ぶ段階へ
+            trialStartTransfer(trialTransferState.caster, trialTransferState.spell);
+        } else {
+            showMessage("SYSTEM", "そのマスには別のユニットがいます。光っているマスを選んでください。");
+        }
+        return;
+    }
+
     // ── 攻撃対象選択中 ──
     if (actionState === "attacking" && selectedUnit) {
         if (unit.side !== selectedUnit.side && unit.hp > 0) {
@@ -519,6 +534,14 @@ function onCellClick(row, col) {
     }
     if (_mapDragged) { _mapDragged = false; return; }
     if (gameMode !== "battle" || battleOver) return;
+
+    // [trial] 転移（戦技）の移動先
+    if (actionState === "trialTransferTile" && trialTransferState) {
+        const cell = getCell(row, col);
+        if (!cell || !cell.classList.contains("highlightMove")) return;
+        trialExecuteTransfer(row, col);
+        return;
+    }
 
     // 転移先マス選択
     if (actionState === "magic" && selectedUnit && selectedSpell?.effectType === "teleport") {
@@ -1487,6 +1510,71 @@ function trialCastLineArt(caster, spell, target) {
     trialExecuteArea(caster, targets, { kind: "magicArt", artName: "万雷", spell });
     endUnitTurn(caster);
     checkVictoryCondition();
+}
+
+// ── [trial] 転移: 味方を指定した位置に移動させる。範囲は魔攻÷2（CSVの効果文） ──
+//   1段階目: 範囲内の味方（自分も可）を選ぶ → 2段階目: 範囲内の空いているマスを選ぶ
+let trialTransferState = null;
+
+function trialTransferRange(caster) {
+    return Math.max(1, Math.floor(Number(caster?.trialStats?.mag || 0) / 2));
+}
+
+function trialDistanceTo(a, x, y) {
+    return Math.abs(a.x - x) + Math.abs(a.y - y);
+}
+
+function trialStartTransfer(caster, spell) {
+    const range = trialTransferRange(caster);
+    trialTransferState = { caster, spell, range, ally: null };
+    selectedSpell = spell;
+    actionState = "trialTransferAlly";
+    clearHighlights();
+    hideForecastLayer();
+    const allies = battleUnits.filter(u => u.hp > 0 && u.side === caster.side && trialDistanceTo(caster, u.x, u.y) <= range);
+    for (const ally of allies) getCell(ally.y, ally.x)?.classList.add("highlightTransfer");
+    addLog(`・${caster.name}は 転移 を詠唱中...（範囲${range}マス）`);
+    setLandscapeHint(`転移させる味方を選んでください（${caster.name}から${range}マス以内。自分も選べます）`);
+    syncLandscapeBattleUi(caster);
+}
+
+function trialPickTransferAlly(unit) {
+    const state = trialTransferState;
+    if (unit.side !== state.caster.side || unit.hp <= 0) {
+        showMessage("SYSTEM", "転移させられるのは味方だけです。");
+        return;
+    }
+    if (trialDistanceTo(state.caster, unit.x, unit.y) > state.range) {
+        showMessage("SYSTEM", `${unit.name}は範囲外です。`);
+        return;
+    }
+    state.ally = unit;
+    actionState = "trialTransferTile";
+    clearHighlights();
+    getCell(unit.y, unit.x)?.classList.add("highlightTransfer");
+    for (let y = 0; y < GRID_ROWS; y++) {
+        for (let x = 0; x < GRID_COLS; x++) {
+            if (trialDistanceTo(state.caster, x, y) > state.range) continue;
+            if (isTileBlocked(x, y)) continue;
+            if (battleUnits.some(u => u.hp > 0 && u.x === x && u.y === y)) continue;
+            getCell(y, x)?.classList.add("highlightMove");
+        }
+    }
+    setLandscapeHint(`${unit.name}の移動先のマスを選んでください（${unit.name}を押すと選び直し）`);
+}
+
+function trialExecuteTransfer(row, col) {
+    const { caster, spell, ally } = trialTransferState;
+    trialTransferState = null;
+    clearHighlights();
+    const mpCost = trialPayMagicMp(caster, spell);
+    const from = `(${ally.x},${ally.y})`;
+    ally.x = col;
+    ally.y = row;
+    addLog(`・${caster.name}が 転移 使用  MP-${mpCost} → ${ally.name}を${from}から(${col},${row})へ移した`);
+    showMessage("SYSTEM", `${caster.name}の転移！${ally.name}が移動した`);
+    renderUnits();
+    endUnitTurn(caster);
 }
 
 /** 範囲の攻撃（円舞・万雷）を計画どおりに反映する */
@@ -2659,6 +2747,7 @@ function getLandscapeMagicEntries(unit) {
                 const artName = item.source === "戦技" ? item.name : null;
                 // 戦技の射程: 封印＝魔防÷2（CSVの効果文どおり）、万雷＝直線3マス
                 const artRange = artName === "封印" ? Math.max(1, Math.floor(unit.trialStats.res / 2))
+                    : artName === "転移" ? trialTransferRange(unit)
                     : artName === "万雷" ? 3 : null;
                 const range = artRange ?? base.range;
                 const spell = {
@@ -2679,6 +2768,7 @@ function addLandscapeBackButton(unit) {
     back.className = "lsCommandBtn back";
     back.innerHTML = "<span>戻る</span>";
     back.addEventListener("click", () => {
+        trialTransferState = null;   // [trial] 転移の選択も取り消す
         actionState = null;
         selectedSpell = null;
         selectedAttackSkill = null;
@@ -2795,6 +2885,10 @@ function renderLandscapeSubCommandRail(unit, kind) {
                     clearHighlights();
                     addLog(`・${unit.name}は ${sp.name} を使用`);
                     executeMagic(unit, sp, unit);
+                    return;
+                }
+                if (sp.trialArtName === "転移") {   // [trial] 味方を選ぶ → 移動先を選ぶ
+                    trialStartTransfer(unit, sp);
                     return;
                 }
                 if (sp.effectType === "teleport") {
