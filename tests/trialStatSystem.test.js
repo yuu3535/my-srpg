@@ -23,6 +23,7 @@ const {
     trialToggleLoadoutSelection,
     trialAbilityNamesFor,
     trialAbilityLevelFor,
+    trialCounterPlan,
 } = require("../trialStatSystem.js");
 
 const P = TRIAL_PROFILES;
@@ -214,6 +215,18 @@ assert.deepEqual(trialMagicMenuFor("ringholm", 30, noHitodama).map(m => m.name),
 assert.equal(trialAbilityLevelFor(P.ringholm), 45);
 assert.equal(trialCauseLevelFor(P.ringholm), 30);
 assert.equal(trialAbilityLevelFor(P.dylan), trialCauseLevelFor(P.dylan));
+
+// 反撃: 防御側が今装備している武器・魔導書の射程で決める（魔法攻撃も反撃の対象）
+const fireBook = { spell: "火", damaging: true };
+assert.equal(trialCounterPlan({ equipped: "weapon", weaponRange: 1, distance: 1 }).canCounter, true);
+assert.deepEqual(trialCounterPlan({ equipped: "weapon", weaponRange: 1, distance: 2 }), { canCounter: false, kind: "weapon", reason: "射程外" });
+assert.equal(trialCounterPlan({ equipped: "grimoire", grimoire: fireBook, mp: 5, distance: 1 }).canCounter, true);
+assert.equal(trialCounterPlan({ equipped: "grimoire", grimoire: fireBook, mp: 5, distance: 2 }).canCounter, true);
+assert.equal(trialCounterPlan({ equipped: "grimoire", grimoire: fireBook, mp: 5, distance: 3 }).reason, "射程外");
+assert.equal(trialCounterPlan({ equipped: "grimoire", grimoire: fireBook, mp: 0, distance: 1 }).reason, "MP不足");
+assert.equal(trialCounterPlan({ equipped: "grimoire", grimoire: { spell: "治癒", damaging: false }, mp: 5, distance: 1 }).reason, "攻撃できない魔導書");
+// 魔導書を持っていても、装備が武器なら武器の射程（自動で持ち替えない）
+assert.deepEqual(trialCounterPlan({ equipped: "weapon", weaponRange: 1, grimoire: fireBook, mp: 5, distance: 2 }).reason, "射程外");
 
 // 追撃: 速さ差5以上
 assert.equal(trialCanFollowUp({ spd: 30 }, { spd: 25 }), true);

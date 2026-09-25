@@ -1094,6 +1094,7 @@ function applyTrialProfile(unit) {
     unit.trialBaseStats = trialStatsAt(profile, level);
     unit.trialLuck = profile.luck;
     unit.trialPrayerUsed = false;
+    unit.trialEquipped = "weapon";   // 今の装備（weapon / grimoire）。反撃の射程はこれで決まる
     unit.trialLevel = level;
     unit.trialAbilityLevel = trialAbilityLevelFor(profile);   // スキル・戦技の習得に使う因果Lv
     unit.trialSiz = profile.siz;
@@ -1154,6 +1155,80 @@ function trialRollAbility(unit, name, extra = {}) {
     const chance = trialAbilityChance(name, unit.trialStats, { maxHp: unit.maxHp, luck: unit.trialLuck, ...extra });
     const roll = Math.floor(Math.random() * 100) + 1;
     return { active: roll <= chance, chance, roll };
+}
+
+const TRIAL_DAMAGING_SPELL_TYPES = new Set(["magicDamage", "break"]);
+
+/** 試験用ユニットの魔導書（仮置き）。spell は戦闘で使う魔法データ（trialGrimoire の印つき） */
+function trialGrimoireOf(unit) {
+    const grimoire = unit?.trialStats ? TRIAL_GRIMOIRES[unit.id] : null;
+    const base = grimoire ? SPELLS_DATA[grimoire.spell] : null;
+    if (!base) return null;
+    return {
+        name: grimoire.name,
+        spell: { ...base, trialGrimoire: true },
+        damaging: TRIAL_DAMAGING_SPELL_TYPES.has(base.effectType),
+    };
+}
+
+/** 今の装備の表示名 */
+function trialEquipmentLabel(unit) {
+    const grimoire = trialGrimoireOf(unit);
+    if (unit?.trialEquipped === "grimoire" && grimoire) return grimoire.name;
+    return `仮の武器（射程${Math.max(1, Number(unit?.attackRange || 1))}）`;
+}
+
+/** 防御側が今の装備で反撃できるか（射程・MP・攻撃できる魔導書か） */
+function trialCounterFor(defender, attacker) {
+    const grimoire = trialGrimoireOf(defender);
+    const plan = trialCounterPlan({
+        equipped: defender.trialEquipped || "weapon",
+        weaponRange: defender.attackRange || 1,
+        grimoire: grimoire ? { spell: grimoire.spell.id, damaging: grimoire.damaging } : null,
+        mp: defender.mp,
+        distance: Math.abs(defender.x - attacker.x) + Math.abs(defender.y - attacker.y),
+    });
+    return {
+        ...plan,
+        spell: plan.kind === "grimoire" ? grimoire?.spell || null : null,
+        label: plan.kind === "grimoire" && grimoire ? grimoire.name : "武器",
+    };
+}
+
+/**
+ * [trial] 反撃の処理（物理攻撃・魔法攻撃の共通）。反撃が起きたら true。
+ *   1. 今の装備の射程・MPで反撃できるか 2. 勇気%で反撃が起きるか 3. 野望で封じられないか
+ *   4. 装備に応じて武器か魔導書で反撃し、速さ差5以上なら反撃の追撃
+ */
+function trialRunCounterPhase(attacker, target) {
+    const plan = trialCounterFor(target, attacker);
+    if (!plan.canCounter) {
+        addLog(`  反撃なし（${target.name}：${plan.reason}）`);
+        return false;
+    }
+    const counterRate = getCounterRate(target);
+    const counterRoll = Math.floor(Math.random() * 100) + 1;
+    if (counterRoll > counterRate) {
+        addLog(`  反撃せず（勇気 ${counterRoll}/${counterRate}%）`);
+        return false;
+    }
+    const ambition = trialRollAbility(attacker, "野望");
+    if (ambition.active) {
+        addLog(`  野望：${target.name}の反撃を封じた（${ambition.roll}/${ambition.chance}%）`);
+        return false;
+    }
+    showMessage(target.name, "反撃！");
+    addLog(`  反撃発生！（勇気 ${counterRoll}/${counterRate}%）`);
+    const strike = () => plan.kind === "grimoire"
+        ? executeMagicCounter(target, attacker, plan.spell, target.spells?.[plan.spell.id] ?? 5)
+        : executePhysicalCounter(target, attacker);
+    strike();
+    // 防御側が速さ差5以上で速ければ、反撃がもう一度出る（MP不足などで反撃できなくなっていれば出ない）
+    if (attacker.hp > 0 && target.hp > 0 && trialFollowUpAvailable(target, attacker) && trialCounterFor(target, attacker).canCounter) {
+        addLog(`  反撃の追撃！（${target.name}の速さが上回る）`);
+        strike();
+    }
+    return true;
 }
 
 /** レベル表示（[trial] 試験用ユニットは因果Lvで表示） */
@@ -1863,6 +1938,13 @@ registerBattleActionHook("beforeAttack", {
     },
 });
 
+/** [trial] 魔法攻撃への反撃（試験用ユニット同士。反撃の可否は防御側の装備の射程で決まる） */
+function trialMagicCounter(caster, target) {
+    if (!isTrialPair(caster, target) || target.hp <= 0 || caster.hp <= 0) return false;
+    if (BATTLE_DEFINITIONS[currentBattleId]?.passive || !canCounter(target)) return false;
+    return trialRunCounterPhase(caster, target);
+}
+
 /** [trial] 祈り: 戦闘中1度だけ、HPが0になったとき幸運%でHP1で耐える（撃破の表示より前に判定する） */
 function trialTryPrayer(unit) {
     if (!unit || unit.hp > 0 || unit.trialPrayerUsed || !trialHasAbility(unit, "祈り")) return;
@@ -2024,6 +2106,7 @@ function renderLandscapeUnitPanel(unit = selectedUnit) {
             ["防御", stats.armor], ["魔防", stats.ward],
             ["技", unit.trialStats.tec], ["速さ", unit.trialStats.spd],
             ["移動", `${unit.move}マス`], ["状態", unitStatusText(unit)],
+            ["装備", trialEquipmentLabel(unit)],
         ]
         : [
             ["力", stats.power], ["魔力", stats.magic],
@@ -2212,7 +2295,11 @@ function getLandscapeMagicEntries(unit) {
             .filter(item => SPELLS_DATA[item.spell])
             .map(item => {
                 const base = SPELLS_DATA[item.spell];
-                const spell = rangeBonus && typeof base.range === "number" ? { ...base, range: base.range + rangeBonus } : base;
+                const spell = {
+                    ...base,
+                    ...(rangeBonus && typeof base.range === "number" ? { range: base.range + rangeBonus } : {}),
+                    ...(item.source === "魔導書" ? { trialGrimoire: true } : {}),
+                };
                 return { id: item.spell, spell, label: item.name, sub: item.source === "魔導書" ? "装備" : "戦技" };
             });
     }
@@ -2427,8 +2514,10 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel) {
         return `<i class="refFcFace ${cls}" style="${style}"></i>`;
     };
     const counterRow = pred.canCounter
-        ? `<div class="counter"><dt>反撃</dt><dd>${counterDmgDisp}<small>命中${pred.ctrHitRate}%・発生${pred.counterRate}%</small></dd></div>`
-        : "";
+        ? `<div class="counter"><dt>反撃</dt><dd>${counterDmgDisp}<small>${pred.counterLabel ? `${pred.counterLabel}・` : ""}命中${pred.ctrHitRate}%・発生${pred.counterRate}%</small></dd></div>`
+        : pred.counterBlockedReason
+            ? `<div class="counter"><dt>反撃</dt><dd>─<small>${pred.counterBlockedReason}</small></dd></div>`
+            : "";
     lsForecast.innerHTML = `
         <div class="refFc">
             <div class="refFcHead"><i class="refFcIcon" aria-hidden="true"></i><span>戦闘予測</span><em>${activeCombatArt?.name || actionLabel || "攻撃"}</em></div>
@@ -2701,7 +2790,10 @@ function resolvePhysicalHit(attacker, target, atkSkillName, options = {}) {
 
     // 反撃チェック：パッシブモードでは反撃しない
     let counterTriggered = false;
-    if (!options.skipCounter && target.hp > 0 && !BATTLE_DEFINITIONS[currentBattleId]?.passive && canCounter(target)) {
+    if (!options.skipCounter && target.hp > 0 && !BATTLE_DEFINITIONS[currentBattleId]?.passive && canCounter(target)
+        && isTrialPair(attacker, target)) {
+        counterTriggered = trialRunCounterPhase(attacker, target);   // [trial]
+    } else if (!options.skipCounter && target.hp > 0 && !BATTLE_DEFINITIONS[currentBattleId]?.passive && canCounter(target)) {
         const counterRate = getCounterRate(target);
         const counterRoll = Math.floor(Math.random() * 100) + 1;
         const ambition = counterRoll <= counterRate ? trialRollAbility(attacker, "野望") : { active: false };
@@ -2750,6 +2842,7 @@ function executeAttack(attacker, target) {
         ({ val: atkStat, name: atkSkillName } = getAttackSkillVal(attacker));
     }
     const combatArtId = selectedCombatArtId;
+    if (attacker.trialStats) attacker.trialEquipped = "weapon";   // [trial] 武器に持ち替え
     const liveShadowComparison = startLivePhysicalShadowSession(
         attacker,
         target,
@@ -2909,6 +3002,7 @@ function renderMagicCommands(unit) {
 }
 
 function executeMagic(caster, spell, target) {
+    if (spell?.trialGrimoire && caster.trialStats) caster.trialEquipped = "grimoire";   // [trial] 魔導書に持ち替え
     const successVal = caster.spells[spell.id] ?? 5;
     const hit = getMagicHitResult(caster, target, spell, successVal);
 
@@ -2981,6 +3075,7 @@ function executeMagic(caster, spell, target) {
 
             if (target.hp <= 0) addLog(`  ${target.name}は倒れた！`);
             finishDamageHooks(targetResult.context, targetResult, hpBefore);
+            trialMagicCounter(caster, target);   // [trial] 魔法攻撃も反撃の対象
             break;
         }
         case "heal": {
@@ -3040,6 +3135,7 @@ function executeMagic(caster, spell, target) {
             trialTryPrayer(target); // [trial] 祈り
             if (target.hp <= 0) addLog(`  ${target.name}は倒れた！`);
             finishDamageHooks(targetResult.context, targetResult, hpBefore);
+            trialMagicCounter(caster, target);   // [trial] 魔法攻撃も反撃の対象
             break;
         }
         case "stun": {
@@ -3406,11 +3502,35 @@ function calculateBattlePrediction(attacker, target, atkSkillName, isMagic, spel
     const ambitionSeal = trialHasAbility(attacker, "野望")
         ? trialAbilityChance("野望", attacker.trialStats) : 0;
     const counterRate = Math.round(getCounterRate(target) * (100 - ambitionSeal) / 100);
-    // 魔法攻撃は実際の戦闘で反撃を受けないため（executeMagic に反撃処理がない）、予測でも反撃なしにする
-    const counterAvailable = !isMagic && target.hp > 0 && canCounter(target);
-    const counterFollowUp = !isMagic && counterAvailable && trialFollowUpAvailable(target, attacker);
+    // 試験用ユニット同士: 魔法攻撃も反撃の対象。反撃の可否は防御側の今の装備の射程で決まる
+    // それ以外（本編の旧方式）: 魔法攻撃は反撃を受けない
+    const trialPair = isTrialPair(attacker, target);
+    const counterDamaging = !isMagic || TRIAL_DAMAGING_SPELL_TYPES.has(spell?.effectType);
+    const counterPlan = trialPair && counterDamaging ? trialCounterFor(target, attacker) : null;
+    const counterAvailable = target.hp > 0 && canCounter(target)
+        && (trialPair ? !!counterPlan?.canCounter : !isMagic);
+    const counterFollowUp = counterAvailable && trialFollowUpAvailable(target, attacker);
+    const counterBlockedReason = trialPair && counterDamaging && target.hp > 0 && !counterAvailable
+        ? (counterPlan?.reason || "反撃しない") : "";
+    const counterLabel = counterPlan?.label || "";
     let ctrHitRate = 0, ctrEffectiveRate = 0, ctrExpDmg = 0, ctrCritRate = 0, ctrCritDmg = 0, counterNotes = "";
-    if (counterAvailable) {
+    if (counterAvailable && counterPlan?.kind === "grimoire") {
+        const ctrHit = getMagicHitResult(target, attacker, counterPlan.spell, target.spells?.[counterPlan.spell.id] ?? 5, { roll: false, isCounter: true });
+        ctrHitRate = ctrHit.rate;
+        ctrEffectiveRate = Math.round(counterRate * ctrHitRate / 100);
+        const ctrResult = createMagicActionContext(target, attacker, counterPlan.spell, {
+            hit: ctrHit,
+            isPreview: true,
+            isCounter: true,
+            half: true,
+            rollCritical: false,
+            commitBarrier: false,
+        });
+        ctrExpDmg = ctrResult.baseAfterBarrier;
+        ctrCritRate = ctrResult.critical.rate;
+        ctrCritDmg = ctrResult.critAfterBarrier;
+        counterNotes = formatActionContextNotes(ctrResult.context);
+    } else if (counterAvailable) {
         const ctrAtkStat = getAttackSkillVal(target).val;
         const ctrHit = getBattleHitResult(target, attacker, ctrAtkStat, false, { roll: false, isCounter: true });
         ctrHitRate = ctrHit.rate;
@@ -3448,6 +3568,8 @@ function calculateBattlePrediction(attacker, target, atkSkillName, isMagic, spel
         attackerFollowUp,
         followUpDmg,
         counterFollowUp,
+        counterLabel,
+        counterBlockedReason,
     };
 }
 
@@ -5232,7 +5354,8 @@ function renderTrialStatusSheet(unit) {
 
         <section class="adventureLoadout adventureRuled">
           <h3>LOADOUT <span>装備・行動</span></h3>
-          <div class="adventureLoadoutBlock"><span>武器</span><b>仮の武器（中威力${TRIAL_WEAPON_POWER.mid}）</b></div>
+          <div class="adventureLoadoutBlock"><span>武器</span><b>仮の武器（中威力${TRIAL_WEAPON_POWER.mid}）${unit.trialEquipped !== "grimoire" ? "・装備中" : ""}</b></div>
+          ${trialGrimoireOf(unit) ? `<div class="adventureLoadoutBlock"><span>魔導書</span><b>${trialGrimoireOf(unit).name}（射程${TRIAL_GRIMOIRE_RANGE.min}〜${TRIAL_GRIMOIRE_RANGE.max}）${unit.trialEquipped === "grimoire" ? "・装備中" : ""}</b></div>` : ""}
           <div class="adventureLoadoutBlock"><span>行動</span><b>${getActionRangeSummary(unit)}</b></div>
           <div class="adventureLoadoutBlock"><span>状態</span><b>${statusNames.join("・") || "通常"}</b></div>
           <div class="adventureLoadoutBlock"><span>発作</span><b>${unit.seizureType || "なし"}</b></div>

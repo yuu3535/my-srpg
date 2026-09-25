@@ -219,6 +219,31 @@ const TRIAL_GRIMOIRES = Object.freeze({
     young_karima: { name: "治癒の魔導書", spell: "治癒" },
 });
 
+// 魔導書は魔法の扱い。射程は1〜2マス（原作者指定 2026-09-25）
+const TRIAL_GRIMOIRE_RANGE = Object.freeze({ min: 1, max: 2 });
+
+/**
+ * 反撃できるか（総合相談での整理・原作者回答 2026-09-25）。
+ *   攻撃の種類（物理・魔法）ではなく、防御側が「今装備している」武器・魔導書の射程で決める。
+ *   反撃のために装備を自動で持ち替えない。
+ *   input: { equipped: "weapon" | "grimoire", weaponRange, grimoire: { spell, damaging } | null, mp, distance }
+ *   返り値: { canCounter, kind, reason }
+ */
+function trialCounterPlan(input) {
+    const distance = Number(input.distance);
+    if (input.equipped === "grimoire" && input.grimoire) {
+        if (!input.grimoire.damaging) return { canCounter: false, kind: "grimoire", reason: "攻撃できない魔導書" };
+        if (distance < TRIAL_GRIMOIRE_RANGE.min || distance > TRIAL_GRIMOIRE_RANGE.max) {
+            return { canCounter: false, kind: "grimoire", reason: "射程外" };
+        }
+        if (Number(input.mp || 0) <= 0) return { canCounter: false, kind: "grimoire", reason: "MP不足" };
+        return { canCounter: true, kind: "grimoire", reason: "" };
+    }
+    const weaponRange = Math.max(1, Number(input.weaponRange || 1));
+    if (distance < 1 || distance > weaponRange) return { canCounter: false, kind: "weapon", reason: "射程外" };
+    return { canCounter: true, kind: "weapon", reason: "" };
+}
+
 /** 戦技を魔法コマンド側・攻撃コマンド側のどちらに出すか */
 function trialArtCommand(art) {
     if (!art) return null;
@@ -526,6 +551,8 @@ if (typeof module !== "undefined") {
         TRIAL_GRIMOIRES,
         trialMagicMenuFor,
         TRIAL_ABILITY_SOURCE,
+        TRIAL_GRIMOIRE_RANGE,
+        trialCounterPlan,
         TRIAL_SELECTABLE_CATEGORIES,
         trialLearnedAbilitiesFor,
         trialSelectionFromLoadout,
