@@ -2676,11 +2676,11 @@ const LS_COMMAND_ICON_PATHS = {
     "待機":  "M7 4h10M7 20h10M8 4c0 4 4 5 4 8s-4 4-4 8M16 4c0 4-4 5-4 8s4 4 4 8",
     "取消":  "M7 7l10 10M17 7L7 17",
 };
-const LS_RING = { radius: 52, node: 44, margin: 6 };
+const LS_RING = { radius: 40, node: 36, margin: 4 };
 // 円環の並び（× を真下に置き、残りを左 → 上 → 右へ）
 const LS_RING_ORDER = { "待機": 0, "攻撃": 1, "魔法": 2, "持ち物": 3 };
-// 2段目の丸の樹（1段目までの距離・段の間・左右の開き）
-const LS_BRANCH = { orb: 30, first: 44, row: 40, pair: 44 };
+// 2段目の樹（札どうしの横の間・段の間・開いたコマンドから1段目までの間）
+const LS_BRANCH = { gap: 4, rowGap: 5, lift: 6 };
 // 対象を選んでいる間の状態と、キャンセルで戻る先のコマンド
 const LS_TARGETING_STATES = {
     attacking: "攻撃", throwing: "攻撃", magic: "魔法",
@@ -2858,7 +2858,10 @@ function addLandscapeBranchNode(branch, label, sub, onClick) {
         : label === "通常攻撃" || label === "素手" ? lsCommandIcon("攻撃")
         : sub === "装備" ? lsCommandIcon("魔法")
         : `<em>${String(label).replace(/^召喚「/, "").charAt(0)}</em>`;
-    btn.innerHTML = `<span class="lsBranchOrb">${orb}</span><span class="lsBranchText"><b>${label}</b>${sub ? `<small>${sub}</small>` : ""}</span>`;
+    // アイコンのすぐ下に名前を入れる。種類（戦技・装備・武器）は書かず、使用済みなどの状態だけ添える
+    const state = sub && !["戦技", "装備", "武器", "ART"].includes(sub) ? sub : "";
+    if (sub) btn.title = `${label}（${sub}）`;
+    btn.innerHTML = `<span class="lsBranchOrb">${orb}</span><b class="lsBranchName">${label}</b>${state ? `<small class="lsBranchState">${state}</small>` : ""}`;
     btn.addEventListener("click", e => {
         e.stopPropagation();
         if (!btn.disabled) onClick();
@@ -2867,34 +2870,55 @@ function addLandscapeBranchNode(branch, label, sub, onClick) {
     return btn;
 }
 
-/** 丸の樹を、真上に回った開いたコマンドから上へ伸ばす（上に入りきらなければ真下へ回して下へ）。
- *  段は 2・1・2・1… と並べ、上下の段どうしを線でつなぐ（セフィロトの樹のように） */
+/** 丸の樹を、真上に回った開いたコマンドから上へ伸ばす。
+ *  段は 2・1・2・1…。頭上に入りきらなければ、1段に並べる数を増やして段を減らす。
+ *  それでも入らない（盤面の上端にいる）ときだけ、真下へ回して下へ伸ばす */
 function layoutLandscapeCommandBranch() {
     const branch = document.getElementById("landscapeCommandBranch");
     const parent = landscapeCommandList.querySelector(".lsRingNode.active");
     if (!branch || !parent) return;
     const nodes = [...branch.querySelectorAll(".lsBranchNode")];
     if (!nodes.length) return;
+    const cx = parseFloat(landscapeCommandList.style.left) || 0;
     const cy = parseFloat(landscapeCommandList.style.top) || 0;
+    const width = landscapeCommandPanel.offsetWidth;
     const height = landscapeCommandPanel.offsetHeight;
     const R = LS_RING.radius;
-    const { orb, first, row, pair } = LS_BRANCH;
+    const { gap, rowGap, lift } = LS_BRANCH;
+    const sizes = nodes.map(n => ({ w: n.offsetWidth, h: n.offsetHeight }));
+    const nodeH = Math.max(...sizes.map(s => s.h));
+    const step = nodeH + rowGap;
 
-    // 段の分け方: 2・1・2・1…（1つだけなら1）
-    const rows = [];
-    for (let i = 0, size = nodes.length === 1 ? 1 : 2; i < nodes.length; size = size === 2 ? 1 : 2) {
-        rows.push(nodes.slice(i, i + size));
-        i += size;
+    const splitRows = pattern => {
+        const rows = [];
+        for (let i = 0, r = 0; i < nodes.length; r++) {
+            const size = pattern(r);
+            rows.push(nodes.slice(i, i + size).map((node, k) => ({ node, ...sizes[i + k] })));
+            i += size;
+        }
+        return rows;
+    };
+    const patterns = [
+        r => (nodes.length === 1 ? 1 : r % 2 === 0 ? 2 : 1),   // 2・1・2・1…（セフィロトの樹のように）
+        () => 3,
+        () => nodes.length,                                      // 1段に全部
+    ];
+    // 開いたコマンドの外側の端から、1段目の中心までの距離
+    const firstOffset = R + LS_RING.node / 2 + lift + nodeH / 2;
+    const extent = rows => firstOffset + (rows.length - 1) * step + nodeH / 2;
+    const roomUp = cy - 6;   // 開いている間は上の帯（フェーズ表示）に重なってよい
+    const roomDown = height - 24 - cy;
+    let rows = null;
+    let dir = -1;
+    for (const pattern of patterns) {
+        const candidate = splitRows(pattern);
+        if (extent(candidate) <= roomUp) { rows = candidate; break; }
     }
-    // 上へ伸ばす余地がなければ下へ。どちらも足りなければ段の間を詰める
-    const top = 38 + orb / 2;
-    const bottom = height - 24 - orb / 2;
-    const roomUp = (cy - R) - top;
-    const roomDown = bottom - (cy + R);
-    const need = first + (rows.length - 1) * row;
-    const dir = need <= roomUp || roomUp >= roomDown ? -1 : 1;
-    const room = dir < 0 ? roomUp : roomDown;
-    const gap = need <= room ? row : Math.max(26, (room - first) / Math.max(1, rows.length - 1));
+    if (!rows) {
+        const candidate = splitRows(patterns[0]);
+        rows = extent(candidate) <= roomDown ? candidate : splitRows(patterns[patterns.length - 1]);
+        dir = extent(rows) <= roomUp || roomUp >= roomDown ? -1 : 1;
+    }
 
     // 開いたコマンドを真上（下へ伸ばすときは真下）に、× を反対側に置く
     const cancel = landscapeCommandList.querySelector(".lsRingCancel");
@@ -2902,21 +2926,32 @@ function layoutLandscapeCommandBranch() {
     parent.style.setProperty("--y", `${dir * R}px`);
     if (cancel) cancel.style.setProperty("--y", `${-dir * R}px`);
 
-    const rootPoint = { x: 0, y: dir * R };
+    // 各段を中央そろえで横に並べる
     const points = [];
     rows.forEach((items, r) => {
-        const y = dir * (R + first + r * gap);
-        items.forEach((node, k) => {
-            const x = items.length === 1 ? 0 : (k === 0 ? -pair : pair);
-            node.style.setProperty("--x", `${x}px`);
-            node.style.setProperty("--y", `${y.toFixed(1)}px`);
-            node.dataset.dir = x < 0 ? "left" : "right";
-            points.push({ x, y, row: r });
+        const y = dir * (firstOffset + r * step);
+        const total = items.reduce((sum, it) => sum + it.w, 0) + gap * (items.length - 1);
+        let x = -total / 2;
+        items.forEach(it => {
+            points.push({ node: it.node, x: x + it.w / 2, y, row: r });
+            x += it.w + gap;
         });
+    });
+    // 盤面の左右からはみ出すなら、樹ごと横にずらす
+    const minX = Math.min(...points.map((p, i) => p.x - p.node.offsetWidth / 2));
+    const maxX = Math.max(...points.map(p => p.x + p.node.offsetWidth / 2));
+    let shift = 0;
+    if (cx + minX < 4) shift = 4 - (cx + minX);
+    else if (cx + maxX > width - 4) shift = width - 4 - (cx + maxX);
+    points.forEach(p => {
+        p.x += shift;
+        p.node.style.setProperty("--x", `${p.x.toFixed(1)}px`);
+        p.node.style.setProperty("--y", `${p.y.toFixed(1)}px`);
     });
     // 線: 開いたコマンド → 1段目、各段 → 次の段のすべて
     const lines = [];
-    const line = (a, b) => lines.push(`<line x1="${a.x}" y1="${a.y.toFixed(1)}" x2="${b.x}" y2="${b.y.toFixed(1)}"/>`);
+    const line = (a, b) => lines.push(`<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}"/>`);
+    const rootPoint = { x: 0, y: dir * R };
     points.filter(p => p.row === 0).forEach(p => line(rootPoint, p));
     points.forEach(p => points.filter(q => q.row === p.row + 1).forEach(q => line(p, q)));
     const svg = branch.querySelector(".lsBranchLines");
