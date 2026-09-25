@@ -131,6 +131,12 @@ const roles = plan => plan.steps.map(step => step.type === "strike" ? step.role 
     const reflected = bpPlanExchange(unit("b"), reflector, weapon, {}, bpFixedRolls([50, 99, 1, 100]));
     assert.equal(reflected.steps[0].reflect.damage, 5, "受けた11の半分を返す");
     assert.equal(reflected.attacker.hp, 25);
+    // カウンターは反撃ではなくスキルの効果: 射程外で反撃できなくても、受けたダメージの半分を返す（原作者 2026-09-25）
+    const farReflector = unit("farReflector", { side: "enemy", x: 2, abilityNames: ["カウンター"] });
+    const farPlan = bpPlanExchange(unit("b2", { equippedItem: "fire_book", grimoireSpell: FIRE }), farReflector,
+        { kind: "grimoire", spell: FIRE }, {}, bpFixedRolls([50, 99, 1]));
+    assert.equal(farPlan.steps.find(step => step.type === "counterCheck").reason, "射程外");
+    assert.ok(farPlan.steps[0].reflect.damage > 0);
 }
 
 // ── 戦闘予測: 見込みは「命中・必殺なし・反撃あり」 ──

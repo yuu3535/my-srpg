@@ -236,6 +236,7 @@ function bpCounterPlanFor(defender, attacker) {
             : null,
         mp: defender.mp,
         distance: bpDistance(defender, attacker),
+        grimoireRangeBonus: bpHas(defender, "魔法射程+1") ? 1 : 0,
     });
     return {
         ...plan,

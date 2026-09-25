@@ -331,7 +331,9 @@ function trialCounterPlan(input) {
     if (!input.equipped) return { canCounter: false, kind: null, reason: "装備なし" };
     if (input.equipped === "grimoire" && input.grimoire) {
         if (!input.grimoire.damaging) return { canCounter: false, kind: "grimoire", reason: "攻撃できない魔導書" };
-        if (distance < TRIAL_GRIMOIRE_RANGE.min || distance > TRIAL_GRIMOIRE_RANGE.max) {
+        // 射程が届かなければ反撃しない。「魔法射程+1」などで伸びた射程も反撃に使う（原作者 2026-09-25）
+        const maxRange = TRIAL_GRIMOIRE_RANGE.max + Number(input.grimoireRangeBonus || 0);
+        if (distance < TRIAL_GRIMOIRE_RANGE.min || distance > maxRange) {
             return { canCounter: false, kind: "grimoire", reason: "射程外" };
         }
         if (Number(input.mp || 0) <= 0) return { canCounter: false, kind: "grimoire", reason: "MP不足" };

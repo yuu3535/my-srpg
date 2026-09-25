@@ -1238,7 +1238,7 @@ function trialEquipmentLabel(unit) {
     const item = TRIAL_ITEMS[unit?.trialEquippedItem];
     if (!item) return "なし";
     return item.kind === "grimoire"
-        ? `${item.name}（射程${TRIAL_GRIMOIRE_RANGE.min}〜${TRIAL_GRIMOIRE_RANGE.max}）`
+        ? `${item.name}（射程${TRIAL_GRIMOIRE_RANGE.min}〜${TRIAL_GRIMOIRE_RANGE.max + (trialHasAbility(unit, "魔法射程+1") ? 1 : 0)}）`
         : `${item.name}（射程${item.range}）`;
 }
 
@@ -1253,6 +1253,7 @@ function trialCounterFor(defender, attacker) {
         grimoire: spell ? { spell: spell.id, damaging: TRIAL_DAMAGING_SPELL_TYPES.has(spell.effectType) } : null,
         mp: defender.mp,
         distance: Math.abs(defender.x - attacker.x) + Math.abs(defender.y - attacker.y),
+        grimoireRangeBonus: trialHasAbility(defender, "魔法射程+1") ? 1 : 0,
     });
     return { ...plan, spell, label: item?.name || "装備なし" };
 }
@@ -1412,7 +1413,8 @@ function trialApplyStrike(step, actor, target) {
     if (step.reflect?.damage > 0) {
         actor.hp = step.reflect.actorHpAfter;
         showDamagePopup(actor.id, step.reflect.damage, "damage");
-        addLog(`${indent}カウンター！${target.name}が${step.reflect.damage}ダメージを返した（${step.reflect.roll}/${step.reflect.chance}%） → ${actor.name} HP ${actor.hp}/${actor.maxHp}`);
+        // カウンターは反撃ではなくスキルの効果（射程・装備に関係なく、受けたダメージの半分を返す。原作者 2026-09-25）
+        addLog(`${indent}スキル「カウンター」：${target.name}が${step.reflect.damage}ダメージを返した（${step.reflect.roll}/${step.reflect.chance}%） → ${actor.name} HP ${actor.hp}/${actor.maxHp}`);
         if (step.reflect.prayer) {
             actor.trialPrayerUsed = true;
             addLog(step.reflect.prayer.saved
@@ -2529,7 +2531,7 @@ function renderLandscapeUnitCard(unit, src, hpPct, mpPct, declLabel) {
         const isBook = item?.kind === "grimoire";
         const derived = trialDerivedValues(unit.trialStats, unit.trialSiz, getEffectiveCourage(unit));
         const power = !item ? "―" : isBook ? (item.spell === "治癒" ? "回復" : TRIAL_WEAPON_POWER.mid) : item.power;
-        const range = !item ? "―" : isBook ? `${TRIAL_GRIMOIRE_RANGE.min}〜${TRIAL_GRIMOIRE_RANGE.max}` : item.range;
+        const range = !item ? "―" : isBook ? `${TRIAL_GRIMOIRE_RANGE.min}〜${TRIAL_GRIMOIRE_RANGE.max + (trialHasAbility(unit, "魔法射程+1") ? 1 : 0)}` : item.range;
         const cell = (label, value) => `<div><dt>${label}</dt><dd>${value}</dd></div>`;
         weapon = `
             <div class="lcWeapon${item ? "" : " none"}">
@@ -4433,7 +4435,11 @@ function trialPlanPrediction(attacker, target, isMagic, spell) {
         effectDesc,
         critRate: first.critRate,
         critDmg: Math.max(0, first.critDamage - barrierValue),
-        effectNotes: trialPlanNotes(first.notes),
+        // 相手のカウンター（スキルの効果。反撃とは別）の発動率も補正の欄に出す
+        effectNotes: trialPlanNotes([...(first.notes || []),
+            ...(trialHasAbility(target, "カウンター") && first.dealt > 0
+                ? [`${target.name}のカウンター(スキル):受けたダメージの半分を返す${trialAbilityChance("カウンター", target.trialStats, { maxHp: target.maxHp })}%`]
+                : [])]),
         canCounter: !!counter,
         counterRate,
         ctrHitRate: counter?.hitRate || 0,

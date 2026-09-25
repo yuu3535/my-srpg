@@ -244,6 +244,10 @@ assert.equal(trialCounterPlan({ equipped: "grimoire", grimoire: { spell: "治癒
 // 魔導書を持っていても、装備が武器なら武器の射程（自動で持ち替えない）
 assert.deepEqual(trialCounterPlan({ equipped: "weapon", weaponRange: 1, grimoire: fireBook, mp: 5, distance: 2 }).reason, "射程外");
 
+// 射程が届かなければ反撃しない。「魔法射程+1」で伸びた射程は反撃にも使う（原作者 2026-09-25）
+assert.equal(trialCounterPlan({ equipped: "grimoire", grimoire: fireBook, mp: 5, distance: 3 }).reason, "射程外");
+assert.equal(trialCounterPlan({ equipped: "grimoire", grimoire: fireBook, mp: 5, distance: 3, grimoireRangeBonus: 1 }).canCounter, true);
+
 // 持ち物: アルバスは仮の魔導書（威力6）を装備する（原作者 2026-09-25）。敵アルバスも同じ
 assert.deepEqual(trialStartingGear("albas"), { items: ["trial_book"], equipped: "trial_book" });
 assert.deepEqual(trialStartingGear("albas_rival"), { items: ["trial_book"], equipped: "trial_book" });
