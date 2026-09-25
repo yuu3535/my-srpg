@@ -5,18 +5,20 @@
 //  本編（シナリオから入る戦闘）と試験の戦闘で開く（game.js の startBattleSession）。game.js の後に読み込む。
 //  身支度（スキル・戦技のセット入れ替え）は trialStatSystem.js の純粋処理を使い、
 //  セット内容はパーティ状態（partyState.js、セーブに残る）へ書く。
-//  ショップ・支援・セーブ・システムは未実装（押すと「準備中」）。
+//  セーブは本編の出撃準備で使える戦闘直前セーブ（ロードするとこの出撃準備から再開）。
+//  出撃ルール（必ず出撃するキャラ・最大人数・出撃位置のマス）は戦闘定義の sortie で指定する。
+//  ショップ・支援・システムは未実装（押すと「準備中」）。
 // =====================================================================
 
 const BRIEFING_ITEMS = Object.freeze([
     { id: "units",   label: "ユニット選択", help: "出撃するユニットを選択します" },
     { id: "gear",    label: "身支度",       help: "スキル・戦技のセットを入れ替えます" },
-    { id: "save",    label: "セーブ",       help: "セーブは準備中です", pending: true },
+    { id: "save",    label: "セーブ",       help: "戦闘直前の状態をセーブします（ロードするとこの出撃準備から再開）" },
     { id: "system",  label: "システム",     help: "システム設定は準備中です", pending: true },
     { id: "back",    label: "戻る",         help: "出撃をやめてホーム画面へ戻ります" },
     { id: "shop",    label: "ショップ",     help: "ショップは準備中です", pending: true },
     { id: "support", label: "支援",         help: "支援会話は準備中です", pending: true },
-    { id: "map",     label: "マップ・配置", help: "マップと敵の配置を確認します" },
+    { id: "map",     label: "マップ・配置", help: "マップを確認し、出撃位置を入れ替えます" },
 ]);
 
 const BRIEFING_CATEGORY_LABELS = Object.freeze({
@@ -34,6 +36,7 @@ const briefingState = {
     view: "menu",        // menu / units / gear / map
     index: 0,
     gearUnitId: null,
+    deploySelectedId: null,  // マップ・配置で選んでいる味方
     stock: [],           // パーティ共有の持ち物（武器・魔導書の id）
     story: false,        // 本編の戦闘か（戻る・ユニット選択を制限する）
     root: null,
@@ -210,7 +213,21 @@ function setBriefingIndex(index) {
 
 function briefingHelpFor(item) {
     if (briefingState.story && item.id === "back") return "本編の戦闘では、出撃準備から戻れません";
+    if (!briefingState.story && item.id === "save") return "テスト戦闘ではセーブできません（本編の出撃準備でセーブできます）";
     return item.help;
+}
+
+/** この戦闘の出撃ルール。未設定の戦闘（プロローグなど）は出撃メンバー固定 */
+function briefingSortie() {
+    const def = BATTLE_DEFINITIONS[currentBattleId] || {};
+    const allyIds = (def.unitIds || []).filter(id => battleUnits.some(u => u.id === id && u.side === "ally"));
+    const initialTiles = allyIds.map(id => def.positions?.[id]).filter(Boolean);
+    return {
+        selectable: !!def.sortie,
+        forced: new Set(def.sortie?.forced || []),
+        max: Number(def.sortie?.max || allyIds.length || 1),
+        deployTiles: (def.sortie?.deployTiles || initialTiles).map(t => ({ x: t.x, y: t.y })),
+    };
 }
 
 function activateBriefingItem(item) {
@@ -221,6 +238,10 @@ function activateBriefingItem(item) {
     if (item.id === "units") showBriefingView("units");
     else if (item.id === "gear") showBriefingView("gear");
     else if (item.id === "map") showBriefingView("map");
+    else if (item.id === "save") {
+        if (briefingState.story && typeof openSaveModal === "function") openSaveModal();
+        else setBriefingHelp(briefingHelpFor(item));
+    }
     else if (item.id === "back") {
         if (briefingState.story) setBriefingHelp("本編の戦闘では、出撃準備から戻れません");
         else leaveBriefing();
@@ -237,11 +258,77 @@ function showBriefingView(view) {
     root.querySelector(".brfMapReturn").classList.toggle("hidden", view !== "map");
     if (view === "units") renderBriefingUnits();
     if (view === "gear") renderBriefingGear();
-    if (view === "map") setBriefingHelp("マップと敵の配置を確認できます。ユニットを押すと情報を表示します");
+    briefingState.deploySelectedId = null;
+    if (view === "map") {
+        renderBriefingDeploy();
+        setBriefingHelp("味方を押して選び、光っているマスへ移します（敵を押すと情報を表示）");
+    } else {
+        clearHighlights();
+        document.querySelectorAll(".battleUnit.unitSelected").forEach(el => el.classList.remove("unitSelected"));
+    }
     if (view === "menu") {
         setBriefingIndex(briefingState.index);
         root.querySelectorAll(".brfItem")[((briefingState.index % 8) + 8) % 8]?.focus({ preventScroll: true });
     }
+}
+
+// ── マップ・配置（出撃位置の入れ替え） ──
+
+function briefingIsDeployTile(x, y) {
+    return briefingSortie().deployTiles.some(t => t.x === x && t.y === y);
+}
+
+function renderBriefingDeploy() {
+    clearHighlights();
+    for (const tile of briefingSortie().deployTiles) getCell(tile.y, tile.x)?.classList.add("highlightMove");
+    document.querySelectorAll(".battleUnit.unitSelected").forEach(el => el.classList.remove("unitSelected"));
+    if (briefingState.deploySelectedId) {
+        document.getElementById(`unit_${briefingState.deploySelectedId}`)?.classList.add("unitSelected");
+    }
+}
+
+function briefingMoveAlly(unit, x, y) {
+    const occupant = briefingAllies().find(u => u !== unit && !u.briefingBench && u.x === x && u.y === y);
+    if (occupant) {
+        occupant.x = unit.x;
+        occupant.y = unit.y;
+    }
+    unit.x = x;
+    unit.y = y;
+    briefingState.deploySelectedId = null;
+    renderUnits();
+    renderBriefingDeploy();
+    setBriefingHelp(occupant ? `${unit.name}と${occupant.name}の位置を入れ替えました` : `${unit.name}の出撃位置を変えました`);
+}
+
+/** マップ・配置でユニットを押したとき。処理したら true */
+function briefingMapUnitClick(unit) {
+    if (!briefingState.active || briefingState.view !== "map") return false;
+    renderLandscapeUnitPanel(unit);
+    if (unit.side !== "ally") return true;
+    const selected = briefingAllies().find(u => u.id === briefingState.deploySelectedId);
+    if (selected && selected !== unit) {
+        briefingMoveAlly(selected, unit.x, unit.y);
+        return true;
+    }
+    briefingState.deploySelectedId = selected === unit ? null : unit.id;
+    renderBriefingDeploy();
+    setBriefingHelp(briefingState.deploySelectedId
+        ? `${unit.name}：光っているマスか味方を押すと、出撃位置を移します`
+        : "味方を押して選び、光っているマスへ移します");
+    return true;
+}
+
+/** マップ・配置でマスを押したとき */
+function briefingMapCellClick(row, col) {
+    if (!briefingState.active || briefingState.view !== "map") return;
+    const selected = briefingAllies().find(u => u.id === briefingState.deploySelectedId);
+    if (!selected) return;
+    if (!briefingIsDeployTile(col, row)) {
+        setBriefingHelp("出撃位置にできるのは光っているマスだけです");
+        return;
+    }
+    briefingMoveAlly(selected, col, row);
 }
 
 // ── ユニット選択 ──
@@ -249,16 +336,17 @@ function showBriefingView(view) {
 function renderBriefingUnits() {
     const panel = briefingState.root.querySelector(".brfPanel");
     const allies = briefingAllies();
+    const sortie = briefingSortie();
     const deployed = allies.filter(unit => !unit.briefingBench).length;
     panel.innerHTML = `
-        <header class="brfPanelHead"><h3>ユニット選択</h3><span>出撃 ${deployed} / ${allies.length}</span>
+        <header class="brfPanelHead"><h3>ユニット選択</h3><span>出撃 ${deployed} / ${sortie.max}</span>
             <button type="button" class="brfClose">決定</button></header>
         <div class="brfUnitList">
             ${allies.map(unit => `
                 <button type="button" class="brfUnitCard${unit.briefingBench ? " bench" : ""}" data-id="${unit.id}">
                     ${briefingFace(unit)}
                     <span class="brfUnitName"><b>${unit.name}</b><small>${formatUnitLevelLabel(unit)}</small></span>
-                    <em>${unit.briefingBench ? "待機" : "出撃"}</em>
+                    <em>${sortie.forced.has(unit.id) ? "必須" : unit.briefingBench ? "待機" : "出撃"}</em>
                 </button>`).join("")}
         </div>`;
     panel.querySelector(".brfClose").addEventListener("click", () => showBriefingView("menu"));
@@ -266,22 +354,31 @@ function renderBriefingUnits() {
         card.addEventListener("click", () => {
             const unit = allies.find(u => u.id === card.dataset.id);
             if (!unit) return;
-            if (briefingState.story) {
-                setBriefingHelp("本編の出撃メンバーはシナリオで決まります（出撃の選択は準備中）");
+            if (!sortie.selectable) {
+                setBriefingHelp("この戦闘の出撃メンバーは決まっています");
+                return;
+            }
+            if (sortie.forced.has(unit.id)) {
+                setBriefingHelp(`${unit.name}はこの戦闘に必ず出撃します`);
                 return;
             }
             if (!unit.briefingBench && allies.filter(u => !u.briefingBench).length <= 1) {
                 setBriefingHelp("最低1人は出撃させてください");
                 return;
             }
+            if (unit.briefingBench && allies.filter(u => !u.briefingBench).length >= sortie.max) {
+                setBriefingHelp(`出撃できるのは${sortie.max}人までです。先にほかのユニットを待機にしてください`);
+                return;
+            }
             unit.briefingBench = !unit.briefingBench;
+            renderUnits();
             renderBriefingUnits();
             setBriefingHelp(`${unit.name}を${unit.briefingBench ? "待機" : "出撃"}にしました`);
         });
     });
-    setBriefingHelp(briefingState.story
-        ? "今回出撃するユニットです"
-        : "押すと出撃・待機を切り替えます");
+    setBriefingHelp(sortie.selectable
+        ? `押すと出撃・待機を切り替えます（最大${sortie.max}人。「必須」は外せません）`
+        : "この戦闘の出撃メンバーは決まっています");
 }
 
 function briefingFace(unit) {
@@ -493,6 +590,13 @@ function openBriefing() {
     briefingState.stock = (typeof getPartyStock === "function" ? getPartyStock(partyState) : null)
         || (typeof TRIAL_STARTING_STOCK !== "undefined" ? [...TRIAL_STARTING_STOCK] : []);
     for (const unit of briefingAllies()) unit.briefingBench = false;
+    const sortie = briefingSortie();
+    let deployedCount = 0;
+    const byPriority = [...briefingAllies()].sort((a, c) => Number(sortie.forced.has(c.id)) - Number(sortie.forced.has(a.id)));
+    for (const unit of byPriority) {
+        if (deployedCount < sortie.max || sortie.forced.has(unit.id)) deployedCount++;
+        else unit.briefingBench = true;
+    }
     // 戦闘準備で出る「味方行動」の帯は、戦闘開始のときに出し直す
     const banner = document.getElementById("phaseBanner");
     if (banner) {
@@ -516,8 +620,12 @@ function startBriefingBattle() {
         addLog(`・待機: ${benched.map(unit => unit.name).join("、")}`);
     }
     closeBriefing();
+    clearHighlights();
+    document.querySelectorAll(".battleUnit.unitSelected").forEach(el => el.classList.remove("unitSelected"));
     addLog("・出撃準備を終えて戦闘開始");
     renderUnits();
+    // 待機・出撃位置の変更を反映して、敵の行動予告を出し直す
+    if (typeof planEnemyActions === "function") planEnemyActions();
     syncLandscapeBattleUi(null);
     if (typeof showPhaseBanner === "function") showPhaseBanner("味方フェーズ");
 }

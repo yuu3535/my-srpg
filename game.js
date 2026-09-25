@@ -341,6 +341,7 @@ function renderUnits() {
     unitLayer.innerHTML = "";
     for (const unit of battleUnits) {
         if (unit.hp <= 0) continue;
+        if (unit.briefingBench) continue;   // 出撃準備で待機にしたユニット
 
         const el = document.createElement("div");
         el.className = `battleUnit ${unit.side === "ally" ? "allyUnit" : "enemyUnit"}`;
@@ -422,6 +423,7 @@ function onUnitClick(unit) {
     if (_mapDragged) { _mapDragged = false; return; }
     // 出撃準備（ブリーフィング）中はユニット情報を見るだけ
     if (typeof isBriefingActive === "function" && isBriefingActive()) {
+        if (typeof briefingMapUnitClick === "function" && briefingMapUnitClick(unit)) return;
         renderLandscapeUnitPanel(unit);
         return;
     }
@@ -510,7 +512,11 @@ function onUnitClick(unit) {
 }
 
 function onCellClick(row, col) {
-    if (typeof isBriefingActive === "function" && isBriefingActive()) return;   // 出撃準備中は操作しない
+    // 出撃準備中は戦闘の操作をしない（マップ・配置では出撃位置の入れ替えだけ）
+    if (typeof isBriefingActive === "function" && isBriefingActive()) {
+        if (typeof briefingMapCellClick === "function") briefingMapCellClick(row, col);
+        return;
+    }
     if (_mapDragged) { _mapDragged = false; return; }
     if (gameMode !== "battle" || battleOver) return;
 
@@ -6393,8 +6399,14 @@ function getSaveData(slot) {
     try { return JSON.parse(localStorage.getItem(SL_KEY(slot))); } catch { return null; }
 }
 
+/** 本編の戦闘の出撃準備（ブリーフィング）中か。戦闘直前セーブができる */
+function isStoryBriefing() {
+    return typeof isBriefingActive === "function" && isBriefingActive() && battleEntrySource === "scenario";
+}
+
 function saveGame(slot) {
-    if (!currentChapter || !scenarioActive) {
+    const briefing = !!currentChapter && isStoryBriefing();
+    if (!currentChapter || (!scenarioActive && !briefing)) {
         showMessage("SYSTEM", "シナリオ中のみセーブできます。");
         return false;
     }
@@ -6408,7 +6420,9 @@ function saveGame(slot) {
         topBgSrc:   topPanelBg.getAttribute("src"),
         partyState: clonePartyState(partyState),
         savedAt,
-        preview:    currentChapter.title,
+        // 戦闘直前セーブ: sceneIdx は戦闘のシーン。ロードすると戦闘のシーンから始まり、ブリーフィングに戻る
+        resume:     briefing ? "briefing" : "scenario",
+        preview:    briefing ? `${currentChapter.title}（出撃準備）` : currentChapter.title,
     }));
     return true;
 }

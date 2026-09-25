@@ -49,6 +49,16 @@ const BATTLE_DEFINITIONS = Object.freeze({
         rows: 8,
         tiles: [],
         trialRules: "adopted-stats-v1",
+        // 出撃ルール（機能の確認用の仮の値。本編の値はシナリオを作る段階で決める）
+        //   forced: 必ず出撃するキャラ / max: 最大出撃人数 / deployTiles: 出撃位置に使えるマス（省略時は味方の初期位置）
+        sortie: {
+            forced: ["arshe"],
+            max: 4,
+            deployTiles: [
+                { x: 2, y: 6 }, { x: 3, y: 6 }, { x: 4, y: 6 }, { x: 5, y: 6 },
+                { x: 6, y: 6 }, { x: 7, y: 6 }, { x: 3, y: 7 }, { x: 5, y: 7 },
+            ],
+        },
         victory: { type: "defeatAll" },
         defeat: { type: "allAlliesDefeated" },
         unitIds: ["ringholm", "arshe", "albas", "young_karima", "forest_guard", "dylan", "herel"],
