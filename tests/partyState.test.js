@@ -6,6 +6,8 @@ const {
     getPartyBattleResources,
     updatePartyStateFromBattle,
     clonePartyState,
+    getPartyLoadout,
+    setPartyLoadout,
 } = require("../partyState.js");
 
 const state = createPartyState(characters, calcBattleStats);
@@ -74,3 +76,16 @@ assert.equal(loadedBuild.members.ringholm.buildChoices.evasion, "zetsuei",
     "save snapshot does not share build choices");
 
 console.log("partyState: all tests passed");
+
+// 身支度のセット内容はパーティ状態に入り、セーブ（clone → 復元）で残る
+const gearState = createPartyState(characters, calcBattleStats);
+assert.equal(getPartyLoadout(gearState, "ringholm"), null, "loadout starts unset");
+assert.equal(setPartyLoadout(gearState, "ringholm", { causeSkills: ["黒の一族", "剣の舞"], combatArts: ["復讐"] }), true);
+assert.equal(setPartyLoadout(gearState, "forest_guard", { causeSkills: [] }), false, "enemies have no loadout");
+const gearSaved = JSON.parse(JSON.stringify(clonePartyState(gearState)));
+const gearLoaded = createPartyState(characters, calcBattleStats, gearSaved);
+assert.deepEqual(getPartyLoadout(gearLoaded, "ringholm"), { causeSkills: ["黒の一族", "剣の舞"], combatArts: ["復讐"] },
+    "loadout survives save and load");
+const gearCopy = getPartyLoadout(gearLoaded, "ringholm");
+gearCopy.causeSkills.push("死神");
+assert.equal(getPartyLoadout(gearLoaded, "ringholm").causeSkills.length, 2, "reads return copies");

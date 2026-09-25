@@ -34,12 +34,14 @@ const TRIAL_RULES_ID = "adopted-stats-v1";
  *   trpgLevel : 試験で使う因果Lvの決定元
  *   sourceCharacterId : 表示（画像）と持ち物（魔法・技能・秘伝など）を借りる
  *               characters.js の id。省略時はゲーム側のユニットのまま
+ *   abilityLevel : スキル・戦技の習得だけに使う因果Lv（能力値は causeLevel / trpgLevel のまま）。
+ *               身支度で入れ替えを試せるよう、味方4人は枠の数より多く習得する Lv45 相当にしている（原作者依頼 2026-09-25）
  *
  *   敵3体（森の番人・ディラン・ヘレル）の個人成長率は採用版に無いため、試験用の仮値。
  */
 const TRIAL_PROFILES = Object.freeze({
     ringholm: {
-        name: "リングホルム", race: "ヒト", trpgLevel: 5,
+        name: "リングホルム", race: "ヒト", trpgLevel: 5, abilityLevel: 45,
         base:   { hp: 12, atk: 16, def: 13, mag: 16, res: 14, tec: 7,  spd: 12, cha: 16 },
         growth: { hp: 45, atk: 75, def: 45, mag: 65, res: 65, tec: 75, spd: 70, cha: 60 },
         caps:   { hp: 104, atk: 94, def: 94, mag: 110, res: 106, tec: 96, spd: 91, cha: 112 },
@@ -48,7 +50,7 @@ const TRIAL_PROFILES = Object.freeze({
     arshe: {
         // ゲーム側の arshe（TRPG Lv4）を、採用版の幼アルシェの値で因果Lv25として扱う。
         // 画像・魔法・技能などの表示と持ち物も幼アルシェ（young_arshe）のものを使う
-        name: "アルシェ", race: "ヒト", trpgLevel: 4, sourceCharacterId: "young_arshe",
+        name: "アルシェ", race: "ヒト", trpgLevel: 4, sourceCharacterId: "young_arshe", abilityLevel: 45,
         base:   { hp: 13, atk: 14, def: 13, mag: 18, res: 15, tec: 9,  spd: 10, cha: 15 },
         growth: { hp: 70, atk: 60, def: 55, mag: 55, res: 50, tec: 70, spd: 70, cha: 60 },
         caps:   { hp: 122, atk: 90, def: 108, mag: 104, res: 106, tec: 87, spd: 71, cha: 102 },
@@ -57,14 +59,14 @@ const TRIAL_PROFILES = Object.freeze({
     young_karima: {
         // 幼カリマ（TRPG Lv1）は因果Lv1だと検証にならないため、原作者指示
         // 「弱すぎる場合は因果Lvを上げる」に従い、アルシェと同じ因果Lv25で扱う
-        name: "カリマ", race: "ヒト", trpgLevel: 1, causeLevel: 25,
+        name: "カリマ", race: "ヒト", trpgLevel: 1, causeLevel: 25, abilityLevel: 45,
         base:   { hp: 12, atk: 14, def: 13, mag: 18, res: 15, tec: 9,  spd: 11, cha: 15 },
         growth: { hp: 55, atk: 50, def: 45, mag: 65, res: 70, tec: 70, spd: 70, cha: 65 },
         caps:   { hp: 122, atk: 86, def: 108, mag: 106, res: 100, tec: 86, spd: 96, cha: 101 },
         luck: 90, courage: 90, siz: 13,
     },
     albas: {
-        name: "アルバス", race: "魔物", trpgLevel: 5,
+        name: "アルバス", race: "魔物", trpgLevel: 5, abilityLevel: 45,
         base:   { hp: 18, atk: 12, def: 13, mag: 24, res: 22, tec: 12, spd: 9,  cha: 17 },
         growth: { hp: 65, atk: 40, def: 50, mag: 80, res: 75, tec: 80, spd: 55, cha: 70 },
         caps:   { hp: 104, atk: 80, def: 89, mag: 110, res: 108, tec: 98, spd: 108, cha: 115 },
@@ -444,6 +446,12 @@ function trialGrowthBonus(profile) {
     return Math.floor((Number(profile.luck || 0) + Number(profile.courage || 0)) / 40);
 }
 
+/** スキル・戦技の習得に使う因果Lv。abilityLevel の指定がなければ能力値と同じ因果Lv */
+function trialAbilityLevelFor(profile) {
+    if (Number.isInteger(profile.abilityLevel)) return profile.abilityLevel;
+    return trialCauseLevelFor(profile);
+}
+
 /** 試験用の因果Lv。causeLevel の指定があれば優先し、なければTRPGレベルの対応表で求める */
 function trialCauseLevelFor(profile) {
     if (Number.isInteger(profile.causeLevel)) return profile.causeLevel;
@@ -533,6 +541,7 @@ if (typeof module !== "undefined") {
         trialDerivedValues,
         trialGrowthBonus,
         trialCauseLevelFor,
+        trialAbilityLevelFor,
         trialStatsAt,
         trialSizeEvasionModifier,
         trialHitRate,

@@ -14,6 +14,16 @@ function cloneStringList(values) {
     return Array.isArray(values) ? [...values] : [];
 }
 
+/** 身支度のセット内容（{ classSkills, causeSkills, combatArts } の名前の配列）。未設定は null */
+function cloneLoadoutSelection(selection) {
+    if (!selection || typeof selection !== "object") return null;
+    const cloned = {};
+    for (const [category, names] of Object.entries(selection)) {
+        if (Array.isArray(names)) cloned[category] = names.filter(name => typeof name === "string");
+    }
+    return cloned;
+}
+
 function clampPartyResource(value, fallback, max) {
     const resolved = Number.isFinite(Number(value)) ? Number(value) : fallback;
     return Math.max(0, Math.min(max, Math.floor(resolved)));
@@ -46,10 +56,24 @@ function createPartyState(characters, statCalculator, savedState = null) {
             buildChoices: saved.buildChoices && typeof saved.buildChoices === "object"
                 ? { ...saved.buildChoices }
                 : { ...(character.buildChoices || {}) },
+            loadoutSelection: cloneLoadoutSelection(saved.loadoutSelection),
         };
     }
 
     return { version: PARTY_STATE_VERSION, members };
+}
+
+/** 身支度のセット内容を読む（セーブに残る）。パーティにいない・未設定なら null */
+function getPartyLoadout(partyState, characterId) {
+    return cloneLoadoutSelection(partyState?.members?.[characterId]?.loadoutSelection);
+}
+
+/** 身支度のセット内容を書く。パーティにいないキャラなら何もしない */
+function setPartyLoadout(partyState, characterId, selection) {
+    const member = partyState?.members?.[characterId];
+    if (!member) return false;
+    member.loadoutSelection = cloneLoadoutSelection(selection);
+    return true;
 }
 
 function getPartyBattleResources(partyState, character, battleStats, enabled) {
@@ -113,6 +137,7 @@ function clonePartyState(partyState) {
             learnedPassives: cloneStringList(member.learnedPassives),
             equippedPassives: cloneStringList(member.equippedPassives),
             buildChoices: { ...(member.buildChoices || {}) },
+            loadoutSelection: cloneLoadoutSelection(member.loadoutSelection),
         };
     }
     return { version: PARTY_STATE_VERSION, members };
@@ -125,5 +150,7 @@ if (typeof module !== "undefined") {
         getPartyBattleResources,
         updatePartyStateFromBattle,
         clonePartyState,
+        getPartyLoadout,
+        setPartyLoadout,
     };
 }

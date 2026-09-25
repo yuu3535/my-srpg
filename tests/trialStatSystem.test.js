@@ -22,6 +22,7 @@ const {
     trialLearnedAbilitiesFor,
     trialToggleLoadoutSelection,
     trialAbilityNamesFor,
+    trialAbilityLevelFor,
 } = require("../trialStatSystem.js");
 
 const P = TRIAL_PROFILES;
@@ -208,6 +209,11 @@ const noRevenge = trialToggleLoadoutSelection("ringholm", 30, null, "combatArts"
 assert.deepEqual(trialPhysicalArtsFor("ringholm", 30, noRevenge).map(a => a.name), ["円舞"]);
 const noHitodama = trialToggleLoadoutSelection("ringholm", 30, null, "combatArts", "召喚「ヒトダマ」").selection;
 assert.deepEqual(trialMagicMenuFor("ringholm", 30, noHitodama).map(m => m.name), ["火の魔導書"]);
+
+// 習得に使う因果Lv（味方4人は入れ替えを試せるよう Lv45 相当。能力値の因果Lvは別）
+assert.equal(trialAbilityLevelFor(P.ringholm), 45);
+assert.equal(trialCauseLevelFor(P.ringholm), 30);
+assert.equal(trialAbilityLevelFor(P.dylan), trialCauseLevelFor(P.dylan));
 
 // 追撃: 速さ差5以上
 assert.equal(trialCanFollowUp({ spd: 30 }, { spd: 25 }), true);

@@ -2,8 +2,9 @@
 //  briefingUi.js ― 出撃準備（ブリーフィング）画面
 //
 //  戦闘開始前に挟むフェーズ。円形のメニューから「ユニット選択」「身支度」などを選ぶ。
-//  現在は試験の戦闘（isTrialBattleSession）だけで開く。game.js の後に読み込む。
-//  身支度（スキル・戦技のセット入れ替え）は trialStatSystem.js の純粋処理を使う。
+//  本編（シナリオから入る戦闘）と試験の戦闘で開く（game.js の startBattleSession）。game.js の後に読み込む。
+//  身支度（スキル・戦技のセット入れ替え）は trialStatSystem.js の純粋処理を使い、
+//  セット内容はパーティ状態（partyState.js、セーブに残る）へ書く。
 //  ショップ・支援・セーブ・システムは未実装（押すと「準備中」）。
 // =====================================================================
 
@@ -33,6 +34,7 @@ const briefingState = {
     view: "menu",        // menu / units / gear / map
     index: 0,
     gearUnitId: null,
+    story: false,        // 本編の戦闘か（戻る・ユニット選択を制限する）
     root: null,
 };
 
@@ -156,6 +158,7 @@ function createBriefingRoot() {
         <div class="brfHelp"><span class="brfHelpText"></span></div>
     `;
     root.querySelector(".brfRing").appendChild(buildBriefingRing());
+    root.classList.toggle("story", briefingState.story);
 
     const items = root.querySelector(".brfItems");
     BRIEFING_ITEMS.forEach((item, index) => {
@@ -201,7 +204,12 @@ function setBriefingIndex(index) {
     root.querySelectorAll(".brfItem").forEach(btn => {
         btn.classList.toggle("selected", Number(btn.dataset.index) === next);
     });
-    setBriefingHelp(BRIEFING_ITEMS[next].help);
+    setBriefingHelp(briefingHelpFor(BRIEFING_ITEMS[next]));
+}
+
+function briefingHelpFor(item) {
+    if (briefingState.story && item.id === "back") return "本編の戦闘では、出撃準備から戻れません";
+    return item.help;
 }
 
 function activateBriefingItem(item) {
@@ -212,7 +220,10 @@ function activateBriefingItem(item) {
     if (item.id === "units") showBriefingView("units");
     else if (item.id === "gear") showBriefingView("gear");
     else if (item.id === "map") showBriefingView("map");
-    else if (item.id === "back") leaveBriefing();
+    else if (item.id === "back") {
+        if (briefingState.story) setBriefingHelp("本編の戦闘では、出撃準備から戻れません");
+        else leaveBriefing();
+    }
 }
 
 function showBriefingView(view) {
@@ -254,6 +265,10 @@ function renderBriefingUnits() {
         card.addEventListener("click", () => {
             const unit = allies.find(u => u.id === card.dataset.id);
             if (!unit) return;
+            if (briefingState.story) {
+                setBriefingHelp("本編の出撃メンバーはシナリオで決まります（出撃の選択は準備中）");
+                return;
+            }
             if (!unit.briefingBench && allies.filter(u => !u.briefingBench).length <= 1) {
                 setBriefingHelp("最低1人は出撃させてください");
                 return;
@@ -263,7 +278,9 @@ function renderBriefingUnits() {
             setBriefingHelp(`${unit.name}を${unit.briefingBench ? "待機" : "出撃"}にしました`);
         });
     });
-    setBriefingHelp("押すと出撃・待機を切り替えます");
+    setBriefingHelp(briefingState.story
+        ? "今回出撃するユニットです"
+        : "押すと出撃・待機を切り替えます");
 }
 
 function briefingFace(unit) {
@@ -286,14 +303,17 @@ function renderBriefingGear() {
     if (!units.some(unit => unit.id === briefingState.gearUnitId)) briefingState.gearUnitId = units[0]?.id || null;
     const unit = units.find(u => u.id === briefingState.gearUnitId);
     if (!unit) {
+        const reason = briefingState.story
+            ? "本編の戦闘は採用版ステータスへの切り替え前のため、身支度はまだ使えません（テスト戦闘で試せます）"
+            : "身支度できるユニットがいません";
         panel.innerHTML = `<header class="brfPanelHead"><h3>身支度</h3><button type="button" class="brfClose">戻る</button></header>
-            <p class="brfEmpty">身支度できるユニットがいません</p>`;
+            <p class="brfEmpty">${reason}</p>`;
         panel.querySelector(".brfClose").addEventListener("click", () => showBriefingView("menu"));
         return;
     }
     const selection = unit.trialLoadoutSelection || null;
-    const loadout = trialSkillLoadoutFor(unit.id, unit.trialLevel, TRIAL_CLASS_LEVEL, selection);
-    const learned = trialLearnedAbilitiesFor(unit.id, unit.trialLevel, TRIAL_CLASS_LEVEL);
+    const loadout = trialSkillLoadoutFor(unit.id, unit.trialAbilityLevel, TRIAL_CLASS_LEVEL, selection);
+    const learned = trialLearnedAbilitiesFor(unit.id, unit.trialAbilityLevel, TRIAL_CLASS_LEVEL);
     const equippedNames = category => loadout[category].filter(Boolean).map(item => item.name);
 
     const chip = (category, item) => {
@@ -318,7 +338,8 @@ function renderBriefingGear() {
         : "マスタースキル・専用兵種の最終スキル";
 
     panel.innerHTML = `
-        <header class="brfPanelHead"><h3>身支度</h3><span>スキル・戦技のセット</span>
+        <header class="brfPanelHead"><h3>身支度</h3><span>スキル・戦技のセット${
+            unit.trialAbilityLevel !== unit.trialLevel ? `（試験: 習得は因果Lv${unit.trialAbilityLevel}相当）` : ""}</span>
             <button type="button" class="brfClose">決定</button></header>
         <div class="brfGear">
             <nav class="brfGearUnits" aria-label="ユニット">
@@ -363,12 +384,14 @@ function renderBriefingGear() {
         btn.addEventListener("mouseenter", describe);
         btn.addEventListener("focus", describe);
         btn.addEventListener("click", () => {
-            const result = trialToggleLoadoutSelection(unit.id, unit.trialLevel, selection, btn.dataset.category, btn.dataset.name);
+            const result = trialToggleLoadoutSelection(unit.id, unit.trialAbilityLevel, selection, btn.dataset.category, btn.dataset.name);
             if (!result.changed) {
                 if (result.reason === "full") setBriefingHelp(`${BRIEFING_CATEGORY_LABELS[btn.dataset.category]}の枠がいっぱいです。外してから選んでください`);
                 return;
             }
             unit.trialLoadoutSelection = result.selection;
+            // セーブに残すため、パーティ状態にも書く
+            if (typeof setPartyLoadout === "function") setPartyLoadout(partyState, unit.id, result.selection);
             refreshTrialLoadout(unit);
             renderBriefingGear();
             setBriefingHelp(`${btn.dataset.name}を${result.reason === "added" ? "セットしました" : "外しました"}`);
@@ -384,11 +407,13 @@ function openBriefing() {
     const shell = document.getElementById("landscapeBattleShell");
     if (!shell) return;
     briefingState.root?.remove();
+    briefingState.story = battleEntrySource === "scenario";
     briefingState.root = createBriefingRoot();
     shell.appendChild(briefingState.root);
     briefingState.active = true;
     briefingState.index = 0;
     briefingState.gearUnitId = null;
+    briefingState.story = battleEntrySource === "scenario";
     for (const unit of briefingAllies()) unit.briefingBench = false;
     // 戦闘準備で出る「味方行動」の帯は、戦闘開始のときに出し直す
     const banner = document.getElementById("phaseBanner");

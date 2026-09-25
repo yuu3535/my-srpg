@@ -5495,6 +5495,7 @@ html, body {
 .brfItem span::first-letter { font-size: 1.3em; }
 .brfItem.selected { color: #fff4d6; font-size: 14px; transform: translate(-50%, -50%) scale(1.04); }
 .brfItem.pending { color: rgba(236,210,142,0.45); }
+#briefingOverlay.story .brfItem[data-index="4"] { color: rgba(236,210,142,0.45); }
 .brfItem.pending.selected { color: rgba(255,244,214,0.7); }
 .brfItem:focus-visible { outline: 1px solid rgba(224,176,72,0.7); outline-offset: 2px; }
 

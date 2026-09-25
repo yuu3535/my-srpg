@@ -1095,7 +1095,10 @@ function applyTrialProfile(unit) {
     unit.trialLuck = profile.luck;
     unit.trialPrayerUsed = false;
     unit.trialLevel = level;
+    unit.trialAbilityLevel = trialAbilityLevelFor(profile);   // スキル・戦技の習得に使う因果Lv
     unit.trialSiz = profile.siz;
+    // 身支度のセット内容はパーティ状態（セーブに残る）から読む
+    unit.trialLoadoutSelection = typeof getPartyLoadout === "function" ? getPartyLoadout(partyState, unit.id) : null;
     refreshTrialLoadout(unit);
     unit.hp = unit.maxHp;
 }
@@ -1107,12 +1110,12 @@ function applyTrialProfile(unit) {
 function refreshTrialLoadout(unit) {
     if (!unit?.trialBaseStats) return;
     const selection = unit.trialLoadoutSelection || null;
-    const bonus = trialLoadoutStatBonus(unit.id, unit.trialLevel, selection);
+    const bonus = trialLoadoutStatBonus(unit.id, unit.trialAbilityLevel, selection);
     const stats = { ...unit.trialBaseStats };
     for (const key of TRIAL_STAT_KEYS) stats[key] += bonus[key] || 0;
     const wasFull = !unit.maxHp || unit.hp >= unit.maxHp;
     unit.trialStats = stats;
-    unit.trialAbilityNames = trialAbilityNamesFor(unit.id, unit.trialLevel, selection);
+    unit.trialAbilityNames = trialAbilityNamesFor(unit.id, unit.trialAbilityLevel, selection);
     unit.maxHp = stats.hp;
     unit.hp = wasFull ? stats.hp : Math.min(unit.hp, stats.hp);
 }
@@ -2205,7 +2208,7 @@ function renderLandscapeCommandRail(unit = selectedUnit) {
 function getLandscapeMagicEntries(unit) {
     if (unit?.trialStats && typeof trialMagicMenuFor === "function") {
         const rangeBonus = trialHasAbility(unit, "魔法射程+1") ? 1 : 0;
-        return trialMagicMenuFor(unit.id, unit.trialLevel, unit.trialLoadoutSelection || null)
+        return trialMagicMenuFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null)
             .filter(item => SPELLS_DATA[item.spell])
             .map(item => {
                 const base = SPELLS_DATA[item.spell];
@@ -2277,7 +2280,7 @@ function renderLandscapeSubCommandRail(unit, kind) {
             syncLandscapeBattleUi(unit);
         }));
         if (unit.trialStats) {
-            trialPhysicalArtsFor(unit.id, unit.trialLevel, unit.trialLoadoutSelection || null).forEach(art => {
+            trialPhysicalArtsFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null).forEach(art => {
                 const baseSkill = getAttackSkillVal(unit);
                 const btn = addButton(art.name, art.implemented ? "戦技" : "未実装", () => {
                     if (!art.implemented) return;
@@ -5148,7 +5151,7 @@ function renderTrialStatusSheet(unit) {
     const courage = getEffectiveCourage(unit);
     const d = trialDerivedValues(stats, unit.trialSiz, courage);
     const cls = TRIAL_UNIT_CLASS[unit.id] || { name: "未設定", line: null };
-    const loadout = trialSkillLoadoutFor(unit.id, unit.trialLevel, TRIAL_CLASS_LEVEL, unit.trialLoadoutSelection || null);
+    const loadout = trialSkillLoadoutFor(unit.id, unit.trialAbilityLevel, TRIAL_CLASS_LEVEL, unit.trialLoadoutSelection || null);
     const pct = (cur, max) => max > 0 ? Math.max(0, Math.min(100, cur / max * 100)) : 0;
     const metric = (label, value, extra = "", tip = "") =>
         `<div class="adventureMetric"${tip ? ` title="${tip}"` : ""}><span>${label}</span><b>${value}${extra}</b></div>`;
@@ -5846,8 +5849,8 @@ function startBattleSession(battleId, options = {}) {
     battleEntrySource = source;
     fromScenario = source === "scenario";
     setBattleMode(battleId);
-    // [trial] 試験の戦闘は、戦闘開始前に出撃準備（ブリーフィング）を挟む
-    if (typeof openBriefing === "function" && isTrialBattleSession(battleId)) openBriefing();
+    // 本編（シナリオから入る戦闘）でも、戦闘開始前に出撃準備を挟む（原作者方針 2026-09-25）
+    if (typeof openBriefing === "function" && (source === "scenario" || isTrialBattleSession(battleId))) openBriefing();
     return true;
 }
 
