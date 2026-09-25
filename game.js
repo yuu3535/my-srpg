@@ -2652,16 +2652,30 @@ function renderLandscapeRoster() {
     });
 }
 
+/** 武器で攻撃できるか（[trial] 武器を持っていなければ攻撃できない） */
+function landscapeCanWeaponAttack(unit) {
+    return !unit.trialStats || !!trialCarriedWeapon(trialGearOf(unit));
+}
+
+/** 戦技の一覧に出る数（物理戦技・専用戦技・自己強化・投擲） */
+function landscapeArtCount(unit) {
+    const weapon = landscapeCanWeaponAttack(unit);
+    const physical = unit.trialStats && weapon
+        ? trialPhysicalArtsFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null).length : 0;
+    const specials = unit.trialStats && TRIAL_ABILITY_SOURCE[unit.id]
+        ? trialSpecialArtsFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null).length : 0;
+    const legacy = weapon ? getAvailableCombatArts(unit, "attack").length : 0;
+    const throwing = !unit.trialStats && "投擲" in (unit.skills || {}) ? 1 : 0;
+    return physical + specials + legacy + throwing + getAvailableCombatArts(unit, "self").length;
+}
+
 function getLandscapeCommands(unit) {
     const commands = [];
-    // コマンドは 攻撃・魔法・待機（＋持ち物を持っているときだけ持ち物）にまとめる（原作者 2026-09-25）。
-    // 戦技（物理戦技・専用戦技・自己強化）は攻撃の2段目に入れる。詳細はユニットカードを押して開く。
-    // 移動の取り消しは一覧の「戻る」か、何もないマスを押す
-    const specialArts = unit.trialStats && TRIAL_ABILITY_SOURCE[unit.id]
-        ? trialSpecialArtsFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null) : [];
-    const hasWeapon = !unit.trialStats || !!trialCarriedWeapon(trialGearOf(unit));
-    if (!unit.acted && (hasWeapon || specialArts.length > 0 || getAvailableCombatArts(unit, "self").length > 0))
-        commands.push({ label: "攻撃", active: actionState === "attacking" || actionState === "throwing" });
+    // コマンドは 攻撃・戦技・魔法・待機（＋持ち物を持っているときだけ持ち物）（原作者 2026-09-25）。
+    // 攻撃は押すとすぐ相手を選ぶ。戦技・魔法・持ち物は右の一覧がその中身に入れ替わる。
+    // 詳細はユニットカードを押して開く。移動の取り消しは一覧の「戻る」か、何もないマスを押す
+    if (!unit.acted && landscapeCanWeaponAttack(unit)) commands.push({ label: "攻撃" });
+    if (!unit.acted && landscapeArtCount(unit) > 0) commands.push({ label: "戦技" });
     // 魔法コマンドは、セットした魔法戦技と装備した魔導書の魔法を選ぶ入口（原作者方針 2026-09-25）
     if (!unit.acted && getLandscapeMagicEntries(unit).length > 0) commands.push({ label: "魔法", active: actionState === "magic" });
     if ((unit.items?.length ?? 0) > 0) commands.push({ label: "持ち物" });
@@ -2699,54 +2713,65 @@ function clearLandscapeCommandBranch() {
     document.getElementById("landscapeCommandBranch")?.remove();
 }
 
-/** 取り消しできることがあるか（枝が開いている・移動を取り消せる） */
-function canCancelLandscapeMenu(unit, branchOpen) {
-    return branchOpen || canUndoMove(unit);
+// 対象を選び始めたコマンド（攻撃・戦技・魔法・持ち物）。取り消しで戻る先と、予測で切り替えられる範囲を決める
+let lsTargetOrigin = null;
+const LS_LIST_KIND = { "戦技": "skill", "魔法": "magic", "持ち物": "item" };
+
+/** 取り消しできることがあるか（戦技などの一覧を開いている・移動を取り消せる） */
+function canCancelLandscapeMenu(unit, listOpen) {
+    return listOpen || canUndoMove(unit);
 }
 
-/** 右のコマンド一覧を作る。openLabel を渡すと、そのコマンドの左隣に2段目の列を開いて返す */
-function buildLandscapeCommandMenu(unit, openLabel = null) {
+function isLandscapeSubListOpen() {
+    return !!landscapeCommandList?.classList.contains("sub");
+}
+
+/** 右のコマンド一覧（1段目）を作る */
+function buildLandscapeCommandMenu(unit) {
     setLandscapeRailVisible(true);
     clearLandscapeCommandBranch();
     landscapeCommandList.className = "menu";
-    landscapeCommandList.style.left = "";
-    landscapeCommandList.style.top = "";
     landscapeCommandList.innerHTML = "";
     getLandscapeCommands(unit).forEach((cmd, i) => {
-        const isOpen = openLabel ? cmd.label === openLabel : !!cmd.active;
         const btn = document.createElement("button");
-        btn.className = `lsMenuItem${isOpen ? " active" : ""}`;
+        btn.className = `lsMenuItem${cmd.active ? " active" : ""}`;
         btn.disabled = !!cmd.disabled;
         btn.dataset.cmd = cmd.label;
         btn.style.setProperty("--tick-delay", `${i * 30}ms`);
         btn.innerHTML = `${lsCommandIcon(cmd.label)}<span>${cmd.label}</span>`;
-        btn.addEventListener("click", () => onLandscapeMenuCommand(unit, cmd, openLabel));
+        btn.addEventListener("click", () => onLandscapeMenuCommand(unit, cmd));
         landscapeCommandList.appendChild(btn);
     });
-    if (canCancelLandscapeMenu(unit, !!openLabel)) {
-        const back = document.createElement("button");
-        back.className = "lsMenuItem lsMenuBack";
-        back.innerHTML = `${lsCommandIcon("戻る")}<span>戻る</span>`;
-        back.addEventListener("click", () => cancelLandscapeMenu(unit));
-        landscapeCommandList.appendChild(back);
-    }
-    if (!openLabel) return null;
-    const branch = document.createElement("div");
-    branch.id = "landscapeCommandBranch";
-    landscapeCommandPanel.appendChild(branch);
-    return branch;
+    if (canCancelLandscapeMenu(unit, false)) addLandscapeMenuBack(() => cancelLandscapeMenu(unit));
 }
 
-/** 2段目の列に、選択肢をひとつ足す（アイコン・名前・状態） */
-function addLandscapeBranchNode(branch, label, sub, onClick) {
-    const index = branch.querySelectorAll(".lsBranchItem").length;
+function addLandscapeMenuBack(onClick, text = "戻る") {
+    const back = document.createElement("button");
+    back.className = "lsMenuItem lsMenuBack";
+    back.innerHTML = `${lsCommandIcon("戻る")}<span>${text}</span>`;
+    back.addEventListener("click", onClick);
+    landscapeCommandList.appendChild(back);
+}
+
+/** 戦技・魔法・持ち物: 右の一覧そのものを、その中身に入れ替える（別の列は出さない） */
+function openLandscapeSubList(unit, title) {
+    setLandscapeRailVisible(true);
+    clearLandscapeCommandBranch();
+    landscapeCommandList.className = "menu sub";
+    landscapeCommandList.innerHTML = `<div class="lsMenuTitle">${lsCommandIcon(title)}<span>${title}</span></div>`;
+    return landscapeCommandList;
+}
+
+/** 入れ替えた一覧に、選択肢をひとつ足す（アイコン・名前・種類や状態） */
+function addLandscapeBranchNode(list, label, sub, onClick) {
+    const index = list.querySelectorAll(".lsBranchItem").length;
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "lsBranchItem";
     btn.style.setProperty("--tick-delay", `${index * 30}ms`);
     const hasArt = typeof SKILL_ICON_DATA !== "undefined" && SKILL_ICON_DATA?.icons?.[label];
     const icon = hasArt ? abilityIconHtml(label, "active", "lsBranchArt")
-        : label === "通常攻撃" || label === "素手" ? lsCommandIcon("攻撃")
+        : label === "投擲" ? lsCommandIcon("攻撃")
         : sub === "装備" ? lsCommandIcon("魔法")
         : `<em>${String(label).replace(/^召喚「/, "").charAt(0)}</em>`;
     btn.innerHTML = `<span class="lsBranchIcon">${icon}</span><b>${label}</b>${sub ? `<small>${sub}</small>` : ""}`;
@@ -2754,34 +2779,30 @@ function addLandscapeBranchNode(branch, label, sub, onClick) {
         e.stopPropagation();
         if (!btn.disabled) onClick();
     });
-    branch.appendChild(btn);
+    list.appendChild(btn);
     return btn;
 }
 
-/** 2段目の列を、開いたコマンドの左隣に置き、線でつなぐ */
-function layoutLandscapeCommandBranch() {
-    const branch = document.getElementById("landscapeCommandBranch");
-    const parent = landscapeCommandList.querySelector(".lsMenuItem.active");
-    if (!branch || !parent) return;
-    const panelRect = landscapeCommandPanel.getBoundingClientRect();
-    const parentRect = parent.getBoundingClientRect();
-    const listRect = landscapeCommandList.getBoundingClientRect();
-    const scale = panelRect.width / (landscapeCommandPanel.offsetWidth || panelRect.width) || 1;
-    const height = landscapeCommandPanel.offsetHeight;
-    const parentMid = (parentRect.top + parentRect.height / 2 - panelRect.top) / scale;
-    const listLeft = (listRect.left - panelRect.left) / scale;
-    const gap = 12;
-    const bh = branch.offsetHeight;
-    const top = Math.max(38, Math.min(height - bh - 24, parentMid - 14));
-    branch.style.left = `${Math.round(listLeft - gap - branch.offsetWidth)}px`;
-    branch.style.top = `${Math.round(top)}px`;
-    branch.style.setProperty("--stem-y", `${Math.round(Math.max(8, Math.min(bh - 8, parentMid - top)))}px`);
-    branch.style.setProperty("--stem-w", `${gap}px`);
+/** 攻撃: 2段目なしで、装備している武器の通常攻撃の相手を選ぶ */
+function startLandscapeDirectAttack(unit) {
+    lsOpenBranch = null;
+    lsTargetOrigin = "攻撃";
+    selectedSpell = null;
+    selectedAttackSkill = getAttackSkillVal(unit).name;
+    selectedCombatArtId = null;
+    actionState = "attacking";
+    clearHighlights();
+    highlightAttackRange(unit);
+    switchTopLayer("battle");
+    addLog(`・${unit.name}は攻撃を選択`);
+    setLandscapeHint(`${unit.name}の攻撃対象を選択してください（予測の ‹ › で戦技に切り替えられます）。`);
+    syncLandscapeBattleUi(unit);
 }
 
-/** 開いた2段目を閉じて、一覧に戻る */
+/** 入れ替えた一覧を閉じて、1段目に戻る */
 function collapseLandscapeBranch(unit) {
     lsOpenBranch = null;
+    lsTargetOrigin = null;
     trialTransferState = null;   // [trial] 転移の選択も取り消す
     actionState = null;
     selectedSpell = null;
@@ -2794,71 +2815,70 @@ function collapseLandscapeBranch(unit) {
     syncLandscapeBattleUi(unit);
 }
 
-/** 取り消し: 2段目 → 一覧 → 移動の取り消し の順に戻る */
+/** 取り消し: 入れ替えた一覧 → 1段目 → 移動の取り消し の順に戻る */
 function cancelLandscapeMenu(unit) {
     if (!unit) return;
-    if (document.getElementById("landscapeCommandBranch")) {
+    if (isLandscapeSubListOpen()) {
         collapseLandscapeBranch(unit);
         return;
     }
     if (canUndoMove(unit)) undoLastMove(unit);
 }
 
-/** 対象を選んでいる間の取り消し: その前の2段目に戻る */
-function cancelLandscapeTargeting(unit, parentLabel) {
+/** 対象を選んでいる間の取り消し: 攻撃なら1段目へ、戦技・魔法・持ち物ならその一覧へ戻る */
+function cancelLandscapeTargeting(unit) {
+    const kind = LS_LIST_KIND[lsTargetOrigin] || (["magic", "trialTransferAlly", "trialTransferTile"].includes(actionState) ? "magic" : null);
     trialTransferState = null;
     actionState = null;
     selectedSpell = null;
     clearHighlights();
     hideForecastLayer();
-    handleBattleCommand(unit, parentLabel);
+    if (kind) renderLandscapeSubCommandRail(unit, kind);
+    else collapseLandscapeBranch(unit);
 }
 
 /** 何もないマスを押したときの取り消し。取り消したら true */
 function landscapeTapCancel() {
     const unit = selectedUnit;
     if (!unit || !isLandscapeBattleUi() || turnPhase !== "ally") return false;
-    const menuOpen = landscapeCommandList?.className === "menu" && !landscapeCommandPanel.classList.contains("railHidden");
-    if (actionState == null && menuOpen && canCancelLandscapeMenu(unit, !!document.getElementById("landscapeCommandBranch"))) {
+    const menuOpen = landscapeCommandList?.classList.contains("menu")
+        && !landscapeCommandList.classList.contains("targetCancel")
+        && !landscapeCommandPanel.classList.contains("railHidden");
+    if (actionState == null && menuOpen && canCancelLandscapeMenu(unit, isLandscapeSubListOpen())) {
         cancelLandscapeMenu(unit);
         return true;
     }
-    const back = LS_TARGETING_STATES[actionState];
     // マスを選ぶ魔法（転移の移動先など）は、マスを押すのが本来の操作なので取り消しにしない
-    if (back && actionState !== "trialTransferTile" && selectedSpell?.effectType !== "teleport") {
-        cancelLandscapeTargeting(unit, back);
+    if (LS_TARGETING_STATES[actionState] && actionState !== "trialTransferTile" && selectedSpell?.effectType !== "teleport") {
+        cancelLandscapeTargeting(unit);
         return true;
     }
     return false;
 }
 
-function onLandscapeMenuCommand(unit, cmd, openLabel) {
+function onLandscapeMenuCommand(unit, cmd) {
     if (!unit || cmd.disabled) return;
-    if (openLabel && cmd.label === openLabel) {   // 開いているコマンドをもう一度押すと閉じる
-        collapseLandscapeBranch(unit);
+    if (cmd.label === "攻撃") {
+        startLandscapeDirectAttack(unit);
         return;
     }
-    const label = cmd.label === "持ち物" ? "アイテム" : cmd.label;
+    const label = cmd.label === "持ち物" ? "アイテム" : cmd.label === "戦技" ? "特技" : cmd.label;
     handleBattleCommand(unit, label);
-    if (!["攻撃", "魔法", "アイテム"].includes(label)) {
+    if (!["魔法", "特技", "アイテム"].includes(label)) {
         syncLandscapeBattleUi(unit);
     }
 }
 
 /** 対象を選んでいる間は、一覧の場所に「取り消し」だけを出す */
-function renderLandscapeTargetCancel(unit, parentLabel) {
+function renderLandscapeTargetCancel(unit) {
     setLandscapeRailVisible(true);
     clearLandscapeCommandBranch();
     landscapeCommandList.className = "menu targetCancel";
     landscapeCommandList.innerHTML = "";
-    const btn = document.createElement("button");
-    btn.className = "lsMenuItem lsMenuBack";
-    btn.innerHTML = `${lsCommandIcon("戻る")}<span>取り消し</span>`;
-    btn.addEventListener("click", () => cancelLandscapeTargeting(unit, parentLabel));
-    landscapeCommandList.appendChild(btn);
+    addLandscapeMenuBack(() => cancelLandscapeTargeting(unit), "取り消し");
 }
 
-/** 攻撃の枝に、専用戦技（月詠・生命吸収）と自己強化の戦技を足す（戦技コマンドは攻撃にまとめた） */
+/** 戦技の一覧に、専用戦技（月詠・生命吸収）と自己強化の戦技を足す */
 function addLandscapeSelfArtButtons(unit, addButton) {
     const specials = unit.trialStats && TRIAL_ABILITY_SOURCE[unit.id]
         ? trialSpecialArtsFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null) : [];
@@ -2872,6 +2892,18 @@ function addLandscapeSelfArtButtons(unit, addButton) {
     getAvailableCombatArts(unit, "self").forEach(art => addButton(art.name, getCombatArtUseText(unit, art), () => {
         executeSelfCombatArt(unit, art.id);
     }));
+}
+
+/** 魔法の射程を塗る */
+function highlightLandscapeSpellRange(unit, spell) {
+    clearHighlights();
+    const range = Number(spell?.range || 0);
+    for (let dy = -range; dy <= range; dy++) {
+        for (let dx = -range; dx <= range; dx++) {
+            if (Math.abs(dx) + Math.abs(dy) > range) continue;
+            getCell(unit.y + dy, unit.x + dx)?.classList.add("highlightAttack");
+        }
+    }
 }
 
 /** 戦闘予測から切り替えられる攻撃の種類（この相手に届くものだけ） */
@@ -2995,7 +3027,7 @@ function renderLandscapeCommandRail(unit = selectedUnit) {
     }
     const targeting = LS_TARGETING_STATES[actionState];
     if (targeting) {
-        renderLandscapeTargetCancel(unit, targeting);
+        renderLandscapeTargetCancel(unit);
         return;
     }
     if (lsOpenBranch && lsOpenBranch.unit === unit && actionState == null) {
@@ -3033,9 +3065,9 @@ function getLandscapeMagicEntries(unit) {
 }
 
 function addLandscapeBackButton(unit) {
-    // 環状コマンドの枝には戻るボタンを置かない（× か何もないマス、開いたコマンドをもう一度押すと戻る）
-    if (document.getElementById("landscapeCommandBranch")) {
-        layoutLandscapeCommandBranch();
+    // 入れ替えた一覧（戦技・魔法・持ち物）の最後に「戻る」を置く
+    if (isLandscapeSubListOpen()) {
+        addLandscapeMenuBack(() => collapseLandscapeBranch(unit));
         return;
     }
     const back = document.createElement("button");
@@ -3048,22 +3080,29 @@ function addLandscapeBackButton(unit) {
 
 function renderLandscapeSubCommandRail(unit, kind) {
     if (!landscapeCommandList || !unit) return;
-    // 戦技は攻撃の2段目にまとめた（原作者 2026-09-25）
-    const parentLabel = { attack: "攻撃", skill: "攻撃", magic: "魔法", item: "持ち物" }[kind];
-    lsOpenBranch = { unit, kind };
-    const branch = buildLandscapeCommandMenu(unit, parentLabel);
-    const addButton = (label, sub, onClick) => addLandscapeBranchNode(branch, label, sub, onClick);
-
+    // 攻撃は一覧を入れ替えず、すぐ相手を選ぶ（原作者 2026-09-25）
     if (kind === "attack") {
+        startLandscapeDirectAttack(unit);
+        return;
+    }
+    const title = { skill: "戦技", magic: "魔法", item: "持ち物" }[kind];
+    lsOpenBranch = { unit, kind };
+    lsTargetOrigin = title;
+    const list = openLandscapeSubList(unit, title);
+    const addButton = (label, sub, onClick) => addLandscapeBranchNode(list, label, sub, onClick);
+
+    if (kind === "skill") {
         const atkSkills = ATTACK_SKILL_PRIORITY
             .filter(name => name in (unit.skills || {}))
             .map(name => ({ label: name, skill: name, sub: String(unit.skills[name]) }));
         if (atkSkills.length === 0) atkSkills.push({ label: "素手", skill: "素手", sub: "4" });
         // [trial] 採用版では攻撃はTRPG技能を選ばず、装備武器での通常攻撃ひとつ（投擲は兵種の戦技）
         if (unit.trialStats) atkSkills.splice(0, atkSkills.length, { label: "通常攻撃", skill: getAttackSkillVal(unit).name, sub: "武器" });
-        // [trial] 武器を持っていなければ武器の攻撃は出さない（専用戦技・自己強化の戦技だけ）
-        const canWeapon = !unit.trialStats || !!trialCarriedWeapon(trialGearOf(unit));
-        if (!canWeapon) atkSkills.length = 0;
+        // [trial] 武器を持っていなければ武器の戦技は出さない（専用戦技・自己強化の戦技だけ）
+        const canWeapon = landscapeCanWeaponAttack(unit);
+        // 通常攻撃は攻撃コマンドへ。戦技の一覧には投擲（TRPG技能の旧データ）だけを残す
+        const throwOnly = atkSkills.filter(item => item.label === "投擲" && canWeapon && !unit.trialStats);
+        atkSkills.splice(0, atkSkills.length, ...throwOnly);
         atkSkills.forEach(item => addButton(item.label, item.sub, () => {
             selectedAttackSkill = item.skill;
             selectedCombatArtId = null;
@@ -3113,27 +3152,6 @@ function renderLandscapeSubCommandRail(unit, kind) {
             });
         });
         addLandscapeSelfArtButtons(unit, addButton);
-        addLandscapeBackButton(unit);
-        return;
-    }
-
-    if (kind === "skill") {
-        // 特技（TRPG技能）は廃止。戦技コマンドとして自己強化の戦技だけを出す
-        const selfArts = getAvailableCombatArts(unit, "self");
-        // [trial] 専用戦技（月詠・生命吸収）。1戦闘に1回（仮）
-        const specials = unit.trialStats && TRIAL_ABILITY_SOURCE[unit.id]
-            ? trialSpecialArtsFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null) : [];
-        specials.forEach(art => {
-            const used = !!unit.trialArtUses?.[art.name];
-            const btn = addButton(art.name, used ? "使用済み" : `${art.radius}マス・1回`, () => {
-                if (!used) trialCastSpecialArt(unit, art.name);
-            });
-            if (btn && used) btn.disabled = true;
-        });
-        if (selfArts.length === 0 && specials.length === 0) addButton("使える戦技なし", "", () => {});
-        selfArts.forEach(art => addButton(art.name, getCombatArtUseText(unit, art), () => {
-            executeSelfCombatArt(unit, art.id);
-        }));
         addLandscapeBackButton(unit);
         return;
     }
@@ -3241,7 +3259,8 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel, optio
 
     const activeCombatArt = readOnly ? null : getCombatArtData(selectedCombatArtId);
     // 届く攻撃が複数あれば、予測の見出しで ‹ › を押して切り替えられる
-    const switchOptions = readOnly ? [] : landscapeForecastOptions(attacker, target);
+    const switchOptions = readOnly ? [] : landscapeForecastOptions(attacker, target)
+        .filter(option => (option.kind === "magic") === !!_vsAttack?.isMagic);
     const switchIndex = landscapeForecastOptionIndex(switchOptions);
     const actionName = switchIndex >= 0 ? switchOptions[switchIndex].label : (activeCombatArt?.name || actionLabel || "攻撃");
     const headAction = switchOptions.length > 1 && switchIndex >= 0
@@ -3314,14 +3333,15 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel, optio
     document.getElementById("lsFcNext")?.addEventListener("click", () => switchBy(1));
     document.getElementById("lsFcCancel").addEventListener("click", () => {
         if (!_vsAttack) return;
-        const { isMagic: cancelMagic } = _vsAttack;
+        const { isMagic: cancelMagic, spell: cancelSpell, attacker: cancelUnit } = _vsAttack;
+        // 予測の「戻る」は、相手を選ぶ段階に戻る（選んだ攻撃・戦技・魔法はそのまま）
+        actionState = cancelMagic ? "magic" : "attacking";
+        if (cancelMagic) selectedSpell = cancelSpell;
         hideBattlePreview();
-        actionState = null;
         clearHighlights();
-        if (selectedUnit) {
-            if (cancelMagic) renderLandscapeSubCommandRail(selectedUnit, "magic");
-            else renderLandscapeSubCommandRail(selectedUnit, "attack");
-        }
+        if (cancelMagic) highlightLandscapeSpellRange(cancelUnit, cancelSpell);
+        else highlightAttackRange(cancelUnit);
+        setLandscapeHint("相手を選び直してください。");
     });
     setLandscapeHint(`${target.name}への${actionName}を実行しますか。`);
 }

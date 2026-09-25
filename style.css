@@ -6389,3 +6389,21 @@ html, body {
 /* ユニット情報の欄は押すと詳細を開く */
 #landscapeUnitPanel[data-unit-id]:not([data-unit-id=""]) { cursor: pointer; }
 
+
+/* ── 戦技・魔法・持ち物: 右の一覧そのものを中身に入れ替える（原作者 2026-09-25） ── */
+#landscapeCommandList.menu.sub { width: 168px; }
+.lsMenuTitle {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    height: 24px;
+    padding: 0 8px;
+    margin-bottom: 2px;
+    color: #ffe2a0;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    background: linear-gradient(90deg, rgba(98,30,120,0.85), rgba(58,20,84,0.3));
+    border-left: 2px solid #c8922a;
+}
+.lsMenuTitle .lsMenuIcon { width: 14px; height: 14px; }
+#landscapeCommandList.menu.sub .lsBranchItem { width: 100%; }
