@@ -2633,8 +2633,16 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel, optio
         return `<i class="refFcFace" style="${style}"></i>`;
     };
     const hp = (before, after) => after === before ? `${before}` : `${before}<i>▶</i><strong>${after}</strong>`;
+    // HPバー: 残るぶんと、この戦闘で減るぶん
+    const hpBar = (u, after) => {
+        const max = Math.max(1, Number(u.maxHp || 1));
+        const nowPct = Math.max(0, Math.min(100, u.hp / max * 100));
+        const afterPct = Math.max(0, Math.min(100, after / max * 100));
+        return `<span class="refFcBar ${u.side}"><i class="lost" style="width:${nowPct}%"></i><i class="after" style="width:${afterPct}%"></i></span>`;
+    };
+    // 反撃は勇気%で起きるかどうかが決まる（起きれば右列の命中・ダメージで攻撃してくる）
     const counterInfo = pred.canCounter
-        ? `反撃 ${pred.counterRate}%${pred.counterLabel ? `（${pred.counterLabel}）` : ""}`
+        ? `反撃してくる確率 ${pred.counterRate}%${pred.counterLabel ? `・${pred.counterLabel}` : ""}`
         : pred.counterBlockedReason ? `反撃なし（${pred.counterBlockedReason}）` : isDamage ? "反撃なし" : "";
 
     lsForecast.innerHTML = `
@@ -2645,6 +2653,7 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel, optio
                 <span></span>
                 <div class="refFcName ${target.side} right"><b>${target.name}</b>${face(target)}</div>
                 <span class="v">${hp(attacker.hp, atkAfter)}</span><span class="k">HP</span><span class="v">${hp(target.hp, defAfter)}</span>
+                ${hpBar(attacker, atkAfter)}<span></span>${hpBar(target, defAfter)}
                 <span class="v">${dmgDisp}</span><span class="k">ダメージ</span><span class="v">${counterDmgDisp}</span>
                 <span class="v">${pred.hitRate}%</span><span class="k">命中</span><span class="v">${pred.canCounter ? `${pred.ctrHitRate}%` : "─"}</span>
                 <span class="v">${isDamage ? `${pred.critRate}%` : "─"}</span><span class="k">必殺</span><span class="v">${pred.canCounter ? `${pred.ctrCritRate}%` : "─"}</span>
@@ -2652,8 +2661,8 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel, optio
             ${counterInfo ? `<div class="refFcCounter">${counterInfo}</div>` : ""}
             ${noteText ? `<div class="refFcNote" title="${noteText}">${noteText}</div>` : ""}
             ${readOnly ? "" : `<div class="refFcBtns">
-                <button type="button" id="lsFcCancel">キャンセル</button>
-                <button type="button" id="lsFcConfirm">実行</button>
+                <button type="button" id="lsFcCancel">戻る</button>
+                <button type="button" id="lsFcConfirm"><i aria-hidden="true"></i>実行</button>
             </div>`}
         </div>
     `;

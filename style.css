@@ -5782,7 +5782,7 @@ html, body {
 #gameScreen[data-mode="battle"] #lsForecast.atBottom {
     right: auto;
     bottom: auto;
-    width: 200px;
+    width: 220px;
     transform: translateX(-50%);
 }
 .refFc .refFcHead { padding: 3px 7px; font-size: 9px; }
@@ -5848,3 +5848,58 @@ html, body {
 .refFc .refFcNote { padding: 0 6px 2px; font-size: 6.5px; }
 .refFc .refFcBtns { padding: 3px 6px 4px; }
 .refFc .refFcBtns button { min-height: 17px; font-size: 9px; letter-spacing: 0.12em; }
+
+/* 戦闘予測: HPバー（残るぶん＝色、減るぶん＝淡い色） */
+.refFcBar {
+    position: relative;
+    height: 4px;
+    margin: 1px 4px 3px;
+    background: rgba(0,0,0,0.55);
+    box-shadow: inset 0 0 0 1px rgba(200,146,42,0.18);
+}
+.refFcBar i { position: absolute; left: 0; top: 0; bottom: 0; }
+.refFcBar .lost { background: rgba(236,210,142,0.35); }
+.refFcBar .after { background: linear-gradient(90deg, #2fbf72, #59e48c); }
+.refFcBar.enemy .after { background: linear-gradient(90deg, #c24a3a, #e88a5c); }
+.refFcBar .after { transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1); }
+
+/* 戦闘予測のボタン: 戻る＝細い枠だけ、実行＝金の帯 */
+.refFc .refFcBtns {
+    grid-template-columns: 1fr 1.6fr;
+    gap: 6px;
+    padding: 4px 8px 6px;
+    border-top: 1px solid rgba(200,146,42,0.14);
+}
+.refFc .refFcBtns button {
+    position: relative;
+    min-height: 19px;
+    padding: 0 6px;
+    font-size: 9px;
+    letter-spacing: 0.24em;
+    text-indent: 0.24em;
+    border-radius: 0;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.refFc .refFcBtns #lsFcCancel {
+    color: rgba(224,189,115,0.7);
+    background: transparent;
+    border: 1px solid rgba(200,146,42,0.28);
+}
+.refFc .refFcBtns #lsFcCancel:hover { color: #ecd28e; border-color: rgba(224,176,72,0.55); }
+.refFc .refFcBtns #lsFcConfirm {
+    color: #1c1022;
+    font-weight: 700;
+    background: linear-gradient(180deg, #f1d48d, #c8922a);
+    border: 1px solid #f4e2a8;
+    box-shadow: 0 0 0 1px rgba(40,20,10,0.6), 0 2px 6px rgba(0,0,0,0.45);
+}
+.refFc .refFcBtns #lsFcConfirm:hover { background: linear-gradient(180deg, #ffe7aa, #d9a33a); }
+.refFc .refFcBtns #lsFcConfirm i {
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    margin-right: 5px;
+    vertical-align: 1px;
+    background: #3a1f10;
+    transform: rotate(45deg);
+}
