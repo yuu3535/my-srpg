@@ -1206,6 +1206,39 @@ function trialCounterFor(defender, attacker) {
     return { ...plan, spell, label: item?.name || "装備なし" };
 }
 
+/** [trial] 交戦の計画（battlePlan.js）に渡すスナップショット。戦闘中のユニットは書き換えない */
+function trialPlanSnapshot(unit) {
+    const equipped = unit.trialEquippedItem ?? null;
+    return {
+        id: unit.id, name: unit.name, side: unit.side, x: unit.x, y: unit.y,
+        hp: unit.hp, maxHp: unit.maxHp, mp: unit.mp,
+        stats: { ...unit.trialStats }, siz: unit.trialSiz,
+        courage: getEffectiveCourage(unit), luck: unit.trialLuck,
+        abilityNames: [...(unit.trialAbilityNames || [])],
+        statusEffects: (unit.statusEffects || []).map(effect => ({ ...effect })),
+        equippedItem: equipped,
+        grimoireSpell: trialItemKind(equipped) === "grimoire" ? trialGrimoireSpell(equipped) : null,
+        criticalBonus: Number(unit.criticalBonus || 0),
+        criticalAvoidanceBonus: Number(unit.criticalAvoidanceBonus || 0),
+        canCounterBase: canCounter(unit),
+        prayerUsed: !!unit.trialPrayerUsed,
+    };
+}
+
+/** [trial] 攻撃の指示を計画の行動にする（魔導書の魔法・魔法の戦技・武器と物理の戦技） */
+function trialPlanAction(isMagic, spell, combatArtId) {
+    if (isMagic) return { kind: spell?.trialItemId ? "grimoire" : "magicArt", spell };
+    const artName = typeof combatArtId === "string" && combatArtId.startsWith("trial:") ? combatArtId.slice(6) : null;
+    return { kind: "weapon", artName };
+}
+
+function trialPlanEnv() {
+    return {
+        units: battleUnits.filter(unit => unit.trialStats && unit.hp > 0).map(trialPlanSnapshot),
+        passiveBattle: !!BATTLE_DEFINITIONS[currentBattleId]?.passive,
+    };
+}
+
 /** [trial] 敵が魔導書を装備していれば、その魔法で攻撃する（MPが足りなければ攻撃しない） */
 function trialEnemyGrimoireSpell(enemy) {
     if (!enemy?.trialStats || trialItemKind(enemy.trialEquippedItem) !== "grimoire") return null;
