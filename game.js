@@ -2422,7 +2422,8 @@ function syncLandscapeBattleMount() {
 }
 
 /** 横画面時：マップの縦横比を GRID_COLS:GRID_ROWS に合わせて中央配置する。
- *  デザイン空間（844×390）内の中央マップ領域に収める。縦画面時は CSS に戻す */
+ *  マップは画面いっぱいの領域に敷き、上の帯・左の一覧・下の説明にかからない範囲に収める（原作者 2026-09-25）。
+ *  縦画面時は CSS に戻す */
 function sizeLandscapeBattleCanvas() {
     if (!battleCanvas) return;
     if (!isLandscapeBattleUi()) {
@@ -2433,8 +2434,10 @@ function sizeLandscapeBattleCanvas() {
         return;
     }
     // マップ領域の実寸（拡大縮小前の値）に合わせる。取れないときは従来の目安値
-    const availW = landscapeBattlefield?.offsetWidth  || 650;
-    const availH = landscapeBattlefield?.offsetHeight || 300;
+    // 上の帯（フェーズ）・左の味方一覧・下の説明のぶんを空ける
+    const safe = { top: 34, right: 8, bottom: 20, left: 52 };
+    const availW = (landscapeBattlefield?.offsetWidth  || 844) - safe.left - safe.right;
+    const availH = (landscapeBattlefield?.offsetHeight || 390) - safe.top - safe.bottom;
     const inset = 32; // battleGrid の上下左右 16px ずつ（セルを正方形に保つため差し引く）
     const ratio = GRID_COLS / GRID_ROWS;
     let innerH = availH - inset, innerW = innerH * ratio;
@@ -2442,8 +2445,8 @@ function sizeLandscapeBattleCanvas() {
     const w = innerW + inset, h = innerH + inset;
     battleCanvas.style.width  = `${Math.round(w)}px`;
     battleCanvas.style.height = `${Math.round(h)}px`;
-    battleCanvas.style.left   = `calc(50% - ${Math.round(w / 2)}px)`;
-    battleCanvas.style.top    = `calc(50% - ${Math.round(h / 2)}px)`;
+    battleCanvas.style.left   = `${Math.round(safe.left + (availW - w) / 2)}px`;
+    battleCanvas.style.top    = `${Math.round(safe.top + (availH - h) / 2)}px`;
 }
 
 function unitStatusText(unit) {
@@ -3315,6 +3318,7 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel, optio
     lsForecast.classList.remove("hidden");
     setLandscapeForecastOpen(true);
     positionLandscapeForecast(target);
+    markLandscapeTarget(target);
 
     if (readOnly) {
         setLandscapeHint(!actionLabel || actionLabel === "攻撃"
@@ -3397,6 +3401,7 @@ async function trialShowEnemyForecast(enemy, victim, isMagic, spell) {
     await sleep(1400);
     lsForecast?.classList.add("hidden");
     setLandscapeForecastOpen(false);
+    markLandscapeTarget(null);
 }
 
 function syncLandscapeBattleUi(unit = selectedUnit) {
@@ -5030,7 +5035,14 @@ function showUnitPortraitAdjuster(unit) {
 }
 
 /** VS レイヤーを閉じてバトルログに戻る */
+/** 戦闘予測の相手に赤い選択枠を付ける（null で外す） */
+function markLandscapeTarget(target) {
+    document.querySelectorAll(".battleUnit.unitTargeted").forEach(el => el.classList.remove("unitTargeted"));
+    if (target) document.getElementById(`unit_${target.id}`)?.classList.add("unitTargeted");
+}
+
 function hideBattlePreview() {
+    markLandscapeTarget(null);
     _vsAttack = null;
     lsForecast?.classList.add("hidden");
     setLandscapeForecastOpen(false);

@@ -6407,3 +6407,105 @@ html, body {
 }
 .lsMenuTitle .lsMenuIcon { width: 14px; height: 14px; }
 #landscapeCommandList.menu.sub .lsBranchItem { width: 100%; }
+
+/* ============================================================
+   [ui-assets] 全画面マップ＋UI素材（原作者 2026-09-25）
+   マップは画面いっぱいに敷き、UIはその上に浮かべる。
+   枠・ボタン・選択枠・範囲マスは assets/ui/（tools/build_ui_assets.py が書き出す）を使う
+============================================================ */
+/* ── マップを画面いっぱいに ── */
+#gameScreen[data-mode="battle"] #landscapeBattleShell.active #landscapeBattlefield,
+#gameScreen[data-mode="battle"] #landscapeBattleShell.forecast-open #landscapeBattlefield {
+    grid-column: 1 / -1;
+    grid-row: 1 / -1;
+    border: 0;
+    background: none;
+    box-shadow: none;
+    z-index: 0;
+}
+#gameScreen[data-mode="battle"] #landscapeBattlefield::after { display: none; }
+#gameScreen[data-mode="battle"] #landscapeTopStrip,
+#gameScreen[data-mode="battle"] #landscapeRoster,
+#gameScreen[data-mode="battle"] #landscapeHint {
+    position: relative;
+    z-index: 4;
+}
+
+/* ── 枠（パネル素材を四隅を保って伸ばす） ── */
+#landscapeCommandList.menu {
+    background: none;
+    border: 10px solid transparent;
+    border-image: url("assets/ui/panel_mid.png") 24 fill / 10px stretch;
+    padding: 0;
+}
+.lcCard,
+.lcWeapon {
+    background: none;
+    border: 8px solid transparent;
+    border-image: url("assets/ui/panel_small.png") 22 fill / 8px stretch;
+}
+.lcCard { height: 84px; }
+.lcCard.enemy,
+.refFc.readOnly { border-color: transparent; }
+.lcWeapon { padding: 1px 4px 2px; }
+#gameScreen[data-mode="battle"] #landscapeRoster {
+    background: none;
+    border: 5px solid transparent;
+    border-image: url("assets/ui/list_cell.png") 22 fill / 8px stretch;
+}
+.refFc {
+    background: none;
+    border: 8px solid transparent;
+    border-image: url("assets/ui/panel_mid.png") 24 fill / 9px stretch;
+}
+/* 予測のボタン: 「戻る」は通常、「実行」は主要アクションの素材 */
+#gameScreen[data-mode="battle"] .refFc .refFcBtns #lsFcCancel,
+#gameScreen[data-mode="battle"] .refFc .refFcBtns #lsFcConfirm {
+    min-height: 24px;
+    color: rgba(236,210,142,0.9);
+    font-weight: 600;
+    background: none;
+    border: 7px solid transparent;
+    border-image: url("assets/ui/button.png") 20 28 fill / 7px 11px stretch;
+    box-shadow: none;
+    clip-path: none;
+}
+#gameScreen[data-mode="battle"] .refFc .refFcBtns #lsFcConfirm {
+    color: #ffe2a0;
+    border-image-source: url("assets/ui/button_primary.png");
+}
+#gameScreen[data-mode="battle"] .refFc .refFcBtns #lsFcConfirm i { background: #ecd28e; }
+#gameScreen[data-mode="battle"] .refFc .refFcBtns button:hover { filter: brightness(1.15); }
+#gameScreen[data-mode="battle"] #landscapePhaseTitle {
+    background: none;
+    border: 8px solid transparent;
+    border-image: url("assets/ui/title_plate.png") 20 44 fill / 8px 17px stretch;
+    box-shadow: none;
+    padding: 0 12px;
+}
+
+/* ── 盤面: 移動・攻撃範囲のマスと選択枠 ── */
+#gameScreen[data-mode="battle"] .gridCell.highlightMove:not(.enemyActionRange) {
+    background: url("assets/ui/tile_move.png") center / 100% 100% no-repeat;
+    border-color: transparent;
+}
+#gameScreen[data-mode="battle"] .gridCell.highlightAttack:not(.enemyActionRange) {
+    background: url("assets/ui/tile_attack.png") center / 100% 100% no-repeat;
+    border-color: transparent;
+}
+.battleUnit.unitSelected::before,
+.battleUnit.unitTargeted::before {
+    content: "";
+    position: absolute;
+    left: -8%;
+    right: -8%;
+    bottom: -10%;
+    aspect-ratio: 1;
+    background: url("assets/ui/select_ally.png") center / 100% 100% no-repeat;
+    pointer-events: none;
+    z-index: -1;
+}
+.battleUnit.unitTargeted::before { background-image: url("assets/ui/select_enemy.png"); }
+#gameScreen .battleUnit.unitSelected img {
+    filter: drop-shadow(0 0 4px rgba(120,190,255,0.7)) drop-shadow(0 2px 3px rgba(0,0,0,0.9)) !important;
+}
