@@ -20,7 +20,8 @@ namespace Srpg.Tests
 
             var controller = Object.FindFirstObjectByType<BattleM1Controller>();
             Assert.IsNotNull(controller, "BattleM1Controller がない");
-            Assert.AreEqual(8, controller.Units.Count);
+            Assert.AreEqual(7, controller.Units.Count);   // カリマは背景を透明にした絵ができるまで出さない
+            Assert.IsTrue(controller.Units.All(u => u.ring != null), "全員の足元に光がある");
 
             var arshe = controller.Units.First(u => u.source.id == "arshe");
             var start = arshe.cell;

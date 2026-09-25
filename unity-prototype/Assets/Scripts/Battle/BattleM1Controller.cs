@@ -26,11 +26,17 @@ namespace Srpg.Battle
         [SerializeField] private Sprite tileSprite;     // 塗りの菱形（移動範囲）
         [SerializeField] private Sprite frameSprite;    // 枠の菱形（選択中）
         [SerializeField] private UnitSprite[] unitSprites = Array.Empty<UnitSprite>();
+        [SerializeField] private Sprite[] allyRingFrames = Array.Empty<Sprite>();    // 足元の光（味方＝青）
+        [SerializeField] private Sprite[] enemyRingFrames = Array.Empty<Sprite>();   // 足元の光（敵＝赤）
+        [SerializeField] private float ringWidth = 0.9f;                            // 足元の光の横幅（マスの横幅＝1）
+        [SerializeField] private Sprite footGlowSprite;                             // 足元の淡い楕円（陣営の色で常に出す）
         [SerializeField] private Camera targetCamera;
         [SerializeField] private float unitHeight = 1.35f;   // ユニットの絵の高さ（マスの横幅＝1）
 
         private static readonly Color MoveColor = new Color(0.30f, 0.60f, 1f, 0.45f);
         private static readonly Color SelectColor = new Color(0.55f, 0.80f, 1f, 1f);
+        private static readonly Color AllyGlow = new Color(0.35f, 0.62f, 1f, 0.75f);
+        private static readonly Color EnemyGlow = new Color(1f, 0.30f, 0.26f, 0.75f);
 
         private BattleDataFile data;
         private readonly List<UnitView> units = new List<UnitView>();
@@ -51,6 +57,8 @@ namespace Srpg.Battle
             public UnitData source;
             public GameObject root;
             public SpriteRenderer renderer;
+            public SpriteRenderer ring;
+            public SpriteRenderer glow;
             public Vector2Int cell;
             public bool moved;
             public Vector2Int Cell => cell;
@@ -126,7 +134,33 @@ namespace Srpg.Battle
                     float scale = unitHeight / renderer.sprite.bounds.size.y;
                     renderer.transform.localScale = new Vector3(scale, scale, 1f);
                 }
-                var view = new UnitView { source = source, root = root, renderer = renderer, cell = new Vector2Int(source.x, source.y) };
+                // 足元の光: 味方は青、敵は赤（原作者 2026-09-26: 敵か味方かを見分けやすく）。キャラの絵の後ろに置く
+                var frames = source.side == "enemy" ? enemyRingFrames : allyRingFrames;
+                SpriteRenderer ring = null;
+                if (frames != null && frames.Length > 0)
+                {
+                    ring = new GameObject("FootRing").AddComponent<SpriteRenderer>();
+                    ring.transform.SetParent(root.transform, false);
+                    float ringScale = ringWidth / frames[0].bounds.size.x;
+                    ring.transform.localScale = new Vector3(ringScale, ringScale, 1f);
+                    ring.transform.localPosition = new Vector3(0f, -IsoGrid.TileHeight * 0.12f, 0f);
+                    // ユニットごとに動きの始まりをずらす
+                    float offset = (Mathf.Abs(source.id.GetHashCode()) % 1000) / 1000f * frames.Length / 20f;
+                    ring.gameObject.AddComponent<SpriteFlipbook>().Setup(frames, 20f, offset);
+                }
+                // 粒は立ちのぼって消えるのをくり返すため、陣営の色の淡い楕円を足元に常に敷く
+                SpriteRenderer glow = null;
+                if (footGlowSprite != null)
+                {
+                    glow = new GameObject("FootGlow").AddComponent<SpriteRenderer>();
+                    glow.transform.SetParent(root.transform, false);
+                    glow.sprite = footGlowSprite;
+                    glow.color = source.side == "enemy" ? EnemyGlow : AllyGlow;
+                    float glowScale = ringWidth / footGlowSprite.bounds.size.x;
+                    glow.transform.localScale = new Vector3(glowScale, glowScale, 1f);
+                    glow.transform.localPosition = new Vector3(0f, IsoGrid.TileHeight * 0.18f, 0f);   // マスの中心
+                }
+                var view = new UnitView { source = source, root = root, renderer = renderer, ring = ring, glow = glow, cell = new Vector2Int(source.x, source.y) };
                 units.Add(view);
                 PlaceUnit(view);
             }
@@ -138,6 +172,8 @@ namespace Srpg.Battle
             Vector2 center = IsoGrid.CellCenter(view.cell.x, view.cell.y);
             view.root.transform.localPosition = new Vector3(center.x, center.y - IsoGrid.TileHeight * 0.18f, 0f);
             view.renderer.sortingOrder = IsoGrid.SortingOrder(view.cell.x, view.cell.y) + 5;
+            if (view.ring != null) view.ring.sortingOrder = view.renderer.sortingOrder - 1;
+            if (view.glow != null) view.glow.sortingOrder = view.renderer.sortingOrder - 2;
         }
 
         private SpriteRenderer CreateDiamond(string name, Sprite sprite, Color color, int order)
