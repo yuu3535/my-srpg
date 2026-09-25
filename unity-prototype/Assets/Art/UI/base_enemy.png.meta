@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 9db596bd9db823a40b309739a218b69f
+guid: 8eddf4420c05374408bc8e5763a71bf9
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 6508184323728878740
-    second: base_rim_0
+      213: -6266930373059638301
+    second: base_enemy_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -50,8 +50,8 @@ TextureImporter:
   spriteExtrude: 1
   spriteMeshType: 0
   alignment: 9
-  spritePivot: {x: 0.5, y: 0.62}
-  spritePixelsToUnits: 160
+  spritePivot: {x: 0.5, y: 0.639}
+  spritePixelsToUnits: 320
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -72,7 +72,7 @@ TextureImporter:
   platformSettings:
   - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 256
+    maxTextureSize: 512
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 0
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: base_rim_0
+      name: base_enemy_0
       rect:
         serializedVersion: 2
-        x: 5
-        y: 7
-        width: 150
-        height: 90
+        x: 0
+        y: 0
+        width: 320
+        height: 155
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 49c20ac1927b15a50800000000000000
-      internalID: 6508184323728878740
+      spriteID: 3eb8ca187046709a0800000000000000
+      internalID: -6266930373059638301
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      base_rim_0: 6508184323728878740
+      base_enemy_0: -6266930373059638301
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
