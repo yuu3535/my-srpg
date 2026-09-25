@@ -6977,26 +6977,22 @@ html, body {
    線を太くした版が届くまで従来の枠を使う（assets/ui/select_ally_v2.png は書き出し済み） */
 
 /* ============================================================
-   [unit-base] 駒の台座（原作者のTRPGの動画の表現・2026-09-26 案1）
-   縁（と側面）は陣営の色: 味方＝青、敵＝赤。天面は草地。キャラの絵の後ろに置く
+   [unit-base] 駒の台座（原作者のTRPGの動画の表現と素材・2026-09-26）
+   味方＝白、敵＝黒（原作者 2026-09-26）。天面は草地。キャラの絵の後ろに置く
+   画像は tools/make_unit_base.py が アイコン素材/台座/台座_元.png から作る。
+   足を置く天面の中心は、画像の下から63.9%の位置
 ============================================================ */
 .battleUnit .unitBase {
-    --base-rim: #4d8cff;
-    --base-side: #2c5bc0;
     position: absolute;
     left: 50%;
     bottom: 1%;
-    width: 74%;
-    aspect-ratio: 2.3;
+    width: 80%;
+    aspect-ratio: 320 / 155;
     z-index: -1;
-    transform: translateX(-50%);
-    border-radius: 50%;
-    background: radial-gradient(ellipse at 50% 38%, #5a8a44, #2f4d27 72%);
-    border: 2px solid var(--base-rim);
-    box-shadow: 0 4px 0 0 var(--base-side), 0 6px 6px rgba(0, 0, 0, 0.55);
+    transform: translate(-50%, 63.9%);
+    background: url("assets/units/base_ally.png") center / 100% 100% no-repeat;
     pointer-events: none;
 }
 .battleUnit.enemyUnit .unitBase {
-    --base-rim: #e5483c;
-    --base-side: #a32a22;
+    background-image: url("assets/units/base_enemy.png");
 }
