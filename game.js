@@ -1394,7 +1394,7 @@ function applyBarrierDamage(target, rawDmg, breakBarrier = false) {
 /** ログ用のダメージ式表記（[trial] 試験用の式はその形で表示） */
 function formatPhysicalFormula(result) {
     return result.trial
-        ? `（[試験] 武器${result.weaponPower}+(力${result.power + (result.powerBonus || 0)}-防御${result.armor})÷2）`
+        ? `（[試験] 武器${result.weaponPower}${result.powerBonus ? `+補正${result.powerBonus}` : ""}+(力${result.power}-防御${result.armor})÷2）`
         : `（力${result.power}+武器${result.weaponPower}-物防${result.armor}）`;
 }
 
@@ -1412,13 +1412,16 @@ function calculatePhysicalDamage(attacker, target, options = {}) {
     const attackerDerivedBonus = getDerivedPassiveStatBonus(attacker);
     const defenderDerivedBonus = getDerivedPassiveStatBonus(target);
     if (isTrialPair(attacker, target)) {
-        // [trial] max(1, round(武器威力 + (力 - 防御) / 2))、武器は仮の中威力
-        const trialWeapon = TRIAL_WEAPON_POWER.mid;
-        const trialAttack = attacker.trialStats.atk + powerBonus + attackerDerivedBonus;
+        // [trial] max(1, round(武器威力 + 威力補正 + (力 - 防御) / 2))
+        //   武器威力は装備中の武器（仮の剣などは中威力）。戦技などの威力補正は能力差の括弧の外に足す
+        //   （括弧の中に入れると半分しか効かないため。WORK_MEMO_2026-09-24 の指示書1）
+        const equippedWeapon = TRIAL_ITEMS[attacker.trialEquippedItem];
+        const trialWeapon = equippedWeapon?.kind === "weapon" ? equippedWeapon.power : TRIAL_WEAPON_POWER.mid;
+        const trialAttack = attacker.trialStats.atk + attackerDerivedBonus;
         const trialArmor = target.trialStats.def + defenderDerivedBonus;
-        const trialRaw = trialDamage(trialAttack, trialArmor, trialWeapon);
+        const trialRaw = trialPhysicalDamage(trialAttack, trialArmor, trialWeapon, powerBonus);
         const trialDealt = options.half ? Math.max(1, Math.floor(trialRaw / 2)) : trialRaw;
-        return { trial: true, damage: trialDealt, raw: trialRaw, power: trialAttack - powerBonus, weaponPower: trialWeapon, powerBonus, armor: trialArmor, masteryBonus: 0, artNote: "" };
+        return { trial: true, damage: trialDealt, raw: trialRaw, power: trialAttack, weaponPower: trialWeapon, powerBonus, armor: trialArmor, masteryBonus: 0, artNote: "" };
     }
     const attackValue = atkStats.power + weaponPower + powerBonus + attackerDerivedBonus;
     const armorValue = defStats.armor + defenderDerivedBonus;

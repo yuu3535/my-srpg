@@ -596,6 +596,14 @@ function trialDamage(attackValue, defenseValue, weaponPower = TRIAL_WEAPON_POWER
     return Math.max(1, Math.round(Number(weaponPower) + (Number(attackValue) - Number(defenseValue)) / 2));
 }
 
+/**
+ * 物理ダメージ: max(1, round(武器威力 + 威力補正 + (力 - 防御) / 2))
+ * 戦技などの威力補正は能力差の括弧の外に足す（括弧の中だと半分しか効かない）
+ */
+function trialPhysicalDamage(attack, defense, weaponPower = TRIAL_WEAPON_POWER.mid, powerBonus = 0) {
+    return trialDamage(attack, defense, Number(weaponPower) + Number(powerBonus || 0));
+}
+
 /** 必殺率（WORK_MEMO §15）: 技 + floor(現在の勇気 / 5) - 相手の魅力 + 補正、0〜100% */
 function trialCriticalRate(attackerStats, currentCourage, defenderStats, modifier = 0) {
     const rate = attackerStats.tec
@@ -660,6 +668,7 @@ if (typeof module !== "undefined") {
         trialSizeEvasionModifier,
         trialHitRate,
         trialDamage,
+        trialPhysicalDamage,
         trialCriticalRate,
         trialCanFollowUp,
     };

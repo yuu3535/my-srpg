@@ -30,6 +30,7 @@ const {
     trialCarriedWeapon,
     trialGearEquip,
     trialGearTransfer,
+    trialPhysicalDamage,
 } = require("../trialStatSystem.js");
 
 const books = id => trialCarriedGrimoires(trialStartingGear(id));
@@ -255,6 +256,11 @@ assert.deepEqual([moved.gears.ringholm.items, moved.gears.ringholm.equipped, mov
 assert.equal(trialGearEquip(gears.ringholm, "albas_sword").changed, false);
 const fullGear = { items: Array(TRIAL_ITEM_CAPACITY).fill("trial_sword"), equipped: "trial_sword" };
 assert.equal(trialGearTransfer({ ringholm: fullGear }, ["albas_sword"], "stock", "ringholm", "albas_sword").reason, "full");
+
+// 物理ダメージの威力補正は括弧の外（+5 はそのまま +5 効く。括弧の中だと +2.5 になっていた）
+assert.equal(trialPhysicalDamage(30, 20, 6, 0), 11);
+assert.equal(trialPhysicalDamage(30, 20, 6, 5), 16);
+assert.equal(trialPhysicalDamage(10, 40, 6, 0), 1);   // 最低1
 
 // 追撃: 速さ差5以上
 assert.equal(trialCanFollowUp({ spd: 30 }, { spd: 25 }), true);
