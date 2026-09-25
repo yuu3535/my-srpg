@@ -21,6 +21,11 @@ const UNITY_ASSETS = path.join(ROOT, "unity-prototype", "Assets");
 const CHARACTERS_DATA = require(path.join(ROOT, "characters.js"));
 const BATTLE_DEFINITIONS = require(path.join(ROOT, "battleDefinitions.js"));
 
+// Unity版の戦闘に出さないキャラ（理由つき）。素材が揃ったら外す
+const UNITY_EXCLUDED_UNITS = {
+    young_karima: "背景を透明にした盤面の絵ができるまで出さない（原作者 2026-09-26）",
+};
+
 function copyAsset(sourceRelative, destDir, destName) {
     const source = path.join(ROOT, sourceRelative);
     if (!fs.existsSync(source)) throw new Error(`素材が見つからない: ${sourceRelative}`);
@@ -47,7 +52,10 @@ function main() {
     ];
 
     const tokenDir = path.join(UNITY_ASSETS, "Art", "Tokens");
-    const units = sources.map(c => {
+    for (const c of sources) {
+        if (UNITY_EXCLUDED_UNITS[c.id]) console.log(`出さない: ${c.name}（${UNITY_EXCLUDED_UNITS[c.id]}）`);
+    }
+    const units = sources.filter(c => !UNITY_EXCLUDED_UNITS[c.id]).map(c => {
         const pos = def.positions?.[c.id] ?? { x: c.x, y: c.y };
         return {
             id: c.id,
