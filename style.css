@@ -4675,34 +4675,27 @@ html, body {
     fill: rgba(255, 112, 116, 0.98);
 }
 
+/* 敵に狙われている味方: 赤い丸の印をやめ、足元から赤い粒子が立ちのぼる表現にする
+   （原作者 2026-09-26。TRPGの動画の表現。素材は アイコン素材/mp4素材/nc144325.mp4 をコマに分けたもの:
+    tools/make_flipbook.py → tools/make_sprite_strip.py で assets/effects/sparks_red.png） */
 .battleUnit.declTargeted::before {
     content: "";
     position: absolute;
-    left: 16%;
-    top: 8%;
-    width: 68%;
-    aspect-ratio: 1;
-    border: 1px solid rgba(255, 62, 76, 0.98);
-    border-radius: 50%;
-    box-shadow:
-        inset 0 0 0 1px rgba(7,8,14,0.82),
-        0 0 4px rgba(255, 42, 58, 0.92),
-        0 0 11px rgba(208, 20, 42, 0.58);
+    left: 50%;
+    bottom: 0;
+    z-index: 1;
+    width: 82%;
+    aspect-ratio: 86 / 160;
+    transform: translateX(-50%);
+    background: url("assets/effects/sparks_red.png") 0 0 / 3500% 100% no-repeat;
+    mix-blend-mode: screen;
     pointer-events: none;
-    animation: declTargetLock 1.15s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    animation: declTargetSparks 1.75s steps(35, jump-none) infinite;
 }
 
-@keyframes declTargetLock {
-    0%, 100% {
-        opacity: 0.76;
-        transform: scale(0.98);
-        filter: brightness(0.88);
-    }
-    50% {
-        opacity: 1;
-        transform: scale(1.02);
-        filter: brightness(1.28);
-    }
+@keyframes declTargetSparks {
+    from { background-position-x: 0%; }
+    to   { background-position-x: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
