@@ -4604,6 +4604,40 @@ function chooseEnemyTarget(enemy, allies) {
     });
 }
 
+/**
+ * [trial] 敵の攻撃の選択肢（相手・立ち位置）を、戦闘予測と同じ計算（battlePlan.js）の見込みで比べて選ぶ。
+ *   候補: 今の位置と移動できるマスのうち、攻撃が届くマス × 攻撃が届く味方
+ *   評価: bpScoreAttack（与える見込み・倒せる見込み・受ける反撃の見込み）
+ *   reserved: ほかの敵が使う予定のマス / onlyTargetId: 宣言した相手だけを見るとき
+ * 返り値: { target, dest, score } または null（どの味方にも届かない）
+ */
+function trialChooseEnemyAttack(enemy, allies, reserved = new Set(), onlyTargetId = null) {
+    if (!enemy?.trialStats) return null;
+    const spell = trialEnemyGrimoireSpell(enemy);
+    const action = spell ? { kind: "grimoire", spell } : { kind: "weapon" };
+    const maxRange = Math.max(1, Number(enemy.attackRange || 1));
+    const tiles = [{ col: enemy.x, row: enemy.y }, ...getMoveRange(enemy)]
+        .filter(tile => (tile.col === enemy.x && tile.row === enemy.y) || !reserved.has(`${tile.col},${tile.row}`));
+    const baseEnv = trialPlanEnv();
+    let best = null;
+    for (const target of allies) {
+        if (!target.trialStats || target.hp <= 0 || (onlyTargetId && target.id !== onlyTargetId)) continue;
+        const targetSnapshot = trialPlanSnapshot(target);
+        for (const tile of tiles) {
+            const distance = Math.abs(tile.col - target.x) + Math.abs(tile.row - target.y);
+            if (distance < 1 || distance > maxRange) continue;
+            const attacker = { ...trialPlanSnapshot(enemy), x: tile.col, y: tile.row };
+            const env = { ...baseEnv, units: baseEnv.units.map(unit => (unit.id === enemy.id ? attacker : unit)) };
+            const forecast = bpForecast(attacker, targetSnapshot, action, env);
+            const moved = Math.abs(tile.col - enemy.x) + Math.abs(tile.row - enemy.y);
+            // 同じ評価なら、動く距離が短いほうを選ぶ
+            const score = bpScoreAttack(forecast, target.hp, enemy.hp).score - moved * 0.01;
+            if (!best || score > best.score) best = { target, dest: { x: tile.col, y: tile.row }, score };
+        }
+    }
+    return best;
+}
+
 function planEnemyActions() {
     enemyDeclarations = new Map();
     if (!DECLARATION_MODE || battleOver || BATTLE_DEFINITIONS[currentBattleId]?.passive) {
@@ -4626,6 +4660,18 @@ function planEnemyActions() {
         if ((enemy.statusEffects || []).some(e => e.type === "stun")) {
             enemyDeclarations.set(enemy.id, { type: "stun" });
             reserved.add(`${enemy.x},${enemy.y}`);
+            continue;
+        }
+
+        const choice = trialChooseEnemyAttack(enemy, aliveAllies, reserved);   // [trial]
+        if (choice) {
+            reserved.add(`${choice.dest.x},${choice.dest.y}`);
+            enemyDeclarations.set(enemy.id, {
+                type: "attack",
+                dest: choice.dest,
+                targetId: choice.target.id,
+                targetName: choice.target.name,
+            });
             continue;
         }
 
@@ -4778,17 +4824,23 @@ async function executeDeclaredAction(enemy, decl) {
     }
 
     let victim = null;
+    let trialChoice = null;
     if (decl.type === "attack") {
         victim = battleUnits.find(u => u.id === decl.targetId && u.hp > 0 && u.side === "ally") || null;
+        const aliveAllies = battleUnits.filter(u => u.side === "ally" && u.hp > 0);
+        // [trial] 宣言した相手に届く中で、その時点で一番よい立ち位置を選び直す
+        if (victim) trialChoice = trialChooseEnemyAttack(enemy, [victim], new Set(), victim.id);
         if (!victim) {
-            const aliveAllies = battleUnits.filter(u => u.side === "ally" && u.hp > 0);
-            victim = chooseEnemyTarget(enemy, aliveAllies);
+            trialChoice = trialChooseEnemyAttack(enemy, aliveAllies);
+            victim = trialChoice?.target || chooseEnemyTarget(enemy, aliveAllies);
             if (victim) addLog(`・${enemy.name}は目標を ${victim.name} に切り替えた`);
         }
     }
 
     let executionDest = decl.dest;
-    if (decl.type === "attack" && victim) {
+    if (decl.type === "attack" && victim && trialChoice) {
+        executionDest = trialChoice.dest;
+    } else if (decl.type === "attack" && victim) {
         const currentDist = Math.abs(victim.x - enemy.x) + Math.abs(victim.y - enemy.y);
         if (currentDist > enemy.attackRange) {
             const candidates = getMoveRange(enemy);

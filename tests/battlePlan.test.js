@@ -5,6 +5,7 @@ const {
     bpForecast,
     bpFixedRolls,
     bpForecastRolls,
+    bpScoreAttack,
 } = require("../battlePlan.js");
 
 // 基本の数値だけを持つスナップショット
@@ -142,6 +143,32 @@ const roles = plan => plan.steps.map(step => step.type === "strike" ? step.role 
     assert.deepEqual([art.first.dealt, art.followUp.dealt], [16, 11]);
     // 入力のスナップショットは書き換えない
     assert.equal(slow.hp, 30);
+}
+
+// ── 敵の行動選びの評価 ──
+{
+    const enemy = unit("enemy", { side: "enemy" });
+    const score = (target, attacker = enemy) => bpScoreAttack(bpForecast(attacker, target, weapon), target.hp, attacker.hp);
+    // 倒せる相手を優先する
+    const low = score(unit("low", { x: 1, hp: 8 }));
+    const full = score(unit("full", { x: 1 }));
+    assert.equal(low.killChance, 0.6);
+    assert.ok(low.score > full.score);
+    // 反撃できない相手（装備なし）は、受けるダメージがないぶん高く評価する
+    const bare = score(unit("bare", { x: 1, equippedItem: null }));
+    assert.equal(bare.expectedTaken, 0);
+    assert.ok(bare.score > full.score);
+    // 距離2から魔導書で攻撃すれば、剣の相手から反撃を受けない
+    const mage = unit("mage", { side: "enemy", equippedItem: "fire_book", grimoireSpell: FIRE });
+    const bookAction = { kind: "grimoire", spell: FIRE };
+    const at1 = bpScoreAttack(bpForecast(mage, unit("t", { x: 1 }), bookAction), 30, 30);
+    const at2 = bpScoreAttack(bpForecast(mage, unit("t", { x: 2 }), bookAction), 30, 30);
+    assert.ok(at1.expectedTaken > 0);
+    assert.equal(at2.expectedTaken, 0);
+    assert.ok(at2.score > at1.score);
+    // 反撃で倒されうる選択肢は大きく減点
+    const fragile = unit("fragile", { side: "enemy", hp: 3 });
+    assert.ok(score(unit("t2", { x: 1 }), fragile).lethalCounter > 0);
 }
 
 console.log("battlePlan: all tests passed");

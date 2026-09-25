@@ -412,6 +412,47 @@ function bpForecast(attackerSnapshot, defenderSnapshot, action, env = {}) {
     };
 }
 
+/**
+ * 敵の行動選び用: 攻撃の選択肢（相手・立ち位置）の評価。戦闘予測（bpForecast）の結果から作る。
+ *   与える見込み: 1撃目と追撃のダメージ × 命中率
+ *   倒せる見込み: 1撃目（または1撃目＋追撃）で倒せるなら、その命中率に応じて加点
+ *   受ける見込み: 反撃（と反撃の追撃）のダメージ × 反撃の起きやすさ × 命中率。半分の重みで減点
+ *   反撃で倒されうるなら、さらに減点
+ */
+const BP_AI_WEIGHTS = Object.freeze({ kill: 30, taken: 0.5, death: 30 });
+
+function bpScoreAttack(forecast, defenderHp, attackerHp) {
+    const first = forecast.first;
+    const followUp = forecast.followUp;
+    const hitFirst = first.hit === false ? 0 : first.hitRate / 100;
+    const hitFollow = followUp ? followUp.hitRate / 100 : 0;
+    const expectedDealt = first.dealt * hitFirst + (followUp ? followUp.dealt * hitFollow : 0);
+
+    let killChance = 0;
+    if (first.dealt >= defenderHp) killChance = hitFirst;
+    else if (followUp && first.dealt + followUp.dealt >= defenderHp) killChance = hitFirst * hitFollow;
+
+    const check = forecast.counterCheck;
+    const counterChance = check && !check.reason
+        ? Math.max(0, Math.min(100, check.courageRate)) / 100 * (1 - (check.seal?.chance || 0) / 100)
+        : 0;
+    const counter = forecast.counter;
+    const counterFollowUp = forecast.counterFollowUp;
+    const takenIfCounter = counter
+        ? counter.dealt * counter.hitRate / 100 + (counterFollowUp ? counterFollowUp.dealt * counterFollowUp.hitRate / 100 : 0)
+        : 0;
+    const expectedTaken = counterChance * takenIfCounter;
+    const lethalCounter = counter && (counter.dealt + (counterFollowUp?.dealt || 0)) >= attackerHp
+        ? counterChance * (counter.hitRate / 100)
+        : 0;
+
+    const score = expectedDealt
+        + killChance * BP_AI_WEIGHTS.kill
+        - expectedTaken * BP_AI_WEIGHTS.taken
+        - lethalCounter * BP_AI_WEIGHTS.death;
+    return { score, expectedDealt, killChance, expectedTaken, lethalCounter };
+}
+
 /*
  * スナップショットの形（game.js 側で戦闘中のユニットから作る）
  *   { id, name, side, x, y, hp, maxHp, mp, stats: {hp, atk, def, mag, res, tec, spd, cha}, siz,
@@ -429,5 +470,6 @@ if (typeof module !== "undefined") {
         bpCounterPlanFor,
         bpPlanExchange,
         bpForecast,
+        bpScoreAttack,
     };
 }
