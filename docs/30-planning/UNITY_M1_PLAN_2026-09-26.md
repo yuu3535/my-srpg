@@ -67,4 +67,26 @@
 
 1. 最初の対象機種: **スマホの横画面**（ブラウザ版と同じ）。タップ操作を基準にし、PC・マウスは後から。
 2. `unity-prototype/` を**Gitに入れる**。→ 済み（`d64ce62` 除外設定、`8498d56` プロジェクト本体）。
-3. タイルの大きさ: 原作者から「横128×縦32のほうがゆとりがあるか」と質問あり。Claude Code の回答は **横128×縦64（2:1）を推奨**（理由はチャットで説明。縦32は横4：縦1で平たすぎ、斜め見下ろしに見えにくく、タップもしにくい）。原作者の確認待ち。
+3. タイルの大きさ: 原作者から「横128×縦32のほうがゆとりがあるか」と質問あり。Claude Code の回答は **横128×縦64（2:1）を推奨**（理由はチャットで説明。縦32は横4：縦1で平たすぎ、斜め見下ろしに見えにくく、タップもしにくい）。原作者の確認待ち。→ **横128×縦64で決定**（原作者 2026-09-26）。
+
+## 7. 進み具合
+
+### M1-a 完了（2026-09-26）
+
+- 斜め見下ろしの盤面（12×8）に、ブラウザ版と同じマップ絵とユニット8体を並べた。マスを押すとユニットを選び、青い移動範囲が出て、範囲のマスを押すと移動する。
+- 作ったもの:
+  - `tools/export_unity_battle.js` … ブラウザ版のデータ（マップ・ユニット・絵）を `unity-prototype/Assets/Data` と `Assets/Art` に書き出す
+  - `Assets/Scripts/Battle/` … `IsoGrid`（マス目と画面の位置の変換）、`MoveRange`（ブラウザ版と同じ移動の規則）、`BattleM1Controller`（盤面・選択・移動）
+  - `Assets/Editor/Agent/BattleM1Builder.cs` … シーン `Assets/Scenes/BattleM1.unity` を組み立て、確認用の画像 `Assets/Previews/BattleM1_*.png` を書き出す
+  - `Assets/Tests/` … 座標・移動範囲のテスト（4件）と、▶で選択・移動するテスト（1件）。すべて通過
+- 作り直す手順（Claude Code）: `node tools/export_unity_battle.js` → Unityを画面なしで `Srpg.EditorAgent.BattleM1Builder.BuildAll` → テスト（`-runTests`）。
+
+### 原作者が試す手順
+
+1. Unity Hub を開き、「Add」（追加）で `unity-prototype` フォルダを選ぶ（初回だけ）。
+2. プロジェクトを開き、下の Project 欄で `Assets/Scenes/BattleM1` をダブルクリック。
+3. 上の Game 欄の解像度を横長（例: 1688×780、なければ「16:9 Landscape」）にして、▶を押す。
+4. ユニットの立っているマスを押すと選べる。青いマスを押すと移動する。
+5. 試し終わったら、Claude Code が作業する前に Unity を閉じる。
+
+### 次: M1-b（戦闘の計算をC#へ移す）
