@@ -1387,6 +1387,25 @@ async function trialEnemyCastGrimoire(enemy, victim, spell) {
     await sleep(700);
 }
 
+/**
+ * スキル・戦技のアイコン（枠つき）。アイコン画像がまだない能力は枠だけ出す。
+ *   frameKind: personal（個人スキル）/ passive（スキル）/ active（戦技）
+ */
+function abilityIconHtml(name, frameKind, extraClass = "") {
+    const data = typeof SKILL_ICON_DATA !== "undefined" ? SKILL_ICON_DATA : null;
+    const icon = name ? data?.icons?.[name] : null;
+    const frame = data?.frames?.[frameKind];
+    return `<span class="abIcon ${frameKind} ${extraClass}${icon ? "" : " noArt"}" aria-hidden="true">`
+        + (icon ? `<img class="abIconArt" src="${icon}" alt="">` : "")
+        + (frame ? `<img class="abIconFrame" src="${frame}" alt="">` : "")
+        + `</span>`;
+}
+
+/** 能力の種類から枠を決める（戦技は active、それ以外のスキルは passive） */
+function abilityFrameKind(item) {
+    return item?.type === "art" || item?.artKind || item?.kind === "art" ? "active" : "passive";
+}
+
 /** レベル表示（[trial] 試験用ユニットは因果Lvで表示） */
 function formatUnitLevelLabel(unit) {
     return unit?.trialLevel ? `因果Lv ${unit.trialLevel}` : `LV ${unit?.level ?? 1}`;
@@ -2225,6 +2244,10 @@ function renderLandscapeUnitPanel(unit = selectedUnit) {
             ["移動", `${unit.move}マス`], ["状態", unitStatusText(unit)],
         ];
     landscapeUnitEmpty.style.display = "none";
+    if (unit.trialStats) {
+        landscapeUnitContent.innerHTML = renderTrialUnitCard(unit, src, hpPct, mpPct, declLabel);
+        return;
+    }
     landscapeUnitContent.innerHTML = `
         <div class="lsUnitPortrait" style="${src ? `background-image:url('${src}')` : ""}"></div>
         <div class="lsUnitBody">
@@ -2236,6 +2259,67 @@ function renderLandscapeUnitPanel(unit = selectedUnit) {
             </div>
             ${declLabel ? `<div class="lsPrediction">TARGET: ${declLabel}</div>` : ""}
         </div>
+    `;
+}
+
+/**
+ * [trial] 右側のユニット欄（原作者の見本の構成）
+ *   上: 立ち絵・名前・因果Lv・兵種・HP/MP ／ 中: 移動・射程・状態 と 能力値 ／ 下: 装備 と スキル（枠つきアイコン）
+ */
+function renderTrialUnitCard(unit, src, hpPct, mpPct, declLabel) {
+    const s = unit.trialStats;
+    const cls = TRIAL_UNIT_CLASS[unit.id] || { name: "―" };
+    const item = TRIAL_ITEMS[unit.trialEquippedItem];
+    const itemRange = item?.kind === "grimoire" ? `${TRIAL_GRIMOIRE_RANGE.min}〜${TRIAL_GRIMOIRE_RANGE.max}` : item ? `${item.range}` : "―";
+    const range = item ? itemRange : "―";
+    const loadout = TRIAL_ABILITY_SOURCE[unit.id]
+        ? trialSkillLoadoutFor(unit.id, unit.trialAbilityLevel, TRIAL_CLASS_LEVEL, unit.trialLoadoutSelection || null)
+        : null;
+    const skills = loadout
+        ? [
+            loadout.personal ? { ...loadout.personal, frame: "personal" } : null,
+            ...loadout.causeSkills.filter(Boolean).map(skill => ({ ...skill, frame: "passive" })),
+            ...loadout.classSkills.filter(Boolean).map(skill => ({ ...skill, frame: "passive" })),
+        ].filter(Boolean)
+        : [];
+    const arts = loadout ? loadout.combatArts.filter(Boolean) : [];
+    const stat = (label, value) => `<div><dt>${label}</dt><dd>${value}</dd></div>`;
+    return `
+        <div class="lsuTop">
+            <div class="lsuPortrait" style="${src ? `background-image:url('${src}')` : ""}"></div>
+            <div class="lsuHead">
+                <div class="lsuName"><b>${unit.name}</b></div>
+                <div class="lsuLv">${formatUnitLevelLabel(unit)}</div>
+                <div class="lsuClass"><i aria-hidden="true"></i>${cls.name}</div>
+                <div class="lsuGauge"><span>HP</span><b>${unit.hp}<small>/${unit.maxHp}</small></b></div>
+                <div class="lsuBar hp"><i style="width:${hpPct}%"></i></div>
+                <div class="lsuGauge mp"><span>MP</span><b>${unit.mp}<small>/${unit.maxMp}</small></b></div>
+                <div class="lsuBar mp"><i style="width:${mpPct}%"></i></div>
+            </div>
+        </div>
+        <div class="lsuStats">
+            <dl class="lsuMove">
+                ${stat("移動", unit.move)}${stat("射程", range)}${stat("状態", unitStatusText(unit))}
+            </dl>
+            <dl class="lsuAbility">
+                ${stat("力", s.atk)}${stat("魔攻", s.mag)}${stat("防御", s.def)}${stat("魔防", s.res)}
+                ${stat("技", s.tec)}${stat("速さ", s.spd)}${stat("魅力", s.cha)}
+            </dl>
+        </div>
+        <div class="lsuWeapon">
+            <i class="lsuWeaponMark ${item?.kind || "none"}" aria-hidden="true"></i>
+            <b>${item?.name || "装備なし"}</b>
+            <span>${item ? (item.kind === "grimoire" ? `魔導書・射程${itemRange}` : `威力${item.power}・射程${itemRange}`) : "反撃できません"}</span>
+        </div>
+        <div class="lsuSkills">
+            ${skills.map(skill => `
+                <div class="lsuSkill" title="${skill.name}：${skill.desc || ""}">
+                    ${abilityIconHtml(skill.name, skill.frame)}
+                    <span><b>${skill.name}</b><small>${skill.desc || ""}</small></span>
+                </div>`).join("") || `<p class="lsuNone">スキルなし</p>`}
+            ${arts.length ? `<div class="lsuArts">${arts.map(art => `<span title="${art.name}：${art.desc || ""}">${abilityIconHtml(art.name, "active")}</span>`).join("")}</div>` : ""}
+        </div>
+        ${declLabel ? `<div class="lsPrediction">TARGET: ${declLabel}</div>` : ""}
     `;
 }
 
@@ -5579,13 +5663,14 @@ function renderTrialStatusSheet(unit) {
         `<div class="adventureMetric"${tip ? ` title="${tip}"` : ""}><span>${label}</span><b>${value}${extra}</b></div>`;
     const slotRows = (items, type) => items.map((item, index) => `
         <div class="trialLoadoutSlot${item ? "" : " empty"}${type === "unique" ? " unique" : ""}"${item?.desc ? ` title="${item.name}：${item.desc}"` : ""}>
-          <em>${type === "unique" ? "固" : index + 1}</em>
+          ${item ? abilityIconHtml(item.name, type === "art" ? "active" : abilityFrameKind(item), "slot") : `<em>${type === "unique" ? "固" : index + 1}</em>`}
           <span><b>${item?.name || "空き枠"}</b><small>${item?.desc || "セットされていません"}</small></span>
           <i>${item ? (item.source || (item.level ? `Lv${item.level}` : "SET")) : "EMPTY"}</i>
         </div>`).join("");
     const personal = loadout.personal;
     const personalRow = `
         <div class="trialPersonalSkill${personal ? "" : " empty"}"${personal?.desc ? ` title="${personal.name}：${personal.desc}"` : ""}>
+          ${personal ? abilityIconHtml(personal.name, "personal", "slot") : ""}
           <span><b>${personal?.name || "未設定"}</b><small>${personal?.desc || "試験用の敵ユニットには個人スキルが設定されていません"}</small></span>
           <i>個人スキル</i>
         </div>`;

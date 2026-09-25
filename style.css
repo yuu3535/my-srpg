@@ -5903,3 +5903,149 @@ html, body {
     background: #3a1f10;
     transform: rotate(45deg);
 }
+
+/* ============================================================
+   スキル・戦技のアイコン（枠つき）― skillIconData.js
+============================================================ */
+.abIcon {
+    position: relative;
+    flex: none;
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+}
+.abIcon img { position: absolute; pointer-events: none; }
+.abIcon .abIconFrame { inset: 0; width: 100%; height: 100%; }
+.abIcon .abIconArt { left: 16%; top: 16%; width: 68%; height: 68%; object-fit: contain; }
+.abIcon.noArt .abIconFrame { opacity: 0.55; }
+.abIcon.slot { width: 14px; height: 14px; }
+.abIcon.chip { width: 16px; height: 16px; margin-right: 1px; }
+.trialLoadoutSlot .abIcon.slot { justify-self: center; }
+.trialPersonalSkill { grid-template-columns: auto minmax(0, 1fr) auto; }
+
+/* ============================================================
+   [trial] 右側のユニット欄（原作者の見本の構成）
+============================================================ */
+#gameScreen[data-mode="battle"] #landscapeBattleShell.active {
+    grid-template-columns: 46px minmax(0, 1fr) 176px;
+}
+#landscapeCommandPanel { right: 188px; }
+#landscapeUnitContent:has(.lsuTop) {
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+.lsuTop {
+    display: grid;
+    grid-template-columns: 70px minmax(0, 1fr);
+    min-height: 96px;
+    border-bottom: 1px solid rgba(200,146,42,0.24);
+}
+.lsuPortrait {
+    background-size: 220%;
+    background-position: 50% 6%;
+    background-repeat: no-repeat;
+    background-color: rgba(0,0,0,0.25);
+    border-right: 1px solid rgba(200,146,42,0.18);
+}
+.lsuHead { display: flex; flex-direction: column; justify-content: center; gap: 1px; padding: 5px 7px 5px 6px; min-width: 0; }
+.lsuName b {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: #f4e6c0;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+}
+.lsuLv { color: rgba(224,189,115,0.75); font-size: 8px; text-align: right; }
+.lsuClass {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 1px 0 3px;
+    padding: 1px 4px;
+    color: #ecd28e;
+    font-size: 9px;
+    background: rgba(70,31,86,0.45);
+    border-left: 2px solid #c8922a;
+}
+.lsuClass i { width: 5px; height: 5px; transform: rotate(45deg); background: #e0b048; }
+.lsuGauge { display: flex; justify-content: space-between; align-items: baseline; font-size: 8px; color: rgba(224,189,115,0.7); }
+.lsuGauge b { color: #f4e6c0; font-size: 11px; }
+.lsuGauge b small { color: rgba(224,189,115,0.6); font-size: 8px; font-weight: 400; }
+.lsuGauge.mp b { font-size: 9px; }
+.lsuBar { height: 3px; margin-bottom: 2px; background: rgba(0,0,0,0.55); }
+.lsuBar i { display: block; height: 100%; }
+.lsuBar.hp i { background: linear-gradient(90deg, #2fbf72, #59e48c); }
+.lsuBar.mp i { background: linear-gradient(90deg, #2e73c7, #68a9ee); }
+
+.lsuStats {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr);
+    gap: 0 6px;
+    padding: 5px 7px;
+    border-bottom: 1px solid rgba(200,146,42,0.18);
+}
+.lsuStats dl { margin: 0; }
+.lsuStats dl > div { display: flex; justify-content: space-between; align-items: baseline; line-height: 1.35; }
+.lsuStats dt { color: rgba(224,189,115,0.65); font-size: 8px; }
+.lsuStats dd { margin: 0; color: #f4e6c0; font-size: 10px; }
+.lsuMove { padding-right: 6px; border-right: 1px solid rgba(200,146,42,0.2); }
+.lsuMove dd { font-size: 9px; max-width: 34px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.lsuAbility { display: grid; grid-template-columns: 1fr 1fr; column-gap: 8px; }
+
+.lsuWeapon {
+    display: grid;
+    grid-template-columns: 14px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    column-gap: 5px;
+    align-items: center;
+    padding: 4px 7px;
+    background: linear-gradient(90deg, rgba(70,31,86,0.4), transparent);
+    border-bottom: 1px solid rgba(200,146,42,0.18);
+}
+.lsuWeapon b { color: #f4e6c0; font-size: 10px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.lsuWeapon span { grid-column: 2; color: rgba(97,223,205,0.75); font-size: 8px; }
+.lsuWeaponMark { grid-row: 1 / 3; width: 12px; height: 12px; transform: rotate(45deg); border: 1px solid #c8922a; background: rgba(82,18,98,0.8); }
+.lsuWeaponMark.grimoire { background: rgba(46,115,199,0.7); }
+.lsuWeaponMark.none { opacity: 0.35; }
+
+.lsuSkills { padding: 3px 5px 5px; }
+.lsuSkill {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr);
+    gap: 5px;
+    align-items: center;
+    padding: 2px 2px;
+    border-bottom: 1px solid rgba(200,146,42,0.1);
+}
+.lsuSkill .abIcon { width: 22px; height: 22px; }
+.lsuSkill span { min-width: 0; }
+.lsuSkill b, .lsuSkill small { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.lsuSkill b { color: #f4e6c0; font-size: 9px; }
+.lsuSkill small { color: rgba(236,210,142,0.55); font-size: 7px; }
+.lsuArts { display: flex; flex-wrap: wrap; gap: 3px; padding: 4px 2px 0; }
+.lsuArts .abIcon { width: 20px; height: 20px; }
+.lsuNone { margin: 4px 2px; color: rgba(224,189,115,0.45); font-size: 9px; }
+
+/* ユニット欄を欄の高さに収める */
+.lsuTop, .lsuStats, .lsuWeapon, .lsuSkills { flex: none; }
+.lsuTop { min-height: 0; }
+.lsuHead { padding: 3px 6px 3px 5px; gap: 0; }
+.lsuClass { margin: 1px 0 2px; }
+.lsuStats { padding: 3px 7px; }
+.lsuWeapon { padding: 2px 7px; }
+.lsuSkills { padding: 2px 5px 2px; }
+.lsuStats { padding: 4px 7px; }
+.lsuStats dl > div { line-height: 1.28; }
+.lsuWeapon { padding: 3px 7px; }
+.lsuSkills { padding: 2px 5px 4px; }
+.lsuSkill { grid-template-columns: 18px minmax(0, 1fr); gap: 4px; padding: 1px 2px; }
+.lsuSkill .abIcon { width: 18px; height: 18px; }
+.lsuSkill small { font-size: 6.5px; }
+.lsuArts { padding-top: 3px; }
+.lsuArts .abIcon { width: 18px; height: 18px; }
+.lsuSkills .lsuSkill { padding: 0 2px; }
+.lsuSkills .lsuArts .abIcon { width: 16px; height: 16px; }
+.adventureBuildPane .trialLoadoutSlot .abIcon.slot { width: 11px; height: 11px; }
+.adventureBuildPane .trialLoadoutSlot { min-height: 0; padding-top: 0; padding-bottom: 0; }

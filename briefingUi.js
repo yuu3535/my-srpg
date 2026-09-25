@@ -492,7 +492,7 @@ function renderBriefingGear() {
         const slot = on ? equippedNames(category).indexOf(item.name) + 1 : "";
         const kind = item.artKind ? `<small>${BRIEFING_ART_KIND_LABELS[item.artKind] || ""}</small>` : "";
         return `<button type="button" class="brfChip${on ? " on" : ""}" data-category="${category}" data-name="${item.name}"
-            title="${item.name}：${item.desc}"><em>${slot}</em><span>${item.name}</span>${kind}</button>`;
+            title="${item.name}：${item.desc}">${abilityIconHtml(item.name, category === "combatArts" ? "active" : "passive", "chip")}<em>${slot}</em><span>${item.name}</span>${kind}</button>`;
     };
     const section = (category, emptyText) => {
         const list = learned[category];
@@ -523,7 +523,7 @@ function renderBriefingGear() {
                 <section class="brfGearSection fixed">
                     <h4>個人スキル<span>外せません</span></h4>
                     <div class="brfPersonal" title="${loadout.personal ? `${loadout.personal.name}：${loadout.personal.desc}` : ""}">
-                        <b>${loadout.personal?.name || "なし"}</b><small>${loadout.personal?.desc || ""}</small>
+                        ${loadout.personal ? abilityIconHtml(loadout.personal.name, "personal", "chip") : ""}<b>${loadout.personal?.name || "なし"}</b><small>${loadout.personal?.desc || ""}</small>
                     </div>
                 </section>
                 <div class="brfGearCols">
