@@ -6339,3 +6339,18 @@ html, body {
     pointer-events: auto;
 }
 .lsCommandBtn.lsTargetCancel .lsRingIcon { width: 14px; height: 14px; }
+
+/* 円環を作り直したとき、前の位置から回り込む（開いたコマンドが真上へ） */
+.lsCommandBtn.lsRingNode.fromPrev,
+.lsCommandBtn.lsRingCancel.fromPrev {
+    animation: lsRingNodeTurn 0.32s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+@keyframes lsRingNodeTurn {
+    from { transform: translate(calc(var(--fx, 0px) - 50%), calc(var(--fy, 0px) - 50%)); }
+    to   { transform: translate(calc(var(--x, 0px) - 50%), calc(var(--y, 0px) - 50%)); }
+}
+.lsCommandBtn.lsRingNode.stay,
+.lsCommandBtn.lsRingCancel.stay { animation: none; }
+/* 樹の丸は開いたコマンドが回り込んでから伸びる */
+#landscapeCommandBranch .lsBranchNode { animation-delay: calc(var(--tick-delay, 0s) + 120ms); }
+#landscapeCommandBranch .lsBranchLines line { animation-delay: 120ms; }

@@ -2665,7 +2665,7 @@ function getLandscapeCommands(unit) {
 }
 
 // ── 環状コマンド（原作者のイメージ 2026-09-25） ──
-//   選んだユニットの周りにコマンドが円環状に並び、2段目はセフィロトの樹のような丸のツリーで伸びる。
+//   選んだユニットの周りにコマンドが円環状に並ぶ。押したコマンドは真上へ回り、そこから丸の樹が上へ伸びる。
 //   取り消しは真下の × か、何もないマスを押す（枝 → 円環 → 移動の取り消し の順に戻る）。
 //   アイコンは仮のSVG（UI素材のコマンドアイコンができたら差し替える）
 const LS_COMMAND_ICON_PATHS = {
@@ -2679,8 +2679,8 @@ const LS_COMMAND_ICON_PATHS = {
 const LS_RING = { radius: 52, node: 44, margin: 6 };
 // 円環の並び（× を真下に置き、残りを左 → 上 → 右へ）
 const LS_RING_ORDER = { "待機": 0, "攻撃": 1, "魔法": 2, "持ち物": 3 };
-// 2段目の丸のツリー
-const LS_BRANCH = { orb: 30, out: 46, zig: 24, step: 32 };
+// 2段目の丸の樹（1段目までの距離・段の間・左右の開き）
+const LS_BRANCH = { orb: 30, first: 44, row: 40, pair: 44 };
 // 対象を選んでいる間の状態と、キャンセルで戻る先のコマンド
 const LS_TARGETING_STATES = {
     attacking: "攻撃", throwing: "攻撃", magic: "魔法",
@@ -2783,27 +2783,67 @@ function buildLandscapeCommandRing(unit, openLabel = null) {
     return branch;
 }
 
-/** 円環をユニットの周りに並べる。× は真下、コマンドは残りを等間隔に */
+/** 円環をユニットの周りに並べる。
+ *  閉じているとき: × を真下に置き、コマンドは残りを等間隔に。
+ *  枝を開いたとき: 開いたコマンドを真上（入りきらなければ真下）へ回し、ほかは左右に寄せる */
 function layoutLandscapeCommandRing(unit) {
     const c = landscapeRingCenter(unit);
     if (!c) return;
     landscapeCommandList.style.left = `${c.x}px`;
     landscapeCommandList.style.top = `${c.y}px`;
     const nodes = [...landscapeCommandList.querySelectorAll(".lsRingNode")];
-    const slots = nodes.length + 1;
-    nodes.forEach((node, i) => {
-        const angle = Math.PI / 2 + (i + 1) * 2 * Math.PI / slots;
-        node.style.setProperty("--x", `${(Math.cos(angle) * LS_RING.radius).toFixed(1)}px`);
-        node.style.setProperty("--y", `${(Math.sin(angle) * LS_RING.radius).toFixed(1)}px`);
-        node.style.setProperty("--tick-delay", `${i * 28}ms`);
-        node.dataset.side = Math.cos(angle) < -0.01 ? "left" : "right";
-    });
     const cancel = landscapeCommandList.querySelector(".lsRingCancel");
+    const open = landscapeCommandList.querySelector(".lsRingNode.active");
+    const openBranch = !!landscapeCommandList.querySelector(".lsRingNode.dim") || (open && nodes.length === 1);
+    const R = LS_RING.radius;
+    const place = (node, angle) => {
+        node.style.setProperty("--x", `${(Math.cos(angle) * R).toFixed(1)}px`);
+        node.style.setProperty("--y", `${(Math.sin(angle) * R).toFixed(1)}px`);
+        node.dataset.side = Math.cos(angle) < -0.01 ? "left" : "right";
+    };
+    if (openBranch && open) {
+        place(open, -Math.PI / 2);
+        const others = nodes.filter(n => n !== open);
+        const leftCount = Math.ceil(others.length / 2);
+        const rightCount = others.length - leftCount;
+        others.forEach((node, i) => {
+            if (i < leftCount) place(node, Math.PI / 2 + (i + 1) * Math.PI / (leftCount + 1));
+            else place(node, -Math.PI / 2 + (i - leftCount + 1) * Math.PI / (rightCount + 1));
+        });
+    } else {
+        const slots = nodes.length + 1;
+        nodes.forEach((node, i) => place(node, Math.PI / 2 + (i + 1) * 2 * Math.PI / slots));
+    }
+    nodes.forEach((node, i) => node.style.setProperty("--tick-delay", `${i * 28}ms`));
     if (cancel) {
         cancel.style.setProperty("--x", "0px");
-        cancel.style.setProperty("--y", `${LS_RING.radius}px`);
+        cancel.style.setProperty("--y", `${R}px`);
         cancel.style.setProperty("--tick-delay", `${nodes.length * 28}ms`);
     }
+    animateLandscapeRingFromPrevious(unit);
+}
+
+// 円環を作り直したとき、前の位置から新しい位置へ動かす（開いたコマンドが真上へ回り込むように）
+let lsRingLastPositions = { unitId: null, pos: {} };
+
+function animateLandscapeRingFromPrevious(unit) {
+    const sameUnit = lsRingLastPositions.unitId === unit.id;
+    const pos = {};
+    landscapeCommandList.querySelectorAll(".lsRingNode, .lsRingCancel").forEach(node => {
+        const key = node.getAttribute("aria-label");
+        const prev = sameUnit ? lsRingLastPositions.pos[key] : null;
+        const x = node.style.getPropertyValue("--x");
+        const y = node.style.getPropertyValue("--y");
+        if (prev && (prev.x !== x || prev.y !== y) && !node.classList.contains("fromPrev")) {
+            node.style.setProperty("--fx", prev.x);
+            node.style.setProperty("--fy", prev.y);
+            node.classList.add("fromPrev");
+        } else if (prev && !node.classList.contains("fromPrev")) {
+            node.classList.add("stay");   // 同じ位置なら飛び出す動きをしない
+        }
+        pos[key] = { x, y };
+    });
+    lsRingLastPositions = { unitId: unit.id, pos };
 }
 
 /** 2段目の丸のツリーに、選択肢をひとつ足す */
@@ -2827,51 +2867,64 @@ function addLandscapeBranchNode(branch, label, sub, onClick) {
     return btn;
 }
 
-/** 丸のツリーを、開いたコマンドの外側へ2列のジグザグで伸ばし、線でつなぐ（セフィロトの樹のように） */
+/** 丸の樹を、真上に回った開いたコマンドから上へ伸ばす（上に入りきらなければ真下へ回して下へ）。
+ *  段は 2・1・2・1… と並べ、上下の段どうしを線でつなぐ（セフィロトの樹のように） */
 function layoutLandscapeCommandBranch() {
     const branch = document.getElementById("landscapeCommandBranch");
     const parent = landscapeCommandList.querySelector(".lsRingNode.active");
     if (!branch || !parent) return;
     const nodes = [...branch.querySelectorAll(".lsBranchNode")];
     if (!nodes.length) return;
-    const px = parseFloat(parent.style.getPropertyValue("--x")) || 0;
-    const py = parseFloat(parent.style.getPropertyValue("--y")) || 0;
-    const cx = parseFloat(landscapeCommandList.style.left) || 0;
     const cy = parseFloat(landscapeCommandList.style.top) || 0;
-    const width = landscapeCommandPanel.offsetWidth;
     const height = landscapeCommandPanel.offsetHeight;
-    const { orb, out, zig, step } = LS_BRANCH;
-    const labelWidth = Math.max(...nodes.map(n => n.querySelector(".lsBranchText")?.offsetWidth || 0));
-    const extent = out + zig + orb / 2 + 6 + labelWidth;
-    let dir = parent.dataset.side === "left" ? -1 : 1;
-    if (dir > 0 && cx + px + extent > width - 4) dir = -1;          // 入りきらなければ反対側へ
-    else if (dir < 0 && cx + px - extent < 4) dir = 1;
-    // 縦は開いたコマンドを中心に並べ、画面からはみ出すぶんだけずらす
-    const span = (nodes.length - 1) * step;
-    const minY = 40 + orb / 2 - cy;
-    const maxY = height - 26 - orb / 2 - cy;
-    let y0 = py - span / 2;
-    if (y0 + span > maxY) y0 = maxY - span;
-    if (y0 < minY) y0 = minY;
-    const points = nodes.map((node, i) => {
-        const x = px + dir * (out + (i % 2) * zig);
-        const y = y0 + i * step;
-        node.style.setProperty("--x", `${x.toFixed(1)}px`);
-        node.style.setProperty("--y", `${y.toFixed(1)}px`);
-        node.dataset.dir = dir > 0 ? "right" : "left";
-        return { x, y };
+    const R = LS_RING.radius;
+    const { orb, first, row, pair } = LS_BRANCH;
+
+    // 段の分け方: 2・1・2・1…（1つだけなら1）
+    const rows = [];
+    for (let i = 0, size = nodes.length === 1 ? 1 : 2; i < nodes.length; size = size === 2 ? 1 : 2) {
+        rows.push(nodes.slice(i, i + size));
+        i += size;
+    }
+    // 上へ伸ばす余地がなければ下へ。どちらも足りなければ段の間を詰める
+    const top = 38 + orb / 2;
+    const bottom = height - 24 - orb / 2;
+    const roomUp = (cy - R) - top;
+    const roomDown = bottom - (cy + R);
+    const need = first + (rows.length - 1) * row;
+    const dir = need <= roomUp || roomUp >= roomDown ? -1 : 1;
+    const room = dir < 0 ? roomUp : roomDown;
+    const gap = need <= room ? row : Math.max(26, (room - first) / Math.max(1, rows.length - 1));
+
+    // 開いたコマンドを真上（下へ伸ばすときは真下）に、× を反対側に置く
+    const cancel = landscapeCommandList.querySelector(".lsRingCancel");
+    parent.style.setProperty("--x", "0px");
+    parent.style.setProperty("--y", `${dir * R}px`);
+    if (cancel) cancel.style.setProperty("--y", `${-dir * R}px`);
+
+    const rootPoint = { x: 0, y: dir * R };
+    const points = [];
+    rows.forEach((items, r) => {
+        const y = dir * (R + first + r * gap);
+        items.forEach((node, k) => {
+            const x = items.length === 1 ? 0 : (k === 0 ? -pair : pair);
+            node.style.setProperty("--x", `${x}px`);
+            node.style.setProperty("--y", `${y.toFixed(1)}px`);
+            node.dataset.dir = x < 0 ? "left" : "right";
+            points.push({ x, y, row: r });
+        });
     });
-    // 線: 開いたコマンド → 最初の2つ、各選択肢 → 次・次の次（格子状につながる）
+    // 線: 開いたコマンド → 1段目、各段 → 次の段のすべて
     const lines = [];
-    const line = (a, b) => lines.push(`<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}"/>`);
-    const root = { x: px, y: py };
-    points.slice(0, 2).forEach(p => line(root, p));
-    points.forEach((p, i) => {
-        if (points[i + 1]) line(p, points[i + 1]);
-        if (points[i + 2]) line(p, points[i + 2]);
-    });
+    const line = (a, b) => lines.push(`<line x1="${a.x}" y1="${a.y.toFixed(1)}" x2="${b.x}" y2="${b.y.toFixed(1)}"/>`);
+    points.filter(p => p.row === 0).forEach(p => line(rootPoint, p));
+    points.forEach(p => points.filter(q => q.row === p.row + 1).forEach(q => line(p, q)));
     const svg = branch.querySelector(".lsBranchLines");
     if (svg) svg.innerHTML = lines.join("");
+    // 次に作り直すときの動きの起点も、回したあとの位置にする
+    const key = parent.getAttribute("aria-label");
+    if (lsRingLastPositions.pos[key]) lsRingLastPositions.pos[key] = { x: "0px", y: `${dir * R}px` };
+    if (cancel && lsRingLastPositions.pos["取り消し"]) lsRingLastPositions.pos["取り消し"] = { x: "0px", y: `${-dir * R}px` };
 }
 
 /** 開いた枝を折りたたんで、円環に戻る */
