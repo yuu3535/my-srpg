@@ -1,0 +1,551 @@
+fileFormatVersion: 2
+guid: 70e22a9144ea29346b004a8facd9ff9d
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -4065062181150657158
+    second: AlbusMagicSheet_0
+  - first:
+      213: 6548413144024596974
+    second: AlbusMagicSheet_1
+  - first:
+      213: -8610325554050452889
+    second: AlbusMagicSheet_2
+  - first:
+      213: -7213274085581128202
+    second: AlbusMagicSheet_3
+  - first:
+      213: -4171791268670681735
+    second: AlbusMagicSheet_4
+  - first:
+      213: 5134692353431707465
+    second: AlbusMagicSheet_5
+  - first:
+      213: -2033972049839941500
+    second: AlbusMagicSheet_6
+  - first:
+      213: 6313690961964810086
+    second: AlbusMagicSheet_7
+  - first:
+      213: -7234386974484437011
+    second: AlbusMagicSheet_8
+  - first:
+      213: 4605970762417354795
+    second: AlbusMagicSheet_9
+  - first:
+      213: 7219964153787682429
+    second: AlbusMagicSheet_10
+  - first:
+      213: 7988896668421085318
+    second: AlbusMagicSheet_11
+  - first:
+      213: 2742591333316988097
+    second: AlbusMagicSheet_12
+  - first:
+      213: 8079631558950751217
+    second: AlbusMagicSheet_13
+  - first:
+      213: -277629947483339899
+    second: AlbusMagicSheet_14
+  - first:
+      213: 5146679362434743724
+    second: AlbusMagicSheet_15
+  - first:
+      213: -6500260560329452686
+    second: AlbusMagicSheet_16
+  - first:
+      213: -6224225597184668224
+    second: AlbusMagicSheet_17
+  - first:
+      213: -1221807120403943926
+    second: AlbusMagicSheet_18
+  - first:
+      213: -1731949439459483821
+    second: AlbusMagicSheet_19
+  - first:
+      213: -8933741056757339071
+    second: AlbusMagicSheet_20
+  - first:
+      213: 8366163152526868882
+    second: AlbusMagicSheet_21
+  - first:
+      213: 2453162288841115638
+    second: AlbusMagicSheet_22
+  - first:
+      213: -1231780972082055010
+    second: AlbusMagicSheet_23
+  - first:
+      213: -6742382348032779514
+    second: AlbusMagicSheet_24
+  - first:
+      213: -1108169251565895365
+    second: AlbusMagicSheet_25
+  - first:
+      213: -2035235084120785324
+    second: AlbusMagicSheet_26
+  - first:
+      213: 5923199178643564093
+    second: AlbusMagicSheet_27
+  - first:
+      213: -1677099021025713268
+    second: AlbusMagicSheet_28
+  - first:
+      213: 2224724908117821265
+    second: AlbusMagicSheet_29
+  - first:
+      213: 3978215149102739402
+    second: AlbusMagicSheet_30
+  - first:
+      213: 5976650286511068975
+    second: AlbusMagicSheet_31
+  - first:
+      213: -5491004199168523089
+    second: AlbusMagicSheet_32
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 0
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: AlbusMagic_00
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 903
+        width: 365
+        height: 301
+      alignment: 9
+      pivot: {x: 0.335, y: 0.01}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 28ccd72e9ef772f43975fd8a21ae1b24
+      internalID: 1775062246
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: AlbusMagic_01
+      rect:
+        serializedVersion: 2
+        x: 365
+        y: 903
+        width: 365
+        height: 301
+      alignment: 9
+      pivot: {x: 0.335, y: 0.01}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3020b8805a8f87f4a9e2692927f51e4e
+      internalID: -1654257934
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: AlbusMagic_02
+      rect:
+        serializedVersion: 2
+        x: 730
+        y: 903
+        width: 365
+        height: 301
+      alignment: 9
+      pivot: {x: 0.335, y: 0.01}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4428d6beecd2ba549b9a84c9009e93b8
+      internalID: -379919153
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: AlbusMagic_03
+      rect:
+        serializedVersion: 2
+        x: 1095
+        y: 903
+        width: 365
+        height: 301
+      alignment: 9
+      pivot: {x: 0.335, y: 0.01}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 28b010fa058ab764b86d61365cbcca57
+      internalID: -1018486416
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: AlbusMagic_04
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 602
+        width: 365
+        height: 301
+      alignment: 9
+      pivot: {x: 0.335, y: 0.01}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1334193b02185f54f9c6e0a30f8c79c0
+      internalID: -425226466
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: AlbusMagic_05
+      rect:
+        serializedVersion: 2
+        x: 365
+        y: 602
+        width: 365
+        height: 301
+      alignment: 9
+      pivot: {x: 0.335, y: 0.01}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: af6b56075a50219459d8fc59d2f1b8f0
+      internalID: 422522123
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: AlbusMagic_06
+      rect:
+        serializedVersion: 2
+        x: 730
+        y: 602
+        width: 365
+        height: 301
+      alignment: 9
+      pivot: {x: 0.335, y: 0.01}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 68beb50ce40e40344bb131bb8385fac6
+      internalID: 1642242972
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: AlbusMagic_07
+      rect:
+        serializedVersion: 2
+        x: 1095
+        y: 602
+        width: 365
+        height: 301
+      alignment: 9
+      pivot: {x: 0.335, y: 0.01}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 8fef8be1029a4d14b8dd2917c9f93a0f
+      internalID: -1891680341
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: AlbusMagic_08
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 301
+        width: 365
+        height: 301
+      alignment: 9
+      pivot: {x: 0.335, y: 0.01}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f2ba20ba8c9225d41befa706ea9bfd6d
+      internalID: 1576080680
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: AlbusMagic_09
+      rect:
+        serializedVersion: 2
+        x: 365
+        y: 301
+        width: 365
+        height: 301
+      alignment: 9
+      pivot: {x: 0.335, y: 0.01}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 28c459740c809cc4ab07ffe4ca46faac
+      internalID: 1710814884
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: AlbusMagic_10
+      rect:
+        serializedVersion: 2
+        x: 730
+        y: 301
+        width: 365
+        height: 301
+      alignment: 9
+      pivot: {x: 0.335, y: 0.01}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2206a14303876ec42bed885fd9298963
+      internalID: -2039759251
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: AlbusMagic_11
+      rect:
+        serializedVersion: 2
+        x: 1095
+        y: 301
+        width: 365
+        height: 301
+      alignment: 9
+      pivot: {x: 0.335, y: 0.01}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1160a79632add034b9d13877536c7cf9
+      internalID: 1395056236
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: AlbusMagic_12
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 365
+        height: 301
+      alignment: 9
+      pivot: {x: 0.335, y: 0.01}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c0f08b2d9200e03489fd74e630e49b00
+      internalID: -299322474
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: AlbusMagic_13
+      rect:
+        serializedVersion: 2
+        x: 365
+        y: 0
+        width: 365
+        height: 301
+      alignment: 9
+      pivot: {x: 0.335, y: 0.01}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1dc1bdca30d2c1e4aadeebba87aadf4b
+      internalID: -13718460
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 1aa4da6224bc2c14eb12ec745ec658cd
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      AlbusMagic_00: 1775062246
+      AlbusMagic_01: -1654257934
+      AlbusMagic_02: -379919153
+      AlbusMagic_03: -1018486416
+      AlbusMagic_04: -425226466
+      AlbusMagic_05: 422522123
+      AlbusMagic_06: 1642242972
+      AlbusMagic_07: -1891680341
+      AlbusMagic_08: 1576080680
+      AlbusMagic_09: 1710814884
+      AlbusMagic_10: -2039759251
+      AlbusMagic_11: 1395056236
+      AlbusMagic_12: -299322474
+      AlbusMagic_13: -13718460
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
