@@ -16,7 +16,17 @@ const SKILL_ICON_DATA = Object.freeze({
     "加速": "assets/icons/skills/加速.png",
     "転移": "assets/icons/skills/転移.png",
     "詠唱破棄": "assets/icons/skills/詠唱破棄.png",
-    "カウンター": "assets/icons/skills/カウンター.png"
+    "カウンター": "assets/icons/skills/カウンター.png",
+    "デュアル+": "assets/icons/skills/デュアル+.png",
+    "応援": "assets/icons/skills/応援.png",
+    "器用": "assets/icons/skills/器用.png",
+    "気付け薬": "assets/icons/skills/気付け薬.png",
+    "先手必勝": "assets/icons/skills/先手必勝.png",
+    "冷静": "assets/icons/skills/冷静.png",
+    "戦闘指揮": "assets/icons/skills/戦闘指揮.png",
+    "虚像": "assets/icons/skills/虚像.png",
+    "後手必勝": "assets/icons/skills/後手必勝.png",
+    "アシスト": "assets/icons/skills/アシスト.png"
   },
   "frames": {
     "personal": "assets/icons/skills/frame_personal.png",

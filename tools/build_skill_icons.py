@@ -28,6 +28,8 @@ OUT_JS = ROOT / "skillIconData.js"
 SIZE = 256
 MARGIN = 0.10          # 周りの余白（1辺の割合）
 INVERT = {"破壊"}       # 色を反転する（暗い背景で沈むため。原作者指示 2026-09-25）
+# 色相を回す（度）。後手必勝は先手必勝と同じ赤〜橙なので、青系にして見分ける（原作者指示 2026-09-25）
+HUE_SHIFT = {"後手必勝": 200}
 FRAMES = {
     "personal": "skill_frame_personal.png",
     "passive": "skill_frame_passive.png",
@@ -54,6 +56,16 @@ def invert_colors(image: Image.Image) -> Image.Image:
     return Image.merge("RGBA", (*rgb.split(), a))
 
 
+def shift_hue(image: Image.Image, degrees: float) -> Image.Image:
+    """色相だけを回す（明るさ・鮮やかさ・透明度はそのまま）"""
+    alpha = image.getchannel("A")
+    h, s, v = image.convert("RGB").convert("HSV").split()
+    offset = round(degrees / 360 * 256)
+    h = h.point(lambda x: (x + offset) % 256)
+    rgb = Image.merge("HSV", (h, s, v)).convert("RGB")
+    return Image.merge("RGBA", (*rgb.split(), alpha))
+
+
 def main():
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     icons = {}
@@ -65,6 +77,8 @@ def main():
         image = to_square(Image.open(path))
         if name in INVERT:
             image = invert_colors(image)
+        if name in HUE_SHIFT:
+            image = shift_hue(image, HUE_SHIFT[name])
         out = OUT_DIR / f"{name}.png"
         image.save(out, optimize=True)
         icons[name] = out.relative_to(ROOT).as_posix()
