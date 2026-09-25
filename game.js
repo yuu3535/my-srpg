@@ -880,6 +880,8 @@ function deselectUnit() {
 // =============================================
 /** BFS で移動可能マスを列挙（enemy は通過不可） */
 function getMoveRange(unit) {
+    // [trial] 封印・封じ（落雷・万雷）を受けていれば移動できない
+    if ((unit.statusEffects || []).some(e => e.type === "immobilize" || e.type === "sealed")) return [];
     const reachable = [];
     const visited   = new Set();
     const queue     = [{ x: unit.x, y: unit.y, remaining: unit.move }];
@@ -1233,7 +1235,7 @@ function trialPlanSnapshot(unit) {
 
 /** [trial] 攻撃の指示を計画の行動にする（魔導書の魔法・魔法の戦技・武器と物理の戦技） */
 function trialPlanAction(isMagic, spell, combatArtId) {
-    if (isMagic) return { kind: spell?.trialItemId ? "grimoire" : "magicArt", spell };
+    if (isMagic) return { kind: spell?.trialItemId ? "grimoire" : "magicArt", spell, artName: spell?.trialArtName || null };
     const artName = typeof combatArtId === "string" && combatArtId.startsWith("trial:") ? combatArtId.slice(6) : null;
     return { kind: "weapon", artName };
 }
@@ -1298,8 +1300,10 @@ function trialApplyStrike(step, actor, target) {
 
     if (step.quickCast?.active) addLog(`${indent}詠唱破棄！MP消費なし（${step.quickCast.roll}/${step.quickCast.chance}%）`);
     if (typeof step.actorMpAfter === "number") actor.mp = step.actorMpAfter;
-    const mpNote = typeof step.mpCost === "number" ? `  MP-${step.mpCost}` : "";
-    if (step.role === "attack") {
+    const mpNote = typeof step.mpCost === "number" && !(step.role === "area" && step.mpCost === 0) ? `  MP-${step.mpCost}` : "";
+    if (step.role === "area") {
+        addLog(`  ${step.kind === "weapon" ? "円舞" : "万雷"} → ${target.name} ${step.kind === "weapon" ? `【命中率 ${step.hitRate}%】 判定 ` : ""}${hitNote}${mpNote} → ${result}`);
+    } else if (step.role === "attack") {
         addLog(step.kind === "weapon"
             ? `・${actor.name} → ${target.name} 【命中率 ${step.hitRate}%】 判定 ${hitNote} → ${result}`
             : `・${actor.name}が ${spellName} 使用（${hitNote}）${mpNote} → ${result}`);
@@ -1347,6 +1351,15 @@ function trialApplyStrike(step, actor, target) {
             addLog(`${indent}${target.name}が吹き飛ばされた！（風）`);
         }
     }
+    if (step.artSeal) {
+        if (step.artSeal.active && !(target.statusEffects || []).some(e => e.type === "sealed")) {
+            target.statusEffects = target.statusEffects || [];
+            target.statusEffects.push({ type: "sealed", holdOwnPhase: true, name: "封じ" });
+        }
+        addLog(step.artSeal.active
+            ? `${indent}${target.name}の追撃・反撃・移動を封じた（${step.artSeal.roll}/${step.artSeal.chance}%）`
+            : `${indent}封じは効かなかった（${step.artSeal.roll}/${step.artSeal.chance}%）`);
+    }
     if (step.prayer) {
         target.trialPrayerUsed = true;
         addLog(step.prayer.saved
@@ -1367,6 +1380,155 @@ function trialApplyStrike(step, actor, target) {
         if (actor.hp <= 0) addLog(`${indent}${actor.name}は倒れた！`);
     }
     renderUnits();
+}
+
+// ── [trial] 戦技の効果（CSVの効果文。数値の決まっていないところは仮） ──
+
+// 補助の戦技: 結界＝魔防÷2の装甲、虚像＝相手の命中−20、封印＝移動を封じる、加速＝再行動、回復＝回復量×3
+const TRIAL_SUPPORT_ARTS = new Set(["結界", "虚像", "封印", "加速", "回復"]);
+
+/** 回復量（仮）: 6 + 魔攻÷4。回復の戦技は3倍 */
+function trialHealAmount(caster, multiplier = 1) {
+    return (6 + Math.floor(caster.trialStats.mag / 4)) * multiplier;
+}
+
+/** 魔法のMPを払う（詠唱破棄の判定つき） */
+function trialPayMagicMp(caster, spell) {
+    let mpCost = rollDice(spell.mpCost || "1d6");
+    const quickCast = trialRollAbility(caster, "詠唱破棄");
+    if (quickCast.active) {
+        addLog(`  詠唱破棄！MP消費なし（${quickCast.roll}/${quickCast.chance}%）`);
+        mpCost = 0;
+    }
+    caster.mp = Math.max(0, caster.mp - mpCost);
+    return mpCost;
+}
+
+function trialCastHeal(caster, spell, target, multiplier) {
+    const mpCost = trialPayMagicMp(caster, spell);
+    const amount = trialHealAmount(caster, multiplier);
+    const before = target.hp;
+    target.hp = Math.min(target.maxHp, target.hp + amount);
+    showDamagePopup(target.id, target.hp - before, "heal");
+    addLog(`・${caster.name}が ${spell.name} 使用  MP-${mpCost} → ${target.name}のHPを${target.hp - before}回復（HP ${target.hp}/${target.maxHp}）`);
+    endUnitTurn(caster);
+}
+
+function trialCastSupportArt(caster, spell, target) {
+    const art = spell.trialArtName;
+    if (art === "回復") {
+        trialCastHeal(caster, spell, target, 3);
+        return;
+    }
+    // 敵が対象（封印・虚像）は命中判定がある
+    if (spell.targetType === "enemy") {
+        const hit = getMagicHitResult(caster, target, spell, 5);
+        const mpCost = trialPayMagicMp(caster, spell);
+        addLog(`・${caster.name}が ${art} 使用（${hit.note}）  MP-${mpCost} → ${hit.isHit ? "命中" : "失敗"}`);
+        if (!hit.isHit) {
+            showDamagePopup(target.id, 0, "miss");
+            endUnitTurn(caster);
+            return;
+        }
+    } else {
+        const mpCost = trialPayMagicMp(caster, spell);
+        addLog(`・${caster.name}が ${art} 使用  MP-${mpCost}`);
+    }
+    target.statusEffects = target.statusEffects || [];
+    const replace = (type, effect) => {
+        target.statusEffects = target.statusEffects.filter(e => e.type !== type);
+        target.statusEffects.push(effect);
+    };
+    if (art === "結界") {
+        const value = Math.floor(caster.trialStats.res / 2);
+        replace("barrier", { type: "barrier", value, duration: 1, name: "結界" });
+        addLog(`  ${target.name}に装甲+${value}（魔防÷2。次の自分の番まで）`);
+    } else if (art === "虚像") {
+        replace("hitDown", { type: "hitDown", value: 20, holdOwnPhase: true, name: "虚像" });
+        addLog(`  ${target.name}の命中-20（相手の次の番まで）`);
+    } else if (art === "封印") {
+        replace("immobilize", { type: "immobilize", holdOwnPhase: true, name: "封印" });
+        addLog(`  ${target.name}の移動を封じた（相手の次の番まで）`);
+    } else if (art === "加速") {
+        target.moved = false;
+        target.acted = false;
+        document.getElementById(`unit_${target.id}`)?.classList.remove("unitDone");
+        addLog(`  ${target.name}が再行動できる`);
+    }
+    renderUnits();
+    // 自分に加速を使ったときは、そのまま行動を続けられる
+    if (art === "加速" && target === caster) {
+        actionState = null;
+        selectedSpell = null;
+        clearHighlights();
+        hideForecastLayer();
+        syncLandscapeBattleUi(caster);
+        return;
+    }
+    endUnitTurn(caster);
+}
+
+/** 万雷: 自分から見て対象の方向へ、直線3マス以内の敵すべてに雷撃（封じつき）。直線上にない対象なら対象だけ */
+function trialCastLineArt(caster, spell, target) {
+    const dx = Math.sign(target.x - caster.x);
+    const dy = Math.sign(target.y - caster.y);
+    let targets = [target];
+    if ((dx === 0) !== (dy === 0)) {
+        targets = [];
+        for (let k = 1; k <= 3; k++) {
+            const x = caster.x + dx * k;
+            const y = caster.y + dy * k;
+            const foe = battleUnits.find(u => u.hp > 0 && u.side !== caster.side && u.trialStats && u.x === x && u.y === y);
+            if (foe) targets.push(foe);
+        }
+        if (!targets.includes(target)) targets.unshift(target);
+    }
+    addLog(`・${caster.name}が 万雷 を放った（${targets.map(u => u.name).join("・")}）`);
+    trialExecuteArea(caster, targets, { kind: "magicArt", artName: "万雷", spell });
+    endUnitTurn(caster);
+    checkVictoryCondition();
+}
+
+/** 範囲の攻撃（円舞・万雷）を計画どおりに反映する */
+function trialExecuteArea(attacker, targets, action) {
+    const plan = bpPlanArea(trialPlanSnapshot(attacker), targets.map(trialPlanSnapshot), action, trialPlanEnv(), bpRandomRolls());
+    const unitsById = Object.fromEntries([attacker, ...targets].map(u => [u.id, u]));
+    for (const step of plan.steps) trialApplyStrike(step, unitsById[step.actorId], unitsById[step.targetId]);
+    renderUnits();
+}
+
+/** 専用戦技（月詠・生命吸収）: 周囲の敵のHPを割合で削る */
+function trialCastSpecialArt(unit, artName) {
+    const spec = TRIAL_SPECIAL_ARTS[artName];
+    if (!spec) return;
+    unit.trialArtUses = unit.trialArtUses || {};
+    if (unit.trialArtUses[artName]) {
+        showMessage("SYSTEM", `${artName}はこの戦闘ですでに使った`);
+        return;
+    }
+    const foes = battleUnits.filter(u => u.hp > 0 && u.side !== unit.side
+        && Math.abs(u.x - unit.x) + Math.abs(u.y - unit.y) <= spec.radius);
+    const plan = bpPlanDrain(trialPlanSnapshot(unit), foes.map(trialPlanSnapshot), spec.percent, spec.drain);
+    unit.trialArtUses[artName] = true;
+    addLog(`・${unit.name}の${artName}！（${spec.radius}マス以内の敵のHPを${spec.percent}%削る）`);
+    if (!plan.hits.length) addLog("  範囲内に敵がいない");
+    for (const hit of plan.hits) {
+        const foe = foes.find(u => u.id === hit.targetId);
+        foe.hp = hit.targetHpAfter;
+        showDamagePopup(foe.id, hit.damage, "damage");
+        flashUnitHit(foe.id);
+        addLog(`  ${foe.name}に${hit.damage}ダメージ → HP ${foe.hp}/${foe.maxHp}`);
+        if (foe.hp <= 0) addLog(`  ${foe.name}は倒れた！`);
+    }
+    if (spec.drain && plan.healed > 0) {
+        unit.hp = plan.attackerHpAfter;
+        unit.mp = plan.attackerMpAfter;
+        showDamagePopup(unit.id, plan.healed, "heal");
+        addLog(`  ${unit.name}のHP・MPを${plan.healed}回復（HP ${unit.hp}/${unit.maxHp}・MP ${unit.mp}/${unit.maxMp}）`);
+    }
+    renderUnits();
+    endUnitTurn(unit);
+    checkVictoryCondition();
 }
 
 /** [trial] 敵が魔導書を装備していれば、その魔法で攻撃する（MPが足りなければ攻撃しない） */
@@ -2194,6 +2356,7 @@ function sizeLandscapeBattleCanvas() {
 function unitStatusText(unit) {
     if (!unit.statusEffects || unit.statusEffects.length === 0) return "通常";
     const nm = { burn:"火傷", stun:"スタン", barrier:"結界", counter:"カウンター",
+                 sealed:"封じ", immobilize:"移動不可", hitDown:"命中↓",
                  accuracyDown:"命中低下", gravityField:"重力場", support:"強化", evasionUp:"回避↑" };
     return unit.statusEffects.map(e => nm[e.type] || e.type).join(" ");
 }
@@ -2391,7 +2554,9 @@ function getLandscapeCommands(unit) {
     // 試験用ユニットはその形（getLandscapeMagicEntries）、ほかは従来の魔法一覧を仮に出す
     if (!unit.acted && getLandscapeMagicEntries(unit).length > 0) commands.push({ label: "魔法", active: actionState === "magic" });
     // 特技のコマンドは廃止し、戦技へ移す（原作者方針 2026-09-25）。自己強化の戦技はここから使う
-    if (!unit.acted && getAvailableCombatArts(unit, "self").length > 0) commands.push({ label: "戦技" });
+    const specialArts = unit.trialStats && TRIAL_ABILITY_SOURCE[unit.id]
+        ? trialSpecialArtsFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null) : [];
+    if (!unit.acted && (getAvailableCombatArts(unit, "self").length > 0 || specialArts.length > 0)) commands.push({ label: "戦技" });
     if ((unit.items?.length ?? 0) > 0) commands.push({ label: "持ち物" });
     if (!unit.acted) commands.push({ label: "待機" });
     commands.push({ label: "詳細" });
@@ -2491,9 +2656,15 @@ function getLandscapeMagicEntries(unit) {
             .filter(item => SPELLS_DATA[item.spell])
             .map(item => {
                 const base = item.itemId ? trialGrimoireSpell(item.itemId) : SPELLS_DATA[item.spell];
+                const artName = item.source === "戦技" ? item.name : null;
+                // 戦技の射程: 封印＝魔防÷2（CSVの効果文どおり）、万雷＝直線3マス
+                const artRange = artName === "封印" ? Math.max(1, Math.floor(unit.trialStats.res / 2))
+                    : artName === "万雷" ? 3 : null;
+                const range = artRange ?? base.range;
                 const spell = {
                     ...base,
-                    ...(rangeBonus && typeof base.range === "number" ? { range: base.range + rangeBonus } : {}),
+                    ...(artName ? { trialArtName: artName, name: artName } : {}),
+                    ...(typeof range === "number" ? { range: range + rangeBonus } : {}),
                 };
                 return { id: item.spell, spell, label: item.name, sub: item.source === "魔導書" ? "装備" : "戦技" };
             });
@@ -2598,7 +2769,17 @@ function renderLandscapeSubCommandRail(unit, kind) {
     if (kind === "skill") {
         // 特技（TRPG技能）は廃止。戦技コマンドとして自己強化の戦技だけを出す
         const selfArts = getAvailableCombatArts(unit, "self");
-        if (selfArts.length === 0) addButton("使える戦技なし", "", () => {});
+        // [trial] 専用戦技（月詠・生命吸収）。1戦闘に1回（仮）
+        const specials = unit.trialStats && TRIAL_ABILITY_SOURCE[unit.id]
+            ? trialSpecialArtsFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null) : [];
+        specials.forEach(art => {
+            const used = !!unit.trialArtUses?.[art.name];
+            const btn = addButton(art.name, used ? "使用済み" : `${art.radius}マス・1回`, () => {
+                if (!used) trialCastSpecialArt(unit, art.name);
+            });
+            if (btn && used) btn.disabled = true;
+        });
+        if (selfArts.length === 0 && specials.length === 0) addButton("使える戦技なし", "", () => {});
         selfArts.forEach(art => addButton(art.name, getCombatArtUseText(unit, art), () => {
             executeSelfCombatArt(unit, art.id);
         }));
@@ -3100,6 +3281,17 @@ function executeAttack(attacker, target) {
     if (attacker.trialStats && trialItemKind(attacker.trialEquippedItem) !== "weapon") {
         attacker.trialEquippedItem = trialCarriedWeapon(trialGearOf(attacker)) ?? attacker.trialEquippedItem;
     }
+    if (isTrialPair(attacker, target) && combatArtId === "trial:円舞") {   // [trial] 隣接する敵すべてに物理攻撃
+        selectedAttackSkill = null;
+        selectedCombatArtId = null;
+        const foes = battleUnits.filter(u => u.hp > 0 && u.side !== attacker.side && u.trialStats
+            && Math.abs(u.x - attacker.x) + Math.abs(u.y - attacker.y) === 1);
+        addLog(`・${attacker.name}の円舞！（${foes.map(u => u.name).join("・")}）`);
+        trialExecuteArea(attacker, foes, { kind: "weapon" });
+        endUnitTurn(attacker);
+        checkVictoryCondition();
+        return;
+    }
     if (isTrialPair(attacker, target)) {   // [trial] 交戦の計画で処理
         selectedAttackSkill = null;
         selectedCombatArtId = null;
@@ -3266,6 +3458,18 @@ function renderMagicCommands(unit) {
 
 function executeMagic(caster, spell, target) {
     if (spell?.trialItemId && caster.trialStats) caster.trialEquippedItem = spell.trialItemId;   // [trial] 魔導書に持ち替え
+    if (caster.trialStats && spell?.trialArtName === "万雷") {   // [trial] 直線3マスの敵を巻き込む
+        trialCastLineArt(caster, spell, target);
+        return;
+    }
+    if (caster.trialStats && TRIAL_SUPPORT_ARTS.has(spell?.trialArtName)) {   // [trial] 補助の戦技
+        trialCastSupportArt(caster, spell, target);
+        return;
+    }
+    if (caster.trialStats && spell?.trialItemId && spell.effectType === "heal") {   // [trial] 治癒の魔導書
+        trialCastHeal(caster, spell, target, 1);
+        return;
+    }
     if (trialIsPlannedAttack(caster, target, true, spell)) {   // [trial] 交戦の計画で処理
         trialExecuteExchange(caster, target, trialPlanAction(true, spell, null));
         endUnitTurn(caster);
@@ -3699,6 +3903,17 @@ function startAllyPhase() {
  */
 function calculateBattlePrediction(attacker, target, atkSkillName, isMagic, spell) {
     if (trialIsPlannedAttack(attacker, target, isMagic, spell)) return trialPlanPrediction(attacker, target, isMagic, spell);
+    // [trial] 敵が対象の補助の戦技（封印・虚像）: 命中率と効果だけ
+    if (isTrialPair(attacker, target) && isMagic && TRIAL_SUPPORT_ARTS.has(spell?.trialArtName)) {
+        const hit = getMagicHitResult(attacker, target, spell, 5, { roll: false });
+        const effect = spell.trialArtName === "封印" ? "移動封じ" : spell.trialArtName === "虚像" ? "命中-20" : spell.trialArtName;
+        return {
+            hitRate: hit.rate, expDmg: 0, effectDesc: effect, critRate: 0, critDmg: 0, effectNotes: "",
+            canCounter: false, counterRate: 0, ctrHitRate: 0, ctrEffectiveRate: 0, ctrExpDmg: 0, ctrCritRate: 0, ctrCritDmg: 0,
+            counterNotes: "", attackerFollowUp: false, followUpDmg: 0, counterFollowUp: false,
+            counterLabel: "", counterBlockedReason: "補助の戦技", attackerHpAfter: attacker.hp, defenderHpAfter: target.hp,
+        };
+    }
     return legacyBattlePrediction(attacker, target, atkSkillName, isMagic, spell);
 }
 
@@ -3707,6 +3922,20 @@ function calculateBattlePrediction(attacker, target, atkSkillName, isMagic, spel
  * 見込み: 攻撃は命中・必殺なし・反撃は起きる（できるなら）
  */
 function trialPlanPrediction(attacker, target, isMagic, spell) {
+    const areaArt = isMagic ? (spell?.trialArtName === "万雷" ? "万雷" : null)
+        : (selectedCombatArtId === "trial:円舞" ? "円舞" : null);
+    if (areaArt) {
+        // 範囲攻撃は反撃・追撃なし。予測は押した相手への1撃を出す
+        const action = isMagic ? trialPlanAction(true, spell, null) : { kind: "weapon" };
+        const step = bpPlanArea(trialPlanSnapshot(attacker), [trialPlanSnapshot(target)], action, trialPlanEnv(), bpForecastRolls()).steps[0];
+        return {
+            hitRate: step.hitRate, expDmg: step.dealt, effectDesc: `${step.dealt}`, critRate: step.critRate,
+            critDmg: step.critDamage, effectNotes: trialPlanNotes([...(step.notes || []), `${areaArt}:${areaArt === "円舞" ? "隣接する敵すべて" : "直線3マスの敵すべて"}`]),
+            canCounter: false, counterRate: 0, ctrHitRate: 0, ctrEffectiveRate: 0, ctrExpDmg: 0, ctrCritRate: 0, ctrCritDmg: 0,
+            counterNotes: "", attackerFollowUp: false, followUpDmg: 0, counterFollowUp: false,
+            counterLabel: "", counterBlockedReason: "範囲攻撃", attackerHpAfter: attacker.hp, defenderHpAfter: step.targetHpAfter,
+        };
+    }
     // 実行時の持ち替えを予測にも反映する
     const snapshot = trialPlanSnapshot(attacker);
     if (isMagic && spell?.trialItemId) {
@@ -5100,10 +5329,24 @@ async function startEnemyPhase() {
 }
 
 function tickStatusEffects(side) {
+    // [trial] 「相手の次の番まで」の状態は、その相手の番を過ごしたあと、次の番が始まるときに消える
+    for (const u of battleUnits) {
+        if (u.side === side || u.hp <= 0 || !u.statusEffects) continue;
+        u.statusEffects = u.statusEffects.filter(e => {
+            if (!e.holdOwnPhase || !e.phaseSeen) return true;
+            addLog(`  ${u.name}の【${e.name || e.type}】効果が切れた`);
+            return false;
+        });
+    }
     for (const u of battleUnits) {
         if (u.side !== side || u.hp <= 0 || !u.statusEffects) continue;
         const nextEffects = [];
         for (const e of u.statusEffects) {
+            if (e.holdOwnPhase) {
+                e.phaseSeen = true;
+                nextEffects.push(e);
+                continue;
+            }
             if (e.type === "burn") {
                 const dmg = rollDice("1d3");
                 u.hp = Math.max(0, u.hp - dmg);

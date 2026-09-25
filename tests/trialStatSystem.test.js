@@ -31,6 +31,7 @@ const {
     trialGearEquip,
     trialGearTransfer,
     trialPhysicalDamage,
+    trialSpecialArtsFor,
 } = require("../trialStatSystem.js");
 
 const books = id => trialCarriedGrimoires(trialStartingGear(id));
@@ -156,7 +157,12 @@ assert.equal(trialSkillLoadoutFor("ringholm", 30, 15).classSkills[0].name, "HP+5
 
 // 物理の戦技は攻撃コマンド側。効果未実装のものは implemented=false
 assert.deepEqual(trialPhysicalArtsFor("ringholm", 30).map(a => [a.name, a.implemented]),
-    [["円舞", false], ["復讐", true]]);
+    [["円舞", true], ["復讐", true]]);
+// 専用戦技（月詠・生命吸収）は攻撃コマンドではなく戦技コマンドに出す
+assert.deepEqual(trialSpecialArtsFor("ringholm", 45).map(a => [a.name, a.radius, a.percent]), [["月詠", 5, 20]]);
+assert.deepEqual(trialSpecialArtsFor("albas", 45), []);   // 既定の4枠（習得順）には入っていない
+assert.deepEqual(trialSpecialArtsFor("albas", 45, { combatArts: ["破壊", "回復", "加速", "生命吸収"] }).map(a => [a.name, a.drain]), [["生命吸収", true]]);
+assert.deepEqual(trialSpecialArtsFor("ringholm", 30), []);
 assert.deepEqual(trialPhysicalArtsFor("arshe", 25).map(a => a.name), ["両断"]);
 
 // 周囲の能力: 死神（敵の命中・回避-10）、王威（味方の命中・回避・必殺耐性+10）

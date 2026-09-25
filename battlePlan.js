@@ -41,6 +41,19 @@ const BP_CRITICAL_MULTIPLIER = 3;
 const BP_ART_HIT = Object.freeze({ "大振り": -30, "破天": 10, "奇襲": 50 });
 const BP_ART_MULTIPLIER = Object.freeze({ "両断": 1.5, "大振り": 2 });
 
+// 命中後に、魔攻÷2 %で相手の追撃・反撃・移動を封じる魔法の戦技（CSVの効果文）
+const BP_SEAL_ARTS = new Set(["落雷", "万雷"]);
+
+/** 封じの発動率（魔攻÷2 %） */
+function bpArtSealChance(stats) {
+    return Math.max(0, Math.min(100, Math.floor(Number(stats?.mag || 0) / 2)));
+}
+
+/** 封じ（落雷・万雷）を受けているか。追撃・反撃・移動ができない */
+function bpSealed(unit) {
+    return (unit?.statusEffects || []).some(effect => effect.type === "sealed");
+}
+
 // ── 乱数 ──
 // percent(label): 1〜100。label は hit / crit / counter / seal / prayer / reflect / quickCast
 // dice(formula): "1d6" などを振る
@@ -143,9 +156,12 @@ function bpStrike(attacker, defender, action, env = {}) {
         isCounter: !!action.isCounter, isMagic: magic, spellId: action.spell?.id,
     });
     const sakki = bpHas(attacker, "殺気") && !action.isCounter;
+    const sealArt = firstStrike && action.kind === "magicArt" && BP_SEAL_ARTS.has(action.artName) ? action.artName : null;
+    if (sealArt) notes.push(`${sealArt}:封じ${bpArtSealChance(attacker.stats)}%`);
     if (sakki) notes.push("殺気:必殺+10");
     notes.push(...aura.notes, ...attack.notes);
     let accuracy = bpStatusSum(attacker, ["accuracyDown"], 5)
+        - bpStatusSum(attacker, ["hitDown"])     // 虚像: 命中−20
         - bpStatusSum(defender, ["evasionUp", "evasionBonus"])
         + (sakki ? 20 : 0)                       // 殺気: 命中+10・相手の回避−10
         + aura.accuracy + attack.accuracy
@@ -234,7 +250,10 @@ function bpCounterPlanFor(defender, attacker) {
 function bpResolveStrike(actor, target, action, role, env, rolls) {
     const step = { type: "strike", role, actorId: actor.id, targetId: target.id, kind: action.kind, spellId: action.spell?.id || null };
 
-    if (bpIsMagic(action)) {
+    if (bpIsMagic(action) && action.freeCast) {
+        step.mpCost = 0;
+        step.actorMpAfter = actor.mp;
+    } else if (bpIsMagic(action)) {
         let mpCost = rolls.dice(action.spell?.mpCost || "1d6");
         const quickChance = bpHas(actor, "詠唱破棄") ? bpAbilityChance("詠唱破棄", actor.stats) : 0;
         if (quickChance > 0) {
@@ -289,6 +308,16 @@ function bpResolveStrike(actor, target, action, role, env, rolls) {
             step.status = { type: "accuracyDown", duration: 3 };
         } else if (action.spell.statusEffect === "knockback") {
             step.status = { type: "knockback" };
+        }
+    }
+
+    // 落雷・万雷: 命中後に魔攻÷2 %で封じる（倒れていなければ）
+    if (!action.isCounter && !action.isFollowUp && action.kind === "magicArt" && BP_SEAL_ARTS.has(action.artName) && target.hp > 0) {
+        const chance = bpArtSealChance(actor.stats);
+        const roll = rolls.percent("artSeal");
+        step.artSeal = { roll, chance, active: roll <= chance };
+        if (step.artSeal.active && !bpSealed(target)) {
+            target.statusEffects.push({ type: "sealed", holdOwnPhase: true, name: "封じ" });
         }
     }
 
@@ -353,7 +382,9 @@ function bpPlanExchange(attackerSnapshot, defenderSnapshot, action, env = {}, ro
     let counterAction = null;
     if (bpIsDamaging(firstAction) && bpAlive(attacker) && bpAlive(defender) && !env.passiveBattle && defender.canCounterBase) {
         const plan = bpCounterPlanFor(defender, attacker);
-        if (!plan.canCounter) {
+        if (bpSealed(defender)) {
+            steps.push({ type: "counterCheck", ok: false, reason: "封じられている", actorId: defender.id, label: plan.label });
+        } else if (!plan.canCounter) {
             steps.push({ type: "counterCheck", ok: false, reason: plan.reason, actorId: defender.id, label: plan.label });
         } else {
             const courageRate = Math.max(0, Math.min(100, Number(defender.courage || 0)));
@@ -379,17 +410,56 @@ function bpPlanExchange(attackerSnapshot, defenderSnapshot, action, env = {}, ro
     const attackerCanFollow = firstAction.kind === "weapon"
         ? firstAction.artName !== "奇襲"
         : firstAction.kind === "grimoire" && Number(attacker.mp || 0) > 0;
-    if (attackerCanFollow && bpAlive(attacker) && bpAlive(defender) && bpCanFollowUp(attacker.stats, defender.stats)) {
+    if (attackerCanFollow && !bpSealed(attacker) && bpAlive(attacker) && bpAlive(defender) && bpCanFollowUp(attacker.stats, defender.stats)) {
         const followUp = firstAction.kind === "weapon"
             ? { kind: "weapon", isFollowUp: true }
             : { ...firstAction, isFollowUp: true, artName: null };
         steps.push(bpResolveStrike(attacker, defender, followUp, "followUp", localEnv, rolls));
-    } else if (counterAction && bpAlive(attacker) && bpAlive(defender) && bpCanFollowUp(defender.stats, attacker.stats)
+    } else if (counterAction && !bpSealed(defender) && bpAlive(attacker) && bpAlive(defender) && bpCanFollowUp(defender.stats, attacker.stats)
         && bpCounterPlanFor(defender, attacker).canCounter) {
         steps.push(bpResolveStrike(defender, attacker, { ...counterAction, isFollowUp: true }, "counterFollowUp", localEnv, rolls));
     }
 
     return { steps, attacker, defender };
+}
+
+/**
+ * 範囲の攻撃（円舞・万雷）: 対象それぞれに1撃ずつ。反撃・追撃はない（範囲攻撃のため。仮の扱い）。
+ * 魔法のMPは最初の1回だけ払う。返り値: { steps, attacker, targets }
+ */
+function bpPlanArea(attackerSnapshot, targetSnapshots, action, env = {}, rolls = bpForecastRolls()) {
+    const attacker = bpCopy(attackerSnapshot);
+    const targets = targetSnapshots.map(bpCopy);
+    const units = (env.units || []).map(unit =>
+        unit.id === attacker.id ? attacker : targets.find(t => t.id === unit.id) || unit);
+    const localEnv = { ...env, units };
+    const steps = [];
+    targets.forEach((target, index) => {
+        if (!bpAlive(attacker) || !bpAlive(target)) return;
+        const strikeAction = { ...action, isCounter: false, isFollowUp: false };
+        if (index > 0 && bpIsMagic(strikeAction)) strikeAction.freeCast = true;
+        steps.push(bpResolveStrike(attacker, target, strikeAction, "area", localEnv, rolls));
+    });
+    return { steps, attacker, targets };
+}
+
+/**
+ * 割合でHPを削る（月詠: 最大HPの20%、生命吸収: 10%を削り、その合計だけ自分のHP・MPを回復）。
+ * 命中判定はなく、最低1。返り値: { hits: [{ targetId, damage, targetHpAfter }], healed, attackerHpAfter, attackerMpAfter }
+ */
+function bpPlanDrain(attackerSnapshot, targetSnapshots, percent, drain = false) {
+    const hits = targetSnapshots.filter(bpAlive).map(target => {
+        const damage = Math.max(1, Math.floor(Number(target.maxHp || 0) * percent / 100));
+        return { targetId: target.id, damage, targetHpAfter: Math.max(0, target.hp - damage) };
+    });
+    const total = hits.reduce((sum, hit) => sum + Math.min(hit.damage, targetSnapshots.find(t => t.id === hit.targetId).hp), 0);
+    const healed = drain ? total : 0;
+    return {
+        hits,
+        healed,
+        attackerHpAfter: Math.min(attackerSnapshot.maxHp, attackerSnapshot.hp + healed),
+        attackerMpAfter: Math.min(Number(attackerSnapshot.maxMp ?? attackerSnapshot.mp), Number(attackerSnapshot.mp || 0) + healed),
+    };
 }
 
 /**
@@ -471,5 +541,8 @@ if (typeof module !== "undefined") {
         bpPlanExchange,
         bpForecast,
         bpScoreAttack,
+        bpPlanArea,
+        bpPlanDrain,
+        bpArtSealChance,
     };
 }

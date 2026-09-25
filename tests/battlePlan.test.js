@@ -6,6 +6,8 @@ const {
     bpFixedRolls,
     bpForecastRolls,
     bpScoreAttack,
+    bpPlanArea,
+    bpPlanDrain,
 } = require("../battlePlan.js");
 
 // 基本の数値だけを持つスナップショット
@@ -169,6 +171,39 @@ const roles = plan => plan.steps.map(step => step.type === "strike" ? step.role 
     // 反撃で倒されうる選択肢は大きく減点
     const fragile = unit("fragile", { side: "enemy", hp: 3 });
     assert.ok(score(unit("t2", { x: 1 }), fragile).lethalCounter > 0);
+}
+
+// ── 戦技の効果 ──
+{
+    const LIGHTNING = { id: "落雷", effectType: "magicDamage", targetType: "enemy", mpCost: "1d6" };
+    const caster = unit("caster", { stats: { hp: 30, atk: 20, def: 20, mag: 40, res: 20, tec: 20, spd: 30, cha: 20 } });
+    const foe = unit("foe", { side: "enemy", x: 1, hp: 60, maxHp: 60 });
+    // 落雷: 命中後に魔攻÷2（20%）で封じる → その交戦で反撃できない
+    const sealed = bpPlanExchange(caster, foe, { kind: "magicArt", artName: "落雷", spell: LIGHTNING }, {}, bpFixedRolls([50, 99, 10]));
+    assert.deepEqual(sealed.steps[0].artSeal, { roll: 10, chance: 20, active: true });
+    assert.equal(sealed.steps[1].reason, "封じられている");
+    assert.equal(sealed.defender.statusEffects.some(e => e.type === "sealed"), true);
+    // 封じが外れれば反撃の判定をする
+    const notSealed = bpPlanExchange(caster, foe, { kind: "magicArt", artName: "落雷", spell: LIGHTNING }, {}, bpFixedRolls([50, 99, 50, 10, 50, 99]));
+    assert.equal(notSealed.steps[1].ok, true);
+    // 予測の見込みでは封じは起きない（反撃ありで見積もる）が、補正の欄に発動率を出す
+    assert.ok(bpForecast(caster, foe, { kind: "magicArt", artName: "落雷", spell: LIGHTNING }).first.notes.includes("落雷:封じ20%"));
+    // 封じられた側は追撃できない
+    const sealedFast = unit("sf", { stats: { hp: 30, atk: 30, def: 20, mag: 30, res: 20, tec: 20, spd: 40, cha: 20 }, statusEffects: [{ type: "sealed" }] });
+    assert.equal(bpPlanExchange(sealedFast, unit("s", { side: "enemy", x: 1 }), weapon).steps.some(s => s.role === "followUp"), false);
+    // 虚像: 命中−20
+    assert.equal(bpStrike(unit("blind", { statusEffects: [{ type: "hitDown", value: 20 }] }), unit("t", { x: 1 }), weapon).hitRate, 40);
+
+    // 円舞・万雷: 範囲の対象それぞれに1撃。反撃はない。魔法のMPは1回だけ
+    const area = bpPlanArea(caster, [unit("e1", { side: "enemy", x: 1 }), unit("e2", { side: "enemy", x: 2 })],
+        { kind: "magicArt", artName: "万雷", spell: LIGHTNING }, {}, bpFixedRolls([50, 99, 99, 50, 99, 99], [4]));
+    assert.deepEqual(area.steps.map(s => [s.targetId, s.role, s.mpCost]), [["e1", "area", 4], ["e2", "area", 0]]);
+
+    // 月詠: 最大HPの20%を削る（最低1） / 生命吸収: 10%を削り、合計を自分のHP・MPへ
+    const moon = bpPlanDrain(caster, [unit("m1", { maxHp: 40, hp: 40 }), unit("m2", { maxHp: 3, hp: 3 })], 20);
+    assert.deepEqual(moon.hits.map(h => h.damage), [8, 1]);
+    const life = bpPlanDrain(unit("l", { hp: 20, maxHp: 30, mp: 10, maxMp: 36 }), [unit("v1", { maxHp: 40, hp: 40 }), unit("v2", { maxHp: 50, hp: 2 })], 10, true);
+    assert.deepEqual([life.healed, life.attackerHpAfter, life.attackerMpAfter], [6, 26, 16]);   // 4 + （5だが残りHP2まで）
 }
 
 console.log("battlePlan: all tests passed");

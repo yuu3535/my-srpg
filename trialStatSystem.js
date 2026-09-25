@@ -206,10 +206,24 @@ const TRIAL_MAGIC_ART_SPELLS = Object.freeze({
     "回復": "治癒",
     "悪夢": "悪夢",
     "召喚「ヒトダマ」": "ヒトダマ",
+    "万雷": "落雷",   // 落雷の魔法データを使い、直線3マスの敵を巻き込む（game.js の万雷の処理）
 });
 
 // 物理の戦技のうち、試験の戦闘で効果を実装済みのもの（game.js の [trial] 戦技フック）
-const TRIAL_IMPLEMENTED_PHYSICAL_ARTS = new Set(["両断", "復讐", "大振り", "破天", "奇襲"]);
+const TRIAL_IMPLEMENTED_PHYSICAL_ARTS = new Set(["両断", "復讐", "大振り", "破天", "奇襲", "円舞"]);
+
+// 専用戦技（月詠・生命吸収）: 周囲の敵のHPを割合で削る。戦技コマンドから使う（1戦闘に1回。仮の制限）
+const TRIAL_SPECIAL_ARTS = Object.freeze({
+    "月詠":     { radius: 5, percent: 20, drain: false },
+    "生命吸収": { radius: 6, percent: 10, drain: true },
+});
+
+/** セット中の専用戦技 */
+function trialSpecialArtsFor(unitId, causeLevel, selection = null) {
+    return trialSkillLoadoutFor(unitId, causeLevel, TRIAL_CLASS_LEVEL, selection).combatArts
+        .filter(art => art && TRIAL_SPECIAL_ARTS[art.name])
+        .map(art => ({ name: art.name, desc: art.desc, ...TRIAL_SPECIAL_ARTS[art.name] }));
+}
 
 // ── 試験用の武器・魔導書（持ち物） ──
 // 1人が持てる数は TRIAL_ITEM_CAPACITY まで。装備できるのは1つ（武器か魔導書）。
@@ -656,6 +670,8 @@ if (typeof module !== "undefined") {
         TRIAL_IMPLEMENTED_PHYSICAL_ARTS,
         trialArtCommand,
         trialPhysicalArtsFor,
+        TRIAL_SPECIAL_ARTS,
+        trialSpecialArtsFor,
         trialAbilityNamesFor,
         trialLoadoutStatBonus,
         trialAuraModifiers,
