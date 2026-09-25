@@ -1,5 +1,7 @@
 # UI素材の発注書（ChatGPT向け）
 
+> **第2版があります**: `docs/30-planning/UI_ASSET_ORDER_2026-09-26_v2.md`（2026-09-26）。この第1版で作った素材のうち A1〜A4 は採用済み。残りは第2版で作り直す。
+
 作成: 2026-09-25 / Claude Code
 状態: **検討中**（原作者が確認してから発注する）
 関連: `docs/10-design/ui/UI_DIRECTION_AND_ASSET_LIST_2026-09-25.md` §5.0.3（意匠の基準）
