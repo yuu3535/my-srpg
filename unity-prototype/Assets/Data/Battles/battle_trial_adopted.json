@@ -1,0 +1,96 @@
+{
+  "battleId": "battle_trial_adopted",
+  "cols": 12,
+  "rows": 8,
+  "tiles": [],
+  "iso": {
+    "image": "Assets/Art/Maps/iso_trial_12x8.png",
+    "tileW": 128,
+    "originX": 608,
+    "originY": 96,
+    "width": 1472,
+    "height": 880
+  },
+  "units": [
+    {
+      "id": "ringholm",
+      "name": "リングホルム",
+      "side": "ally",
+      "x": 3,
+      "y": 6,
+      "move": 3,
+      "attackRange": 1,
+      "token": "Assets/Art/Tokens/ringholm.png"
+    },
+    {
+      "id": "arshe",
+      "name": "アルシェ",
+      "side": "ally",
+      "x": 4,
+      "y": 6,
+      "move": 3,
+      "attackRange": 1,
+      "token": "Assets/Art/Tokens/arshe.png"
+    },
+    {
+      "id": "albas",
+      "name": "アルバス",
+      "side": "ally",
+      "x": 5,
+      "y": 6,
+      "move": 3,
+      "attackRange": 1,
+      "token": "Assets/Art/Tokens/albas.png"
+    },
+    {
+      "id": "young_karima",
+      "name": "カリマ",
+      "side": "ally",
+      "x": 6,
+      "y": 6,
+      "move": 3,
+      "attackRange": 1,
+      "token": "Assets/Art/Tokens/young_karima.png"
+    },
+    {
+      "id": "forest_guard",
+      "name": "森の番人",
+      "side": "enemy",
+      "x": 6,
+      "y": 1,
+      "move": 3,
+      "attackRange": 1,
+      "token": "Assets/Art/Tokens/forest_guard.png"
+    },
+    {
+      "id": "dylan",
+      "name": "ディラン",
+      "side": "enemy",
+      "x": 7,
+      "y": 1,
+      "move": 3,
+      "attackRange": 1,
+      "token": "Assets/Art/Tokens/dylan.png"
+    },
+    {
+      "id": "herel",
+      "name": "ヘレル",
+      "side": "enemy",
+      "x": 8,
+      "y": 2,
+      "move": 3,
+      "attackRange": 1,
+      "token": "Assets/Art/Tokens/herel.png"
+    },
+    {
+      "id": "albas_rival",
+      "name": "アルバス（敵）",
+      "side": "enemy",
+      "x": 5,
+      "y": 2,
+      "move": 3,
+      "attackRange": 1,
+      "token": "Assets/Art/Tokens/albas_rival.png"
+    }
+  ]
+}
