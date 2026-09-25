@@ -211,13 +211,87 @@ const TRIAL_MAGIC_ART_SPELLS = Object.freeze({
 // 物理の戦技のうち、試験の戦闘で効果を実装済みのもの（game.js の [trial] 戦技フック）
 const TRIAL_IMPLEMENTED_PHYSICAL_ARTS = new Set(["両断", "復讐", "大振り", "破天", "奇襲"]);
 
-// 仮の魔導書（1人1冊）。武器・魔導書の装備欄ができるまでの試験用。
-// どのキャラに何の魔導書を持たせるかは原作者が決める（ここは Claude Code の仮置き）
-const TRIAL_GRIMOIRES = Object.freeze({
-    ringholm:     { name: "火の魔導書",   spell: "火" },   // 黒の一族（火魔法強化）に合わせた
-    arshe:        { name: "火の魔導書",   spell: "火" },
-    young_karima: { name: "治癒の魔導書", spell: "治癒" },
+// ── 試験用の武器・魔導書（持ち物） ──
+// 1人が持てる数は TRIAL_ITEM_CAPACITY まで。装備できるのは1つ（武器か魔導書）。
+// 魔導書は魔法の扱いで、射程は TRIAL_GRIMOIRE_RANGE（1〜2マス。原作者指定 2026-09-25）。
+// どのキャラに何を持たせるかは原作者の仮置きの許可による（Claude Code が配置）。
+const TRIAL_ITEMS = Object.freeze({
+    trial_sword: { name: "仮の剣", kind: "weapon", power: TRIAL_WEAPON_POWER.mid, range: 1 },
+    // アルバスが見た目で持つ剣。アルバス専用の武器ではなく、持ち物にしまったり、ほかの味方に装備させたりできる
+    albas_sword: { name: "アルバスの剣", kind: "weapon", power: TRIAL_WEAPON_POWER.mid, range: 1 },
+    fire_book:   { name: "火の魔導書",   kind: "grimoire", spell: "火" },   // 黒の一族（火魔法強化）に合わせた
+    heal_book:   { name: "治癒の魔導書", kind: "grimoire", spell: "治癒" },
+    // ヘレル（魔法型の敵）の仮の魔導書。隕石を単体の攻撃魔法として使う
+    star_book:   { name: "星の魔導書",   kind: "grimoire", spell: "隕石", effectType: "magicDamage" },
 });
+
+const TRIAL_ITEM_CAPACITY = 5;
+
+// 戦闘開始時の持ち物と装備（身支度で変えられる。変えた内容はパーティ状態に残る）
+const TRIAL_STARTING_GEAR = Object.freeze({
+    ringholm:     { items: ["trial_sword", "fire_book"], equipped: "trial_sword" },
+    arshe:        { items: ["trial_sword", "fire_book"], equipped: "trial_sword" },
+    young_karima: { items: ["trial_sword", "heal_book"], equipped: "trial_sword" },
+    albas:        { items: [], equipped: null },   // 剣はフレーバー。共有の持ち物に入っている
+    forest_guard: { items: ["trial_sword"], equipped: "trial_sword" },
+    dylan:        { items: ["trial_sword"], equipped: "trial_sword" },
+    herel:        { items: ["star_book"], equipped: "star_book" },
+});
+
+// パーティ共有の持ち物（誰も持っていない武器・魔導書）
+const TRIAL_STARTING_STOCK = Object.freeze(["albas_sword"]);
+
+function trialStartingGear(unitId) {
+    const gear = TRIAL_STARTING_GEAR[unitId];
+    return gear ? { items: [...gear.items], equipped: gear.equipped } : { items: [], equipped: null };
+}
+
+function trialItemKind(itemId) {
+    return TRIAL_ITEMS[itemId]?.kind || null;
+}
+
+/** 持ち物の中の魔導書（魔法コマンドに出す） */
+function trialCarriedGrimoires(gear) {
+    return (gear?.items || []).filter(id => trialItemKind(id) === "grimoire");
+}
+
+/** 持ち物の中の最初の武器（通常攻撃で持ち替える先）。なければ null */
+function trialCarriedWeapon(gear) {
+    return (gear?.items || []).find(id => trialItemKind(id) === "weapon") || null;
+}
+
+/** 装備する（持っているものだけ） */
+function trialGearEquip(gear, itemId) {
+    if (itemId !== null && !(gear?.items || []).includes(itemId)) return { gear, changed: false };
+    return { gear: { items: [...gear.items], equipped: itemId }, changed: gear.equipped !== itemId };
+}
+
+/**
+ * 持ち物の受け渡し。from・to はユニットのid か "stock"（共有の持ち物）。
+ * 装備中のものを渡すと、残りの最初の持ち物を装備する（なければ装備なし）。
+ * 返り値: { gears, stock, ok, reason }
+ */
+function trialGearTransfer(gears, stock, from, to, itemId) {
+    const nextGears = Object.fromEntries(Object.entries(gears || {}).map(([id, g]) => [id, { items: [...g.items], equipped: g.equipped }]));
+    const nextStock = [...(stock || [])];
+    const take = owner => {
+        const list = owner === "stock" ? nextStock : nextGears[owner]?.items;
+        const index = list ? list.indexOf(itemId) : -1;
+        if (index < 0) return false;
+        list.splice(index, 1);
+        return true;
+    };
+    if (from === to) return { gears, stock, ok: false, reason: "same" };
+    if (to !== "stock" && !nextGears[to]) return { gears, stock, ok: false, reason: "unknown" };
+    if (to !== "stock" && nextGears[to].items.length >= TRIAL_ITEM_CAPACITY) return { gears, stock, ok: false, reason: "full" };
+    if (!take(from)) return { gears, stock, ok: false, reason: "missing" };
+    if (to === "stock") nextStock.push(itemId);
+    else nextGears[to].items.push(itemId);
+    if (from !== "stock" && nextGears[from].equipped === itemId) {
+        nextGears[from].equipped = nextGears[from].items[0] || null;
+    }
+    return { gears: nextGears, stock: nextStock, ok: true, reason: "" };
+}
 
 // 魔導書は魔法の扱い。射程は1〜2マス（原作者指定 2026-09-25）
 const TRIAL_GRIMOIRE_RANGE = Object.freeze({ min: 1, max: 2 });
@@ -231,6 +305,7 @@ const TRIAL_GRIMOIRE_RANGE = Object.freeze({ min: 1, max: 2 });
  */
 function trialCounterPlan(input) {
     const distance = Number(input.distance);
+    if (!input.equipped) return { canCounter: false, kind: null, reason: "装備なし" };
     if (input.equipped === "grimoire" && input.grimoire) {
         if (!input.grimoire.damaging) return { canCounter: false, kind: "grimoire", reason: "攻撃できない魔導書" };
         if (distance < TRIAL_GRIMOIRE_RANGE.min || distance > TRIAL_GRIMOIRE_RANGE.max) {
@@ -252,15 +327,18 @@ function trialArtCommand(art) {
     return "attack";
 }
 
-/** 試験用ユニットの魔法コマンドの中身（セット中の魔法戦技 → 魔導書の順） */
-function trialMagicMenuFor(unitId, causeLevel, selection = null) {
+/**
+ * 試験用ユニットの魔法コマンドの中身（セット中の魔法戦技 → 持っている魔導書の順）
+ *   grimoireIds: 持ち物の中の魔導書の id（trialCarriedGrimoires）
+ */
+function trialMagicMenuFor(unitId, causeLevel, selection = null, grimoireIds = []) {
     const loadout = trialSkillLoadoutFor(unitId, causeLevel, TRIAL_CLASS_LEVEL, selection);
     const menu = loadout.combatArts
         .filter(art => art && trialArtCommand(art) === "magic" && TRIAL_MAGIC_ART_SPELLS[art.name])
         .map(art => ({ name: art.name, spell: TRIAL_MAGIC_ART_SPELLS[art.name], source: "戦技" }));
-    const grimoire = TRIAL_GRIMOIRES[unitId];
-    if (grimoire && !menu.some(item => item.spell === grimoire.spell)) {
-        menu.push({ name: grimoire.name, spell: grimoire.spell, source: "魔導書" });
+    for (const itemId of grimoireIds) {
+        const item = TRIAL_ITEMS[itemId];
+        if (item?.kind === "grimoire") menu.push({ name: item.name, spell: item.spell, source: "魔導書", itemId });
     }
     return menu;
 }
@@ -548,7 +626,16 @@ if (typeof module !== "undefined") {
         TRIAL_CAUSE_ABILITIES,
         trialSkillLoadoutFor,
         TRIAL_MAGIC_ART_SPELLS,
-        TRIAL_GRIMOIRES,
+        TRIAL_ITEMS,
+        TRIAL_ITEM_CAPACITY,
+        TRIAL_STARTING_GEAR,
+        TRIAL_STARTING_STOCK,
+        trialStartingGear,
+        trialItemKind,
+        trialCarriedGrimoires,
+        trialCarriedWeapon,
+        trialGearEquip,
+        trialGearTransfer,
         trialMagicMenuFor,
         TRIAL_ABILITY_SOURCE,
         TRIAL_GRIMOIRE_RANGE,

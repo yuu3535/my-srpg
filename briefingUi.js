@@ -34,6 +34,7 @@ const briefingState = {
     view: "menu",        // menu / units / gear / map
     index: 0,
     gearUnitId: null,
+    stock: [],           // パーティ共有の持ち物（武器・魔導書の id）
     story: false,        // 本編の戦闘か（戻る・ユニット選択を制限する）
     root: null,
 };
@@ -297,6 +298,79 @@ function briefingGearUnits() {
     return briefingAllies().filter(unit => unit.trialStats && TRIAL_ABILITY_SOURCE[unit.id] && !unit.briefingBench);
 }
 
+// ── 装備・持ち物（武器・魔導書） ──
+
+function briefingItemLabel(itemId) {
+    const item = TRIAL_ITEMS[itemId];
+    if (!item) return { name: itemId, kind: "" };
+    return {
+        name: item.name,
+        kind: item.kind === "grimoire" ? `魔導書・射程${TRIAL_GRIMOIRE_RANGE.min}〜${TRIAL_GRIMOIRE_RANGE.max}` : `武器・射程${item.range}`,
+    };
+}
+
+function briefingItemsSection(unit) {
+    const gear = trialGearOf(unit);
+    const carried = gear.items.map((itemId, index) => {
+        const label = briefingItemLabel(itemId);
+        const on = gear.equipped === itemId && gear.items.indexOf(itemId) === index;
+        return `<span class="brfItemChip${on ? " on" : ""}">
+            <button type="button" class="brfItemEquip" data-item="${itemId}" title="${on ? "装備を外す" : "装備する"}">
+                <em>${on ? "装" : ""}</em><span>${label.name}</span><small>${label.kind}</small></button>
+            <button type="button" class="brfItemStore" data-item="${itemId}" title="共有の持ち物にしまう" aria-label="${label.name}をしまう">しまう</button>
+        </span>`;
+    }).join("");
+    const stock = briefingState.stock.map(itemId => {
+        const label = briefingItemLabel(itemId);
+        return `<button type="button" class="brfItemTake" data-item="${itemId}" title="${unit.name}に持たせる">
+            <span>${label.name}</span><small>${label.kind}</small><i>持たせる</i></button>`;
+    }).join("");
+    return `
+        <section class="brfGearSection">
+            <h4>装備・持ち物<span>${gear.items.length} / ${TRIAL_ITEM_CAPACITY}</span></h4>
+            <div class="brfChips">${carried || `<p class="brfNone">持ち物なし（装備なし）</p>`}</div>
+            <h4 class="brfSubHead">共有の持ち物<span>${briefingState.stock.length}</span></h4>
+            <div class="brfChips">${stock || `<p class="brfNone">なし</p>`}</div>
+        </section>`;
+}
+
+function applyBriefingGear(unit, gear) {
+    unit.trialItems = gear.items;
+    unit.trialEquippedItem = gear.equipped;
+    // セーブに残すため、パーティ状態にも書く
+    if (typeof setPartyGear === "function") setPartyGear(partyState, unit.id, gear);
+    if (typeof setPartyStock === "function") setPartyStock(partyState, briefingState.stock);
+}
+
+function bindBriefingItemButtons(panel, unit) {
+    panel.querySelectorAll(".brfItemEquip").forEach(btn => btn.addEventListener("click", () => {
+        const gear = trialGearOf(unit);
+        const next = gear.equipped === btn.dataset.item ? null : btn.dataset.item;
+        const result = trialGearEquip(gear, next);
+        applyBriefingGear(unit, result.gear);
+        renderBriefingGear();
+        setBriefingHelp(next ? `${briefingItemLabel(next).name}を装備しました` : "装備を外しました（反撃できません）");
+    }));
+    const transfer = (from, to, itemId) => {
+        const gears = { [unit.id]: trialGearOf(unit) };
+        const result = trialGearTransfer(gears, briefingState.stock, from, to, itemId);
+        if (!result.ok) {
+            if (result.reason === "full") setBriefingHelp(`持ち物がいっぱいです（${TRIAL_ITEM_CAPACITY}つまで）`);
+            return false;
+        }
+        briefingState.stock = result.stock;
+        applyBriefingGear(unit, result.gears[unit.id]);
+        renderBriefingGear();
+        return true;
+    };
+    panel.querySelectorAll(".brfItemStore").forEach(btn => btn.addEventListener("click", () => {
+        if (transfer(unit.id, "stock", btn.dataset.item)) setBriefingHelp(`${briefingItemLabel(btn.dataset.item).name}を共有の持ち物にしまいました`);
+    }));
+    panel.querySelectorAll(".brfItemTake").forEach(btn => btn.addEventListener("click", () => {
+        if (transfer("stock", unit.id, btn.dataset.item)) setBriefingHelp(`${briefingItemLabel(btn.dataset.item).name}を${unit.name}に持たせました。押すと装備します`);
+    }));
+}
+
 function renderBriefingGear() {
     const panel = briefingState.root.querySelector(".brfPanel");
     const units = briefingGearUnits();
@@ -362,6 +436,7 @@ function renderBriefingGear() {
                             <h4>兵種固有<span>${unique ? "1 / 1" : "0 / 1"}</span></h4>
                             <p class="brfNone">${unique ? unique.name : exclusiveNote}</p>
                         </section>
+                        ${briefingItemsSection(unit)}
                     </div>
                     <div>
                         ${section("causeSkills", "因果Lvが上がると習得します")}
@@ -372,6 +447,7 @@ function renderBriefingGear() {
         </div>`;
 
     panel.querySelector(".brfClose").addEventListener("click", () => showBriefingView("menu"));
+    bindBriefingItemButtons(panel, unit);
     panel.querySelectorAll(".brfGearUnit").forEach(btn => btn.addEventListener("click", () => {
         briefingState.gearUnitId = btn.dataset.id;
         renderBriefingGear();
@@ -414,6 +490,8 @@ function openBriefing() {
     briefingState.index = 0;
     briefingState.gearUnitId = null;
     briefingState.story = battleEntrySource === "scenario";
+    briefingState.stock = (typeof getPartyStock === "function" ? getPartyStock(partyState) : null)
+        || (typeof TRIAL_STARTING_STOCK !== "undefined" ? [...TRIAL_STARTING_STOCK] : []);
     for (const unit of briefingAllies()) unit.briefingBench = false;
     // 戦闘準備で出る「味方行動」の帯は、戦闘開始のときに出し直す
     const banner = document.getElementById("phaseBanner");

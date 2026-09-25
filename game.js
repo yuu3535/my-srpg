@@ -1094,7 +1094,12 @@ function applyTrialProfile(unit) {
     unit.trialBaseStats = trialStatsAt(profile, level);
     unit.trialLuck = profile.luck;
     unit.trialPrayerUsed = false;
-    unit.trialEquipped = "weapon";   // 今の装備（weapon / grimoire）。反撃の射程はこれで決まる
+    // 持ち物（武器・魔導書）と今の装備。反撃の射程は今の装備で決まる
+    const gear = (typeof getPartyGear === "function" ? getPartyGear(partyState, unit.id) : null) || trialStartingGear(unit.id);
+    unit.trialItems = gear.items;
+    unit.trialEquippedItem = gear.equipped;
+    // 敵は今の装備で攻撃する（魔導書なら射程2で魔法攻撃）。味方の通常攻撃は武器の射程
+    if (unit.side === "enemy" && trialItemKind(gear.equipped) === "grimoire") unit.attackRange = TRIAL_GRIMOIRE_RANGE.max;
     unit.trialLevel = level;
     unit.trialAbilityLevel = trialAbilityLevelFor(profile);   // スキル・戦技の習得に使う因果Lv
     unit.trialSiz = profile.siz;
@@ -1159,40 +1164,63 @@ function trialRollAbility(unit, name, extra = {}) {
 
 const TRIAL_DAMAGING_SPELL_TYPES = new Set(["magicDamage", "break"]);
 
-/** 試験用ユニットの魔導書（仮置き）。spell は戦闘で使う魔法データ（trialGrimoire の印つき） */
-function trialGrimoireOf(unit) {
-    const grimoire = unit?.trialStats ? TRIAL_GRIMOIRES[unit.id] : null;
-    const base = grimoire ? SPELLS_DATA[grimoire.spell] : null;
+/** 魔導書の魔法データ（戦闘で使う形）。射程は魔導書の射程、trialItemId の印つき */
+function trialGrimoireSpell(itemId) {
+    const item = TRIAL_ITEMS[itemId];
+    const base = item?.kind === "grimoire" ? SPELLS_DATA[item.spell] : null;
     if (!base) return null;
     return {
-        name: grimoire.name,
-        spell: { ...base, trialGrimoire: true },
-        damaging: TRIAL_DAMAGING_SPELL_TYPES.has(base.effectType),
+        ...base,
+        ...(item.effectType ? { effectType: item.effectType } : {}),
+        range: TRIAL_GRIMOIRE_RANGE.max,
+        trialGrimoire: true,
+        trialItemId: itemId,
     };
+}
+
+function trialGearOf(unit) {
+    return { items: unit?.trialItems || [], equipped: unit?.trialEquippedItem ?? null };
 }
 
 /** 今の装備の表示名 */
 function trialEquipmentLabel(unit) {
-    const grimoire = trialGrimoireOf(unit);
-    if (unit?.trialEquipped === "grimoire" && grimoire) return grimoire.name;
-    return `仮の武器（射程${Math.max(1, Number(unit?.attackRange || 1))}）`;
+    const item = TRIAL_ITEMS[unit?.trialEquippedItem];
+    if (!item) return "なし";
+    return item.kind === "grimoire"
+        ? `${item.name}（射程${TRIAL_GRIMOIRE_RANGE.min}〜${TRIAL_GRIMOIRE_RANGE.max}）`
+        : `${item.name}（射程${item.range}）`;
 }
 
-/** 防御側が今の装備で反撃できるか（射程・MP・攻撃できる魔導書か） */
+/** 防御側が今の装備で反撃できるか（装備・射程・MP・攻撃できる魔導書か） */
 function trialCounterFor(defender, attacker) {
-    const grimoire = trialGrimoireOf(defender);
+    const itemId = defender.trialEquippedItem;
+    const item = TRIAL_ITEMS[itemId];
+    const spell = item?.kind === "grimoire" ? trialGrimoireSpell(itemId) : null;
     const plan = trialCounterPlan({
-        equipped: defender.trialEquipped || "weapon",
-        weaponRange: defender.attackRange || 1,
-        grimoire: grimoire ? { spell: grimoire.spell.id, damaging: grimoire.damaging } : null,
+        equipped: item ? (item.kind === "grimoire" ? "grimoire" : "weapon") : null,
+        weaponRange: item?.kind === "weapon" ? item.range : 1,
+        grimoire: spell ? { spell: spell.id, damaging: TRIAL_DAMAGING_SPELL_TYPES.has(spell.effectType) } : null,
         mp: defender.mp,
         distance: Math.abs(defender.x - attacker.x) + Math.abs(defender.y - attacker.y),
     });
-    return {
-        ...plan,
-        spell: plan.kind === "grimoire" ? grimoire?.spell || null : null,
-        label: plan.kind === "grimoire" && grimoire ? grimoire.name : "武器",
-    };
+    return { ...plan, spell, label: item?.name || "装備なし" };
+}
+
+/** [trial] 敵が魔導書を装備していれば、その魔法で攻撃する（MPが足りなければ攻撃しない） */
+function trialEnemyGrimoireSpell(enemy) {
+    if (!enemy?.trialStats || trialItemKind(enemy.trialEquippedItem) !== "grimoire") return null;
+    return trialGrimoireSpell(enemy.trialEquippedItem);
+}
+
+async function trialEnemyCastGrimoire(enemy, victim, spell) {
+    if (enemy.mp <= 0) {
+        addLog(`・${enemy.name}はMPが足りず攻撃できない`);
+        await sleep(300);
+        return;
+    }
+    executeMagic(enemy, spell, victim);
+    checkVictoryCondition();
+    await sleep(700);
 }
 
 /**
@@ -2190,7 +2218,8 @@ function renderLandscapeRoster() {
 function getLandscapeCommands(unit) {
     const commands = [];
     if (canUndoMove(unit)) commands.push({ label: "戻る", active: true });
-    if (!unit.acted) commands.push({ label: "攻撃", active: actionState === "attacking" || actionState === "throwing" });
+    if (!unit.acted && (!unit.trialStats || trialCarriedWeapon(trialGearOf(unit))))
+        commands.push({ label: "攻撃", active: actionState === "attacking" || actionState === "throwing" });
     // 魔法コマンドは、セットした魔法戦技と装備した魔導書の魔法を選ぶ入口（原作者方針 2026-09-25）。
     // 試験用ユニットはその形（getLandscapeMagicEntries）、ほかは従来の魔法一覧を仮に出す
     if (!unit.acted && getLandscapeMagicEntries(unit).length > 0) commands.push({ label: "魔法", active: actionState === "magic" });
@@ -2291,14 +2320,13 @@ function renderLandscapeCommandRail(unit = selectedUnit) {
 function getLandscapeMagicEntries(unit) {
     if (unit?.trialStats && typeof trialMagicMenuFor === "function") {
         const rangeBonus = trialHasAbility(unit, "魔法射程+1") ? 1 : 0;
-        return trialMagicMenuFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null)
+        return trialMagicMenuFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null, trialCarriedGrimoires(trialGearOf(unit)))
             .filter(item => SPELLS_DATA[item.spell])
             .map(item => {
-                const base = SPELLS_DATA[item.spell];
+                const base = item.itemId ? trialGrimoireSpell(item.itemId) : SPELLS_DATA[item.spell];
                 const spell = {
                     ...base,
                     ...(rangeBonus && typeof base.range === "number" ? { range: base.range + rangeBonus } : {}),
-                    ...(item.source === "魔導書" ? { trialGrimoire: true } : {}),
                 };
                 return { id: item.spell, spell, label: item.name, sub: item.source === "魔導書" ? "装備" : "戦技" };
             });
@@ -2842,7 +2870,10 @@ function executeAttack(attacker, target) {
         ({ val: atkStat, name: atkSkillName } = getAttackSkillVal(attacker));
     }
     const combatArtId = selectedCombatArtId;
-    if (attacker.trialStats) attacker.trialEquipped = "weapon";   // [trial] 武器に持ち替え
+    // [trial] 通常攻撃・物理の戦技は、持っている武器に持ち替える
+    if (attacker.trialStats && trialItemKind(attacker.trialEquippedItem) !== "weapon") {
+        attacker.trialEquippedItem = trialCarriedWeapon(trialGearOf(attacker)) ?? attacker.trialEquippedItem;
+    }
     const liveShadowComparison = startLivePhysicalShadowSession(
         attacker,
         target,
@@ -3002,7 +3033,7 @@ function renderMagicCommands(unit) {
 }
 
 function executeMagic(caster, spell, target) {
-    if (spell?.trialGrimoire && caster.trialStats) caster.trialEquipped = "grimoire";   // [trial] 魔導書に持ち替え
+    if (spell?.trialItemId && caster.trialStats) caster.trialEquippedItem = spell.trialItemId;   // [trial] 魔導書に持ち替え
     const successVal = caster.spells[spell.id] ?? 5;
     const hit = getMagicHitResult(caster, target, spell, successVal);
 
@@ -4667,6 +4698,12 @@ async function executeDeclaredAction(enemy, decl) {
         return;
     }
 
+    const enemySpell = trialEnemyGrimoireSpell(enemy);   // [trial] 魔導書を装備した敵は魔法で攻撃
+    if (enemySpell) {
+        await trialEnemyCastGrimoire(enemy, victim, enemySpell);
+        return;
+    }
+
     const { val: atkStat, name: atkSkillName } = getAttackSkillVal(enemy);
     const targetStunned = (victim.statusEffects || []).some(e => e.type === "stun");
     const evadeStat = targetStunned ? 0 : getEvadeSkillVal(victim);
@@ -4825,7 +4862,10 @@ async function enemyAction(enemy) {
 
     // 攻撃射程内なら攻撃
     const distAfter = Math.abs(target.x - enemy.x) + Math.abs(target.y - enemy.y);
-    if (distAfter <= enemy.attackRange) {
+    const enemySpell = trialEnemyGrimoireSpell(enemy);   // [trial] 魔導書を装備した敵は魔法で攻撃
+    if (distAfter <= enemy.attackRange && enemySpell) {
+        await trialEnemyCastGrimoire(enemy, target, enemySpell);
+    } else if (distAfter <= enemy.attackRange) {
         const { val: atkStat, name: atkSkillName } = getAttackSkillVal(enemy);
         const targetStunned = (target.statusEffects || []).some(e => e.type === "stun");
         const evadeStat = targetStunned ? 0 : getEvadeSkillVal(target);
@@ -5354,8 +5394,8 @@ function renderTrialStatusSheet(unit) {
 
         <section class="adventureLoadout adventureRuled">
           <h3>LOADOUT <span>装備・行動</span></h3>
-          <div class="adventureLoadoutBlock"><span>武器</span><b>仮の武器（中威力${TRIAL_WEAPON_POWER.mid}）${unit.trialEquipped !== "grimoire" ? "・装備中" : ""}</b></div>
-          ${trialGrimoireOf(unit) ? `<div class="adventureLoadoutBlock"><span>魔導書</span><b>${trialGrimoireOf(unit).name}（射程${TRIAL_GRIMOIRE_RANGE.min}〜${TRIAL_GRIMOIRE_RANGE.max}）${unit.trialEquipped === "grimoire" ? "・装備中" : ""}</b></div>` : ""}
+          <div class="adventureLoadoutBlock"><span>装備</span><b>${trialEquipmentLabel(unit)}</b></div>
+          <div class="adventureLoadoutBlock"><span>持ち物</span><b>${(unit.trialItems || []).map(id => TRIAL_ITEMS[id]?.name || id).join("・") || "なし"}</b></div>
           <div class="adventureLoadoutBlock"><span>行動</span><b>${getActionRangeSummary(unit)}</b></div>
           <div class="adventureLoadoutBlock"><span>状態</span><b>${statusNames.join("・") || "通常"}</b></div>
           <div class="adventureLoadoutBlock"><span>発作</span><b>${unit.seizureType || "なし"}</b></div>

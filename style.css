@@ -5729,3 +5729,50 @@ html, body {
 .brfChip:active { transform: translateY(1px); }
 .brfChip:focus-visible { outline: 1px solid rgba(224,176,72,0.8); outline-offset: 1px; }
 .brfNone { margin: 0; font-size: 9px; color: rgba(224,189,115,0.45); }
+
+/* 身支度: 装備・持ち物 */
+.brfSubHead { margin-top: 6px !important; }
+.brfItemChip {
+    display: inline-flex;
+    align-items: stretch;
+    border: 1px solid rgba(200,146,42,0.3);
+    background: rgba(255,255,255,0.02);
+}
+.brfItemChip.on { border-color: rgba(224,176,72,0.8); background: linear-gradient(180deg, rgba(82,18,98,0.85), rgba(40,14,58,0.85)); }
+.brfItemEquip, .brfItemStore, .brfItemTake {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 6px;
+    font-family: inherit;
+    font-size: 11px;
+    color: rgba(236,210,142,0.75);
+    background: none;
+    border: 0;
+    cursor: pointer;
+}
+.brfItemChip.on .brfItemEquip { color: #fff4d6; }
+.brfItemEquip em {
+    width: 14px;
+    height: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-style: normal;
+    font-size: 8px;
+    color: #170d1e;
+    background: rgba(200,146,42,0.22);
+    clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+.brfItemChip.on .brfItemEquip em { background: #e0b048; }
+.brfItemEquip small, .brfItemTake small { font-size: 8px; color: rgba(97,223,205,0.75); }
+.brfItemStore {
+    font-size: 9px;
+    color: rgba(224,189,115,0.6);
+    border-left: 1px solid rgba(200,146,42,0.25);
+}
+.brfItemTake {
+    border: 1px dashed rgba(200,146,42,0.35);
+}
+.brfItemTake i { font-style: normal; font-size: 9px; color: rgba(224,189,115,0.7); }
+.brfItemEquip:active, .brfItemStore:active, .brfItemTake:active { transform: translateY(1px); }

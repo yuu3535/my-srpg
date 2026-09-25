@@ -24,7 +24,15 @@ const {
     trialAbilityNamesFor,
     trialAbilityLevelFor,
     trialCounterPlan,
+    TRIAL_ITEM_CAPACITY,
+    trialStartingGear,
+    trialCarriedGrimoires,
+    trialCarriedWeapon,
+    trialGearEquip,
+    trialGearTransfer,
 } = require("../trialStatSystem.js");
+
+const books = id => trialCarriedGrimoires(trialStartingGear(id));
 
 const P = TRIAL_PROFILES;
 
@@ -182,8 +190,9 @@ assert.equal(guardLoadout.combatArts.length, 4);
 // 魔法コマンド: セット中の魔法戦技 → 魔導書の順。物理戦技は出さない
 assert.deepEqual(trialMagicMenuFor("albas", 30).map(m => [m.name, m.spell, m.source]),
     [["破壊", "破壊", "戦技"], ["回復", "治癒", "戦技"], ["加速", "加速", "戦技"]]);
-assert.deepEqual(trialMagicMenuFor("ringholm", 30).map(m => m.name), ["召喚「ヒトダマ」", "火の魔導書"]);
-assert.deepEqual(trialMagicMenuFor("young_karima", 25).map(m => m.name), ["結界", "破壊", "治癒の魔導書"]);
+assert.deepEqual(trialMagicMenuFor("ringholm", 30, null, books("ringholm")).map(m => m.name), ["召喚「ヒトダマ」", "火の魔導書"]);
+assert.deepEqual(trialMagicMenuFor("young_karima", 25, null, books("young_karima")).map(m => m.name), ["結界", "破壊", "治癒の魔導書"]);
+assert.equal(trialMagicMenuFor("ringholm", 30).some(m => m.source === "魔導書"), false);   // 魔導書を持っていなければ出ない
 assert.equal(trialMagicMenuFor("arshe", 25).some(m => m.name === "両断"), false);
 assert.deepEqual(trialMagicMenuFor("dylan", 25), []);
 
@@ -209,7 +218,7 @@ assert.equal(trialToggleLoadoutSelection("ringholm", 45, sel, "classUnique", "�
 const noRevenge = trialToggleLoadoutSelection("ringholm", 30, null, "combatArts", "復讐").selection;
 assert.deepEqual(trialPhysicalArtsFor("ringholm", 30, noRevenge).map(a => a.name), ["円舞"]);
 const noHitodama = trialToggleLoadoutSelection("ringholm", 30, null, "combatArts", "召喚「ヒトダマ」").selection;
-assert.deepEqual(trialMagicMenuFor("ringholm", 30, noHitodama).map(m => m.name), ["火の魔導書"]);
+assert.deepEqual(trialMagicMenuFor("ringholm", 30, noHitodama, books("ringholm")).map(m => m.name), ["火の魔導書"]);
 
 // 習得に使う因果Lv（味方4人は入れ替えを試せるよう Lv45 相当。能力値の因果Lvは別）
 assert.equal(trialAbilityLevelFor(P.ringholm), 45);
@@ -227,6 +236,25 @@ assert.equal(trialCounterPlan({ equipped: "grimoire", grimoire: fireBook, mp: 0,
 assert.equal(trialCounterPlan({ equipped: "grimoire", grimoire: { spell: "治癒", damaging: false }, mp: 5, distance: 1 }).reason, "攻撃できない魔導書");
 // 魔導書を持っていても、装備が武器なら武器の射程（自動で持ち替えない）
 assert.deepEqual(trialCounterPlan({ equipped: "weapon", weaponRange: 1, grimoire: fireBook, mp: 5, distance: 2 }).reason, "射程外");
+
+// 持ち物: アルバスの剣は共有の持ち物にあり、ほかの味方に持たせて装備できる
+assert.deepEqual(trialStartingGear("albas"), { items: [], equipped: null });
+assert.equal(trialCounterPlan({ equipped: null, distance: 1 }).reason, "装備なし");
+assert.equal(trialCarriedWeapon(trialStartingGear("ringholm")), "trial_sword");
+assert.deepEqual(books("herel"), ["star_book"]);
+let gears = { ringholm: trialStartingGear("ringholm"), albas: trialStartingGear("albas") };
+let moved = trialGearTransfer(gears, ["albas_sword"], "stock", "albas", "albas_sword");
+assert.equal(moved.ok, true);
+assert.deepEqual(moved.gears.albas.items, ["albas_sword"]);
+assert.deepEqual(moved.stock, []);
+assert.equal(trialGearEquip(moved.gears.albas, "albas_sword").gear.equipped, "albas_sword");
+// 装備中の剣を共有の持ち物にしまうと、残りの最初の持ち物（火の魔導書）を装備する
+moved = trialGearTransfer(gears, [], "ringholm", "stock", "trial_sword");
+assert.deepEqual([moved.gears.ringholm.items, moved.gears.ringholm.equipped, moved.stock], [["fire_book"], "fire_book", ["trial_sword"]]);
+// 持っていないものは装備できない。持てる数を超えては渡せない
+assert.equal(trialGearEquip(gears.ringholm, "albas_sword").changed, false);
+const fullGear = { items: Array(TRIAL_ITEM_CAPACITY).fill("trial_sword"), equipped: "trial_sword" };
+assert.equal(trialGearTransfer({ ringholm: fullGear }, ["albas_sword"], "stock", "ringholm", "albas_sword").reason, "full");
 
 // 追撃: 速さ差5以上
 assert.equal(trialCanFollowUp({ spd: 30 }, { spd: 25 }), true);

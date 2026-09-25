@@ -24,6 +24,13 @@ function cloneLoadoutSelection(selection) {
     return cloned;
 }
 
+/** 身支度の持ち物と装備（{ items: [id], equipped: id|null }）。未設定は null */
+function cloneGear(gear) {
+    if (!gear || !Array.isArray(gear.items)) return null;
+    const items = gear.items.filter(id => typeof id === "string");
+    return { items, equipped: items.includes(gear.equipped) ? gear.equipped : null };
+}
+
 function clampPartyResource(value, fallback, max) {
     const resolved = Number.isFinite(Number(value)) ? Number(value) : fallback;
     return Math.max(0, Math.min(max, Math.floor(resolved)));
@@ -57,10 +64,37 @@ function createPartyState(characters, statCalculator, savedState = null) {
                 ? { ...saved.buildChoices }
                 : { ...(character.buildChoices || {}) },
             loadoutSelection: cloneLoadoutSelection(saved.loadoutSelection),
+            gear: cloneGear(saved.gear),
         };
     }
 
-    return { version: PARTY_STATE_VERSION, members };
+    return { version: PARTY_STATE_VERSION, members, stock: cloneStockList(savedState?.stock) };
+}
+
+/** パーティ共有の持ち物。未設定は null（初期の中身は呼び出し側が決める） */
+function cloneStockList(stock) {
+    return Array.isArray(stock) ? stock.filter(id => typeof id === "string") : null;
+}
+
+function getPartyGear(partyState, characterId) {
+    return cloneGear(partyState?.members?.[characterId]?.gear);
+}
+
+function setPartyGear(partyState, characterId, gear) {
+    const member = partyState?.members?.[characterId];
+    if (!member) return false;
+    member.gear = cloneGear(gear);
+    return true;
+}
+
+function getPartyStock(partyState) {
+    return cloneStockList(partyState?.stock);
+}
+
+function setPartyStock(partyState, stock) {
+    if (!partyState) return false;
+    partyState.stock = cloneStockList(stock) || [];
+    return true;
 }
 
 /** 身支度のセット内容を読む（セーブに残る）。パーティにいない・未設定なら null */
@@ -138,9 +172,10 @@ function clonePartyState(partyState) {
             equippedPassives: cloneStringList(member.equippedPassives),
             buildChoices: { ...(member.buildChoices || {}) },
             loadoutSelection: cloneLoadoutSelection(member.loadoutSelection),
+            gear: cloneGear(member.gear),
         };
     }
-    return { version: PARTY_STATE_VERSION, members };
+    return { version: PARTY_STATE_VERSION, members, stock: cloneStockList(partyState.stock) };
 }
 
 if (typeof module !== "undefined") {
@@ -152,5 +187,9 @@ if (typeof module !== "undefined") {
         clonePartyState,
         getPartyLoadout,
         setPartyLoadout,
+        getPartyGear,
+        setPartyGear,
+        getPartyStock,
+        setPartyStock,
     };
 }

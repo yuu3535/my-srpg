@@ -8,6 +8,10 @@ const {
     clonePartyState,
     getPartyLoadout,
     setPartyLoadout,
+    getPartyGear,
+    setPartyGear,
+    getPartyStock,
+    setPartyStock,
 } = require("../partyState.js");
 
 const state = createPartyState(characters, calcBattleStats);
@@ -89,3 +93,15 @@ assert.deepEqual(getPartyLoadout(gearLoaded, "ringholm"), { causeSkills: ["黒�
 const gearCopy = getPartyLoadout(gearLoaded, "ringholm");
 gearCopy.causeSkills.push("死神");
 assert.equal(getPartyLoadout(gearLoaded, "ringholm").causeSkills.length, 2, "reads return copies");
+
+// 持ち物・装備と共有の持ち物も、セーブ（clone → 復元）で残る
+assert.equal(getPartyGear(gearState, "albas"), null, "gear starts unset");
+assert.equal(getPartyStock(gearState), null, "stock starts unset");
+setPartyGear(gearState, "ringholm", { items: ["trial_sword", "albas_sword"], equipped: "albas_sword" });
+setPartyStock(gearState, ["fire_book"]);
+const gearLoaded2 = createPartyState(characters, calcBattleStats, JSON.parse(JSON.stringify(clonePartyState(gearState))));
+assert.deepEqual(getPartyGear(gearLoaded2, "ringholm"), { items: ["trial_sword", "albas_sword"], equipped: "albas_sword" });
+assert.deepEqual(getPartyStock(gearLoaded2), ["fire_book"]);
+assert.equal(getPartyGear(gearLoaded2, "ringholm").equipped, "albas_sword");
+setPartyGear(gearState, "arshe", { items: ["fire_book"], equipped: "missing" });
+assert.equal(getPartyGear(gearState, "arshe").equipped, null, "cannot equip an item the member does not carry");
