@@ -244,15 +244,17 @@ assert.equal(trialCounterPlan({ equipped: "grimoire", grimoire: { spell: "治癒
 // 魔導書を持っていても、装備が武器なら武器の射程（自動で持ち替えない）
 assert.deepEqual(trialCounterPlan({ equipped: "weapon", weaponRange: 1, grimoire: fireBook, mp: 5, distance: 2 }).reason, "射程外");
 
-// 持ち物: アルバスの剣は共有の持ち物にあり、ほかの味方に持たせて装備できる
-assert.deepEqual(trialStartingGear("albas"), { items: [], equipped: null });
+// 持ち物: アルバスは仮の魔導書（威力6）を装備する（原作者 2026-09-25）。敵アルバスも同じ
+assert.deepEqual(trialStartingGear("albas"), { items: ["trial_book"], equipped: "trial_book" });
+assert.deepEqual(trialStartingGear("albas_rival"), { items: ["trial_book"], equipped: "trial_book" });
+// アルバスの剣は共有の持ち物にあり、ほかの味方に持たせて装備できる
 assert.equal(trialCounterPlan({ equipped: null, distance: 1 }).reason, "装備なし");
 assert.equal(trialCarriedWeapon(trialStartingGear("ringholm")), "trial_sword");
 assert.deepEqual(books("herel"), ["star_book"]);
 let gears = { ringholm: trialStartingGear("ringholm"), albas: trialStartingGear("albas") };
 let moved = trialGearTransfer(gears, ["albas_sword"], "stock", "albas", "albas_sword");
 assert.equal(moved.ok, true);
-assert.deepEqual(moved.gears.albas.items, ["albas_sword"]);
+assert.deepEqual(moved.gears.albas.items, ["trial_book", "albas_sword"]);
 assert.deepEqual(moved.stock, []);
 assert.equal(trialGearEquip(moved.gears.albas, "albas_sword").gear.equipped, "albas_sword");
 // 装備中の剣を共有の持ち物にしまうと、残りの最初の持ち物（火の魔導書）を装備する

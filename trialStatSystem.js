@@ -242,6 +242,8 @@ const TRIAL_ITEMS = Object.freeze({
     heal_book:   { name: "治癒の魔導書", kind: "grimoire", spell: "治癒" },
     // ヘレル（魔法型の敵）の仮の魔導書。隕石を単体の攻撃魔法として使う
     star_book:   { name: "星の魔導書",   kind: "grimoire", spell: "隕石", effectType: "magicDamage" },
+    // 仮の魔導書: 属性なしの攻撃魔法（威力6＝魔導書の標準の威力）。魔法データは火を借り、名前だけ「魔弾」にする
+    trial_book:  { name: "仮の魔導書",   kind: "grimoire", spell: "火", spellName: "魔弾", power: 6 },
 });
 
 const TRIAL_ITEM_CAPACITY = 5;
@@ -251,12 +253,12 @@ const TRIAL_STARTING_GEAR = Object.freeze({
     ringholm:     { items: ["trial_sword", "fire_book"], equipped: "trial_sword" },
     arshe:        { items: ["trial_sword", "fire_book"], equipped: "trial_sword" },
     young_karima: { items: ["trial_sword", "heal_book"], equipped: "trial_sword" },
-    albas:        { items: [], equipped: null },   // 剣はフレーバー。共有の持ち物に入っている
+    albas:        { items: ["trial_book"], equipped: "trial_book" },   // 剣はフレーバー。共有の持ち物に入っている
     forest_guard: { items: ["trial_sword"], equipped: "trial_sword" },
     dylan:        { items: ["trial_sword"], equipped: "trial_sword" },
     herel:        { items: ["star_book"], equipped: "star_book" },
-    // 敵アルバス: 装備がないと攻撃も反撃もできないため、火の魔導書を持たせる（仮）
-    albas_rival:  { items: ["fire_book"], equipped: "fire_book" },
+    // 敵アルバス: 味方のアルバスと同じく仮の魔導書を装備する
+    albas_rival:  { items: ["trial_book"], equipped: "trial_book" },
 });
 
 // パーティ共有の持ち物（誰も持っていない武器・魔導書）

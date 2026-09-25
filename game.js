@@ -1222,6 +1222,7 @@ function trialGrimoireSpell(itemId) {
     return {
         ...base,
         ...(item.effectType ? { effectType: item.effectType } : {}),
+        ...(item.spellName ? { name: item.spellName } : {}),
         range: TRIAL_GRIMOIRE_RANGE.max,
         trialGrimoire: true,
         trialItemId: itemId,
@@ -3411,10 +3412,10 @@ function positionLandscapeForecast(target) {
 }
 
 /** [trial] 敵の攻撃の前に、戦闘予測を見るだけで表示する */
-async function trialShowEnemyForecast(enemy, victim, isMagic, spell) {
+async function trialShowEnemyForecast(enemy, victim, isMagic, spell, label = null) {
     if (!isTrialPair(enemy, victim)) return;
     const pred = trialPlanPrediction(enemy, victim, isMagic, spell);
-    renderLandscapeBattlePreview(enemy, victim, pred, isMagic ? (spell?.name || "魔法") : "攻撃", { readOnly: true, isMagic, spell });
+    renderLandscapeBattlePreview(enemy, victim, pred, label || (isMagic ? (spell?.name || "魔法") : "攻撃"), { readOnly: true, isMagic, spell });
     await sleep(1400);
     lsForecast?.classList.add("hidden");
     setLandscapeForecastOpen(false);
@@ -5492,11 +5493,45 @@ function chooseEnemyTarget(enemy, allies) {
  *   reserved: ほかの敵が使う予定のマス / onlyTargetId: 宣言した相手だけを見るとき
  * 返り値: { target, dest, score } または null（どの味方にも届かない）
  */
+/**
+ * [trial] 敵が使える攻撃の一覧（原作者 2026-09-25: 敵も戦技を使う）
+ *   通常攻撃（武器）・物理の戦技（武器）・魔導書の魔法・攻撃の魔法戦技（破壊・落雷など）。
+ *   範囲の戦技（円舞・万雷）と、補助の戦技はまだ選ばない
+ */
+function trialEnemyAttackOptions(enemy) {
+    const options = [];
+    const gear = trialGearOf(enemy);
+    const weapon = trialCarriedWeapon(gear);
+    if (weapon && trialItemKind(enemy.trialEquippedItem) === "weapon") {
+        const range = Math.max(1, Number(TRIAL_ITEMS[enemy.trialEquippedItem]?.range || 1));
+        options.push({ label: "攻撃", action: { kind: "weapon" }, range, isMagic: false });
+        if (TRIAL_ABILITY_SOURCE[enemy.id]) {
+            trialPhysicalArtsFor(enemy.id, enemy.trialAbilityLevel, enemy.trialLoadoutSelection || null)
+                .filter(art => art.implemented && art.name !== "円舞")
+                .forEach(art => options.push({ label: art.name, action: { kind: "weapon", artName: art.name }, range, isMagic: false, isArt: true }));
+        }
+    }
+    if (Number(enemy.mp || 0) > 0) {
+        getLandscapeMagicEntries(enemy).forEach(({ spell }) => {
+            if (!spell || spell.targetType !== "enemy" || !TRIAL_DAMAGING_SPELL_TYPES.has(spell.effectType)) return;
+            if (spell.trialArtName === "万雷" || typeof spell.range !== "number") return;
+            options.push({
+                label: spell.name,
+                action: trialPlanAction(true, spell, null),
+                range: spell.range,
+                isMagic: true,
+                spell,
+                isArt: !!spell.trialArtName,
+            });
+        });
+    }
+    return options;
+}
+
 function trialChooseEnemyAttack(enemy, allies, reserved = new Set(), onlyTargetId = null) {
     if (!enemy?.trialStats) return null;
-    const spell = trialEnemyGrimoireSpell(enemy);
-    const action = spell ? { kind: "grimoire", spell } : { kind: "weapon" };
-    const maxRange = Math.max(1, Number(enemy.attackRange || 1));
+    const options = trialEnemyAttackOptions(enemy);
+    if (!options.length) return null;
     const tiles = [{ col: enemy.x, row: enemy.y }, ...getMoveRange(enemy)]
         .filter(tile => (tile.col === enemy.x && tile.row === enemy.y) || !reserved.has(`${tile.col},${tile.row}`));
     const baseEnv = trialPlanEnv();
@@ -5506,17 +5541,38 @@ function trialChooseEnemyAttack(enemy, allies, reserved = new Set(), onlyTargetI
         const targetSnapshot = trialPlanSnapshot(target);
         for (const tile of tiles) {
             const distance = Math.abs(tile.col - target.x) + Math.abs(tile.row - target.y);
-            if (distance < 1 || distance > maxRange) continue;
+            if (distance < 1) continue;
             const attacker = { ...trialPlanSnapshot(enemy), x: tile.col, y: tile.row };
             const env = { ...baseEnv, units: baseEnv.units.map(unit => (unit.id === enemy.id ? attacker : unit)) };
-            const forecast = bpForecast(attacker, targetSnapshot, action, env);
             const moved = Math.abs(tile.col - enemy.x) + Math.abs(tile.row - enemy.y);
-            // 同じ評価なら、動く距離が短いほうを選ぶ
-            const score = bpScoreAttack(forecast, target.hp, enemy.hp).score - moved * 0.01;
-            if (!best || score > best.score) best = { target, dest: { x: tile.col, y: tile.row }, score };
+            for (const option of options) {
+                if (distance > option.range) continue;
+                const forecast = bpForecast(attacker, targetSnapshot, option.action, env);
+                // 同じ評価なら、動く距離が短いほう・通常攻撃（MPや回数を使わないほう）を選ぶ
+                const score = bpScoreAttack(forecast, target.hp, enemy.hp).score - moved * 0.01 - (option.isArt || option.isMagic ? 0.005 : 0);
+                if (!best || score > best.score) best = { target, dest: { x: tile.col, y: tile.row }, score, option };
+            }
         }
     }
     return best;
+}
+
+/** [trial] 敵が選んだ攻撃（通常攻撃・戦技・魔法）を行う */
+async function trialEnemyPerform(enemy, victim, option) {
+    if (option.isMagic && Number(enemy.mp || 0) <= 0) {
+        addLog(`・${enemy.name}はMPが足りず攻撃できない`);
+        await sleep(300);
+        return;
+    }
+    if (option.isArt) addLog(`・${enemy.name}は戦技「${option.label}」を使った`);
+    // 予測は選んでいる戦技（selectedCombatArtId）で計算するため、敵の戦技を一時的に入れる
+    const savedArt = selectedCombatArtId;
+    selectedCombatArtId = !option.isMagic && option.action.artName ? `trial:${option.action.artName}` : null;
+    await trialShowEnemyForecast(enemy, victim, option.isMagic, option.spell || null, option.label);
+    selectedCombatArtId = savedArt;
+    trialExecuteExchange(enemy, victim, option.action);
+    checkVictoryCondition();
+    await sleep(700);
 }
 
 function planEnemyActions() {
@@ -5756,6 +5812,11 @@ async function executeDeclaredAction(enemy, decl) {
     if (decl.type !== "attack" || !victim) return;
 
     const dist = Math.abs(victim.x - enemy.x) + Math.abs(victim.y - enemy.y);
+    // [trial] 選んだ攻撃（通常攻撃・戦技・魔法）で行う。射程はその攻撃のもの
+    if (trialChoice?.option && isTrialPair(enemy, victim) && dist >= 1 && dist <= trialChoice.option.range) {
+        await trialEnemyPerform(enemy, victim, trialChoice.option);
+        return;
+    }
     if (dist > enemy.attackRange) {
         addLog(`・${enemy.name}は ${victim.name} に追いつけず攻撃できなかった`);
         await sleep(300);
