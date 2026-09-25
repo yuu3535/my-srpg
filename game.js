@@ -6307,8 +6307,6 @@ function showItemRadial(unit) {
 // =============================================
 function openStatusModal(unitId, tab = "basic") {
     statusTargetId = unitId;
-    // [trial] タブ式の画面では、開いた入口に合う欄を最初に出す
-    statusTab = { magic: "arts", battle: "skill" }[tab] || "basic";
     statusReturnFocus = document.activeElement;
     renderStatusModal();
     statusModalOverlay.classList.remove("hidden");
@@ -6387,50 +6385,30 @@ function getAvailablePassiveSkills(unit) {
  * [trial] 試験用ユニットのステータスシート（prototypes/adopted_status_sheet_prototype.html と同じ構成）。
  * 外枠・配置・意匠は既存の .adventure* をそのまま使い、中身だけを採用版ステータスへ入れ替える。
  */
-// ── [trial] タブ式のステータス画面（UI案1枚目の形。原作者 2026-09-25） ──
-//   左: 同じ陣営の顔一覧（押すと切り替え）／中央: 立ち絵と名札 ／ 右: タブと中身
-//   ← → でタブ、↑ ↓ でユニットを切り替える
-const STATUS_TABS = [
-    { id: "basic", label: "基礎" },
-    { id: "ability", label: "能力" },
-    { id: "skill", label: "スキル" },
-    { id: "arts", label: "戦技" },
-    { id: "gear", label: "装備" },
-    { id: "profile", label: "プロフィール" },
-];
-let statusTab = "basic";
-
-/** ステータス画面で切り替えられるユニット（同じ陣営・試験用の能力を持つもの） */
-function statusRosterUnits(unit) {
-    return battleUnits.filter(u => u.side === unit.side && u.trialStats && (u.hp > 0 || u.side === "ally"));
-}
-
-function switchStatusUnit(delta) {
-    const unit = battleUnits.find(u => u.id === statusTargetId);
-    if (!unit?.trialStats) return;
-    const list = statusRosterUnits(unit);
-    const index = list.indexOf(unit);
-    const next = list[(index + delta + list.length) % list.length];
-    if (next && next !== unit) {
-        statusTargetId = next.id;
-        renderStatusModal();
-    }
-}
-
-function switchStatusTab(delta) {
-    const index = STATUS_TABS.findIndex(t => t.id === statusTab);
-    statusTab = STATUS_TABS[(index + delta + STATUS_TABS.length) % STATUS_TABS.length].id;
-    renderStatusModal();
-}
-
 function renderTrialStatusSheet(unit) {
-    const profile = TRIAL_PROFILES[unit.id] || {};
+    const profile = TRIAL_PROFILES[unit.id];
     const stats = unit.trialStats;
     const courage = getEffectiveCourage(unit);
     const d = trialDerivedValues(stats, unit.trialSiz, courage);
     const cls = TRIAL_UNIT_CLASS[unit.id] || { name: "未設定", line: null };
     const loadout = trialSkillLoadoutFor(unit.id, unit.trialAbilityLevel, TRIAL_CLASS_LEVEL, unit.trialLoadoutSelection || null);
     const pct = (cur, max) => max > 0 ? Math.max(0, Math.min(100, cur / max * 100)) : 0;
+    const metric = (label, value, extra = "", tip = "") =>
+        `<div class="adventureMetric"${tip ? ` title="${tip}"` : ""}><span>${label}</span><b>${value}${extra}</b></div>`;
+    const slotRows = (items, type) => items.map((item, index) => `
+        <div class="trialLoadoutSlot${item ? "" : " empty"}${type === "unique" ? " unique" : ""}"${item?.desc ? ` title="${item.name}：${item.desc}"` : ""}>
+          ${item ? abilityIconHtml(item.name, type === "art" ? "active" : abilityFrameKind(item), "slot") : `<em>${type === "unique" ? "固" : index + 1}</em>`}
+          <span><b>${item?.name || "空き枠"}</b><small>${item?.desc || "セットされていません"}</small></span>
+          <i>${item ? (item.source || (item.level ? `Lv${item.level}` : "SET")) : "EMPTY"}</i>
+        </div>`).join("");
+    const personal = loadout.personal;
+    const personalRow = `
+        <div class="trialPersonalSkill${personal ? "" : " empty"}"${personal?.desc ? ` title="${personal.name}：${personal.desc}"` : ""}>
+          ${personal ? abilityIconHtml(personal.name, "personal", "slot") : ""}
+          <span><b>${personal?.name || "未設定"}</b><small>${personal?.desc || "試験用の敵ユニットには個人スキルが設定されていません"}</small></span>
+          <i>個人スキル</i>
+        </div>`;
+    const statusNames = (unit.statusEffects || []).map(effect => effect?.name || effect?.id || effect).filter(Boolean);
     const portrait = getPortraitSrc(unit) || unit.tokenImage || "";
     const damaged = unit.maxHp > 0 && unit.hp / unit.maxHp <= 0.5;
     const portraitSize = damaged
@@ -6439,166 +6417,92 @@ function renderTrialStatusSheet(unit) {
     const portraitPos = damaged
         ? (unit.portraitDmgBgPos || unit.statusBgPos || unit.portraitBgPos || "center top")
         : (unit.statusBgPos || unit.portraitBgPos || "center top");
-    const statusNames = (unit.statusEffects || []).map(effect => effect?.name || effect?.id || effect).filter(Boolean);
-    const faction = unit.faction || profile.faction || "";
-    const tip = text => text ? ` title="${String(text).replace(/"/g, "&quot;")}"` : "";
 
-    // 顔一覧
-    const roster = statusRosterUnits(unit).map(u => {
-        const src = getPortraitSrc(u) || u.tokenImage || "";
-        const face = src ? `background-image:url('${src}');background-size:${u.portraitBgSize || "cover"};background-position:${u.portraitBgPos || "center top"}` : "";
-        return `<button type="button" class="stRosterFace${u === unit ? " active" : ""}" data-unit="${u.id}" aria-label="${u.name}"><i style="${face}"></i></button>`;
-    }).join("");
+    statusModalBody.innerHTML = `
+      <div class="adventureSheet trialSheet">
+        <section class="adventureIdentity">
+          <div class="adventurePortrait" role="img" aria-label="${unit.name}の立ち絵" style="background-image:url('${portrait}');background-size:${portraitSize};background-position:${portraitPos}"></div>
+          <div class="adventureNameplate">
+            <strong>${unit.name}</strong><span>${formatUnitLevelLabel(unit)}</span>
+          </div>
+          <dl class="adventureProfile">
+            <div><dt>種族</dt><dd>${profile.race || unit.race || "―"}</dd></div>
+            <div><dt>一族</dt><dd>${unit.clan || "―"}</dd></div>
+            <div><dt>兵種</dt><dd>${cls.name}</dd></div>
+            <div><dt>秘伝</dt><dd>${unit.secretArt || "―"}</dd></div>
+          </dl>
+        </section>
 
-    // 共通の部品
-    const gauge = (kind, label, cur, max) => `
-        <div class="stGauge ${kind}"><span>${label}</span><div class="stGaugeBar"><i style="clip-path:inset(0 ${100 - pct(cur, max)}% 0 0)"></i></div><b>${cur}<small>/${max}</small></b></div>`;
-    const row = (label, value, note = "") => `<div class="stRow"${tip(note)}><dt>${label}</dt><dd>${value}</dd></div>`;
-    const slot = (item, frameKind, emptyLabel) => item ? `
-        <div class="stSlot"${tip(item.desc ? `${item.name}：${item.desc}` : "")}>
-          ${abilityIconHtml(item.name, frameKind, "stSlotIcon")}
-          <span><b>${item.name}</b><small>${item.desc || ""}</small></span>
-          <i>${item.source || (item.level ? `Lv${item.level}` : "")}</i>
-        </div>` : `
-        <div class="stSlot empty"><span class="stSlotIcon"></span><span><b>${emptyLabel}</b><small>セットされていません</small></span><i></i></div>`;
+        <section class="adventureVitals adventureRuled">
+          <h3>VITAL <span>基礎情報</span></h3>
+          <div class="adventureGauge hp">
+            <span>HP</span><i><em style="width:${pct(unit.hp, unit.maxHp)}%"></em></i><b>${unit.hp} / ${unit.maxHp}</b>
+          </div>
+          <div class="adventureGauge mp">
+            <span>MP</span><i><em style="width:${pct(unit.mp, unit.maxMp)}%"></em></i><b>${unit.mp} / ${unit.maxMp}</b>
+          </div>
+          <div class="adventureMetrics coreStats">
+            ${metric("勇気", courage, `<small>/${profile.courage}</small>`)}${metric("幸運", profile.luck)}
+            ${metric("反撃率", `${getCounterRate(unit)}%`)}${metric("成長補正", `+${trialGrowthBonus(profile)}%`)}
+          </div>
+        </section>
 
-    let content = "";
-    if (statusTab === "basic") {
-        content = `
-          <div class="stCols">
+        <section class="adventureBattle adventureRuled">
+          <h3>ABILITY <span>能力値・戦闘値</span></h3>
+          <div class="trialAbility">
             <div>
-              ${gauge("hp", "HP", unit.hp, unit.maxHp)}
-              ${gauge("mp", "MP", unit.mp, unit.maxMp)}
-              <div class="stGauge exp"><span>EXP</span><div class="stGaugeBar"><i style="clip-path:inset(0 100% 0 0)"></i></div><b>―</b></div>
-              <p class="stNote">EXP・陣営は仕組みを決めたら表示します</p>
-              <dl class="stRows">
-                ${row("因果Lv", unit.trialLevel ?? "―")}
-                ${row("兵種", cls.name)}
-                ${row("陣営", faction || "―")}
-              </dl>
-            </div>
-            <dl class="stRows">
-              ${row("勇気", `${courage}<small>/${profile.courage ?? "―"}</small>`, "現在の勇気。反撃が起きる確率・必殺に関わる")}
-              ${row("運", profile.luck ?? "―", "祈りなどの発動率・成長補正に関わる")}
-              ${row("反撃率", `${getCounterRate(unit)}%`)}
-              ${row("成長補正", `+${trialGrowthBonus(profile)}%`, "（運＋勇気）÷40")}
-              ${row("移動", `${unit.move}マス`)}
-              ${row("行動", getActionRangeSummary(unit))}
-              ${row("状態", statusNames.join("・") || "通常")}
-            </dl>
-          </div>`;
-    } else if (statusTab === "ability") {
-        const caps = profile.caps || {};
-        const statRow = (key, label) => {
-            const value = key === "hp" ? unit.maxHp : stats[key];
-            const cap = caps[key];
-            return `<div class="stStat"><dt>${label}</dt><div class="stStatBar"><i style="width:${cap ? pct(value, cap) : 0}%"></i></div><dd>${value}<small>${cap ? `/${cap}` : ""}</small></dd></div>`;
-        };
-        content = `
-          <div class="stCols">
-            <div>
-              <h4 class="stHead">能力値<small>現在値／上限</small></h4>
-              <dl class="stStats">
-                ${statRow("hp", "HP")}${statRow("atk", "力")}${statRow("mag", "魔攻")}${statRow("def", "防御")}
-                ${statRow("res", "魔防")}${statRow("tec", "技")}${statRow("spd", "速さ")}${statRow("cha", "魅力")}
-              </dl>
-            </div>
-            <div>
-              <h4 class="stHead">戦闘値</h4>
-              <dl class="stRows">
-                ${row("命中値", d.hit, `60＋技${stats.tec}×2.5。命中率＝命中値−相手の回避値`)}
-                ${row("回避値", d.evade, `速さ${stats.spd}×2.5＋体格補正${d.sizeMod}`)}
-                ${row("必殺値", d.crit, `技${stats.tec}＋現在の勇気${courage}÷5。必殺率＝必殺値−相手の必殺耐性`)}
-                ${row("必殺耐性", d.critGuard, `魅力${stats.cha}`)}
-                ${row("体格", unit.trialSiz ?? "―")}
-              </dl>
-            </div>
-          </div>`;
-    } else if (statusTab === "skill") {
-        content = `
-          <div class="stClassHead"><b>${cls.name}</b><span>${cls.line || "―"}　兵種Lv ${cls.line ? TRIAL_CLASS_LEVEL : "―"}</span></div>
-          <div class="stSlotGrid one">${slot(loadout.personal, "personal", "個人スキル（未設定）")}</div>
-          <h4 class="stHead">兵種スキル<small>4枠＋固有1枠</small></h4>
-          <div class="stSlotGrid">${loadout.classSkills.map(s => slot(s, "passive", "空き枠")).join("")}${loadout.classUnique.map(s => slot(s, "passive", "固有・空き")).join("")}</div>
-          <h4 class="stHead">因果スキル<small>3枠</small></h4>
-          <div class="stSlotGrid">${loadout.causeSkills.map(s => slot(s, "passive", "空き枠")).join("")}</div>`;
-    } else if (statusTab === "arts") {
-        const magic = typeof trialMagicMenuFor === "function"
-            ? trialMagicMenuFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null, trialCarriedGrimoires(trialGearOf(unit)))
-            : [];
-        content = `
-          <h4 class="stHead">戦技<small>4枠</small></h4>
-          <div class="stSlotGrid">${loadout.combatArts.map(s => slot(s, "active", "空き枠")).join("")}</div>
-          <h4 class="stHead">使える魔法<small>魔法戦技・魔導書</small></h4>
-          <div class="stChips">${magic.length ? magic.map(m => `<span>${m.name}<small>${m.source}</small></span>`).join("") : `<em>なし</em>`}</div>`;
-    } else if (statusTab === "gear") {
-        const item = TRIAL_ITEMS[unit.trialEquippedItem];
-        const isBook = item?.kind === "grimoire";
-        const power = !item ? "―" : isBook ? (item.spell === "治癒" ? "回復" : TRIAL_WEAPON_POWER.mid) : item.power;
-        const range = !item ? "―" : isBook ? `${TRIAL_GRIMOIRE_RANGE.min}〜${TRIAL_GRIMOIRE_RANGE.max}` : item.range;
-        const carried = unit.trialItems || [];
-        const slots = Array.from({ length: TRIAL_ITEM_CAPACITY }, (_, i) => carried[i]);
-        content = `
-          <div class="stCols">
-            <div>
-              <h4 class="stHead">装備</h4>
-              <div class="stWeapon${item ? "" : " none"}">
-                <div class="stWeaponName">${lsCommandIcon(isBook ? "魔法" : "攻撃")}<b>${item ? item.name : "装備なし"}</b><small>${item ? (isBook ? "魔導書" : "武器") : "反撃できません"}</small></div>
-                <dl class="stRows">
-                  ${row("威力", power)}${row("射程", range)}
-                  ${row("命中", item ? d.hit : "―")}${row("必殺", item ? d.crit : "―")}
-                </dl>
+              <h4>能力値</h4>
+              <div class="adventureMetrics battleStats">
+                ${metric("力", stats.atk)}${metric("魔攻", stats.mag)}
+                ${metric("防御", stats.def)}${metric("魔防", stats.res)}
+                ${metric("技", stats.tec)}${metric("速さ", stats.spd)}
+                ${metric("魅力", stats.cha)}${metric("HP", unit.maxHp)}
               </div>
             </div>
             <div>
-              <h4 class="stHead">持ち物<small>${carried.length}/${TRIAL_ITEM_CAPACITY}</small></h4>
-              <ol class="stItems">${slots.map(id => {
-                  const it = id ? TRIAL_ITEMS[id] : null;
-                  return `<li class="${it ? "" : "empty"}${id && id === unit.trialEquippedItem ? " equipped" : ""}">${it ? `${lsCommandIcon(it.kind === "grimoire" ? "魔法" : "攻撃")}<b>${it.name}</b>${id === unit.trialEquippedItem ? "<small>装備中</small>" : ""}` : "<b>―</b>"}</li>`;
-              }).join("")}</ol>
-              <p class="stNote">持ち物の入れ替えは出撃準備の「身支度」で行います</p>
+              <h4>戦闘値</h4>
+              <div class="adventureMetrics trialCombat">
+                ${metric("命中値", d.hit, "", `60＋技${stats.tec}×2.5。命中率＝命中値−相手の回避値`)}
+                ${metric("回避値", d.evade, "", `速さ${stats.spd}×2.5＋体格補正${d.sizeMod}`)}
+                ${metric("必殺値", d.crit, "", `技${stats.tec}＋現在の勇気${courage}÷5。必殺率＝必殺値−相手の必殺耐性`)}
+                ${metric("必殺耐性", d.critGuard, "", `魅力${stats.cha}`)}
+              </div>
             </div>
-          </div>`;
-    } else {
-        content = `
-          <div class="stCols">
-            <dl class="stRows">
-              ${row("名前", unit.name)}
-              ${row("種族", profile.race || unit.race || "―")}
-              ${row("一族", unit.clan || "―")}
-              ${row("陣営", faction || "―")}
-              ${row("秘伝", unit.secretArt || "―")}
-              ${row("発作", unit.seizureType || "なし")}
-            </dl>
-            <div class="stBio"><h4 class="stHead">紹介</h4><p>${unit.bio || profile.bio || "紹介文はまだありません。"}</p></div>
-          </div>`;
-    }
-
-    statusModalBody.innerHTML = `
-      <div class="stSheet">
-        <nav class="stRoster" aria-label="ユニットの切り替え">${roster}</nav>
-        <section class="stPortrait">
-          <div class="stPortraitArt" role="img" aria-label="${unit.name}の立ち絵" style="background-image:url('${portrait}');background-size:${portraitSize};background-position:${portraitPos}"></div>
-          <div class="stNameplate">
-            <strong>${unit.name}</strong>
-            <span>${formatUnitLevelLabel(unit)}</span>
-            <em><i aria-hidden="true"></i>${cls.name}${faction ? `・${faction}` : ""}</em>
           </div>
         </section>
-        <section class="stMain">
-          <div class="stTabs" role="tablist">${STATUS_TABS.map(t => `<button type="button" role="tab" class="stTab${t.id === statusTab ? " active" : ""}" aria-selected="${t.id === statusTab}" data-tab="${t.id}">${t.label}</button>`).join("")}</div>
-          <div class="stContent" role="tabpanel" tabindex="0">${content}</div>
-        </section>
-      </div>`;
 
-    statusModalBody.querySelectorAll(".stTab").forEach(btn => btn.addEventListener("click", () => {
-        statusTab = btn.dataset.tab;
-        renderStatusModal();
-    }));
-    statusModalBody.querySelectorAll(".stRosterFace").forEach(btn => btn.addEventListener("click", () => {
-        statusTargetId = btn.dataset.unit;
-        renderStatusModal();
-    }));
+        <section class="adventureLoadout adventureRuled">
+          <h3>LOADOUT <span>装備・行動</span></h3>
+          <div class="adventureLoadoutBlock"><span>装備</span><b>${trialEquipmentLabel(unit)}</b></div>
+          <div class="adventureLoadoutBlock"><span>持ち物</span><b>${(unit.trialItems || []).map(id => TRIAL_ITEMS[id]?.name || id).join("・") || "なし"}</b></div>
+          <div class="adventureLoadoutBlock"><span>行動</span><b>${getActionRangeSummary(unit)}</b></div>
+          <div class="adventureLoadoutBlock"><span>状態</span><b>${statusNames.join("・") || "通常"}</b></div>
+          <div class="adventureLoadoutBlock"><span>発作</span><b>${unit.seizureType || "なし"}</b></div>
+        </section>
+
+        <section class="adventureSkills adventureRuled">
+          <h3>SKILL <span>個人・兵種スキル</span></h3>
+          <div class="trialClassHead"><b>${cls.name}</b><span>${cls.line || "―"}　兵種Lv ${cls.line ? TRIAL_CLASS_LEVEL : "―"}</span></div>
+          ${personalRow}
+          <div class="trialSlotCaption"><span>通常兵種</span><b>4枠</b></div>
+          <div class="trialLoadoutList classSlots" role="list" aria-label="通常兵種スキル4枠">${slotRows(loadout.classSkills, "class")}</div>
+          <div class="trialSlotCaption unique"><span>兵種固有</span><b>1枠</b></div>
+          <div class="trialLoadoutList" role="list" aria-label="兵種固有1枠">${slotRows(loadout.classUnique, "unique")}</div>
+        </section>
+
+        <section class="adventureBuild adventureRuled">
+          <div class="adventureBuildPane">
+            <h3>CAUSE <span>因果スキル・3枠</span></h3>
+            <div class="trialLoadoutList cause" role="list" aria-label="因果スキル3枠">${slotRows(loadout.causeSkills, "cause")}</div>
+          </div>
+          <div class="adventureBuildPane">
+            <h3>ARTS <span>戦技・4枠</span></h3>
+            <div class="trialLoadoutList arts" role="list" aria-label="戦技4枠">${slotRows(loadout.combatArts, "art")}</div>
+          </div>
+        </section>
+
+        <div class="adventureSigil" aria-hidden="true"><span></span></div>
+      </div>`;
 }
 
 function renderStatusSheet(unit, bs) {
@@ -7551,13 +7455,6 @@ statusModalOverlay.addEventListener("keydown", e => {
     if (e.key === "Escape") {
         e.preventDefault();
         closeStatus();
-    } else if (statusModalBody.querySelector(".stSheet") && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
-        // [trial] タブ式のステータス画面: 左右でタブ、上下でユニット
-        e.preventDefault();
-        if (e.key === "ArrowLeft") switchStatusTab(-1);
-        else if (e.key === "ArrowRight") switchStatusTab(1);
-        else if (e.key === "ArrowUp") switchStatusUnit(-1);
-        else switchStatusUnit(1);
     } else if (e.key === "Tab") {
         const focusable = [...statusModalOverlay.querySelectorAll('button, [tabindex="0"]')];
         const first = focusable[0];
