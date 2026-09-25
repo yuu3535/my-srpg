@@ -2717,7 +2717,7 @@ function buildLandscapeCommandRing(unit, openLabel = null) {
     const tail = label => (label === "移動" || label === "戻る") ? 1 : 0;
     const commands = getLandscapeCommands(unit).sort((a, b) => tail(a.label) - tail(b.label));
     commands.forEach(cmd => {
-        const isOpen = openLabel ? cmd.label === openLabel : !!cmd.active;
+        const isOpen = openLabel ? cmd.label === openLabel : !!cmd.active && cmd.label !== "戻る";
         const btn = document.createElement("button");
         btn.className = `lsCommandBtn lsRingNode${isOpen ? " active" : ""}${openLabel && !isOpen ? " dim" : ""}`;
         btn.disabled = !!cmd.disabled;
