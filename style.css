@@ -6056,10 +6056,296 @@ html, body {
     box-shadow: inset 0 0 0 2px rgba(97,223,205,0.85), inset 0 0 10px rgba(97,223,205,0.35);
 }
 
+
 /* ============================================================
-   [ring] 環状コマンド（原作者のイメージ 2026-09-25）
-   選んだユニットの周りにコマンドを円環状に並べ、2段目は枝のように伸ばす
+   [menu] 右のコマンド一覧＋左下のユニットカード（UI案2枚目の形。原作者 2026-09-25）
+   環状コマンドはやめ、素直な縦並びにした。意匠は黒紫・金の細罫線・明朝体のまま
 ============================================================ */
+#gameScreen[data-mode="battle"] #landscapeBattleShell.active {
+    grid-template-columns: 46px minmax(0, 1fr) 0;
+}
+
+/* ── 右: コマンド一覧 ── */
+#landscapeCommandList.menu {
+    position: absolute;
+    left: auto;
+    top: 50%;
+    right: 10px;
+    bottom: auto;
+    width: 118px;
+    height: auto;
+    display: grid;
+    gap: 0;
+    padding: 4px;
+    margin: 0;
+    transform: translateY(-50%);
+    background: linear-gradient(180deg, rgba(14,7,24,0.94), rgba(6,4,12,0.94));
+    border: 1px solid rgba(224,176,72,0.48);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,232,160,0.08);
+    pointer-events: auto;
+    animation: lsMenuIn 0.2s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+#landscapeCommandList.menu::before { content: none; }
+@keyframes lsMenuIn {
+    from { opacity: 0; transform: translate(10px, -50%); }
+    to   { opacity: 1; transform: translate(0, -50%); }
+}
+.lsMenuItem {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    height: 30px;
+    padding: 0 10px;
+    color: rgba(236,210,142,0.9);
+    font-family: inherit;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid rgba(224,176,72,0.12);
+    cursor: pointer;
+    transition: background 0.14s ease, color 0.14s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+.lsMenuItem:last-child { border-bottom: 0; }
+.lsMenuItem:hover { background: rgba(82,18,98,0.42); }
+.lsMenuItem:active { transform: translateY(1px); }
+.lsMenuItem.active {
+    color: #ffe2a0;
+    background: linear-gradient(90deg, rgba(98,30,120,0.95), rgba(58,20,84,0.7));
+    box-shadow: inset 0 0 0 1px rgba(255,226,160,0.65), 0 0 10px rgba(130,60,160,0.35);
+}
+.lsMenuItem.active::before {
+    content: "";
+    position: absolute;
+    left: -5px;
+    top: 50%;
+    width: 6px;
+    height: 6px;
+    transform: translateY(-50%) rotate(45deg);
+    background: #ecd28e;
+}
+.lsMenuItem:disabled { opacity: 0.38; cursor: default; }
+.lsMenuBack {
+    height: 24px;
+    margin-top: 2px;
+    color: rgba(224,189,115,0.62);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    border-top: 1px solid rgba(224,176,72,0.22);
+}
+.lsMenuIcon {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.lsMenuBack .lsMenuIcon { width: 13px; height: 13px; }
+#landscapeCommandList.menu.targetCancel { width: 100px; }
+
+/* ── 2段目: 一覧の左隣の列。開いたコマンドと線でつなぐ ── */
+#landscapeCommandBranch {
+    position: absolute;
+    width: auto;
+    height: auto;
+    display: grid;
+    gap: 0;
+    min-width: 124px;
+    max-width: 200px;
+    padding: 4px;
+    background: linear-gradient(180deg, rgba(14,7,24,0.94), rgba(6,4,12,0.94));
+    border: 1px solid rgba(224,176,72,0.48);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,232,160,0.08);
+    pointer-events: auto;
+    animation: lsBranchIn 0.2s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+@keyframes lsBranchIn {
+    from { opacity: 0; transform: translateX(8px); }
+    to   { opacity: 1; transform: none; }
+}
+#landscapeCommandBranch::after {
+    content: "";
+    position: absolute;
+    left: 100%;
+    top: var(--stem-y, 14px);
+    width: var(--stem-w, 12px);
+    height: 1px;
+    background: rgba(224,176,72,0.75);
+}
+.lsBranchItem {
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 7px;
+    min-height: 28px;
+    padding: 2px 6px;
+    color: rgba(236,210,142,0.92);
+    font-family: inherit;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid rgba(224,176,72,0.1);
+    cursor: pointer;
+    animation: lsBranchItemIn 0.18s ease-out backwards;
+    animation-delay: var(--tick-delay, 0s);
+    -webkit-tap-highlight-color: transparent;
+}
+@keyframes lsBranchItemIn {
+    from { opacity: 0; transform: translateX(6px); }
+    to   { opacity: 1; transform: none; }
+}
+.lsBranchItem:last-child { border-bottom: 0; }
+.lsBranchItem:hover { background: rgba(82,18,98,0.42); }
+.lsBranchItem:active { transform: translateY(1px); }
+.lsBranchItem:disabled { opacity: 0.4; cursor: default; }
+.lsBranchItem b {
+    overflow: hidden;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.lsBranchItem small {
+    color: rgba(224,189,115,0.55);
+    font-size: 8px;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+}
+.lsBranchIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    overflow: hidden;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 35%, rgba(58,22,82,0.96), rgba(14,6,24,0.96) 72%);
+    border: 1px solid rgba(224,176,72,0.5);
+}
+.lsBranchIcon em { font-style: normal; font-size: 10px; font-weight: 700; }
+.lsBranchIcon .lsMenuIcon { width: 12px; height: 12px; }
+.lsBranchIcon .abIcon.lsBranchArt { width: 100%; height: 100%; }
+
+/* ── 左下: ユニットカード＋武器カード ── */
+#gameScreen[data-mode="battle"] #landscapeUnitPanel {
+    position: absolute;
+    left: 54px;
+    right: auto;
+    top: auto;
+    bottom: 24px;
+    grid-column: auto;
+    grid-row: auto;
+    width: auto;
+    height: auto;
+    display: block;
+    overflow: visible;
+    padding: 0;
+    background: none;
+    border: 0;
+    box-shadow: none;
+    z-index: 21;
+    transform: none;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+#gameScreen[data-mode="battle"] #landscapeUnitPanel.isEmpty { opacity: 0; visibility: hidden; pointer-events: none; }
+#landscapeBattleShell.forecast-open #landscapeUnitPanel { opacity: 0 !important; visibility: hidden !important; }
+#landscapeUnitPanel #landscapeUnitEmpty { display: none !important; }
+#landscapeUnitPanel #landscapeUnitContent {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 6px;
+    height: auto;
+    overflow: visible;
+}
+.lcCard {
+    display: grid;
+    grid-template-columns: 62px 168px;
+    height: 74px;
+    overflow: hidden;
+    background: linear-gradient(180deg, rgba(14,7,24,0.94), rgba(6,4,12,0.94));
+    border: 1px solid rgba(224,176,72,0.48);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,232,160,0.08);
+    animation: lsCardIn 0.2s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+@keyframes lsCardIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+}
+.lcCard.enemy { border-color: rgba(200,80,80,0.55); }
+.lcPortrait {
+    background-color: rgba(3,4,10,0.8);
+    background-repeat: no-repeat;
+    border-right: 1px solid rgba(224,176,72,0.3);
+}
+.lcBody {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    min-width: 0;
+    padding: 3px 8px;
+}
+.lcName { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+.lcName b { color: #f3e2b6; font-size: 13px; letter-spacing: 0.1em; white-space: nowrap; }
+.lcName span { color: rgba(224,189,115,0.7); font-size: 8.5px; white-space: nowrap; }
+.lcClass {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: rgba(236,210,142,0.85);
+    font-size: 9px;
+    white-space: nowrap;
+}
+.lcClass i { width: 5px; height: 5px; transform: rotate(45deg); background: #c8922a; }
+.lcClass em { margin-left: auto; color: rgba(224,189,115,0.55); font-size: 8px; font-style: normal; }
+.lcBar { display: grid; grid-template-columns: 16px minmax(0, 1fr) 42px; align-items: center; gap: 4px; }
+.lcBar span { color: rgba(224,189,115,0.7); font-size: 8px; }
+.lcBar div { height: 4px; background: rgba(0,0,0,0.6); border: 1px solid rgba(224,176,72,0.2); }
+.lcBar i { display: block; height: 100%; }
+.lcBar.hp i { background: linear-gradient(90deg, #3fbf82, #59e48c); }
+.lcBar.mp i { background: linear-gradient(90deg, #3d6fd0, #5d95f0); }
+.lcCard.enemy .lcBar.hp i { background: linear-gradient(90deg, #b8423c, #e0645a); }
+.lcBar b { color: #f3e2b6; font-size: 10px; text-align: right; }
+.lcBar b small { color: rgba(224,189,115,0.55); font-size: 8px; }
+.lcDecl { color: #e08a70; font-size: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lcWeapon {
+    width: 150px;
+    padding: 4px 8px 5px;
+    background: linear-gradient(180deg, rgba(14,7,24,0.94), rgba(6,4,12,0.94));
+    border: 1px solid rgba(224,176,72,0.48);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,232,160,0.08);
+    animation: lsCardIn 0.2s cubic-bezier(0.22, 1, 0.36, 1) 40ms backwards;
+}
+.lcWeaponName {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding-bottom: 3px;
+    margin-bottom: 3px;
+    color: #ecd28e;
+    border-bottom: 1px solid rgba(224,176,72,0.22);
+    white-space: nowrap;
+}
+.lcWeaponName .lsMenuIcon { width: 13px; height: 13px; }
+.lcWeaponName b { font-size: 10.5px; letter-spacing: 0.08em; }
+.lcWeaponName small { margin-left: auto; color: #e08a70; font-size: 7.5px; }
+.lcWeapon dl { display: grid; grid-template-columns: 1fr 1fr; gap: 1px 10px; margin: 0; }
+.lcWeapon dl div { display: flex; justify-content: space-between; }
+.lcWeapon dt { color: rgba(224,189,115,0.6); font-size: 8.5px; }
+.lcWeapon dd { margin: 0; color: #f3e2b6; font-size: 10px; }
+.lcWeapon.none dd { color: rgba(224,189,115,0.45); }
+
+/* コマンドの入れ物は戦闘UI全体に重ね、タップは中身だけが受ける */
 #gameScreen[data-mode="battle"] #landscapeCommandPanel {
     inset: 0;
     left: 0;
@@ -6072,226 +6358,6 @@ html, body {
     background: none;
     pointer-events: none;
 }
-#landscapeCommandList.ring,
-#landscapeCommandList.targetCancel {
-    position: absolute;
-    display: block;
-    width: 0;
-    height: 0;
-    padding: 0;
-    margin: 0;
-    pointer-events: none;
-}
-/* 円環の細い金の輪 */
-#landscapeCommandList.ring::before {
-    content: "";
-    position: absolute;
-    left: -52px;
-    top: -52px;
-    width: 104px;
-    height: 104px;
-    border-radius: 50%;
-    border: 1px solid rgba(224,176,72,0.42);
-    box-shadow: 0 0 0 5px rgba(12,6,22,0.34), inset 0 0 14px rgba(82,18,98,0.35);
-    animation: lsRingOpen 0.24s cubic-bezier(0.22, 1, 0.36, 1) backwards;
-}
-@keyframes lsRingOpen {
-    from { transform: scale(0.4); opacity: 0; }
-    to   { transform: none; opacity: 1; }
-}
-.lsCommandBtn.lsRingNode,
-.lsCommandBtn.lsRingNode:active,
-.lsCommandBtn.lsRingNode.active {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 44px;
-    min-width: 0;
-    height: 44px;
-    min-height: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1px;
-    border-radius: 50%;
-    font-size: 9px;
-    letter-spacing: 0.06em;
-    text-indent: 0.06em;
-    color: rgba(236,210,142,0.92);
-    background: radial-gradient(circle at 50% 35%, rgba(58,22,82,0.96), rgba(14,6,24,0.96) 72%);
-    border: 1px solid rgba(224,176,72,0.62);
-    box-shadow: 0 3px 8px rgba(0,0,0,0.55), inset 0 0 0 2px rgba(12,6,22,0.9), inset 0 0 0 3px rgba(224,176,72,0.22);
-    pointer-events: auto;
-    transform: translate(calc(var(--x, 0px) - 50%), calc(var(--y, 0px) - 50%));
-    animation: lsRingNodeOut 0.3s cubic-bezier(0.34, 1.4, 0.64, 1) backwards;
-    animation-delay: var(--tick-delay, 0s);
-    transition: transform 0.14s ease, opacity 0.16s ease, filter 0.16s ease;
-}
-@keyframes lsRingNodeOut {
-    from { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
-    to   { transform: translate(calc(var(--x, 0px) - 50%), calc(var(--y, 0px) - 50%)); opacity: 1; }
-}
-.lsCommandBtn.lsRingNode:active {
-    transform: translate(calc(var(--x, 0px) - 50%), calc(var(--y, 0px) - 50%)) scale(0.94);
-}
-.lsCommandBtn.lsRingNode.active {
-    color: #ffe2a0;
-    background: radial-gradient(circle at 50% 35%, rgba(130,73,28,0.96), rgba(52,22,12,0.96) 72%);
-    border-color: rgba(255,226,160,0.9);
-    box-shadow: 0 0 10px rgba(200,146,42,0.5), inset 0 0 0 2px rgba(12,6,22,0.9);
-}
-.lsCommandBtn.lsRingNode.dim { opacity: 0.55; filter: saturate(0.6); }
-.lsCommandBtn.lsRingNode:disabled { opacity: 0.32; }
-.lsCommandBtn.lsRingNode span { display: block; line-height: 1; }
-.lsRingIcon {
-    width: 17px;
-    height: 17px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.6;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
-/* × （取り消し）: 円環の真下の小さな丸 */
-.lsCommandBtn.lsRingCancel,
-.lsCommandBtn.lsRingCancel:active {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 24px;
-    min-width: 0;
-    height: 24px;
-    min-height: 0;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    color: rgba(236,210,142,0.85);
-    background: rgba(10,6,18,0.94);
-    border: 1px solid rgba(224,176,72,0.5);
-    box-shadow: 0 2px 6px rgba(0,0,0,0.55);
-    pointer-events: auto;
-    transform: translate(calc(var(--x, 0px) - 50%), calc(var(--y, 0px) - 50%));
-    animation: lsRingNodeOut 0.3s cubic-bezier(0.34, 1.4, 0.64, 1) backwards;
-    animation-delay: var(--tick-delay, 0s);
-}
-.lsCommandBtn.lsRingCancel:active {
-    transform: translate(calc(var(--x, 0px) - 50%), calc(var(--y, 0px) - 50%)) scale(0.9);
-}
-.lsCommandBtn.lsRingCancel .lsRingIcon { width: 12px; height: 12px; stroke-width: 2; }
-
-/* 2段目: セフィロトの樹のような丸のツリー（円環の中心が原点） */
-#landscapeCommandBranch {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 0;
-    height: 0;
-    pointer-events: none;
-}
-.lsBranchLines {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 1px;
-    height: 1px;
-    overflow: visible;
-    pointer-events: none;
-}
-.lsBranchLines line {
-    stroke: rgba(224,176,72,0.55);
-    stroke-width: 1;
-    stroke-dasharray: 120;
-    stroke-dashoffset: 120;
-    animation: lsBranchLineDraw 0.35s ease-out forwards;
-}
-@keyframes lsBranchLineDraw { to { stroke-dashoffset: 0; } }
-.lsBranchNode {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 30px;
-    height: 30px;
-    padding: 0;
-    border: 0;
-    background: none;
-    font-family: inherit;
-    cursor: pointer;
-    pointer-events: auto;
-    transform: translate(calc(var(--x, 0px) - 50%), calc(var(--y, 0px) - 50%));
-    animation: lsBranchNodeIn 0.28s cubic-bezier(0.34, 1.4, 0.64, 1) backwards;
-    animation-delay: var(--tick-delay, 0s);
-    -webkit-tap-highlight-color: transparent;
-}
-@keyframes lsBranchNodeIn {
-    from { transform: translate(calc(var(--x, 0px) - 50%), calc(var(--y, 0px) - 50%)) scale(0.2); opacity: 0; }
-    to   { transform: translate(calc(var(--x, 0px) - 50%), calc(var(--y, 0px) - 50%)); opacity: 1; }
-}
-.lsBranchNode:active .lsBranchOrb { transform: scale(0.92); }
-.lsBranchOrb {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    border-radius: 50%;
-    color: rgba(236,210,142,0.92);
-    background: radial-gradient(circle at 50% 35%, rgba(58,22,82,0.96), rgba(14,6,24,0.96) 72%);
-    border: 1px solid rgba(224,176,72,0.62);
-    box-shadow: 0 2px 6px rgba(0,0,0,0.55), inset 0 0 0 2px rgba(12,6,22,0.9);
-    transition: transform 0.12s ease, border-color 0.12s ease;
-}
-.lsBranchOrb em {
-    font-style: normal;
-    font-size: 13px;
-    font-weight: 700;
-    line-height: 1;
-}
-.lsBranchOrb .lsRingIcon { width: 15px; height: 15px; }
-.lsBranchOrb .abIcon.lsBranchArt { width: 100%; height: 100%; }
-.lsBranchNode:hover .lsBranchOrb { border-color: rgba(255,226,160,0.95); }
-.lsBranchText {
-    position: absolute;
-    top: 50%;
-    left: calc(100% + 5px);
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1px;
-    padding: 2px 6px;
-    white-space: nowrap;
-    text-align: left;
-    transform: translateY(-50%);
-    background: rgba(8,5,14,0.86);
-    border-left: 1px solid rgba(224,176,72,0.55);
-}
-.lsBranchNode[data-dir="left"] .lsBranchText {
-    left: auto;
-    right: calc(100% + 5px);
-    align-items: flex-end;
-    text-align: right;
-    border-left: 0;
-    border-right: 1px solid rgba(224,176,72,0.55);
-}
-.lsBranchText b {
-    color: #ecd28e;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    line-height: 1.1;
-}
-.lsBranchText small {
-    color: rgba(224,189,115,0.55);
-    font-size: 7.5px;
-    letter-spacing: 0.08em;
-    line-height: 1;
-}
-.lsBranchNode:disabled { cursor: default; opacity: 0.4; }
 
 /* 戦闘予測: 攻撃の種類を切り替える */
 .refFcSwitch {
@@ -6323,99 +6389,3 @@ html, body {
 /* ユニット情報の欄は押すと詳細を開く */
 #landscapeUnitPanel[data-unit-id]:not([data-unit-id=""]) { cursor: pointer; }
 
-/* 対象を選んでいる間は、画面下のキャンセルだけ */
-#landscapeCommandList.targetCancel {
-    left: 50%;
-    top: auto;
-    bottom: 30px;
-    width: auto;
-    height: auto;
-    transform: translateX(-50%);
-}
-.lsCommandBtn.lsTargetCancel {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    pointer-events: auto;
-}
-.lsCommandBtn.lsTargetCancel .lsRingIcon { width: 14px; height: 14px; }
-
-/* 円環を作り直したとき、前の位置から回り込む（開いたコマンドが真上へ） */
-.lsCommandBtn.lsRingNode.fromPrev,
-.lsCommandBtn.lsRingCancel.fromPrev {
-    animation: lsRingNodeTurn 0.32s cubic-bezier(0.22, 1, 0.36, 1) backwards;
-}
-@keyframes lsRingNodeTurn {
-    from { transform: translate(calc(var(--fx, 0px) - 50%), calc(var(--fy, 0px) - 50%)); }
-    to   { transform: translate(calc(var(--x, 0px) - 50%), calc(var(--y, 0px) - 50%)); }
-}
-.lsCommandBtn.lsRingNode.stay,
-.lsCommandBtn.lsRingCancel.stay { animation: none; }
-/* 樹の丸は開いたコマンドが回り込んでから伸びる */
-#landscapeCommandBranch .lsBranchNode { animation-delay: calc(var(--tick-delay, 0s) + 120ms); }
-#landscapeCommandBranch .lsBranchLines line { animation-delay: 120ms; }
-
-/* ── 環状コマンドの縮小（原作者 2026-09-25: キャラから離れて見える） ── */
-#landscapeCommandList.ring::before {
-    left: -40px;
-    top: -40px;
-    width: 80px;
-    height: 80px;
-    box-shadow: 0 0 0 4px rgba(12,6,22,0.3), inset 0 0 12px rgba(82,18,98,0.3);
-}
-.lsCommandBtn.lsRingNode,
-.lsCommandBtn.lsRingNode:active,
-.lsCommandBtn.lsRingNode.active {
-    width: 36px;
-    height: 36px;
-    font-size: 8px;
-    letter-spacing: 0.04em;
-    text-indent: 0.04em;
-}
-.lsRingNode .lsRingIcon { width: 14px; height: 14px; }
-.lsCommandBtn.lsRingCancel,
-.lsCommandBtn.lsRingCancel:active { width: 20px; height: 20px; }
-.lsCommandBtn.lsRingCancel .lsRingIcon { width: 10px; height: 10px; }
-
-/* ── 2段目: アイコンのすぐ下に名前を入れた札（棒は短く） ── */
-.lsBranchNode {
-    width: auto;
-    min-width: 38px;
-    height: auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    padding: 3px 5px 3px;
-    border-radius: 10px;
-    background: linear-gradient(180deg, rgba(40,16,58,0.96), rgba(12,6,22,0.96));
-    border: 1px solid rgba(224,176,72,0.55);
-    box-shadow: 0 2px 6px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,232,160,0.08);
-    white-space: nowrap;
-}
-.lsBranchNode:hover { border-color: rgba(255,226,160,0.95); }
-.lsBranchNode:active { transform: translate(calc(var(--x, 0px) - 50%), calc(var(--y, 0px) - 50%)) scale(0.95); }
-.lsBranchOrb {
-    position: relative;
-    inset: auto;
-    width: 22px;
-    height: 22px;
-    flex: none;
-    box-shadow: inset 0 0 0 1px rgba(12,6,22,0.9);
-}
-.lsBranchOrb em { font-size: 11px; }
-.lsBranchOrb .lsRingIcon { width: 13px; height: 13px; }
-.lsBranchName {
-    color: #ecd28e;
-    font-size: 8.5px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    line-height: 1.1;
-}
-.lsBranchState {
-    margin-top: -1px;
-    color: rgba(224,189,115,0.6);
-    font-size: 7px;
-    line-height: 1;
-}
-.lsBranchNode:hover .lsBranchOrb { border-color: rgba(224,176,72,0.62); }
