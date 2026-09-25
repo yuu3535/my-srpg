@@ -29,13 +29,19 @@ namespace Srpg.Battle
         [SerializeField] private Sprite[] allyRingFrames = Array.Empty<Sprite>();    // 足元の光（味方＝青）
         [SerializeField] private Sprite[] enemyRingFrames = Array.Empty<Sprite>();   // 足元の光（敵＝赤）
         [SerializeField] private float ringWidth = 0.9f;                            // 足元の光の横幅（マスの横幅＝1）
-        [SerializeField] private Sprite footGlowSprite;                             // 足元の淡い楕円（陣営の色で常に出す）
+        [SerializeField] private Sprite footGlowSprite;                             // 足元の淡い楕円（台座がないときに使う）
+        [SerializeField] private Sprite baseRimSprite;                              // 駒の台座の縁（陣営の色で染める）
+        [SerializeField] private Sprite baseTopSprite;                              // 駒の台座の天面（草地）
+        [SerializeField] private float baseWidth = 0.82f;                           // 台座の横幅（マスの横幅＝1）
         [SerializeField] private Camera targetCamera;
         [SerializeField] private float unitHeight = 1.35f;   // ユニットの絵の高さ（マスの横幅＝1）
 
         private static readonly Color MoveColor = new Color(0.30f, 0.60f, 1f, 0.45f);
         private static readonly Color SelectColor = new Color(0.55f, 0.80f, 1f, 1f);
         private static readonly Color AllyGlow = new Color(0.35f, 0.62f, 1f, 0.75f);
+        // 台座の縁の色（原作者 2026-09-26 案1: 味方＝青、敵＝赤）
+        private static readonly Color AllyRim = new Color(0.30f, 0.55f, 1f, 1f);
+        private static readonly Color EnemyRim = new Color(0.90f, 0.26f, 0.22f, 1f);
         private static readonly Color EnemyGlow = new Color(1f, 0.30f, 0.26f, 0.75f);
 
         private BattleDataFile data;
@@ -59,6 +65,8 @@ namespace Srpg.Battle
             public SpriteRenderer renderer;
             public SpriteRenderer ring;
             public SpriteRenderer glow;
+            public SpriteRenderer baseRim;
+            public SpriteRenderer baseTop;
             public Vector2Int cell;
             public bool moved;
             public Vector2Int Cell => cell;
@@ -149,8 +157,15 @@ namespace Srpg.Battle
                     ring.gameObject.AddComponent<SpriteFlipbook>().Setup(frames, 20f, offset);
                 }
                 // 粒は立ちのぼって消えるのをくり返すため、陣営の色の淡い楕円を足元に常に敷く
+                // 駒の台座（TRPGの駒のように、キャラを台座に立たせる。原作者の動画の表現 2026-09-26）
+                SpriteRenderer baseRim = null, baseTop = null;
+                if (baseRimSprite != null && baseTopSprite != null)
+                {
+                    baseRim = CreateBasePart(root.transform, "BaseRim", baseRimSprite, source.side == "enemy" ? EnemyRim : AllyRim);
+                    baseTop = CreateBasePart(root.transform, "BaseTop", baseTopSprite, Color.white);
+                }
                 SpriteRenderer glow = null;
-                if (footGlowSprite != null)
+                if (footGlowSprite != null && baseRim == null)
                 {
                     glow = new GameObject("FootGlow").AddComponent<SpriteRenderer>();
                     glow.transform.SetParent(root.transform, false);
@@ -160,10 +175,21 @@ namespace Srpg.Battle
                     glow.transform.localScale = new Vector3(glowScale, glowScale, 1f);
                     glow.transform.localPosition = new Vector3(0f, IsoGrid.TileHeight * 0.18f, 0f);   // マスの中心
                 }
-                var view = new UnitView { source = source, root = root, renderer = renderer, ring = ring, glow = glow, cell = new Vector2Int(source.x, source.y) };
+                var view = new UnitView { source = source, root = root, renderer = renderer, ring = ring, glow = glow, baseRim = baseRim, baseTop = baseTop, cell = new Vector2Int(source.x, source.y) };
                 units.Add(view);
                 PlaceUnit(view);
             }
+        }
+
+        private SpriteRenderer CreateBasePart(Transform parent, string name, Sprite sprite, Color color)
+        {
+            var part = new GameObject(name).AddComponent<SpriteRenderer>();
+            part.transform.SetParent(parent, false);
+            part.sprite = sprite;
+            part.color = color;
+            float scale = baseWidth / sprite.bounds.size.x;
+            part.transform.localScale = new Vector3(scale, scale, 1f);
+            return part;
         }
 
         private void PlaceUnit(UnitView view)
@@ -174,6 +200,8 @@ namespace Srpg.Battle
             view.renderer.sortingOrder = IsoGrid.SortingOrder(view.cell.x, view.cell.y) + 5;
             if (view.ring != null) view.ring.sortingOrder = view.renderer.sortingOrder - 1;
             if (view.glow != null) view.glow.sortingOrder = view.renderer.sortingOrder - 2;
+            if (view.baseRim != null) view.baseRim.sortingOrder = view.renderer.sortingOrder - 4;
+            if (view.baseTop != null) view.baseTop.sortingOrder = view.renderer.sortingOrder - 3;
         }
 
         private SpriteRenderer CreateDiamond(string name, Sprite sprite, Color color, int order)

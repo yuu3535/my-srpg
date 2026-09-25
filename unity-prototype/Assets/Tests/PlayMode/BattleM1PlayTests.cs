@@ -22,6 +22,11 @@ namespace Srpg.Tests
             Assert.IsNotNull(controller, "BattleM1Controller がない");
             Assert.AreEqual(7, controller.Units.Count);   // カリマは背景を透明にした絵ができるまで出さない
             Assert.IsTrue(controller.Units.All(u => u.ring != null), "全員の足元に光がある");
+            Assert.IsTrue(controller.Units.All(u => u.baseRim != null && u.baseTop != null), "全員が台座に立つ");
+            var enemyRim = controller.Units.First(u => u.source.side == "enemy").baseRim.color;
+            var allyRim = controller.Units.First(u => u.source.side == "ally").baseRim.color;
+            Assert.Greater(enemyRim.r, enemyRim.b, "敵の台座の縁は赤");
+            Assert.Greater(allyRim.b, allyRim.r, "味方の台座の縁は青");
 
             var arshe = controller.Units.First(u => u.source.id == "arshe");
             var start = arshe.cell;

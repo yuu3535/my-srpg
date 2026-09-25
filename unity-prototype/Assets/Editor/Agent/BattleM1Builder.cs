@@ -25,6 +25,9 @@ namespace Srpg.EditorAgent
         private const string TileSpritePath = "Assets/Art/UI/tile_diamond.png";
         private const string FrameSpritePath = "Assets/Art/UI/tile_frame.png";
         private const string FootGlowPath = "Assets/Art/UI/foot_glow.png";
+        // 駒の台座（仮）: 縁は白で描き、陣営の色（味方＝青、敵＝赤）はシーン側で付ける。天面は草地
+        private const string BaseRimPath = "Assets/Art/UI/base_rim.png";
+        private const string BaseTopPath = "Assets/Art/UI/base_top.png";
         private const string PreviewDir = "Assets/Previews";
         // 足元の光のコマ（tools/make_flipbook.py が動画から作る）
         private const string AllyRingDir = "Assets/Art/Effects/FootRing/Ally";
@@ -64,6 +67,56 @@ namespace Srpg.EditorAgent
             AssetDatabase.ImportAsset(FrameSpritePath, ImportAssetOptions.ForceUpdate);
             File.WriteAllBytes(FootGlowPath, DrawFootGlow().EncodeToPNG());
             AssetDatabase.ImportAsset(FootGlowPath, ImportAssetOptions.ForceUpdate);
+            File.WriteAllBytes(BaseRimPath, DrawBase(top: false).EncodeToPNG());
+            File.WriteAllBytes(BaseTopPath, DrawBase(top: true).EncodeToPNG());
+            AssetDatabase.ImportAsset(BaseRimPath, ImportAssetOptions.ForceUpdate);
+            AssetDatabase.ImportAsset(BaseTopPath, ImportAssetOptions.ForceUpdate);
+        }
+
+        /// <summary>
+        /// 駒の台座（仮・原作者のTRPGの動画の表現 2026-09-26）。楕円の円柱。
+        ///   縁（top=false）: 側面の帯と天面のふちの輪。白で描き、陣営の色で染める
+        ///   天面（top=true）: 草地の楕円（縁の輪の内側）
+        /// 画像は 160×100、天面の楕円の中心は上から 38px（足を置く位置）
+        /// </summary>
+        private static Texture2D DrawBase(bool top)
+        {
+            const int w = 160, h = 100;
+            const float cx = w / 2f, cy = 38f, rx = 74f, ry = 34f, side = 20f;
+            var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            for (int py = 0; py < h; py++)
+            for (int px = 0; px < w; px++)
+            {
+                float x = px + 0.5f, y = py + 0.5f;   // 上から数えた位置
+                float dx = (x - cx) / rx;
+                float topDist = Mathf.Sqrt(dx * dx + Mathf.Pow((y - cy) / ry, 2f));
+                float bottomDist = Mathf.Sqrt(dx * dx + Mathf.Pow((y - cy - side) / ry, 2f));
+                Color c = new Color(0, 0, 0, 0);
+                if (top)
+                {
+                    if (topDist <= 0.86f)
+                    {
+                        float shade = 0.75f + 0.25f * (1f - Mathf.Clamp01((y - (cy - ry)) / (2f * ry)));
+                        float grain = Mathf.PerlinNoise(px * 0.18f, py * 0.18f) * 0.18f;
+                        c = new Color((0.20f + grain) * shade, (0.40f + grain) * shade, (0.18f + grain * 0.5f) * shade, 1f);
+                    }
+                }
+                else
+                {
+                    bool inSide = Mathf.Abs(dx) <= 1f && y >= cy && (bottomDist <= 1f || y <= cy + side) && topDist >= 0.99f;
+                    bool inRim = topDist <= 1f && topDist > 0.86f;
+                    if (inSide)
+                    {
+                        // 側面: 左右の端ほど暗く、立体に見せる
+                        float light = 0.55f + 0.45f * (1f - Mathf.Abs(dx));
+                        c = new Color(light, light, light, 1f);
+                    }
+                    else if (inRim) c = new Color(1f, 1f, 1f, 1f);
+                }
+                tex.SetPixel(px, h - 1 - py, c);
+            }
+            tex.Apply();
+            return tex;
         }
 
         /// <summary>足元の淡い楕円（白。陣営の色はシーン側で付ける）。縁ほど薄く、輪の部分を少し濃く</summary>
@@ -116,6 +169,9 @@ namespace Srpg.EditorAgent
             // 菱形: 1マス（128px）＝1ワールド単位、中心がピボット
             foreach (var path in new[] { TileSpritePath, FrameSpritePath, FootGlowPath })
                 ConfigureSprite(path, 128, new Vector2(0.5f, 0.5f), 256, FilterMode.Bilinear);
+            // 台座: 天面の楕円の中心（上から38px/100px）がピボット＝足を置く位置
+            foreach (var path in new[] { BaseRimPath, BaseTopPath })
+                ConfigureSprite(path, 160, new Vector2(0.5f, 0.62f), 256, FilterMode.Bilinear);
             // マップ絵: 1マスの横幅 tileW px ＝ 1ワールド単位、左上がピボット
             if (data.iso != null)
                 ConfigureSprite(data.iso.image, data.iso.tileW, new Vector2(0f, 1f), 2048, FilterMode.Bilinear);
@@ -191,6 +247,8 @@ namespace Srpg.EditorAgent
             so.FindProperty("frameSprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(FrameSpritePath);
             so.FindProperty("targetCamera").objectReferenceValue = camera;
             so.FindProperty("footGlowSprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(FootGlowPath);
+            so.FindProperty("baseRimSprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(BaseRimPath);
+            so.FindProperty("baseTopSprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(BaseTopPath);
             SetSpriteArray(so, "allyRingFrames", AllyRingDir);
             SetSpriteArray(so, "enemyRingFrames", EnemyRingDir);
             var spritesProp = so.FindProperty("unitSprites");
