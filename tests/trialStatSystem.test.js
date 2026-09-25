@@ -129,7 +129,7 @@ assert.deepEqual(TRIAL_UNIT_CLASS.ringholm, { name: "ならずもの", line: "�
 assert.deepEqual(TRIAL_UNIT_CLASS.albas, { name: "ロード", line: "術軍師上級" });
 assert.equal(TRIAL_PERSONAL_SKILLS.ringholm.name, "殺気");
 assert.equal(TRIAL_PERSONAL_SKILLS.young_karima.name, "双蛇の逆針");
-assert.match(TRIAL_PERSONAL_SKILLS.albas.desc, /自分から攻撃したとき/);   // 原作者回答（案A）で上書き
+assert.match(TRIAL_PERSONAL_SKILLS.albas.desc, /^自分から攻撃した際、魅力×2%で相手の反撃を封じる/);   // 原作者回答（案A）
 assert.equal(TRIAL_CAUSE_ABILITIES.arshe.find(a => a.name === "両断").artKind, "physicalArt");
 assert.equal(TRIAL_CAUSE_ABILITIES.albas.find(a => a.name === "生命吸収").artKind, "exclusiveArt");
 assert.deepEqual(TRIAL_CAUSE_ABILITIES.albas.find(a => a.level === 50).statBonus, { hp: 10, mag: 10, tec: 10, cha: 10 });

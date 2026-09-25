@@ -159,19 +159,13 @@ const TRIAL_LOADOUT_SLOT_COUNTS = Object.freeze({
     combatArts: 4,
 });
 
-// CSVの効果文より新しい原作者回答で上書きするもの
-const TRIAL_PERSONAL_SKILL_OVERRIDES = Object.freeze({
-    // 野望: 反撃封じはアルバスから攻撃するときに、敵の反撃を封じる（WORK_MEMO_2026-09-25 原作者回答・案A）
-    "野望": "自分から攻撃したとき、魅力×2%で敵の反撃を封じる。相手の命中−10・相手の回避−10・必殺+10",
-});
-
 const TRIAL_PERSONAL_SKILLS = Object.freeze(Object.fromEntries(
     Object.entries(TRIAL_ABILITY_SOURCE).map(([unitId, name]) => {
         const personal = TRIAL_ABILITY_DATA?.causeTable?.[name]?.personal;
         if (!personal) return [unitId, null];
         return [unitId, {
             name: personal.name,
-            desc: TRIAL_PERSONAL_SKILL_OVERRIDES[personal.name] || personal.desc,
+            desc: personal.desc,
         }];
     })
 ));
