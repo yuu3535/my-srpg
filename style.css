@@ -6485,27 +6485,31 @@ html, body {
 }
 
 /* ── 盤面: 移動・攻撃範囲のマスと選択枠 ── */
-#gameScreen[data-mode="battle"] .gridCell.highlightMove:not(.enemyActionRange) {
-    background: url("assets/ui/tile_move.png") center / 100% 100% no-repeat;
-    border-color: transparent;
-}
+/* 攻撃範囲のマスは素材。移動範囲は従来の青のまま、カーソルを乗せた移動先にだけ素材を出す（原作者 2026-09-25） */
 #gameScreen[data-mode="battle"] .gridCell.highlightAttack:not(.enemyActionRange) {
-    background: url("assets/ui/tile_attack.png") center / 100% 100% no-repeat;
+    background: url("assets/ui/tile_attack.png") center / 131% 128% no-repeat;   /* 素材の余白ぶん広げ、線をマスの縁に合わせる */
     border-color: transparent;
 }
-.battleUnit.unitSelected::before,
-.battleUnit.unitTargeted::before {
+/* 選択枠・移動先の素材はマスに付ける。素材の線がマスの縁に重なるよう、光のぶん外へ広げる */
+.gridCell.cellSelectedAlly,
+.gridCell.cellTargeted,
+#gameScreen[data-mode="battle"] .gridCell.highlightMove:not(.enemyActionRange):hover { z-index: 1; }
+.gridCell.cellSelectedAlly::after,
+.gridCell.cellTargeted::after {
     content: "";
     position: absolute;
-    left: -8%;
-    right: -8%;
-    bottom: -10%;
-    aspect-ratio: 1;
+    inset: -20% -19.5% -19% -18.7%;
     background: url("assets/ui/select_ally.png") center / 100% 100% no-repeat;
     pointer-events: none;
-    z-index: -1;
 }
-.battleUnit.unitTargeted::before { background-image: url("assets/ui/select_enemy.png"); }
+.gridCell.cellTargeted::after { background-image: url("assets/ui/select_enemy.png"); }
+#gameScreen[data-mode="battle"] .gridCell.highlightMove:not(.enemyActionRange):hover::after {
+    content: "";
+    position: absolute;
+    inset: -13.8% -14.2% -13.2% -15.3%;
+    background: url("assets/ui/tile_move.png") center / 100% 100% no-repeat;
+    pointer-events: none;
+}
 #gameScreen .battleUnit.unitSelected img {
     filter: drop-shadow(0 0 4px rgba(120,190,255,0.7)) drop-shadow(0 2px 3px rgba(0,0,0,0.9)) !important;
 }

@@ -336,6 +336,7 @@ function getActionRangeClass(unit) {
 // ユニット描画
 // =============================================
 function renderUnits() {
+    markLandscapeCells();
     // ダメージポップアップはアニメーション中なので退避して再追加する
     const livePopups = [...unitLayer.querySelectorAll(".dmgPopup")];
     unitLayer.innerHTML = "";
@@ -891,6 +892,7 @@ function deselectUnit() {
     }
     selectedUnit        = null;
     lsOpenBranch        = null;
+    markLandscapeCells();
     actionState         = null;
     selectedSpell       = null;
     selectedAttackSkill = null;
@@ -3405,6 +3407,7 @@ async function trialShowEnemyForecast(enemy, victim, isMagic, spell) {
 }
 
 function syncLandscapeBattleUi(unit = selectedUnit) {
+    markLandscapeCells();
     syncLandscapeBattleMount();
     renderLandscapeHeader();
     renderLandscapeRoster();
@@ -5035,10 +5038,25 @@ function showUnitPortraitAdjuster(unit) {
 }
 
 /** VS レイヤーを閉じてバトルログに戻る */
+// 選択枠はキャラの画像ではなくマスに付ける（マス目に合わせるため。原作者 2026-09-25）
+let lsMarkedTarget = null;
+
 /** 戦闘予測の相手に赤い選択枠を付ける（null で外す） */
 function markLandscapeTarget(target) {
-    document.querySelectorAll(".battleUnit.unitTargeted").forEach(el => el.classList.remove("unitTargeted"));
-    if (target) document.getElementById(`unit_${target.id}`)?.classList.add("unitTargeted");
+    lsMarkedTarget = target || null;
+    markLandscapeCells();
+}
+
+/** 選択中の味方のマスに青い枠、予測の相手のマスに赤い枠 */
+function markLandscapeCells() {
+    if (!battleGrid) return;
+    battleGrid.querySelectorAll(".cellSelectedAlly, .cellTargeted")
+        .forEach(cell => cell.classList.remove("cellSelectedAlly", "cellTargeted"));
+    if (gameMode !== "battle" || battleOver) return;
+    const ally = selectedUnit;
+    if (ally && ally.side === "ally" && ally.hp > 0 && turnPhase === "ally") getCell(ally.y, ally.x)?.classList.add("cellSelectedAlly");
+    const target = lsMarkedTarget;
+    if (target && target.hp > 0) getCell(target.y, target.x)?.classList.add("cellTargeted");
 }
 
 function hideBattlePreview() {
