@@ -62,6 +62,11 @@ const BATTLE_DEFINITIONS = Object.freeze({
         victory: { type: "defeatAll" },
         defeat: { type: "allAlliesDefeated" },
         unitIds: ["ringholm", "arshe", "albas", "young_karima", "forest_guard", "dylan", "herel"],
+        // 既存のキャラを複製して置く（id: { from: 元のキャラ, 上書きする項目 }）。
+        // アルバス同士で破壊・反撃を試すため、敵のアルバスを置く（原作者 2026-09-25）
+        unitCopies: {
+            albas_rival: { from: "albas", side: "enemy", name: "アルバス（敵）" },
+        },
         positions: {
             ringholm:     { x: 3, y: 6 },
             arshe:        { x: 4, y: 6 },
@@ -70,6 +75,7 @@ const BATTLE_DEFINITIONS = Object.freeze({
             forest_guard: { x: 6, y: 1 },
             dylan:        { x: 7, y: 1 },
             herel:        { x: 8, y: 2 },
+            albas_rival:  { x: 5, y: 2 },
         },
     },
 });

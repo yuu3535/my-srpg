@@ -3308,7 +3308,7 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel, optio
     };
     // 反撃は射程内なら必ず起きる（原作者 2026-09-25）。野望で封じる確率があるときだけ確率を出す
     const counterInfo = pred.canCounter
-        ? `反撃あり${pred.counterLabel ? `・${pred.counterLabel}` : ""}${pred.counterRate < 100 ? `（野望で封じられなければ・${pred.counterRate}%）` : ""}`
+        ? `反撃あり${pred.counterLabel ? `・${pred.counterLabel}` : ""}${pred.counterRate < 100 ? `（野望で${100 - pred.counterRate}%封じる）` : ""}`
         : pred.counterBlockedReason ? `反撃なし（${pred.counterBlockedReason}）` : isDamage ? "反撃なし" : "";
 
     lsForecast.innerHTML = `
@@ -7250,7 +7250,16 @@ function setBattleMode(battleId) {
         landscapeBattleShell?.style.setProperty("--ls-bg", `url("${encodeURI(def.background)}")`);
     }
     const sourceData = def
-        ? CHARACTERS_DATA.filter(c => def.unitIds.includes(c.id))
+        ? [
+            ...CHARACTERS_DATA.filter(c => def.unitIds.includes(c.id)),
+            // unitCopies: 既存のキャラを複製して別のユニットとして置く（例: 敵のアルバス）
+            ...Object.entries(def.unitCopies || {}).map(([id, copy]) => {
+                const base = CHARACTERS_DATA.find(c => c.id === copy.from);
+                if (!base) return null;
+                const { from, ...overrides } = copy;
+                return { ...base, ...overrides, id };
+            }).filter(Boolean),
+        ]
         : CHARACTERS_DATA;
     const usePersistentParty = battleEntrySource === "scenario";
 

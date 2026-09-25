@@ -39,6 +39,15 @@ const TRIAL_RULES_ID = "adopted-stats-v1";
  *
  *   敵3体（森の番人・ディラン・ヘレル）の個人成長率は採用版に無いため、試験用の仮値。
  */
+// アルバスのプロフィール。テスト戦闘の敵アルバス（albas_rival）も同じ値を使う（原作者 2026-09-25: アルバス同士で試す）
+const TRIAL_ALBAS_PROFILE = Object.freeze({
+    name: "アルバス", race: "魔物", trpgLevel: 5, abilityLevel: 45,
+    base:   { hp: 18, atk: 12, def: 13, mag: 24, res: 22, tec: 12, spd: 9,  cha: 17 },
+    growth: { hp: 65, atk: 40, def: 50, mag: 80, res: 75, tec: 80, spd: 55, cha: 70 },
+    caps:   { hp: 104, atk: 80, def: 89, mag: 110, res: 108, tec: 98, spd: 108, cha: 115 },
+    luck: 65, courage: 65, siz: 15,
+});
+
 const TRIAL_PROFILES = Object.freeze({
     ringholm: {
         name: "リングホルム", race: "ヒト", trpgLevel: 5, abilityLevel: 45,
@@ -65,13 +74,8 @@ const TRIAL_PROFILES = Object.freeze({
         caps:   { hp: 122, atk: 86, def: 108, mag: 106, res: 100, tec: 86, spd: 96, cha: 101 },
         luck: 90, courage: 90, siz: 13,
     },
-    albas: {
-        name: "アルバス", race: "魔物", trpgLevel: 5, abilityLevel: 45,
-        base:   { hp: 18, atk: 12, def: 13, mag: 24, res: 22, tec: 12, spd: 9,  cha: 17 },
-        growth: { hp: 65, atk: 40, def: 50, mag: 80, res: 75, tec: 80, spd: 55, cha: 70 },
-        caps:   { hp: 104, atk: 80, def: 89, mag: 110, res: 108, tec: 98, spd: 108, cha: 115 },
-        luck: 65, courage: 65, siz: 15,
-    },
+    albas: TRIAL_ALBAS_PROFILE,
+    albas_rival: TRIAL_ALBAS_PROFILE,
     forest_guard: {
         // TRPGシートなし。characters.js の値（TRPG Lv2相当）をLv1基礎値として換算した一般兵
         name: "森の番人", race: "ヒト", trpgLevel: 2,
@@ -116,6 +120,7 @@ const TRIAL_ABILITY_SOURCE = Object.freeze({
     arshe: "アルシェ",
     albas: "アルバス",
     young_karima: "カリマ",
+    albas_rival: "アルバス",   // テスト戦闘の敵アルバス（スキル・戦技は味方のアルバスと同じ）
 });
 
 // 専用兵種を持つ4人。因果Lv50スキルは因果スキル枠ではなく、専用兵種の兵種固有枠へ入る（SKILL_LOADOUT_RULES §5）
@@ -250,6 +255,8 @@ const TRIAL_STARTING_GEAR = Object.freeze({
     forest_guard: { items: ["trial_sword"], equipped: "trial_sword" },
     dylan:        { items: ["trial_sword"], equipped: "trial_sword" },
     herel:        { items: ["star_book"], equipped: "star_book" },
+    // 敵アルバス: 装備がないと攻撃も反撃もできないため、火の魔導書を持たせる（仮）
+    albas_rival:  { items: ["fire_book"], equipped: "fire_book" },
 });
 
 // パーティ共有の持ち物（誰も持っていない武器・魔導書）
