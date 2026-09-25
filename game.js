@@ -519,7 +519,7 @@ function onUnitClick(unit) {
         clearHighlights();
         actionState = null;
         syncLandscapeBattleUi(unit);
-        setLandscapeHint(`${unit.name}の行動を選んでください。`);
+        setLandscapeHint(`${unit.name}の行動を選んでください（× か何もないマスで移動先の選択に戻る）。`);
         return;
     }
 
@@ -543,6 +543,9 @@ function onCellClick(row, col) {
     }
     if (_mapDragged) { _mapDragged = false; return; }
     if (gameMode !== "battle" || battleOver) return;
+
+    // 環状コマンド: 何もないマスを押すと取り消し（枝 → 円環 → 移動の取り消し、対象選択 → 枝）
+    if (landscapeTapCancel()) return;
 
     // [trial] 転移（戦技）の移動先
     if (actionState === "trialTransferTile" && trialTransferState) {
@@ -2479,6 +2482,8 @@ function activateLandscapeDefaultMove(unit) {
 
 function renderLandscapeUnitPanel(unit = selectedUnit) {
     if (!landscapeUnitContent || !landscapeUnitEmpty) return;
+    const unitPanel = document.getElementById("landscapeUnitPanel");
+    if (unitPanel) unitPanel.dataset.unitId = unit && unit.side === "ally" ? String(unit.id) : "";
     if (!isLandscapeBattleUi() || !unit) {
         landscapeUnitContent.innerHTML = "";
         landscapeUnitEmpty.style.display = "";
@@ -2644,26 +2649,24 @@ function renderLandscapeRoster() {
 
 function getLandscapeCommands(unit) {
     const commands = [];
-    if (canUndoMove(unit)) commands.push({ label: "戻る", active: true });
-    if (!unit.acted && (!unit.trialStats || trialCarriedWeapon(trialGearOf(unit))))
-        commands.push({ label: "攻撃", active: actionState === "attacking" || actionState === "throwing" });
-    // 魔法コマンドは、セットした魔法戦技と装備した魔導書の魔法を選ぶ入口（原作者方針 2026-09-25）。
-    // 試験用ユニットはその形（getLandscapeMagicEntries）、ほかは従来の魔法一覧を仮に出す
-    if (!unit.acted && getLandscapeMagicEntries(unit).length > 0) commands.push({ label: "魔法", active: actionState === "magic" });
-    // 特技のコマンドは廃止し、戦技へ移す（原作者方針 2026-09-25）。自己強化の戦技はここから使う
+    // 環状コマンドは 攻撃・魔法・待機（＋持ち物を持っているときだけ持ち物）にまとめる（原作者 2026-09-25）。
+    // 戦技（物理戦技・専用戦技・自己強化）は攻撃の枝に入れる。詳細はユニット情報の欄を押して開く。
+    // 移動の取り消しは × か、何もないマスを押す
     const specialArts = unit.trialStats && TRIAL_ABILITY_SOURCE[unit.id]
         ? trialSpecialArtsFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null) : [];
-    if (!unit.acted && (getAvailableCombatArts(unit, "self").length > 0 || specialArts.length > 0)) commands.push({ label: "戦技" });
+    const hasWeapon = !unit.trialStats || !!trialCarriedWeapon(trialGearOf(unit));
+    if (!unit.acted && (hasWeapon || specialArts.length > 0 || getAvailableCombatArts(unit, "self").length > 0))
+        commands.push({ label: "攻撃", active: actionState === "attacking" || actionState === "throwing" });
+    // 魔法コマンドは、セットした魔法戦技と装備した魔導書の魔法を選ぶ入口（原作者方針 2026-09-25）
+    if (!unit.acted && getLandscapeMagicEntries(unit).length > 0) commands.push({ label: "魔法", active: actionState === "magic" });
     if ((unit.items?.length ?? 0) > 0) commands.push({ label: "持ち物" });
     if (!unit.acted) commands.push({ label: "待機" });
-    commands.push({ label: "詳細" });
-    if (!unit.moved) commands.push({ label: "移動" });   // 環状コマンドをその場で開いたあと、移動に戻る
     return commands;
 }
 
 // ── 環状コマンド（原作者のイメージ 2026-09-25） ──
-//   選んだユニットの周りにコマンドが円環状に並び、魔法・戦技などは枝のように次の選択肢が伸びる。
-//   キャンセルすると枝を折りたたんで円環に戻る。
+//   選んだユニットの周りにコマンドが円環状に並び、2段目はセフィロトの樹のような丸のツリーで伸びる。
+//   取り消しは真下の × か、何もないマスを押す（枝 → 円環 → 移動の取り消し の順に戻る）。
 //   アイコンは仮のSVG（UI素材のコマンドアイコンができたら差し替える）
 const LS_COMMAND_ICON_PATHS = {
     "攻撃":  "M5 19l3-3M6.5 14.5l3 3M9 16L19 6V4h-2L7 14",
@@ -2671,11 +2674,13 @@ const LS_COMMAND_ICON_PATHS = {
     "戦技":  "M12 3l1.8 5.2L19 7l-3.4 4.3L19 16l-5.2-1.2L12 20l-1.8-5.2L5 16l3.4-4.7L5 7l5.2 1.2z",
     "持ち物": "M9 4.5h6l-1.3 2.7c2.9 1.2 4.8 4 4.8 7.1 0 2.8-2.9 4.7-6.5 4.7s-6.5-1.9-6.5-4.7c0-3.1 1.9-5.9 4.8-7.1zM9.6 7.2h4.8",
     "待機":  "M7 4h10M7 20h10M8 4c0 4 4 5 4 8s-4 4-4 8M16 4c0 4-4 5-4 8s4 4 4 8",
-    "詳細":  "M7 4h10v16H7zM9.5 8h5M9.5 11.5h5M9.5 15h3",
-    "移動":  "M12 4v16M4 12h16M12 4l-2.5 2.5M12 4l2.5 2.5M12 20l-2.5-2.5M12 20l2.5-2.5M4 12l2.5-2.5M4 12l2.5 2.5M20 12l-2.5-2.5M20 12l-2.5 2.5",
-    "戻る":  "M9 5.5l-4 4 4 4M5 9.5h9a5 5 0 0 1 0 10h-3",
+    "取消":  "M7 7l10 10M17 7L7 17",
 };
 const LS_RING = { radius: 52, node: 44, margin: 6 };
+// 円環の並び（× を真下に置き、残りを左 → 上 → 右へ）
+const LS_RING_ORDER = { "待機": 0, "攻撃": 1, "魔法": 2, "持ち物": 3 };
+// 2段目の丸のツリー
+const LS_BRANCH = { orb: 30, out: 46, zig: 24, step: 32 };
 // 対象を選んでいる間の状態と、キャンセルで戻る先のコマンド
 const LS_TARGETING_STATES = {
     attacking: "攻撃", throwing: "攻撃", magic: "魔法",
@@ -2687,25 +2692,59 @@ function lsCommandIcon(label) {
     return d ? `<svg class="lsRingIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>` : "";
 }
 
-/** ユニットの中心（戦闘UIの座標） */
-function landscapeUnitCenter(unit) {
+/** 円環の中心（戦闘UIの座標）。ユニットの中心を、円環が盤面からはみ出さない範囲に収める */
+function landscapeRingCenter(unit) {
     const shell = landscapeBattleShell;
     const unitEl = unit && document.getElementById(`unit_${unit.id}`);
     if (!shell || !unitEl) return null;
     const shellRect = shell.getBoundingClientRect();
     const unitRect = unitEl.getBoundingClientRect();
     const scale = shellRect.width / (shell.offsetWidth || shellRect.width) || 1;
+    const x = (unitRect.left + unitRect.width / 2 - shellRect.left) / scale;
+    const y = (unitRect.top + unitRect.height / 2 - shellRect.top) / scale;
+    const reach = LS_RING.radius + LS_RING.node / 2 + LS_RING.margin;
     return {
-        x: (unitRect.left + unitRect.width / 2 - shellRect.left) / scale,
-        y: (unitRect.top + unitRect.height / 2 - shellRect.top) / scale,
-        width: shell.offsetWidth,
-        height: shell.offsetHeight,
+        x: Math.round(Math.max(reach, Math.min(shell.offsetWidth - reach, x))),
+        y: Math.round(Math.max(reach, Math.min(shell.offsetHeight - reach, y))),
     };
+}
+
+// 円環はユニットを追いかける（移動の動き・拡大縮小・盤面の移動でずれないように）
+let lsRingFollowUnit = null;
+let lsRingFollowFrame = 0;
+
+function followLandscapeRing(unit) {
+    lsRingFollowUnit = unit;
+    if (!lsRingFollowFrame) lsRingFollowFrame = requestAnimationFrame(stepLandscapeRingFollow);
+}
+
+function stepLandscapeRingFollow() {
+    lsRingFollowFrame = 0;
+    const unit = lsRingFollowUnit;
+    if (!unit || landscapeCommandList.className !== "ring" || landscapeCommandPanel.classList.contains("railHidden")) {
+        lsRingFollowUnit = null;
+        return;
+    }
+    const c = landscapeRingCenter(unit);
+    if (c) {
+        const left = `${c.x}px`;
+        const top = `${c.y}px`;
+        if (landscapeCommandList.style.left !== left || landscapeCommandList.style.top !== top) {
+            landscapeCommandList.style.left = left;
+            landscapeCommandList.style.top = top;
+            layoutLandscapeCommandBranch();   // 枝も画面に収まるように並べ直す
+        }
+    }
+    lsRingFollowFrame = requestAnimationFrame(stepLandscapeRingFollow);
 }
 
 function clearLandscapeCommandBranch() {
     document.getElementById("landscapeCommandBranch")?.remove();
-    document.getElementById("landscapeCommandStem")?.remove();
+}
+
+/** 取り消しできることがあるか（枝が開いている・移動を取り消せる・まだ移動していない） */
+function canCancelLandscapeRing(unit, branchOpen) {
+    return branchOpen || canUndoMove(unit) || !unit.moved;
 }
 
 /** 円環を作る。openLabel を渡すと、そのコマンドから枝を伸ばす入れ物を返す */
@@ -2714,10 +2753,10 @@ function buildLandscapeCommandRing(unit, openLabel = null) {
     clearLandscapeCommandBranch();
     landscapeCommandList.className = "ring";
     landscapeCommandList.innerHTML = "";
-    const tail = label => (label === "移動" || label === "戻る") ? 1 : 0;
-    const commands = getLandscapeCommands(unit).sort((a, b) => tail(a.label) - tail(b.label));
+    const commands = getLandscapeCommands(unit)
+        .sort((a, b) => (LS_RING_ORDER[a.label] ?? 9) - (LS_RING_ORDER[b.label] ?? 9));
     commands.forEach(cmd => {
-        const isOpen = openLabel ? cmd.label === openLabel : !!cmd.active && cmd.label !== "戻る";
+        const isOpen = openLabel ? cmd.label === openLabel : !!cmd.active;
         const btn = document.createElement("button");
         btn.className = `lsCommandBtn lsRingNode${isOpen ? " active" : ""}${openLabel && !isOpen ? " dim" : ""}`;
         btn.disabled = !!cmd.disabled;
@@ -2726,60 +2765,113 @@ function buildLandscapeCommandRing(unit, openLabel = null) {
         btn.addEventListener("click", () => onLandscapeRingCommand(unit, cmd, openLabel));
         landscapeCommandList.appendChild(btn);
     });
+    if (canCancelLandscapeRing(unit, !!openLabel)) {
+        const cancel = document.createElement("button");
+        cancel.className = "lsCommandBtn lsRingCancel";
+        cancel.setAttribute("aria-label", "取り消し");
+        cancel.innerHTML = lsCommandIcon("取消");
+        cancel.addEventListener("click", () => cancelLandscapeRing(unit));
+        landscapeCommandList.appendChild(cancel);
+    }
     layoutLandscapeCommandRing(unit);
+    followLandscapeRing(unit);
     if (!openLabel) return null;
     const branch = document.createElement("div");
     branch.id = "landscapeCommandBranch";
-    landscapeCommandPanel.appendChild(branch);
+    branch.innerHTML = `<svg class="lsBranchLines" aria-hidden="true"></svg>`;
+    landscapeCommandList.appendChild(branch);
     return branch;
 }
 
-/** 円環をユニットの周りに並べる。盤面の端では内側へずらす */
+/** 円環をユニットの周りに並べる。× は真下、コマンドは残りを等間隔に */
 function layoutLandscapeCommandRing(unit) {
-    const c = landscapeUnitCenter(unit);
+    const c = landscapeRingCenter(unit);
     if (!c) return;
-    const reach = LS_RING.radius + LS_RING.node / 2 + LS_RING.margin;
-    const cx = Math.max(reach, Math.min(c.width - reach, c.x));
-    const cy = Math.max(reach, Math.min(c.height - reach, c.y));
-    landscapeCommandList.style.left = `${Math.round(cx)}px`;
-    landscapeCommandList.style.top = `${Math.round(cy)}px`;
-    const nodes = [...landscapeCommandList.children];
+    landscapeCommandList.style.left = `${c.x}px`;
+    landscapeCommandList.style.top = `${c.y}px`;
+    const nodes = [...landscapeCommandList.querySelectorAll(".lsRingNode")];
+    const slots = nodes.length + 1;
     nodes.forEach((node, i) => {
-        const angle = -Math.PI / 2 + i * 2 * Math.PI / nodes.length;   // 真上から時計回り
+        const angle = Math.PI / 2 + (i + 1) * 2 * Math.PI / slots;
         node.style.setProperty("--x", `${(Math.cos(angle) * LS_RING.radius).toFixed(1)}px`);
         node.style.setProperty("--y", `${(Math.sin(angle) * LS_RING.radius).toFixed(1)}px`);
         node.style.setProperty("--tick-delay", `${i * 28}ms`);
         node.dataset.side = Math.cos(angle) < -0.01 ? "left" : "right";
     });
+    const cancel = landscapeCommandList.querySelector(".lsRingCancel");
+    if (cancel) {
+        cancel.style.setProperty("--x", "0px");
+        cancel.style.setProperty("--y", `${LS_RING.radius}px`);
+        cancel.style.setProperty("--tick-delay", `${nodes.length * 28}ms`);
+    }
 }
 
-/** 枝（2段目の選択肢）を、開いたコマンドの外側へ伸ばす */
+/** 2段目の丸のツリーに、選択肢をひとつ足す */
+function addLandscapeBranchNode(branch, label, sub, onClick) {
+    const index = branch.querySelectorAll(".lsBranchNode").length;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "lsBranchNode";
+    btn.style.setProperty("--tick-delay", `${60 + index * 36}ms`);
+    const hasArt = typeof SKILL_ICON_DATA !== "undefined" && SKILL_ICON_DATA?.icons?.[label];
+    const orb = hasArt ? abilityIconHtml(label, "active", "lsBranchArt")
+        : label === "通常攻撃" || label === "素手" ? lsCommandIcon("攻撃")
+        : sub === "装備" ? lsCommandIcon("魔法")
+        : `<em>${String(label).replace(/^召喚「/, "").charAt(0)}</em>`;
+    btn.innerHTML = `<span class="lsBranchOrb">${orb}</span><span class="lsBranchText"><b>${label}</b>${sub ? `<small>${sub}</small>` : ""}</span>`;
+    btn.addEventListener("click", e => {
+        e.stopPropagation();
+        if (!btn.disabled) onClick();
+    });
+    branch.appendChild(btn);
+    return btn;
+}
+
+/** 丸のツリーを、開いたコマンドの外側へ2列のジグザグで伸ばし、線でつなぐ（セフィロトの樹のように） */
 function layoutLandscapeCommandBranch() {
     const branch = document.getElementById("landscapeCommandBranch");
     const parent = landscapeCommandList.querySelector(".lsRingNode.active");
     if (!branch || !parent) return;
-    const px = parseFloat(landscapeCommandList.style.left) + parseFloat(parent.style.getPropertyValue("--x"));
-    const py = parseFloat(landscapeCommandList.style.top) + parseFloat(parent.style.getPropertyValue("--y"));
+    const nodes = [...branch.querySelectorAll(".lsBranchNode")];
+    if (!nodes.length) return;
+    const px = parseFloat(parent.style.getPropertyValue("--x")) || 0;
+    const py = parseFloat(parent.style.getPropertyValue("--y")) || 0;
+    const cx = parseFloat(landscapeCommandList.style.left) || 0;
+    const cy = parseFloat(landscapeCommandList.style.top) || 0;
     const width = landscapeCommandPanel.offsetWidth;
     const height = landscapeCommandPanel.offsetHeight;
-    const bw = branch.offsetWidth;
-    const bh = branch.offsetHeight;
-    const gap = LS_RING.node / 2 + 14;
-    let toRight = parent.dataset.side !== "left";
-    if (toRight && px + gap + bw > width - 4) toRight = false;       // 入りきらなければ反対側へ
-    else if (!toRight && px - gap - bw < 4) toRight = true;
-    const left = toRight ? px + gap : px - gap - bw;
-    const top = Math.max(36, Math.min(height - bh - 22, py - bh / 2));
-    branch.style.left = `${Math.round(left)}px`;
-    branch.style.top = `${Math.round(top)}px`;
-    branch.classList.toggle("toLeft", !toRight);
-    // 開いたコマンドと枝をつなぐ線
-    const stem = document.createElement("i");
-    stem.id = "landscapeCommandStem";
-    stem.style.left = `${Math.round(toRight ? px + LS_RING.node / 2 : left + bw)}px`;
-    stem.style.top = `${Math.round(Math.max(top + 8, Math.min(top + bh - 8, py)))}px`;
-    stem.style.width = `${gap - LS_RING.node / 2}px`;
-    landscapeCommandPanel.appendChild(stem);
+    const { orb, out, zig, step } = LS_BRANCH;
+    const labelWidth = Math.max(...nodes.map(n => n.querySelector(".lsBranchText")?.offsetWidth || 0));
+    const extent = out + zig + orb / 2 + 6 + labelWidth;
+    let dir = parent.dataset.side === "left" ? -1 : 1;
+    if (dir > 0 && cx + px + extent > width - 4) dir = -1;          // 入りきらなければ反対側へ
+    else if (dir < 0 && cx + px - extent < 4) dir = 1;
+    // 縦は開いたコマンドを中心に並べ、画面からはみ出すぶんだけずらす
+    const span = (nodes.length - 1) * step;
+    const minY = 40 + orb / 2 - cy;
+    const maxY = height - 26 - orb / 2 - cy;
+    let y0 = py - span / 2;
+    if (y0 + span > maxY) y0 = maxY - span;
+    if (y0 < minY) y0 = minY;
+    const points = nodes.map((node, i) => {
+        const x = px + dir * (out + (i % 2) * zig);
+        const y = y0 + i * step;
+        node.style.setProperty("--x", `${x.toFixed(1)}px`);
+        node.style.setProperty("--y", `${y.toFixed(1)}px`);
+        node.dataset.dir = dir > 0 ? "right" : "left";
+        return { x, y };
+    });
+    // 線: 開いたコマンド → 最初の2つ、各選択肢 → 次・次の次（格子状につながる）
+    const lines = [];
+    const line = (a, b) => lines.push(`<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}"/>`);
+    const root = { x: px, y: py };
+    points.slice(0, 2).forEach(p => line(root, p));
+    points.forEach((p, i) => {
+        if (points[i + 1]) line(p, points[i + 1]);
+        if (points[i + 2]) line(p, points[i + 2]);
+    });
+    const svg = branch.querySelector(".lsBranchLines");
+    if (svg) svg.innerHTML = lines.join("");
 }
 
 /** 開いた枝を折りたたんで、円環に戻る */
@@ -2793,6 +2885,52 @@ function collapseLandscapeBranch(unit) {
     hideForecastLayer();
     renderBattleCommands(unit);
     syncLandscapeBattleUi(unit);
+    setLandscapeHint(`${unit.name}の行動を選んでください（× か何もないマスで取り消し）。`);
+}
+
+/** 取り消し: 枝 → 円環 → 移動の取り消し（まだ移動していなければ移動先の選択へ）の順に戻る */
+function cancelLandscapeRing(unit) {
+    if (!unit) return;
+    if (document.getElementById("landscapeCommandBranch")) {
+        collapseLandscapeBranch(unit);
+        return;
+    }
+    if (canUndoMove(unit)) {
+        undoLastMove(unit);
+        return;
+    }
+    if (!unit.moved) {
+        activateLandscapeDefaultMove(unit);
+        syncLandscapeBattleUi(unit);
+    }
+}
+
+/** 対象を選んでいる間の取り消し: その前の枝に戻る */
+function cancelLandscapeTargeting(unit, parentLabel) {
+    trialTransferState = null;
+    actionState = null;
+    selectedSpell = null;
+    clearHighlights();
+    hideForecastLayer();
+    handleBattleCommand(unit, parentLabel);
+}
+
+/** 何もないマスを押したときの取り消し。取り消したら true */
+function landscapeTapCancel() {
+    const unit = selectedUnit;
+    if (!unit || !isLandscapeBattleUi() || turnPhase !== "ally") return false;
+    const ringOpen = landscapeCommandList?.className === "ring" && !landscapeCommandPanel.classList.contains("railHidden");
+    if (actionState == null && ringOpen) {
+        cancelLandscapeRing(unit);
+        return true;
+    }
+    const back = LS_TARGETING_STATES[actionState];
+    // マスを選ぶ魔法（転移の移動先など）は、マスを押すのが本来の操作なので取り消しにしない
+    if (back && actionState !== "trialTransferTile" && selectedSpell?.effectType !== "teleport") {
+        cancelLandscapeTargeting(unit, back);
+        return true;
+    }
+    return false;
 }
 
 function onLandscapeRingCommand(unit, cmd, openLabel) {
@@ -2801,22 +2939,14 @@ function onLandscapeRingCommand(unit, cmd, openLabel) {
         collapseLandscapeBranch(unit);
         return;
     }
-    if (cmd.label === "移動") {
-        activateLandscapeDefaultMove(unit);
-        syncLandscapeBattleUi(unit);
-        return;
-    }
-    const label = cmd.label === "持ち物" ? "アイテム"
-                : cmd.label === "詳細" ? "ステータス"
-                : cmd.label === "戦技" ? "特技"
-                : cmd.label;
+    const label = cmd.label === "持ち物" ? "アイテム" : cmd.label;
     handleBattleCommand(unit, label);
-    if (!["攻撃", "魔法", "特技", "アイテム"].includes(label)) {
+    if (!["攻撃", "魔法", "アイテム"].includes(label)) {
         syncLandscapeBattleUi(unit);
     }
 }
 
-/** 対象を選んでいる間は円環を閉じ、画面下にキャンセルだけを出す（周りのマスを押せるように） */
+/** 対象を選んでいる間は円環を閉じ、画面下に小さな取り消しだけを出す（周りのマスを押せるように） */
 function renderLandscapeTargetCancel(unit, parentLabel) {
     setLandscapeRailVisible(true);
     clearLandscapeCommandBranch();
@@ -2826,17 +2956,82 @@ function renderLandscapeTargetCancel(unit, parentLabel) {
     landscapeCommandList.innerHTML = "";
     const btn = document.createElement("button");
     btn.className = "lsCommandBtn lsTargetCancel";
-    btn.innerHTML = `${lsCommandIcon("戻る")}<span>キャンセル</span>`;
-    btn.addEventListener("click", () => {
-        trialTransferState = null;
-        actionState = null;
-        selectedSpell = null;
-        clearHighlights();
-        hideForecastLayer();
-        handleBattleCommand(unit, parentLabel);
-    });
+    btn.innerHTML = `${lsCommandIcon("取消")}<span>取り消し</span>`;
+    btn.addEventListener("click", () => cancelLandscapeTargeting(unit, parentLabel));
     landscapeCommandList.appendChild(btn);
 }
+
+/** 攻撃の枝に、専用戦技（月詠・生命吸収）と自己強化の戦技を足す（戦技コマンドは攻撃にまとめた） */
+function addLandscapeSelfArtButtons(unit, addButton) {
+    const specials = unit.trialStats && TRIAL_ABILITY_SOURCE[unit.id]
+        ? trialSpecialArtsFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null) : [];
+    specials.forEach(art => {
+        const used = !!unit.trialArtUses?.[art.name];
+        const btn = addButton(art.name, used ? "使用済み" : `${art.radius}マス・1回`, () => {
+            if (!used) trialCastSpecialArt(unit, art.name);
+        });
+        if (btn && used) btn.disabled = true;
+    });
+    getAvailableCombatArts(unit, "self").forEach(art => addButton(art.name, getCombatArtUseText(unit, art), () => {
+        executeSelfCombatArt(unit, art.id);
+    }));
+}
+
+/** 戦闘予測から切り替えられる攻撃の種類（この相手に届くものだけ） */
+function landscapeForecastOptions(attacker, target) {
+    const dist = Math.abs(attacker.x - target.x) + Math.abs(attacker.y - target.y);
+    const options = [];
+    const canWeapon = !attacker.trialStats || !!trialCarriedWeapon(trialGearOf(attacker));
+    if (canWeapon && dist <= attacker.attackRange) {
+        const base = getAttackSkillVal(attacker).name;
+        options.push({ kind: "attack", label: attacker.trialStats ? "通常攻撃" : base, skill: base, artId: null });
+        if (attacker.trialStats) {
+            trialPhysicalArtsFor(attacker.id, attacker.trialAbilityLevel, attacker.trialLoadoutSelection || null)
+                .filter(art => art.implemented)
+                .forEach(art => options.push({ kind: "attack", label: art.name, skill: base, artId: `trial:${art.name}` }));
+        }
+        getAvailableCombatArts(attacker, "attack")
+            .forEach(art => options.push({ kind: "attack", label: art.name, skill: base, artId: art.id }));
+    }
+    getLandscapeMagicEntries(attacker).forEach(({ id, spell, label }) => {
+        const sp = spell || SPELLS_DATA[id];
+        if (!sp || sp.targetType !== "enemy" || typeof sp.range !== "number" || dist > sp.range) return;
+        options.push({ kind: "magic", label, spell: sp });
+    });
+    return options;
+}
+
+function landscapeForecastOptionIndex(options) {
+    if (_vsAttack?.isMagic) {
+        const cur = _vsAttack.spell;
+        return options.findIndex(o => o.kind === "magic" && o.spell.name === cur?.name && !!o.spell.trialArtName === !!cur?.trialArtName);
+    }
+    return options.findIndex(o => o.kind === "attack" && o.artId === (selectedCombatArtId || null));
+}
+
+/** 戦闘予測の攻撃の種類を切り替えて、予測を出し直す */
+function applyLandscapeForecastOption(attacker, target, option) {
+    if (option.kind === "attack") {
+        actionState = "attacking";
+        selectedSpell = null;
+        selectedAttackSkill = option.skill;
+        selectedCombatArtId = option.artId;
+    } else {
+        actionState = "magic";
+        selectedSpell = option.spell;
+        selectedCombatArtId = null;
+    }
+    selectedUnit = attacker;
+    onUnitClick(target);
+}
+
+// ユニット情報の欄を押すと、そのユニットの詳細（ステータス）を開く（環状コマンドから詳細を外したため）
+document.getElementById("landscapeUnitPanel")?.addEventListener("click", event => {
+    const id = event.currentTarget.dataset.unitId;
+    const unit = id ? battleUnits.find(u => String(u.id) === id) : null;
+    if (!unit || unit.side !== "ally" || gameMode !== "battle") return;
+    openStatusModal(unit.id);
+});
 
 /** レールのボタンを「時計の針」のような弧状に配置する。
  *  軸（ハブ）は左＝盤面側。各ボタンは左端を支点に回転する針で、
@@ -2944,31 +3139,25 @@ function getLandscapeMagicEntries(unit) {
 }
 
 function addLandscapeBackButton(unit) {
-    const branch = document.getElementById("landscapeCommandBranch");
+    // 環状コマンドの枝には戻るボタンを置かない（× か何もないマス、開いたコマンドをもう一度押すと戻る）
+    if (document.getElementById("landscapeCommandBranch")) {
+        layoutLandscapeCommandBranch();
+        return;
+    }
     const back = document.createElement("button");
     back.className = "lsCommandBtn back";
     back.innerHTML = "<span>戻る</span>";
     back.addEventListener("click", () => collapseLandscapeBranch(unit));
-    (branch || landscapeCommandList).appendChild(back);
-    if (branch) layoutLandscapeCommandBranch();
-    else applyLandscapeRailArc();
+    landscapeCommandList.appendChild(back);
+    applyLandscapeRailArc();
 }
 
 function renderLandscapeSubCommandRail(unit, kind) {
     if (!landscapeCommandList || !unit) return;
-    const parentLabel = { attack: "攻撃", skill: "戦技", magic: "魔法", item: "持ち物" }[kind];
+    // 戦技は攻撃の枝にまとめた（原作者 2026-09-25）
+    const parentLabel = { attack: "攻撃", skill: "攻撃", magic: "魔法", item: "持ち物" }[kind];
     const branch = buildLandscapeCommandRing(unit, parentLabel);
-
-    let branchIndex = 0;
-    const addButton = (label, sub, onClick) => {
-        const btn = document.createElement("button");
-        btn.className = "lsCommandBtn";
-        btn.style.setProperty("--tick-delay", `${branchIndex++ * 30}ms`);
-        btn.innerHTML = `<span>${label}</span>${sub ? `<small>${sub}</small>` : ""}`;
-        btn.addEventListener("click", onClick);
-        (branch || landscapeCommandList).appendChild(btn);
-        return btn;
-    };
+    const addButton = (label, sub, onClick) => addLandscapeBranchNode(branch, label, sub, onClick);
 
     if (kind === "attack") {
         const atkSkills = ATTACK_SKILL_PRIORITY
@@ -2977,6 +3166,9 @@ function renderLandscapeSubCommandRail(unit, kind) {
         if (atkSkills.length === 0) atkSkills.push({ label: "素手", skill: "素手", sub: "4" });
         // [trial] 採用版では攻撃はTRPG技能を選ばず、装備武器での通常攻撃ひとつ（投擲は兵種の戦技）
         if (unit.trialStats) atkSkills.splice(0, atkSkills.length, { label: "通常攻撃", skill: getAttackSkillVal(unit).name, sub: "武器" });
+        // [trial] 武器を持っていなければ武器の攻撃は出さない（専用戦技・自己強化の戦技だけ）
+        const canWeapon = !unit.trialStats || !!trialCarriedWeapon(trialGearOf(unit));
+        if (!canWeapon) atkSkills.length = 0;
         atkSkills.forEach(item => addButton(item.label, item.sub, () => {
             selectedAttackSkill = item.skill;
             selectedCombatArtId = null;
@@ -2995,7 +3187,7 @@ function renderLandscapeSubCommandRail(unit, kind) {
             }
             syncLandscapeBattleUi(unit);
         }));
-        if (unit.trialStats) {
+        if (unit.trialStats && canWeapon) {
             trialPhysicalArtsFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null).forEach(art => {
                 const baseSkill = getAttackSkillVal(unit);
                 const btn = addButton(art.name, art.implemented ? "戦技" : "未実装", () => {
@@ -3025,6 +3217,7 @@ function renderLandscapeSubCommandRail(unit, kind) {
                 syncLandscapeBattleUi(unit);
             });
         });
+        addLandscapeSelfArtButtons(unit, addButton);
         addLandscapeBackButton(unit);
         return;
     }
@@ -3152,6 +3345,13 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel, optio
     const counterDmgDisp = pred.canCounter ? `${ctrN}${pred.counterFollowUp ? "×2" : ""}` : "─";
 
     const activeCombatArt = readOnly ? null : getCombatArtData(selectedCombatArtId);
+    // 届く攻撃が複数あれば、予測の見出しで ‹ › を押して切り替えられる
+    const switchOptions = readOnly ? [] : landscapeForecastOptions(attacker, target);
+    const switchIndex = landscapeForecastOptionIndex(switchOptions);
+    const actionName = switchIndex >= 0 ? switchOptions[switchIndex].label : (activeCombatArt?.name || actionLabel || "攻撃");
+    const headAction = switchOptions.length > 1 && switchIndex >= 0
+        ? `<div class="refFcSwitch"><button type="button" id="lsFcPrev" aria-label="前の攻撃">‹</button><em>${actionName}</em><small>${switchIndex + 1}/${switchOptions.length}</small><button type="button" id="lsFcNext" aria-label="次の攻撃">›</button></div>`
+        : `<em>${actionName}</em>`;
     const noteText = [pred.effectNotes, pred.counterNotes ? `反撃: ${pred.counterNotes.replace(/^\s*\[|\]\s*$/g, "")}` : ""]
         .filter(Boolean)
         .map(note => note.replace(/^\s*\[|\]\s*$/g, ""))
@@ -3179,7 +3379,7 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel, optio
 
     lsForecast.innerHTML = `
         <div class="refFc${readOnly ? " readOnly" : ""}">
-            <div class="refFcHead"><span>${readOnly ? "敵の攻撃" : "戦闘予測"}</span><em>${activeCombatArt?.name || actionLabel || "攻撃"}</em></div>
+            <div class="refFcHead"><span>${readOnly ? "敵の攻撃" : "戦闘予測"}</span>${headAction}</div>
             <div class="refFcGrid">
                 <div class="refFcName ${attacker.side}">${face(attacker)}<b>${attacker.name}</b></div>
                 <span></span>
@@ -3211,6 +3411,12 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel, optio
     document.getElementById("lsFcConfirm").addEventListener("click", () => {
         executePendingBattlePreview();
     });
+    const switchBy = delta => {
+        const next = switchOptions[(switchIndex + delta + switchOptions.length) % switchOptions.length];
+        if (next) applyLandscapeForecastOption(attacker, target, next);
+    };
+    document.getElementById("lsFcPrev")?.addEventListener("click", () => switchBy(-1));
+    document.getElementById("lsFcNext")?.addEventListener("click", () => switchBy(1));
     document.getElementById("lsFcCancel").addEventListener("click", () => {
         if (!_vsAttack) return;
         const { isMagic: cancelMagic } = _vsAttack;
@@ -3222,7 +3428,7 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel, optio
             else renderLandscapeSubCommandRail(selectedUnit, "attack");
         }
     });
-    setLandscapeHint(`${target.name}への${actionLabel || "攻撃"}を実行しますか。`);
+    setLandscapeHint(`${target.name}への${actionName}を実行しますか。`);
 }
 
 /** 戦闘予測の枠を、攻撃を受ける側の頭上に置く（上に入らなければ足元の下） */

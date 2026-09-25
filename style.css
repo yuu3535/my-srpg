@@ -6155,49 +6155,173 @@ html, body {
     stroke-linejoin: round;
 }
 
-/* 枝（2段目の選択肢） */
-#landscapeCommandBranch {
+/* × （取り消し）: 円環の真下の小さな丸 */
+.lsCommandBtn.lsRingCancel,
+.lsCommandBtn.lsRingCancel:active {
     position: absolute;
-    display: grid;
-    gap: 3px;
-    min-width: 108px;
-    max-width: 170px;
-    padding: 4px;
-    background: linear-gradient(180deg, rgba(12,6,22,0.9), rgba(6,4,12,0.9));
-    border: 1px solid rgba(224,176,72,0.42);
-    box-shadow: 0 6px 14px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,232,160,0.08);
-    pointer-events: auto;
-    transform-origin: left center;
-    animation: lsBranchGrow 0.22s cubic-bezier(0.22, 1, 0.36, 1) backwards;
-}
-#landscapeCommandBranch.toLeft { transform-origin: right center; }
-@keyframes lsBranchGrow {
-    from { transform: scaleX(0.3); opacity: 0; }
-    to   { transform: none; opacity: 1; }
-}
-#landscapeCommandBranch .lsCommandBtn {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 8px;
-    width: 100%;
+    left: 0;
+    top: 0;
+    width: 24px;
     min-width: 0;
-    min-height: 26px;
-    padding: 4px 9px;
-    font-size: 11px;
-    letter-spacing: 0.1em;
-    text-indent: 0;
-    text-align: left;
-    animation: lsCommandRise 0.2s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    height: 24px;
+    min-height: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: rgba(236,210,142,0.85);
+    background: rgba(10,6,18,0.94);
+    border: 1px solid rgba(224,176,72,0.5);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.55);
+    pointer-events: auto;
+    transform: translate(calc(var(--x, 0px) - 50%), calc(var(--y, 0px) - 50%));
+    animation: lsRingNodeOut 0.3s cubic-bezier(0.34, 1.4, 0.64, 1) backwards;
     animation-delay: var(--tick-delay, 0s);
 }
-#landscapeCommandBranch .lsCommandBtn small { margin: 0; white-space: nowrap; }
-#landscapeCommandStem {
+.lsCommandBtn.lsRingCancel:active {
+    transform: translate(calc(var(--x, 0px) - 50%), calc(var(--y, 0px) - 50%)) scale(0.9);
+}
+.lsCommandBtn.lsRingCancel .lsRingIcon { width: 12px; height: 12px; stroke-width: 2; }
+
+/* 2段目: セフィロトの樹のような丸のツリー（円環の中心が原点） */
+#landscapeCommandBranch {
     position: absolute;
-    height: 1px;
-    background: linear-gradient(90deg, rgba(224,176,72,0.85), rgba(224,176,72,0.4));
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
     pointer-events: none;
 }
+.lsBranchLines {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1px;
+    height: 1px;
+    overflow: visible;
+    pointer-events: none;
+}
+.lsBranchLines line {
+    stroke: rgba(224,176,72,0.55);
+    stroke-width: 1;
+    stroke-dasharray: 120;
+    stroke-dashoffset: 120;
+    animation: lsBranchLineDraw 0.35s ease-out forwards;
+}
+@keyframes lsBranchLineDraw { to { stroke-dashoffset: 0; } }
+.lsBranchNode {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-family: inherit;
+    cursor: pointer;
+    pointer-events: auto;
+    transform: translate(calc(var(--x, 0px) - 50%), calc(var(--y, 0px) - 50%));
+    animation: lsBranchNodeIn 0.28s cubic-bezier(0.34, 1.4, 0.64, 1) backwards;
+    animation-delay: var(--tick-delay, 0s);
+    -webkit-tap-highlight-color: transparent;
+}
+@keyframes lsBranchNodeIn {
+    from { transform: translate(calc(var(--x, 0px) - 50%), calc(var(--y, 0px) - 50%)) scale(0.2); opacity: 0; }
+    to   { transform: translate(calc(var(--x, 0px) - 50%), calc(var(--y, 0px) - 50%)); opacity: 1; }
+}
+.lsBranchNode:active .lsBranchOrb { transform: scale(0.92); }
+.lsBranchOrb {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 50%;
+    color: rgba(236,210,142,0.92);
+    background: radial-gradient(circle at 50% 35%, rgba(58,22,82,0.96), rgba(14,6,24,0.96) 72%);
+    border: 1px solid rgba(224,176,72,0.62);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.55), inset 0 0 0 2px rgba(12,6,22,0.9);
+    transition: transform 0.12s ease, border-color 0.12s ease;
+}
+.lsBranchOrb em {
+    font-style: normal;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+}
+.lsBranchOrb .lsRingIcon { width: 15px; height: 15px; }
+.lsBranchOrb .abIcon.lsBranchArt { width: 100%; height: 100%; }
+.lsBranchNode:hover .lsBranchOrb { border-color: rgba(255,226,160,0.95); }
+.lsBranchText {
+    position: absolute;
+    top: 50%;
+    left: calc(100% + 5px);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    padding: 2px 6px;
+    white-space: nowrap;
+    text-align: left;
+    transform: translateY(-50%);
+    background: rgba(8,5,14,0.86);
+    border-left: 1px solid rgba(224,176,72,0.55);
+}
+.lsBranchNode[data-dir="left"] .lsBranchText {
+    left: auto;
+    right: calc(100% + 5px);
+    align-items: flex-end;
+    text-align: right;
+    border-left: 0;
+    border-right: 1px solid rgba(224,176,72,0.55);
+}
+.lsBranchText b {
+    color: #ecd28e;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    line-height: 1.1;
+}
+.lsBranchText small {
+    color: rgba(224,189,115,0.55);
+    font-size: 7.5px;
+    letter-spacing: 0.08em;
+    line-height: 1;
+}
+.lsBranchNode:disabled { cursor: default; opacity: 0.4; }
+
+/* 戦闘予測: 攻撃の種類を切り替える */
+.refFcSwitch {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+.refFcSwitch em { font-style: normal; }
+.refFcSwitch small {
+    color: rgba(224,189,115,0.5);
+    font-size: 8px;
+}
+.refFcSwitch button {
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    color: #ecd28e;
+    font-family: inherit;
+    font-size: 12px;
+    line-height: 14px;
+    background: rgba(58,22,82,0.8);
+    border: 1px solid rgba(224,176,72,0.5);
+    border-radius: 50%;
+    cursor: pointer;
+}
+.refFcSwitch button:active { transform: scale(0.9); }
+
+/* ユニット情報の欄は押すと詳細を開く */
+#landscapeUnitPanel[data-unit-id]:not([data-unit-id=""]) { cursor: pointer; }
 
 /* 対象を選んでいる間は、画面下のキャンセルだけ */
 #landscapeCommandList.targetCancel {
