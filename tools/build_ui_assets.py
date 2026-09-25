@@ -3,7 +3,7 @@
 使い方:
     py -3.12 tools/build_ui_assets.py
 
-入力: アイコン素材/SRPG_UI_21_assets/（「番号_名前.png」）
+入力: アイコン素材/SRPG_UI_21_assets/（「番号_名前.png」）と、発注書で作った素材（ORDERED_ASSETS）
 出力: assets/ui/英語名.png
 
 - パネル・ボタン・タブ・ゲージは、外側の淡い影を切り落とし、枠の線までの大きさにする
@@ -46,6 +46,19 @@ ASSETS = {
 }
 
 
+# 発注書（docs/30-planning/UI_ASSET_ORDER_2026-09-25.md）で作った素材。
+# (元のファイル, 書き出す名前, 切り落としのしきい値, 縮める先 ("width"|"height", px) または None)
+ORDERED_ASSETS = [
+    # ChatGPT（アイコン素材/発注UI/）: 光沢なし・細い金の線の枠
+    ("アイコン素材/発注UI/A1.png", "panel_a1", 128, ("width", 512)),     # 基本パネル（上辺だけ太い金の線）
+    ("アイコン素材/発注UI/A2.png", "panel_a2", 128, ("width", 512)),     # 基本パネル（敵: 上辺が赤）
+    ("アイコン素材/発注UI/A3.png", "heading_bar", 64, ("height", 256)),  # 見出しの飾り（縦の金の線）
+    ("アイコン素材/発注UI/A4.png", "separator_a4", 64, ("width", 1024)), # 区切り線（中央に菱形）
+    # Codex（アイコン素材/SRPG_UI_v2/）: 盤面の選択枠（線はマスの縁に合わせて使う）
+    ("アイコン素材/SRPG_UI_v2/D4_選択枠_味方.png", "select_ally_v2", None, None),
+]
+
+
 def trim(image: Image.Image, threshold: int) -> Image.Image:
     alpha = image.getchannel("A").point(lambda a: 255 if a >= threshold else 0)
     bbox = alpha.getbbox()
@@ -62,6 +75,22 @@ def main():
         image = Image.open(path).convert("RGBA")
         if threshold is not None:
             image = trim(image, threshold)
+        out = OUT_DIR / f"{name}.png"
+        image.save(out, optimize=True)
+        print(f"{path.name} -> {out.relative_to(ROOT).as_posix()} {image.size}")
+
+    for source, name, threshold, resize in ORDERED_ASSETS:
+        path = ROOT / source
+        if not path.exists():
+            print(f"見つからない（とばす）: {source}")
+            continue
+        image = Image.open(path).convert("RGBA")
+        if threshold is not None:
+            image = trim(image, threshold)
+        if resize:
+            side, size = resize
+            scale = size / (image.width if side == "width" else image.height)
+            image = image.resize((max(1, round(image.width * scale)), max(1, round(image.height * scale))), Image.LANCZOS)
         out = OUT_DIR / f"{name}.png"
         image.save(out, optimize=True)
         print(f"{path.name} -> {out.relative_to(ROOT).as_posix()} {image.size}")
