@@ -26,9 +26,10 @@ namespace Srpg.Battle
         [SerializeField] private Sprite tileSprite;     // 塗りの菱形（移動範囲）
         [SerializeField] private Sprite frameSprite;    // 枠の菱形（選択中）
         [SerializeField] private UnitSprite[] unitSprites = Array.Empty<UnitSprite>();
-        [SerializeField] private Sprite[] allyRingFrames = Array.Empty<Sprite>();    // 足元の光（味方＝青）
-        [SerializeField] private Sprite[] enemyRingFrames = Array.Empty<Sprite>();   // 足元の光（敵＝赤）
-        [SerializeField] private float ringWidth = 0.9f;                            // 足元の光の横幅（マスの横幅＝1）
+        // 敵に狙われているユニットの足元から立ちのぼる赤い粒子（原作者 2026-09-26）。
+        // 陣営は台座の色（味方＝白・敵＝黒）で示すので、ふだんは出さない
+        [SerializeField] private Sprite[] targetSparkFrames = Array.Empty<Sprite>();
+        [SerializeField] private float ringWidth = 0.9f;                            // 粒子の横幅（マスの横幅＝1）
         [SerializeField] private Sprite footGlowSprite;                             // 足元の淡い楕円（台座がないときに使う）
         [SerializeField] private Sprite baseAllySprite;                             // 駒の台座（味方＝白。原作者の素材）
         [SerializeField] private Sprite baseEnemySprite;                            // 駒の台座（敵＝黒）
@@ -139,7 +140,7 @@ namespace Srpg.Battle
                     renderer.transform.localScale = new Vector3(scale, scale, 1f);
                 }
                 // 足元の光: 味方は青、敵は赤（原作者 2026-09-26: 敵か味方かを見分けやすく）。キャラの絵の後ろに置く
-                var frames = source.side == "enemy" ? enemyRingFrames : allyRingFrames;
+                var frames = targetSparkFrames;
                 SpriteRenderer ring = null;
                 if (frames != null && frames.Length > 0)
                 {
@@ -151,6 +152,7 @@ namespace Srpg.Battle
                     // ユニットごとに動きの始まりをずらす
                     float offset = (Mathf.Abs(source.id.GetHashCode()) % 1000) / 1000f * frames.Length / 20f;
                     ring.gameObject.AddComponent<SpriteFlipbook>().Setup(frames, 20f, offset);
+                    ring.gameObject.SetActive(false);   // 狙われたときだけ出す（SetTargeted）
                 }
                 // 粒は立ちのぼって消えるのをくり返すため、陣営の色の淡い楕円を足元に常に敷く
                 // 駒の台座（TRPGの駒のように、キャラを台座に立たせる。原作者の動画の表現と素材 2026-09-26）
@@ -258,6 +260,13 @@ namespace Srpg.Battle
                 return;
             }
             Deselect();
+        }
+
+        /// <summary>敵に狙われている印（足元の赤い粒子）を出す・消す。敵の行動予告（M1-c）から呼ぶ</summary>
+        public void SetTargeted(string unitId, bool targeted)
+        {
+            var unit = units.FirstOrDefault(u => u.source.id == unitId);
+            if (unit?.ring != null) unit.ring.gameObject.SetActive(targeted);
         }
 
         public void Select(string unitId)

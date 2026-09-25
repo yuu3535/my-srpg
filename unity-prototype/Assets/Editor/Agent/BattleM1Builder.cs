@@ -199,8 +199,7 @@ namespace Srpg.EditorAgent
             so.FindProperty("footGlowSprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(FootGlowPath);
             so.FindProperty("baseAllySprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(BaseAllyPath);
             so.FindProperty("baseEnemySprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(BaseEnemyPath);
-            SetSpriteArray(so, "allyRingFrames", AllyRingDir);
-            SetSpriteArray(so, "enemyRingFrames", EnemyRingDir);
+            SetSpriteArray(so, "targetSparkFrames", EnemyRingDir);   // 赤い粒子＝狙われている印
             var spritesProp = so.FindProperty("unitSprites");
             var withToken = data.units.Where(u => !string.IsNullOrEmpty(u.token)).ToArray();
             spritesProp.arraySize = withToken.Length;

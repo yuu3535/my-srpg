@@ -21,7 +21,11 @@ namespace Srpg.Tests
             var controller = Object.FindFirstObjectByType<BattleM1Controller>();
             Assert.IsNotNull(controller, "BattleM1Controller がない");
             Assert.AreEqual(7, controller.Units.Count);   // カリマは背景を透明にした絵ができるまで出さない
-            Assert.IsTrue(controller.Units.All(u => u.ring != null), "全員の足元に光がある");
+            // 赤い粒子は、ふだんは出さず、狙われたときだけ出す
+            Assert.IsTrue(controller.Units.All(u => u.ring != null && !u.ring.gameObject.activeSelf), "ふだんは足元の粒子を出さない");
+            controller.SetTargeted("arshe", true);
+            Assert.IsTrue(controller.Units.First(u => u.source.id == "arshe").ring.gameObject.activeSelf, "狙われると赤い粒子が出る");
+            controller.SetTargeted("arshe", false);
             Assert.IsTrue(controller.Units.All(u => u.unitBase != null), "全員が台座に立つ");
             // 台座は味方＝白、敵＝黒（原作者 2026-09-26）
             StringAssert.Contains("enemy", controller.Units.First(u => u.source.side == "enemy").unitBase.sprite.name);
