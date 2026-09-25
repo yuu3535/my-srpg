@@ -15,7 +15,9 @@
 | UIの方向性と試作方針 | [`10-design/ui/UNITY_SRPG_UI_DESIGN_DIRECTION_DRAFT.md`](10-design/ui/UNITY_SRPG_UI_DESIGN_DIRECTION_DRAFT.md) |
 | 現在のブラウザ版に何が実装されているか | [`20-implementation/CURRENT_GAME_SYSTEM_2026-09-21.md`](20-implementation/CURRENT_GAME_SYSTEM_2026-09-21.md) |
 | 次に何をするか | [`30-planning/NEXT_ACTION_QUEUE.md`](30-planning/NEXT_ACTION_QUEUE.md) |
-| 直近の作業内容 | [`90-worklogs/WORK_MEMO_2026-09-24.md`](90-worklogs/WORK_MEMO_2026-09-24.md) |
+| 直近の作業内容 | [`90-worklogs/WORK_MEMO_2026-09-26.md`](90-worklogs/WORK_MEMO_2026-09-26.md) |
+| マップ資料の最新版と旧案の区分 | [`10-design/map/README.md`](10-design/map/README.md) |
+| Unityアイソメマップの制作仕様 | [`10-design/map/UNITY_ISOMETRIC_MAP_PRODUCTION_GUIDE_2026-09-26.md`](10-design/map/UNITY_ISOMETRIC_MAP_PRODUCTION_GUIDE_2026-09-26.md) |
 
 ## フォルダの役割
 
@@ -38,6 +40,12 @@
 
 - [`ui/UNITY_SRPG_UI_DESIGN_DIRECTION_DRAFT.md`](10-design/ui/UNITY_SRPG_UI_DESIGN_DIRECTION_DRAFT.md)：Unity向けUI設計方針のたたき台
 - [`ui/WORLD_UI_DIRECTION_MEMO.md`](10-design/ui/WORLD_UI_DIRECTION_MEMO.md)：世界観とUI表現の方向性
+
+#### 戦闘マップ
+
+- [`map/README.md`](10-design/map/README.md)：旧案、ブラウザ試作、Unity最新版の区分と読む順番
+- [`map/MAP_WORLD_AND_ART_DIRECTION_2026-09-26.md`](10-design/map/MAP_WORLD_AND_ART_DIRECTION_2026-09-26.md)：原作TRPGと百年戦争編をマップへ翻訳する世界観・美術基準
+- [`map/UNITY_ISOMETRIC_MAP_PRODUCTION_GUIDE_2026-09-26.md`](10-design/map/UNITY_ISOMETRIC_MAP_PRODUCTION_GUIDE_2026-09-26.md)：2:1アイソメトリック盤面の画像・レイヤー・Unity受け渡し仕様
 
 ### `20-implementation` — 現在の実装事実
 

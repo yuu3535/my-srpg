@@ -1,5 +1,8 @@
 # 斜め見下ろしマップ絵の発注（ChatGPT向け）
 
+> **区分: ブラウザ試作向け・Unity共通の寸法参考**
+> この文書はブラウザ版で一枚絵を試すために作られた。12×8、1472×880px、1マス128×64pxという下絵の寸法はUnity M1でも共通だが、Unity完成版では高い地形部品を分離する。現行の制作仕様は `docs/10-design/map/UNITY_ISOMETRIC_MAP_PRODUCTION_GUIDE_2026-09-26.md` を参照する。
+
 作成: 2026-09-26 / Claude Code
 状態: **試作対象**（ブラウザ版で1マップ試す。原作者 2026-09-26）
 関連: `tools/make_iso_map.py`、`battleDefinitions.js` の `battle_trial_adopted.isoView`

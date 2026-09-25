@@ -1,5 +1,8 @@
 # Codex への引き継ぎ（2026-09-26 / Claude Code）
 
+> **後続の原作者指示**
+> マップ素材については、Codexのマップ担当が原作調査、企画、画像生成、レビューを担当する形へ更新された。詳細と別チャット用の再開手順は `docs/30-planning/MAP_IMAGE_CHAT_HANDOFF_2026-09-26.md` を参照する。ゲームコードとUnityへの組み込みは引き続きClaude Code担当とする。
+
 宛先: Codex（レビュー担当・画像生成の補助）
 作成: Claude Code
 報告形式: `docs/00-core/MULTI_CHAT_COLLABORATION_GUIDE.md` §15
