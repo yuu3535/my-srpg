@@ -226,8 +226,8 @@ function trialArtCommand(art) {
 }
 
 /** 試験用ユニットの魔法コマンドの中身（セット中の魔法戦技 → 魔導書の順） */
-function trialMagicMenuFor(unitId, causeLevel) {
-    const loadout = trialSkillLoadoutFor(unitId, causeLevel);
+function trialMagicMenuFor(unitId, causeLevel, selection = null) {
+    const loadout = trialSkillLoadoutFor(unitId, causeLevel, TRIAL_CLASS_LEVEL, selection);
     const menu = loadout.combatArts
         .filter(art => art && trialArtCommand(art) === "magic" && TRIAL_MAGIC_ART_SPELLS[art.name])
         .map(art => ({ name: art.name, spell: TRIAL_MAGIC_ART_SPELLS[art.name], source: "戦技" }));
@@ -239,8 +239,8 @@ function trialMagicMenuFor(unitId, causeLevel) {
 }
 
 /** 攻撃コマンドに出す物理の戦技（implemented=false は効果未実装で選べない） */
-function trialPhysicalArtsFor(unitId, causeLevel) {
-    return trialSkillLoadoutFor(unitId, causeLevel).combatArts
+function trialPhysicalArtsFor(unitId, causeLevel, selection = null) {
+    return trialSkillLoadoutFor(unitId, causeLevel, TRIAL_CLASS_LEVEL, selection).combatArts
         .filter(art => art && trialArtCommand(art) === "attack")
         .map(art => ({ name: art.name, desc: art.desc, implemented: TRIAL_IMPLEMENTED_PHYSICAL_ARTS.has(art.name) }));
 }
@@ -249,44 +249,84 @@ function trialFillLoadoutSlots(items, count) {
     return Array.from({ length: count }, (_, index) => items[index] || null);
 }
 
-/**
- * 試験画面・試験戦闘のセット内容。
- * セット変更機能が未実装のため、習得順に空き枠へ入れる。
- */
-function trialSkillLoadoutFor(unitId, causeLevel, classLevel = TRIAL_CLASS_LEVEL) {
+// セットを入れ替えられる区分（兵種固有枠は現在兵種で決まるため入れ替え対象外）
+const TRIAL_SELECTABLE_CATEGORIES = Object.freeze(["classSkills", "causeSkills", "combatArts"]);
+
+/** 習得済みの能力（セット前の一覧）。区分ごとに習得順 */
+function trialLearnedAbilitiesFor(unitId, causeLevel, classLevel = TRIAL_CLASS_LEVEL) {
     const cls = TRIAL_UNIT_CLASS[unitId] || { line: null };
     const classLearned = (cls.line ? TRIAL_CLASS_SKILLS[cls.line] || [] : [])
         .filter(([need]) => need !== "マスター" && classLevel >= Number(need.replace("兵種Lv", "")))
         .map(([need, name, desc, kind, statBonus]) => ({ name, desc, source: need, kind, statBonus }));
     const causeLearned = (TRIAL_CAUSE_ABILITIES[unitId] || [])
         .filter(ability => ability.level <= Number(causeLevel || 1));
-    // 専用兵種のLv50スキルは、専用兵種が現在兵種のときだけ兵種固有枠に置ける（試験では最初の兵種のため置かない）
-    const exclusive = causeLearned.find(ability => ability.type === "exclusive") || null;
-    const inExclusiveClass = cls.line === "専用兵種";
     return {
-        personal: TRIAL_PERSONAL_SKILLS[unitId] || null,
-        classSkills: trialFillLoadoutSlots(
-            classLearned.filter(skill => skill.kind !== "art"),
-            TRIAL_LOADOUT_SLOT_COUNTS.classSkills
-        ),
-        classUnique: trialFillLoadoutSlots(
-            exclusive && inExclusiveClass ? [exclusive] : [],
-            TRIAL_LOADOUT_SLOT_COUNTS.classUnique
-        ),
-        causeSkills: trialFillLoadoutSlots(
-            causeLearned.filter(ability => ability.type === "skill"),
-            TRIAL_LOADOUT_SLOT_COUNTS.causeSkills
-        ),
-        combatArts: trialFillLoadoutSlots(
-            causeLearned.filter(ability => ability.type === "art"),
-            TRIAL_LOADOUT_SLOT_COUNTS.combatArts
-        ),
+        classSkills: classLearned.filter(skill => skill.kind !== "art"),
+        causeSkills: causeLearned.filter(ability => ability.type === "skill"),
+        combatArts: causeLearned.filter(ability => ability.type === "art"),
+        exclusive: causeLearned.find(ability => ability.type === "exclusive") || null,
     };
 }
 
+/**
+ * 試験画面・試験戦闘のセット内容。
+ *   selection: { classSkills: [名前], causeSkills: [名前], combatArts: [名前] }（身支度で選んだもの）。
+ *   区分の指定がなければ、習得順に空き枠へ入れる。習得していない名前は無視する。
+ */
+function trialSkillLoadoutFor(unitId, causeLevel, classLevel = TRIAL_CLASS_LEVEL, selection = null) {
+    const cls = TRIAL_UNIT_CLASS[unitId] || { line: null };
+    const learned = trialLearnedAbilitiesFor(unitId, causeLevel, classLevel);
+    const pick = category => {
+        const names = selection?.[category];
+        if (!Array.isArray(names)) return learned[category];
+        return names
+            .map(name => learned[category].find(item => item.name === name))
+            .filter(Boolean);
+    };
+    // 専用兵種のLv50スキルは、専用兵種が現在兵種のときだけ兵種固有枠に置ける（試験では最初の兵種のため置かない）
+    const inExclusiveClass = cls.line === "専用兵種";
+    return {
+        personal: TRIAL_PERSONAL_SKILLS[unitId] || null,
+        classSkills: trialFillLoadoutSlots(pick("classSkills"), TRIAL_LOADOUT_SLOT_COUNTS.classSkills),
+        classUnique: trialFillLoadoutSlots(
+            learned.exclusive && inExclusiveClass ? [learned.exclusive] : [],
+            TRIAL_LOADOUT_SLOT_COUNTS.classUnique
+        ),
+        causeSkills: trialFillLoadoutSlots(pick("causeSkills"), TRIAL_LOADOUT_SLOT_COUNTS.causeSkills),
+        combatArts: trialFillLoadoutSlots(pick("combatArts"), TRIAL_LOADOUT_SLOT_COUNTS.combatArts),
+    };
+}
+
+/** 今のセット内容を selection の形（名前の配列）にする */
+function trialSelectionFromLoadout(loadout) {
+    return Object.fromEntries(TRIAL_SELECTABLE_CATEGORIES.map(category => [
+        category,
+        (loadout[category] || []).filter(Boolean).map(item => item.name),
+    ]));
+}
+
+/**
+ * 身支度でのセットの付け外し。付けている能力なら外し、外れている能力なら空き枠に付ける。
+ * 返り値: { selection, changed, reason }。枠がいっぱいのときは changed=false, reason="full"
+ */
+function trialToggleLoadoutSelection(unitId, causeLevel, selection, category, name, classLevel = TRIAL_CLASS_LEVEL) {
+    if (!TRIAL_SELECTABLE_CATEGORIES.includes(category)) return { selection, changed: false, reason: "locked" };
+    const learned = trialLearnedAbilitiesFor(unitId, causeLevel, classLevel);
+    if (!learned[category].some(item => item.name === name)) return { selection, changed: false, reason: "unknown" };
+    const current = trialSelectionFromLoadout(trialSkillLoadoutFor(unitId, causeLevel, classLevel, selection));
+    const names = current[category];
+    if (names.includes(name)) {
+        return { selection: { ...current, [category]: names.filter(n => n !== name) }, changed: true, reason: "removed" };
+    }
+    if (names.length >= TRIAL_LOADOUT_SLOT_COUNTS[category]) {
+        return { selection: current, changed: false, reason: "full" };
+    }
+    return { selection: { ...current, [category]: [...names, name] }, changed: true, reason: "added" };
+}
+
 /** セット中の能力の名前（個人スキルを含む）。戦闘効果の判定に使う */
-function trialAbilityNamesFor(unitId, causeLevel) {
-    const loadout = trialSkillLoadoutFor(unitId, causeLevel);
+function trialAbilityNamesFor(unitId, causeLevel, selection = null) {
+    const loadout = trialSkillLoadoutFor(unitId, causeLevel, TRIAL_CLASS_LEVEL, selection);
     return [
         loadout.personal,
         ...loadout.classSkills,
@@ -297,8 +337,8 @@ function trialAbilityNamesFor(unitId, causeLevel) {
 }
 
 /** セット中のスキルの無条件の能力値上昇（「技・魅力+10」など）を合計する */
-function trialLoadoutStatBonus(unitId, causeLevel) {
-    const loadout = trialSkillLoadoutFor(unitId, causeLevel);
+function trialLoadoutStatBonus(unitId, causeLevel, selection = null) {
+    const loadout = trialSkillLoadoutFor(unitId, causeLevel, TRIAL_CLASS_LEVEL, selection);
     const total = Object.fromEntries(TRIAL_STAT_KEYS.map(key => [key, 0]));
     for (const item of [...loadout.classSkills, ...loadout.classUnique, ...loadout.causeSkills]) {
         for (const [key, value] of Object.entries(item?.statBonus || {})) total[key] += value;
@@ -478,6 +518,10 @@ if (typeof module !== "undefined") {
         TRIAL_GRIMOIRES,
         trialMagicMenuFor,
         TRIAL_ABILITY_SOURCE,
+        TRIAL_SELECTABLE_CATEGORIES,
+        trialLearnedAbilitiesFor,
+        trialSelectionFromLoadout,
+        trialToggleLoadoutSelection,
         TRIAL_IMPLEMENTED_PHYSICAL_ARTS,
         trialArtCommand,
         trialPhysicalArtsFor,

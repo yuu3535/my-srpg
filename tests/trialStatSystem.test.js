@@ -19,6 +19,9 @@ const {
     trialAuraModifiers,
     trialAttackModifiers,
     trialAbilityChance,
+    trialLearnedAbilitiesFor,
+    trialToggleLoadoutSelection,
+    trialAbilityNamesFor,
 } = require("../trialStatSystem.js");
 
 const P = TRIAL_PROFILES;
@@ -181,6 +184,30 @@ assert.deepEqual(trialMagicMenuFor("ringholm", 30).map(m => m.name), ["召喚「
 assert.deepEqual(trialMagicMenuFor("young_karima", 25).map(m => m.name), ["結界", "破壊", "治癒の魔導書"]);
 assert.equal(trialMagicMenuFor("arshe", 25).some(m => m.name === "両断"), false);
 assert.deepEqual(trialMagicMenuFor("dylan", 25), []);
+
+// 身支度: 習得済みの一覧と、セットの付け外し
+const ringLearned = trialLearnedAbilitiesFor("ringholm", 45);
+assert.deepEqual(ringLearned.causeSkills.map(a => a.name), ["黒の一族", "死神", "カウンター", "戦闘指揮", "剣の舞"]);
+// 既定（習得順）の3枠がいっぱい → 4つ目は付けられない
+let sel = null;
+let toggled = trialToggleLoadoutSelection("ringholm", 45, sel, "causeSkills", "剣の舞");
+assert.deepEqual([toggled.changed, toggled.reason], [false, "full"]);
+// 外してから付ける
+toggled = trialToggleLoadoutSelection("ringholm", 45, sel, "causeSkills", "死神");
+assert.deepEqual(toggled.selection.causeSkills, ["黒の一族", "カウンター"]);
+toggled = trialToggleLoadoutSelection("ringholm", 45, toggled.selection, "causeSkills", "剣の舞");
+assert.deepEqual(toggled.selection.causeSkills, ["黒の一族", "カウンター", "剣の舞"]);
+sel = toggled.selection;
+assert.deepEqual(trialSkillLoadoutFor("ringholm", 45, 1, sel).causeSkills.map(a => a.name), ["黒の一族", "カウンター", "剣の舞"]);
+assert.equal(trialAbilityNamesFor("ringholm", 45, sel).includes("死神"), false);
+// 戦技は4枠。習得していない名前・入れ替えできない区分は変わらない
+assert.equal(trialToggleLoadoutSelection("ringholm", 45, sel, "combatArts", "両断").reason, "unknown");
+assert.equal(trialToggleLoadoutSelection("ringholm", 45, sel, "classUnique", "勇者の器").reason, "locked");
+// 戦技を外すと、その戦技は攻撃・魔法コマンドに出ない
+const noRevenge = trialToggleLoadoutSelection("ringholm", 30, null, "combatArts", "復讐").selection;
+assert.deepEqual(trialPhysicalArtsFor("ringholm", 30, noRevenge).map(a => a.name), ["円舞"]);
+const noHitodama = trialToggleLoadoutSelection("ringholm", 30, null, "combatArts", "召喚「ヒトダマ」").selection;
+assert.deepEqual(trialMagicMenuFor("ringholm", 30, noHitodama).map(m => m.name), ["火の魔導書"]);
 
 // 追撃: 速さ差5以上
 assert.equal(trialCanFollowUp({ spd: 30 }, { spd: 25 }), true);

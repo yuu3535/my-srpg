@@ -420,6 +420,11 @@ function renderUnits() {
 // =============================================
 function onUnitClick(unit) {
     if (_mapDragged) { _mapDragged = false; return; }
+    // 出撃準備（ブリーフィング）中はユニット情報を見るだけ
+    if (typeof isBriefingActive === "function" && isBriefingActive()) {
+        renderLandscapeUnitPanel(unit);
+        return;
+    }
     if (gameMode !== "battle" || battleOver) return;
 
     // ── 攻撃対象選択中 ──
@@ -505,6 +510,7 @@ function onUnitClick(unit) {
 }
 
 function onCellClick(row, col) {
+    if (typeof isBriefingActive === "function" && isBriefingActive()) return;   // 出撃準備中は操作しない
     if (_mapDragged) { _mapDragged = false; return; }
     if (gameMode !== "battle" || battleOver) return;
 
@@ -1085,18 +1091,30 @@ function applyTrialProfile(unit) {
         unit.trialSourceId = source.id;
     }
     const level = trialCauseLevelFor(profile);
-    const stats = trialStatsAt(profile, level);
-    // セット中のスキルの無条件の能力値上昇（「技・魅力+10」など）を加える
-    const loadoutBonus = trialLoadoutStatBonus(unit.id, level);
-    for (const key of TRIAL_STAT_KEYS) stats[key] += loadoutBonus[key] || 0;
-    unit.trialAbilityNames = trialAbilityNamesFor(unit.id, level);
+    unit.trialBaseStats = trialStatsAt(profile, level);
     unit.trialLuck = profile.luck;
     unit.trialPrayerUsed = false;
     unit.trialLevel = level;
-    unit.trialStats = stats;
     unit.trialSiz = profile.siz;
-    unit.hp = stats.hp;
+    refreshTrialLoadout(unit);
+    unit.hp = unit.maxHp;
+}
+
+/**
+ * [trial] セット内容（unit.trialLoadoutSelection）から、能力値と能力名を作り直す。
+ * 身支度でセットを変えたときにも呼ぶ。セット中のスキルの無条件の能力値上昇（「技・魅力+10」など）を加える
+ */
+function refreshTrialLoadout(unit) {
+    if (!unit?.trialBaseStats) return;
+    const selection = unit.trialLoadoutSelection || null;
+    const bonus = trialLoadoutStatBonus(unit.id, unit.trialLevel, selection);
+    const stats = { ...unit.trialBaseStats };
+    for (const key of TRIAL_STAT_KEYS) stats[key] += bonus[key] || 0;
+    const wasFull = !unit.maxHp || unit.hp >= unit.maxHp;
+    unit.trialStats = stats;
+    unit.trialAbilityNames = trialAbilityNamesFor(unit.id, unit.trialLevel, selection);
     unit.maxHp = stats.hp;
+    unit.hp = wasFull ? stats.hp : Math.min(unit.hp, stats.hp);
 }
 
 function trialHasAbility(unit, name) {
@@ -2187,7 +2205,7 @@ function renderLandscapeCommandRail(unit = selectedUnit) {
 function getLandscapeMagicEntries(unit) {
     if (unit?.trialStats && typeof trialMagicMenuFor === "function") {
         const rangeBonus = trialHasAbility(unit, "魔法射程+1") ? 1 : 0;
-        return trialMagicMenuFor(unit.id, unit.trialLevel)
+        return trialMagicMenuFor(unit.id, unit.trialLevel, unit.trialLoadoutSelection || null)
             .filter(item => SPELLS_DATA[item.spell])
             .map(item => {
                 const base = SPELLS_DATA[item.spell];
@@ -2259,7 +2277,7 @@ function renderLandscapeSubCommandRail(unit, kind) {
             syncLandscapeBattleUi(unit);
         }));
         if (unit.trialStats) {
-            trialPhysicalArtsFor(unit.id, unit.trialLevel).forEach(art => {
+            trialPhysicalArtsFor(unit.id, unit.trialLevel, unit.trialLoadoutSelection || null).forEach(art => {
                 const baseSkill = getAttackSkillVal(unit);
                 const btn = addButton(art.name, art.implemented ? "戦技" : "未実装", () => {
                     if (!art.implemented) return;
@@ -5130,7 +5148,7 @@ function renderTrialStatusSheet(unit) {
     const courage = getEffectiveCourage(unit);
     const d = trialDerivedValues(stats, unit.trialSiz, courage);
     const cls = TRIAL_UNIT_CLASS[unit.id] || { name: "未設定", line: null };
-    const loadout = trialSkillLoadoutFor(unit.id, unit.trialLevel, TRIAL_CLASS_LEVEL);
+    const loadout = trialSkillLoadoutFor(unit.id, unit.trialLevel, TRIAL_CLASS_LEVEL, unit.trialLoadoutSelection || null);
     const pct = (cur, max) => max > 0 ? Math.max(0, Math.min(100, cur / max * 100)) : 0;
     const metric = (label, value, extra = "", tip = "") =>
         `<div class="adventureMetric"${tip ? ` title="${tip}"` : ""}><span>${label}</span><b>${value}${extra}</b></div>`;
@@ -5828,6 +5846,8 @@ function startBattleSession(battleId, options = {}) {
     battleEntrySource = source;
     fromScenario = source === "scenario";
     setBattleMode(battleId);
+    // [trial] 試験の戦闘は、戦闘開始前に出撃準備（ブリーフィング）を挟む
+    if (typeof openBriefing === "function" && isTrialBattleSession(battleId)) openBriefing();
     return true;
 }
 
