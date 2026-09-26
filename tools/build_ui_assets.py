@@ -71,7 +71,38 @@ ORDERED_ASSETS = [
     ("アイコン素材/発注UI/D4.png", "select_ally_d4", 128, ("square", 256)),   # 選択中の味方
     ("アイコン素材/発注UI/D5.png", "select_enemy_d5", 128, ("square", 256)),  # 攻撃の相手
     ("アイコン素材/発注UI/D6.png", "move_dest", 128, ("square", 256)),        # 移動先の印
+    # ChatGPT 第3版（docs/30-planning/MAP_UI_ASSET_ORDER_2026-09-26_v3.md）。画面の2倍の大きさで書き出す
+    ("アイコン素材/発注UI_v3/F2-1.png", "fc_emblem_sword", 64, ("height", 264)),  # 帯の真ん中の紋章（交差した剣）。魔法でも同じ（F2-2 の本は使わない）
+    ("アイコン素材/発注UI_v3/F3-1.png", "button_f3_normal", 128, ("height", 50)),  # 「攻撃する」（紫の帯）
+    ("アイコン素材/発注UI_v3/F3-2.png", "button_f3_pressed", 128, ("height", 50)),
+    ("アイコン素材/発注UI_v3/F3-3.png", "button_f3_red", 128, ("height", 50)),     # 届いたのは赤の帯（灰色の「使えない時」ではない）
+    ("アイコン素材/発注UI_v3/F5.png", "heading_flourish", 64, ("width", 400)),     # 見出しの下の飾り
+    ("アイコン素材/発注UI_v3/R1.png", "roster_frame", 128, ("width", 92)),         # 味方一覧の枠（上下に伸ばす）
+    ("アイコン素材/発注UI_v3/A5-1.png", "face_frame", 128, ("width", 96)),         # 顔枠: 通常
+    ("アイコン素材/発注UI_v3/A5-2.png", "face_frame_selected", 128, ("width", 96)),  # 選択中
+    ("アイコン素材/発注UI_v3/A5-3.png", "face_frame_done", 128, ("width", 96)),    # 行動済み
+    # 盤面の印: 光も絵のうち（ごく薄い光だけ切る）
+    ("アイコン素材/発注UI_v3/P1.png", "mark_target", 8, ("square", 96)),     # 狙う相手の頭上
+    ("アイコン素材/発注UI_v3/P2.png", "mark_selected", 8, ("width", 72)),    # 選んだ味方の頭上
+    ("アイコン素材/発注UI_v3/P3.png", "mark_intent", 8, ("square", 48)),     # 行動予告のある敵
 ]
+
+# 武器の種類のアイコン（F4）: 形のまわりで切り、正方形の真ん中に置く。
+# 「魔導書」は「魔法」（燃える生命核）に変わった（ChatGPT CLAUDE_CODE_HANDOFF_F4_MAGIC_2026-09-27）
+WEAPON_ICONS = [
+    ("アイコン素材/発注UI_v3/F4-剣.png", "weapon_sword"),
+    ("アイコン素材/発注UI_v3/F4-槍.png", "weapon_lance"),
+    ("アイコン素材/発注UI_v3/F4-斧.png", "weapon_axe"),
+    ("アイコン素材/発注UI_v3/F4-弓.png", "weapon_bow"),
+    ("アイコン素材/発注UI_v3/F4-杖.png", "weapon_staff"),
+    ("アイコン素材/発注UI_v3/F4-魔法.png", "weapon_magic"),
+]
+
+# 戦闘予測の帯の枠（F1）。ゲームでは 681×132px。枠の線と飾りは細く保ち、間の無地だけを伸ばす
+BAND_FRAME = ("アイコン素材/発注UI_v3/F1.png", "fc_band", (1362, 264), 0.36)
+# 切り抜いた F1（2037×399）の、縮めるだけの所（四隅・辺の真ん中の菱形）と、伸ばす所
+BAND_X = [(0, 200, False), (200, 870, True), (870, 1167, False), (1167, 1837, True), (1837, 2037, False)]
+BAND_Y = [(0, 138, False), (138, 166, True), (166, 233, False), (233, 261, True), (261, 399, False)]
 
 
 def even_frame(image: Image.Image, rows: int = 28) -> Image.Image:
@@ -108,6 +139,63 @@ def violet_fill(image: Image.Image) -> Image.Image:
             if a > 0 and r < 90 and r - b < 30:   # 金の線ではない暗い地
                 px[x, y] = (*fill, a)
     return out
+
+
+def slice_resize(image: Image.Image, size, scale: float, xs, ys) -> Image.Image:
+    """
+    枠の絵を、線と飾りの太さを保ったまま大きさを変える（9分割を細かくしたもの）。
+    xs・ys は (始まり, 終わり, 伸ばすか)。伸ばさない所は scale 倍、伸ばす所で残りを埋める
+    """
+    def plan(segs, total):
+        fixed = sum(round((e - s) * scale) for s, e, stretch in segs if not stretch)
+        stretch_src = sum(e - s for s, e, stretch in segs if stretch)
+        out, pos = [], 0
+        for i, (s, e, stretch) in enumerate(segs):
+            if i == len(segs) - 1:
+                n = total - pos
+            elif stretch:
+                n = round((total - fixed) * (e - s) / stretch_src)
+            else:
+                n = round((e - s) * scale)
+            out.append((s, e, pos, n))
+            pos += n
+        return out
+    W, H = size
+    result = Image.new("RGBA", (W, H))
+    for sx0, sx1, dx, w in plan(xs, W):
+        for sy0, sy1, dy, h in plan(ys, H):
+            if w > 0 and h > 0:
+                result.paste(image.crop((sx0, sy0, sx1, sy1)).resize((w, h), Image.LANCZOS), (dx, dy))
+    return result
+
+
+def replace_fill(framed: Image.Image, source: Image.Image, inset: int) -> Image.Image:
+    """
+    伸ばした枠の中の地（縦に伸びて筋になる）を、元の絵の中の地をそのまま縮めたものに替える。
+    金の線・飾り（明るい所）だけは枠の絵のまま残す
+    """
+    W, H = framed.size
+    sw, sh = source.size
+    fill = source.crop((round(sw * 0.15), round(sh * 0.25), round(sw * 0.85), round(sh * 0.75))).resize((W - inset * 2, H - inset * 2), Image.LANCZOS)
+    out = framed.copy()
+    fp, op = fill.load(), out.load()
+    for y in range(fill.height):
+        for x in range(fill.width):
+            r, g, b, a = op[x + inset, y + inset]
+            if max(r, g) < 70:   # 金ではない暗い地
+                op[x + inset, y + inset] = fp[x, y]
+    return out
+
+
+def square_icon(image: Image.Image, size: int, margin: float = 0.06) -> Image.Image:
+    """形のまわりで切ったアイコンを、正方形の真ん中に置く"""
+    inner = round(size * (1 - margin * 2))
+    icon = image.copy()
+    icon.thumbnail((inner, inner), Image.LANCZOS)
+    out = Image.new("RGBA", (size, size))
+    out.paste(icon, ((size - icon.width) // 2, (size - icon.height) // 2), icon)
+    return out
+
 
 
 def trim(image: Image.Image, threshold: int) -> Image.Image:
@@ -156,6 +244,21 @@ def main():
         even.save(OUT_DIR / "panel_even.png", optimize=True)
         reddish(even).save(OUT_DIR / "panel_even_enemy.png", optimize=True)
         print("panel_a1.png -> assets/ui/panel_even.png, panel_even_enemy.png")
+    for source, name in WEAPON_ICONS:
+        path = ROOT / source
+        if not path.exists():
+            print(f"見つからない（とばす）: {source}")
+            continue
+        square_icon(trim(Image.open(path).convert("RGBA"), 64), 64).save(OUT_DIR / f"{name}.png", optimize=True)
+        print(f"{path.name} -> assets/ui/{name}.png")
+
+    source, name, size, scale = BAND_FRAME
+    if (ROOT / source).exists():
+        band = trim(Image.open(ROOT / source).convert("RGBA"), 128)
+        replace_fill(slice_resize(band, size, scale, BAND_X, BAND_Y), band, 12).save(OUT_DIR / f"{name}.png", optimize=True)
+        print(f"F1.png -> assets/ui/{name}.png {size}")
+
+
     b2 = OUT_DIR / "button_b2_normal.png"
     if b2.exists():
         violet_fill(Image.open(b2).convert("RGBA")).save(OUT_DIR / "button_violet.png", optimize=True)
