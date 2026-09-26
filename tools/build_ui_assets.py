@@ -47,7 +47,7 @@ ASSETS = {
 
 
 # 発注書（docs/30-planning/UI_ASSET_ORDER_2026-09-25.md）で作った素材。
-# (元のファイル, 書き出す名前, 切り落としのしきい値, 縮める先 ("width"|"height", px) または None)
+# (元のファイル, 書き出す名前, 切り落としのしきい値, 縮める先 ("width"|"height"|"square", px) または None)
 ORDERED_ASSETS = [
     # ChatGPT（アイコン素材/発注UI/）: 光沢なし・細い金の線の枠
     ("アイコン素材/発注UI/A1.png", "panel_a1", 128, ("width", 512)),     # 基本パネル（上辺だけ太い金の線）
@@ -56,7 +56,58 @@ ORDERED_ASSETS = [
     ("アイコン素材/発注UI/A4.png", "separator_a4", 64, ("width", 1024)), # 区切り線（中央に菱形）
     # Codex（アイコン素材/SRPG_UI_v2/）: 盤面の選択枠（線はマスの縁に合わせて使う）
     ("アイコン素材/SRPG_UI_v2/D4_選択枠_味方.png", "select_ally_v2", None, None),
+    # ChatGPT 第2版（docs/30-planning/UI_ASSET_ORDER_2026-09-26_v2.md）
+    # ボタン: 縦を保ったまま横に伸ばす（飾りは左右の端だけ）
+    ("アイコン素材/発注UI/B1-1.png", "button_b1_normal", 128, ("width", 880)),    # 主ボタン（実行）: 赤銅の帯
+    ("アイコン素材/発注UI/B1-2.png", "button_b1_pressed", 128, ("width", 880)),
+    ("アイコン素材/発注UI/B1-3.png", "button_b1_disabled", 128, ("width", 880)),
+    ("アイコン素材/発注UI/B2-1.png", "button_b2_normal", 128, ("width", 880)),    # 副ボタン（戻る）: 黒紫の地に金の線
+    ("アイコン素材/発注UI/B2-2.png", "button_b2_pressed", 128, ("width", 880)),
+    ("アイコン素材/発注UI/B2-3_v2.png", "button_b2_disabled", 128, ("width", 880)),  # 作り直し版（縁が灰色）
+    # 盤面の印: 線までで切り抜き、マスの縁に線が来るようにする（外の光は切れる）
+    ("アイコン素材/発注UI/D1.png", "range_move", 128, ("square", 256)),       # 移動範囲（今は使わない。移動範囲は従来の青）
+    ("アイコン素材/発注UI/D2.png", "range_attack", 128, ("square", 256)),     # 攻撃範囲
+    ("アイコン素材/発注UI/D3.png", "range_support", 128, ("square", 256)),    # 補助範囲（転移など）
+    ("アイコン素材/発注UI/D4.png", "select_ally_d4", 128, ("square", 256)),   # 選択中の味方
+    ("アイコン素材/発注UI/D5.png", "select_enemy_d5", 128, ("square", 256)),  # 攻撃の相手
+    ("アイコン素材/発注UI/D6.png", "move_dest", 128, ("square", 256)),        # 移動先の印
 ]
+
+
+def even_frame(image: Image.Image, rows: int = 28) -> Image.Image:
+    """上辺だけ太いA1の枠を、上下同じ太さにする（下辺を上下反転して上辺に貼る。原作者 2026-09-26）"""
+    out = image.copy()
+    bottom = image.crop((0, image.height - rows, image.width, image.height)).transpose(Image.FLIP_TOP_BOTTOM)
+    out.paste(bottom, (0, 0))
+    return out
+
+
+def reddish(image: Image.Image) -> Image.Image:
+    """金の線だけを落ち着いた赤（#c95a4a 付近）にする。暗い地はそのまま"""
+    out = image.copy()
+    px = out.load()
+    for y in range(out.height):
+        for x in range(out.width):
+            r, g, b, a = px[x, y]
+            if r > 60 and r > b * 1.3:
+                px[x, y] = (round(r * 0.92), round(g * 0.45), round(b * 0.75), a)
+    return out
+
+
+def violet_fill(image: Image.Image) -> Image.Image:
+    """B2（黒紫の地に金の線）の地だけを紫の帯にする。「攻撃する」ボタン用（原作者の見本 2026-09-26）"""
+    out = image.copy()
+    px = out.load()
+    h = out.height
+    for y in range(h):
+        t = y / max(1, h - 1)
+        top, bottom = (104, 52, 150), (54, 24, 88)
+        fill = tuple(round(top[i] + (bottom[i] - top[i]) * t) for i in range(3))
+        for x in range(out.width):
+            r, g, b, a = px[x, y]
+            if a > 0 and r < 90 and r - b < 30:   # 金の線ではない暗い地
+                px[x, y] = (*fill, a)
+    return out
 
 
 def trim(image: Image.Image, threshold: int) -> Image.Image:
@@ -89,11 +140,26 @@ def main():
             image = trim(image, threshold)
         if resize:
             side, size = resize
-            scale = size / (image.width if side == "width" else image.height)
-            image = image.resize((max(1, round(image.width * scale)), max(1, round(image.height * scale))), Image.LANCZOS)
+            if side == "square":
+                image = image.resize((size, size), Image.LANCZOS)
+            else:
+                scale = size / (image.width if side == "width" else image.height)
+                image = image.resize((max(1, round(image.width * scale)), max(1, round(image.height * scale))), Image.LANCZOS)
         out = OUT_DIR / f"{name}.png"
         image.save(out, optimize=True)
         print(f"{path.name} -> {out.relative_to(ROOT).as_posix()} {image.size}")
+
+    # 上下同じ太さの枠（味方・敵）
+    a1 = OUT_DIR / "panel_a1.png"
+    if a1.exists():
+        even = even_frame(Image.open(a1).convert("RGBA"))
+        even.save(OUT_DIR / "panel_even.png", optimize=True)
+        reddish(even).save(OUT_DIR / "panel_even_enemy.png", optimize=True)
+        print("panel_a1.png -> assets/ui/panel_even.png, panel_even_enemy.png")
+    b2 = OUT_DIR / "button_b2_normal.png"
+    if b2.exists():
+        violet_fill(Image.open(b2).convert("RGBA")).save(OUT_DIR / "button_violet.png", optimize=True)
+        print("button_b2_normal.png -> assets/ui/button_violet.png")
 
 
 if __name__ == "__main__":

@@ -2843,6 +2843,8 @@ const LS_COMMAND_ICON_PATHS = {
     "持ち物": "M9 4.5h6l-1.3 2.7c2.9 1.2 4.8 4 4.8 7.1 0 2.8-2.9 4.7-6.5 4.7s-6.5-1.9-6.5-4.7c0-3.1 1.9-5.9 4.8-7.1zM9.6 7.2h4.8",
     "待機":  "M7 4h10M7 20h10M8 4c0 4 4 5 4 8s-4 4-4 8M16 4c0 4-4 5-4 8s4 4 4 8",
     "戻る":  "M9 5.5l-4 4 4 4M5 9.5h9a5 5 0 0 1 0 10h-3",
+    "交差":  "M5 19l3-3M6.5 14.5l3 3M9 16L19 6V4h-2L7 14M19 19l-3-3M17.5 14.5l-3 3M15 16L5 6V4h2l10 10",
+    "詳細":  "M10.5 4a6.5 6.5 0 1 0 0 13a6.5 6.5 0 1 0 0-13zM15.2 15.2L20 20",
 };
 // 対象を選んでいる間の状態と、取り消しで戻る先のコマンド
 const LS_TARGETING_STATES = {
@@ -3380,7 +3382,7 @@ function renderLandscapeSubCommandRail(unit, kind) {
 }
 
 /**
- * 戦闘予測（攻撃側・受ける側それぞれの HP・ダメージ・命中・必殺）。攻撃を受ける側の頭上に出す。
+ * 戦闘予測（攻撃側・受ける側それぞれの HP・ダメージ・命中・必殺）。画面の下の帯に出す（原作者の見本 2026-09-26）。
  *   options.readOnly: 敵の攻撃のとき（ボタンなし・見るだけ）
  *   options.isMagic / options.spell: 省略時は選んでいる攻撃（_vsAttack）から
  */
@@ -3407,64 +3409,85 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel, optio
     const counterDmgDisp = pred.canCounter ? `${ctrN}${pred.counterFollowUp ? "×2" : ""}` : "─";
 
     const activeCombatArt = readOnly ? null : getCombatArtData(selectedCombatArtId);
-    // 届く攻撃が複数あれば、予測の見出しで ‹ › を押して切り替えられる
+    // 届く攻撃が複数あれば、予測の武器の欄で ‹ › を押して切り替えられる
     const switchOptions = readOnly ? [] : landscapeForecastOptions(attacker, target)
         .filter(option => (option.kind === "magic") === !!_vsAttack?.isMagic);
     const switchIndex = landscapeForecastOptionIndex(switchOptions);
     const actionName = switchIndex >= 0 ? switchOptions[switchIndex].label : (activeCombatArt?.name || actionLabel || "攻撃");
-    const headAction = switchOptions.length > 1 && switchIndex >= 0
-        ? `<div class="refFcSwitch"><button type="button" id="lsFcPrev" aria-label="前の攻撃">‹</button><em>${actionName}</em><small>${switchIndex + 1}/${switchOptions.length}</small><button type="button" id="lsFcNext" aria-label="次の攻撃">›</button></div>`
-        : `<em>${actionName}</em>`;
     const noteText = [pred.effectNotes, pred.counterNotes ? `反撃: ${pred.counterNotes.replace(/^\s*\[|\]\s*$/g, "")}` : ""]
         .filter(Boolean)
         .map(note => note.replace(/^\s*\[|\]\s*$/g, ""))
         .join(" / ");
 
-    const face = u => {
+    // 左右の端に出す顔のアップ（見本: 頭が帯の高さの8割ほど、頭頂が少し切れる）
+    const bust = (u, side) => {
         const src = getPortraitSrc(u) || u.tokenImage || "";
-        const style = src
-            ? `background-image:url('${src}');background-size:${u.portraitBgSize || "cover"};background-position:${u.portraitBgPos || "center top"}`
-            : "";
-        return `<i class="refFcFace" style="${style}"></i>`;
+        if (!src) return `<div class="fcbBust ${side} ${u.side}"></div>`;
+        // 拡大率は顔アイコンと同じ。縦は顔アイコンのずらし量から決める（全員を並べて合わせた値）。
+        // 合わない立ち絵は characters.js の forecastBustPos で直接指定する
+        const size = parseFloat(u.portraitBgSize) || 300;
+        const [x = "50%", y = "top"] = String(u.portraitBgPos || "50% top").split(" ");
+        const posX = /%$/.test(x) ? x : "50%";
+        const pos = u.forecastBustPos || `${posX} ${Math.round((/px$/.test(y) ? parseFloat(y) : 0) * 0.5 - 80)}px`;
+        return `<div class="fcbBust ${side} ${u.side}"><i style="background-image:url('${src}');background-size:${size}% auto;background-position:${pos}"></i></div>`;
     };
-    const hp = (before, after) => after === before ? `${before}` : `${before}<i>▶</i><strong>${after}</strong>`;
+    const hp = (before, after) => after === before ? `${before}<i>▶</i>${before}` : `${before}<i>▶</i><strong>${after}</strong>`;
     // HPバー: 残るぶんと、この戦闘で減るぶん
     const hpBar = (u, after) => {
         const max = Math.max(1, Number(u.maxHp || 1));
         const nowPct = Math.max(0, Math.min(100, u.hp / max * 100));
         const afterPct = Math.max(0, Math.min(100, after / max * 100));
-        return `<span class="refFcBar ${u.side}"><i class="lost" style="width:${nowPct}%"></i><i class="after" style="width:${afterPct}%"></i></span>`;
+        return `<span class="fcbBar ${u.side}"><i class="lost" style="width:${nowPct}%"></i><i class="after" style="width:${afterPct}%"></i></span>`;
     };
+    const itemOf = u => typeof TRIAL_ITEMS !== "undefined" ? TRIAL_ITEMS[u.trialEquippedItem] : null;
+    const weaponIcon = u => lsCommandIcon(itemOf(u)?.kind === "grimoire" ? "魔法" : "攻撃");
+    // 攻撃する側: 選んでいる攻撃（届く攻撃が複数なら ‹ › で切り替え）
+    const attackerItem = itemOf(attacker);
+    const attackerWeapon = switchOptions.length > 1 && switchIndex >= 0
+        ? `<div class="fcbWeapon switch">${lsCommandIcon(isMagic ? "魔法" : "攻撃")}<button type="button" id="lsFcPrev" aria-label="前の攻撃">‹</button><b>${actionName}</b><small>${switchIndex + 1}/${switchOptions.length}</small><button type="button" id="lsFcNext" aria-label="次の攻撃">›</button></div>`
+        : `<div class="fcbWeapon">${lsCommandIcon(isMagic ? "魔法" : "攻撃")}<b>${actionName}</b>${attackerItem && attackerItem.name !== actionName ? `<small>${attackerItem.name}</small>` : ""}</div>`;
+    // 受ける側: 装備と、反撃できるか
+    const targetItem = itemOf(target);
+    const targetWeapon = `<div class="fcbWeapon">${weaponIcon(target)}<b>${targetItem ? targetItem.name : "装備なし"}</b>${pred.canCounter ? "" : "<em>反撃なし</em>"}</div>`;
+    const stat = (label, value) => `<div><dt>${label}</dt><dd>${value}</dd></div>`;
+    const side = (u, weaponHtml, after, dmg, hit, crit, pos) => `
+        <div class="fcbSide ${pos} ${u.side}">
+            <div class="fcbName"><b>${u.name}</b><span>${formatUnitLevelLabel(u)}</span></div>
+            ${weaponHtml}
+            <div class="fcbHp"><span>HP</span>${hpBar(u, after)}<b>${hp(u.hp, after)}</b></div>
+            <dl class="fcbStats">${stat("ダメージ", dmg)}${stat("命中", hit)}${stat("必殺", crit)}</dl>
+        </div>`;
     // 反撃は射程内なら必ず起きる（原作者 2026-09-25）。野望で封じる確率があるときだけ確率を出す
     const counterInfo = pred.canCounter
         ? `反撃あり${pred.counterLabel ? `・${pred.counterLabel}` : ""}${pred.counterRate < 100 ? `（野望で${100 - pred.counterRate}%封じる）` : ""}`
         : pred.counterBlockedReason ? `反撃なし（${pred.counterBlockedReason}）` : isDamage ? "反撃なし" : "";
+    const detailText = [counterInfo, noteText].filter(Boolean).map(t => `<p>${t}</p>`).join("");
+    const confirmLabel = isMagic || activeCombatArt ? "実行する" : "攻撃する";
 
     lsForecast.innerHTML = `
-        <div class="refFc${readOnly ? " readOnly" : ""}">
-            <div class="refFcHead"><span>${readOnly ? "敵の攻撃" : "戦闘予測"}</span>${headAction}</div>
-            <div class="refFcGrid">
-                <div class="refFcName ${attacker.side}">${face(attacker)}<b>${attacker.name}</b></div>
-                <span></span>
-                <div class="refFcName ${target.side} right"><b>${target.name}</b>${face(target)}</div>
-                <span class="v">${hp(attacker.hp, atkAfter)}</span><span class="k">HP</span><span class="v">${hp(target.hp, defAfter)}</span>
-                ${hpBar(attacker, atkAfter)}<span></span>${hpBar(target, defAfter)}
-                <span class="v">${dmgDisp}</span><span class="k">ダメージ</span><span class="v">${counterDmgDisp}</span>
-                <span class="v">${pred.hitRate}%</span><span class="k">命中</span><span class="v">${pred.canCounter ? `${pred.ctrHitRate}%` : "─"}</span>
-                <span class="v">${isDamage ? `${pred.critRate}%` : "─"}</span><span class="k">必殺</span><span class="v">${pred.canCounter ? `${pred.ctrCritRate}%` : "─"}</span>
-            </div>
-            ${counterInfo ? `<div class="refFcCounter">${counterInfo}</div>` : ""}
-            ${noteText ? `<div class="refFcNote" title="${noteText}">${noteText}</div>` : ""}
-            ${readOnly ? "" : `<div class="refFcBtns">
-                <button type="button" id="lsFcCancel">戻る</button>
-                <button type="button" id="lsFcConfirm"><i aria-hidden="true"></i>実行</button>
-            </div>`}
+        <div class="fcbTitle${readOnly ? " readOnly" : ""}"><i aria-hidden="true"></i>${readOnly ? "敵の攻撃" : "戦闘予測"}</div>
+        <div class="fcbPanel${readOnly ? " readOnly" : ""}">
+            ${bust(attacker, "left")}
+            ${side(attacker, attackerWeapon, atkAfter, dmgDisp, `${pred.hitRate}%`, isDamage ? `${pred.critRate}%` : "─", "left")}
+            <div class="fcbEmblem">${lsCommandIcon(isMagic ? "魔法" : "交差")}</div>
+            ${side(target, targetWeapon, defAfter, counterDmgDisp, pred.canCounter ? `${pred.ctrHitRate}%` : "─", pred.canCounter ? `${pred.ctrCritRate}%` : "─", "right")}
+            ${bust(target, "right")}
         </div>
+        ${detailText ? `<div class="fcbDetail hidden" id="lsFcDetailBox">${detailText}</div>` : ""}
+        ${readOnly ? "" : `<div class="fcbBtns">
+            <button type="button" id="lsFcCancel">${lsCommandIcon("戻る")}キャンセル</button>
+            <button type="button" id="lsFcConfirm">${lsCommandIcon(isMagic ? "魔法" : "交差")}${confirmLabel}</button>
+            <button type="button" id="lsFcDetail"${detailText ? "" : " disabled"}>${lsCommandIcon("詳細")}戦闘詳細</button>
+        </div>`}
     `;
     lsForecast.classList.remove("hidden");
     setLandscapeForecastOpen(true);
-    positionLandscapeForecast(target);
+    lsForecast.style.left = "";
+    lsForecast.style.top = "";
     markLandscapeTarget(target);
+    // 下の帯に隠れないよう、狙う相手が見える位置へ盤面を動かす
+    lsPanKey = null;
+    keepLandscapeUnitVisible(target);
 
     if (readOnly) {
         setLandscapeHint(!actionLabel || actionLabel === "攻撃"
@@ -3479,6 +3502,12 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel, optio
         const next = switchOptions[(switchIndex + delta + switchOptions.length) % switchOptions.length];
         if (next) applyLandscapeForecastOption(attacker, target, next);
     };
+    document.getElementById("lsFcDetail")?.addEventListener("click", event => {
+        const box = document.getElementById("lsFcDetailBox");
+        if (!box) return;
+        box.classList.toggle("hidden");
+        event.currentTarget.classList.toggle("on", !box.classList.contains("hidden"));
+    });
     document.getElementById("lsFcPrev")?.addEventListener("click", () => switchBy(-1));
     document.getElementById("lsFcNext")?.addEventListener("click", () => switchBy(1));
     document.getElementById("lsFcCancel").addEventListener("click", () => {
@@ -3494,49 +3523,6 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel, optio
         setLandscapeHint("相手を選び直してください。");
     });
     setLandscapeHint(`${target.name}への${actionName}を実行しますか。`);
-}
-
-/** 戦闘予測の枠を、攻撃を受ける側の頭上に置く（上に入らなければ足元の下） */
-function positionLandscapeForecast(target) {
-    const shell = landscapeBattleShell;
-    const unitEl = document.getElementById(`unit_${target.id}`);
-    if (!shell || !unitEl || !lsForecast) return;
-    const shellRect = shell.getBoundingClientRect();
-    const unitRect = unitEl.getBoundingClientRect();
-    const scale = shellRect.width / (shell.offsetWidth || shellRect.width) || 1;
-    const boxWidth = lsForecast.offsetWidth;
-    const boxHeight = lsForecast.offsetHeight;
-    const shellWidth = shell.offsetWidth;
-    const shellHeight = shell.offsetHeight;
-    const centerX = (unitRect.left + unitRect.width / 2 - shellRect.left) / scale;
-    const centerY = (unitRect.top + unitRect.height / 2 - shellRect.top) / scale;
-    const unitTop = (unitRect.top - shellRect.top) / scale;
-    const unitBottom = (unitRect.bottom - shellRect.top) / scale;
-    const unitLeft = (unitRect.left - shellRect.left) / scale;
-    const unitRight = (unitRect.right - shellRect.left) / scale;
-    const gap = 6;
-    const clampX = x => Math.max(6 + boxWidth / 2, Math.min(shellWidth - 6 - boxWidth / 2, x));
-    const clampY = y => Math.max(6, Math.min(shellHeight - boxHeight - 6, y));
-    let left;
-    let top;
-    if (unitTop - boxHeight - gap >= 36) {
-        // 頭上
-        left = clampX(centerX);
-        top = unitTop - boxHeight - gap;
-    } else if (unitRight + gap + boxWidth <= shellWidth - 6) {
-        // 頭上に入らなければ右横
-        left = unitRight + gap + boxWidth / 2;
-        top = clampY(centerY - boxHeight / 2);
-    } else if (unitLeft - gap - boxWidth >= 6) {
-        // 右にも入らなければ左横
-        left = unitLeft - gap - boxWidth / 2;
-        top = clampY(centerY - boxHeight / 2);
-    } else {
-        left = clampX(centerX);
-        top = clampY(unitBottom + gap);
-    }
-    lsForecast.style.left = `${Math.round(left)}px`;
-    lsForecast.style.top = `${Math.round(top)}px`;
 }
 
 /** [trial] 敵の攻撃の前に、戦闘予測を見るだけで表示する */
@@ -3587,6 +3573,7 @@ function keepLandscapeUnitVisible(unit) {
             landscapeCommandList,
             document.getElementById("landscapeRoster"),
             document.getElementById("landscapeTopStrip"),
+            ...document.querySelectorAll("#lsForecast:not(.hidden) .fcbPanel, #lsForecast:not(.hidden) .fcbBtns"),
         ].filter(el => el && el.offsetParent !== null && getComputedStyle(el).visibility !== "hidden")
             .map(el => el.getBoundingClientRect())
             .filter(r => r.width > 0 && r.height > 0);

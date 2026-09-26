@@ -6973,8 +6973,49 @@ html, body {
     background: url("assets/ui/separator_a4.png") center top / 100% 6px no-repeat;
 }
 
-/* 選択中の味方の枠（D4・Codex）は、実際の大きさ（1マス約36px）では線が0.4px程度になり見えなかったため、
-   線を太くした版が届くまで従来の枠を使う（assets/ui/select_ally_v2.png は書き出し済み） */
+/* ── 第2版（ChatGPT 2026-09-26）: B1・B2 ボタン、D1〜D6 盤面の印 ── */
+/* 予測のボタン。上下は切らずに左右の飾り（素材の端から64px）だけを残し、真ん中を横に伸ばす */
+#gameScreen[data-mode="battle"] .refFc .refFcBtns { border-top: 0; }
+#gameScreen[data-mode="battle"] .refFc .refFcBtns #lsFcCancel,
+#gameScreen[data-mode="battle"] .refFc .refFcBtns #lsFcConfirm {
+    min-height: 22px;
+    background: none;
+    border: solid transparent;
+    border-width: 0 12px;
+    border-image: url("assets/ui/button_b2_normal.png") 0 64 fill / 0 12px stretch;
+}
+#gameScreen[data-mode="battle"] .refFc .refFcBtns #lsFcCancel { color: rgba(236,210,142,0.88); }
+#gameScreen[data-mode="battle"] .refFc .refFcBtns #lsFcConfirm {
+    color: #ffe6b0;
+    border-image-source: url("assets/ui/button_b1_normal.png");
+}
+#gameScreen[data-mode="battle"] .refFc .refFcBtns #lsFcCancel:hover,
+#gameScreen[data-mode="battle"] .refFc .refFcBtns #lsFcConfirm:hover { background: none; border-color: transparent; filter: brightness(1.12); }
+#gameScreen[data-mode="battle"] .refFc .refFcBtns #lsFcCancel:active { border-image-source: url("assets/ui/button_b2_pressed.png"); filter: none; }
+#gameScreen[data-mode="battle"] .refFc .refFcBtns #lsFcConfirm:active { border-image-source: url("assets/ui/button_b1_pressed.png"); filter: none; }
+#gameScreen[data-mode="battle"] .refFc .refFcBtns #lsFcCancel:disabled { border-image-source: url("assets/ui/button_b2_disabled.png"); color: rgba(160,150,170,0.6); filter: none; }
+#gameScreen[data-mode="battle"] .refFc .refFcBtns #lsFcConfirm:disabled { border-image-source: url("assets/ui/button_b1_disabled.png"); color: rgba(210,200,190,0.6); filter: none; }
+
+/* 盤面の印。素材は線まで切り抜いてあるので、マスいっぱいに敷けば線がマスの縁に来る */
+#gameScreen[data-mode="battle"] .gridCell.highlightAttack:not(.enemyActionRange) {
+    background: url("assets/ui/range_attack.png") center / 100% 100% no-repeat;
+}
+#gameScreen .gridCell.highlightTransfer {
+    background: url("assets/ui/range_support.png") center / 100% 100% no-repeat;
+    box-shadow: none;
+}
+.gridCell.cellSelectedAlly::after,
+.gridCell.cellTargeted::after {
+    inset: -3%;
+    background-image: url("assets/ui/select_ally_d4.png");
+}
+.gridCell.cellTargeted::after { background-image: url("assets/ui/select_enemy_d5.png"); }
+#gameScreen[data-mode="battle"] .gridCell.highlightMove:not(.enemyActionRange):hover::after,
+#gameScreen[data-mode="battle"] .gridCell.cellMovePending::after {
+    inset: 0;
+    background-image: url("assets/ui/move_dest.png");
+}
+/* 移動範囲（D1）は使わない。移動範囲は従来の青のまま（原作者 2026-09-25）。assets/ui/range_move.png は書き出しのみ */
 
 /* ============================================================
    [unit-base] 駒の台座（原作者のTRPGの動画の表現と素材・2026-09-26）
@@ -6995,4 +7036,474 @@ html, body {
 }
 .battleUnit.enemyUnit .unitBase {
     background-image: url("assets/units/base_enemy.png");
+}
+
+/* ============================================================
+   [sheet-fix] 原作者の確認（2026-09-26 夜）
+   1. 平面（2D）では台座を出さない（斜め見下ろしのときだけ）
+   2. 戦闘予測をステータス一覧の意匠に（英字の小見出し・細い罫線の行・控えめなボタン）
+   3. ステータスのスキル・戦技のアイコンを大きく
+   4. 枠の上下の太さをそろえる（panel_even: A1の下辺を上辺にも使う）
+============================================================ */
+/* 1. 台座 */
+#battleBoard:not(.mapIsoTrue) .battleUnit .unitBase { display: none; }
+
+/* 4. 枠 */
+#gameScreen[data-mode="battle"] #landscapeCommandList.menu,
+#gameScreen[data-mode="battle"] .lcCard,
+#gameScreen[data-mode="battle"] .lcWeapon,
+#gameScreen[data-mode="battle"] .refFc {
+    border-width: 7px;
+    border-image: url("assets/ui/panel_even.png") 26 fill / 7px stretch;
+}
+#gameScreen[data-mode="battle"] .lcCard.enemy,
+#gameScreen[data-mode="battle"] .refFc.readOnly {
+    border-image-source: url("assets/ui/panel_even_enemy.png");
+}
+
+/* 2. 戦闘予測 */
+#gameScreen[data-mode="battle"] .refFc .refFcHead {
+    align-items: baseline;
+    padding: 3px 6px 5px;
+}
+#gameScreen[data-mode="battle"] .refFc .refFcHead > span {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    padding-left: 7px;
+    color: rgba(226,212,180,0.7);
+    font-size: 8px;
+    letter-spacing: 0.14em;
+}
+#gameScreen[data-mode="battle"] .refFc .refFcHead > span small {
+    color: #d6a740;
+    font-size: 7.5px;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+}
+#gameScreen[data-mode="battle"] .refFc .refFcHead em { color: #efd081; font-size: 9px; letter-spacing: 0.1em; }
+#gameScreen[data-mode="battle"] .refFc.readOnly .refFcHead > span small { color: #d9826f; }
+
+#gameScreen[data-mode="battle"] .refFcGrid {
+    grid-template-columns: minmax(0, 1fr) 38px minmax(0, 1fr);
+    gap: 0;
+    padding: 2px 4px 0;
+}
+#gameScreen[data-mode="battle"] .refFcName {
+    gap: 5px;
+    padding: 0 2px 3px;
+    border-bottom: 0;
+}
+#gameScreen[data-mode="battle"] .refFcName b { color: #f1e2bb; font-size: 9px; letter-spacing: 0.06em; }
+#gameScreen[data-mode="battle"] .refFcGrid .refFcFace {
+    width: 22px;
+    height: 22px;
+    border: 1px solid rgba(214,167,64,0.55);
+    box-shadow: inset 0 0 0 1px rgba(8,6,16,0.8);
+}
+/* 数値の行: 一覧と同じく細い罫線で区切る */
+#gameScreen[data-mode="battle"] .refFcGrid .v,
+#gameScreen[data-mode="battle"] .refFcGrid .k {
+    padding: 2px 0 1px;
+    border-top: 1px solid rgba(200,146,42,0.12);
+}
+#gameScreen[data-mode="battle"] .refFcGrid .v {
+    color: #f1e2bb;
+    font-size: 10px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+#gameScreen[data-mode="battle"] .refFcGrid .k {
+    color: rgba(214,167,64,0.6);
+    font-size: 6.5px;
+    letter-spacing: 0.2em;
+}
+/* HPの行だけ少し大きく、罫線は付けない（名前のすぐ下） */
+#gameScreen[data-mode="battle"] .refFcGrid > .v:nth-child(4),
+#gameScreen[data-mode="battle"] .refFcGrid > .k:nth-child(5),
+#gameScreen[data-mode="battle"] .refFcGrid > .v:nth-child(6) { border-top-color: rgba(200,146,42,0.28); }
+#gameScreen[data-mode="battle"] .refFcGrid > .v:nth-child(4),
+#gameScreen[data-mode="battle"] .refFcGrid > .v:nth-child(6) { font-size: 12px; }
+#gameScreen[data-mode="battle"] .refFcBar { height: 2px; margin: 0 6px 3px; }
+#gameScreen[data-mode="battle"] .refFcCounter {
+    padding: 3px 8px 1px;
+    color: rgba(226,212,180,0.66);
+    font-size: 7px;
+    letter-spacing: 0.06em;
+    border-top: 1px solid rgba(200,146,42,0.12);
+}
+#gameScreen[data-mode="battle"] .refFc .refFcNote { padding: 1px 8px 3px; color: rgba(83,210,191,0.7); font-size: 6.5px; }
+
+/* ボタン: 帯を低く、文字を小さく */
+#gameScreen[data-mode="battle"] .refFc .refFcBtns {
+    grid-template-columns: 1fr 1.4fr;
+    gap: 8px;
+    padding: 4px 6px 2px;
+    background: url("assets/ui/separator_a4.png") center top / 100% 5px no-repeat;
+}
+#gameScreen[data-mode="battle"] .refFc .refFcBtns #lsFcCancel,
+#gameScreen[data-mode="battle"] .refFc .refFcBtns #lsFcConfirm {
+    min-height: 19px;
+    font-size: 8.5px;
+    letter-spacing: 0.3em;
+    border-width: 0 10px;
+    border-image-width: 0 10px;
+}
+#gameScreen[data-mode="battle"] .refFc .refFcBtns #lsFcConfirm i { width: 4px; height: 4px; }
+
+/* 3. ステータスのスキル・戦技のアイコン */
+.trialDetailRow {
+    grid-template-columns: 26px minmax(0, 1fr);
+    align-items: start;
+    gap: 7px;
+}
+.trialDetailRow .abIcon.slot { width: 26px; height: 26px; margin-top: 1px; }
+
+/* 狙う相手を選ぶ間の「取り消し」: 枠が細くなって文字が折り返さないように */
+#gameScreen[data-mode="battle"] #landscapeCommandList.targetCancel .lsMenuBack span { white-space: nowrap; }
+
+/* ============================================================
+   [forecast-band] 戦闘予測: 画面の下の帯（原作者の見本の構成・2026-09-26）
+   左右の端に胸から上の立ち絵、その内側に 名前・Lv／武器／HP／ダメージ・命中・必殺、
+   真ん中に交差した剣。下に「キャンセル／攻撃する／戦闘詳細」。左上に「戦闘予測」
+   #lsForecast は盤面全体に重ね、クリックは中の部品だけが受ける
+============================================================ */
+#gameScreen[data-mode="battle"] #lsForecast,
+#gameScreen[data-mode="battle"] #lsForecast.atBottom {
+    position: absolute;
+    inset: 0;
+    width: auto;
+    height: auto;
+    display: block;
+    transform: none;
+    pointer-events: none;
+    z-index: 26;
+}
+#gameScreen[data-mode="battle"] #lsForecast.hidden { display: none; }
+#lsForecast .fcbPanel,
+#lsForecast .fcbDetail,
+#lsForecast .fcbBtns { pointer-events: auto; }
+#landscapeBattleShell.forecast-open #landscapePhaseTitle,
+#landscapeBattleShell.forecast-open #mapZoomBtns { visibility: hidden; }
+
+/* 左上の見出し */
+#lsForecast .fcbTitle {
+    position: absolute;
+    top: 7px;
+    left: 10px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 2px 26px 2px 4px;
+    color: #efd081;
+    font-family: "Noto Serif JP", serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.32em;
+    text-shadow: 0 1px 3px rgba(4,3,10,0.9);
+    background: linear-gradient(90deg, rgba(8,6,16,0.82), rgba(8,6,16,0.5) 70%, transparent);
+    pointer-events: none;
+}
+#lsForecast .fcbTitle i {
+    width: 7px;
+    height: 7px;
+    border: 1px solid #d6a740;
+    transform: rotate(45deg);
+    box-shadow: 0 0 0 2px rgba(8,6,16,0.9), 0 0 0 3px rgba(214,167,64,0.45);
+}
+#lsForecast .fcbTitle::after {
+    content: "";
+    position: absolute;
+    left: 4px;
+    right: 0;
+    bottom: -2px;
+    height: 1px;
+    background: linear-gradient(90deg, #d6a740, rgba(214,167,64,0));
+}
+#lsForecast .fcbTitle.readOnly { color: #e9927e; }
+
+/* 下の帯 */
+#lsForecast .fcbPanel {
+    position: absolute;
+    left: 6px;
+    right: 6px;
+    bottom: 34px;
+    height: 134px;
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr) 58px minmax(0, 1fr) 112px;
+    align-items: stretch;
+    overflow: hidden;
+    border: 7px solid transparent;
+    border-image: url("assets/ui/panel_even.png") 26 fill / 7px stretch;
+    box-shadow: 0 -6px 18px rgba(4,3,10,0.55);
+}
+#lsForecast .fcbPanel.readOnly { bottom: 6px; }
+
+/* 立ち絵: 帯の端から内側へ薄くなる */
+#lsForecast .fcbBust {
+    position: relative;
+    margin: -4px;
+    overflow: hidden;
+}
+#lsForecast .fcbBust.ally { background: radial-gradient(circle at 50% 60%, rgba(98,52,150,0.4), transparent 70%); }
+#lsForecast .fcbBust.enemy { background: radial-gradient(circle at 50% 60%, rgba(150,52,52,0.34), transparent 70%); }
+#lsForecast .fcbBust i {
+    position: absolute;
+    inset: 0;
+    background-repeat: no-repeat;
+    -webkit-mask-image: linear-gradient(90deg, #000 62%, transparent);
+    mask-image: linear-gradient(90deg, #000 62%, transparent);
+}
+/* 右（受ける側）は向かい合うように左右反転（反転するので、薄くなる向きも同じ指定でよい） */
+#lsForecast .fcbBust.right i { transform: scaleX(-1); }
+
+/* 能力の欄 */
+#lsForecast .fcbSide {
+    display: grid;
+    align-content: center;
+    gap: 1px;
+    min-width: 0;
+    padding: 0 12px 0 10px;
+    color: #f1e2bb;
+}
+#lsForecast .fcbName,
+#lsForecast .fcbWeapon,
+#lsForecast .fcbHp { display: flex; align-items: center; gap: 6px; min-width: 0; }
+#lsForecast .fcbName { justify-content: space-between; padding-bottom: 1px; }
+#lsForecast .fcbName b {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+}
+#lsForecast .fcbName span { flex: none; color: rgba(226,212,180,0.72); font-size: 8.5px; letter-spacing: 0.06em; }
+#lsForecast .fcbWeapon {
+    padding: 1px 0 2px;
+    border-bottom: 1px solid rgba(200,146,42,0.16);
+}
+#lsForecast .fcbWeapon .lsMenuIcon {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    padding: 1px;
+    stroke: #efd081;
+    background: rgba(76,40,110,0.55);
+    border: 1px solid rgba(214,167,64,0.45);
+}
+#lsForecast .fcbWeapon b { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 9.5px; font-weight: 600; letter-spacing: 0.08em; }
+#lsForecast .fcbWeapon small { flex: none; color: rgba(226,212,180,0.55); font-size: 7.5px; }
+#lsForecast .fcbWeapon em { margin-left: auto; color: rgba(233,146,126,0.85); font-size: 7.5px; font-style: normal; letter-spacing: 0.1em; }
+#lsForecast .fcbWeapon.switch button {
+    flex: none;
+    padding: 0 3px;
+    color: rgba(239,208,129,0.8);
+    font-size: 13px;
+    line-height: 1;
+    background: none;
+    border: 0;
+    cursor: pointer;
+}
+#lsForecast .fcbWeapon.switch button:hover { color: #ffe2a0; }
+#lsForecast .fcbWeapon.switch button:active { transform: translateY(1px); }
+
+#lsForecast .fcbHp { padding: 2px 0 1px; }
+#lsForecast .fcbHp > span:not(.fcbBar) { flex: none; width: 16px; color: #d6a740; font-size: 8px; font-weight: 700; letter-spacing: 0.08em; }
+#lsForecast .fcbHp > b {
+    flex: none;
+    min-width: 58px;
+    text-align: right;
+    font-size: 13px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+#lsForecast .fcbHp > b i { margin: 0 3px; color: rgba(214,167,64,0.7); font-size: 7px; font-style: normal; }
+#lsForecast .fcbHp > b strong { color: #ffe2a0; }
+#lsForecast .fcbBar {
+    position: relative;
+    flex: 1;
+    height: 4px;
+    background: rgba(0,0,0,0.6);
+    box-shadow: inset 0 0 0 1px rgba(200,146,42,0.16);
+}
+#lsForecast .fcbBar i { position: absolute; left: 0; top: 0; bottom: 0; }
+#lsForecast .fcbBar .lost { background: rgba(236,210,142,0.28); }
+#lsForecast .fcbBar .after { background: linear-gradient(90deg, #2aa7a0, #58e0c8); transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1); }
+#lsForecast .fcbBar.enemy .after { background: linear-gradient(90deg, #b8423c, #e0645a); }
+
+#lsForecast .fcbStats { display: grid; margin: 0; }
+#lsForecast .fcbStats > div {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    padding: 1px 2px 1px 20px;
+    border-bottom: 1px solid rgba(200,146,42,0.12);
+}
+#lsForecast .fcbStats dt { color: rgba(226,212,180,0.72); font-size: 8.5px; letter-spacing: 0.2em; }
+#lsForecast .fcbStats dd { margin: 0; font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* 真ん中の交差した剣と縦の飾り線 */
+#lsForecast .fcbEmblem {
+    position: relative;
+    display: grid;
+    place-items: center;
+}
+#lsForecast .fcbEmblem::before {
+    content: "";
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    left: 50%;
+    width: 1px;
+    background: linear-gradient(180deg, transparent, rgba(214,167,64,0.7) 20%, rgba(214,167,64,0.7) 80%, transparent);
+}
+#lsForecast .fcbEmblem .lsMenuIcon {
+    position: relative;
+    width: 34px;
+    height: 34px;
+    padding: 3px;
+    stroke: #f2d690;
+    stroke-width: 1.5;
+    background: radial-gradient(circle, rgba(20,14,34,1) 55%, rgba(20,14,34,0) 72%);
+}
+
+/* 戦闘詳細（反撃・スキルの効果の説明） */
+#lsForecast .fcbDetail {
+    position: absolute;
+    right: 124px;
+    bottom: 172px;
+    width: 300px;
+    padding: 6px 10px;
+    color: rgba(226,212,180,0.85);
+    font-size: 8px;
+    line-height: 1.6;
+    border: 5px solid transparent;
+    border-image: url("assets/ui/panel_even.png") 26 fill / 5px stretch;
+}
+#lsForecast .fcbDetail.hidden { display: none; }
+#lsForecast .fcbDetail p { margin: 0; }
+#lsForecast .fcbDetail p + p { margin-top: 3px; color: rgba(83,210,191,0.8); }
+
+/* 下のボタン */
+#lsForecast .fcbBtns {
+    position: absolute;
+    left: 50%;
+    bottom: 5px;
+    display: grid;
+    grid-template-columns: 110px 150px 110px;
+    gap: 10px;
+    transform: translateX(-50%);
+}
+#lsForecast .fcbBtns button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 24px;
+    padding: 0;
+    color: rgba(236,210,142,0.92);
+    font-family: "Noto Serif JP", serif;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    background: none;
+    border: solid transparent;
+    border-width: 0 12px;
+    border-image: url("assets/ui/button_b2_normal.png") 0 64 fill / 0 12px stretch;
+    cursor: pointer;
+}
+#lsForecast .fcbBtns button .lsMenuIcon { width: 13px; height: 13px; stroke: currentColor; }
+#lsForecast .fcbBtns #lsFcConfirm {
+    color: #fff2d0;
+    font-size: 11px;
+    border-image-source: url("assets/ui/button_violet.png");
+}
+#lsForecast .fcbBtns button:hover { filter: brightness(1.14); }
+#lsForecast .fcbBtns button:active { transform: translateY(1px); border-image-source: url("assets/ui/button_b2_pressed.png"); filter: none; }
+#lsForecast .fcbBtns #lsFcConfirm:active { border-image-source: url("assets/ui/button_violet.png"); filter: brightness(0.85); }
+#lsForecast .fcbBtns #lsFcDetail.on { color: #ffe2a0; }
+#lsForecast .fcbBtns button:disabled { color: rgba(160,150,170,0.55); border-image-source: url("assets/ui/button_b2_disabled.png"); cursor: default; filter: none; transform: none; }
+
+/* 見本の比率に合わせる（原作者 2026-09-26）
+   見本（16:9）: 帯の縦横比 約5.6:1、立ち絵23%・文字22%・剣8.5%・文字22%・立ち絵23%、立ち絵は顔のアップ。
+   ゲーム画面は見本より横長（約2.17:1）なので、画面幅いっぱいにせず中央に置く */
+#lsForecast .fcbPanel {
+    left: 50%;
+    right: auto;
+    width: auto;
+    height: 124px;
+    aspect-ratio: 5.6;
+    max-width: calc(100% - 12px);
+    transform: translateX(-50%);
+    grid-template-columns: 23fr 22fr 8.5fr 22fr 23fr;
+    border-width: 6px;
+    border-image-width: 6px;
+}
+#lsForecast .fcbSide { padding: 0 8px 0 6px; }
+#lsForecast .fcbStats > div { padding-left: 14px; }
+#lsForecast .fcbHp > b { min-width: 50px; }
+#lsForecast .fcbBust i {
+    -webkit-mask-image: linear-gradient(90deg, #000 70%, transparent);
+    mask-image: linear-gradient(90deg, #000 70%, transparent);
+}
+#lsForecast .fcbDetail {
+    left: 50%;
+    right: auto;
+    bottom: 166px;
+    width: 300px;
+    transform: translateX(-10%);
+}
+/* ボタン: キャンセル13.5%・攻撃する21%・戦闘詳細13.5%（見本の画面幅に対して） */
+#lsForecast .fcbBtns {
+    grid-template-columns: 94px 146px 94px;
+    gap: 18px;
+    bottom: 5px;
+}
+#lsForecast .fcbBtns button { height: 25px; }
+#lsForecast .fcbPanel { height: 132px; }
+#lsForecast .fcbDetail { bottom: 174px; }
+#lsForecast .fcbBtns button { white-space: nowrap; letter-spacing: 0.12em; }
+
+/* ============================================================
+   [ui-safe] 3段の重ね（原作者 2026-09-26）
+   奥: 背景 ／ 中: マップ（画面いっぱい） ／ 手前: UI（中央の16:9の枠の中）
+   ゲーム画面 844×390（約2.16:1）のうち、UIは中央の約693×390（16:9）に置く。
+   左右の余り（--ls-safe）にはUIを置かず、マップと背景だけが見える。
+   スマホの左右の切り欠き・丸い角も避けられる
+============================================================ */
+#gameScreen[data-mode="battle"] #landscapeBattleShell.active {
+    --ls-safe: 75px;
+    padding-left: calc(6px + var(--ls-safe));
+    padding-right: calc(6px + var(--ls-safe));
+}
+/* マップは余りの部分まで広げる */
+#gameScreen[data-mode="battle"] #landscapeBattleShell.active #landscapeBattlefield {
+    margin-left: calc(-1 * var(--ls-safe));
+    margin-right: calc(-1 * var(--ls-safe));
+}
+/* 盤面の上に浮かぶUI（位置を画面の端から決めているもの）を、枠の内側へ */
+#gameScreen[data-mode="battle"] #landscapeBattleShell.active #landscapeCommandPanel,
+#gameScreen[data-mode="battle"] #landscapeBattleShell.active #lsForecast {
+    left: var(--ls-safe);
+    right: var(--ls-safe);
+}
+#gameScreen[data-mode="battle"] #landscapeBattleShell.active #landscapeUnitPanel { margin-left: var(--ls-safe); }
+#gameScreen[data-mode="battle"] #landscapeBattleShell.active #mapZoomBtns { margin-right: var(--ls-safe); }
+
+/* 戦闘予測の帯は枠いっぱい（見本の16:9と同じ比率になる） */
+#lsForecast .fcbPanel {
+    left: 6px;
+    right: 6px;
+    width: auto;
+    max-width: none;
+    aspect-ratio: auto;
+    transform: none;
+}
+
+/* マップ絵（一枚絵）の縁を、奥の背景へなじませる（絵の端の線が見えないように） */
+#isoMapImage {
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent), linear-gradient(180deg, transparent, #000 7%, #000 93%, transparent);
+    -webkit-mask-composite: source-in;
+    mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent), linear-gradient(180deg, transparent, #000 7%, #000 93%, transparent);
+    mask-composite: intersect;
 }

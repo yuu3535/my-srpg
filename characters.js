@@ -166,6 +166,7 @@ const CHARACTERS_DATA = [
         tokenImage: "立ち絵AI生成/アルバスドット.png",
         portraitImage: "立ち絵AI生成/アルバス1.png",
         portraitBgSize: "400%",  portraitBgPos: "55% -15px",
+        forecastBustPos: "55% -62px",   // 戦闘予測の顔のアップ（計算では頭が上に切れるため）
         portraitDmgBgSize: "400%", portraitDmgBgPos: "49% -20px",
         statusBgSize: "355%", statusBgPos: "55% -25px",
         portraitImageDamaged: "立ち絵AI生成/アルバス被弾.png",
@@ -483,6 +484,7 @@ const CHARACTERS_DATA = [
         tokenImage: "立ち絵AI生成/モブ/アルストロ兵魔法ドット.png",
         portraitImage: "立ち絵AI生成/モブ/アルストロ兵1魔法.png",
         portraitBgSize: "285%",  portraitBgPos: "center -25px",
+        forecastBustPos: "center -30px",   // 戦闘予測の顔のアップ（計算では頭が上に切れるため）
         portraitDmgBgSize: "250%", portraitDmgBgPos: "44% -15px",
         statusBgSize: "250%", statusBgPos: "34% -20px",
         portraitImageDamaged: "立ち絵AI生成/モブ/アルストロ兵1魔法被弾.png",
