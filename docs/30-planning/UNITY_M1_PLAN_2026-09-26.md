@@ -89,4 +89,26 @@
 4. ユニットの立っているマスを押すと選べる。青いマスを押すと移動する。
 5. 試し終わったら、Claude Code が作業する前に Unity を閉じる。
 
+### M1-a を3Dの盤面に置き換え（2026-09-27）
+
+- 原作者の決定で、マップは3Dの盤面＋2Dのキャラで作る（`docs/10-design/map/MAP_BOARD_METHOD_DECISION_2026-09-27.md`、制作仕様 `docs/10-design/map/UNITY_3D_BOARD_MAP_PRODUCTION_GUIDE_2026-09-27.md`）。
+- シーン `Assets/Scenes/Battle3D.unity` を最初のシーンにした。2Dの `BattleM1` は比べるために残す。
+- 流れは M1-a と同じ（味方を押すと移動範囲、範囲のマスを押すと動く）。そのうえで、斜め・真上の切り替えと90°ずつ回す、キャラの板の絵、足元の影と陣営の枠（D4・D5）、狙われている赤い丸（`SetTargeted`）、光と霧（T5 の C）がつく。
+- 作ったもの:
+  - `Assets/Scripts/Battle/Board3D/Board3DMap.cs` … 3Dの盤面のデータ（地形・高さ・キャラ・明かり・木）
+  - `Assets/Scripts/Battle/Board3D/Board3DView.cs` … 盤面の組み立て・カメラ・回転・板の絵・押したマス（試作の `Board3DTestController` を一般化）
+  - `Assets/Scripts/Battle/Battle3DController.cs` … 戦闘データから盤面を作り、選ぶ・動かす（移動の規則は `MoveRange`）
+  - `Assets/Editor/Agent/Battle3DBuilder.cs` … シーンを組み立て、`Assets/Previews/Battle3D_*.png` を書き出す（押す判定から移動までを画面上の位置で確かめる）
+  - `Assets/Tests/PlayMode/Battle3DPlayTests.cs` … ▶で選ぶ・動かす・狙われた印・回したあとの押す判定
+- 今の戦闘データは「通れないマス」しか持たないので、通れるマスの地形（石畳の道・苔・土）は見た目だけで決めている。地形の規則を戦闘データに足したら、それを使う。
+- 作り直す手順（Claude Code）: `node tools/export_unity_battle.js` → `Srpg.EditorAgent.Battle3DBuilder.BuildAll` → テスト。
+
+### 原作者が試す手順（3Dの盤面）
+
+1. Unity でプロジェクトを開き、`Assets/Scenes/Battle3D` をダブルクリック。
+2. Game 欄を横長にして ▶。
+3. 味方のマスを押すと選べて青い移動範囲が出る。青いマスを押すと動く。
+4. 右下のボタン（または Q・E、横にスワイプ）で90°回す。「真上から見る」で真上に切り替え。
+5. 試し終わったら、Claude Code が作業する前に Unity を閉じる。
+
 ### 次: M1-b（戦闘の計算をC#へ移す）
