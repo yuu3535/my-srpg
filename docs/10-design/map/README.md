@@ -24,7 +24,9 @@
 |---|---|---|
 | `MAP_WORLD_AND_ART_DIRECTION_2026-09-26.md` | 現行の設計基盤 | 原作TRPG、世界観、物語をマップへ翻訳する基準 |
 | `UNITY_ISOMETRIC_MAP_PRODUCTION_GUIDE_2026-09-26.md` | 現行の制作仕様 | 2:1、128×64px、レイヤー分割、Unityへの受け渡し |
-| `MAP_PROTOTYPE_BORDER_WATCHROAD_2026-09-26.md` | 比較用仮案 | 最初の非シナリオ12×8試作。A〜Cの配置比較 |
+| `MAP_PROTOTYPE_BORDER_WATCHROAD_2026-09-26.md` | 試作対象（案B改） | 最初の非シナリオ12×8試作。A〜Cの配置比較と、採用した案B改の地形表 |
+| `graybox/border_watchroad_*.png` | 試作対象の図 | 案の比較図、案B改の配置図・地形の配置図（ChatGPTへ渡す） |
+| `docs/30-planning/MAP_ORDER_BORDER_WATCHROAD_2026-09-26.md` | 発注用 | 案B改の地面マップと戦闘の背景のChatGPT向け依頼文 |
 | `docs/30-planning/UNITY_M1_PLAN_2026-09-26.md` | 現在の実装計画 | Unity試作の到達点と次工程 |
 | `assets/maps/iso_trial_12x8_guide.png` | 現行下絵 | 12×8盤面の位置合わせ基準 |
 | `assets/maps/iso_trial_12x8.png` | 仮素材 | M1用の石畳・森の仮マップ。完成素材ではない |
