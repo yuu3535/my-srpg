@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Object = UnityEngine.Object;
 using UnityEngine.InputSystem;
@@ -11,10 +12,11 @@ namespace Srpg.Battle
     /// Board3DMap を受け取り、盤面・キャラ・木・明かりを組み立て、カメラを動かし、押したマスを知らせる。
     /// 試作（MAP_3D_BOARD_TEST_REQUEST_2026-09-26.md）で決めたこと:
     ///   - 正方形のマスを3Dのブロックで並べ、天面と側面に模様を貼る（T1・T5）
-    ///   - 真上と斜め見下ろし（正投影・縦30°）を切り替え、90°ずつ回す（T2・T3）。光もカメラと一緒に回す
+    ///   - 真上と斜め見下ろし（正投影・縦30°）を切り替え、45°ずつ回す（斜め⇔正面。原作者 2026-09-27）。真上は90°ずつ。光もカメラと一緒に回す
     ///   - キャラは板の絵で、常にカメラの方を向く。真上ではマスの中に収まる（T4）
     ///   - 台座なし。足元の影と、陣営の枠（UI素材 D4 味方・D5 敵）。重なりは キャラ＞枠＞影＞マップ（T4）
-    /// 操作: 押す＝マスを知らせる（CellTapped。受け手がいなければそのマスを選ぶ）／ 横にスワイプ・Q/E・画面のボタン＝90°回す ／ T・ボタン＝真上と斜め
+    /// 操作: 押す＝マスを知らせる（CellTapped。受け手がいなければそのマスを選ぶ。キャラの体を押したら、そのキャラのマス）
+    ///       ／ 横にスワイプ・Q/E・画面のボタン＝45°回す ／ T・ボタン＝真上と斜め
     /// </summary>
     public class Board3DView : MonoBehaviour
     {
@@ -49,6 +51,7 @@ namespace Srpg.Battle
         [SerializeField] private bool lanterns = true;                      // たいまつと門の光（点の光）
         [SerializeField] private bool showGuiButtons = true;                // 仮の画面ボタン（回す・真上）。正式なUIができたら外す
         [SerializeField] private bool buildOnStart = true;                  // ▶で自分で組み立てる（試作の国境監視路）
+        [SerializeField] private bool showCellInfo = true;                  // 左上の「列・行・地形」（戦闘の画面では戦闘の表示を出すので消す）
         [SerializeField] private NamedTexture[] boardTextures = Array.Empty<NamedTexture>();
         [SerializeField] private UnitSprite[] unitSprites = Array.Empty<UnitSprite>();
         [SerializeField] private Sprite treeSprite;                         // 板に貼る木の絵
@@ -64,6 +67,11 @@ namespace Srpg.Battle
         [SerializeField] private bool startTilted = true;
         [SerializeField, Range(10f, 80f)] private float tiltPitch = 30f;    // 斜め見下ろしの縦の角度
         [SerializeField] private float turnSeconds = 0.35f;                 // 回す・傾けるときの動きの長さ
+        // 寄りの画面（原作者 2026-09-27: 盤面全体の箱庭ではなく、寄りを基本にする。全体はボタンで見る）
+        [SerializeField] private bool startOverview = true;                 // 始まりを全体にするか（試作は全体、戦闘は寄り）
+        [SerializeField] private float closeSize = 4.0f;                    // 寄りの画面の大きさ（正投影の縦の半分。理想の画面と同じくらいのマスの大きさ）
+        [SerializeField] private float focusRaise = 0.35f;                  // 寄りのとき、見ている所を画面のどれだけ上に置くか（下にUIがある）
+        [SerializeField] private Texture2D backdrop;                        // いちばん奥の背景（発注書 第3版 M1）
 
         private const float TileGap = 0.06f;       // マスの間のすき間（盤面の目地）
         private const float TileHeight = 0.3f;     // マスのブロックの厚み
@@ -74,6 +82,7 @@ namespace Srpg.Battle
         private const int OrderShadow = -30, OrderRange = -20, OrderMark = -10, OrderCharacter = 10;
 
         private static readonly Color RangeColor = new Color(0.30f, 0.60f, 1f, 0.42f);   // 移動範囲は従来の青（原作者 2026-09-25）
+        public static readonly Color AttackRangeColor = new Color(1f, 0.30f, 0.26f, 0.40f); // 攻撃の範囲は赤
         private static readonly Color TargetRingColor = new Color(1f, 0.24f, 0.30f, 1f); // 狙われている印（赤い丸。原作者 2026-09-27）
 
         private Board3DMap map;
@@ -107,6 +116,7 @@ namespace Srpg.Battle
 
         private readonly List<Billboard> billboards = new List<Billboard>();
         private readonly Dictionary<string, UnitVisual> unitVisuals = new Dictionary<string, UnitVisual>();
+        private readonly Dictionary<Collider, UnitVisual> unitBodies = new Dictionary<Collider, UnitVisual>();
         private Material spriteMaterial;
         private Sprite shadowSprite, ringSprite, squareSprite;
 
@@ -116,11 +126,18 @@ namespace Srpg.Battle
         public Board3DMap Map { get => map; set => map = value; }
 
         private bool tilted;
-        private int turn;                  // 90°の何回目か（0〜3）
+        private int turn;                  // 45°の何回目か（0〜7）。偶数＝斜め、奇数＝正面（真上では90°ずつ）
         private float pitch, yaw, size;    // 今のカメラ
         private float fromPitch, fromYaw, fromSize, toPitch, toYaw, toSize, moveTime = -1f;
-        private Vector2 pressPosition;
-        private bool pressing;
+        private Vector2 pressPosition, lastDrag;
+        private bool pressing, dragging;
+        private bool overview = true;
+        private Vector3 focus, fromFocus, toFocus;   // カメラが見ている所（盤面の中の位置。全体のときは盤面の中心）
+        private Vector3 closeFocus;                  // 寄りのときに見る所（全体にしている間も覚えておく）
+        private RectTransform backdropRect;
+
+        public bool Overview => overview;
+        public float CloseSize { get => closeSize; set => closeSize = Mathf.Clamp(value, 2.6f, 7f); }
 
         /// <summary>マスが押された（受け手がいなければ、そのマスを選ぶ）</summary>
         public event Action<Vector2Int> CellTapped;
@@ -132,6 +149,7 @@ namespace Srpg.Battle
         private void Start()
         {
             // 戦闘の画面では Battle3DController がマップを渡してから Setup する（buildOnStart = false）
+            overview = startOverview;
             if (!buildOnStart) return;
             Setup();
             SetView(startTilted, 0, true);
@@ -152,7 +170,8 @@ namespace Srpg.Battle
             baseBlock.name = "Base";
             Object.DestroyImmediate(baseBlock.GetComponent<Collider>());
             baseBlock.transform.SetParent(boardRoot, false);
-            baseBlock.transform.localScale = new Vector3(map.Columns + 0.1f, BaseHeight, map.Rows + 0.1f);
+            int margin = map.SceneryMargin;
+            baseBlock.transform.localScale = new Vector3(map.Columns + margin * 2 + 0.1f, BaseHeight, map.Rows + margin * 2 + 0.1f);
             baseBlock.transform.localPosition = new Vector3(0, -TileHeight - BaseHeight * 0.5f + 0.02f, 0);
             baseBlock.GetComponent<Renderer>().sharedMaterial = LitMaterial(new Color32(24, 20, 30, 255));
 
@@ -163,6 +182,17 @@ namespace Srpg.Battle
                 tiles[cell] = textured && TextureMaterial("top_stone") != null ? BuildTexturedTile(cell) : BuildColoredTile(cell);
                 AddMarker(cell);
             }
+
+            // まわりの景色（押せない。当たり判定を外す）
+            foreach (var cell in map.SceneryCells)
+            {
+                var tile = textured && TextureMaterial("top_stone") != null ? BuildTexturedTile(cell) : BuildColoredTile(cell);
+                tile.name = $"Scenery_{cell.x}_{cell.y}";
+                var collider = tile.GetComponent<Collider>();
+                if (collider != null) Object.DestroyImmediate(collider);
+            }
+            foreach (var cell in map.SceneryTrees) AddModelTree(cell);
+            AddBackdrop();
 
             foreach (var unit in map.Units) AddUnit(unit);
             foreach (var cell in map.ModelTrees) AddModelTree(cell);
@@ -188,8 +218,10 @@ namespace Srpg.Battle
             tiles.Clear();
             billboards.Clear();
             unitVisuals.Clear();
+            unitBodies.Clear();
             rangeTiles.Clear();
             boardRoot = null;
+            backdropRect = null;
         }
 
         private GameObject BuildColoredTile(Vector2Int cell)
@@ -248,6 +280,11 @@ namespace Srpg.Battle
             if (sprite != null)
             {
                 visual.billboard = AddBillboard($"Unit_{unit.id}", sprite, top + Vector3.up * feet, unitHeight, true, footFromPivot);
+                // キャラの体にも当たり判定を付ける（体を押したら、後ろのマスではなくそのキャラのマスを選ぶ）
+                var body = visual.billboard.sprite.gameObject.AddComponent<BoxCollider>();
+                body.center = sprite.bounds.center;
+                body.size = new Vector3(sprite.bounds.size.x * 0.7f, sprite.bounds.size.y * 0.9f, 0.05f);
+                unitBodies[body] = visual;
                 // 敵に狙われている印: キャラのまわりの赤い丸（ブラウザ版と同じ。原作者 2026-09-27）。ふだんは出さない
                 var ring = new GameObject("TargetRing").AddComponent<SpriteRenderer>();
                 ring.transform.SetParent(visual.billboard.holder, false);
@@ -290,14 +327,38 @@ namespace Srpg.Battle
                 visual.frame.color = new Color(1f, 1f, 1f, highlighted ? 1f : teamFrameAlpha);
         }
 
-        /// <summary>移動範囲のマス（半透明の青）を出す。空なら消す</summary>
-        public void ShowRange(IEnumerable<Vector2Int> cells)
+        /// <summary>範囲のマス（移動は半透明の青、攻撃は赤）を出す。空なら消す</summary>
+        public void ShowRange(IEnumerable<Vector2Int> cells, Color? color = null)
         {
             foreach (var tile in rangeTiles) if (tile != null) Object.DestroyImmediate(tile);
             rangeTiles.Clear();
             if (cells == null) return;
             foreach (var cell in cells)
-                rangeTiles.Add(AddFlat($"Range_{cell.x}_{cell.y}", SquareSprite(), map.TopCenter(cell) + Vector3.up * 0.01f, 1f - TileGap, RangeColor, OrderRange).gameObject);
+                rangeTiles.Add(AddFlat($"Range_{cell.x}_{cell.y}", SquareSprite(), map.TopCenter(cell) + Vector3.up * 0.01f, 1f - TileGap, color ?? RangeColor, OrderRange).gameObject);
+        }
+
+        /// <summary>倒れたキャラを盤面から消す</summary>
+        public void RemoveUnit(string id)
+        {
+            if (!unitVisuals.TryGetValue(id, out var visual)) return;
+            if (visual.billboard != null) visual.billboard.holder.gameObject.SetActive(false);
+            foreach (var part in visual.footParts) part.gameObject.SetActive(false);
+        }
+
+        /// <summary>行動済みのキャラを暗くする</summary>
+        public void SetUnitDimmed(string id, bool dimmed)
+        {
+            if (!unitVisuals.TryGetValue(id, out var visual) || visual.billboard == null) return;
+            var renderer = visual.billboard.sprite.GetComponent<SpriteRenderer>();
+            if (renderer != null) renderer.color = dimmed ? new Color(0.5f, 0.5f, 0.55f, 1f) : Color.white;
+        }
+
+        /// <summary>そのキャラの頭の上の画面位置（ダメージの数字などを出す）</summary>
+        public Vector3 UnitHeadToScreen(string id)
+        {
+            if (!unitVisuals.TryGetValue(id, out var visual) || targetCamera == null) return Vector3.zero;
+            var top = map.TopCenter(visual.unit.cell) + Vector3.up * unitHeight;
+            return targetCamera.WorldToScreenPoint(transform.TransformPoint(top));
         }
 
         public int RangeCount => rangeTiles.Count;
@@ -423,6 +484,14 @@ namespace Srpg.Battle
             var root = new GameObject("Tree_Model").transform;
             root.SetParent(boardRoot, false);
             root.localPosition = map.TopCenter(cell);
+            if (!map.InBounds(cell))
+            {
+                // 景色の木は、大きさと向きを少しずつ変える
+                float h = Board3DScenery.Hash(cell.y, cell.x);
+                root.localScale = Vector3.one * (0.8f + 0.45f * h);
+                root.localRotation = Quaternion.Euler(0f, h * 360f, 0f);
+                root.localPosition += new Vector3((h - 0.5f) * 0.3f, 0f, (Board3DScenery.Hash(cell.x + 7, cell.y) - 0.5f) * 0.3f);
+            }
             var trunk = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             Object.DestroyImmediate(trunk.GetComponent<Collider>());
             trunk.transform.SetParent(root, false);
@@ -585,8 +654,11 @@ namespace Srpg.Battle
         private string TopTextureName(Vector2Int cell)
         {
             if (map.IsWall(cell)) return "top_wall";
+            // 景色の茂み・下草は、森の地面として苔の模様（清書では top_thicket）
+            if (map.IsScenery(cell) && (map.TerrainAt(cell) == 't' || map.TerrainAt(cell) == 'g')) return "top_moss";
             return map.TerrainAt(cell) switch
             {
+                'c' => "top_wall",
                 's' => "top_stone",
                 'd' => "top_dirt",
                 'g' => "top_moss",
@@ -602,7 +674,7 @@ namespace Srpg.Battle
         {
             if (map.IsWall(cell)) return "side_stone";
             char t = map.TerrainAt(cell);
-            return t == '~' || t == '=' || t == 'o' || t == '#' ? "side_stone" : "side_earth";
+            return t == '~' || t == '=' || t == 'o' || t == '#' || t == 'c' ? "side_stone" : "side_earth";
         }
 
         /// <summary>天面と側面に別の模様を貼ったマスのブロック。天面の模様はマスごとに90°ずつ回して、繰り返しを目立たなくする</summary>
@@ -752,12 +824,20 @@ namespace Srpg.Battle
             if (targetCamera == null) return false;
             Physics.SyncTransforms();
             var ray = targetCamera.ScreenPointToRay(screenPosition);
-            if (!Physics.Raycast(ray, out var hit, 200f)) return false;
-            foreach (var pair in tiles)
+            // 手前から順に見て、最初に当たったマスかキャラ（キャラならそのキャラのマス）
+            foreach (var hit in Physics.RaycastAll(ray, 200f).OrderBy(h => h.distance))
             {
-                if (pair.Value != hit.collider.gameObject) continue;
-                cell = pair.Key;
-                return true;
+                if (unitBodies.TryGetValue(hit.collider, out var visual) && hit.collider.gameObject.activeInHierarchy)
+                {
+                    cell = visual.unit.cell;
+                    return true;
+                }
+                foreach (var pair in tiles)
+                {
+                    if (pair.Value != hit.collider.gameObject) continue;
+                    cell = pair.Key;
+                    return true;
+                }
             }
             return false;
         }
@@ -797,25 +877,65 @@ namespace Srpg.Battle
 
         // ── カメラ ──
 
-        /// <summary>真上／斜めと、90°の向きを決める。immediate なら動きなしで切り替える</summary>
+        /// <summary>
+        /// 真上／斜めと、向きを決める。turnIndex は45°ずつ（0＝基本の斜め、1＝正面、2＝次の斜め…）。
+        /// 真上では90°ずつにそろえる（マスの縦横を画面の縦横に合わせる）。immediate なら動きなしで切り替える
+        /// </summary>
         public void SetView(bool tiltedView, int turnIndex, bool immediate = false)
         {
             tilted = tiltedView;
-            turn = ((turnIndex % 4) + 4) % 4;
+            turn = ((turnIndex % 8) + 8) % 8;
             toPitch = tilted ? tiltPitch : 90f;
-            // 斜めの基本の向きは、今までの2Dの斜めの絵と同じ（列0・行0の角が奥）
-            float targetYaw = turn * 90f + (tilted ? -45f : 0f);
+            // 斜めの基本の向きは、今までの2Dの斜めの絵と同じ（列0・行0の角が奥）。turn 1 で正面（行が画面の横にそろう）
+            float targetYaw = tilted ? turn * 45f - 45f : (turn / 2) * 90f;
             toYaw = yaw + Mathf.DeltaAngle(yaw, targetYaw);
-            toSize = FitSize(toPitch, toYaw);
-            if (immediate || turnSeconds <= 0f)
+            toSize = overview ? FitSize(toPitch, toYaw) : closeSize;
+            toFocus = overview ? Vector3.zero : ClampFocus(closeFocus);
+            StartCameraMove(immediate);
+        }
+
+        private void StartCameraMove(bool immediate)
+        {
+            if (immediate || turnSeconds <= 0f || !Application.isPlaying)
             {
-                pitch = toPitch; yaw = toYaw; size = toSize;
+                pitch = toPitch; yaw = toYaw; size = toSize; focus = toFocus;
                 moveTime = -1f;
                 ApplyCamera();
                 return;
             }
-            fromPitch = pitch; fromYaw = yaw; fromSize = size;
+            fromPitch = pitch; fromYaw = yaw; fromSize = size; fromFocus = focus;
             moveTime = 0f;
+        }
+
+        /// <summary>全体（盤面がまるごと入る）と寄り（横に約10マス）を切り替える</summary>
+        public void SetOverview(bool on, bool immediate = false)
+        {
+            overview = on;
+            SetView(tilted, turn, immediate);
+        }
+
+        /// <summary>そのマスを画面に入れる（寄りのとき。全体のときは覚えておくだけ）</summary>
+        public void FocusOn(Vector2Int cell, bool immediate = false) => FocusOnPoint(map.TopCenter(cell), immediate);
+
+        public void FocusOnPoint(Vector3 point, bool immediate = false)
+        {
+            closeFocus = ClampFocus(point);
+            if (overview) return;
+            toFocus = closeFocus;
+            if (moveTime >= 0f && !immediate) return;   // 回している途中なら、その動きのまま寄る先だけ変える
+            toPitch = pitch; toYaw = yaw; toSize = size;
+            StartCameraMove(immediate);
+        }
+
+        /// <summary>
+        /// 見ている所は、戦えるマスの少し内側から出さない（盤面の角に寄っても、景色の外が画面の角に見えないように）。
+        /// 高さは天面の高さのまま
+        /// </summary>
+        private Vector3 ClampFocus(Vector3 point)
+        {
+            if (map == null) return point;
+            float hx = Mathf.Max(0f, (map.Columns - 1) * 0.5f - 1.5f), hz = Mathf.Max(0f, (map.Rows - 1) * 0.5f - 1f);
+            return new Vector3(Mathf.Clamp(point.x, -hx, hx), point.y, Mathf.Clamp(point.z, -hz, hz));
         }
 
         public void TurnBy(int steps) => SetView(tilted, turn + steps);
@@ -840,6 +960,7 @@ namespace Srpg.Battle
             targetCamera.transform.rotation = rotation;
             targetCamera.transform.position = transform.position + focus - rotation * Vector3.forward * 30f;
             if (keyLight != null) keyLight.transform.rotation = Quaternion.Euler(lightPitch, yaw + lightYawOffset, 0f);
+            FitBackdrop();
             UpdateBillboards();
         }
 
@@ -850,12 +971,50 @@ namespace Srpg.Battle
             targetCamera.orthographic = true;
             targetCamera.orthographicSize = size;
             targetCamera.transform.rotation = rotation;
-            targetCamera.transform.position = transform.position - rotation * Vector3.forward * 30f;
+            // 寄りのときは、見ている所を画面の少し上に置く（画面の下にユニットのカードや戦闘予測が出るため）
+            var aim = transform.position + focus - rotation * Vector3.up * (size * focusRaise * (1f - OverviewBlend()));
+            targetCamera.transform.position = aim - rotation * Vector3.forward * 30f;
             targetCamera.nearClipPlane = 0.1f;
             targetCamera.farClipPlane = 80f;
             // 光もカメラと一緒に回す（どの向きから見ても、同じ側が明るい。原作者 2026-09-26）
             if (keyLight != null) keyLight.transform.rotation = Quaternion.Euler(lightPitch, yaw + lightYawOffset, 0f);
+            FitBackdrop();
             UpdateBillboards();
+        }
+
+        // 全体のときは見ている所を上げない（0＝寄り、1＝全体）
+        private float OverviewBlend() => overview ? 1f : 0f;
+
+        /// <summary>いちばん奥の背景（M1）: カメラに付けた画面いっぱいの絵。霧を受けないようUIの絵として描く</summary>
+        private void AddBackdrop()
+        {
+            if (backdrop == null || targetCamera == null) return;
+            var canvasObject = new GameObject("Backdrop", typeof(Canvas));
+            canvasObject.transform.SetParent(transform, false);
+            var canvas = canvasObject.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceCamera;
+            canvas.worldCamera = targetCamera;
+            canvas.planeDistance = 70f;
+            canvas.sortingOrder = -100;
+            var image = new GameObject("Image", typeof(RectTransform), typeof(UnityEngine.UI.RawImage));
+            image.transform.SetParent(canvasObject.transform, false);
+            image.GetComponent<UnityEngine.UI.RawImage>().texture = backdrop;
+            image.GetComponent<UnityEngine.UI.RawImage>().raycastTarget = false;
+            backdropRect = image.GetComponent<RectTransform>();
+            backdropRect.anchorMin = Vector2.zero;
+            backdropRect.anchorMax = Vector2.one;
+            backdropRect.offsetMin = backdropRect.offsetMax = Vector2.zero;
+        }
+
+        /// <summary>背景の絵の縦横比を保って画面を覆う</summary>
+        private void FitBackdrop()
+        {
+            if (backdropRect == null || backdrop == null || targetCamera == null) return;
+            float screenAspect = targetCamera.aspect > 0f ? targetCamera.aspect : 844f / 390f;
+            float imageAspect = (float)backdrop.width / backdrop.height;
+            float sx = Mathf.Max(1f, imageAspect / screenAspect), sy = Mathf.Max(1f, screenAspect / imageAspect);
+            backdropRect.anchorMin = new Vector2(0.5f - sx * 0.5f, 0.5f - sy * 0.5f);
+            backdropRect.anchorMax = new Vector2(0.5f + sx * 0.5f, 0.5f + sy * 0.5f);
         }
 
         /// <summary>盤面全体が画面に入る大きさ（正投影の縦の半分）</summary>
@@ -891,6 +1050,7 @@ namespace Srpg.Battle
                 pitch = Mathf.Lerp(fromPitch, toPitch, t);
                 yaw = Mathf.Lerp(fromYaw, toYaw, t);
                 size = Mathf.Lerp(fromSize, toSize, t);
+                focus = Vector3.Lerp(fromFocus, toFocus, t);
                 ApplyCamera();
                 if (t >= 1f) moveTime = -1f;
             }
@@ -898,9 +1058,23 @@ namespace Srpg.Battle
             var keyboard = Keyboard.current;
             if (keyboard != null)
             {
-                if (keyboard.qKey.wasPressedThisFrame) TurnBy(-1);
-                if (keyboard.eKey.wasPressedThisFrame) TurnBy(1);
+                if (keyboard.qKey.wasPressedThisFrame) TurnBy(tilted ? -1 : -2);
+                if (keyboard.eKey.wasPressedThisFrame) TurnBy(tilted ? 1 : 2);
                 if (keyboard.tKey.wasPressedThisFrame) ToggleTilt();
+                if (keyboard.fKey.wasPressedThisFrame) SetOverview(!overview);
+            }
+
+            // 寄りのときは、ホイールで寄る・引く
+            var mouse = Mouse.current;
+            if (mouse != null && !overview)
+            {
+                float scroll = mouse.scroll.ReadValue().y;
+                if (Mathf.Abs(scroll) > 0.01f)
+                {
+                    CloseSize -= Mathf.Sign(scroll) * 0.4f;
+                    size = toSize = closeSize;
+                    ApplyCamera();
+                }
             }
 
             var pointer = Pointer.current;
@@ -910,27 +1084,57 @@ namespace Srpg.Battle
             {
                 if (IsOverButtons(position)) return;
                 pressing = true;
-                pressPosition = position;
+                dragging = false;
+                pressPosition = lastDrag = position;
             }
-            else if (pressing && pointer.press.wasReleasedThisFrame)
+            else if (pressing && pointer.press.isPressed && !overview)
+            {
+                // 寄りのときは、指でずらして見回す（回すのはボタン・Q/E）
+                if (!dragging && (position - pressPosition).magnitude > TapPixels) dragging = true;
+                if (dragging) PanByScreen(position - lastDrag);
+                lastDrag = position;
+            }
+            if (pressing && pointer.press.wasReleasedThisFrame)
             {
                 pressing = false;
                 var delta = position - pressPosition;
-                if (Mathf.Abs(delta.x) >= SwipePixels && Mathf.Abs(delta.x) > Mathf.Abs(delta.y))
-                    TurnBy(delta.x > 0 ? 1 : -1);
+                if (dragging) dragging = false;
+                else if (overview && Mathf.Abs(delta.x) >= SwipePixels && Mathf.Abs(delta.x) > Mathf.Abs(delta.y))
+                    TurnBy((delta.x > 0 ? 1 : -1) * (tilted ? 1 : 2));
                 else if (delta.magnitude <= TapPixels)
                     Tap(position);
             }
+        }
+
+        /// <summary>画面上で動かした分だけ、見ている所をずらす（指に地面が付いてくるように）</summary>
+        public void PanByScreen(Vector2 screenDelta)
+        {
+            if (targetCamera == null || map == null) return;
+            float unitsPerPixel = 2f * size / Mathf.Max(1f, targetCamera.pixelHeight);
+            var rotation = Quaternion.Euler(pitch, yaw, 0f);
+            var right = rotation * Vector3.right; right.y = 0f; right.Normalize();
+            var up = rotation * Vector3.up; up.y = 0f;
+            if (up.sqrMagnitude < 1e-4f) up = rotation * Vector3.forward;
+            up.y = 0f; up.Normalize();
+            float sin = Mathf.Max(0.3f, Mathf.Sin(pitch * Mathf.Deg2Rad));
+            focus = ClampFocus(focus - right * screenDelta.x * unitsPerPixel - up * screenDelta.y * unitsPerPixel / sin);
+            toFocus = closeFocus = focus;
+            moveTime = -1f;
+            ApplyCamera();
         }
 
         // ── 画面のボタン（試作用。正式なUIは別） ──
 
         private float GuiScale => Mathf.Max(1f, Screen.height / 390f);
 
-        private Rect ButtonArea => new Rect(Screen.width / GuiScale - 250f, 390f - 48f, 240f, 38f);
+        private Rect ButtonArea => new Rect(Screen.width / GuiScale - 326f, 390f - 48f, 316f, 38f);
+
+        /// <summary>ほかの画面の部品（戦闘の操作の欄など）の上を押したときは、マスを押したことにしない</summary>
+        public Func<Vector2, bool> IsOverOtherGui;
 
         private bool IsOverButtons(Vector2 screenPosition)
         {
+            if (IsOverOtherGui != null && IsOverOtherGui(screenPosition)) return true;
             if (!showGuiButtons) return false;
             var guiPoint = new Vector2(screenPosition.x, Screen.height - screenPosition.y) / GuiScale;
             return ButtonArea.Contains(guiPoint);
@@ -948,14 +1152,18 @@ namespace Srpg.Battle
             float s = GuiScale;
             GUI.matrix = Matrix4x4.Scale(new Vector3(s, s, 1f));
             var area = ButtonArea;
-            if (GUI.Button(new Rect(area.x, area.y, 60f, area.height), "◀ 90°")) TurnBy(-1);
+            if (GUI.Button(new Rect(area.x, area.y, 60f, area.height), tilted ? "◀ 45°" : "◀ 90°")) TurnBy(tilted ? -1 : -2);
             if (GUI.Button(new Rect(area.x + 66f, area.y, 108f, area.height), tilted ? "真上から見る" : "斜めから見る")) ToggleTilt();
-            if (GUI.Button(new Rect(area.x + 180f, area.y, 60f, area.height), "90° ▶")) TurnBy(1);
+            if (GUI.Button(new Rect(area.x + 180f, area.y, 60f, area.height), tilted ? "45° ▶" : "90° ▶")) TurnBy(tilted ? 1 : 2);
+            if (GUI.Button(new Rect(area.x + 246f, area.y, 70f, area.height), overview ? "寄る" : "全体")) SetOverview(!overview);
 
-            string info = Selected.HasValue
-                ? $"列{Selected.Value.x}・行{Selected.Value.y}　{Board3DMap.TerrainName(map.TerrainAt(Selected.Value))}"
-                : "マスを押すと選べます";
-            GUI.Label(new Rect(10f, 8f, 400f, 24f), info);
+            if (showCellInfo)
+            {
+                string info = Selected.HasValue
+                    ? $"列{Selected.Value.x}・行{Selected.Value.y}　{Board3DMap.TerrainName(map.TerrainAt(Selected.Value))}"
+                    : "マスを押すと選べます";
+                GUI.Label(new Rect(10f, 8f, 400f, 24f), info);
+            }
 
             // 向きの表示: 行0の側（盤面の奥）を「北」として矢印で出す
             if (targetCamera != null)

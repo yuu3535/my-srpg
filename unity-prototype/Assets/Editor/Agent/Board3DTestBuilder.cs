@@ -122,7 +122,7 @@ namespace Srpg.EditorAgent
             controller.Setup();
             for (int turn = 1; turn < 4; turn++)
             {
-                controller.SetView(true, turn, true);
+                controller.SetView(true, turn * 2, true);
                 Render(camera, rt, $"Board3D_T3_turn{turn * 90}");
             }
             controller.SetRawAngles(30f, 0f);   // 0°と90°の間（-45° → 45°の途中）
@@ -133,7 +133,7 @@ namespace Srpg.EditorAgent
             Render(camera, rt, "Board3D_T4_top");
             for (int turn = 0; turn < 4; turn++)
             {
-                controller.SetView(true, turn, true);
+                controller.SetView(true, turn * 2, true);
                 Render(camera, rt, $"Board3D_T4_turn{turn * 90}");
             }
             // 寄って見る: 0° で石の壁のまわり ／ 180° で3Dの木の後ろに立つリングホルム
@@ -169,8 +169,28 @@ namespace Srpg.EditorAgent
             Render(camera, rt, "Board3D_T5_C2_close");
             controller.SetCloseView(30f, -45f, Board3DLayout.TopCenter(new Vector2Int(5, 1)) + Vector3.up * 0.3f, 2.6f);
             Render(camera, rt, "Board3D_T5_C2_gate");
-            controller.SetView(true, 2, true);
+            controller.SetView(true, 4, true);
             Render(camera, rt, "Board3D_T5_C2_turn180");
+            controller.SetView(true, 1, true);   // 正面（原作者 2026-09-27）
+            Render(camera, rt, "Board3D_T5_C2_front");
+
+            // T6: 寄りの画面を基本にする（原作者 2026-09-27）。盤面のまわりの景色と、いちばん奥の背景（M1）
+            controller.SetView(true, 0, true);
+            Render(camera, rt, "Board3D_T6_overview");
+            controller.SetOverview(false, true);
+            controller.FocusOnPoint(Board3DLayout.TopCenter(new Vector2Int(4, 5)), true);
+            Render(camera, rt, "Board3D_T6_close");
+            controller.FocusOnPoint(Board3DLayout.TopCenter(new Vector2Int(6, 1)), true);
+            Render(camera, rt, "Board3D_T6_close_gate");
+            controller.FocusOnPoint(Board3DLayout.TopCenter(new Vector2Int(1, 6)), true);
+            Render(camera, rt, "Board3D_T6_close_edge");
+            controller.FocusOnPoint(Board3DLayout.TopCenter(new Vector2Int(4, 5)), true);
+            controller.SetView(true, 1, true);
+            Render(camera, rt, "Board3D_T6_close_front");
+            controller.SetView(false, 0, true);
+            Render(camera, rt, "Board3D_T6_close_top");
+            controller.SetOverview(true, true);
+            controller.SetView(true, 0, true);
 
             camera.targetTexture = null;
             UnityEngine.Object.DestroyImmediate(rt);
@@ -373,9 +393,14 @@ namespace Srpg.EditorAgent
         }
 
         /// <summary>盤面の表示（Board3DView）に、カメラ・光・模様・木の絵・陣営の枠・キャラの絵（足の裏の位置つき）を渡す</summary>
-        internal static void ConfigureView(Board3DView view, Camera camera, Light light, IEnumerable<string> unitIds, bool buildOnStart)
+        // いちばん奥の背景（発注書 第3版 M1。アイコン素材/発注UI_v3/M1.png を写したもの）
+        internal const string BackdropPath = "Assets/Art/Board3D/bg_battle_m1.png";
+
+        internal static void ConfigureView(Board3DView view, Camera camera, Light light, IEnumerable<string> unitIds, bool buildOnStart, bool startOverview = true)
         {
             var so = new SerializedObject(view);
+            so.FindProperty("startOverview").boolValue = startOverview;
+            so.FindProperty("backdrop").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Texture2D>(BackdropPath);
             so.FindProperty("targetCamera").objectReferenceValue = camera;
             so.FindProperty("keyLight").objectReferenceValue = light;
             so.FindProperty("buildOnStart").boolValue = buildOnStart;

@@ -80,6 +80,7 @@ namespace Srpg.Battle
             map.ModelTrees.AddRange(Trees);
             map.Gates.Add(Gate);   // たいまつと門の光は門の模型に付く
             map.Railings.AddRange(Railings);
+            Board3DScenery.Surround(map);   // まわりの景色（原作者 2026-09-27: 盤面の外を透明にしない）
             return map;
         }
 

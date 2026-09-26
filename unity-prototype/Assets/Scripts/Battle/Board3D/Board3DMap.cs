@@ -30,6 +30,12 @@ namespace Srpg.Battle
         public readonly List<Vector2Int> PictureTrees = new List<Vector2Int>();
         public readonly List<Vector2Int> Gates = new List<Vector2Int>();      // 門（柱と屋根をマスの奥の辺に立てる。門の下は通れる）
         public readonly List<Vector2Int> Railings = new List<Vector2Int>();   // 橋の欄干（マスの左右の辺に低い手すり）
+        public readonly List<Vector2Int> SceneryTrees = new List<Vector2Int>(); // 盤面の外の景色の木（Board3DScenery）
+
+        // 戦えるマスの外の、見た目だけの地形（種類と天面の高さ）。押せない・入れない
+        private readonly Dictionary<Vector2Int, (char type, float height)> scenery = new Dictionary<Vector2Int, (char, float)>();
+        public IEnumerable<Vector2Int> SceneryCells => scenery.Keys;
+        public int SceneryMargin { get; private set; }
 
         public const float GateHeight = 1.8f;
         public const float TreeHeight = 2.3f;
@@ -52,7 +58,23 @@ namespace Srpg.Battle
         /// <summary>壁の模型が立つマス（地形は # にする）。height は天面の高さ</summary>
         public void AddWall(Vector2Int cell, float height = WallHeight) => walls[cell] = height;
 
-        public char TerrainAt(Vector2Int cell) => terrain[cell.x, cell.y];
+        /// <summary>盤面の外に見た目だけの地形を置く（c は岩の崖。ほかの記号は盤面と同じ模様）</summary>
+        public void SetScenery(Vector2Int cell, char type, float height)
+        {
+            if (InBounds(cell)) return;
+            scenery[cell] = (type, height);
+            int dx = cell.x < 0 ? -cell.x : Mathf.Max(0, cell.x - Columns + 1);
+            int dy = cell.y < 0 ? -cell.y : Mathf.Max(0, cell.y - Rows + 1);
+            SceneryMargin = Mathf.Max(SceneryMargin, Mathf.Max(dx, dy));
+        }
+
+        public bool IsScenery(Vector2Int cell) => !InBounds(cell) && scenery.ContainsKey(cell);
+
+        public char TerrainAt(Vector2Int cell)
+        {
+            if (InBounds(cell)) return terrain[cell.x, cell.y];
+            return scenery.TryGetValue(cell, out var s) ? s.type : '.';
+        }
         public char MarkerAt(Vector2Int cell) => markers.TryGetValue(cell, out var m) ? m : '.';
         public bool IsWall(Vector2Int cell) => walls.ContainsKey(cell);
         public bool InBounds(Vector2Int cell) => cell.x >= 0 && cell.x < Columns && cell.y >= 0 && cell.y < Rows;
@@ -78,6 +100,7 @@ namespace Srpg.Battle
         /// </summary>
         public float TopHeight(Vector2Int cell)
         {
+            if (!InBounds(cell)) return scenery.TryGetValue(cell, out var s) ? s.height : 0f;
             if (walls.TryGetValue(cell, out var wall)) return wall;
             return TerrainAt(cell) switch
             {
@@ -125,6 +148,7 @@ namespace Srpg.Battle
             'o' => new Color32(104, 98, 92, 255),
             '#' => new Color32(96, 90, 86, 255),
             't' => new Color32(40, 56, 44, 255),
+            'c' => new Color32(84, 80, 78, 255),
             _ => Color.magenta,
         };
     }

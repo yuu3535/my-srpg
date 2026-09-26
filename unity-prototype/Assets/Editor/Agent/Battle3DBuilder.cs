@@ -22,6 +22,7 @@ namespace Srpg.EditorAgent
     public static class Battle3DBuilder
     {
         private const string DataPath = "Assets/Data/Battles/battle_trial_adopted.json";
+        private const string PlanPath = "Assets/Data/Battles/battle_trial_adopted_plan.json";   // 戦闘の状態（tools/export_unity_battle_plan.mjs）
         private const string ScenePath = "Assets/Scenes/Battle3D.unity";
 
         public static void BuildAll()
@@ -50,12 +51,16 @@ namespace Srpg.EditorAgent
 
             var viewObject = new GameObject("Board3D");
             var view = viewObject.AddComponent<Board3DView>();
-            Board3DTestBuilder.ConfigureView(view, camera, light, data.units.Select(u => u.id), buildOnStart: false);
+            Board3DTestBuilder.ConfigureView(view, camera, light, data.units.Select(u => u.id), buildOnStart: false, startOverview: false);
+            var viewSo = new SerializedObject(view);
+            viewSo.FindProperty("showCellInfo").boolValue = false;   // 左上は戦闘の表示（フェーズ・ログ）
+            viewSo.ApplyModifiedPropertiesWithoutUndo();
 
             var controllerObject = new GameObject("Battle3D");
             var controller = controllerObject.AddComponent<Battle3DController>();
             var so = new SerializedObject(controller);
             so.FindProperty("battleJson").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(DataPath);
+            so.FindProperty("planJson").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(PlanPath);
             so.FindProperty("view").objectReferenceValue = view;
             so.ApplyModifiedPropertiesWithoutUndo();
 
@@ -79,23 +84,64 @@ namespace Srpg.EditorAgent
             if (controller.Selected != arshe) throw new InvalidOperationException("アルシェを押して選べなかった");
             Board3DTestBuilder.Render(camera, rt, "Battle3D_select");
 
-            // 2マス奥を押して動かす
+            // 2マス奥を押して動かし、待機
             var dest = arshe.cell + new Vector2Int(0, -2);
             TapOnScreen(view, camera, dest);
             if (arshe.cell != dest) throw new InvalidOperationException("移動範囲のマスを押して動かせなかった");
+            controller.ChooseWait();
             // 敵に狙われている印（赤い丸）
             controller.SetTargeted("ringholm", true);
             view.SetCloseView(30f, -45f, view.Map.TopCenter(new Vector2Int(4, 5)) + Vector3.up * 0.4f, 2.6f);
             Board3DTestBuilder.Render(camera, rt, "Battle3D_moved_targeted");
             controller.SetTargeted("ringholm", false);
 
+            // アルバスが敵のアルバスへ攻撃する: 動いて「攻撃」→ 攻撃の範囲（赤）→ 相手を選んで戦闘予測 → 実行
+            view.SetView(true, 0, true);
+            var albas = controller.Units.First(u => u.source.id == "albas");
+            TapOnScreen(view, camera, albas.cell);
+            TapOnScreen(view, camera, albas.cell + new Vector2Int(0, -2));
+            controller.ChooseAttack();
+            Board3DTestBuilder.Render(camera, rt, "Battle3D_attack_range");
+            controller.ShowForecast("albas_rival");
+            if (controller.CurrentForecast == null) throw new InvalidOperationException("戦闘予測が出なかった");
+            var forecast = controller.CurrentForecast;
+            controller.RollsOverride = new Srpg.Battle.Plan.ForecastRolls();   // 画像を毎回同じにするため、予測どおりに当てる
+            controller.ConfirmAttack();
+            var rival = controller.Units.First(u => u.source.id == "albas_rival");
+            if (rival.plan.hp != forecast.defenderHpAfter) throw new InvalidOperationException($"予測と実際が違う（{rival.plan.hp} / {forecast.defenderHpAfter}）");
+            Debug.Log($"[Battle3DBuilder] アルバス→敵のアルバス: 予測 HP {forecast.defenderHpAfter}、実際 {rival.plan.hp}");
+
+            // 敵の番（待たずに進める）
+            controller.EndTurn();
+            Debug.Log("[Battle3DBuilder] " + string.Join(" / ", controller.Log.Skip(Math.Max(0, controller.Log.Count - 12))));
+            Board3DTestBuilder.Render(camera, rt, "Battle3D_after_enemy");
+            controller.RollsOverride = null;
+
             view.SetView(false, 0, true);
             Board3DTestBuilder.Render(camera, rt, "Battle3D_top");
-            view.SetView(true, 2, true);
+            view.SetView(true, 4, true);
             Board3DTestBuilder.Render(camera, rt, "Battle3D_turn180");
+            view.SetView(true, 1, true);   // 正面（原作者 2026-09-27）
+            Board3DTestBuilder.Render(camera, rt, "Battle3D_front");
+
+            // 寄りの画面（原作者 2026-09-27: 戦闘は寄りが基本。全体はボタンで見る）
+            controller.Setup();
+            view.SetView(true, 0, true);
+            view.SetOverview(false, true);
+            controller.FocusOnAllies(true);
+            Board3DTestBuilder.Render(camera, rt, "Battle3D_close");
+            controller.Select("arshe");
+            Board3DTestBuilder.Render(camera, rt, "Battle3D_close_select");
+            view.SetView(true, 1, true);
+            Board3DTestBuilder.Render(camera, rt, "Battle3D_close_front");
+            view.SetView(false, 0, true);
+            Board3DTestBuilder.Render(camera, rt, "Battle3D_close_top");
+            view.SetOverview(true, true);
+            view.SetView(true, 0, true);
 
             camera.targetTexture = null;
             UnityEngine.Object.DestroyImmediate(rt);
+            controller.Setup();  // シーンには始まりの状態を保存する（盤面の見た目はこのあと消す）
             view.ClearBoard();   // 盤面は再生したときに作る（作ったマテリアルはシーンに保存できないため）
             EditorSceneManager.SaveScene(scene, ScenePath);
 

@@ -2,7 +2,8 @@
     "name": "Srpg.Battle",
     "rootNamespace": "Srpg.Battle",
     "references": [
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
