@@ -26,7 +26,9 @@
 | `UNITY_ISOMETRIC_MAP_PRODUCTION_GUIDE_2026-09-26.md` | 現行の制作仕様 | 2:1、128×64px、レイヤー分割、Unityへの受け渡し |
 | `MAP_PROTOTYPE_BORDER_WATCHROAD_2026-09-26.md` | 試作対象（案B改） | 最初の非シナリオ12×8試作。A〜Cの配置比較と、採用した案B改の地形表 |
 | `graybox/border_watchroad_*.png` | 試作対象の図 | 案の比較図、案B改の配置図・地形の配置図（ChatGPTへ渡す） |
-| `docs/30-planning/MAP_ORDER_BORDER_WATCHROAD_2026-09-26.md` | 発注用 | 案B改の地面マップと戦闘の背景のChatGPT向け依頼文 |
+| `docs/30-planning/MAP_ORDER_BORDER_WATCHROAD_2026-09-26.md` | 保留 | 案B改の地面マップと戦闘の背景のChatGPT向け依頼文（2Dの斜めの絵の場合） |
+| `MAP_3D_BOARD_TEST_REQUEST_2026-09-26.md` | 検討中・試作対象 | 3Dの盤面＋2Dのキャラで、真上→斜め見下ろし→回転を試す。総合担当への依頼 |
+| `concepts/reference_battle_screen_*` | 原作者の見本 | 目指す戦闘画面の見た目（斜め見下ろし・石のブロックの城壁） |
 | `docs/30-planning/UNITY_M1_PLAN_2026-09-26.md` | 現在の実装計画 | Unity試作の到達点と次工程 |
 | `assets/maps/iso_trial_12x8_guide.png` | 現行下絵 | 12×8盤面の位置合わせ基準 |
 | `assets/maps/iso_trial_12x8.png` | 仮素材 | M1用の石畳・森の仮マップ。完成素材ではない |
