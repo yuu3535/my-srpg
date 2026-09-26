@@ -29,6 +29,8 @@ namespace Srpg.EditorAgent
         private const string PreviewDir = "Assets/Previews";
         private const string TokenDir = "Assets/Art/Tokens";                         // キャラの盤面の絵（BattleM1 と同じ）
         private const string TreePicturePath = "Assets/Art/Board3D/tree_picture.png";  // 板に貼る仮の木の絵（ここで描く）
+        private const string TextureDir = "Assets/Art/Board3D/Textures";                // T5 の仮の模様（tools/make_board_textures.py）
+        private const string VolumeProfilePath = "Assets/Settings/Board3DVolume.asset";  // 光のにじみ（ブルーム）の設定
         // ゲームのUI素材（ブラウザ版の assets/ui/ から複製）。盤面の枠 D4（味方）・D5（敵）
         private static readonly (string source, string dest)[] UiFrames =
         {
@@ -91,7 +93,13 @@ namespace Srpg.EditorAgent
             camera.orthographic = true;
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color32(14, 11, 26, 255);   // 黒紫
-            cameraObject.AddComponent<UniversalAdditionalCameraData>().SetRenderer(rendererIndex);
+            var cameraData = cameraObject.AddComponent<UniversalAdditionalCameraData>();
+            cameraData.SetRenderer(rendererIndex);
+            cameraData.renderPostProcessing = true;   // 光のにじみ（ブルーム）
+            var volumeObject = new GameObject("Global Volume");
+            var volume = volumeObject.AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.sharedProfile = EnsureVolumeProfile();
 
             var lightObject = new GameObject("Directional Light");
             var light = lightObject.AddComponent<Light>();
@@ -109,6 +117,15 @@ namespace Srpg.EditorAgent
             so.FindProperty("targetCamera").objectReferenceValue = camera;
             so.FindProperty("keyLight").objectReferenceValue = light;
             so.FindProperty("treeSprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(TreePicturePath);
+            var texturePaths = ConfigureBoardTextures();
+            var texturesProp = so.FindProperty("boardTextures");
+            texturesProp.arraySize = texturePaths.Length;
+            for (int i = 0; i < texturePaths.Length; i++)
+            {
+                var element = texturesProp.GetArrayElementAtIndex(i);
+                element.FindPropertyRelative("name").stringValue = Path.GetFileNameWithoutExtension(texturePaths[i]);
+                element.FindPropertyRelative("texture").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Texture2D>(texturePaths[i]);
+            }
             so.FindProperty("allyFrameSprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(UiFrames[0].dest);
             so.FindProperty("enemyFrameSprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(UiFrames[1].dest);
             var withSprite = Board3DLayout.Units
@@ -129,6 +146,9 @@ namespace Srpg.EditorAgent
             var rt = new RenderTexture(PreviewWidth, PreviewHeight, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
             camera.targetTexture = rt;
             camera.aspect = (float)PreviewWidth / PreviewHeight;
+            controller.Textured = false;
+            controller.Lanterns = false;
+            volume.enabled = false;
             controller.Setup();
 
             // T1: 真上（最初の1枚は陰影の準備が間に合わず暗くなるので、一度空撮りしてから撮る）
@@ -182,8 +202,27 @@ namespace Srpg.EditorAgent
             }
             controller.Foot = Board3DTestController.FootStyle.TeamFrame;
 
+            // T5: 仮の模様（ドット絵の粗さ）を貼り、見え方を4通りで比べる
+            //   A 模様だけ ／ B 粗い解像度で描いて点のまま拡大 ／ C 色を寄せて遠くを霧で沈める ／ D B と C の両方
+            // 原作者の決定（2026-09-27）で C に。原作TRPGの背景素材の色に寄せて作り直した C を「C2」として撮る
+            // （A・B・C・D の比較の画像は、決定の記録として残してある）
+            controller.Textured = true;
+            controller.Lanterns = true;
+            volume.enabled = true;
+            SetMoodC2();
+            controller.Setup();
+            controller.SetView(true, 0, true);
+            Render(camera, rt, "Board3D_T5_C2_board");
+            controller.SetCloseView(30f, -45f, Board3DLayout.TopCenter(new Vector2Int(4, 4)) + Vector3.up * 0.3f, 2.6f);
+            Render(camera, rt, "Board3D_T5_C2_close");
+            controller.SetCloseView(30f, -45f, Board3DLayout.TopCenter(new Vector2Int(5, 1)) + Vector3.up * 0.3f, 2.6f);
+            Render(camera, rt, "Board3D_T5_C2_gate");
+            controller.SetView(true, 2, true);
+            Render(camera, rt, "Board3D_T5_C2_turn180");
+
             camera.targetTexture = null;
             UnityEngine.Object.DestroyImmediate(rt);
+            controller.Textured = true;
             controller.ClearBoard();   // 盤面は再生したときに作る（作ったマテリアルはシーンに保存できないため）
             EditorSceneManager.SaveScene(scene, ScenePath);
             AssetDatabase.SaveAssets();
@@ -212,6 +251,82 @@ namespace Srpg.EditorAgent
             float foot = (float)lowest / h;
             Debug.Log($"[Board3DTestBuilder] feet {Path.GetFileName(path)}: 一番下の色 {foot:P1}・基準点 {pivot:P1}");
             return foot - pivot;
+        }
+
+        /// <summary>
+        /// 画像を書き込む。別のアプリ（エクスプローラーの縮小表示など）が一瞬ファイルを開いていると失敗するので、少し待ってやり直す
+        /// </summary>
+        private static void WriteWithRetry(string path, byte[] bytes)
+        {
+            for (int attempt = 1; ; attempt++)
+            {
+                try
+                {
+                    File.WriteAllBytes(path, bytes);
+                    return;
+                }
+                catch (IOException) when (attempt < 10)
+                {
+                    System.Threading.Thread.Sleep(300 * attempt);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 作り直した C（docs/10-design/map/MAP_COLOR_MOOD_DIRECTION_2026-09-27.md）:
+        /// 主な光は琥珀、まわりの明るさ（影の色）は青緑、霧は弱めの深い藍。シーンにもこの設定で保存する
+        /// </summary>
+        private static void SetMoodC2()
+        {
+            var light = UnityEngine.Object.FindObjectsByType<Light>(FindObjectsSortMode.None).FirstOrDefault(l => l.type == LightType.Directional);
+            RenderSettings.fog = true;
+            RenderSettings.fogMode = FogMode.Linear;
+            RenderSettings.fogColor = new Color32(16, 34, 44, 255);
+            RenderSettings.fogStartDistance = 29f;
+            RenderSettings.fogEndDistance = 46f;
+            RenderSettings.ambientMode = AmbientMode.Flat;
+            RenderSettings.ambientLight = new Color32(76, 102, 108, 255);
+            if (light != null)
+            {
+                light.color = new Color32(255, 216, 168, 255);
+                light.intensity = 1.45f;
+            }
+        }
+
+        /// <summary>光のにじみ（ブルーム）の設定を用意する。明るい光（炎・門の光）だけがにじむ</summary>
+        private static VolumeProfile EnsureVolumeProfile()
+        {
+            var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(VolumeProfilePath);
+            if (profile != null) return profile;
+            profile = ScriptableObject.CreateInstance<VolumeProfile>();
+            AssetDatabase.CreateAsset(profile, VolumeProfilePath);
+            var bloom = profile.Add<Bloom>(true);
+            bloom.threshold.Override(1.0f);
+            bloom.intensity.Override(0.8f);
+            bloom.scatter.Override(0.65f);
+            AssetDatabase.AddObjectToAsset(bloom, profile);
+            EditorUtility.SetDirty(profile);
+            AssetDatabase.SaveAssets();
+            return profile;
+        }
+
+        /// <summary>仮の模様を、点のまま拡大・繰り返しで読み込む。模様のパスを返す</summary>
+        private static string[] ConfigureBoardTextures()
+        {
+            if (!Directory.Exists(TextureDir)) return Array.Empty<string>();
+            var paths = Directory.GetFiles(TextureDir, "*.png").Select(p => p.Replace(Path.DirectorySeparatorChar, '/')).OrderBy(p => p, StringComparer.Ordinal).ToArray();
+            foreach (var path in paths)
+            {
+                AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
+                var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+                importer.textureType = TextureImporterType.Default;
+                importer.filterMode = FilterMode.Point;
+                importer.wrapMode = TextureWrapMode.Repeat;
+                importer.mipmapEnabled = false;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
+                importer.SaveAndReimport();
+            }
+            return paths;
         }
 
         /// <summary>ゲームのUI素材（盤面の枠）を複製し、マス1つ分の絵として読み込む</summary>
@@ -288,18 +403,47 @@ namespace Srpg.EditorAgent
                 throw new InvalidOperationException($"マス {cell} を押して選べなかった");
         }
 
-        private static void Render(Camera camera, RenderTexture rt, string name)
+        /// <summary>
+        /// 画像を書き出す。downscale が2以上なら、その分だけ粗い解像度で描いてから、ぼかさず点のまま元の大きさへ拡大する
+        /// （T5 の「粗い解像度で描いて拡大」。3Dの盤面もキャラのドット絵と同じ粗さになる）
+        /// </summary>
+        private static void Render(Camera camera, RenderTexture rt, string name, int downscale = 1)
         {
             Directory.CreateDirectory(PreviewDir);
-            camera.Render();
             var previous = RenderTexture.active;
-            RenderTexture.active = rt;
-            var tex = new Texture2D(PreviewWidth, PreviewHeight, TextureFormat.RGB24, false);
-            tex.ReadPixels(new Rect(0, 0, PreviewWidth, PreviewHeight), 0, 0);
-            tex.Apply();
+            Texture2D tex;
+            if (downscale <= 1)
+            {
+                camera.Render();
+                RenderTexture.active = rt;
+                tex = new Texture2D(PreviewWidth, PreviewHeight, TextureFormat.RGB24, false);
+                tex.ReadPixels(new Rect(0, 0, PreviewWidth, PreviewHeight), 0, 0);
+                tex.Apply();
+            }
+            else
+            {
+                int w = PreviewWidth / downscale, h = PreviewHeight / downscale;
+                var small = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32) { filterMode = FilterMode.Point };
+                camera.targetTexture = small;
+                camera.Render();
+                RenderTexture.active = small;
+                var lowTex = new Texture2D(w, h, TextureFormat.RGB24, false);
+                lowTex.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+                var low = lowTex.GetPixels32();
+                var big = new Color32[PreviewWidth * PreviewHeight];
+                for (int y = 0; y < PreviewHeight; y++)
+                for (int x = 0; x < PreviewWidth; x++)
+                    big[y * PreviewWidth + x] = low[Math.Min(h - 1, y / downscale) * w + Math.Min(w - 1, x / downscale)];
+                tex = new Texture2D(PreviewWidth, PreviewHeight, TextureFormat.RGB24, false);
+                tex.SetPixels32(big);
+                tex.Apply();
+                camera.targetTexture = rt;
+                UnityEngine.Object.DestroyImmediate(lowTex);
+                UnityEngine.Object.DestroyImmediate(small);
+            }
             RenderTexture.active = previous;
             var path = $"{PreviewDir}/{name}.png";
-            File.WriteAllBytes(path, tex.EncodeToPNG());
+            WriteWithRetry(path, tex.EncodeToPNG());
             UnityEngine.Object.DestroyImmediate(tex);
             Debug.Log($"[Board3DTestBuilder] preview: {path}");
         }

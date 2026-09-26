@@ -56,6 +56,9 @@ namespace Srpg.Battle
         public static readonly Vector2Int ModelTree = new Vector2Int(0, 6);
         public static readonly Vector2Int PictureTree = new Vector2Int(11, 1);
 
+        // T5（C 作り直し）: 仮の明かり。監視門（目的地点・列5・行0）の両脇のたいまつ
+        public static readonly Vector2Int[] Torches = { new Vector2Int(4, 0), new Vector2Int(6, 0) };
+
         public const float WallHeight = 1.3f;
 
         public static bool IsWall(Vector2Int cell) => System.Array.IndexOf(Walls, cell) >= 0;

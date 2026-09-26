@@ -13,6 +13,7 @@ namespace Srpg.Battle
     ///   T3: 縦の軸で90°ずつ回す（ボタン・キー Q/E・横のスワイプ）。回す間は短い動き
     ///   T4: キャラの盤面の絵を板にして立たせる（常にカメラの方を向く）。仮の石の壁2マスと、
     ///       仮の木（3Dの模型と、板に貼った絵を1本ずつ）。水堀は低く、壁は高く
+    ///   T5: 仮の模様（ドット絵の粗さ）をマスの天面と側面に貼る（tools/make_board_textures.py）
     /// 操作: 押す＝マスを選ぶ ／ 横にスワイプ・Q/E・画面のボタン＝90°回す ／ T・ボタン＝真上と斜めの切り替え
     /// </summary>
     public class Board3DTestController : MonoBehaviour
@@ -36,7 +37,17 @@ namespace Srpg.Battle
             public float footFromPivot;
         }
 
+        [Serializable]
+        public struct NamedTexture
+        {
+            public string name;
+            public Texture2D texture;
+        }
+
         [SerializeField] private Camera targetCamera;
+        [SerializeField] private bool textured = true;                      // T5: 模様を貼る（false なら T1〜T4 の仮の色）
+        [SerializeField] private bool lanterns = true;                      // T5（C 作り直し）: たいまつと門の光（点の光）
+        [SerializeField] private NamedTexture[] boardTextures = Array.Empty<NamedTexture>();
         [SerializeField] private UnitSprite[] unitSprites = Array.Empty<UnitSprite>();
         [SerializeField] private Sprite treeSprite;                         // 板に貼る木の絵
         [SerializeField] private float unitHeight = 1.25f;                  // キャラの絵の高さ（1マス＝1）
@@ -78,6 +89,9 @@ namespace Srpg.Battle
         private Sprite shadowSprite, ringSprite;
 
         public FootStyle Foot { get => footStyle; set => footStyle = value; }
+        public bool Textured { get => textured; set => textured = value; }
+        public bool Lanterns { get => lanterns; set => lanterns = value; }
+        private readonly Dictionary<string, Material> texturedMaterials = new Dictionary<string, Material>();
 
         private bool tilted;
         private int turn;                  // 90°の何回目か（0〜3）
@@ -118,6 +132,12 @@ namespace Srpg.Battle
             for (int c = 0; c < Board3DLayout.Columns; c++)
             {
                 var cell = new Vector2Int(c, r);
+                if (textured && TextureMaterial("top_stone") != null)
+                {
+                    tiles[cell] = BuildTexturedTile(cell);
+                    AddMarker(cell);
+                    continue;
+                }
                 var tile = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 tile.name = $"Tile_{c}_{r}";
                 tile.transform.SetParent(boardRoot, false);
@@ -134,6 +154,11 @@ namespace Srpg.Battle
 
             foreach (var (cell, id) in Board3DLayout.Units) AddUnit(cell, id);
             AddModelTree(Board3DLayout.ModelTree);
+            if (lanterns)
+            {
+                foreach (var cell in Board3DLayout.Torches) AddTorch(cell);
+                AddPointLight("GateGlow", Board3DLayout.TopCenter(new Vector2Int(5, 0)) + Vector3.up * 0.6f, new Color32(255, 214, 150, 255), 2.6f, 1.6f);
+            }
             AddPictureTree(Board3DLayout.PictureTree);
 
             selectionFrame = BuildSelectionFrame();
@@ -263,7 +288,8 @@ namespace Srpg.Battle
             trunk.transform.SetParent(root, false);
             trunk.transform.localScale = new Vector3(0.18f, 0.5f, 0.18f);
             trunk.transform.localPosition = new Vector3(0, 0.5f, 0);
-            trunk.GetComponent<Renderer>().sharedMaterial = LitMaterial(new Color32(74, 52, 36, 255));
+            trunk.GetComponent<Renderer>().sharedMaterial = textured && TextureMaterial("side_earth") != null
+                ? TextureMaterial("side_earth") : LitMaterial(new Color32(74, 52, 36, 255));
             var crowns = new[] { (0.95f, 1.25f), (0.75f, 1.75f), (0.5f, 2.15f) };
             foreach (var (width, y) in crowns)
             {
@@ -272,8 +298,54 @@ namespace Srpg.Battle
                 crown.transform.SetParent(root, false);
                 crown.transform.localScale = new Vector3(width, width * 0.8f, width);
                 crown.transform.localPosition = new Vector3(0, y, 0);
-                crown.GetComponent<Renderer>().sharedMaterial = LitMaterial(new Color32(46, 78, 50, 255));
+                crown.GetComponent<Renderer>().sharedMaterial = textured && TextureMaterial("top_moss") != null
+                    ? TextureMaterial("top_moss") : LitMaterial(new Color32(46, 78, 50, 255));
             }
+        }
+
+        /// <summary>仮のたいまつ: 細い柱の上に光る炎と、橙の点の光（原作の背景素材の「暗い中のはっきりした光」）</summary>
+        private void AddTorch(Vector2Int cell)
+        {
+            var root = new GameObject($"Torch_{cell.x}_{cell.y}").transform;
+            root.SetParent(boardRoot, false);
+            root.localPosition = Board3DLayout.TopCenter(cell) + new Vector3(0f, 0f, 0.3f);
+            var post = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            Object.DestroyImmediate(post.GetComponent<Collider>());
+            post.transform.SetParent(root, false);
+            post.transform.localScale = new Vector3(0.08f, 0.32f, 0.08f);
+            post.transform.localPosition = new Vector3(0f, 0.32f, 0f);
+            post.GetComponent<Renderer>().sharedMaterial = LitMaterial(new Color32(60, 40, 30, 255));
+            var flame = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            Object.DestroyImmediate(flame.GetComponent<Collider>());
+            flame.transform.SetParent(root, false);
+            flame.transform.localScale = new Vector3(0.16f, 0.22f, 0.16f);
+            flame.transform.localPosition = new Vector3(0f, 0.72f, 0f);
+            flame.GetComponent<Renderer>().sharedMaterial = GlowMaterial(new Color(1f, 0.5f, 0.16f), 2.2f);
+            flame.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            AddPointLight($"TorchLight_{cell.x}_{cell.y}", root.localPosition + new Vector3(0f, 0.8f, 0f), new Color32(255, 150, 72, 255), 3.4f, 2.8f);
+        }
+
+        private void AddPointLight(string objectName, Vector3 localPosition, Color color, float range, float intensity)
+        {
+            var light = new GameObject(objectName).AddComponent<Light>();
+            light.transform.SetParent(boardRoot, false);
+            light.transform.localPosition = localPosition;
+            light.type = LightType.Point;
+            light.color = color;
+            light.range = range;
+            light.intensity = intensity;
+            light.shadows = LightShadows.None;
+        }
+
+        /// <summary>自分で光る材質（光のにじみ＝ブルームで周りに光が広がる）</summary>
+        private static Material GlowMaterial(Color color, float strength)
+        {
+            var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+            var material = new Material(shader) { color = color };
+            material.EnableKeyword("_EMISSION");
+            material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
+            if (material.HasProperty("_EmissionColor")) material.SetColor("_EmissionColor", color * strength);
+            return material;
         }
 
         /// <summary>仮の木（板に貼った絵）。キャラと同じく常にカメラの方を向く</summary>
@@ -348,6 +420,115 @@ namespace Srpg.Battle
                 inner.GetComponent<Renderer>().sharedMaterial = LitMaterial(new Color32(24, 20, 30, 255));
                 inner.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             }
+        }
+
+        // ── T5: 模様を貼ったマス ──
+
+        private static string TopTextureName(Vector2Int cell)
+        {
+            if (Board3DLayout.IsWall(cell)) return "top_wall";
+            return Board3DLayout.TerrainAt(cell) switch
+            {
+                's' => "top_stone",
+                'd' => "top_dirt",
+                'g' => "top_moss",
+                '=' => "top_bridge",
+                '~' => "top_water",
+                'o' => "top_rubble",
+                _ => "top_dark",
+            };
+        }
+
+        private static string SideTextureName(Vector2Int cell) =>
+            Board3DLayout.IsWall(cell) || Board3DLayout.TerrainAt(cell) == '~' || Board3DLayout.TerrainAt(cell) == '=' ? "side_stone" : "side_earth";
+
+        /// <summary>天面と側面に別の模様を貼ったマスのブロック。天面の模様はマスごとに90°ずつ回して、繰り返しを目立たなくする</summary>
+        private GameObject BuildTexturedTile(Vector2Int cell)
+        {
+            float top = Board3DLayout.TopHeight(cell);
+            float height = top + TileHeight;
+            var tile = new GameObject($"Tile_{cell.x}_{cell.y}");
+            tile.transform.SetParent(boardRoot, false);
+            tile.transform.localPosition = Board3DLayout.TopCenter(cell);
+            int turnUv = (cell.x * 7 + cell.y * 13) % 4;
+            tile.AddComponent<MeshFilter>().sharedMesh = BlockMesh(1f - TileGap, height, turnUv);
+            tile.AddComponent<MeshRenderer>().sharedMaterials = new[]
+            {
+                TextureMaterial(TopTextureName(cell)),
+                TextureMaterial(SideTextureName(cell)),
+            };
+            var box = tile.AddComponent<BoxCollider>();
+            box.size = new Vector3(1f - TileGap, height, 1f - TileGap);
+            box.center = new Vector3(0f, -height * 0.5f, 0f);
+            return tile;
+        }
+
+        /// <summary>天面（部分0）と4つの側面（部分1）だけの箱。天面は y=0、底は y=-height。側面の模様は高さ1ごとに繰り返す</summary>
+        private static Mesh BlockMesh(float width, float height, int turnUv)
+        {
+            float h = width * 0.5f;
+            var vertices = new List<Vector3>();
+            var normals = new List<Vector3>();
+            var uvs = new List<Vector2>();
+            var topTris = new List<int>();
+            var sideTris = new List<int>();
+
+            Vector2 Turn(Vector2 uv)
+            {
+                for (int i = 0; i < turnUv; i++) uv = new Vector2(1f - uv.y, uv.x);
+                return uv;
+            }
+            void Quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d, Vector3 normal, Vector2 ua, Vector2 ub, Vector2 uc, Vector2 ud, List<int> tris)
+            {
+                int start = vertices.Count;
+                vertices.AddRange(new[] { a, b, c, d });
+                normals.AddRange(new[] { normal, normal, normal, normal });
+                uvs.AddRange(new[] { ua, ub, uc, ud });
+                tris.AddRange(new[] { start, start + 1, start + 2, start, start + 2, start + 3 });
+            }
+
+            // 天面（上から見て時計回り）
+            Quad(new Vector3(-h, 0, -h), new Vector3(-h, 0, h), new Vector3(h, 0, h), new Vector3(h, 0, -h), Vector3.up,
+                Turn(new Vector2(0, 0)), Turn(new Vector2(0, 1)), Turn(new Vector2(1, 1)), Turn(new Vector2(1, 0)), topTris);
+            // 側面: 模様の上端（v=1）を天面にそろえる
+            float vb = 1f - height;
+            var sides = new (Vector3 normal, Vector3 left, Vector3 right)[]
+            {
+                (Vector3.back, new Vector3(-h, 0, -h), new Vector3(h, 0, -h)),
+                (Vector3.right, new Vector3(h, 0, -h), new Vector3(h, 0, h)),
+                (Vector3.forward, new Vector3(h, 0, h), new Vector3(-h, 0, h)),
+                (Vector3.left, new Vector3(-h, 0, h), new Vector3(-h, 0, -h)),
+            };
+            foreach (var (normal, left, right) in sides)
+            {
+                var down = Vector3.down * height;
+                Quad(left + down, left, right, right + down, normal,
+                    new Vector2(0, vb), new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, vb), sideTris);
+            }
+
+            var mesh = new Mesh { name = "Block" };
+            mesh.SetVertices(vertices);
+            mesh.SetNormals(normals);
+            mesh.SetUVs(0, uvs);
+            mesh.subMeshCount = 2;
+            mesh.SetTriangles(topTris, 0);
+            mesh.SetTriangles(sideTris, 1);
+            mesh.RecalculateBounds();
+            return mesh;
+        }
+
+        private Material TextureMaterial(string name)
+        {
+            if (texturedMaterials.TryGetValue(name, out var cached)) return cached;
+            Texture2D texture = null;
+            foreach (var entry in boardTextures) if (entry.name == name) texture = entry.texture;
+            if (texture == null) return null;
+            var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+            var material = new Material(shader) { mainTexture = texture };
+            if (material.HasProperty("_BaseMap")) material.SetTexture("_BaseMap", texture);
+            if (material.HasProperty("_Smoothness")) material.SetFloat("_Smoothness", 0.05f);
+            texturedMaterials[name] = material;
+            return material;
         }
 
         /// <summary>選んだマスの枠（明るい4本の棒）</summary>
