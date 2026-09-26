@@ -22,9 +22,8 @@ const CHARACTERS_DATA = require(path.join(ROOT, "characters.js"));
 const BATTLE_DEFINITIONS = require(path.join(ROOT, "battleDefinitions.js"));
 
 // Unity版の戦闘に出さないキャラ（理由つき）。素材が揃ったら外す
-const UNITY_EXCLUDED_UNITS = {
-    young_karima: "背景を透明にした盤面の絵ができるまで出さない（原作者 2026-09-26）",
-};
+// （カリマは背景を透明にした盤面の絵ができたので出す。原作者 2026-09-26）
+const UNITY_EXCLUDED_UNITS = {};
 
 function copyAsset(sourceRelative, destDir, destName) {
     const source = path.join(ROOT, sourceRelative);

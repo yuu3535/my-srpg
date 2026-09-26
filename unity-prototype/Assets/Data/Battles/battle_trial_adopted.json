@@ -43,6 +43,16 @@
       "token": "Assets/Art/Tokens/albas.png"
     },
     {
+      "id": "young_karima",
+      "name": "カリマ",
+      "side": "ally",
+      "x": 6,
+      "y": 6,
+      "move": 3,
+      "attackRange": 1,
+      "token": "Assets/Art/Tokens/young_karima.png"
+    },
+    {
       "id": "forest_guard",
       "name": "森の番人",
       "side": "enemy",

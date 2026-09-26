@@ -283,7 +283,7 @@ const CHARACTERS_DATA = [
 
         moved: false, acted: false,
         char: "カ",
-        tokenImage: "立ち絵AI生成/幼少期カリマドット.png",
+        tokenImage: "立ち絵AI生成/カリマドット絵.png",   // 背景を透明にした盤面の絵（原作者 2026-09-26）
         portraitImage: "立ち絵透過済み/幼少期カリマ1_transparent.png?v=20260717a",
         portraitBgSize: "300%",  portraitBgPos: "55% top",
         portraitDmgBgSize: "250%", portraitDmgBgPos: "50% 5px",

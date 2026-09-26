@@ -20,7 +20,7 @@ namespace Srpg.Tests
 
             var controller = Object.FindFirstObjectByType<BattleM1Controller>();
             Assert.IsNotNull(controller, "BattleM1Controller がない");
-            Assert.AreEqual(7, controller.Units.Count);   // カリマは背景を透明にした絵ができるまで出さない
+            Assert.AreEqual(8, controller.Units.Count);   // 味方4人（カリマを含む）と敵4人
             // 赤い粒子は、ふだんは出さず、狙われたときだけ出す
             Assert.IsTrue(controller.Units.All(u => u.ring != null && !u.ring.gameObject.activeSelf), "ふだんは足元の粒子を出さない");
             controller.SetTargeted("arshe", true);
