@@ -6,23 +6,25 @@ namespace Srpg.Battle
     /// 3Dの盤面の試作（T1〜T3）で使う、マス目と地形の配置。
     /// 配置は国境監視路の案B改（docs/10-design/map/MAP_PROTOTYPE_BORDER_WATCHROAD_2026-09-26.md §7）。
     /// 1マス＝1×1。列は +x（右）、行は −z（手前）へ進む。盤面の中心が原点。
+    /// 盤面を組み立てるときは Watchroad() で Board3DMap にして渡す。
     /// </summary>
     public static class Board3DLayout
     {
         public const int Columns = 12;
         public const int Rows = 8;
 
-        // 地形の配置（行0〜7、列0〜11）。s 旧石畳 / d 土道 / g 苔と下草 / = 補修橋 / ~ 水堀 / o 遮蔽物 / # 砦壁の基礎・密な下草
+        // 地形の配置（行0〜7、列0〜11。マップ担当の「3Dの盤面の地形・高い物の表」2026-09-27）。
+        // s 旧石畳 / d 土道 / g 苔と下草 / = 補修橋 / ~ 水堀 / o 遮蔽物 / # 石の基礎 / t 密な茂み（盤面の角。木が立つ）
         public static readonly string[] Terrain =
         {
-            "##sssss#dd##",
-            "#ssosssoddd#",
+            "ttsssss#ddtt",
+            "tssosssodddt",
             "gs#ggssgdddg",
             "gs#~~~=~~ddg",
             "gss~~~=~~dod",
             "gosggosg#ddg",
-            "#gsgggsggdg#",
-            "##ggggsggd##",
+            "tgsgggsggdgt",
+            "ttggggsggdtt",
         };
 
         // 駒の配置（向きが分かるように盤面に置く印）。A 味方 / E 敵 / C 敵の指揮役 / G 目的地点（監視門） / S 道標
@@ -51,31 +53,42 @@ namespace Srpg.Battle
             (new Vector2Int(9, 0), "albas_rival"),
         };
 
-        // T4: 仮の石の壁（崩れた砦壁 列2・行2〜3）と、仮の木（3Dの模型と、板に貼った絵を1本ずつ）
-        public static readonly Vector2Int[] Walls = { new Vector2Int(2, 2), new Vector2Int(2, 3) };
-        public static readonly Vector2Int ModelTree = new Vector2Int(0, 6);
-        public static readonly Vector2Int PictureTree = new Vector2Int(11, 1);
+        // 高い物（マップ担当の「高い物の表」2026-09-27）
+        // 崩れた砦壁: 2マスで1つの壁。上の端を崩して、場所によって高さを変える
+        public static readonly (Vector2Int cell, float height)[] Walls = { (new Vector2Int(2, 2), 1.3f), (new Vector2Int(2, 3), 1.05f) };
+        // 木（針葉樹）: 盤面の角の茂み t だけに置く
+        public static readonly Vector2Int[] Trees = { new Vector2Int(0, 0), new Vector2Int(11, 0), new Vector2Int(0, 6), new Vector2Int(11, 6) };
+        // 監視門（目的地点）: 柱と屋根はマスの奥の辺に立て、たいまつ2本は門の左右の柱に付ける。門の下は通れる
+        public static readonly Vector2Int Gate = new Vector2Int(5, 0);
+        // 補修橋の欄干: 橋のマスの左右の辺に低い手すり
+        public static readonly Vector2Int[] Railings = { new Vector2Int(6, 3), new Vector2Int(6, 4) };
 
-        // T5（C 作り直し）: 仮の明かり。監視門（目的地点・列5・行0）の両脇のたいまつ
-        public static readonly Vector2Int[] Torches = { new Vector2Int(4, 0), new Vector2Int(6, 0) };
-
-        public const float WallHeight = 1.3f;
-
-        public static bool IsWall(Vector2Int cell) => System.Array.IndexOf(Walls, cell) >= 0;
-
-        /// <summary>マスの天面の高さ。水堀は低く、壁は高く、遮蔽物（瓦礫）は少しだけ高い</summary>
-        public static float TopHeight(Vector2Int cell)
+        /// <summary>国境監視路の試作マップ（案B改）を、3Dの盤面のデータにする</summary>
+        public static Board3DMap Watchroad()
         {
-            if (IsWall(cell)) return WallHeight;
-            return TerrainAt(cell) switch
+            var map = new Board3DMap(Columns, Rows);
+            for (int r = 0; r < Rows; r++)
+            for (int c = 0; c < Columns; c++)
             {
-                '~' => -0.18f,
-                'o' => 0.14f,
-                _ => 0f,
-            };
+                var cell = new Vector2Int(c, r);
+                map.SetTerrain(cell, TerrainAt(cell));
+                if (MarkerAt(cell) != '.') map.SetMarker(cell, MarkerAt(cell));
+            }
+            foreach (var (cell, height) in Walls) map.AddWall(cell, height);
+            foreach (var (cell, id) in Units)
+                map.Units.Add(new Board3DMap.Unit { cell = cell, id = id, enemy = MarkerAt(cell) == 'E' || MarkerAt(cell) == 'C' });
+            map.ModelTrees.AddRange(Trees);
+            map.Gates.Add(Gate);   // たいまつと門の光は門の模型に付く
+            map.Railings.AddRange(Railings);
+            return map;
         }
 
-        public static Vector3 TopCenter(Vector2Int cell) => CellCenter(cell) + Vector3.up * TopHeight(cell);
+        private static Board3DMap cached;
+        private static Board3DMap Map => cached ??= Watchroad();
+
+        public static bool IsWall(Vector2Int cell) => Map.IsWall(cell);
+        public static float TopHeight(Vector2Int cell) => Map.TopHeight(cell);
+        public static Vector3 TopCenter(Vector2Int cell) => Map.TopCenter(cell);
 
         public static char TerrainAt(Vector2Int cell) => Terrain[cell.y][cell.x];
         public static char MarkerAt(Vector2Int cell) => Markers[cell.y][cell.x];
@@ -83,7 +96,7 @@ namespace Srpg.Battle
         public static bool InBounds(Vector2Int cell) =>
             cell.x >= 0 && cell.x < Columns && cell.y >= 0 && cell.y < Rows;
 
-        /// <summary>マスの天面の中心（天面の高さは y = 0）</summary>
+        /// <summary>マスの中心（高さ 0 の面）</summary>
         public static Vector3 CellCenter(Vector2Int cell) =>
             new Vector3(cell.x - (Columns - 1) * 0.5f, 0f, (Rows - 1) * 0.5f - cell.y);
 
@@ -92,30 +105,5 @@ namespace Srpg.Battle
             new Vector2Int(
                 Mathf.RoundToInt(world.x + (Columns - 1) * 0.5f),
                 Mathf.RoundToInt((Rows - 1) * 0.5f - world.z));
-
-        public static string TerrainName(char t) => t switch
-        {
-            's' => "旧石畳",
-            'd' => "土道",
-            'g' => "苔と下草",
-            '=' => "補修橋",
-            '~' => "水堀",
-            'o' => "遮蔽物",
-            '#' => "砦壁の基礎",
-            _ => "―",
-        };
-
-        /// <summary>仮の色（T1〜T3。模様はT5で貼る）</summary>
-        public static Color TerrainColor(char t) => t switch
-        {
-            's' => new Color32(150, 146, 138, 255),
-            'd' => new Color32(139, 108, 74, 255),
-            'g' => new Color32(82, 108, 66, 255),
-            '=' => new Color32(122, 90, 58, 255),
-            '~' => new Color32(38, 68, 94, 255),
-            'o' => new Color32(104, 98, 92, 255),
-            '#' => new Color32(52, 50, 58, 255),
-            _ => Color.magenta,
-        };
     }
 }

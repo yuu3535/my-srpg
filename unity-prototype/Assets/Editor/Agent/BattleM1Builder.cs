@@ -223,8 +223,9 @@ namespace Srpg.EditorAgent
             controller.Setup();   // シーンには選択なしの状態を保存する
 
             EditorSceneManager.SaveScene(scene, ScenePath);
+            // 最初のシーンは3Dの戦闘（Battle3D。原作者 2026-09-27）。2Dの BattleM1 は比べるために一覧の後ろに残す
             var scenes = EditorBuildSettings.scenes.Where(s => s.path != ScenePath).ToList();
-            scenes.Insert(0, new EditorBuildSettingsScene(ScenePath, true));
+            scenes.Add(new EditorBuildSettingsScene(ScenePath, true));
             EditorBuildSettings.scenes = scenes.ToArray();
             AssetDatabase.SaveAssets();
         }

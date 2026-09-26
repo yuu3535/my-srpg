@@ -48,5 +48,6 @@ namespace Srpg.Battle
         public int move;
         public int attackRange;
         public string token;
+        public bool flying;   // 飛行（水堀・遮蔽物・石の基礎・茂みを通り抜けられる。止まれるマスは TerrainRules）
     }
 }

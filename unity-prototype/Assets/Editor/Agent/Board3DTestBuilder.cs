@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -24,21 +25,21 @@ namespace Srpg.EditorAgent
     /// </summary>
     public static class Board3DTestBuilder
     {
-        private const string ScenePath = "Assets/Scenes/Board3DTest.unity";
-        private const string RendererPath = "Assets/Settings/Renderer3D.asset";
-        private const string PreviewDir = "Assets/Previews";
-        private const string TokenDir = "Assets/Art/Tokens";                         // キャラの盤面の絵（BattleM1 と同じ）
-        private const string TreePicturePath = "Assets/Art/Board3D/tree_picture.png";  // 板に貼る仮の木の絵（ここで描く）
-        private const string TextureDir = "Assets/Art/Board3D/Textures";                // T5 の仮の模様（tools/make_board_textures.py）
-        private const string VolumeProfilePath = "Assets/Settings/Board3DVolume.asset";  // 光のにじみ（ブルーム）の設定
+        internal const string ScenePath = "Assets/Scenes/Board3DTest.unity";
+        internal const string RendererPath = "Assets/Settings/Renderer3D.asset";
+        internal const string PreviewDir = "Assets/Previews";
+        internal const string TokenDir = "Assets/Art/Tokens";                         // キャラの盤面の絵（BattleM1 と同じ）
+        internal const string TreePicturePath = "Assets/Art/Board3D/tree_picture.png";  // 板に貼る仮の木の絵（ここで描く）
+        internal const string TextureDir = "Assets/Art/Board3D/Textures";                // T5 の仮の模様（tools/make_board_textures.py）
+        internal const string VolumeProfilePath = "Assets/Settings/Board3DVolume.asset";  // 光のにじみ（ブルーム）の設定
         // ゲームのUI素材（ブラウザ版の assets/ui/ から複製）。盤面の枠 D4（味方）・D5（敵）
-        private static readonly (string source, string dest)[] UiFrames =
+        internal static readonly (string source, string dest)[] UiFrames =
         {
             ("../assets/ui/select_ally_d4.png", "Assets/Art/Board3D/select_ally_d4.png"),
             ("../assets/ui/select_enemy_d5.png", "Assets/Art/Board3D/select_enemy_d5.png"),
         };
-        private const int PreviewWidth = 1688;   // スマホの横画面（844×390 の2倍）
-        private const int PreviewHeight = 780;
+        internal const int PreviewWidth = 1688;   // スマホの横画面（844×390 の2倍）
+        internal const int PreviewHeight = 780;
 
         public static void BuildAll()
         {
@@ -59,7 +60,7 @@ namespace Srpg.EditorAgent
         }
 
         /// <summary>3D用の描画設定を描画設定の一覧に足し、その番号を返す（あれば足さない）</summary>
-        private static int EnsureUniversalRenderer()
+        internal static int EnsureUniversalRenderer()
         {
             var pipeline = (GraphicsSettings.defaultRenderPipeline ?? QualitySettings.renderPipeline) as UniversalRenderPipelineAsset;
             if (pipeline == null) pipeline = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>("Assets/Settings/UniversalRP.asset");
@@ -88,59 +89,10 @@ namespace Srpg.EditorAgent
         {
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
-            var cameraObject = new GameObject("Main Camera") { tag = "MainCamera" };
-            var camera = cameraObject.AddComponent<Camera>();
-            camera.orthographic = true;
-            camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = new Color32(14, 11, 26, 255);   // 黒紫
-            var cameraData = cameraObject.AddComponent<UniversalAdditionalCameraData>();
-            cameraData.SetRenderer(rendererIndex);
-            cameraData.renderPostProcessing = true;   // 光のにじみ（ブルーム）
-            var volumeObject = new GameObject("Global Volume");
-            var volume = volumeObject.AddComponent<Volume>();
-            volume.isGlobal = true;
-            volume.sharedProfile = EnsureVolumeProfile();
-
-            var lightObject = new GameObject("Directional Light");
-            var light = lightObject.AddComponent<Light>();
-            light.type = LightType.Directional;
-            light.intensity = 1.15f;
-            light.color = new Color32(255, 244, 226, 255);
-            light.shadows = LightShadows.Soft;
-            lightObject.transform.rotation = Quaternion.Euler(55f, -30f, 0f);
-            RenderSettings.ambientMode = AmbientMode.Flat;
-            RenderSettings.ambientLight = new Color32(78, 72, 96, 255);
-
+            CreateStage(rendererIndex, out var camera, out var light, out var volume);
             var controllerObject = new GameObject("Board3DTest");
-            var controller = controllerObject.AddComponent<Board3DTestController>();
-            var so = new SerializedObject(controller);
-            so.FindProperty("targetCamera").objectReferenceValue = camera;
-            so.FindProperty("keyLight").objectReferenceValue = light;
-            so.FindProperty("treeSprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(TreePicturePath);
-            var texturePaths = ConfigureBoardTextures();
-            var texturesProp = so.FindProperty("boardTextures");
-            texturesProp.arraySize = texturePaths.Length;
-            for (int i = 0; i < texturePaths.Length; i++)
-            {
-                var element = texturesProp.GetArrayElementAtIndex(i);
-                element.FindPropertyRelative("name").stringValue = Path.GetFileNameWithoutExtension(texturePaths[i]);
-                element.FindPropertyRelative("texture").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Texture2D>(texturePaths[i]);
-            }
-            so.FindProperty("allyFrameSprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(UiFrames[0].dest);
-            so.FindProperty("enemyFrameSprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(UiFrames[1].dest);
-            var withSprite = Board3DLayout.Units
-                .Select(u => (u.id, sprite: AssetDatabase.LoadAssetAtPath<Sprite>($"{TokenDir}/{u.id}.png")))
-                .Where(u => u.sprite != null).ToArray();
-            var spritesProp = so.FindProperty("unitSprites");
-            spritesProp.arraySize = withSprite.Length;
-            for (int i = 0; i < withSprite.Length; i++)
-            {
-                var element = spritesProp.GetArrayElementAtIndex(i);
-                element.FindPropertyRelative("id").stringValue = withSprite[i].id;
-                element.FindPropertyRelative("sprite").objectReferenceValue = withSprite[i].sprite;
-                element.FindPropertyRelative("footFromPivot").floatValue = FootFromPivot(withSprite[i].sprite, $"{TokenDir}/{withSprite[i].id}.png");
-            }
-            so.ApplyModifiedPropertiesWithoutUndo();
+            var controller = controllerObject.AddComponent<Board3DView>();
+            ConfigureView(controller, camera, light, Board3DLayout.Units.Select(u => u.id), buildOnStart: true);
 
             // 確認用の画像（画面の大きさに合わせてから、マスを押す位置を計算する）
             var rt = new RenderTexture(PreviewWidth, PreviewHeight, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
@@ -191,7 +143,7 @@ namespace Srpg.EditorAgent
             Render(camera, rt, "Board3D_T4_close_tree");
 
             // 足元の見せ方の比較（台座 ／ 影だけ ／ 影と陣営の色の輪）。斜めで寄ったところと、真上
-            foreach (Board3DTestController.FootStyle foot in Enum.GetValues(typeof(Board3DTestController.FootStyle)))
+            foreach (Board3DView.FootStyle foot in Enum.GetValues(typeof(Board3DView.FootStyle)))
             {
                 controller.Foot = foot;
                 controller.Setup();
@@ -200,7 +152,7 @@ namespace Srpg.EditorAgent
                 controller.SetView(false, 0, true);
                 Render(camera, rt, $"Board3D_T4_foot_{foot}_top");
             }
-            controller.Foot = Board3DTestController.FootStyle.TeamFrame;
+            controller.Foot = Board3DView.FootStyle.TeamFrame;
 
             // T5: 仮の模様（ドット絵の粗さ）を貼り、見え方を4通りで比べる
             //   A 模様だけ ／ B 粗い解像度で描いて点のまま拡大 ／ C 色を寄せて遠くを霧で沈める ／ D B と C の両方
@@ -233,7 +185,7 @@ namespace Srpg.EditorAgent
         /// 足の下の余白の量が絵ごとに違うため、この分だけ絵を下げて足の裏をマスの面にそろえる。
         /// 足より下に広がる魔法の光なども「色のある行」に入るので、その絵は光の下端が面に来る
         /// </summary>
-        private static float FootFromPivot(Sprite sprite, string path)
+        internal static float FootFromPivot(Sprite sprite, string path)
         {
             var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
             tex.LoadImage(File.ReadAllBytes(path));
@@ -256,7 +208,7 @@ namespace Srpg.EditorAgent
         /// <summary>
         /// 画像を書き込む。別のアプリ（エクスプローラーの縮小表示など）が一瞬ファイルを開いていると失敗するので、少し待ってやり直す
         /// </summary>
-        private static void WriteWithRetry(string path, byte[] bytes)
+        internal static void WriteWithRetry(string path, byte[] bytes)
         {
             for (int attempt = 1; ; attempt++)
             {
@@ -276,7 +228,7 @@ namespace Srpg.EditorAgent
         /// 作り直した C（docs/10-design/map/MAP_COLOR_MOOD_DIRECTION_2026-09-27.md）:
         /// 主な光は琥珀、まわりの明るさ（影の色）は青緑、霧は弱めの深い藍。シーンにもこの設定で保存する
         /// </summary>
-        private static void SetMoodC2()
+        internal static void SetMoodC2()
         {
             var light = UnityEngine.Object.FindObjectsByType<Light>(FindObjectsSortMode.None).FirstOrDefault(l => l.type == LightType.Directional);
             RenderSettings.fog = true;
@@ -294,7 +246,7 @@ namespace Srpg.EditorAgent
         }
 
         /// <summary>光のにじみ（ブルーム）の設定を用意する。明るい光（炎・門の光）だけがにじむ</summary>
-        private static VolumeProfile EnsureVolumeProfile()
+        internal static VolumeProfile EnsureVolumeProfile()
         {
             var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(VolumeProfilePath);
             if (profile != null) return profile;
@@ -311,7 +263,7 @@ namespace Srpg.EditorAgent
         }
 
         /// <summary>仮の模様を、点のまま拡大・繰り返しで読み込む。模様のパスを返す</summary>
-        private static string[] ConfigureBoardTextures()
+        internal static string[] ConfigureBoardTextures()
         {
             if (!Directory.Exists(TextureDir)) return Array.Empty<string>();
             var paths = Directory.GetFiles(TextureDir, "*.png").Select(p => p.Replace(Path.DirectorySeparatorChar, '/')).OrderBy(p => p, StringComparer.Ordinal).ToArray();
@@ -330,7 +282,7 @@ namespace Srpg.EditorAgent
         }
 
         /// <summary>ゲームのUI素材（盤面の枠）を複製し、マス1つ分の絵として読み込む</summary>
-        private static void CopyUiFrames()
+        internal static void CopyUiFrames()
         {
             foreach (var (source, dest) in UiFrames)
             {
@@ -348,7 +300,7 @@ namespace Srpg.EditorAgent
         }
 
         /// <summary>板に貼る仮の木の絵（幹と、重ねた丸い葉）を描いて、足元を基準にした絵として読み込む</summary>
-        private static void WriteTreePicture()
+        internal static void WriteTreePicture()
         {
             const int w = 256, h = 384;
             var pixels = new Color32[w * h];
@@ -393,8 +345,69 @@ namespace Srpg.EditorAgent
             importer.SaveAndReimport();
         }
 
+        /// <summary>3Dの盤面の場: カメラ（3D用の描画設定・光のにじみ）、光のにじみの設定、向きのある光</summary>
+        internal static void CreateStage(int rendererIndex, out Camera camera, out Light light, out Volume volume)
+        {
+            var cameraObject = new GameObject("Main Camera") { tag = "MainCamera" };
+            camera = cameraObject.AddComponent<Camera>();
+            camera.orthographic = true;
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = new Color32(14, 11, 26, 255);   // 黒紫
+            var cameraData = cameraObject.AddComponent<UniversalAdditionalCameraData>();
+            cameraData.SetRenderer(rendererIndex);
+            cameraData.renderPostProcessing = true;   // 光のにじみ（ブルーム）
+            var volumeObject = new GameObject("Global Volume");
+            volume = volumeObject.AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.sharedProfile = EnsureVolumeProfile();
+
+            var lightObject = new GameObject("Directional Light");
+            light = lightObject.AddComponent<Light>();
+            light.type = LightType.Directional;
+            light.intensity = 1.15f;
+            light.color = new Color32(255, 244, 226, 255);
+            light.shadows = LightShadows.Soft;
+            lightObject.transform.rotation = Quaternion.Euler(55f, -30f, 0f);
+            RenderSettings.ambientMode = AmbientMode.Flat;
+            RenderSettings.ambientLight = new Color32(78, 72, 96, 255);
+        }
+
+        /// <summary>盤面の表示（Board3DView）に、カメラ・光・模様・木の絵・陣営の枠・キャラの絵（足の裏の位置つき）を渡す</summary>
+        internal static void ConfigureView(Board3DView view, Camera camera, Light light, IEnumerable<string> unitIds, bool buildOnStart)
+        {
+            var so = new SerializedObject(view);
+            so.FindProperty("targetCamera").objectReferenceValue = camera;
+            so.FindProperty("keyLight").objectReferenceValue = light;
+            so.FindProperty("buildOnStart").boolValue = buildOnStart;
+            so.FindProperty("treeSprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(TreePicturePath);
+            var texturePaths = ConfigureBoardTextures();
+            var texturesProp = so.FindProperty("boardTextures");
+            texturesProp.arraySize = texturePaths.Length;
+            for (int i = 0; i < texturePaths.Length; i++)
+            {
+                var element = texturesProp.GetArrayElementAtIndex(i);
+                element.FindPropertyRelative("name").stringValue = Path.GetFileNameWithoutExtension(texturePaths[i]);
+                element.FindPropertyRelative("texture").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Texture2D>(texturePaths[i]);
+            }
+            so.FindProperty("allyFrameSprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(UiFrames[0].dest);
+            so.FindProperty("enemyFrameSprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(UiFrames[1].dest);
+            var withSprite = unitIds
+                .Select(id => (id, sprite: AssetDatabase.LoadAssetAtPath<Sprite>($"{TokenDir}/{id}.png")))
+                .Where(u => u.sprite != null).ToArray();
+            var spritesProp = so.FindProperty("unitSprites");
+            spritesProp.arraySize = withSprite.Length;
+            for (int i = 0; i < withSprite.Length; i++)
+            {
+                var element = spritesProp.GetArrayElementAtIndex(i);
+                element.FindPropertyRelative("id").stringValue = withSprite[i].id;
+                element.FindPropertyRelative("sprite").objectReferenceValue = withSprite[i].sprite;
+                element.FindPropertyRelative("footFromPivot").floatValue = FootFromPivot(withSprite[i].sprite, $"{TokenDir}/{withSprite[i].id}.png");
+            }
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
         /// <summary>そのマスの天面の中心を画面上で押したことにする（押して選べるかの確認）</summary>
-        private static void Tap(Board3DTestController controller, Camera camera, Vector2Int cell)
+        private static void Tap(Board3DView controller, Camera camera, Vector2Int cell)
         {
             var screen = camera.WorldToScreenPoint(controller.transform.position + Board3DLayout.TopCenter(cell));
             bool picked = controller.PickAtScreen(screen);
@@ -407,7 +420,7 @@ namespace Srpg.EditorAgent
         /// 画像を書き出す。downscale が2以上なら、その分だけ粗い解像度で描いてから、ぼかさず点のまま元の大きさへ拡大する
         /// （T5 の「粗い解像度で描いて拡大」。3Dの盤面もキャラのドット絵と同じ粗さになる）
         /// </summary>
-        private static void Render(Camera camera, RenderTexture rt, string name, int downscale = 1)
+        internal static void Render(Camera camera, RenderTexture rt, string name, int downscale = 1)
         {
             Directory.CreateDirectory(PreviewDir);
             var previous = RenderTexture.active;

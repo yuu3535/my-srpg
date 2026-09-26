@@ -20,7 +20,8 @@
       "y": 6,
       "move": 3,
       "attackRange": 1,
-      "token": "Assets/Art/Tokens/ringholm.png"
+      "token": "Assets/Art/Tokens/ringholm.png",
+      "flying": false
     },
     {
       "id": "arshe",
@@ -30,7 +31,8 @@
       "y": 6,
       "move": 3,
       "attackRange": 1,
-      "token": "Assets/Art/Tokens/arshe.png"
+      "token": "Assets/Art/Tokens/arshe.png",
+      "flying": false
     },
     {
       "id": "albas",
@@ -40,7 +42,8 @@
       "y": 6,
       "move": 3,
       "attackRange": 1,
-      "token": "Assets/Art/Tokens/albas.png"
+      "token": "Assets/Art/Tokens/albas.png",
+      "flying": false
     },
     {
       "id": "young_karima",
@@ -50,7 +53,8 @@
       "y": 6,
       "move": 3,
       "attackRange": 1,
-      "token": "Assets/Art/Tokens/young_karima.png"
+      "token": "Assets/Art/Tokens/young_karima.png",
+      "flying": false
     },
     {
       "id": "forest_guard",
@@ -60,7 +64,8 @@
       "y": 1,
       "move": 3,
       "attackRange": 1,
-      "token": "Assets/Art/Tokens/forest_guard.png"
+      "token": "Assets/Art/Tokens/forest_guard.png",
+      "flying": false
     },
     {
       "id": "dylan",
@@ -70,7 +75,8 @@
       "y": 1,
       "move": 3,
       "attackRange": 1,
-      "token": "Assets/Art/Tokens/dylan.png"
+      "token": "Assets/Art/Tokens/dylan.png",
+      "flying": false
     },
     {
       "id": "herel",
@@ -80,7 +86,8 @@
       "y": 2,
       "move": 3,
       "attackRange": 1,
-      "token": "Assets/Art/Tokens/herel.png"
+      "token": "Assets/Art/Tokens/herel.png",
+      "flying": false
     },
     {
       "id": "albas_rival",
@@ -90,7 +97,8 @@
       "y": 2,
       "move": 3,
       "attackRange": 1,
-      "token": "Assets/Art/Tokens/albas_rival.png"
+      "token": "Assets/Art/Tokens/albas_rival.png",
+      "flying": false
     }
   ]
 }

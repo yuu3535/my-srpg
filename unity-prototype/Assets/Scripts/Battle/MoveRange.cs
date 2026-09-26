@@ -7,6 +7,7 @@ namespace Srpg.Battle
     /// 移動範囲（ブラウザ版 game.js の getMoveRange と同じ規則）。
     ///   上下左右に移動力のぶん進める。相手の陣営のユニットは通れない。味方は通れるが、止まれない。
     ///   通れないマス（wall・void）には入れない。
+    ///   地形を考えるときは、入れるマスと止まれるマスを分けて渡す（飛行は通り抜けられても止まれないマスがある）。
     /// </summary>
     public static class MoveRange
     {
@@ -20,6 +21,20 @@ namespace Srpg.Battle
         public static List<Vector2Int> Compute(
             Vector2Int start, int move, string side,
             IEnumerable<IOccupant> units, int cols, int rows, System.Func<Vector2Int, bool> isBlocked,
+            IOccupant self = null)
+        {
+            System.Func<Vector2Int, bool> open = cell => isBlocked == null || !isBlocked(cell);
+            return Compute(start, move, side, units, cols, rows, open, open, self);
+        }
+
+        /// <summary>
+        /// 地形を考える移動範囲。canEnter: 入れる（通り抜けられる）マス、canStop: 止まれるマス。
+        /// 飛行は、止まれないマス（石の基礎・茂み）も通り抜けられる（TerrainRules）
+        /// </summary>
+        public static List<Vector2Int> Compute(
+            Vector2Int start, int move, string side,
+            IEnumerable<IOccupant> units, int cols, int rows,
+            System.Func<Vector2Int, bool> canEnter, System.Func<Vector2Int, bool> canStop,
             IOccupant self = null)
         {
             var occupants = new Dictionary<Vector2Int, IOccupant>();
@@ -38,13 +53,13 @@ namespace Srpg.Battle
             while (queue.Count > 0)
             {
                 var (cell, remaining) = queue.Dequeue();
-                if (cell != start && !occupants.ContainsKey(cell)) reachable.Add(cell);
+                if (cell != start && !occupants.ContainsKey(cell) && canStop(cell)) reachable.Add(cell);
                 if (remaining <= 0) continue;
                 foreach (var dir in dirs)
                 {
                     var next = cell + dir;
                     if (!IsoGrid.InBounds(next, cols, rows) || visited.Contains(next)) continue;
-                    if (isBlocked != null && isBlocked(next)) continue;
+                    if (!canEnter(next)) continue;
                     if (occupants.TryGetValue(next, out var occ) && occ.Side != side) continue;
                     visited.Add(next);
                     queue.Enqueue((next, remaining - 1));

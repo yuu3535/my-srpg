@@ -65,6 +65,7 @@ function main() {
             move: c.move,
             attackRange: c.attackRange ?? 1,
             token: c.tokenImage ? copyAsset(c.tokenImage, tokenDir, `${c.id}.png`) : null,
+            flying: !!c.flying,   // 飛行（キャラのデータにあれば。移動の規則は Unity の TerrainRules）
         };
     });
 
