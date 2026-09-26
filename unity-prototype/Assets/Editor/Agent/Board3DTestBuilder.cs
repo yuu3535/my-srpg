@@ -121,6 +121,7 @@ namespace Srpg.EditorAgent
                 var element = spritesProp.GetArrayElementAtIndex(i);
                 element.FindPropertyRelative("id").stringValue = withSprite[i].id;
                 element.FindPropertyRelative("sprite").objectReferenceValue = withSprite[i].sprite;
+                element.FindPropertyRelative("footFromPivot").floatValue = FootFromPivot(withSprite[i].sprite, $"{TokenDir}/{withSprite[i].id}.png");
             }
             so.ApplyModifiedPropertiesWithoutUndo();
 
@@ -186,6 +187,31 @@ namespace Srpg.EditorAgent
             controller.ClearBoard();   // 盤面は再生したときに作る（作ったマテリアルはシーンに保存できないため）
             EditorSceneManager.SaveScene(scene, ScenePath);
             AssetDatabase.SaveAssets();
+        }
+
+        /// <summary>
+        /// 絵の基準点から、一番下の色のある行（不透明度50%以上が3画素以上並ぶ行）までの距離を、絵の高さに対する割合で返す。
+        /// 足の下の余白の量が絵ごとに違うため、この分だけ絵を下げて足の裏をマスの面にそろえる。
+        /// 足より下に広がる魔法の光なども「色のある行」に入るので、その絵は光の下端が面に来る
+        /// </summary>
+        private static float FootFromPivot(Sprite sprite, string path)
+        {
+            var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            tex.LoadImage(File.ReadAllBytes(path));
+            var pixels = tex.GetPixels32();
+            int w = tex.width, h = tex.height, lowest = 0;
+            for (int y = 0; y < h; y++)   // y=0 が下端
+            {
+                int count = 0;
+                for (int x = 0; x < w && count < 3; x++)
+                    if (pixels[y * w + x].a >= 128) count++;
+                if (count >= 3) { lowest = y; break; }
+            }
+            UnityEngine.Object.DestroyImmediate(tex);
+            float pivot = sprite.pivot.y / sprite.rect.height;
+            float foot = (float)lowest / h;
+            Debug.Log($"[Board3DTestBuilder] feet {Path.GetFileName(path)}: 一番下の色 {foot:P1}・基準点 {pivot:P1}");
+            return foot - pivot;
         }
 
         /// <summary>ゲームのUI素材（盤面の枠）を複製し、マス1つ分の絵として読み込む</summary>

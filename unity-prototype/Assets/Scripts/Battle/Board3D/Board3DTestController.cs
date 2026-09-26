@@ -31,6 +31,9 @@ namespace Srpg.Battle
         {
             public string id;
             public Sprite sprite;
+            // 絵の基準点（下端から2%）から、一番下の色のある行までの距離（絵の高さに対する割合。上が＋）。
+            // 組み立て時に絵ごとに測る。この分だけ絵を下げて、足の裏をマスの面にそろえる（原作者 2026-09-27）
+            public float footFromPivot;
         }
 
         [SerializeField] private Camera targetCamera;
@@ -67,6 +70,7 @@ namespace Srpg.Battle
             public float height;
             public float scale;
             public bool fitCell;
+            public float footFromPivot;
         }
 
         private readonly List<Billboard> billboards = new List<Billboard>();
@@ -151,7 +155,7 @@ namespace Srpg.Battle
             char m = Board3DLayout.MarkerAt(cell);
             bool enemy = m == 'E' || m == 'C';
             var top = Board3DLayout.TopCenter(cell);
-            float feet = 0.03f;   // 陣営の枠（0.014）より上
+            float feet = 0.005f;   // 足の裏はマスの面（重なり順は描く順で決めるので、浮かせなくてよい）
             if (footStyle == FootStyle.Pedestal)
             {
                 var pedestal = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
@@ -175,9 +179,11 @@ namespace Srpg.Battle
             }
 
             Sprite sprite = null;
-            foreach (var entry in unitSprites) if (entry.id == id) sprite = entry.sprite;
+            float footFromPivot = 0f;
+            foreach (var entry in unitSprites)
+                if (entry.id == id) { sprite = entry.sprite; footFromPivot = entry.footFromPivot; }
             if (sprite == null) return;   // 絵のないキャラは足元だけ
-            AddBillboard($"Unit_{id}", sprite, top + Vector3.up * feet, unitHeight, true);
+            AddBillboard($"Unit_{id}", sprite, top + Vector3.up * feet, unitHeight, true, footFromPivot);
         }
 
         /// <summary>地面に寝かせた絵（足元の影・陣営の輪）。size はマスに対する直径</summary>
@@ -230,7 +236,7 @@ namespace Srpg.Battle
         }
 
         /// <summary>板に貼った絵を立てる。足元（絵の下端の中央）が position に来る</summary>
-        private void AddBillboard(string objectName, Sprite sprite, Vector3 position, float height, bool fitCell = false)
+        private void AddBillboard(string objectName, Sprite sprite, Vector3 position, float height, bool fitCell = false, float footFromPivot = 0f)
         {
             var holder = new GameObject(objectName).transform;
             holder.SetParent(boardRoot, false);
@@ -242,7 +248,8 @@ namespace Srpg.Battle
             spriteRenderer.sortingOrder = OrderCharacter;
             float scale = height / Mathf.Max(0.01f, sprite.bounds.size.y);
             spriteRenderer.transform.localScale = Vector3.one * scale;
-            billboards.Add(new Billboard { holder = holder, sprite = spriteRenderer.transform, height = height, scale = scale, fitCell = fitCell });
+            spriteRenderer.transform.localPosition = Vector3.down * (footFromPivot * height);
+            billboards.Add(new Billboard { holder = holder, sprite = spriteRenderer.transform, height = height, scale = scale, fitCell = fitCell, footFromPivot = footFromPivot });
         }
 
         /// <summary>仮の木（3Dの模型）: 幹と、重ねた3つの葉の塊</summary>
@@ -302,7 +309,8 @@ namespace Srpg.Battle
                 if (!b.fitCell) continue;
                 float height = Mathf.Lerp(b.height, topViewUnitSize, t);
                 b.sprite.localScale = Vector3.one * (b.scale * height / b.height);
-                b.sprite.localPosition = Vector3.down * (height * 0.5f * t);   // 絵の中心をマスの中央へ
+                // 立っているときは足の裏をマスの面に、真上では絵の中心をマスの中央へ
+                b.sprite.localPosition = Vector3.down * Mathf.Lerp(b.footFromPivot * height, height * 0.5f, t);
             }
         }
 
