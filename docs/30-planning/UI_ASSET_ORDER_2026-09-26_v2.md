@@ -1,5 +1,7 @@
 # UI素材の発注書 第2版（ChatGPT向け）
 
+> **第3版があります**: `MAP_UI_ASSET_ORDER_2026-09-26_v3.md`（マップ・UIをまとめた版）。この版の A5 顔枠の依頼文は第3版からも使う。
+
 作成: 2026-09-26 / Claude Code
 前の版: `docs/30-planning/UI_ASSET_ORDER_2026-09-25.md`（第1版）
 レビュー: `docs/40-reviews/ART_REVIEW_2026-09-26.md`
