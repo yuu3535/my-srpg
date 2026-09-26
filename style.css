@@ -7517,3 +7517,126 @@ html, body {
     mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent), linear-gradient(180deg, transparent, #000 7%, #000 93%, transparent);
     mask-composite: intersect;
 }
+
+/* ============================================================
+   [ui-v3] 発注書 第3版の素材（ChatGPT・2026-09-27 届いた分）
+   F1 帯の枠 ／ F2 真ん中の紋章 ／ F3 「攻撃する」 ／ F4 武器の種類 ／ F5 見出しの飾り
+   R1 味方一覧の枠 ／ A5 顔枠 ／ P1〜P3 盤面の頭上の印
+============================================================ */
+/* F4: 絵のアイコン（線画の色・線の指定を外す） */
+img.lsMenuIcon.wpnIcon {
+    object-fit: contain;
+    stroke: none;
+    background-clip: content-box;
+}
+#lsForecast .fcbWeapon .lsMenuIcon.wpnIcon { width: 17px; height: 17px; padding: 1px; }
+
+/* F1: 帯の枠は1枚の絵（金の線は細いまま、間の無地だけ伸ばしてある） */
+#lsForecast .fcbPanel {
+    padding: 7px 10px;
+    border: 0;
+    border-image: none;
+    background: url("assets/ui/fc_band.png?v=ui-v3-1") 0 0 / 100% 100% no-repeat;
+}
+#lsForecast .fcbBust { margin: 0; }
+#lsForecast .fcbSide { padding: 0 5px 0 3px; gap: 0; }
+#lsForecast .fcbStats > div { padding-top: 0; padding-bottom: 0; line-height: 1.45; }
+
+/* F2: 真ん中の紋章。物理と魔法のどちらでも交差した剣（原作者 2026-09-27: 物理対魔法もあるので統一）。縦の飾り線も絵のうち */
+#lsForecast .fcbEmblem { background: url("assets/ui/fc_emblem_sword.png?v=ui-v3-1") center / auto 100% no-repeat; }
+#lsForecast .fcbEmblem::before { display: none; }
+
+/* F3: 「攻撃する」（紫の帯） */
+#lsForecast .fcbBtns #lsFcConfirm,
+#lsForecast .fcbBtns #lsFcConfirm:active {
+    border-width: 0 12px;
+    border-image: url("assets/ui/button_f3_normal.png?v=ui-v3-1") 0 24 fill / 0 12px stretch;
+}
+#lsForecast .fcbBtns #lsFcConfirm:active {
+    border-image-source: url("assets/ui/button_f3_pressed.png?v=ui-v3-1");
+    filter: none;
+}
+
+/* F5: 見出しの下の飾り（線の代わり） */
+#lsForecast .fcbTitle::after {
+    left: 0;
+    right: 0;
+    bottom: -9px;
+    height: 13px;
+    background: url("assets/ui/heading_flourish.png?v=ui-v3-1") center / contain no-repeat;
+}
+
+/* R1: 味方一覧の枠 */
+#gameScreen[data-mode="battle"] #landscapeRoster {
+    border: solid transparent;
+    border-width: 10px 4px;
+    border-image: url("assets/ui/roster_frame.png?v=ui-v3-1") 20 8 fill / 10px 4px stretch;
+    background: none;
+    box-shadow: none;
+    padding-top: 2px;
+}
+
+/* A5: 顔枠（通常・選択中・行動済み） */
+.lsRosterUnit {
+    border: 0;
+    background: #140b1f;
+}
+.lsRosterFace { inset: 2px; }
+.lsRosterUnit::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: url("assets/ui/face_frame.png?v=ui-v3-1") 0 0 / 100% 100% no-repeat;
+    pointer-events: none;
+}
+.lsRosterUnit.selected { box-shadow: none; }
+.lsRosterUnit.selected::after { background-image: url("assets/ui/face_frame_selected.png?v=ui-v3-1"); }
+.lsRosterUnit.done::after { background-image: url("assets/ui/face_frame_done.png?v=ui-v3-1"); }
+.lsRosterMark { z-index: 1; }
+
+/* P1・P2: 頭上の印（戦闘予測の相手＝交差した剣、選んでいる味方＝青の▼） */
+.battleUnit.headTarget::after,
+.battleUnit.headSelected::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 100%;
+    background: center / contain no-repeat;
+    pointer-events: none;
+    z-index: 2;
+}
+.battleUnit.headTarget::after {
+    bottom: 84%;
+    width: 34%;
+    aspect-ratio: 1;
+    background-image: url("assets/ui/mark_target.png?v=ui-v3-1");
+    animation: headMarkPulse 1.4s ease-in-out infinite;
+}
+.battleUnit.headSelected::after {
+    width: 26%;
+    aspect-ratio: 72 / 63;
+    background-image: url("assets/ui/mark_selected.png?v=ui-v3-1");
+    animation: headMarkBob 1.6s ease-in-out infinite;
+}
+@keyframes headMarkPulse {
+    0%, 100% { transform: translate(-50%, 0) scale(1); opacity: 0.92; }
+    50%      { transform: translate(-50%, 0) scale(1.08); opacity: 1; }
+}
+@keyframes headMarkBob {
+    0%, 100% { transform: translate(-50%, 0); }
+    50%      { transform: translate(-50%, -3px); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .battleUnit.headTarget::after,
+    .battleUnit.headSelected::after { animation: none; transform: translate(-50%, 0); }
+}
+
+/* P3: 行動予告のある敵（HPの数字の左の小さな印） */
+.battleUnit.declAttacker .unitHpInfo::before {
+    content: "";
+    flex: none;
+    width: 9px;
+    height: 9px;
+    margin-right: -1px;
+    background: url("assets/ui/mark_intent.png?v=ui-v3-1") center / contain no-repeat;
+}

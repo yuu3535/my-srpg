@@ -337,6 +337,7 @@ function getActionRangeClass(unit) {
 // =============================================
 function renderUnits() {
     markLandscapeCells();
+    queueMicrotask(markLandscapeUnitHeads);   // 駒を作り直したあとに頭上の印を付け直す
     // ダメージポップアップはアニメーション中なので退避して再追加する
     const livePopups = [...unitLayer.querySelectorAll(".dmgPopup")];
     unitLayer.innerHTML = "";
@@ -2661,7 +2662,7 @@ function renderLandscapeUnitCard(unit, src, hpPct, mpPct, declLabel) {
         const cell = (label, value) => `<div><dt>${label}</dt><dd>${value}</dd></div>`;
         weapon = `
             <div class="lcWeapon${item ? "" : " none"}">
-                <div class="lcWeaponName">${lsCommandIcon(isBook ? "魔法" : "攻撃")}<b>${item ? item.name : "装備なし"}</b>${item ? "" : "<small>反撃できません</small>"}</div>
+                <div class="lcWeaponName">${item ? weaponTypeIcon(weaponTypeOf(item)) : lsCommandIcon("攻撃")}<b>${item ? item.name : "装備なし"}</b>${item ? "" : "<small>反撃できません</small>"}</div>
                 <dl>${cell("威力", power)}${cell("射程", range)}${cell("命中", item ? derived.hit : "―")}${cell("必殺", item ? derived.crit : "―")}</dl>
             </div>`;
     }
@@ -2852,7 +2853,34 @@ const LS_TARGETING_STATES = {
     trialTransferAlly: "魔法", trialTransferTile: "魔法",
 };
 
+// 絵のアイコン（発注書 第3版 F4）。「魔法」は本ではなく、本人の内の魔力を燃やす「燃える生命核」
+// （魔法は魔導書という道具で得るものではない。ChatGPT CLAUDE_CODE_HANDOFF_F4_MAGIC_2026-09-27）
+const UI_ASSET_VERSION = "ui-v3-1";
+const LS_COMMAND_ICON_IMAGES = { "魔法": "assets/ui/weapon_magic.png" };
+// 武器の種類 → アイコン
+const WEAPON_TYPE_ICONS = {
+    "剣": "assets/ui/weapon_sword.png",
+    "槍": "assets/ui/weapon_lance.png",
+    "斧": "assets/ui/weapon_axe.png",
+    "弓": "assets/ui/weapon_bow.png",
+    "杖": "assets/ui/weapon_staff.png",
+    "魔法": "assets/ui/weapon_magic.png",
+};
+
+/** 持ち物の武器の種類。魔導書（仮の名前。魔法を使うための物）は「魔法」、種類の書いていない武器は剣（今の試験の武器はどれも剣） */
+function weaponTypeOf(item) {
+    if (!item) return null;
+    return item.kind === "grimoire" ? "魔法" : (item.weaponType || "剣");
+}
+
+function weaponTypeIcon(type) {
+    const src = WEAPON_TYPE_ICONS[type];
+    return src ? `<img class="lsMenuIcon wpnIcon" src="${src}?v=${UI_ASSET_VERSION}" alt="" aria-hidden="true">` : lsCommandIcon("攻撃");
+}
+
 function lsCommandIcon(label) {
+    const img = LS_COMMAND_ICON_IMAGES[label];
+    if (img) return `<img class="lsMenuIcon wpnIcon" src="${img}?v=${UI_ASSET_VERSION}" alt="" aria-hidden="true">`;
     const d = LS_COMMAND_ICON_PATHS[label];
     return d ? `<svg class="lsMenuIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>` : "";
 }
@@ -3440,12 +3468,16 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel, optio
         return `<span class="fcbBar ${u.side}"><i class="lost" style="width:${nowPct}%"></i><i class="after" style="width:${afterPct}%"></i></span>`;
     };
     const itemOf = u => typeof TRIAL_ITEMS !== "undefined" ? TRIAL_ITEMS[u.trialEquippedItem] : null;
-    const weaponIcon = u => lsCommandIcon(itemOf(u)?.kind === "grimoire" ? "魔法" : "攻撃");
+    const weaponIcon = u => itemOf(u) ? weaponTypeIcon(weaponTypeOf(itemOf(u))) : lsCommandIcon("攻撃");
     // 攻撃する側: 選んでいる攻撃（届く攻撃が複数なら ‹ › で切り替え）
     const attackerItem = itemOf(attacker);
+    // 攻撃する側のアイコン: 魔法なら魔法、武器なら持ち替える武器の種類
+    const attackerWeaponItem = attackerItem?.kind === "weapon" ? attackerItem
+        : (attacker.trialStats && typeof TRIAL_ITEMS !== "undefined" ? TRIAL_ITEMS[trialCarriedWeapon(trialGearOf(attacker))] : null);
+    const attackerIcon = isMagic ? weaponTypeIcon("魔法") : weaponTypeIcon(weaponTypeOf(attackerWeaponItem) || "剣");
     const attackerWeapon = switchOptions.length > 1 && switchIndex >= 0
-        ? `<div class="fcbWeapon switch">${lsCommandIcon(isMagic ? "魔法" : "攻撃")}<button type="button" id="lsFcPrev" aria-label="前の攻撃">‹</button><b>${actionName}</b><small>${switchIndex + 1}/${switchOptions.length}</small><button type="button" id="lsFcNext" aria-label="次の攻撃">›</button></div>`
-        : `<div class="fcbWeapon">${lsCommandIcon(isMagic ? "魔法" : "攻撃")}<b>${actionName}</b>${attackerItem && attackerItem.name !== actionName ? `<small>${attackerItem.name}</small>` : ""}</div>`;
+        ? `<div class="fcbWeapon switch">${attackerIcon}<button type="button" id="lsFcPrev" aria-label="前の攻撃">‹</button><b>${actionName}</b><small>${switchIndex + 1}/${switchOptions.length}</small><button type="button" id="lsFcNext" aria-label="次の攻撃">›</button></div>`
+        : `<div class="fcbWeapon">${attackerIcon}<b>${actionName}</b>${attackerItem && attackerItem.name !== actionName ? `<small>${attackerItem.name}</small>` : ""}</div>`;
     // 受ける側: 装備と、反撃できるか
     const targetItem = itemOf(target);
     const targetWeapon = `<div class="fcbWeapon">${weaponIcon(target)}<b>${targetItem ? targetItem.name : "装備なし"}</b>${pred.canCounter ? "" : "<em>反撃なし</em>"}</div>`;
@@ -3469,7 +3501,7 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel, optio
         <div class="fcbPanel${readOnly ? " readOnly" : ""}">
             ${bust(attacker, "left")}
             ${side(attacker, attackerWeapon, atkAfter, dmgDisp, `${pred.hitRate}%`, isDamage ? `${pred.critRate}%` : "─", "left")}
-            <div class="fcbEmblem">${lsCommandIcon(isMagic ? "魔法" : "交差")}</div>
+            <div class="fcbEmblem" aria-hidden="true"></div>
             ${side(target, targetWeapon, defAfter, counterDmgDisp, pred.canCounter ? `${pred.ctrHitRate}%` : "─", pred.canCounter ? `${pred.ctrCritRate}%` : "─", "right")}
             ${bust(target, "right")}
         </div>
@@ -5243,6 +5275,18 @@ function markLandscapeTarget(target) {
     markLandscapeCells();
 }
 
+/** 頭上の印（発注書 第3版 P1・P2）: 選んでいる味方に青の▼、戦闘予測の相手に交差した剣 */
+function markLandscapeUnitHeads() {
+    if (!unitLayer) return;
+    unitLayer.querySelectorAll(".headSelected, .headTarget").forEach(el => el.classList.remove("headSelected", "headTarget"));
+    if (gameMode !== "battle" || battleOver) return;
+    const ally = selectedUnit;
+    if (ally && ally.side === "ally" && ally.hp > 0 && turnPhase === "ally" && !lsMarkedTarget) {
+        document.getElementById(`unit_${ally.id}`)?.classList.add("headSelected");
+    }
+    if (lsMarkedTarget && lsMarkedTarget.hp > 0) document.getElementById(`unit_${lsMarkedTarget.id}`)?.classList.add("headTarget");
+}
+
 /** 選択中の味方のマスに青い枠、予測の相手のマスに赤い枠 */
 function markLandscapeCells() {
     if (!battleGrid) return;
@@ -5253,6 +5297,7 @@ function markLandscapeCells() {
     if (ally && ally.side === "ally" && ally.hp > 0 && turnPhase === "ally") getCell(ally.y, ally.x)?.classList.add("cellSelectedAlly");
     const target = lsMarkedTarget;
     if (target && target.hp > 0) getCell(target.y, target.x)?.classList.add("cellTargeted");
+    markLandscapeUnitHeads();
 }
 
 function hideBattlePreview() {
@@ -5554,6 +5599,7 @@ let enemyDeclarations = new Map();
 function clearDeclarationCells() {
     for (const cell of battleGrid.children) cell.classList.remove("declAttackCell");
     unitLayer.querySelectorAll(".declTargeted").forEach(el => el.classList.remove("declTargeted"));
+    unitLayer.querySelectorAll(".declAttacker").forEach(el => el.classList.remove("declAttacker"));
 }
 
 /** Execute the forecasted action, then close the preview after processing finishes. */
@@ -5830,6 +5876,7 @@ function renderDeclarations() {
         if (!target) continue;
 
         document.getElementById(`unit_${target.id}`)?.classList.add("declTargeted");
+        document.getElementById(`unit_${enemy.id}`)?.classList.add("declAttacker");
 
         const startX = cx(enemy.x), startY = cy(enemy.y);
         const targetX = cx(target.x), targetY = cy(target.y);
