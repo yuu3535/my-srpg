@@ -117,6 +117,27 @@ namespace Srpg.Battle
                 vertices.Add(c + new Vector3(0.5f, 0f, -0.5f)); uvs.Add(new Vector2(r.xMax, r.yMin));
                 tris.AddRange(new[] { i, i + 1, i + 2, i, i + 2, i + 3 });
             }
+            // 地面の絵の外: 絵を鏡に映したように続ける（レビュー 2026-09-28 A2: 寄りの画面の角に景色の面の端と黒が見えていた）。
+            // 盤面を回しても画面の角まで埋まるよう、絵の外に OuterMargin マス
+            var (origin, columns, rows) = GroundExtent;
+            for (int y = origin.y - OuterMargin; y < origin.y + rows + OuterMargin; y++)
+            for (int x = origin.x - OuterMargin; x < origin.x + columns + OuterMargin; x++)
+            {
+                bool insideX = x >= origin.x && x < origin.x + columns, insideY = y >= origin.y && y < origin.y + rows;
+                if (insideX && insideY) continue;
+                var (mx, flipX) = Mirror(x, origin.x, columns);
+                var (my, flipY) = Mirror(y, origin.y, rows);
+                var c = map.CellCenter(new Vector2Int(x, y));
+                var r = GroundUv(new Vector2Int(mx, my));
+                float uL = flipX ? r.xMax : r.xMin, uR = flipX ? r.xMin : r.xMax;
+                float vB = flipY ? r.yMax : r.yMin, vT = flipY ? r.yMin : r.yMax;
+                int i = vertices.Count;
+                vertices.Add(c + new Vector3(-0.5f, 0f, -0.5f)); uvs.Add(new Vector2(uL, vB));
+                vertices.Add(c + new Vector3(-0.5f, 0f, 0.5f)); uvs.Add(new Vector2(uL, vT));
+                vertices.Add(c + new Vector3(0.5f, 0f, 0.5f)); uvs.Add(new Vector2(uR, vT));
+                vertices.Add(c + new Vector3(0.5f, 0f, -0.5f)); uvs.Add(new Vector2(uR, vB));
+                tris.AddRange(new[] { i, i + 1, i + 2, i, i + 2, i + 3 });
+            }
             var mesh = new Mesh { name = "FlatScenery", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
             mesh.SetVertices(vertices);
             mesh.SetUVs(0, uvs);
@@ -127,6 +148,16 @@ namespace Srpg.Battle
             go.transform.SetParent(boardRoot, false);
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
             go.AddComponent<MeshRenderer>().sharedMaterial = GroundMaterial();
+        }
+
+        private const int OuterMargin = 16;   // 地面の絵の外に、鏡に映して続けるマスの数
+
+        /// <summary>絵の範囲 [start, start+count) の外のマスを、端で折り返して中のマスにする（折り返した回数が奇数なら左右・上下を反転）</summary>
+        private static (int index, bool flipped) Mirror(int value, int start, int count)
+        {
+            int period = count * 2;
+            int k = ((value - start) % period + period) % period;
+            return k < count ? (start + k, false) : (start + period - 1 - k, true);
         }
 
         /// <summary>地面の1枚絵の中の、そのマスの範囲（uv。左下が 0）</summary>
