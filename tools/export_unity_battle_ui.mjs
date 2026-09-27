@@ -115,12 +115,18 @@ const result = await evaluate(`(async () => {
         const list = [];
         if (trialCarriedWeapon(trialGearOf(unit))) {
             const range = weaponRangeOf(unit);
-            list.push({ label: "通常攻撃", kind: "weapon", artName: "", itemId: "", rangeMin: 1, rangeMax: range, isArt: false, isMagic: false, spell: null, equipSpell: null });
+            list.push({ label: "通常攻撃", kind: "weapon", artName: "", itemId: "", rangeMin: 1, rangeMax: range, isArt: false, isMagic: false, spell: null, equipSpell: null, area: "" });
+            // 円舞は隣接する敵すべて（範囲。area = "adjacent"）
             trialPhysicalArtsFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null)
-                .filter(art => art.implemented && art.name !== "円舞")
-                .forEach(art => list.push({ label: art.name, kind: "weapon", artName: art.name, itemId: "", rangeMin: 1, rangeMax: range, isArt: true, isMagic: false, spell: null, equipSpell: null }));
+                .filter(art => art.implemented)
+                .forEach(art => list.push({ label: art.name, kind: "weapon", artName: art.name === "円舞" ? "" : art.name, itemId: "", rangeMin: 1, rangeMax: art.name === "円舞" ? 1 : range,
+                    isArt: true, isMagic: false, spell: null, equipSpell: null, area: art.name === "円舞" ? "adjacent" : "" }));
         }
-        getLandscapeMagicEntries(unit).forEach(({ spell, label }) => { if (attackable(spell)) list.push(magicOption(unit, spell, label)); });
+        getLandscapeMagicEntries(unit).forEach(({ spell, label }) => {
+            if (attackable(spell)) list.push(magicOption(unit, spell, label));
+            // 万雷は直線3マスの敵すべて（範囲。area = "line"）
+            else if (spell && spell.trialArtName === "万雷") list.push({ ...magicOption(unit, spell, label), area: "line" });
+        });
         return list;
     };
     // 敵が選ぶ攻撃（trialEnemyAttackOptions と同じ）
@@ -162,13 +168,14 @@ const result = await evaluate(`(async () => {
         });
         // 補助の魔法のうち Unity 版で使えるもの（味方が対象の 回復・結界・加速 の戦技と、治癒の魔核）。
         // ブラウザ版の trialCastSupportArt・trialCastHeal と同じ効果を Unity 側で行う
-        const supportable = spell => spell && spell.targetType === "ally" && typeof spell.range === "number"
-            && (["回復", "結界", "加速"].includes(spell.trialArtName) || (spell.trialItemId && spell.effectType === "heal"));
+        // 虚像・封印（敵が対象。命中の判定あり）と転移（味方と行き先を選ぶ）も入れる
+        const supportable = spell => spell && typeof spell.range === "number"
+            && (["回復", "結界", "加速", "虚像", "封印", "転移"].includes(spell.trialArtName) || (spell.trialItemId && spell.effectType === "heal"));
         getLandscapeMagicEntries(unit).forEach(({ spell, label, sub }) => {
             let supportIndex = -1;
             if (supportable(spell)) {
                 supportIndex = entry.supports.length;
-                entry.supports.push({ ...magicOption(unit, spell, label), kind: "support", rangeMin: 0 });
+                entry.supports.push({ ...magicOption(unit, spell, label), kind: "support", rangeMin: spell.targetType === "enemy" ? 1 : 0 });
             }
             entry.magicList.push({ label, sub: sub || "", mpCost: String(spell?.mpCost ?? ""), index: attackable(spell) ? findOption(label, true) : -1, supportIndex });
         });

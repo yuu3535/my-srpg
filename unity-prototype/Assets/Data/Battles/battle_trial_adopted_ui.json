@@ -18,9 +18,9 @@
       "portrait": "ringholm",
       "cardUv": {
         "x": 0.3755555555555556,
-        "y": 0.6841397849462365,
+        "y": 0.6841398874918619,
         "w": 0.2777777777777778,
-        "h": 0.24865591397849465
+        "h": 0.24865581143286924
       },
       "bustUv": {
         "x": 0.3755555555555556,
@@ -46,7 +46,21 @@
           "isArt": false,
           "isMagic": false,
           "spell": null,
-          "equipSpell": null
+          "equipSpell": null,
+          "area": ""
+        },
+        {
+          "label": "円舞",
+          "kind": "weapon",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 1,
+          "isArt": true,
+          "isMagic": false,
+          "spell": null,
+          "equipSpell": null,
+          "area": "adjacent"
         },
         {
           "label": "復讐",
@@ -58,7 +72,8 @@
           "isArt": true,
           "isMagic": false,
           "spell": null,
-          "equipSpell": null
+          "equipSpell": null,
+          "area": ""
         }
       ],
       "enemyOptions": [
@@ -91,12 +106,12 @@
         {
           "label": "円舞",
           "sub": "攻撃時に、隣接するすべての敵に物理ダメ－ジを与える",
-          "index": -1
+          "index": 1
         },
         {
           "label": "復讐",
           "sub": "攻撃時、自分のＨＰの減っている分を威力に加算する",
-          "index": 1
+          "index": 2
         }
       ],
       "magicList": [
@@ -127,9 +142,9 @@
       "portrait": "arshe",
       "cardUv": {
         "x": 0.4,
-        "y": 0.7016129032258065,
+        "y": 0.6935485101515246,
         "w": 0.3333333333333333,
-        "h": 0.29838709677419356
+        "h": 0.3064514898484753
       },
       "bustUv": {
         "x": 0.4,
@@ -155,7 +170,8 @@
           "isArt": false,
           "isMagic": false,
           "spell": null,
-          "equipSpell": null
+          "equipSpell": null,
+          "area": ""
         },
         {
           "label": "両断",
@@ -167,7 +183,8 @@
           "isArt": true,
           "isMagic": false,
           "spell": null,
-          "equipSpell": null
+          "equipSpell": null,
+          "area": ""
         },
         {
           "label": "破壊",
@@ -299,10 +316,30 @@
           "sub": "戦技",
           "mpCost": "1d8",
           "index": -1,
-          "supportIndex": -1
+          "supportIndex": 0
         }
       ],
-      "supports": []
+      "supports": [
+        {
+          "label": "封印",
+          "kind": "support",
+          "artName": "封印",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 14,
+          "isArt": true,
+          "isMagic": true,
+          "spell": {
+            "id": "封印",
+            "name": "封印",
+            "targetType": "enemy",
+            "mpCost": "1d8",
+            "effectType": "stun",
+            "statusEffect": ""
+          },
+          "equipSpell": null
+        }
+      ]
     },
     {
       "id": "albas",
@@ -321,9 +358,9 @@
       "portrait": "albas",
       "cardUv": {
         "x": 0.4125,
-        "y": 0.7308467741935484,
+        "y": 0.7308466819024855,
         "w": 0.25,
-        "h": 0.22379032258064516
+        "h": 0.22379041487170803
       },
       "bustUv": {
         "x": 0.4125,
@@ -408,7 +445,7 @@
           "sub": "戦技",
           "mpCost": "1d8",
           "index": -1,
-          "supportIndex": -1
+          "supportIndex": 2
         }
       ],
       "supports": [
@@ -449,6 +486,25 @@
             "statusEffect": ""
           },
           "equipSpell": null
+        },
+        {
+          "label": "転移",
+          "kind": "support",
+          "artName": "転移",
+          "itemId": "",
+          "rangeMin": 0,
+          "rangeMax": 25,
+          "isArt": true,
+          "isMagic": true,
+          "spell": {
+            "id": "転移",
+            "name": "転移",
+            "targetType": "ally",
+            "mpCost": "1d8",
+            "effectType": "teleport",
+            "statusEffect": ""
+          },
+          "equipSpell": null
         }
       ]
     },
@@ -469,9 +525,9 @@
       "portrait": "young_karima",
       "cardUv": {
         "x": 0.3666666666666667,
-        "y": 0.6798421708431399,
+        "y": 0.6798420388101458,
         "w": 0.3333333333333333,
-        "h": 0.32015782915686003
+        "h": 0.3201579611898541
       },
       "bustUv": {
         "x": 0.3666666666666667,
@@ -497,7 +553,8 @@
           "isArt": false,
           "isMagic": false,
           "spell": null,
-          "equipSpell": null
+          "equipSpell": null,
+          "area": ""
         },
         {
           "label": "破壊",
@@ -573,14 +630,14 @@
           "sub": "戦技",
           "mpCost": "1d8",
           "index": -1,
-          "supportIndex": -1
+          "supportIndex": 1
         },
         {
           "label": "封印",
           "sub": "戦技",
           "mpCost": "1d8",
           "index": -1,
-          "supportIndex": -1
+          "supportIndex": 2
         }
       ],
       "supports": [
@@ -599,6 +656,44 @@
             "targetType": "ally",
             "mpCost": "1d6",
             "effectType": "barrier",
+            "statusEffect": ""
+          },
+          "equipSpell": null
+        },
+        {
+          "label": "虚像",
+          "kind": "support",
+          "artName": "虚像",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 2,
+          "isArt": true,
+          "isMagic": true,
+          "spell": {
+            "id": "虚像",
+            "name": "虚像",
+            "targetType": "enemy",
+            "mpCost": "1d8",
+            "effectType": "accuracyDown",
+            "statusEffect": ""
+          },
+          "equipSpell": null
+        },
+        {
+          "label": "封印",
+          "kind": "support",
+          "artName": "封印",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 16,
+          "isArt": true,
+          "isMagic": true,
+          "spell": {
+            "id": "封印",
+            "name": "封印",
+            "targetType": "enemy",
+            "mpCost": "1d8",
+            "effectType": "stun",
             "statusEffect": ""
           },
           "equipSpell": null
@@ -622,9 +717,9 @@
       "portrait": "forest_guard",
       "cardUv": {
         "x": 0.3785714285714286,
-        "y": 0.5610600133096018,
+        "y": 0.5610599078341014,
         "w": 0.2857142857142857,
-        "h": 0.30069113876413095
+        "h": 0.30069124423963134
       },
       "bustUv": {
         "x": 0.3785714285714286,
@@ -650,7 +745,8 @@
           "isArt": false,
           "isMagic": false,
           "spell": null,
-          "equipSpell": null
+          "equipSpell": null,
+          "area": ""
         }
       ],
       "enemyOptions": [
@@ -716,7 +812,8 @@
           "isArt": false,
           "isMagic": false,
           "spell": null,
-          "equipSpell": null
+          "equipSpell": null,
+          "area": ""
         }
       ],
       "enemyOptions": [
@@ -943,7 +1040,7 @@
           "sub": "戦技",
           "mpCost": "1d8",
           "index": -1,
-          "supportIndex": -1
+          "supportIndex": 2
         }
       ],
       "supports": [
@@ -981,6 +1078,25 @@
             "targetType": "ally",
             "mpCost": "1d6",
             "effectType": "extraAction",
+            "statusEffect": ""
+          },
+          "equipSpell": null
+        },
+        {
+          "label": "転移",
+          "kind": "support",
+          "artName": "転移",
+          "itemId": "",
+          "rangeMin": 0,
+          "rangeMax": 25,
+          "isArt": true,
+          "isMagic": true,
+          "spell": {
+            "id": "転移",
+            "name": "転移",
+            "targetType": "ally",
+            "mpCost": "1d8",
+            "effectType": "teleport",
             "statusEffect": ""
           },
           "equipSpell": null

@@ -25843,6 +25843,4172 @@
    "attackerMpAfter": 34,
    "defenderHpAfter": 12,
    "defenderMpAfter": 18
+  },
+  {
+   "attackerId": "ringholm",
+   "defenderId": "forest_guard",
+   "distance": 1,
+   "rolls": "forecast",
+   "attackerHp": 26,
+   "area": "円舞",
+   "areaTargets": [
+    {
+     "id": "forest_guard",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "dylan",
+     "x": 4,
+     "y": 4
+    }
+   ],
+   "optionKind": "weapon",
+   "artName": "",
+   "spell": null,
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [],
+   "dice": [],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 15,
+     "critRate": 36,
+     "critDamage": 45,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 15,
+     "targetHpAfter": 5,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 6,
+     "critRate": 32,
+     "critDamage": 18,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 6,
+     "targetHpAfter": 33,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 26,
+   "attackerMpAfter": 28,
+   "defenderHpAfter": 5,
+   "defenderMpAfter": 12
+  },
+  {
+   "attackerId": "ringholm",
+   "defenderId": "forest_guard",
+   "distance": 1,
+   "rolls": "mixed",
+   "attackerHp": 26,
+   "area": "円舞",
+   "areaTargets": [
+    {
+     "id": "forest_guard",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "dylan",
+     "x": 4,
+     "y": 4
+    }
+   ],
+   "optionKind": "weapon",
+   "artName": "",
+   "spell": null,
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [
+    40,
+    5,
+    60,
+    90,
+    30,
+    2,
+    70,
+    50,
+    20,
+    80
+   ],
+   "dice": [
+    2,
+    5,
+    1,
+    4
+   ],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 15,
+     "critRate": 36,
+     "critDamage": 45,
+     "hit": true,
+     "hitRoll": 40,
+     "crit": true,
+     "critRoll": 5,
+     "dealt": 45,
+     "targetHpAfter": 0,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 6,
+     "critRate": 32,
+     "critDamage": 18,
+     "hit": true,
+     "hitRoll": 60,
+     "crit": false,
+     "critRoll": 90,
+     "dealt": 6,
+     "targetHpAfter": 33,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 26,
+   "attackerMpAfter": 28,
+   "defenderHpAfter": 0,
+   "defenderMpAfter": 12
+  },
+  {
+   "attackerId": "ringholm",
+   "defenderId": "forest_guard",
+   "distance": 1,
+   "rolls": "forecast",
+   "attackerHp": 26,
+   "area": "円舞",
+   "areaTargets": [
+    {
+     "id": "forest_guard",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "herel",
+     "x": 4,
+     "y": 4
+    }
+   ],
+   "optionKind": "weapon",
+   "artName": "",
+   "spell": null,
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [],
+   "dice": [],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 15,
+     "critRate": 36,
+     "critDamage": 45,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 15,
+     "targetHpAfter": 5,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 15,
+     "critRate": 22,
+     "critDamage": 45,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 15,
+     "targetHpAfter": 10,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 26,
+   "attackerMpAfter": 28,
+   "defenderHpAfter": 5,
+   "defenderMpAfter": 12
+  },
+  {
+   "attackerId": "ringholm",
+   "defenderId": "forest_guard",
+   "distance": 1,
+   "rolls": "mixed",
+   "attackerHp": 26,
+   "area": "円舞",
+   "areaTargets": [
+    {
+     "id": "forest_guard",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "herel",
+     "x": 4,
+     "y": 4
+    }
+   ],
+   "optionKind": "weapon",
+   "artName": "",
+   "spell": null,
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [
+    40,
+    5,
+    60,
+    90,
+    30,
+    2,
+    70,
+    50,
+    20,
+    80
+   ],
+   "dice": [
+    2,
+    5,
+    1,
+    4
+   ],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 15,
+     "critRate": 36,
+     "critDamage": 45,
+     "hit": true,
+     "hitRoll": 40,
+     "crit": true,
+     "critRoll": 5,
+     "dealt": 45,
+     "targetHpAfter": 0,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 15,
+     "critRate": 22,
+     "critDamage": 45,
+     "hit": true,
+     "hitRoll": 60,
+     "crit": false,
+     "critRoll": 90,
+     "dealt": 15,
+     "targetHpAfter": 10,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 26,
+   "attackerMpAfter": 28,
+   "defenderHpAfter": 0,
+   "defenderMpAfter": 12
+  },
+  {
+   "attackerId": "ringholm",
+   "defenderId": "forest_guard",
+   "distance": 1,
+   "rolls": "forecast",
+   "attackerHp": 26,
+   "area": "円舞",
+   "areaTargets": [
+    {
+     "id": "forest_guard",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "albas_rival",
+     "x": 4,
+     "y": 4
+    }
+   ],
+   "optionKind": "weapon",
+   "artName": "",
+   "spell": null,
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [],
+   "dice": [],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 15,
+     "critRate": 36,
+     "critDamage": 45,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 15,
+     "targetHpAfter": 5,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 12,
+     "critRate": 20,
+     "critDamage": 36,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 12,
+     "targetHpAfter": 26,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 26,
+   "attackerMpAfter": 28,
+   "defenderHpAfter": 5,
+   "defenderMpAfter": 12
+  },
+  {
+   "attackerId": "ringholm",
+   "defenderId": "forest_guard",
+   "distance": 1,
+   "rolls": "mixed",
+   "attackerHp": 26,
+   "area": "円舞",
+   "areaTargets": [
+    {
+     "id": "forest_guard",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "albas_rival",
+     "x": 4,
+     "y": 4
+    }
+   ],
+   "optionKind": "weapon",
+   "artName": "",
+   "spell": null,
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [
+    40,
+    5,
+    60,
+    90,
+    30,
+    2,
+    70,
+    50,
+    20,
+    80
+   ],
+   "dice": [
+    2,
+    5,
+    1,
+    4
+   ],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 15,
+     "critRate": 36,
+     "critDamage": 45,
+     "hit": true,
+     "hitRoll": 40,
+     "crit": true,
+     "critRoll": 5,
+     "dealt": 45,
+     "targetHpAfter": 0,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 12,
+     "critRate": 20,
+     "critDamage": 36,
+     "hit": true,
+     "hitRoll": 60,
+     "crit": false,
+     "critRoll": 90,
+     "dealt": 12,
+     "targetHpAfter": 26,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 26,
+   "attackerMpAfter": 28,
+   "defenderHpAfter": 0,
+   "defenderMpAfter": 12
+  },
+  {
+   "attackerId": "ringholm",
+   "defenderId": "dylan",
+   "distance": 1,
+   "rolls": "forecast",
+   "attackerHp": 26,
+   "area": "円舞",
+   "areaTargets": [
+    {
+     "id": "dylan",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "forest_guard",
+     "x": 4,
+     "y": 4
+    }
+   ],
+   "optionKind": "weapon",
+   "artName": "",
+   "spell": null,
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [],
+   "dice": [],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 6,
+     "critRate": 32,
+     "critDamage": 18,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 6,
+     "targetHpAfter": 33,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 15,
+     "critRate": 36,
+     "critDamage": 45,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 15,
+     "targetHpAfter": 5,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 26,
+   "attackerMpAfter": 28,
+   "defenderHpAfter": 33,
+   "defenderMpAfter": 17
+  },
+  {
+   "attackerId": "ringholm",
+   "defenderId": "dylan",
+   "distance": 1,
+   "rolls": "mixed",
+   "attackerHp": 26,
+   "area": "円舞",
+   "areaTargets": [
+    {
+     "id": "dylan",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "forest_guard",
+     "x": 4,
+     "y": 4
+    }
+   ],
+   "optionKind": "weapon",
+   "artName": "",
+   "spell": null,
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [
+    40,
+    5,
+    60,
+    90,
+    30,
+    2,
+    70,
+    50,
+    20,
+    80
+   ],
+   "dice": [
+    2,
+    5,
+    1,
+    4
+   ],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 6,
+     "critRate": 32,
+     "critDamage": 18,
+     "hit": true,
+     "hitRoll": 40,
+     "crit": true,
+     "critRoll": 5,
+     "dealt": 18,
+     "targetHpAfter": 21,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 15,
+     "critRate": 36,
+     "critDamage": 45,
+     "hit": true,
+     "hitRoll": 60,
+     "crit": false,
+     "critRoll": 90,
+     "dealt": 15,
+     "targetHpAfter": 5,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 26,
+   "attackerMpAfter": 28,
+   "defenderHpAfter": 21,
+   "defenderMpAfter": 17
+  },
+  {
+   "attackerId": "ringholm",
+   "defenderId": "dylan",
+   "distance": 1,
+   "rolls": "forecast",
+   "attackerHp": 26,
+   "area": "円舞",
+   "areaTargets": [
+    {
+     "id": "dylan",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "herel",
+     "x": 4,
+     "y": 4
+    }
+   ],
+   "optionKind": "weapon",
+   "artName": "",
+   "spell": null,
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [],
+   "dice": [],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 6,
+     "critRate": 32,
+     "critDamage": 18,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 6,
+     "targetHpAfter": 33,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 15,
+     "critRate": 22,
+     "critDamage": 45,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 15,
+     "targetHpAfter": 10,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 26,
+   "attackerMpAfter": 28,
+   "defenderHpAfter": 33,
+   "defenderMpAfter": 17
+  },
+  {
+   "attackerId": "ringholm",
+   "defenderId": "dylan",
+   "distance": 1,
+   "rolls": "mixed",
+   "attackerHp": 26,
+   "area": "円舞",
+   "areaTargets": [
+    {
+     "id": "dylan",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "herel",
+     "x": 4,
+     "y": 4
+    }
+   ],
+   "optionKind": "weapon",
+   "artName": "",
+   "spell": null,
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [
+    40,
+    5,
+    60,
+    90,
+    30,
+    2,
+    70,
+    50,
+    20,
+    80
+   ],
+   "dice": [
+    2,
+    5,
+    1,
+    4
+   ],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 6,
+     "critRate": 32,
+     "critDamage": 18,
+     "hit": true,
+     "hitRoll": 40,
+     "crit": true,
+     "critRoll": 5,
+     "dealt": 18,
+     "targetHpAfter": 21,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 15,
+     "critRate": 22,
+     "critDamage": 45,
+     "hit": true,
+     "hitRoll": 60,
+     "crit": false,
+     "critRoll": 90,
+     "dealt": 15,
+     "targetHpAfter": 10,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 26,
+   "attackerMpAfter": 28,
+   "defenderHpAfter": 21,
+   "defenderMpAfter": 17
+  },
+  {
+   "attackerId": "ringholm",
+   "defenderId": "dylan",
+   "distance": 1,
+   "rolls": "forecast",
+   "attackerHp": 26,
+   "area": "円舞",
+   "areaTargets": [
+    {
+     "id": "dylan",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "albas_rival",
+     "x": 4,
+     "y": 4
+    }
+   ],
+   "optionKind": "weapon",
+   "artName": "",
+   "spell": null,
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [],
+   "dice": [],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 6,
+     "critRate": 32,
+     "critDamage": 18,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 6,
+     "targetHpAfter": 33,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 12,
+     "critRate": 20,
+     "critDamage": 36,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 12,
+     "targetHpAfter": 26,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 26,
+   "attackerMpAfter": 28,
+   "defenderHpAfter": 33,
+   "defenderMpAfter": 17
+  },
+  {
+   "attackerId": "ringholm",
+   "defenderId": "dylan",
+   "distance": 1,
+   "rolls": "mixed",
+   "attackerHp": 26,
+   "area": "円舞",
+   "areaTargets": [
+    {
+     "id": "dylan",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "albas_rival",
+     "x": 4,
+     "y": 4
+    }
+   ],
+   "optionKind": "weapon",
+   "artName": "",
+   "spell": null,
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [
+    40,
+    5,
+    60,
+    90,
+    30,
+    2,
+    70,
+    50,
+    20,
+    80
+   ],
+   "dice": [
+    2,
+    5,
+    1,
+    4
+   ],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 6,
+     "critRate": 32,
+     "critDamage": 18,
+     "hit": true,
+     "hitRoll": 40,
+     "crit": true,
+     "critRoll": 5,
+     "dealt": 18,
+     "targetHpAfter": 21,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 12,
+     "critRate": 20,
+     "critDamage": 36,
+     "hit": true,
+     "hitRoll": 60,
+     "crit": false,
+     "critRoll": 90,
+     "dealt": 12,
+     "targetHpAfter": 26,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 26,
+   "attackerMpAfter": 28,
+   "defenderHpAfter": 21,
+   "defenderMpAfter": 17
+  },
+  {
+   "attackerId": "ringholm",
+   "defenderId": "herel",
+   "distance": 1,
+   "rolls": "forecast",
+   "attackerHp": 26,
+   "area": "円舞",
+   "areaTargets": [
+    {
+     "id": "herel",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "forest_guard",
+     "x": 4,
+     "y": 4
+    }
+   ],
+   "optionKind": "weapon",
+   "artName": "",
+   "spell": null,
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [],
+   "dice": [],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 15,
+     "critRate": 22,
+     "critDamage": 45,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 15,
+     "targetHpAfter": 10,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 15,
+     "critRate": 36,
+     "critDamage": 45,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 15,
+     "targetHpAfter": 5,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 26,
+   "attackerMpAfter": 28,
+   "defenderHpAfter": 10,
+   "defenderMpAfter": 23
+  },
+  {
+   "attackerId": "ringholm",
+   "defenderId": "herel",
+   "distance": 1,
+   "rolls": "mixed",
+   "attackerHp": 26,
+   "area": "円舞",
+   "areaTargets": [
+    {
+     "id": "herel",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "forest_guard",
+     "x": 4,
+     "y": 4
+    }
+   ],
+   "optionKind": "weapon",
+   "artName": "",
+   "spell": null,
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [
+    40,
+    5,
+    60,
+    90,
+    30,
+    2,
+    70,
+    50,
+    20,
+    80
+   ],
+   "dice": [
+    2,
+    5,
+    1,
+    4
+   ],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 15,
+     "critRate": 22,
+     "critDamage": 45,
+     "hit": true,
+     "hitRoll": 40,
+     "crit": true,
+     "critRoll": 5,
+     "dealt": 45,
+     "targetHpAfter": 0,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 15,
+     "critRate": 36,
+     "critDamage": 45,
+     "hit": true,
+     "hitRoll": 60,
+     "crit": false,
+     "critRoll": 90,
+     "dealt": 15,
+     "targetHpAfter": 5,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 26,
+   "attackerMpAfter": 28,
+   "defenderHpAfter": 0,
+   "defenderMpAfter": 23
+  },
+  {
+   "attackerId": "ringholm",
+   "defenderId": "herel",
+   "distance": 1,
+   "rolls": "forecast",
+   "attackerHp": 26,
+   "area": "円舞",
+   "areaTargets": [
+    {
+     "id": "herel",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "dylan",
+     "x": 4,
+     "y": 4
+    }
+   ],
+   "optionKind": "weapon",
+   "artName": "",
+   "spell": null,
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [],
+   "dice": [],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 15,
+     "critRate": 22,
+     "critDamage": 45,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 15,
+     "targetHpAfter": 10,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 6,
+     "critRate": 32,
+     "critDamage": 18,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 6,
+     "targetHpAfter": 33,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 26,
+   "attackerMpAfter": 28,
+   "defenderHpAfter": 10,
+   "defenderMpAfter": 23
+  },
+  {
+   "attackerId": "ringholm",
+   "defenderId": "herel",
+   "distance": 1,
+   "rolls": "mixed",
+   "attackerHp": 26,
+   "area": "円舞",
+   "areaTargets": [
+    {
+     "id": "herel",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "dylan",
+     "x": 4,
+     "y": 4
+    }
+   ],
+   "optionKind": "weapon",
+   "artName": "",
+   "spell": null,
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [
+    40,
+    5,
+    60,
+    90,
+    30,
+    2,
+    70,
+    50,
+    20,
+    80
+   ],
+   "dice": [
+    2,
+    5,
+    1,
+    4
+   ],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 15,
+     "critRate": 22,
+     "critDamage": 45,
+     "hit": true,
+     "hitRoll": 40,
+     "crit": true,
+     "critRoll": 5,
+     "dealt": 45,
+     "targetHpAfter": 0,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 6,
+     "critRate": 32,
+     "critDamage": 18,
+     "hit": true,
+     "hitRoll": 60,
+     "crit": false,
+     "critRoll": 90,
+     "dealt": 6,
+     "targetHpAfter": 33,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 26,
+   "attackerMpAfter": 28,
+   "defenderHpAfter": 0,
+   "defenderMpAfter": 23
+  },
+  {
+   "attackerId": "ringholm",
+   "defenderId": "herel",
+   "distance": 1,
+   "rolls": "forecast",
+   "attackerHp": 26,
+   "area": "円舞",
+   "areaTargets": [
+    {
+     "id": "herel",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "albas_rival",
+     "x": 4,
+     "y": 4
+    }
+   ],
+   "optionKind": "weapon",
+   "artName": "",
+   "spell": null,
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [],
+   "dice": [],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 15,
+     "critRate": 22,
+     "critDamage": 45,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 15,
+     "targetHpAfter": 10,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 12,
+     "critRate": 20,
+     "critDamage": 36,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 12,
+     "targetHpAfter": 26,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 26,
+   "attackerMpAfter": 28,
+   "defenderHpAfter": 10,
+   "defenderMpAfter": 23
+  },
+  {
+   "attackerId": "ringholm",
+   "defenderId": "herel",
+   "distance": 1,
+   "rolls": "mixed",
+   "attackerHp": 26,
+   "area": "円舞",
+   "areaTargets": [
+    {
+     "id": "herel",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "albas_rival",
+     "x": 4,
+     "y": 4
+    }
+   ],
+   "optionKind": "weapon",
+   "artName": "",
+   "spell": null,
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [
+    40,
+    5,
+    60,
+    90,
+    30,
+    2,
+    70,
+    50,
+    20,
+    80
+   ],
+   "dice": [
+    2,
+    5,
+    1,
+    4
+   ],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 15,
+     "critRate": 22,
+     "critDamage": 45,
+     "hit": true,
+     "hitRoll": 40,
+     "crit": true,
+     "critRoll": 5,
+     "dealt": 45,
+     "targetHpAfter": 0,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 12,
+     "critRate": 20,
+     "critDamage": 36,
+     "hit": true,
+     "hitRoll": 60,
+     "crit": false,
+     "critRoll": 90,
+     "dealt": 12,
+     "targetHpAfter": 26,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 26,
+   "attackerMpAfter": 28,
+   "defenderHpAfter": 0,
+   "defenderMpAfter": 23
+  },
+  {
+   "attackerId": "ringholm",
+   "defenderId": "albas_rival",
+   "distance": 1,
+   "rolls": "forecast",
+   "attackerHp": 26,
+   "area": "円舞",
+   "areaTargets": [
+    {
+     "id": "albas_rival",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "forest_guard",
+     "x": 4,
+     "y": 4
+    }
+   ],
+   "optionKind": "weapon",
+   "artName": "",
+   "spell": null,
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [],
+   "dice": [],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 12,
+     "critRate": 20,
+     "critDamage": 36,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 12,
+     "targetHpAfter": 26,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 15,
+     "critRate": 36,
+     "critDamage": 45,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 15,
+     "targetHpAfter": 5,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 26,
+   "attackerMpAfter": 28,
+   "defenderHpAfter": 26,
+   "defenderMpAfter": 36
+  },
+  {
+   "attackerId": "ringholm",
+   "defenderId": "albas_rival",
+   "distance": 1,
+   "rolls": "mixed",
+   "attackerHp": 26,
+   "area": "円舞",
+   "areaTargets": [
+    {
+     "id": "albas_rival",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "forest_guard",
+     "x": 4,
+     "y": 4
+    }
+   ],
+   "optionKind": "weapon",
+   "artName": "",
+   "spell": null,
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [
+    40,
+    5,
+    60,
+    90,
+    30,
+    2,
+    70,
+    50,
+    20,
+    80
+   ],
+   "dice": [
+    2,
+    5,
+    1,
+    4
+   ],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 12,
+     "critRate": 20,
+     "critDamage": 36,
+     "hit": true,
+     "hitRoll": 40,
+     "crit": true,
+     "critRoll": 5,
+     "dealt": 36,
+     "targetHpAfter": 2,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 15,
+     "critRate": 36,
+     "critDamage": 45,
+     "hit": true,
+     "hitRoll": 60,
+     "crit": false,
+     "critRoll": 90,
+     "dealt": 15,
+     "targetHpAfter": 5,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 26,
+   "attackerMpAfter": 28,
+   "defenderHpAfter": 2,
+   "defenderMpAfter": 36
+  },
+  {
+   "attackerId": "ringholm",
+   "defenderId": "albas_rival",
+   "distance": 1,
+   "rolls": "forecast",
+   "attackerHp": 26,
+   "area": "円舞",
+   "areaTargets": [
+    {
+     "id": "albas_rival",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "dylan",
+     "x": 4,
+     "y": 4
+    }
+   ],
+   "optionKind": "weapon",
+   "artName": "",
+   "spell": null,
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [],
+   "dice": [],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 12,
+     "critRate": 20,
+     "critDamage": 36,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 12,
+     "targetHpAfter": 26,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 6,
+     "critRate": 32,
+     "critDamage": 18,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 6,
+     "targetHpAfter": 33,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 26,
+   "attackerMpAfter": 28,
+   "defenderHpAfter": 26,
+   "defenderMpAfter": 36
+  },
+  {
+   "attackerId": "ringholm",
+   "defenderId": "albas_rival",
+   "distance": 1,
+   "rolls": "mixed",
+   "attackerHp": 26,
+   "area": "円舞",
+   "areaTargets": [
+    {
+     "id": "albas_rival",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "dylan",
+     "x": 4,
+     "y": 4
+    }
+   ],
+   "optionKind": "weapon",
+   "artName": "",
+   "spell": null,
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [
+    40,
+    5,
+    60,
+    90,
+    30,
+    2,
+    70,
+    50,
+    20,
+    80
+   ],
+   "dice": [
+    2,
+    5,
+    1,
+    4
+   ],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 12,
+     "critRate": 20,
+     "critDamage": 36,
+     "hit": true,
+     "hitRoll": 40,
+     "crit": true,
+     "critRoll": 5,
+     "dealt": 36,
+     "targetHpAfter": 2,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 6,
+     "critRate": 32,
+     "critDamage": 18,
+     "hit": true,
+     "hitRoll": 60,
+     "crit": false,
+     "critRoll": 90,
+     "dealt": 6,
+     "targetHpAfter": 33,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 26,
+   "attackerMpAfter": 28,
+   "defenderHpAfter": 2,
+   "defenderMpAfter": 36
+  },
+  {
+   "attackerId": "ringholm",
+   "defenderId": "albas_rival",
+   "distance": 1,
+   "rolls": "forecast",
+   "attackerHp": 26,
+   "area": "円舞",
+   "areaTargets": [
+    {
+     "id": "albas_rival",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "herel",
+     "x": 4,
+     "y": 4
+    }
+   ],
+   "optionKind": "weapon",
+   "artName": "",
+   "spell": null,
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [],
+   "dice": [],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 12,
+     "critRate": 20,
+     "critDamage": 36,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 12,
+     "targetHpAfter": 26,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 15,
+     "critRate": 22,
+     "critDamage": 45,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 15,
+     "targetHpAfter": 10,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 26,
+   "attackerMpAfter": 28,
+   "defenderHpAfter": 26,
+   "defenderMpAfter": 36
+  },
+  {
+   "attackerId": "ringholm",
+   "defenderId": "albas_rival",
+   "distance": 1,
+   "rolls": "mixed",
+   "attackerHp": 26,
+   "area": "円舞",
+   "areaTargets": [
+    {
+     "id": "albas_rival",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "herel",
+     "x": 4,
+     "y": 4
+    }
+   ],
+   "optionKind": "weapon",
+   "artName": "",
+   "spell": null,
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [
+    40,
+    5,
+    60,
+    90,
+    30,
+    2,
+    70,
+    50,
+    20,
+    80
+   ],
+   "dice": [
+    2,
+    5,
+    1,
+    4
+   ],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 12,
+     "critRate": 20,
+     "critDamage": 36,
+     "hit": true,
+     "hitRoll": 40,
+     "crit": true,
+     "critRoll": 5,
+     "dealt": 36,
+     "targetHpAfter": 2,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "weapon",
+     "hitRate": 100,
+     "damage": 15,
+     "critRate": 22,
+     "critDamage": 45,
+     "hit": true,
+     "hitRoll": 60,
+     "crit": false,
+     "critRoll": 90,
+     "dealt": 15,
+     "targetHpAfter": 10,
+     "mpCost": -1,
+     "actorMpAfter": -1,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 26,
+   "attackerMpAfter": 28,
+   "defenderHpAfter": 2,
+   "defenderMpAfter": 36
+  },
+  {
+   "attackerId": "arshe",
+   "defenderId": "forest_guard",
+   "distance": 1,
+   "rolls": "forecast",
+   "attackerHp": 31,
+   "area": "万雷",
+   "areaTargets": [
+    {
+     "id": "forest_guard",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "dylan",
+     "x": 7,
+     "y": 4
+    }
+   ],
+   "optionKind": "magicArt",
+   "artName": "万雷",
+   "spell": {
+    "id": "落雷",
+    "name": "万雷",
+    "targetType": "enemy",
+    "mpCost": "1d6",
+    "effectType": "magicDamage",
+    "statusEffect": ""
+   },
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [],
+   "dice": [],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 98,
+     "damage": 13,
+     "critRate": 23,
+     "critDamage": 39,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 13,
+     "targetHpAfter": 7,
+     "mpCost": 4,
+     "actorMpAfter": 14,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 80,
+     "damage": 10,
+     "critRate": 19,
+     "critDamage": 30,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 10,
+     "targetHpAfter": 29,
+     "mpCost": 0,
+     "actorMpAfter": 14,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 31,
+   "attackerMpAfter": 14,
+   "defenderHpAfter": 7,
+   "defenderMpAfter": 12
+  },
+  {
+   "attackerId": "arshe",
+   "defenderId": "forest_guard",
+   "distance": 1,
+   "rolls": "mixed",
+   "attackerHp": 31,
+   "area": "万雷",
+   "areaTargets": [
+    {
+     "id": "forest_guard",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "dylan",
+     "x": 7,
+     "y": 4
+    }
+   ],
+   "optionKind": "magicArt",
+   "artName": "万雷",
+   "spell": {
+    "id": "落雷",
+    "name": "万雷",
+    "targetType": "enemy",
+    "mpCost": "1d6",
+    "effectType": "magicDamage",
+    "statusEffect": ""
+   },
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [
+    40,
+    5,
+    60,
+    90,
+    30,
+    2,
+    70,
+    50,
+    20,
+    80
+   ],
+   "dice": [
+    2,
+    5,
+    1,
+    4
+   ],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 98,
+     "damage": 13,
+     "critRate": 23,
+     "critDamage": 39,
+     "hit": true,
+     "hitRoll": 40,
+     "crit": true,
+     "critRoll": 5,
+     "dealt": 39,
+     "targetHpAfter": 0,
+     "mpCost": 2,
+     "actorMpAfter": 16,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 80,
+     "damage": 10,
+     "critRate": 19,
+     "critDamage": 30,
+     "hit": true,
+     "hitRoll": 60,
+     "crit": false,
+     "critRoll": 90,
+     "dealt": 10,
+     "targetHpAfter": 29,
+     "mpCost": 0,
+     "actorMpAfter": 16,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 31,
+   "attackerMpAfter": 16,
+   "defenderHpAfter": 0,
+   "defenderMpAfter": 12
+  },
+  {
+   "attackerId": "arshe",
+   "defenderId": "forest_guard",
+   "distance": 1,
+   "rolls": "forecast",
+   "attackerHp": 31,
+   "area": "万雷",
+   "areaTargets": [
+    {
+     "id": "forest_guard",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "herel",
+     "x": 7,
+     "y": 4
+    }
+   ],
+   "optionKind": "magicArt",
+   "artName": "万雷",
+   "spell": {
+    "id": "落雷",
+    "name": "万雷",
+    "targetType": "enemy",
+    "mpCost": "1d6",
+    "effectType": "magicDamage",
+    "statusEffect": ""
+   },
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [],
+   "dice": [],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 98,
+     "damage": 13,
+     "critRate": 23,
+     "critDamage": 39,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 13,
+     "targetHpAfter": 7,
+     "mpCost": 4,
+     "actorMpAfter": 14,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 75,
+     "damage": 8,
+     "critRate": 9,
+     "critDamage": 24,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 8,
+     "targetHpAfter": 17,
+     "mpCost": 0,
+     "actorMpAfter": 14,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 31,
+   "attackerMpAfter": 14,
+   "defenderHpAfter": 7,
+   "defenderMpAfter": 12
+  },
+  {
+   "attackerId": "arshe",
+   "defenderId": "forest_guard",
+   "distance": 1,
+   "rolls": "mixed",
+   "attackerHp": 31,
+   "area": "万雷",
+   "areaTargets": [
+    {
+     "id": "forest_guard",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "herel",
+     "x": 7,
+     "y": 4
+    }
+   ],
+   "optionKind": "magicArt",
+   "artName": "万雷",
+   "spell": {
+    "id": "落雷",
+    "name": "万雷",
+    "targetType": "enemy",
+    "mpCost": "1d6",
+    "effectType": "magicDamage",
+    "statusEffect": ""
+   },
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [
+    40,
+    5,
+    60,
+    90,
+    30,
+    2,
+    70,
+    50,
+    20,
+    80
+   ],
+   "dice": [
+    2,
+    5,
+    1,
+    4
+   ],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 98,
+     "damage": 13,
+     "critRate": 23,
+     "critDamage": 39,
+     "hit": true,
+     "hitRoll": 40,
+     "crit": true,
+     "critRoll": 5,
+     "dealt": 39,
+     "targetHpAfter": 0,
+     "mpCost": 2,
+     "actorMpAfter": 16,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 75,
+     "damage": 8,
+     "critRate": 9,
+     "critDamage": 24,
+     "hit": true,
+     "hitRoll": 60,
+     "crit": false,
+     "critRoll": 90,
+     "dealt": 8,
+     "targetHpAfter": 17,
+     "mpCost": 0,
+     "actorMpAfter": 16,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 31,
+   "attackerMpAfter": 16,
+   "defenderHpAfter": 0,
+   "defenderMpAfter": 12
+  },
+  {
+   "attackerId": "arshe",
+   "defenderId": "forest_guard",
+   "distance": 1,
+   "rolls": "forecast",
+   "attackerHp": 31,
+   "area": "万雷",
+   "areaTargets": [
+    {
+     "id": "forest_guard",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "albas_rival",
+     "x": 7,
+     "y": 4
+    }
+   ],
+   "optionKind": "magicArt",
+   "artName": "万雷",
+   "spell": {
+    "id": "落雷",
+    "name": "万雷",
+    "targetType": "enemy",
+    "mpCost": "1d6",
+    "effectType": "magicDamage",
+    "statusEffect": ""
+   },
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [],
+   "dice": [],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 98,
+     "damage": 13,
+     "critRate": 23,
+     "critDamage": 39,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 13,
+     "targetHpAfter": 7,
+     "mpCost": 4,
+     "actorMpAfter": 14,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 77,
+     "damage": 1,
+     "critRate": 7,
+     "critDamage": 3,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 1,
+     "targetHpAfter": 37,
+     "mpCost": 0,
+     "actorMpAfter": 14,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 31,
+   "attackerMpAfter": 14,
+   "defenderHpAfter": 7,
+   "defenderMpAfter": 12
+  },
+  {
+   "attackerId": "arshe",
+   "defenderId": "forest_guard",
+   "distance": 1,
+   "rolls": "mixed",
+   "attackerHp": 31,
+   "area": "万雷",
+   "areaTargets": [
+    {
+     "id": "forest_guard",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "albas_rival",
+     "x": 7,
+     "y": 4
+    }
+   ],
+   "optionKind": "magicArt",
+   "artName": "万雷",
+   "spell": {
+    "id": "落雷",
+    "name": "万雷",
+    "targetType": "enemy",
+    "mpCost": "1d6",
+    "effectType": "magicDamage",
+    "statusEffect": ""
+   },
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [
+    40,
+    5,
+    60,
+    90,
+    30,
+    2,
+    70,
+    50,
+    20,
+    80
+   ],
+   "dice": [
+    2,
+    5,
+    1,
+    4
+   ],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 98,
+     "damage": 13,
+     "critRate": 23,
+     "critDamage": 39,
+     "hit": true,
+     "hitRoll": 40,
+     "crit": true,
+     "critRoll": 5,
+     "dealt": 39,
+     "targetHpAfter": 0,
+     "mpCost": 2,
+     "actorMpAfter": 16,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 77,
+     "damage": 1,
+     "critRate": 7,
+     "critDamage": 3,
+     "hit": true,
+     "hitRoll": 60,
+     "crit": false,
+     "critRoll": 90,
+     "dealt": 1,
+     "targetHpAfter": 37,
+     "mpCost": 0,
+     "actorMpAfter": 16,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 31,
+   "attackerMpAfter": 16,
+   "defenderHpAfter": 0,
+   "defenderMpAfter": 12
+  },
+  {
+   "attackerId": "arshe",
+   "defenderId": "dylan",
+   "distance": 1,
+   "rolls": "forecast",
+   "attackerHp": 31,
+   "area": "万雷",
+   "areaTargets": [
+    {
+     "id": "dylan",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "forest_guard",
+     "x": 7,
+     "y": 4
+    }
+   ],
+   "optionKind": "magicArt",
+   "artName": "万雷",
+   "spell": {
+    "id": "落雷",
+    "name": "万雷",
+    "targetType": "enemy",
+    "mpCost": "1d6",
+    "effectType": "magicDamage",
+    "statusEffect": ""
+   },
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [],
+   "dice": [],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 80,
+     "damage": 10,
+     "critRate": 19,
+     "critDamage": 30,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 10,
+     "targetHpAfter": 29,
+     "mpCost": 4,
+     "actorMpAfter": 14,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 98,
+     "damage": 13,
+     "critRate": 23,
+     "critDamage": 39,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 13,
+     "targetHpAfter": 7,
+     "mpCost": 0,
+     "actorMpAfter": 14,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 31,
+   "attackerMpAfter": 14,
+   "defenderHpAfter": 29,
+   "defenderMpAfter": 17
+  },
+  {
+   "attackerId": "arshe",
+   "defenderId": "dylan",
+   "distance": 1,
+   "rolls": "mixed",
+   "attackerHp": 31,
+   "area": "万雷",
+   "areaTargets": [
+    {
+     "id": "dylan",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "forest_guard",
+     "x": 7,
+     "y": 4
+    }
+   ],
+   "optionKind": "magicArt",
+   "artName": "万雷",
+   "spell": {
+    "id": "落雷",
+    "name": "万雷",
+    "targetType": "enemy",
+    "mpCost": "1d6",
+    "effectType": "magicDamage",
+    "statusEffect": ""
+   },
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [
+    40,
+    5,
+    60,
+    90,
+    30,
+    2,
+    70,
+    50,
+    20,
+    80
+   ],
+   "dice": [
+    2,
+    5,
+    1,
+    4
+   ],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 80,
+     "damage": 10,
+     "critRate": 19,
+     "critDamage": 30,
+     "hit": true,
+     "hitRoll": 40,
+     "crit": true,
+     "critRoll": 5,
+     "dealt": 30,
+     "targetHpAfter": 9,
+     "mpCost": 2,
+     "actorMpAfter": 16,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 98,
+     "damage": 13,
+     "critRate": 23,
+     "critDamage": 39,
+     "hit": true,
+     "hitRoll": 90,
+     "crit": false,
+     "critRoll": 30,
+     "dealt": 13,
+     "targetHpAfter": 7,
+     "mpCost": 0,
+     "actorMpAfter": 16,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 31,
+   "attackerMpAfter": 16,
+   "defenderHpAfter": 9,
+   "defenderMpAfter": 17
+  },
+  {
+   "attackerId": "arshe",
+   "defenderId": "dylan",
+   "distance": 1,
+   "rolls": "forecast",
+   "attackerHp": 31,
+   "area": "万雷",
+   "areaTargets": [
+    {
+     "id": "dylan",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "herel",
+     "x": 7,
+     "y": 4
+    }
+   ],
+   "optionKind": "magicArt",
+   "artName": "万雷",
+   "spell": {
+    "id": "落雷",
+    "name": "万雷",
+    "targetType": "enemy",
+    "mpCost": "1d6",
+    "effectType": "magicDamage",
+    "statusEffect": ""
+   },
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [],
+   "dice": [],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 80,
+     "damage": 10,
+     "critRate": 19,
+     "critDamage": 30,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 10,
+     "targetHpAfter": 29,
+     "mpCost": 4,
+     "actorMpAfter": 14,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 75,
+     "damage": 8,
+     "critRate": 9,
+     "critDamage": 24,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 8,
+     "targetHpAfter": 17,
+     "mpCost": 0,
+     "actorMpAfter": 14,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 31,
+   "attackerMpAfter": 14,
+   "defenderHpAfter": 29,
+   "defenderMpAfter": 17
+  },
+  {
+   "attackerId": "arshe",
+   "defenderId": "dylan",
+   "distance": 1,
+   "rolls": "mixed",
+   "attackerHp": 31,
+   "area": "万雷",
+   "areaTargets": [
+    {
+     "id": "dylan",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "herel",
+     "x": 7,
+     "y": 4
+    }
+   ],
+   "optionKind": "magicArt",
+   "artName": "万雷",
+   "spell": {
+    "id": "落雷",
+    "name": "万雷",
+    "targetType": "enemy",
+    "mpCost": "1d6",
+    "effectType": "magicDamage",
+    "statusEffect": ""
+   },
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [
+    40,
+    5,
+    60,
+    90,
+    30,
+    2,
+    70,
+    50,
+    20,
+    80
+   ],
+   "dice": [
+    2,
+    5,
+    1,
+    4
+   ],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 80,
+     "damage": 10,
+     "critRate": 19,
+     "critDamage": 30,
+     "hit": true,
+     "hitRoll": 40,
+     "crit": true,
+     "critRoll": 5,
+     "dealt": 30,
+     "targetHpAfter": 9,
+     "mpCost": 2,
+     "actorMpAfter": 16,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 75,
+     "damage": 8,
+     "critRate": 9,
+     "critDamage": 24,
+     "hit": false,
+     "hitRoll": 90,
+     "crit": false,
+     "critRoll": -1,
+     "dealt": 0,
+     "targetHpAfter": 25,
+     "mpCost": 0,
+     "actorMpAfter": 16,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 31,
+   "attackerMpAfter": 16,
+   "defenderHpAfter": 9,
+   "defenderMpAfter": 17
+  },
+  {
+   "attackerId": "arshe",
+   "defenderId": "dylan",
+   "distance": 1,
+   "rolls": "forecast",
+   "attackerHp": 31,
+   "area": "万雷",
+   "areaTargets": [
+    {
+     "id": "dylan",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "albas_rival",
+     "x": 7,
+     "y": 4
+    }
+   ],
+   "optionKind": "magicArt",
+   "artName": "万雷",
+   "spell": {
+    "id": "落雷",
+    "name": "万雷",
+    "targetType": "enemy",
+    "mpCost": "1d6",
+    "effectType": "magicDamage",
+    "statusEffect": ""
+   },
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [],
+   "dice": [],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 80,
+     "damage": 10,
+     "critRate": 19,
+     "critDamage": 30,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 10,
+     "targetHpAfter": 29,
+     "mpCost": 4,
+     "actorMpAfter": 14,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 77,
+     "damage": 1,
+     "critRate": 7,
+     "critDamage": 3,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 1,
+     "targetHpAfter": 37,
+     "mpCost": 0,
+     "actorMpAfter": 14,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 31,
+   "attackerMpAfter": 14,
+   "defenderHpAfter": 29,
+   "defenderMpAfter": 17
+  },
+  {
+   "attackerId": "arshe",
+   "defenderId": "dylan",
+   "distance": 1,
+   "rolls": "mixed",
+   "attackerHp": 31,
+   "area": "万雷",
+   "areaTargets": [
+    {
+     "id": "dylan",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "albas_rival",
+     "x": 7,
+     "y": 4
+    }
+   ],
+   "optionKind": "magicArt",
+   "artName": "万雷",
+   "spell": {
+    "id": "落雷",
+    "name": "万雷",
+    "targetType": "enemy",
+    "mpCost": "1d6",
+    "effectType": "magicDamage",
+    "statusEffect": ""
+   },
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [
+    40,
+    5,
+    60,
+    90,
+    30,
+    2,
+    70,
+    50,
+    20,
+    80
+   ],
+   "dice": [
+    2,
+    5,
+    1,
+    4
+   ],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 80,
+     "damage": 10,
+     "critRate": 19,
+     "critDamage": 30,
+     "hit": true,
+     "hitRoll": 40,
+     "crit": true,
+     "critRoll": 5,
+     "dealt": 30,
+     "targetHpAfter": 9,
+     "mpCost": 2,
+     "actorMpAfter": 16,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 77,
+     "damage": 1,
+     "critRate": 7,
+     "critDamage": 3,
+     "hit": false,
+     "hitRoll": 90,
+     "crit": false,
+     "critRoll": -1,
+     "dealt": 0,
+     "targetHpAfter": 38,
+     "mpCost": 0,
+     "actorMpAfter": 16,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 31,
+   "attackerMpAfter": 16,
+   "defenderHpAfter": 9,
+   "defenderMpAfter": 17
+  },
+  {
+   "attackerId": "arshe",
+   "defenderId": "herel",
+   "distance": 1,
+   "rolls": "forecast",
+   "attackerHp": 31,
+   "area": "万雷",
+   "areaTargets": [
+    {
+     "id": "herel",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "forest_guard",
+     "x": 7,
+     "y": 4
+    }
+   ],
+   "optionKind": "magicArt",
+   "artName": "万雷",
+   "spell": {
+    "id": "落雷",
+    "name": "万雷",
+    "targetType": "enemy",
+    "mpCost": "1d6",
+    "effectType": "magicDamage",
+    "statusEffect": ""
+   },
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [],
+   "dice": [],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 75,
+     "damage": 8,
+     "critRate": 9,
+     "critDamage": 24,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 8,
+     "targetHpAfter": 17,
+     "mpCost": 4,
+     "actorMpAfter": 14,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 98,
+     "damage": 13,
+     "critRate": 23,
+     "critDamage": 39,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 13,
+     "targetHpAfter": 7,
+     "mpCost": 0,
+     "actorMpAfter": 14,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 31,
+   "attackerMpAfter": 14,
+   "defenderHpAfter": 17,
+   "defenderMpAfter": 23
+  },
+  {
+   "attackerId": "arshe",
+   "defenderId": "herel",
+   "distance": 1,
+   "rolls": "mixed",
+   "attackerHp": 31,
+   "area": "万雷",
+   "areaTargets": [
+    {
+     "id": "herel",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "forest_guard",
+     "x": 7,
+     "y": 4
+    }
+   ],
+   "optionKind": "magicArt",
+   "artName": "万雷",
+   "spell": {
+    "id": "落雷",
+    "name": "万雷",
+    "targetType": "enemy",
+    "mpCost": "1d6",
+    "effectType": "magicDamage",
+    "statusEffect": ""
+   },
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [
+    40,
+    5,
+    60,
+    90,
+    30,
+    2,
+    70,
+    50,
+    20,
+    80
+   ],
+   "dice": [
+    2,
+    5,
+    1,
+    4
+   ],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 75,
+     "damage": 8,
+     "critRate": 9,
+     "critDamage": 24,
+     "hit": true,
+     "hitRoll": 40,
+     "crit": true,
+     "critRoll": 5,
+     "dealt": 24,
+     "targetHpAfter": 1,
+     "mpCost": 2,
+     "actorMpAfter": 16,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 98,
+     "damage": 13,
+     "critRate": 23,
+     "critDamage": 39,
+     "hit": true,
+     "hitRoll": 90,
+     "crit": false,
+     "critRoll": 30,
+     "dealt": 13,
+     "targetHpAfter": 7,
+     "mpCost": 0,
+     "actorMpAfter": 16,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 31,
+   "attackerMpAfter": 16,
+   "defenderHpAfter": 1,
+   "defenderMpAfter": 23
+  },
+  {
+   "attackerId": "arshe",
+   "defenderId": "herel",
+   "distance": 1,
+   "rolls": "forecast",
+   "attackerHp": 31,
+   "area": "万雷",
+   "areaTargets": [
+    {
+     "id": "herel",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "dylan",
+     "x": 7,
+     "y": 4
+    }
+   ],
+   "optionKind": "magicArt",
+   "artName": "万雷",
+   "spell": {
+    "id": "落雷",
+    "name": "万雷",
+    "targetType": "enemy",
+    "mpCost": "1d6",
+    "effectType": "magicDamage",
+    "statusEffect": ""
+   },
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [],
+   "dice": [],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 75,
+     "damage": 8,
+     "critRate": 9,
+     "critDamage": 24,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 8,
+     "targetHpAfter": 17,
+     "mpCost": 4,
+     "actorMpAfter": 14,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 80,
+     "damage": 10,
+     "critRate": 19,
+     "critDamage": 30,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 10,
+     "targetHpAfter": 29,
+     "mpCost": 0,
+     "actorMpAfter": 14,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 31,
+   "attackerMpAfter": 14,
+   "defenderHpAfter": 17,
+   "defenderMpAfter": 23
+  },
+  {
+   "attackerId": "arshe",
+   "defenderId": "herel",
+   "distance": 1,
+   "rolls": "mixed",
+   "attackerHp": 31,
+   "area": "万雷",
+   "areaTargets": [
+    {
+     "id": "herel",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "dylan",
+     "x": 7,
+     "y": 4
+    }
+   ],
+   "optionKind": "magicArt",
+   "artName": "万雷",
+   "spell": {
+    "id": "落雷",
+    "name": "万雷",
+    "targetType": "enemy",
+    "mpCost": "1d6",
+    "effectType": "magicDamage",
+    "statusEffect": ""
+   },
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [
+    40,
+    5,
+    60,
+    90,
+    30,
+    2,
+    70,
+    50,
+    20,
+    80
+   ],
+   "dice": [
+    2,
+    5,
+    1,
+    4
+   ],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 75,
+     "damage": 8,
+     "critRate": 9,
+     "critDamage": 24,
+     "hit": true,
+     "hitRoll": 40,
+     "crit": true,
+     "critRoll": 5,
+     "dealt": 24,
+     "targetHpAfter": 1,
+     "mpCost": 2,
+     "actorMpAfter": 16,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 80,
+     "damage": 10,
+     "critRate": 19,
+     "critDamage": 30,
+     "hit": false,
+     "hitRoll": 90,
+     "crit": false,
+     "critRoll": -1,
+     "dealt": 0,
+     "targetHpAfter": 39,
+     "mpCost": 0,
+     "actorMpAfter": 16,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 31,
+   "attackerMpAfter": 16,
+   "defenderHpAfter": 1,
+   "defenderMpAfter": 23
+  },
+  {
+   "attackerId": "arshe",
+   "defenderId": "herel",
+   "distance": 1,
+   "rolls": "forecast",
+   "attackerHp": 31,
+   "area": "万雷",
+   "areaTargets": [
+    {
+     "id": "herel",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "albas_rival",
+     "x": 7,
+     "y": 4
+    }
+   ],
+   "optionKind": "magicArt",
+   "artName": "万雷",
+   "spell": {
+    "id": "落雷",
+    "name": "万雷",
+    "targetType": "enemy",
+    "mpCost": "1d6",
+    "effectType": "magicDamage",
+    "statusEffect": ""
+   },
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [],
+   "dice": [],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 75,
+     "damage": 8,
+     "critRate": 9,
+     "critDamage": 24,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 8,
+     "targetHpAfter": 17,
+     "mpCost": 4,
+     "actorMpAfter": 14,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 77,
+     "damage": 1,
+     "critRate": 7,
+     "critDamage": 3,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 1,
+     "targetHpAfter": 37,
+     "mpCost": 0,
+     "actorMpAfter": 14,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 31,
+   "attackerMpAfter": 14,
+   "defenderHpAfter": 17,
+   "defenderMpAfter": 23
+  },
+  {
+   "attackerId": "arshe",
+   "defenderId": "herel",
+   "distance": 1,
+   "rolls": "mixed",
+   "attackerHp": 31,
+   "area": "万雷",
+   "areaTargets": [
+    {
+     "id": "herel",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "albas_rival",
+     "x": 7,
+     "y": 4
+    }
+   ],
+   "optionKind": "magicArt",
+   "artName": "万雷",
+   "spell": {
+    "id": "落雷",
+    "name": "万雷",
+    "targetType": "enemy",
+    "mpCost": "1d6",
+    "effectType": "magicDamage",
+    "statusEffect": ""
+   },
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [
+    40,
+    5,
+    60,
+    90,
+    30,
+    2,
+    70,
+    50,
+    20,
+    80
+   ],
+   "dice": [
+    2,
+    5,
+    1,
+    4
+   ],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 75,
+     "damage": 8,
+     "critRate": 9,
+     "critDamage": 24,
+     "hit": true,
+     "hitRoll": 40,
+     "crit": true,
+     "critRoll": 5,
+     "dealt": 24,
+     "targetHpAfter": 1,
+     "mpCost": 2,
+     "actorMpAfter": 16,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 77,
+     "damage": 1,
+     "critRate": 7,
+     "critDamage": 3,
+     "hit": false,
+     "hitRoll": 90,
+     "crit": false,
+     "critRoll": -1,
+     "dealt": 0,
+     "targetHpAfter": 38,
+     "mpCost": 0,
+     "actorMpAfter": 16,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 31,
+   "attackerMpAfter": 16,
+   "defenderHpAfter": 1,
+   "defenderMpAfter": 23
+  },
+  {
+   "attackerId": "arshe",
+   "defenderId": "albas_rival",
+   "distance": 1,
+   "rolls": "forecast",
+   "attackerHp": 31,
+   "area": "万雷",
+   "areaTargets": [
+    {
+     "id": "albas_rival",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "forest_guard",
+     "x": 7,
+     "y": 4
+    }
+   ],
+   "optionKind": "magicArt",
+   "artName": "万雷",
+   "spell": {
+    "id": "落雷",
+    "name": "万雷",
+    "targetType": "enemy",
+    "mpCost": "1d6",
+    "effectType": "magicDamage",
+    "statusEffect": ""
+   },
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [],
+   "dice": [],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 77,
+     "damage": 1,
+     "critRate": 7,
+     "critDamage": 3,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 1,
+     "targetHpAfter": 37,
+     "mpCost": 4,
+     "actorMpAfter": 14,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 98,
+     "damage": 13,
+     "critRate": 23,
+     "critDamage": 39,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 13,
+     "targetHpAfter": 7,
+     "mpCost": 0,
+     "actorMpAfter": 14,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 31,
+   "attackerMpAfter": 14,
+   "defenderHpAfter": 37,
+   "defenderMpAfter": 36
+  },
+  {
+   "attackerId": "arshe",
+   "defenderId": "albas_rival",
+   "distance": 1,
+   "rolls": "mixed",
+   "attackerHp": 31,
+   "area": "万雷",
+   "areaTargets": [
+    {
+     "id": "albas_rival",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "forest_guard",
+     "x": 7,
+     "y": 4
+    }
+   ],
+   "optionKind": "magicArt",
+   "artName": "万雷",
+   "spell": {
+    "id": "落雷",
+    "name": "万雷",
+    "targetType": "enemy",
+    "mpCost": "1d6",
+    "effectType": "magicDamage",
+    "statusEffect": ""
+   },
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [
+    40,
+    5,
+    60,
+    90,
+    30,
+    2,
+    70,
+    50,
+    20,
+    80
+   ],
+   "dice": [
+    2,
+    5,
+    1,
+    4
+   ],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 77,
+     "damage": 1,
+     "critRate": 7,
+     "critDamage": 3,
+     "hit": true,
+     "hitRoll": 40,
+     "crit": true,
+     "critRoll": 5,
+     "dealt": 3,
+     "targetHpAfter": 35,
+     "mpCost": 2,
+     "actorMpAfter": 16,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 98,
+     "damage": 13,
+     "critRate": 23,
+     "critDamage": 39,
+     "hit": true,
+     "hitRoll": 90,
+     "crit": false,
+     "critRoll": 30,
+     "dealt": 13,
+     "targetHpAfter": 7,
+     "mpCost": 0,
+     "actorMpAfter": 16,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 31,
+   "attackerMpAfter": 16,
+   "defenderHpAfter": 35,
+   "defenderMpAfter": 36
+  },
+  {
+   "attackerId": "arshe",
+   "defenderId": "albas_rival",
+   "distance": 1,
+   "rolls": "forecast",
+   "attackerHp": 31,
+   "area": "万雷",
+   "areaTargets": [
+    {
+     "id": "albas_rival",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "dylan",
+     "x": 7,
+     "y": 4
+    }
+   ],
+   "optionKind": "magicArt",
+   "artName": "万雷",
+   "spell": {
+    "id": "落雷",
+    "name": "万雷",
+    "targetType": "enemy",
+    "mpCost": "1d6",
+    "effectType": "magicDamage",
+    "statusEffect": ""
+   },
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [],
+   "dice": [],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 77,
+     "damage": 1,
+     "critRate": 7,
+     "critDamage": 3,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 1,
+     "targetHpAfter": 37,
+     "mpCost": 4,
+     "actorMpAfter": 14,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 80,
+     "damage": 10,
+     "critRate": 19,
+     "critDamage": 30,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 10,
+     "targetHpAfter": 29,
+     "mpCost": 0,
+     "actorMpAfter": 14,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 31,
+   "attackerMpAfter": 14,
+   "defenderHpAfter": 37,
+   "defenderMpAfter": 36
+  },
+  {
+   "attackerId": "arshe",
+   "defenderId": "albas_rival",
+   "distance": 1,
+   "rolls": "mixed",
+   "attackerHp": 31,
+   "area": "万雷",
+   "areaTargets": [
+    {
+     "id": "albas_rival",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "dylan",
+     "x": 7,
+     "y": 4
+    }
+   ],
+   "optionKind": "magicArt",
+   "artName": "万雷",
+   "spell": {
+    "id": "落雷",
+    "name": "万雷",
+    "targetType": "enemy",
+    "mpCost": "1d6",
+    "effectType": "magicDamage",
+    "statusEffect": ""
+   },
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [
+    40,
+    5,
+    60,
+    90,
+    30,
+    2,
+    70,
+    50,
+    20,
+    80
+   ],
+   "dice": [
+    2,
+    5,
+    1,
+    4
+   ],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 77,
+     "damage": 1,
+     "critRate": 7,
+     "critDamage": 3,
+     "hit": true,
+     "hitRoll": 40,
+     "crit": true,
+     "critRoll": 5,
+     "dealt": 3,
+     "targetHpAfter": 35,
+     "mpCost": 2,
+     "actorMpAfter": 16,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 80,
+     "damage": 10,
+     "critRate": 19,
+     "critDamage": 30,
+     "hit": false,
+     "hitRoll": 90,
+     "crit": false,
+     "critRoll": -1,
+     "dealt": 0,
+     "targetHpAfter": 39,
+     "mpCost": 0,
+     "actorMpAfter": 16,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 31,
+   "attackerMpAfter": 16,
+   "defenderHpAfter": 35,
+   "defenderMpAfter": 36
+  },
+  {
+   "attackerId": "arshe",
+   "defenderId": "albas_rival",
+   "distance": 1,
+   "rolls": "forecast",
+   "attackerHp": 31,
+   "area": "万雷",
+   "areaTargets": [
+    {
+     "id": "albas_rival",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "herel",
+     "x": 7,
+     "y": 4
+    }
+   ],
+   "optionKind": "magicArt",
+   "artName": "万雷",
+   "spell": {
+    "id": "落雷",
+    "name": "万雷",
+    "targetType": "enemy",
+    "mpCost": "1d6",
+    "effectType": "magicDamage",
+    "statusEffect": ""
+   },
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [],
+   "dice": [],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 77,
+     "damage": 1,
+     "critRate": 7,
+     "critDamage": 3,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 1,
+     "targetHpAfter": 37,
+     "mpCost": 4,
+     "actorMpAfter": 14,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 75,
+     "damage": 8,
+     "critRate": 9,
+     "critDamage": 24,
+     "hit": true,
+     "hitRoll": 1,
+     "crit": false,
+     "critRoll": 100,
+     "dealt": 8,
+     "targetHpAfter": 17,
+     "mpCost": 0,
+     "actorMpAfter": 14,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 31,
+   "attackerMpAfter": 14,
+   "defenderHpAfter": 37,
+   "defenderMpAfter": 36
+  },
+  {
+   "attackerId": "arshe",
+   "defenderId": "albas_rival",
+   "distance": 1,
+   "rolls": "mixed",
+   "attackerHp": 31,
+   "area": "万雷",
+   "areaTargets": [
+    {
+     "id": "albas_rival",
+     "x": 6,
+     "y": 4
+    },
+    {
+     "id": "herel",
+     "x": 7,
+     "y": 4
+    }
+   ],
+   "optionKind": "magicArt",
+   "artName": "万雷",
+   "spell": {
+    "id": "落雷",
+    "name": "万雷",
+    "targetType": "enemy",
+    "mpCost": "1d6",
+    "effectType": "magicDamage",
+    "statusEffect": ""
+   },
+   "itemId": "",
+   "equipSpell": null,
+   "weaponItemId": "",
+   "percents": [
+    40,
+    5,
+    60,
+    90,
+    30,
+    2,
+    70,
+    50,
+    20,
+    80
+   ],
+   "dice": [
+    2,
+    5,
+    1,
+    4
+   ],
+   "steps": [
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 77,
+     "damage": 1,
+     "critRate": 7,
+     "critDamage": 3,
+     "hit": true,
+     "hitRoll": 40,
+     "crit": true,
+     "critRoll": 5,
+     "dealt": 3,
+     "targetHpAfter": 35,
+     "mpCost": 2,
+     "actorMpAfter": 16,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    },
+    {
+     "role": "area",
+     "kind": "magicArt",
+     "hitRate": 75,
+     "damage": 8,
+     "critRate": 9,
+     "critDamage": 24,
+     "hit": false,
+     "hitRoll": 90,
+     "crit": false,
+     "critRoll": -1,
+     "dealt": 0,
+     "targetHpAfter": 25,
+     "mpCost": 0,
+     "actorMpAfter": 16,
+     "reflectDamage": -1,
+     "prayerSaved": -1,
+     "status": ""
+    }
+   ],
+   "attackerHpAfter": 31,
+   "attackerMpAfter": 16,
+   "defenderHpAfter": 35,
+   "defenderMpAfter": 36
+  }
+ ],
+ "hits": [
+  {
+   "casterId": "arshe",
+   "targetId": "forest_guard",
+   "spell": {
+    "id": "封印",
+    "name": "封印",
+    "targetType": "enemy",
+    "mpCost": "1d8",
+    "effectType": "stun",
+    "statusEffect": ""
+   },
+   "rate": 98
+  },
+  {
+   "casterId": "arshe",
+   "targetId": "dylan",
+   "spell": {
+    "id": "封印",
+    "name": "封印",
+    "targetType": "enemy",
+    "mpCost": "1d8",
+    "effectType": "stun",
+    "statusEffect": ""
+   },
+   "rate": 80
+  },
+  {
+   "casterId": "arshe",
+   "targetId": "herel",
+   "spell": {
+    "id": "封印",
+    "name": "封印",
+    "targetType": "enemy",
+    "mpCost": "1d8",
+    "effectType": "stun",
+    "statusEffect": ""
+   },
+   "rate": 75
+  },
+  {
+   "casterId": "arshe",
+   "targetId": "albas_rival",
+   "spell": {
+    "id": "封印",
+    "name": "封印",
+    "targetType": "enemy",
+    "mpCost": "1d8",
+    "effectType": "stun",
+    "statusEffect": ""
+   },
+   "rate": 77
+  },
+  {
+   "casterId": "young_karima",
+   "targetId": "forest_guard",
+   "spell": {
+    "id": "虚像",
+    "name": "虚像",
+    "targetType": "enemy",
+    "mpCost": "1d8",
+    "effectType": "accuracyDown",
+    "statusEffect": ""
+   },
+   "rate": 98
+  },
+  {
+   "casterId": "young_karima",
+   "targetId": "dylan",
+   "spell": {
+    "id": "虚像",
+    "name": "虚像",
+    "targetType": "enemy",
+    "mpCost": "1d8",
+    "effectType": "accuracyDown",
+    "statusEffect": ""
+   },
+   "rate": 80
+  },
+  {
+   "casterId": "young_karima",
+   "targetId": "herel",
+   "spell": {
+    "id": "虚像",
+    "name": "虚像",
+    "targetType": "enemy",
+    "mpCost": "1d8",
+    "effectType": "accuracyDown",
+    "statusEffect": ""
+   },
+   "rate": 75
+  },
+  {
+   "casterId": "young_karima",
+   "targetId": "albas_rival",
+   "spell": {
+    "id": "虚像",
+    "name": "虚像",
+    "targetType": "enemy",
+    "mpCost": "1d8",
+    "effectType": "accuracyDown",
+    "statusEffect": ""
+   },
+   "rate": 77
+  },
+  {
+   "casterId": "young_karima",
+   "targetId": "forest_guard",
+   "spell": {
+    "id": "封印",
+    "name": "封印",
+    "targetType": "enemy",
+    "mpCost": "1d8",
+    "effectType": "stun",
+    "statusEffect": ""
+   },
+   "rate": 98
+  },
+  {
+   "casterId": "young_karima",
+   "targetId": "dylan",
+   "spell": {
+    "id": "封印",
+    "name": "封印",
+    "targetType": "enemy",
+    "mpCost": "1d8",
+    "effectType": "stun",
+    "statusEffect": ""
+   },
+   "rate": 80
+  },
+  {
+   "casterId": "young_karima",
+   "targetId": "herel",
+   "spell": {
+    "id": "封印",
+    "name": "封印",
+    "targetType": "enemy",
+    "mpCost": "1d8",
+    "effectType": "stun",
+    "statusEffect": ""
+   },
+   "rate": 75
+  },
+  {
+   "casterId": "young_karima",
+   "targetId": "albas_rival",
+   "spell": {
+    "id": "封印",
+    "name": "封印",
+    "targetType": "enemy",
+    "mpCost": "1d8",
+    "effectType": "stun",
+    "statusEffect": ""
+   },
+   "rate": 77
   }
  ]
 }

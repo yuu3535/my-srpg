@@ -336,6 +336,46 @@ namespace Srpg.Battle.Plan
 
         private static bool Alive(PlanUnit unit) => unit.hp > 0;
 
+        /// <summary>範囲の攻撃の計画（battlePlan.js の bpPlanArea）: 対象ごとに1撃ずつ。反撃・追撃はない。魔法は2人目からMPを払わない</summary>
+        public class AreaResult
+        {
+            public List<PlanStep> steps = new List<PlanStep>();
+            public PlanUnit attacker;
+            public List<PlanUnit> targets;
+        }
+
+        public static AreaResult PlanArea(PlanUnit attackerSnapshot, IList<PlanUnit> targetSnapshots, PlanAction action, IEnumerable<PlanUnit> envUnits, IPlanRolls rolls)
+        {
+            var attacker = attackerSnapshot.Clone();
+            var targets = targetSnapshots.Select(t => t.Clone()).ToList();
+            var units = (envUnits ?? Array.Empty<PlanUnit>())
+                .Select(unit => unit.id == attacker.id ? attacker : targets.FirstOrDefault(t => t.id == unit.id) ?? unit).ToList();
+            var result = new AreaResult { attacker = attacker, targets = targets };
+            for (int i = 0; i < targets.Count; i++)
+            {
+                if (!Alive(attacker) || !Alive(targets[i])) continue;
+                var strike = action.With(isCounter: false, isFollowUp: false);
+                if (i > 0 && IsMagic(strike)) strike.freeCast = true;
+                result.steps.Add(ResolveStrike(attacker, targets[i], strike, "area", units, rolls));
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 虚像・封印（敵が対象の補助の魔法）の命中率（ブラウザ版 getMagicHitResult → getBattleHitResult）。
+        /// 攻撃の命中と違い、虚像（命中−20）と殺気は足さない。スタン中の相手には必ず当たる
+        /// </summary>
+        public static int SupportHitRate(PlanUnit caster, PlanUnit target, PlanSpell spell, IList<PlanUnit> units)
+        {
+            if (target.statusEffects.Any(e => e.type == "stun")) return 100;
+            var aura = TrialRules.AuraModifiers(caster, target, units);
+            var attack = TrialRules.AttackModifiers(caster.abilityNames, target.abilityNames, false, true, spell?.id);
+            int accuracy = StatusSum(caster, new[] { "accuracyDown" }, 5)
+                - StatusSum(target, new[] { "evasionUp", "evasionBonus" })
+                + aura.accuracy + attack.accuracy;
+            return TrialRules.HitRate(caster.stats, target.stats, target.siz, accuracy);
+        }
+
         /// <summary>
         /// 1回の交戦の計画を作る。attacker・defender は写して使い、交戦後の状態を返す（元は書き換えない）。
         /// 順番: 攻撃 → 反撃（外れても判定する） → 追撃（速いほうが1回。攻撃側は外れても追撃する）。

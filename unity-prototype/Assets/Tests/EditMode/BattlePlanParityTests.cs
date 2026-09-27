@@ -31,6 +31,8 @@ namespace Srpg.Tests
         {
             public string attackerId, defenderId, rolls, artName;
             public string optionKind, itemId, weaponItemId;   // 攻撃の選択肢（戦技・魔法の戦技・魔導書）の答え合わせ
+            public string area;                               // 範囲の攻撃（円舞・万雷）の答え合わせ
+            public AreaTarget[] areaTargets;
             public PlanSpell spell, equipSpell;
             public int distance, attackerHp;
             public int[] percents, dice;
@@ -39,9 +41,44 @@ namespace Srpg.Tests
         }
 
         [Serializable]
+        private class AreaTarget
+        {
+            public string id;
+            public int x, y;
+        }
+
+        [Serializable]
+        private class HitCase
+        {
+            public string casterId, targetId;
+            public PlanSpell spell;
+            public int rate;
+        }
+
+        [Serializable]
         private class CaseFile
         {
             public Case[] cases;
+            public HitCase[] hits;
+        }
+
+        /// <summary>虚像・封印の命中率がブラウザ版と同じ</summary>
+        [Test]
+        public void SupportHitRateMatchesTheBrowserVersion()
+        {
+            var state = JsonUtility.FromJson<PlanStateFile>(File.ReadAllText(StatePath));
+            BattlePlan.SetItems(state.items);
+            var hits = JsonUtility.FromJson<CaseFile>(File.ReadAllText(CasesPath)).hits;
+            Assert.Greater(hits.Length, 0);
+            var failures = new List<string>();
+            foreach (var h in hits)
+            {
+                var caster = state.units.First(u => u.id == h.casterId);
+                var target = state.units.First(u => u.id == h.targetId);
+                int rate = BattlePlan.SupportHitRate(caster, target, h.spell, state.units.ToList());
+                if (rate != h.rate) failures.Add($"{h.casterId}→{h.targetId} {h.spell.id}: {rate}%（ブラウザ版 {h.rate}%）");
+            }
+            Assert.IsEmpty(failures, string.Join("\n", failures));
         }
 
         [Test]
@@ -60,6 +97,26 @@ namespace Srpg.Tests
                 var attacker = a.Clone(); attacker.x = 5; attacker.y = 4;
                 if (!string.IsNullOrEmpty(c.artName) || !string.IsNullOrEmpty(c.optionKind)) attacker.hp = c.attackerHp;
                 var defender = d.Clone(); defender.x = 5 + c.distance; defender.y = 4;
+                if (!string.IsNullOrEmpty(c.area))
+                {
+                    // 範囲の攻撃: 巻き込む相手を置いて、bpPlanArea と比べる
+                    var areaTargets = c.areaTargets.Select(t => { var x = state.units.First(u => u.id == t.id).Clone(); x.x = t.x; x.y = t.y; return x; }).ToList();
+                    var areaEnv = state.units.Select(u => u.id == a.id ? attacker : areaTargets.FirstOrDefault(t => t.id == u.id) ?? u).ToList();
+                    var areaOption = new BattleOption { kind = c.optionKind, artName = c.artName, spell = c.spell };
+                    IPlanRolls areaRolls = c.rolls == "forecast" ? new ForecastRolls() : new FixedRolls(c.percents, c.dice);
+                    var areaPlan = BattlePlan.PlanArea(attacker, areaTargets, areaOption.ToAction(), areaEnv, areaRolls);
+                    string areaWhere = $"{c.area} {c.attackerId}→{string.Join("・", c.areaTargets.Select(t => t.id))} {c.rolls}";
+                    if (areaPlan.steps.Count != c.steps.Length) { failures.Add($"{areaWhere}: 段の数 {areaPlan.steps.Count}（ブラウザ版 {c.steps.Length}）"); continue; }
+                    for (int i = 0; i < c.steps.Length; i++)
+                    {
+                        var e = c.steps[i];
+                        var s = areaPlan.steps[i];
+                        if (e.hitRate != s.hitRate || e.damage != s.damage || e.critRate != s.critRate || e.dealt != s.dealt || e.hit != s.hit || e.targetHpAfter != s.targetHpAfter)
+                            failures.Add($"{areaWhere} 段{i}: 命中{s.hitRate}/{e.hitRate} ダメージ{s.damage}/{e.damage} 必殺{s.critRate}/{e.critRate} 与えた{s.dealt}/{e.dealt}");
+                    }
+                    if (areaPlan.attacker.mp != c.attackerMpAfter) failures.Add($"{areaWhere}: MP {areaPlan.attacker.mp}（ブラウザ版 {c.attackerMpAfter}）");
+                    continue;
+                }
                 var env = state.units.Select(u => u.id == a.id ? attacker : u.id == d.id ? defender : u).ToList();
                 PlanAction action;
                 if (!string.IsNullOrEmpty(c.optionKind))

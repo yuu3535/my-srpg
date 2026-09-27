@@ -733,7 +733,7 @@ namespace Srpg.Battle
             if (!Built || controller == null || controller.Data == null) return;
             var sel = controller.Selected;
             var tgt = controller.Target;
-            string key = $"{statusOpen}|{subList}|{controller.CurrentOption?.label}|{controller.EnemyPreview?.attacker?.Id}|{controller.CurrentPhase}|{controller.CurrentMode}|{sel?.Id}|{sel?.plan?.hp}|{sel?.plan?.mp}|{sel?.cell}|{tgt?.Id}|{tgt?.plan?.hp}|{controller.Turn}|{controller.Units.Count(u => u.acted)}"
+            string key = $"{statusOpen}|{subList}|{controller.CurrentOption?.label}|{controller.TransferAlly?.Id}|{controller.EnemyPreview?.attacker?.Id}|{controller.CurrentPhase}|{controller.CurrentMode}|{sel?.Id}|{sel?.plan?.hp}|{sel?.plan?.mp}|{sel?.cell}|{tgt?.Id}|{tgt?.plan?.hp}|{controller.Turn}|{controller.Units.Count(u => u.acted)}"
                 + $"|{controller.Declarations.Count}|{string.Join(",", controller.Units.Select(u => u.plan?.hp ?? 0))}";
             if (key == stateKey) return;
             stateKey = key;
@@ -983,6 +983,17 @@ namespace Srpg.Battle
             }
         }
 
+        private string SupportHint()
+        {
+            var option = controller.CurrentOption;
+            if (option?.artName == "転移")
+                return controller.TransferAlly == null
+                    ? $"転移させる味方を選んでください（{option.rangeMax}マス以内。自分も選べます）。"
+                    : $"{controller.TransferAlly.Name}の移動先のマスを選んでください（味方を押すと選び直し）。";
+            if (option?.spell?.targetType == "enemy") return $"{option.ActionName}を使う相手を選んでください（赤いマス）。";
+            return $"{option?.ActionName}を使う味方を選んでください（緑のマス）。";
+        }
+
         private string HintText(bool forecastOpen)
         {
             var sel = controller.Selected;
@@ -1000,7 +1011,7 @@ namespace Srpg.Battle
             {
                 Battle3DController.Mode.Moving => $"{sel.Name}の移動先を選ぶか、右のコマンドを選んでください。",
                 Battle3DController.Mode.Targeting => "攻撃する相手を選んでください。",
-                Battle3DController.Mode.Support => $"{controller.CurrentOption?.ActionName}を使う味方を選んでください（緑のマス）。",
+                Battle3DController.Mode.Support => SupportHint(),
                 _ => $"{sel.Name}の行動を選んでください。",
             };
         }

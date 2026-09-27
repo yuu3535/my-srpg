@@ -15,6 +15,7 @@ namespace Srpg.Battle.Plan
         public string itemId;        // 魔導書の持ち物（grimoire のとき）
         public int rangeMin = 1, rangeMax = 1;
         public bool isArt, isMagic;
+        public string area;          // 範囲の攻撃: "adjacent"（円舞・隣接する敵すべて）/ "line"（万雷・直線3マス）。なければ空
         public PlanSpell spell;      // 魔法のとき
         public PlanSpell equipSpell; // 魔導書に持ち替えたときの、装備の魔法
 
@@ -48,6 +49,7 @@ namespace Srpg.Battle.Plan
             itemId != null && BattlePlan.Items.TryGetValue(itemId, out var item) && item.kind == "weapon";
 
         public bool InRange(int distance) => distance >= rangeMin && distance <= rangeMax;
+        public bool IsArea => !string.IsNullOrEmpty(area);
 
         /// <summary>予測・一覧に出す名前（魔導書は魔法の名前。例: 仮の魔導書 → 魔弾）</summary>
         public string ActionName => kind == "grimoire" && spell != null && !string.IsNullOrEmpty(spell.name) ? spell.name : label;

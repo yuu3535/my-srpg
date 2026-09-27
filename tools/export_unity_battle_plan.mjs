@@ -171,7 +171,45 @@ const result = await evaluate(`(async () => {
             }
         }
     }
-    return { units, items, cases };
+    // 範囲の攻撃（円舞・万雷。bpPlanArea）: 2人を巻き込む
+    const foes = units.filter(u => u.side === "enemy");
+    const areaActions = [
+        { attackerId: "ringholm", action: { kind: "weapon" }, label: "円舞", place: [[6, 4], [4, 4]] },
+        { attackerId: "arshe", action: trialPlanAction(true, { ...SPELLS_DATA["落雷"], trialArtName: "万雷", name: "万雷" }, null), label: "万雷", place: [[6, 4], [7, 4]] },
+    ];
+    for (const area of areaActions) {
+        const a = units.find(u => u.id === area.attackerId);
+        for (let i = 0; i < foes.length; i++) for (let j = 0; j < foes.length; j++) {
+            if (i === j) continue;
+            const attacker = { ...a, x: 5, y: 4 };
+            const targets = [{ ...foes[i], x: area.place[0][0], y: area.place[0][1] }, { ...foes[j], x: area.place[1][0], y: area.place[1][1] }];
+            const env = { units: units.map(u => u.id === a.id ? attacker : targets.find(t => t.id === u.id) || u), passiveBattle: false };
+            for (const set of [rollSets[0], rollSets[2]]) {
+                const rolls = set.name === "forecast" ? bpForecastRolls() : bpFixedRolls(set.percents, set.dice);
+                const plan = bpPlanArea(attacker, targets, area.action, env, rolls);
+                cases.push({
+                    attackerId: a.id, defenderId: targets[0].id, distance: 1, rolls: set.name, attackerHp: a.hp,
+                    area: area.label, areaTargets: targets.map(t => ({ id: t.id, x: t.x, y: t.y })),
+                    optionKind: area.action.kind, artName: area.action.artName || "", spell: planSpell(area.action.spell), itemId: "", equipSpell: null, weaponItemId: "",
+                    percents: set.percents || [], dice: set.dice || [], steps: plan.steps.map(summarize),
+                    attackerHpAfter: plan.attacker.hp, attackerMpAfter: plan.attacker.mp,
+                    defenderHpAfter: plan.targets[0].hp, defenderMpAfter: plan.targets[0].mp,
+                });
+            }
+        }
+    }
+
+    // 虚像・封印の命中率（getMagicHitResult。攻撃の命中とは足す補正が違う）: 今の配置のまま
+    const hits = [];
+    for (const unit of battleUnits.filter(u => u.trialStats && u.hp > 0)) {
+        const spells = getLandscapeMagicEntries(unit).map(e => e.spell).filter(sp => sp && ["虚像", "封印"].includes(sp.trialArtName));
+        for (const sp of spells) {
+            for (const foe of battleUnits.filter(u => u.trialStats && u.hp > 0 && u.side !== unit.side)) {
+                hits.push({ casterId: unit.id, targetId: foe.id, spell: planSpell(sp), rate: getMagicHitResult(unit, foe, sp, 5, { roll: false }).rate });
+            }
+        }
+    }
+    return { units, items, cases, hits };
 })()`);
 
 const dataFile = join(ROOT, "unity-prototype", "Assets", "Data", "Battles", "battle_trial_adopted_plan.json");
@@ -179,8 +217,8 @@ const fixtureFile = join(ROOT, "unity-prototype", "Assets", "Tests", "EditMode",
 mkdirSync(dirname(dataFile), { recursive: true });
 mkdirSync(dirname(fixtureFile), { recursive: true });
 writeFileSync(dataFile, JSON.stringify({ battleId: "battle_trial_adopted", units: result.units, items: result.items }, null, 2) + "\n", "utf8");
-writeFileSync(fixtureFile, JSON.stringify({ cases: result.cases }, null, 1) + "\n", "utf8");
-console.log(`書き出し: 戦闘の状態 ${result.units.length}人・持ち物 ${result.items.length}種、答え合わせ ${result.cases.length}件`);
+writeFileSync(fixtureFile, JSON.stringify({ cases: result.cases, hits: result.hits }, null, 1) + "\n", "utf8");
+console.log(`書き出し: 戦闘の状態 ${result.units.length}人・持ち物 ${result.items.length}種、答え合わせ ${result.cases.length}件・命中 ${result.hits.length}件`);
 
 ws.close();
 edge.kill();

@@ -72,7 +72,18 @@ namespace Srpg.Battle
 
         /// <summary>今のマスから、その補助が届く味方（自分も含む）がいるか</summary>
         public bool CanSupportFromHere(BattleOption option) =>
-            selected != null && option != null && units.Any(u => u.Alive && u.Side == selected.Side && Distance(u.cell, selected.cell) <= option.rangeMax);
+            selected != null && option != null && SupportTargets(option).Any();
+
+        /// <summary>補助の対象: 敵が対象の魔法（虚像・封印）は射程の敵、ほかは射程の味方（自分も含む）</summary>
+        private IEnumerable<UnitState> SupportTargets(BattleOption option)
+        {
+            bool enemyTarget = option.spell?.targetType == "enemy";
+            return units.Where(u => u.Alive && (enemyTarget ? u.Side != selected.Side : u.Side == selected.Side)
+                && Distance(u.cell, selected.cell) >= (enemyTarget ? 1 : 0) && Distance(u.cell, selected.cell) <= option.rangeMax);
+        }
+
+        /// <summary>転移の2段目で選んでいる味方（1段目のあいだは null）</summary>
+        public UnitState TransferAlly { get; private set; }
 
         /// <summary>補助の魔法を選び、届く味方（緑）から対象を選ぶ</summary>
         public void ChooseSupport(BattleOption option)
@@ -80,10 +91,10 @@ namespace Srpg.Battle
             StayIfMoving();
             if (CurrentMode != Mode.Acting || selected == null || option == null) return;
             currentOption = option;
+            TransferAlly = null;
             supportCells.Clear();
-            foreach (var ally in units.Where(u => u.Alive && u.Side == selected.Side && Distance(u.cell, selected.cell) <= option.rangeMax))
-                supportCells.Add(ally.cell);
-            view.ShowRange(supportCells, Board3DView.SupportRangeColor);
+            foreach (var unit in SupportTargets(option)) supportCells.Add(unit.cell);
+            view.ShowRange(supportCells, option.spell?.targetType == "enemy" ? Board3DView.AttackRangeColor : Board3DView.SupportRangeColor);
             CurrentMode = Mode.Support;
         }
 
@@ -109,10 +120,32 @@ namespace Srpg.Battle
         {
             var rolls = RollsOverride ?? new RandomRolls();
             if (!string.IsNullOrEmpty(option.itemId)) option.ApplyEquip(caster.plan, UiOf(caster)?.weaponItemId);   // 治癒の魔核に持ち替え
-            int cost = PayMagicMp(caster, option.spell, rolls);
             string art = option.artName;
             supportCells.Clear();
             view.ShowRange(null);
+            if (option.spell?.targetType == "enemy")
+            {
+                // 虚像・封印: 命中の判定（ブラウザ版 getMagicHitResult）→ MP → 効果
+                int rate = BattlePlan.SupportHitRate(caster.plan, target.plan, option.spell, PlanUnits());
+                int roll = rolls.Percent("補助の命中");
+                bool hit = roll <= rate;
+                int paid = PayMagicMp(caster, option.spell, rolls);
+                AddLog($"{caster.Name}が {art} 使用（{roll}/{rate}%）  MP-{paid} → {(hit ? "命中" : "失敗")}");
+                if (!hit)
+                {
+                    AddPopup(target.Id, "MISS", new Color(0.8f, 0.8f, 0.85f));
+                    FinishAction(caster);
+                    return;
+                }
+                string type = art == "虚像" ? "hitDown" : "immobilize";
+                target.plan.statusEffects.RemoveAll(e => e.type == type);
+                target.plan.statusEffects.Add(new PlanStatus { type = type, value = art == "虚像" ? 20 : 0, holdOwnPhase = true, name = art });
+                AddLog(art == "虚像" ? $"  {target.Name}の命中-20（相手の次の番まで）" : $"  {target.Name}の移動を封じた（相手の次の番まで）");
+                AddPopup(target.Id, art, new Color(0.85f, 0.6f, 1f));
+                FinishAction(caster);
+                return;
+            }
+            int cost = PayMagicMp(caster, option.spell, rolls);
             if (art == "回復" || (string.IsNullOrEmpty(art) && option.spell?.effectType == "heal"))
             {
                 int amount = (6 + caster.plan.stats.mag / 4) * (art == "回復" ? 3 : 1);
@@ -144,6 +177,92 @@ namespace Srpg.Battle
                 }
             }
             FinishAction(caster);
+        }
+
+        /// <summary>転移の1段目: 移す味方を選び、範囲の空いているマスを出す（ブラウザ版 trialPickTransferAlly）</summary>
+        private void PickTransferAlly(UnitState ally)
+        {
+            TransferAlly = ally;
+            supportCells.Clear();
+            for (int x = 0; x < data.cols; x++)
+            for (int y = 0; y < data.rows; y++)
+            {
+                var cell = new Vector2Int(x, y);
+                if (Distance(cell, selected.cell) > currentOption.rangeMax) continue;
+                if (!map.CanStop(cell, false)) continue;
+                if (units.Any(u => u.Alive && u.cell == cell)) continue;
+                supportCells.Add(cell);
+            }
+            view.ShowRange(supportCells);
+            view.Select(ally.cell);
+        }
+
+        /// <summary>転移の2段目: 選んだ味方を、選んだマスへ移す（ブラウザ版 trialExecuteTransfer）</summary>
+        private void CastTransfer(UnitState caster, UnitState ally, Vector2Int cell)
+        {
+            var rolls = RollsOverride ?? new RandomRolls();
+            int cost = PayMagicMp(caster, currentOption.spell, rolls);
+            var from = ally.cell;
+            ally.cell = cell;
+            if (ally.plan != null) { ally.plan.x = cell.x; ally.plan.y = cell.y; }
+            view.MoveUnit(ally.Id, cell);
+            AddLog($"{caster.Name}が 転移 使用  MP-{cost} → {ally.Name}を{from}から{cell}へ移した");
+            TransferAlly = null;
+            supportCells.Clear();
+            view.ShowRange(null);
+            FinishAction(caster);
+        }
+
+        /// <summary>範囲の攻撃で巻き込む相手（ブラウザ版: 円舞＝隣接する敵すべて、万雷＝相手の方向の直線3マスの敵すべて）</summary>
+        private List<UnitState> AreaTargets(UnitState attacker, UnitState target, BattleOption option)
+        {
+            var foes = units.Where(u => u.Alive && u.Side != attacker.Side).ToList();
+            if (option.area == "adjacent")
+            {
+                var list = foes.Where(u => Distance(u.cell, attacker.cell) == 1).ToList();
+                if (!list.Contains(target)) list.Insert(0, target);
+                return list;
+            }
+            int dx = Math.Sign(target.cell.x - attacker.cell.x), dy = Math.Sign(target.cell.y - attacker.cell.y);
+            if ((dx == 0) == (dy == 0)) return new List<UnitState> { target };   // 直線上にない相手なら、その相手だけ
+            var line = new List<UnitState>();
+            for (int k = 1; k <= 3; k++)
+            {
+                var foe = foes.FirstOrDefault(u => u.cell == attacker.cell + new Vector2Int(dx * k, dy * k));
+                if (foe != null) line.Add(foe);
+            }
+            if (!line.Contains(target)) line.Insert(0, target);
+            return line;
+        }
+
+        /// <summary>範囲の攻撃を計画どおりに反映する（ブラウザ版 trialExecuteArea）</summary>
+        private void ExecuteArea(UnitState attacker, UnitState target, BattleOption option)
+        {
+            var rolls = RollsOverride ?? new RandomRolls();
+            option.ApplyEquip(attacker.plan, UiOf(attacker)?.weaponItemId);
+            var targets = AreaTargets(attacker, target, option);
+            var plan = BattlePlan.PlanArea(attacker.plan, targets.Select(t => t.plan).ToList(), option.ToAction(), PlanUnits(), rolls);
+            AddLog($"{attacker.Name}の{option.ActionName}！（{string.Join("・", targets.Select(t => t.Name))}）");
+            foreach (var step in plan.steps)
+            {
+                var victim = targets.First(t => t.Id == step.targetId);
+                if (!step.hit)
+                {
+                    AddLog($"  {victim.Name}：外れた（{step.hitRoll}/{step.hitRate}%）");
+                    AddPopup(victim.Id, "MISS", new Color(0.8f, 0.8f, 0.85f));
+                    continue;
+                }
+                AddLog($"  {victim.Name}に{step.dealt}ダメージ{(step.crit ? " 必殺！" : "")}（残りHP {step.targetHpAfter}）");
+                AddPopup(victim.Id, step.crit ? $"{step.dealt}!" : step.dealt.ToString(), step.crit ? new Color(1f, 0.75f, 0.3f) : Color.white);
+            }
+            CopyBack(attacker, plan.attacker);
+            for (int i = 0; i < targets.Count; i++) CopyBack(targets[i], plan.targets[i]);
+            foreach (var unit in targets.Append(attacker))
+            {
+                if (unit.Alive) continue;
+                AddLog($"{unit.Name}は倒れた");
+                view.RemoveUnit(unit.Id);
+            }
         }
 
         /// <summary>
@@ -256,6 +375,18 @@ namespace Srpg.Battle
             var a = attacker.plan.Clone();
             option.ApplyEquip(a, UiOf(attacker)?.weaponItemId);
             var env = PlanUnits().Select(u => u.id == a.id ? a : u).ToList();
+            if (option.IsArea)
+            {
+                // 範囲の攻撃は反撃・追撃なし。予測は押した相手への1撃（ブラウザ版 trialPlanPrediction）
+                var area = BattlePlan.PlanArea(a, new[] { defender.plan }, option.ToAction(), env, new ForecastRolls());
+                return new BattlePlan.Forecast
+                {
+                    plan = new PlanResult { steps = area.steps, attacker = area.attacker, defender = area.targets[0] },
+                    first = area.steps.FirstOrDefault(),
+                    attackerHpAfter = area.attacker.hp,
+                    defenderHpAfter = area.targets[0].hp,
+                };
+            }
             return BattlePlan.ForecastOf(a, defender.plan, option.ToAction(), env);
         }
         public Battle3DHud Hud => hud;
@@ -402,6 +533,8 @@ namespace Srpg.Battle
 
         private List<Vector2Int> MoveCellsOf(UnitState unit)
         {
+            // 封印（移動不可）・封じのあいだは動けない（ブラウザ版 getMoveRange と同じ）
+            if (unit.plan != null && unit.plan.statusEffects.Any(e => e.type == "immobilize" || e.type == "sealed")) return new List<Vector2Int>();
             // 地形の通行（TerrainRules）: 地上は s d g = だけ。飛行は通り抜けられるが、# と t には止まれない
             bool flying = unit.source.flying;
             return MoveRange.Compute(unit.cell, unit.source.move, unit.source.side, units.Where(u => u.Alive), data.cols, data.rows,
@@ -444,7 +577,15 @@ namespace Srpg.Battle
                     BackToActing();
                     return;
                 case Mode.Support:
-                    if (unit != null && unit.Side == selected.Side && supportCells.Contains(cell)) { CastSupport(selected, unit, currentOption); return; }
+                    if (currentOption?.artName == "転移")
+                    {
+                        // 転移: 1段目＝範囲の味方、2段目＝範囲の空いているマス（味方を押すと選び直し）
+                        if (unit != null && unit.Side == selected.Side && Distance(unit.cell, selected.cell) <= currentOption.rangeMax) { PickTransferAlly(unit); return; }
+                        if (TransferAlly != null && unit == null && supportCells.Contains(cell)) { CastTransfer(selected, TransferAlly, cell); return; }
+                        BackToActing();
+                        return;
+                    }
+                    if (unit != null && supportCells.Contains(cell)) { CastSupport(selected, unit, currentOption); return; }
                     BackToActing();
                     return;
                 case Mode.Acting:
@@ -534,7 +675,8 @@ namespace Srpg.Battle
         {
             if (CurrentMode != Mode.Forecast || selected == null || target == null) return;
             var attacker = selected;
-            Execute(attacker, target, currentOption);
+            if (currentOption != null && currentOption.IsArea) ExecuteArea(attacker, target, currentOption);
+            else Execute(attacker, target, currentOption);
             FinishAction(attacker);
         }
 
@@ -563,6 +705,7 @@ namespace Srpg.Battle
         private void BackToActing()
         {
             supportCells.Clear();
+            TransferAlly = null;
             attackCells.Clear();
             view.ShowRange(null);
             CurrentMode = Mode.Acting;

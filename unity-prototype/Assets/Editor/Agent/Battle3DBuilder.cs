@@ -188,6 +188,12 @@ namespace Srpg.EditorAgent
             hud.GetComponentsInChildren<UnityEngine.UI.Button>(true).First(x => x.name == "Command_回復").onClick.Invoke();
             RenderWithHud(hud, camera, rt, "Battle3D_ui_support");
             controller.CancelTargeting();
+            // 転移: 味方を選んだあと、行き先のマスを選ぶところ
+            var albasSel = controller.Units.First(u => u.source.id == "albas");
+            controller.ChooseSupport(controller.SupportsOf(albasSel).First(o => o.label == "転移"));
+            controller.TapCell(controller.Units.First(u => u.source.id == "ringholm").cell);
+            RenderWithHud(hud, camera, rt, "Battle3D_ui_transfer");
+            controller.CancelTargeting();
             // 敵の攻撃の前の予測（見るだけ）
             controller.PreviewEnemyAttack("albas_rival");
             if (controller.EnemyPreview == null) throw new InvalidOperationException("UIの確認: 敵の攻撃の予測が出なかった");

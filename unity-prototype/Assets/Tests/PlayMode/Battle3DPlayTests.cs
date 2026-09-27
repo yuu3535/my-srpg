@@ -138,6 +138,39 @@ namespace Srpg.Tests
             controller.TapCell(albas.cell);
             Assert.IsFalse(albas.acted, "加速を自分に使うと、もう一度行動できる");
             Assert.AreSame(albas, controller.Selected);
+
+            // 転移: 味方を選んで、空いているマスへ移す
+            var transfer = controller.SupportsOf(albas).First(o => o.label == "転移");
+            controller.ChooseSupport(transfer);
+            controller.TapCell(ringholm.cell);
+            Assert.AreSame(ringholm, controller.TransferAlly, "1段目で味方を選ぶ");
+            var dest = ringholm.cell + new Vector2Int(0, -1);
+            if (controller.Units.Any(u => u.Alive && u.cell == dest)) dest = ringholm.cell + new Vector2Int(1, -1);
+            controller.TapCell(dest);
+            Assert.AreEqual(dest, ringholm.cell, "2段目で選んだマスへ移る");
+            Assert.IsTrue(albas.acted);
+            controller.RollsOverride = null;
+        }
+
+        /// <summary>封印（敵が対象・命中の判定あり）: 当たると、その敵は相手の次の番まで動けない</summary>
+        [UnityTest]
+        public IEnumerator SealStopsMovement()
+        {
+            SceneManager.LoadScene("Battle3D");
+            yield return null;
+            yield return null;
+            var controller = Object.FindFirstObjectByType<Battle3DController>();
+            controller.RollsOverride = new FixedRolls(new[] { 1, 1, 1, 1 }, new[] { 3, 3, 3 });   // 必ず当たる
+            var arshe = controller.Units.First(u => u.Id == "arshe");
+            controller.Select("arshe");
+            var seal = controller.SupportsOf(arshe).First(o => o.label == "封印");
+            Assert.IsTrue(controller.CanSupportFromHere(seal));
+            controller.ChooseSupport(seal);
+            var foe = controller.Units.Where(u => u.Side == "enemy" && u.Alive)
+                .OrderBy(u => Mathf.Abs(u.cell.x - arshe.cell.x) + Mathf.Abs(u.cell.y - arshe.cell.y)).First();
+            controller.TapCell(foe.cell);
+            Assert.IsTrue(foe.plan.statusEffects.Any(e => e.type == "immobilize"), "封印が当たる");
+            Assert.IsTrue(arshe.acted);
             controller.RollsOverride = null;
         }
 
