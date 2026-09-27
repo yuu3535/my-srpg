@@ -1,0 +1,26 @@
+{
+  "mapId": "orcus_training_yard",
+  "name": "（例）オルクス魔王城の訓練場",
+  "indoor": false,
+  "timeOfDay": "day",
+  "description": "（例）城の中庭の訓練場。石畳の中に、砂を撒いた稽古場がある。",
+  "mood": "（例）明るい昼。石は暖かい灰色、砂は明るい砂色。落ち着いた色。",
+  "moodReference": "背景/オルクス魔王城鍛錬場.png（雰囲気の見本として添える）",
+  "note": "ひな形。マップ担当がこの形で配置表を作る。記号は MAP_ART_PIPELINE_v1 §7（屋内は案）。terrain は場所の全体（上が北・1マス1文字）。1枚で頼めるのは32×32マスまで",
+  "battleAreas": [{ "id": "main", "x": 2, "y": 2, "w": 7, "h": 8 }],
+  "padTerrain": "W",
+  "legend": {},
+  "terrain": [
+    "WWWWWWWWWWW",
+    "WffffDffffW",
+    "WfaaaaaaafW",
+    "WfaaaaaaafW",
+    "WfaaaaaaafW",
+    "WPaaaaaaaPW",
+    "WfaaaaaaafW",
+    "WfaaaaaaafW",
+    "WfaaaaaaafW",
+    "WfffffffffW",
+    "WWWWWDWWWWW"
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "mapId": "watchroad",
+  "name": "国境監視路",
+  "indoor": false,
+  "timeOfDay": "day",
+  "description": "国境の古い監視路。手入れされなくなって、自然に戻りかけている。",
+  "mood": "明るい昼。色は落ち着いた自然な色（草は青みのある緑、土は赤茶〜砂色、石は暖かい灰色）。鮮やかすぎる色は使わない。地形の境目は、草が道に少しはみ出すなど自然になじませる（道と草原の区別ははっきり）",
+  "note": "2026-09-28 に前の下絵（watchroad_topdown_guide.png。戦うマス＋まわり10マスの景色を自動で作ったもの）から起こした。地面の1枚絵はもう届いている（ブラッシュアップ版を採用）",
+  "battleAreas": [
+    {
+      "id": "main",
+      "x": 10,
+      "y": 10,
+      "w": 12,
+      "h": 8
+    }
+  ],
+  "padTerrain": "t",
+  "terrain": [
+    "ctctcctttttcssssstddtcttttcctctt",
+    "cttttttttttcssssstddtcttctcttctt",
+    "ctttttccttccssssstddtttctctcttct",
+    "cctttcttttttssssstddtttcttttcttt",
+    "cctttcctccttssssscddttttttcctttt",
+    "ttttccctttttssssstddctcttcttctct",
+    "tctttttttttcssssstddttttcttttttt",
+    "tctctttcttttssssstddttttttcttctt",
+    "ctccccttttttsssssgddtgggtttttttt",
+    "cttttcttttgtsssssgddtggttcttcttc",
+    "tttttttttgttsssss#ddttgtttttttct",
+    "tttttttcgttssosssodddttgtttttttt",
+    "ttttttctttgs#ggssgdddgttttctttct",
+    "cctttttcgggs#~~~=~~ddggttctcttct",
+    "ctctttttgggss~~~=~~doddddddddddd",
+    "ctcttttttggosggosg#ddgtgttcttttt",
+    "tttcttcctgtgsgggsggdgtttttcttttt",
+    "ttttcttttgttggggsggdttgttttttctc",
+    "ttttttttgtggggggsggdtggttttttttt",
+    "tttttttttggtttttsttdtggttttttttt",
+    "ttttttttttttttttsttdtttttttttttt",
+    "ttttttttttttttttsttdtttttttttttt",
+    "ttttttttttttttttsttdtttttttttttt",
+    "ttttttttttttttttsttdtttttttttttt",
+    "ttttttttttttttttsttdtttttttttttt",
+    "ttttttttttttttttsttdtttttttttttt",
+    "ttttttttttttttttsttdtttttttttttt",
+    "ttttttttttttttttsttdtttttttttttt"
+  ]
+}
