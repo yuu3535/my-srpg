@@ -238,31 +238,35 @@ const TRIAL_ITEMS = Object.freeze({
     trial_sword: { name: "仮の剣", kind: "weapon", power: TRIAL_WEAPON_POWER.mid, range: 1 },
     // アルバスが見た目で持つ剣。アルバス専用の武器ではなく、持ち物にしまったり、ほかの味方に装備させたりできる
     albas_sword: { name: "アルバスの剣", kind: "weapon", power: TRIAL_WEAPON_POWER.mid, range: 1 },
-    fire_book:   { name: "火の魔導書",   kind: "grimoire", spell: "火" },   // 黒の一族（火魔法強化）に合わせた
-    heal_book:   { name: "治癒の魔導書", kind: "grimoire", spell: "治癒" },
-    // ヘレル（魔法型の敵）の仮の魔導書。隕石を単体の攻撃魔法として使う
-    star_book:   { name: "星の魔導書",   kind: "grimoire", spell: "隕石", effectType: "magicDamage" },
-    // 仮の魔導書: 属性なしの攻撃魔法（威力6＝魔導書の標準の威力）。魔法データは火を借り、名前だけ「魔弾」にする
-    trial_book:  { name: "仮の魔導書",   kind: "grimoire", spell: "火", spellName: "魔弾", power: 6 },
+    // 魔法武器「魔核」（仮の名前。原作者 2026-09-27: この世界の魔法は書物ではない）。
+    // 仕組みは従来の魔導書のまま（kind: "grimoire"・id も変えない）。表示の名前だけ「魔核」にした
+    fire_book:   { name: "火の魔核",   kind: "grimoire", spell: "火" },   // 黒の一族（火魔法強化）に合わせた
+    heal_book:   { name: "治癒の魔核", kind: "grimoire", spell: "治癒" },
+    // ヘレル（魔法型の敵）の仮の魔核。隕石を単体の攻撃魔法として使う
+    star_book:   { name: "星の魔核",   kind: "grimoire", spell: "隕石", effectType: "magicDamage" },
+    // 仮の魔核: 属性なしの攻撃魔法（威力6＝魔核の標準の威力）。魔法データは火を借り、名前だけ「魔弾」にする
+    trial_book:  { name: "仮の魔核",   kind: "grimoire", spell: "火", spellName: "魔弾", power: 6 },
 });
 
 const TRIAL_ITEM_CAPACITY = 5;
 
 // 戦闘開始時の持ち物と装備（身支度で変えられる。変えた内容はパーティ状態に残る）
+// 原作者 2026-09-27: 最初から持っている魔核（旧・魔導書）はいったん外す。素の本人の戦技（因果Lv・兵種Lvで習得）だけで
+// どう戦えるかを見るため。外した魔核は共有の持ち物に入れ、身支度で持たせて試せる。敵はヘレルの星の魔核だけ残す（攻撃の手段がほかにない）
 const TRIAL_STARTING_GEAR = Object.freeze({
-    ringholm:     { items: ["trial_sword", "fire_book"], equipped: "trial_sword" },
-    arshe:        { items: ["trial_sword", "fire_book"], equipped: "trial_sword" },
-    young_karima: { items: ["trial_sword", "heal_book"], equipped: "trial_sword" },
-    albas:        { items: ["trial_book"], equipped: "trial_book" },   // 剣はフレーバー。共有の持ち物に入っている
+    ringholm:     { items: ["trial_sword"], equipped: "trial_sword" },
+    arshe:        { items: ["trial_sword"], equipped: "trial_sword" },
+    young_karima: { items: ["trial_sword"], equipped: "trial_sword" },
+    albas:        { items: [], equipped: null },   // 剣はフレーバー。共有の持ち物に入っている
     forest_guard: { items: ["trial_sword"], equipped: "trial_sword" },
     dylan:        { items: ["trial_sword"], equipped: "trial_sword" },
     herel:        { items: ["star_book"], equipped: "star_book" },
-    // 敵アルバス: 味方のアルバスと同じく仮の魔導書を装備する
-    albas_rival:  { items: ["trial_book"], equipped: "trial_book" },
+    // 敵アルバス: 味方のアルバスと同じく何も持たない（破壊などの戦技で戦う）
+    albas_rival:  { items: [], equipped: null },
 });
 
 // パーティ共有の持ち物（誰も持っていない武器・魔導書）
-const TRIAL_STARTING_STOCK = Object.freeze(["albas_sword"]);
+const TRIAL_STARTING_STOCK = Object.freeze(["albas_sword", "fire_book", "fire_book", "heal_book", "trial_book"]);
 
 function trialStartingGear(unitId) {
     const gear = TRIAL_STARTING_GEAR[unitId];
@@ -390,10 +394,14 @@ function trialLearnedAbilitiesFor(unitId, causeLevel, classLevel = TRIAL_CLASS_L
         .map(([need, name, desc, kind, statBonus]) => ({ name, desc, source: need, kind, statBonus }));
     const causeLearned = (TRIAL_CAUSE_ABILITIES[unitId] || [])
         .filter(ability => ability.level <= Number(causeLevel || 1));
+    // 戦技枠は兵種の戦技と因果の戦技の共通の枠（SKILL_LOADOUT_RULES §戦技枠）。因果の戦技のあとに兵種の戦技を並べる
+    const classArts = classLearned
+        .filter(skill => skill.kind === "art")
+        .map(skill => ({ level: null, type: "art", artKind: skill.kind, name: skill.name, desc: skill.desc, source: skill.source, statBonus: null }));
     return {
         classSkills: classLearned.filter(skill => skill.kind !== "art"),
         causeSkills: causeLearned.filter(ability => ability.type === "skill"),
-        combatArts: causeLearned.filter(ability => ability.type === "art"),
+        combatArts: [...causeLearned.filter(ability => ability.type === "art"), ...classArts],
         exclusive: causeLearned.find(ability => ability.type === "exclusive") || null,
     };
 }

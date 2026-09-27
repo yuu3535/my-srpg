@@ -402,7 +402,7 @@ function briefingItemLabel(itemId) {
     if (!item) return { name: itemId, kind: "" };
     return {
         name: item.name,
-        kind: item.kind === "grimoire" ? `魔導書・射程${TRIAL_GRIMOIRE_RANGE.min}〜${TRIAL_GRIMOIRE_RANGE.max}` : `武器・射程${item.range}`,
+        kind: item.kind === "grimoire" ? `魔核・射程${TRIAL_GRIMOIRE_RANGE.min}〜${TRIAL_GRIMOIRE_RANGE.max}` : `武器・射程${item.range}`,
     };
 }
 

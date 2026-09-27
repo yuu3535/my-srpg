@@ -2726,7 +2726,7 @@ function renderTrialUnitCard(unit, src, hpPct, mpPct, declLabel) {
         <div class="lsuWeapon">
             <i class="lsuWeaponMark ${item?.kind || "none"}" aria-hidden="true"></i>
             <b>${item?.name || "装備なし"}</b>
-            <span>${item ? (item.kind === "grimoire" ? `魔導書・射程${itemRange}` : `威力${item.power}・射程${itemRange}`) : "反撃できません"}</span>
+            <span>${item ? (item.kind === "grimoire" ? `魔核・射程${itemRange}` : `威力${item.power}・射程${itemRange}`) : "反撃できません"}</span>
         </div>
         <div class="lsuSkills">
             ${skills.map(skill => `
