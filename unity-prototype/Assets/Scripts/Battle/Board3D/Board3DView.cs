@@ -244,6 +244,22 @@ namespace Srpg.Battle
         /// <summary>足元（影・陣営の枠、または台座）と、その上に立つキャラの絵（板・常にカメラの方を向く）</summary>
         private void AddUnit(Board3DMap.Unit unit)
         {
+            AddUnitParts(unit);
+            if (unitVisuals.TryGetValue(unit.id, out var added))
+            {
+                if (added.billboard != null) SetLayer(added.billboard.holder, UnitLayer);
+                foreach (var part in added.footParts) SetLayer(part, UnitLayer);
+            }
+        }
+
+        private static void SetLayer(Transform t, int layer)
+        {
+            t.gameObject.layer = layer;
+            foreach (Transform child in t) SetLayer(child, layer);
+        }
+
+        private void AddUnitParts(Board3DMap.Unit unit)
+        {
             var visual = new UnitVisual { unit = unit };
             var top = map.TopCenter(unit.cell);
             float feet = 0.005f;   // 足の裏はマスの面（重なり順は描く順で決めるので、浮かせなくてよい）
@@ -345,6 +361,15 @@ namespace Srpg.Battle
             foreach (var part in visual.footParts) part.gameObject.SetActive(false);
         }
 
+        /// <summary>そのキャラの絵が盤面に出ているか（倒れたら消える）と、絵の位置</summary>
+        public bool IsUnitShown(string id, out Vector3 position)
+        {
+            position = default;
+            if (!unitVisuals.TryGetValue(id, out var visual) || visual.billboard == null) return false;
+            position = visual.billboard.holder.position;
+            return visual.billboard.holder.gameObject.activeInHierarchy;
+        }
+
         /// <summary>行動済みのキャラを暗くする</summary>
         public void SetUnitDimmed(string id, bool dimmed)
         {
@@ -361,7 +386,67 @@ namespace Srpg.Battle
             return targetCamera.WorldToScreenPoint(transform.TransformPoint(top));
         }
 
+        /// <summary>キャラの足元（マスの天面の中心）の画面の位置</summary>
+        public Vector3 UnitFootToScreen(string id)
+        {
+            if (!unitVisuals.TryGetValue(id, out var visual) || targetCamera == null) return Vector3.zero;
+            return targetCamera.WorldToScreenPoint(transform.TransformPoint(map.TopCenter(visual.unit.cell)));
+        }
+
+        /// <summary>カーソルのあるマス（マウス）。指で押したときは最後に押したマス</summary>
+        public Vector2Int? HoverCell { get; private set; }
+
         public int RangeCount => rangeTiles.Count;
+
+        /// <summary>キャラ（板の絵・足元の枠・赤い丸）を置く層。マップ表の絵には写さない（陣営の印を上に重ねるため）</summary>
+        public const int UnitLayer = 8;
+
+        private RenderTexture mapPicture;
+
+        /// <summary>
+        /// 戦況の画面のマップ表: 戦えるマスだけを真上から撮った絵（北＝行0が上）。キャラは写さない。
+        /// 盤面を映すカメラを一時的に借りて撮り、元に戻す（UIのキャンバスはこの間だけ隠す）
+        /// </summary>
+        public Texture RenderMapPicture(int cellPixels = 40, params Canvas[] hide)
+        {
+            if (targetCamera == null || map == null) return null;
+            int w = map.Columns * cellPixels, h = map.Rows * cellPixels;
+            if (mapPicture == null || mapPicture.width != w || mapPicture.height != h)
+            {
+                if (mapPicture != null) mapPicture.Release();
+                mapPicture = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4, name = "MapPicture" };
+            }
+            var cam = targetCamera;
+            var saved = (cam.transform.position, cam.transform.rotation, cam.orthographicSize, cam.cullingMask, cam.targetTexture, cam.aspect);
+            var backdropCanvas = backdropRect != null ? backdropRect.GetComponentInParent<Canvas>() : null;
+            var hidden = new List<Canvas>(hide ?? Array.Empty<Canvas>()) { backdropCanvas };
+            var wasEnabled = hidden.Select(c => c != null && c.enabled).ToList();
+            foreach (var c in hidden) if (c != null) c.enabled = false;
+            var lightRotation = keyLight != null ? keyLight.transform.rotation : Quaternion.identity;
+            try
+            {
+                cam.targetTexture = mapPicture;
+                cam.aspect = (float)map.Columns / map.Rows;
+                cam.orthographicSize = map.Rows * 0.5f;
+                cam.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+                cam.transform.position = transform.position + Vector3.up * 20f;
+                cam.cullingMask = ~(1 << UnitLayer);
+                if (keyLight != null) keyLight.transform.rotation = Quaternion.Euler(lightPitch, lightYawOffset, 0f);
+                cam.Render();
+            }
+            finally
+            {
+                cam.transform.position = saved.position;
+                cam.transform.rotation = saved.rotation;
+                cam.orthographicSize = saved.orthographicSize;
+                cam.cullingMask = saved.cullingMask;
+                cam.targetTexture = saved.targetTexture;
+                cam.aspect = saved.aspect;
+                if (keyLight != null) keyLight.transform.rotation = lightRotation;
+                for (int i = 0; i < hidden.Count; i++) if (hidden[i] != null) hidden[i].enabled = wasEnabled[i];
+            }
+            return mapPicture;
+        }
 
         // ── 地面の絵・板の絵 ──
 
@@ -868,9 +953,12 @@ namespace Srpg.Battle
             if (selectionFrame != null) selectionFrame.SetActive(false);
         }
 
+        private Vector2 lastHover = new Vector2(-1f, -1f);
+
         private void Tap(Vector2 screenPosition)
         {
             if (!TryPickCell(screenPosition, out var cell)) return;
+            if (map.InBounds(cell)) HoverCell = cell;
             if (CellTapped != null) CellTapped(cell);
             else Select(cell);
         }
@@ -1080,6 +1168,12 @@ namespace Srpg.Battle
             var pointer = Pointer.current;
             if (pointer == null) return;
             var position = pointer.position.ReadValue();
+            // マウスのカーソルのあるマス（地形の欄に出す）。UIの上では変えない
+            if (pointer is Mouse && position != lastHover)
+            {
+                lastHover = position;
+                if (!IsOverButtons(position)) HoverCell = TryPickCell(position, out var hover) && map.InBounds(hover) ? hover : (Vector2Int?)null;
+            }
             if (pointer.press.wasPressedThisFrame)
             {
                 if (IsOverButtons(position)) return;

@@ -41,6 +41,13 @@ namespace Srpg.EditorAgent
             ("fc_band", Vector4.zero),
             ("fc_emblem_sword", Vector4.zero),
             ("heading_flourish", Vector4.zero),
+            ("roster_frame", new Vector4(8, 20, 8, 20)),
+            ("face_frame", Vector4.zero),
+            ("face_frame_selected", Vector4.zero),
+            ("face_frame_done", Vector4.zero),
+            ("mark_selected", Vector4.zero),
+            ("mark_target", Vector4.zero),
+            ("mark_intent", Vector4.zero),
             ("weapon_sword", Vector4.zero),
             ("weapon_lance", Vector4.zero),
             ("weapon_axe", Vector4.zero),
@@ -168,6 +175,9 @@ namespace Srpg.EditorAgent
             controller.FocusOnAllies(true);
             hud.Build();
             RenderWithHud(hud, camera, rt, "Battle3D_ui_idle");
+            hud.OpenStatus();
+            RenderWithHud(hud, camera, rt, "Battle3D_ui_status");
+            hud.CloseStatus();
             controller.Select("albas");
             RenderWithHud(hud, camera, rt, "Battle3D_ui_select");
             var albasUi = controller.Units.First(u => u.source.id == "albas");
@@ -178,6 +188,20 @@ namespace Srpg.EditorAgent
             if (controller.CurrentForecast == null) throw new InvalidOperationException("UIの確認: 戦闘予測が出なかった");
             view.FocusOnPoint((view.Map.TopCenter(albasUi.cell) + view.Map.TopCenter(controller.Target.cell)) * 0.5f, true);
             RenderWithHud(hud, camera, rt, "Battle3D_ui_forecast");
+            // 味方全員を待機させて敵の番へ（敵が予告どおりに動いたあと、次の味方の番の予告と赤い丸）
+            controller.CancelForecast();
+            controller.CancelTargeting();
+            controller.ChooseWait();
+            foreach (var ally in controller.Units.Where(u => u.Side == "ally" && u.Alive && !u.acted).ToList())
+            {
+                controller.Select(ally.Id);
+                controller.ChooseWait();
+            }
+            // 味方が全員行動したら敵の番は自動で進む（ターン2の味方の番になっている）
+            if (controller.Turn != 2 || controller.CurrentPhase != Battle3DController.Phase.Ally)
+                throw new InvalidOperationException($"UIの確認: 敵の番のあとターン2になっていない（ターン{controller.Turn}・{controller.CurrentPhase}）");
+            controller.FocusOnAllies(true);
+            RenderWithHud(hud, camera, rt, "Battle3D_ui_turn2");
             hud.Clear();
             view.SetOverview(true, true);
             view.SetView(true, 0, true);
@@ -231,6 +255,9 @@ namespace Srpg.EditorAgent
             so.FindProperty("controller").objectReferenceValue = controller;
             so.FindProperty("targetCamera").objectReferenceValue = camera;
             so.FindProperty("uiJson").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(UiDataPath);
+            // 明朝体はゲームに同梱する（原作者 2026-09-27。Noto Serif JP の 400・700。OFL）
+            so.FindProperty("regularFont").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/NotoSerifJP-Regular.ttf");
+            so.FindProperty("boldFont").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/NotoSerifJP-Bold.ttf");
             var spritesProp = so.FindProperty("sprites");
             spritesProp.arraySize = sprites.Count;
             for (int i = 0; i < sprites.Count; i++)
@@ -272,6 +299,8 @@ namespace Srpg.EditorAgent
         private static void RenderWithHud(Battle3DHud hud, Camera camera, RenderTexture rt, string name)
         {
             hud.Refresh();
+            hud.UpdateOverlays();
+            hud.UpdateTerrain();
             Canvas.ForceUpdateCanvases();
             Board3DTestBuilder.Render(camera, rt, name);
         }

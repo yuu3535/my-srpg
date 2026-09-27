@@ -54,6 +54,25 @@ namespace Srpg.Battle
         [SerializeField] private Battle3DHud hud;   // 画面のUI（あれば仮の操作の欄 IMGUI は出さない）
         public Battle3DHud Hud => hud;
 
+        /// <summary>
+        /// 敵の行動予告（ブラウザ版の planEnemyActions と同じ）: 味方の番の始まりに、敵ごとに狙う相手を決めて見せる。
+        /// 敵の番では、その相手を攻撃できる一番よい立ち位置を選び直して攻撃する（相手が倒れていたら選び直す）
+        /// </summary>
+        public class Declaration
+        {
+            public string type;      // attack / move / wait
+            public string targetId;  // attack のとき
+            public Vector2Int dest;
+        }
+
+        private readonly Dictionary<string, Declaration> declarations = new Dictionary<string, Declaration>();
+        public IReadOnlyDictionary<string, Declaration> Declarations => declarations;
+
+        /// <summary>戦況の画面の見出しと、勝利条件・敗北条件の文（今の試験の戦闘。battleDefinitions の victory・defeat と同じ）</summary>
+        public string BattleTitle => "テスト戦闘";
+        public string VictoryText => "すべての敵を撃破する";
+        public string DefeatText => "味方の全滅";
+
         /// <summary>今のマスから攻撃が届く相手がいるか（「攻撃」を押せるか）</summary>
         public bool CanAttackFromHere => selected != null && TargetsFrom(selected, selected.cell).Any();
         /// <summary>動いたあとで、動く前のマスへ戻せるか</summary>
@@ -143,6 +162,7 @@ namespace Srpg.Battle
             view.IsOverOtherGui = IsOverPanel;
             view.Setup();
             AddLog("味方フェーズ ターン1");
+            PlanEnemyActions();
         }
 
         /// <summary>
@@ -498,38 +518,23 @@ namespace Srpg.Battle
         private void EnemyAct(UnitState enemy)
         {
             view.FocusOn(enemy.cell);
-            var cells = new List<Vector2Int> { enemy.cell };
-            cells.AddRange(MoveCellsOf(enemy));
-            double bestScore = double.NegativeInfinity;
-            Vector2Int bestCell = enemy.cell;
-            UnitState bestTarget = null;
-            var original = enemy.cell;
-            foreach (var cell in cells)
+            var allies = units.Where(u => u.Alive && u.Side == "ally").ToList();
+            if (allies.Count == 0) return;
+            declarations.TryGetValue(enemy.Id, out var decl);
+            // 予告した相手がいれば、その相手を攻撃できる一番よい立ち位置を選び直す。倒れていたら相手を選び直す
+            var victim = decl?.type == "attack" ? allies.FirstOrDefault(u => u.Id == decl.targetId) : null;
+            var (cell, target) = victim != null ? ChooseEnemyAttack(enemy, new[] { victim }) : ChooseEnemyAttack(enemy, allies);
+            if (decl?.type == "attack" && victim == null && target != null) AddLog($"{enemy.Name}は目標を {target.Name} に切り替えた");
+            if (target == null) cell = ApproachCell(enemy, victim != null ? new[] { victim } : (IEnumerable<UnitState>)allies);
+            if (cell != enemy.cell)
             {
-                var attacker = enemy.plan.Clone();
-                attacker.x = cell.x; attacker.y = cell.y;
-                foreach (var ally in TargetsFrom(enemy, cell))
-                {
-                    var env = PlanUnits().Select(u => u.id == enemy.Id ? attacker : u).ToList();
-                    var f = BattlePlan.ForecastOf(attacker, ally.plan, PlanAction.ForEquipped(attacker), env);
-                    double score = BattlePlan.ScoreAttack(f, ally.plan.hp, attacker.hp) - Distance(cell, original) * 0.01;   // 同点なら動かない方
-                    if (score > bestScore) { bestScore = score; bestCell = cell; bestTarget = ally; }
-                }
+                enemy.cell = cell;
+                enemy.plan.x = cell.x; enemy.plan.y = cell.y;
+                view.MoveUnit(enemy.Id, cell);
             }
-            if (bestTarget == null)
-            {
-                // 攻撃できない: いちばん近い味方にいちばん近づけるマスへ
-                var allies = units.Where(u => u.Alive && u.Side == "ally").ToList();
-                if (allies.Count == 0) return;
-                bestCell = cells.OrderBy(c => allies.Min(a => Distance(a.cell, c))).ThenBy(c => Distance(c, original)).First();
-            }
-            if (bestCell != enemy.cell)
-            {
-                enemy.cell = bestCell;
-                enemy.plan.x = bestCell.x; enemy.plan.y = bestCell.y;
-                view.MoveUnit(enemy.Id, bestCell);
-            }
-            if (bestTarget != null) Execute(enemy, bestTarget);
+            declarations.Remove(enemy.Id);
+            RefreshTargetRings();
+            if (target != null) Execute(enemy, target);
             else AddLog($"{enemy.Name}は近づいてきた");
         }
 
@@ -545,6 +550,75 @@ namespace Srpg.Battle
                 if (unit.Alive) view.SetUnitDimmed(unit.Id, false);
             }
             AddLog($"味方フェーズ ターン{Turn}");
+            PlanEnemyActions();
+        }
+
+        /// <summary>敵の行動予告を作り、狙われた味方に赤い丸を出す</summary>
+        public void PlanEnemyActions()
+        {
+            declarations.Clear();
+            var allies = units.Where(u => u.Alive && u.Side == "ally").ToList();
+            var reserved = new HashSet<Vector2Int>();
+            foreach (var enemy in units.Where(u => u.Alive && u.Side == "enemy"))
+            {
+                if (allies.Count == 0) break;
+                var (cell, target) = ChooseEnemyAttack(enemy, allies, reserved);
+                if (target != null)
+                {
+                    reserved.Add(cell);
+                    declarations[enemy.Id] = new Declaration { type = "attack", targetId = target.Id, dest = cell };
+                    continue;
+                }
+                var dest = ApproachCell(enemy, allies, reserved);
+                reserved.Add(dest);
+                declarations[enemy.Id] = new Declaration { type = dest != enemy.cell ? "move" : "wait", dest = dest };
+            }
+            RefreshTargetRings();
+        }
+
+        private void RefreshTargetRings()
+        {
+            var targeted = new HashSet<string>(declarations.Values.Where(d => d.type == "attack").Select(d => d.targetId));
+            foreach (var unit in units.Where(u => u.Side == "ally"))
+                view.SetTargeted(unit.Id, unit.Alive && targeted.Contains(unit.Id));
+        }
+
+        /// <summary>
+        /// 敵が攻撃する立ち位置と相手を選ぶ: 動ける先（今のマスも含む）×届く相手のすべてを戦闘予測で評価する
+        /// （ブラウザ版の敵の行動選びと同じ評価 BattlePlan.ScoreAttack）。reserved のマスには止まらない
+        /// </summary>
+        private (Vector2Int cell, UnitState target) ChooseEnemyAttack(UnitState enemy, IEnumerable<UnitState> candidates, ICollection<Vector2Int> reserved = null)
+        {
+            var cells = new List<Vector2Int> { enemy.cell };
+            cells.AddRange(MoveCellsOf(enemy));
+            var targets = candidates.Where(u => u.Alive).ToList();
+            double bestScore = double.NegativeInfinity;
+            Vector2Int bestCell = enemy.cell;
+            UnitState bestTarget = null;
+            foreach (var cell in cells)
+            {
+                if (reserved != null && cell != enemy.cell && reserved.Contains(cell)) continue;
+                var attacker = enemy.plan.Clone();
+                attacker.x = cell.x; attacker.y = cell.y;
+                foreach (var ally in TargetsFrom(enemy, cell).Where(targets.Contains))
+                {
+                    var env = PlanUnits().Select(u => u.id == enemy.Id ? attacker : u).ToList();
+                    var f = BattlePlan.ForecastOf(attacker, ally.plan, PlanAction.ForEquipped(attacker), env);
+                    double score = BattlePlan.ScoreAttack(f, ally.plan.hp, attacker.hp) - Distance(cell, enemy.cell) * 0.01;   // 同点なら動かない方
+                    if (score > bestScore) { bestScore = score; bestCell = cell; bestTarget = ally; }
+                }
+            }
+            return (bestCell, bestTarget);
+        }
+
+        /// <summary>攻撃できないとき: 相手（いちばん近い味方）にいちばん近づけるマス</summary>
+        private Vector2Int ApproachCell(UnitState enemy, IEnumerable<UnitState> toward, ICollection<Vector2Int> reserved = null)
+        {
+            var goals = toward.Where(u => u.Alive).ToList();
+            if (goals.Count == 0) return enemy.cell;
+            var cells = new List<Vector2Int> { enemy.cell };
+            cells.AddRange(MoveCellsOf(enemy).Where(c => reserved == null || !reserved.Contains(c)));
+            return cells.OrderBy(c => goals.Min(a => Distance(a.cell, c))).ThenBy(c => Distance(c, enemy.cell)).First();
         }
 
         // ── 表示（仮の操作の欄。IMGUI） ──

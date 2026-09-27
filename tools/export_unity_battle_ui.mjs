@@ -114,7 +114,7 @@ const result = await evaluate(`(async () => {
             weaponName: item ? item.name : "装備なし",
             weaponType: item ? weaponTypeOf(item) : "",
             weaponPower: stats["威力"] || "―", weaponRange: stats["射程"] || "―", weaponHit: stats["命中"] || "―", weaponCrit: stats["必殺"] || "―",
-            portrait: "", cardUv: null, bustUv: null,
+            portrait: "", cardUv: null, bustUv: null, rosterUv: null,
         };
         const src = getPortraitSrc(unit) || unit.tokenImage || "";
         const face = q(".lcPortrait");
@@ -124,6 +124,8 @@ const result = await evaluate(`(async () => {
             const r = face.getBoundingClientRect();
             entry.portrait = unit.id;
             entry.cardUv = uvOf(r.width, r.height, im.naturalWidth, im.naturalHeight, cs.backgroundSize, cs.backgroundPosition);
+            // 左の味方一覧の顔（renderLandscapeRoster と同じ指定。顔の箱は 36×36 の内側 2px）
+            entry.rosterUv = uvOf(32, 32, im.naturalWidth, im.naturalHeight, unit.portraitBgSize || "cover", unit.portraitBgPos || "center top");
             // 戦闘予測の顔のアップ（renderLandscapeBattlePreview の bust と同じ決め方。箱は 154×118）
             const size = parseFloat(unit.portraitBgSize) || 300;
             const [x = "50%", y = "top"] = String(unit.portraitBgPos || "50% top").split(" ");

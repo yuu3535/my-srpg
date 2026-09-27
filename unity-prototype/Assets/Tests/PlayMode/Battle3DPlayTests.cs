@@ -26,11 +26,11 @@ namespace Srpg.Tests
             Assert.IsTrue(controller.Units.All(u => u.plan != null), "全員に戦闘の状態（能力値・装備）がある");
             Assert.IsTrue(controller.View.Tilted, "斜め見下ろしで始まる");
 
-            // 狙われている印（赤い丸）は、ふだんは出さず、狙われたときだけ出す
-            Assert.IsFalse(controller.View.IsTargeted("arshe"));
-            controller.SetTargeted("arshe", true);
-            Assert.IsTrue(controller.View.IsTargeted("arshe"));
-            controller.SetTargeted("arshe", false);
+            // 敵の行動予告: 敵ごとに行動を決め、狙われた味方にだけ赤い丸を出す（ブラウザ版と同じ）
+            Assert.AreEqual(controller.Units.Count(u => u.Side == "enemy"), controller.Declarations.Count, "敵全員の行動予告がある");
+            var declaredTargets = controller.Declarations.Values.Where(d => d.type == "attack").Select(d => d.targetId).ToList();
+            foreach (var ally in controller.Units.Where(u => u.Side == "ally"))
+                Assert.AreEqual(declaredTargets.Contains(ally.Id), controller.View.IsTargeted(ally.Id), $"{ally.Name}の赤い丸");
 
             // アルシェ: 選ぶ → 動く → 待機
             var arshe = controller.Units.First(u => u.source.id == "arshe");
@@ -104,8 +104,14 @@ namespace Srpg.Tests
             Assert.IsTrue(hud.Built, "▶で画面のUIを作る");
             Button Command(string label) => hud.GetComponentsInChildren<Button>(true).FirstOrDefault(b => b.name == "Command_" + label);
 
+            Assert.IsTrue(hud.StatusOpen, "戦闘の始まりに戦況の画面を出す");
+            hud.CloseStatus();
             hud.Refresh();
             Assert.IsNotNull(Command("ターン終了"), "誰も選んでいないときは「ターン終了」");
+            Command("戦況").onClick.Invoke();
+            Assert.IsTrue(hud.StatusOpen, "「戦況」で戦況の画面を開く");
+            hud.CloseStatus();
+            hud.Refresh();
 
             // 魔導書を持つアルバス: 選んだだけで「魔法」を押すと、その場に止まって相手を選ぶ
             controller.Select("albas");

@@ -11,7 +11,9 @@ using Object = UnityEngine.Object;
 namespace Srpg.Battle
 {
     /// <summary>
-    /// 3Dの戦闘の画面のUI（1段目）: 右のコマンド一覧、左下のユニットのカードと武器のカード、下の戦闘予測の帯。
+    /// 3Dの戦闘の画面のUI。1段目: 右のコマンド一覧、左下のユニットのカードと武器のカード、下の戦闘予測の帯。
+    /// 2段目: 上の帯（フェーズ・勝利条件・ターン・敵行動予告の数）、左の味方一覧、右上の地形の欄、
+    /// キャラの下のHPバーと行動予告の印、頭の上の印（選んだ味方＝青の▼、戦闘予測の相手＝交差した剣）。
     /// ブラウザ版の戦闘画面と同じ配置・同じ素材（assets/ui）で作る。位置と大きさはブラウザ版の 844×390 の画面で測った値
     /// （tools/export_unity_battle_ui.mjs が表示の値と立ち絵の切り抜きを書き出す）。
     /// UIは中央の16:9の枠の中（3段の重ね。原作者 2026-09-26）。明朝体（端末の Noto Serif JP・游明朝）
@@ -46,7 +48,7 @@ namespace Srpg.Battle
             public int maxMp;
             public string weaponName, weaponType, weaponPower, weaponRange, weaponHit, weaponCrit;
             public string portrait;
-            public UvRect cardUv, bustUv;
+            public UvRect cardUv, bustUv, rosterUv;
         }
 
         [Serializable]
@@ -61,6 +63,8 @@ namespace Srpg.Battle
         [SerializeField] private TextAsset uiJson;
         [SerializeField] private NamedSprite[] sprites = Array.Empty<NamedSprite>();      // UI素材（panel_even・fc_band・ボタン・武器のアイコンなど）
         [SerializeField] private NamedTexture[] portraits = Array.Empty<NamedTexture>();  // 立ち絵（キャラの id）
+        [SerializeField] private Font regularFont;   // 明朝体（ゲームに同梱した Noto Serif JP。Assets/Fonts）
+        [SerializeField] private Font boldFont;
 
         // ブラウザ版の画面の大きさ（この上の位置で並べる）と、UIを置く16:9の枠の左右の余り
         private const float ScreenW = 844f, ScreenH = 390f;
@@ -99,6 +103,39 @@ namespace Srpg.Battle
         private Text fcDetailText;
         private string stateKey;
 
+        // 2段目
+        private RectTransform overlayRoot, topStrip, roster, terrainPanel;
+        private Text phaseEn, phaseJa, turnValue, terrainName, terrainNote;
+        private RectTransform turnGroup;
+
+        // 戦況の画面（原作者 2026-09-27: 勝利条件・敗北条件・ターン・軍の数・マップ表をここにまとめる）
+        private RectTransform statusRoot, statusMapArea, statusMapPanel;
+        private RawImage statusMap;
+        private Text statusTitle, statusVictory, statusDefeat, statusTurn, statusAllies, statusEnemies, statusOthers, statusTargets;
+        private readonly List<GameObject> statusMarks = new List<GameObject>();
+        private bool statusOpen, openedAtStart;
+        public bool StatusOpen => statusOpen;
+        private Image phaseEdge;
+        private Vector2Int? shownTerrainCell;
+        private readonly List<RosterSlot> rosterSlots = new List<RosterSlot>();
+        private readonly Dictionary<string, UnitOverlay> overlays = new Dictionary<string, UnitOverlay>();
+        private Image markSelected, markTarget;
+
+        private class RosterSlot
+        {
+            public string id;
+            public RawImage face;
+            public Image frame, hpFill;
+            public Text done;
+        }
+
+        private class UnitOverlay
+        {
+            public RectTransform root;
+            public Text hp;
+            public Image fill, intent;
+        }
+
         private class ForecastSide
         {
             public Text name, level, weapon, hpValue, note;
@@ -108,12 +145,18 @@ namespace Srpg.Battle
 
         public bool Built => canvas != null;
 
-        private void Start()
+        private void LateUpdate()
         {
-            if (!Built) Build();
+            // 戦闘の組み立て（Battle3DController.Setup）が済んでから作る（Start の順番に頼らない）
+            if (!Built)
+            {
+                if (controller == null || controller.Data == null) return;
+                Build();
+            }
+            Refresh();
+            UpdateOverlays();
+            UpdateTerrain();
         }
-
-        private void LateUpdate() => Refresh();
 
         // ── 組み立て ──
 
@@ -127,7 +170,8 @@ namespace Srpg.Battle
             if (uiJson != null)
                 foreach (var u in JsonUtility.FromJson<UiDataFile>(uiJson.text).units ?? Array.Empty<UiUnit>())
                     uiUnits[u.id] = u;
-            font = Font.CreateDynamicFontFromOSFont(new[] { "Noto Serif JP", "Yu Mincho", "游明朝", "MS PMincho", "Hiragino Mincho ProN" }, 16);
+            font = regularFont != null ? regularFont
+                : Font.CreateDynamicFontFromOSFont(new[] { "Noto Serif JP", "Yu Mincho", "游明朝", "MS PMincho", "Hiragino Mincho ProN" }, 16);
 
             var canvasObject = new GameObject("HUD", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             canvasObject.transform.SetParent(transform, false);
@@ -135,12 +179,19 @@ namespace Srpg.Battle
             canvas.renderMode = RenderMode.ScreenSpaceCamera;
             canvas.worldCamera = targetCamera != null ? targetCamera : Camera.main;
             canvas.planeDistance = 1f;
-            canvas.sortingOrder = 10;
+            canvas.sortingOrder = 100;   // 盤面のキャラの絵（10）より手前
             var scaler = canvasObject.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(ScreenW, ScreenH);
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
             scaler.matchWidthOrHeight = 1f;
+
+            // キャラの下のHPバー・頭の上の印（盤面に付いて動く。ほかのUIより奥）
+            overlayRoot = NewRect("Overlays", canvasObject.transform);
+            Stretch(overlayRoot);
+            overlays.Clear();
+            markSelected = OverlayMark("MarkSelected", "mark_selected", 13, 11.4f);
+            markTarget = OverlayMark("MarkTarget", "mark_target", 16, 16);
 
             // ブラウザ版の 844×390 の画面を真ん中に置き、その上の位置で並べる
             frame = NewRect("Frame", canvasObject.transform);
@@ -148,11 +199,15 @@ namespace Srpg.Battle
             frame.pivot = new Vector2(0.5f, 0.5f);
             frame.sizeDelta = new Vector2(ScreenW, ScreenH);
 
+            BuildTopStrip();
+            BuildRoster();
+            BuildTerrainPanel();
             BuildUnitCard();
             BuildWeaponCard();
             BuildCommandList();
             BuildHint();
             BuildForecast();
+            BuildStatus();
 
             if (Application.isPlaying && EventSystem.current == null)
             {
@@ -160,6 +215,9 @@ namespace Srpg.Battle
                 es.transform.SetParent(transform, false);
             }
             stateKey = null;
+            statusOpen = false;
+            // ▶で戦闘が始まったら、まず戦況の画面で勝利条件を見せる（1回だけ）
+            if (Application.isPlaying && !openedAtStart) { openedAtStart = true; OpenStatus(); }
             Refresh();
         }
 
@@ -168,6 +226,354 @@ namespace Srpg.Battle
             for (int i = transform.childCount - 1; i >= 0; i--) Object.DestroyImmediate(transform.GetChild(i).gameObject);
             canvas = null;
             commandItems.Clear();
+            rosterSlots.Clear();
+            overlays.Clear();
+        }
+
+        /// <summary>上の帯: フェーズ（英字の小見出し＋日本語）・勝利条件・TURN・敵行動予告の数</summary>
+        private void BuildTopStrip()
+        {
+            topStrip = Place(NewRect("TopStrip", frame), 82, 6, 680, 30);
+            var bg = topStrip.gameObject.AddComponent<Image>();
+            bg.sprite = StopsSprite((0f, Hex("#381547", 0.62f)), (0.46f, Hex("#070811", 0.34f)), (0.72f, Hex("#070811", 0f)), (1f, Hex("#070811", 0f)));
+            bg.raycastTarget = false;
+            Place(NewRect("Rule", topStrip), 0, 29, 680, 1).gameObject.AddComponent<Image>().color = Hex("#c8922a", 0.22f);
+            phaseEdge = Place(NewRect("PhaseEdge", topStrip), 0, 1, 2, 28).gameObject.AddComponent<Image>();
+            phaseEn = Label(topStrip, "ALLY PHASE", 10, 4, 100, 9, 6.5f, Hex("#d6a740", 0.62f));
+            phaseJa = Label(topStrip, "味方フェーズ", 10, 12, 110, 15, 13, Hex("#efd081"), FontStyle.Bold);
+            // ターンは見出しの右に小さく（勝利条件・敵行動予告の数は戦況の画面へ移した。原作者 2026-09-27）
+            turnGroup = Place(NewRect("Turn", topStrip), 116, 0, 80, 30);
+            Place(NewRect("Divider", turnGroup), 0, 6, 1, 18).gameObject.AddComponent<Image>().color = Hex("#c8922a", 0.25f);
+            Label(turnGroup, "TURN", 12, 13, 32, 11, 7.5f, Hex("#e0bd73", 0.5f));
+            turnValue = Label(turnGroup, "TurnValue", 42, 5, 30, 20, 14, Hex("#efd081"), FontStyle.Bold);
+        }
+
+        /// <summary>左の味方一覧（R1 の枠・A5 の顔枠）。押すとその味方を選ぶ</summary>
+        private void BuildRoster()
+        {
+            roster = Place(NewRect("Roster", frame), 82, 45, 46, 314);
+            Framed(roster, "roster_frame", 4f);
+            rosterSlots.Clear();
+            int i = 0;
+            foreach (var unit in controller.Units.Where(u => u.Side == "ally"))
+            {
+                var slotRect = Place(NewRect("Roster_" + unit.Id, roster), 5, 12 + i * 40, 36, 36);
+                var bg = slotRect.gameObject.AddComponent<Image>();
+                bg.color = Hex("#140b1f");
+                var slot = new RosterSlot { id = unit.Id };
+                slot.face = Place(NewRect("Face", slotRect), 2, 2, 32, 32).gameObject.AddComponent<RawImage>();
+                slot.face.raycastTarget = false;
+                uiUnits.TryGetValue(unit.Id, out var ui);
+                SetPortrait(slot.face, ui, ui?.rosterUv);
+                var hpBar = Place(NewRect("Hp", slotRect), 2, 32, 32, 2);
+                hpBar.gameObject.AddComponent<Image>().color = new Color(0, 0, 0, 0.65f);
+                slot.hpFill = NewRect("Fill", hpBar).gameObject.AddComponent<Image>();
+                slot.hpFill.color = Hex("#59e48c");
+                slot.frame = Place(NewRect("Frame", slotRect), 0, 0, 36, 36).gameObject.AddComponent<Image>();
+                slot.frame.raycastTarget = false;
+                slot.done = Label(slotRect, "済", 22, 1, 12, 11, 8, Hex("#ecd28e"), FontStyle.Bold);
+                var button = slotRect.gameObject.AddComponent<Button>();
+                button.transition = Selectable.Transition.None;
+                string id = unit.Id;
+                button.onClick.AddListener(() => SelectFromRoster(id));
+                rosterSlots.Add(slot);
+                i++;
+            }
+        }
+
+        private void SelectFromRoster(string id)
+        {
+            var unit = controller.Units.FirstOrDefault(u => u.Id == id);
+            if (unit == null || !unit.Alive || unit.acted || controller.CurrentPhase != Battle3DController.Phase.Ally) return;
+            // 攻撃の相手を選んでいる間や、動いたあとは切り替えない（ブラウザ版と同じ）
+            var mode = controller.CurrentMode;
+            if (mode != Battle3DController.Mode.Idle && mode != Battle3DController.Mode.Moving) return;
+            controller.Select(id);
+        }
+
+        /// <summary>右上の地形の欄（原作者の理想の画面）。カーソルのあるマス、なければ選んだキャラのマス</summary>
+        private void BuildTerrainPanel()
+        {
+            terrainPanel = Place(NewRect("Terrain", frame), 640, 44, 118, 42);
+            Framed(terrainPanel, "panel_even", 7f);
+            Diamond(terrainPanel, 12, 11, 5, Hex("#c8922a"));
+            terrainName = Label(terrainPanel, "Name", 22, 5, 90, 17, 11, Ivory, FontStyle.Bold);
+            terrainNote = Label(terrainPanel, "Note", 12, 22, 100, 14, 8.5f, Muted);
+        }
+
+        private Image OverlayMark(string name, string sprite, float w, float h)
+        {
+            var image = NewRect(name, overlayRoot).gameObject.AddComponent<Image>();
+            image.sprite = SpriteOf(sprite);
+            image.preserveAspect = true;
+            image.raycastTarget = false;
+            image.rectTransform.anchorMin = image.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            image.rectTransform.pivot = new Vector2(0.5f, 0f);
+            image.rectTransform.sizeDelta = new Vector2(w, h);
+            image.gameObject.SetActive(false);
+            return image;
+        }
+
+        private UnitOverlay OverlayOf(Battle3DController.UnitState unit)
+        {
+            if (overlays.TryGetValue(unit.Id, out var o)) return o;
+            o = new UnitOverlay { root = NewRect("Overlay_" + unit.Id, overlayRoot) };
+            o.root.anchorMin = o.root.anchorMax = new Vector2(0.5f, 0.5f);
+            o.root.pivot = new Vector2(0.5f, 1f);
+            o.root.sizeDelta = new Vector2(46, 8);
+            o.intent = Place(NewRect("Intent", o.root), -2, 0, 8, 8).gameObject.AddComponent<Image>();
+            o.intent.sprite = SpriteOf("mark_intent");
+            o.intent.raycastTarget = false;
+            o.hp = Label(o.root, "Hp", 7, 0, 12, 8, 7, Hex("#55ee88"), FontStyle.Bold, TextAnchor.MiddleRight);
+            var shadow = o.hp.gameObject.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0, 0, 0, 0.9f);
+            shadow.effectDistance = new Vector2(0.6f, -0.6f);
+            var bar = Place(NewRect("Bar", o.root), 21, 3, 26, 2);
+            bar.gameObject.AddComponent<Image>().color = new Color(0, 0, 0, 0.6f);
+            o.fill = NewRect("Fill", bar).gameObject.AddComponent<Image>();
+            o.fill.raycastTarget = false;
+            overlays[unit.Id] = o;
+            return o;
+        }
+
+        /// <summary>キャラの下のHPバーと行動予告の印、頭の上の印を、キャラの位置に合わせる（毎フレーム）</summary>
+        public void UpdateOverlays()
+        {
+            if (!Built || controller == null || controller.View == null || overlayRoot == null) return;
+            var view = controller.View;
+            foreach (var unit in controller.Units)
+            {
+                var o = OverlayOf(unit);
+                var foot = view.UnitFootToScreen(unit.Id);
+                bool visible = unit.Alive && foot.z > 0f;
+                o.root.gameObject.SetActive(visible);
+                if (!visible) continue;
+                o.root.anchoredPosition = ScreenToOverlay(foot) + new Vector2(0f, -1f);
+                int hp = unit.plan?.hp ?? 0, maxHp = Math.Max(1, unit.plan?.maxHp ?? 1);
+                float t = (float)hp / maxHp;
+                var color = t <= 0.25f ? Hex("#ff5555") : t <= 0.5f ? Hex("#ffcc44") : Hex("#55ee88");
+                o.hp.text = hp.ToString();
+                o.hp.color = color;
+                o.fill.color = unit.Side == "enemy" && t > 0.5f ? Hex("#e0645a") : color;
+                SetBar(o.fill.rectTransform, t);
+                bool intent = unit.Side == "enemy" && controller.Declarations.TryGetValue(unit.Id, out var d) && d.type == "attack"
+                    && controller.CurrentPhase == Battle3DController.Phase.Ally;
+                o.intent.gameObject.SetActive(intent);
+            }
+
+            // 頭の上の印: 選んでいる味方（動かす・行動を選ぶ間）に青の▼、戦闘予測の相手に交差した剣
+            var sel = controller.Selected;
+            var mode = controller.CurrentMode;
+            bool showSelected = sel != null && sel.Side == "ally" && (mode == Battle3DController.Mode.Moving || mode == Battle3DController.Mode.Acting);
+            PlaceHeadMark(markSelected, showSelected ? sel : null, 2f);
+            PlaceHeadMark(markTarget, mode == Battle3DController.Mode.Forecast ? controller.Target : null, 0f);
+        }
+
+        /// <summary>
+        /// 画面の位置（px）を、盤面の上の印の置き場（画面いっぱい・中心が原点）の位置にする。
+        /// キャンバスの位置はカメラが動いた次の描画で追いつくので、それを通さずに直接計算する（ずらしている間も遅れない）
+        /// </summary>
+        private Vector2 ScreenToOverlay(Vector3 screen)
+        {
+            var cam = canvas.worldCamera;
+            var rect = cam != null ? cam.pixelRect : new Rect(0, 0, Screen.width, Screen.height);
+            float scale = Mathf.Max(0.0001f, canvas.scaleFactor);
+            return new Vector2((screen.x - rect.center.x) / scale, (screen.y - rect.center.y) / scale);
+        }
+
+        private void PlaceHeadMark(Image mark, Battle3DController.UnitState unit, float bob)
+        {
+            bool show = unit != null && unit.Alive;
+            mark.gameObject.SetActive(show);
+            if (!show) return;
+            var head = controller.View.UnitHeadToScreen(unit.Id);
+            var local = ScreenToOverlay(head);
+            float wave = Application.isPlaying ? Mathf.Sin(Time.time * 4f) * bob : 0f;
+            mark.rectTransform.anchoredPosition = local + new Vector2(0f, 1f + wave);
+        }
+
+        /// <summary>地形の欄を、カーソルのあるマス（なければ選んだキャラのマス）に合わせる</summary>
+        public void UpdateTerrain()
+        {
+            if (!Built || terrainPanel == null || controller == null || controller.View == null) return;
+            var map = controller.View.Map;
+            Vector2Int? cell = controller.View.HoverCell ?? controller.Selected?.cell;
+            bool show = cell.HasValue && map != null && map.InBounds(cell.Value) && controller.CurrentMode != Battle3DController.Mode.Forecast;
+            terrainPanel.gameObject.SetActive(show);
+            if (!show || shownTerrainCell == cell) return;
+            shownTerrainCell = cell;
+            char t = map.TerrainAt(cell.Value);
+            terrainName.text = Board3DMap.TerrainName(t);
+            // 地形の効果（回避・防御）はまだ戦闘の計算にない。通れない地形はそう書く
+            terrainNote.text = TerrainRules.CanStop(t, false) ? "回避 +0　防御 +0" : "通れない";
+        }
+
+        /// <summary>
+        /// 戦況の画面（見本: 原作者のスクショ）。左に 見出し・勝利条件・敗北条件・軍の数・ターン・行動予告、右にマップ表。
+        /// マップ表は3Dの盤面を真上から撮った絵に、陣営の印（味方＝青・敵＝赤）を重ねる
+        /// </summary>
+        private void BuildStatus()
+        {
+            statusRoot = NewRect("Status", canvas.transform);
+            Stretch(statusRoot);
+            var dim = statusRoot.gameObject.AddComponent<Image>();
+            dim.color = new Color(4 / 255f, 3 / 255f, 10 / 255f, 0.9f);   // 色は線形で混ぜるので、見た目より強めの値にする
+            var dimButton = statusRoot.gameObject.AddComponent<Button>();
+            dimButton.transition = Selectable.Transition.None;
+            dimButton.onClick.AddListener(CloseStatus);   // 外側を押しても閉じる
+
+            var body = NewRect("Body", statusRoot);
+            body.anchorMin = body.anchorMax = new Vector2(0.5f, 0.5f);
+            body.pivot = new Vector2(0.5f, 0.5f);
+            body.sizeDelta = new Vector2(ScreenW, ScreenH);
+            body.gameObject.AddComponent<Image>().color = new Color(0, 0, 0, 0);   // 中を押しても閉じない（閉じるのは「戻る」か枠の外）
+
+            // 見出し（戦闘の名前）
+            var head = Place(NewRect("Head", body), 82, 14, 300, 30);
+            var headBg = head.gameObject.AddComponent<Image>();
+            headBg.sprite = StopsSprite((0f, Hex("#381547", 0.9f)), (0.6f, Hex("#1a0f2a", 0.7f)), (1f, Hex("#070811", 0f)));
+            Place(NewRect("Edge", head), 0, 1, 2, 28).gameObject.AddComponent<Image>().color = Hex("#d6a740");
+            Place(NewRect("Rule", head), 0, 29, 300, 1).gameObject.AddComponent<Image>().color = Hex("#c8922a", 0.35f);
+            Label(head, "BATTLE STATUS", 12, 4, 120, 9, 6.5f, Hex("#d6a740", 0.62f));
+            statusTitle = Label(head, "Title", 12, 12, 280, 16, 13, Hex("#efd081"), FontStyle.Bold);
+
+            // 左: 条件
+            StatusHeading(body, "勝利条件", 100, 60);
+            statusVictory = StatusPanel(body, "Victory", 100, 82);
+            StatusHeading(body, "敗北条件", 100, 124);
+            statusDefeat = StatusPanel(body, "Defeat", 100, 146);
+            statusAllies = StatusChip(body, "自軍", 100, 192, Hex("#4d8cff"));
+            statusEnemies = StatusChip(body, "敵軍", 258, 192, Hex("#e0483c"));
+            statusOthers = StatusChip(body, "友軍", 100, 222, Hex("#59c47a"));
+            statusTurn = StatusChip(body, "ターン", 258, 222, Hex("#d6a740"));
+            StatusHeading(body, "敵の行動予告", 100, 258);
+            statusTargets = Label(body, "Targets", 112, 282, 290, 64, 9, Hex("#e8d5a4"));
+            statusTargets.alignment = TextAnchor.UpperLeft;
+            statusTargets.verticalOverflow = VerticalWrapMode.Truncate;
+            statusTargets.horizontalOverflow = HorizontalWrapMode.Wrap;
+            statusTargets.lineSpacing = 1.2f;
+
+            // 右: マップ表
+            statusMapPanel = Place(NewRect("MapPanel", body), 430, 44, 330, 290);
+            var mapPanel = statusMapPanel;
+            Framed(mapPanel, "panel_even", 7f);
+            statusMapArea = Place(NewRect("MapArea", mapPanel), 14, 14, 302, 262);
+            statusMap = NewRect("Picture", statusMapArea).gameObject.AddComponent<RawImage>();
+            statusMap.raycastTarget = false;
+            statusMap.rectTransform.anchorMin = statusMap.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            statusMap.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            Outline(statusMap.rectTransform, Hex("#c8922a", 0.45f));
+
+            var close = FrameButton(body, "Close", 666, 356, 94, 25, "button_b2_normal", "button_b2_pressed", 12f, "back", "戻る", 9.5f, Hex("#ecd28e", 0.92f), out _, out _);
+            close.onClick.AddListener(CloseStatus);
+            statusRoot.gameObject.SetActive(false);
+        }
+
+        private void StatusHeading(RectTransform parent, string text, float x, float y)
+        {
+            var band = Place(NewRect("Heading_" + text, parent), x, y, 300, 18);
+            var bg = band.gameObject.AddComponent<Image>();
+            bg.sprite = StopsSprite((0f, Hex("#381547", 0f)), (0.2f, Hex("#381547", 0.85f)), (0.8f, Hex("#381547", 0.85f)), (1f, Hex("#381547", 0f)));
+            bg.raycastTarget = false;
+            Place(NewRect("Top", band), 30, 0, 240, 1).gameObject.AddComponent<Image>().color = Hex("#d6a740", 0.55f);
+            Place(NewRect("Bottom", band), 30, 17, 240, 1).gameObject.AddComponent<Image>().color = Hex("#d6a740", 0.55f);
+            float half = text.Length * 11f * 0.55f + 12f;   // 文字の幅に合わせて左右に菱形
+            Diamond(band, 150 - half - 6, 6, 6, Hex("#d6a740"));
+            Diamond(band, 150 + half, 6, 6, Hex("#d6a740"));
+            Label(band, text, 0, 0, 300, 18, 11, Hex("#efd081"), FontStyle.Bold, TextAnchor.MiddleCenter);
+        }
+
+        private Text StatusPanel(RectTransform parent, string name, float x, float y)
+        {
+            var panel = Place(NewRect("Panel_" + name, parent), x, y, 300, 34);
+            Framed(panel, "panel_even", 7f);
+            return Label(panel, name, 0, 0, 300, 34, 11, Ivory, anchor: TextAnchor.MiddleCenter);
+        }
+
+        private Text StatusChip(RectTransform parent, string label, float x, float y, Color mark)
+        {
+            var chip = Place(NewRect("Chip_" + label, parent), x, y, 142, 24);
+            var bg = chip.gameObject.AddComponent<Image>();
+            bg.sprite = StopsSprite((0f, Hex("#1a0f2a", 0.9f)), (1f, Hex("#1a0f2a", 0.2f)));
+            Place(NewRect("Rule", chip), 0, 23, 142, 1).gameObject.AddComponent<Image>().color = Hex("#c8922a", 0.3f);
+            Diamond(chip, 8, 8, 8, mark);
+            Label(chip, label, 24, 0, 60, 24, 10, Hex("#e8d5a4"));
+            return Label(chip, label + "Value", 80, 0, 56, 24, 13, Hex("#efd081"), FontStyle.Bold, TextAnchor.MiddleRight);
+        }
+
+        /// <summary>戦況の画面を開く（マップ表を撮り直す）</summary>
+        public void OpenStatus()
+        {
+            if (!Built) return;
+            statusOpen = true;
+            statusRoot.gameObject.SetActive(true);
+            frame.gameObject.SetActive(false);        // ふだんのUIとキャラの下のHPは隠す
+            overlayRoot.gameObject.SetActive(false);
+            statusRoot.SetAsLastSibling();
+            FillStatus();
+            stateKey = null;
+        }
+
+        public void CloseStatus()
+        {
+            statusOpen = false;
+            if (statusRoot != null) statusRoot.gameObject.SetActive(false);
+            if (frame != null) frame.gameObject.SetActive(true);
+            if (overlayRoot != null) overlayRoot.gameObject.SetActive(true);
+            stateKey = null;
+        }
+
+        private void FillStatus()
+        {
+            statusTitle.text = controller.BattleTitle;
+            statusVictory.text = controller.VictoryText;
+            statusDefeat.text = controller.DefeatText;
+            statusAllies.text = controller.Units.Count(u => u.Side == "ally" && u.Alive).ToString();
+            statusEnemies.text = controller.Units.Count(u => u.Side == "enemy" && u.Alive).ToString();
+            statusOthers.text = controller.Units.Count(u => u.Side != "ally" && u.Side != "enemy" && u.Alive).ToString();
+            statusTurn.text = controller.Turn.ToString();
+            var lines = controller.Declarations
+                .Where(p => p.Value.type == "attack")
+                .Select(p => (enemy: controller.Units.FirstOrDefault(u => u.Id == p.Key), target: controller.Units.FirstOrDefault(u => u.Id == p.Value.targetId)))
+                .Where(p => p.enemy != null && p.target != null)
+                .Select(p => $"{p.enemy.Name}　→　{p.target.Name}")
+                .ToList();
+            statusTargets.text = lines.Count > 0 ? string.Join("\n", lines) : "なし";
+
+            // マップ表: 盤面を真上から撮った絵を、欄に収まる大きさで置く
+            var map = controller.View.Map;
+            var picture = controller.View.RenderMapPicture(40, canvas);
+            statusMap.texture = picture;
+            // 欄の横幅に合わせて大きさを決め、枠の高さをマップ表に合わせる（縦長のマップなら高さに合わせる）
+            float cell = Mathf.Min(302f / map.Columns, 262f / map.Rows);
+            var size = new Vector2(cell * map.Columns, cell * map.Rows);
+            statusMapPanel.sizeDelta = new Vector2(330, size.y + 28);
+            statusMapArea.sizeDelta = new Vector2(302, size.y);
+            statusMap.rectTransform.sizeDelta = size;
+            statusMap.rectTransform.anchoredPosition = Vector2.zero;
+
+            // 陣営の印（味方＝青・敵＝赤）
+            foreach (var mark in statusMarks) Object.DestroyImmediate(mark);
+            statusMarks.Clear();
+            foreach (var unit in controller.Units.Where(u => u.Alive))
+            {
+                var m = NewRect("Mark_" + unit.Id, statusMap.rectTransform);
+                m.anchorMin = m.anchorMax = new Vector2(0f, 1f);
+                m.pivot = new Vector2(0.5f, 0.5f);
+                m.sizeDelta = new Vector2(cell * 0.62f, cell * 0.62f);
+                m.anchoredPosition = new Vector2((unit.cell.x + 0.5f) * cell, -(unit.cell.y + 0.5f) * cell);
+                var img = m.gameObject.AddComponent<Image>();
+                img.color = unit.Side == "ally" ? Hex("#3f7ee0") : unit.Side == "enemy" ? Hex("#c9463c") : Hex("#4fae6a");
+                img.raycastTarget = false;
+                Outline(m, Hex("#f3e2b6", 0.85f));
+                if (unit.Side == "enemy" && controller.Declarations.TryGetValue(unit.Id, out var d) && d.type == "attack")
+                {
+                    var x = Place(NewRect("Intent", m), cell * 0.36f, -cell * 0.14f, cell * 0.4f, cell * 0.4f).gameObject.AddComponent<Image>();
+                    x.sprite = SpriteOf("mark_intent");
+                    x.raycastTarget = false;
+                }
+                statusMarks.Add(m.gameObject);
+            }
         }
 
         private void BuildUnitCard()
@@ -337,7 +743,8 @@ namespace Srpg.Battle
             if (!Built || controller == null || controller.Data == null) return;
             var sel = controller.Selected;
             var tgt = controller.Target;
-            string key = $"{controller.CurrentPhase}|{controller.CurrentMode}|{sel?.Id}|{sel?.plan?.hp}|{sel?.plan?.mp}|{sel?.cell}|{tgt?.Id}|{tgt?.plan?.hp}|{controller.Turn}|{controller.Units.Count(u => u.acted)}";
+            string key = $"{statusOpen}|{controller.CurrentPhase}|{controller.CurrentMode}|{sel?.Id}|{sel?.plan?.hp}|{sel?.plan?.mp}|{sel?.cell}|{tgt?.Id}|{tgt?.plan?.hp}|{controller.Turn}|{controller.Units.Count(u => u.acted)}"
+                + $"|{controller.Declarations.Count}|{string.Join(",", controller.Units.Select(u => u.plan?.hp ?? 0))}";
             if (key == stateKey) return;
             stateKey = key;
 
@@ -350,8 +757,48 @@ namespace Srpg.Battle
             if (showCard) FillCard(sel);
             if (forecastOpen) FillForecast(sel, tgt, controller.CurrentForecast);
             FillCommands(forecastOpen);
+            FillTopStrip(forecastOpen);
+            FillRoster(forecastOpen);
             hintBar.gameObject.SetActive(!forecastOpen);   // 戦闘予測のときは下のボタンが出る
             hintText.text = HintText(forecastOpen);
+        }
+
+        private void FillTopStrip(bool forecastOpen)
+        {
+            var phase = controller.CurrentPhase;
+            bool ended = phase == Battle3DController.Phase.Victory || phase == Battle3DController.Phase.Defeat;
+            bool enemy = phase == Battle3DController.Phase.Enemy;
+            // 戦闘予測の間は左上に「戦闘予測」の見出しが出るので、フェーズの見出しを隠す（ブラウザ版と同じ）
+            phaseEn.gameObject.SetActive(!forecastOpen);
+            phaseJa.gameObject.SetActive(!forecastOpen);
+            phaseEdge.gameObject.SetActive(!forecastOpen);
+            turnGroup.gameObject.SetActive(!forecastOpen);
+            phaseEn.text = ended ? "BATTLE END" : enemy ? "ENEMY PHASE" : "ALLY PHASE";
+            phaseJa.text = ended ? "戦闘終了" : enemy ? "敵フェーズ" : "味方フェーズ";
+            phaseEdge.color = enemy ? Hex("#c95a4a") : Hex("#d6a740");
+            phaseJa.color = enemy ? Hex("#f0a27f") : Hex("#efd081");
+            phaseEn.color = enemy ? Hex("#e56e4e", 0.7f) : Hex("#d6a740", 0.62f);
+            turnValue.text = controller.Turn.ToString();
+        }
+
+        private void FillRoster(bool forecastOpen)
+        {
+            roster.gameObject.SetActive(!forecastOpen);
+            foreach (var slot in rosterSlots)
+            {
+                var unit = controller.Units.FirstOrDefault(u => u.Id == slot.id);
+                if (unit == null) continue;
+                bool dead = !unit.Alive;
+                bool done = !dead && unit.acted;
+                bool selectedNow = controller.Selected == unit;
+                slot.frame.sprite = SpriteOf(selectedNow ? "face_frame_selected" : done ? "face_frame_done" : "face_frame");
+                slot.face.color = dead || done ? new Color(0.32f, 0.3f, 0.34f, 1f) : Color.white;
+                slot.done.gameObject.SetActive(done);
+                SetBar(slot.hpFill.rectTransform, unit.plan == null ? 0f : (float)unit.plan.hp / Math.Max(1, unit.plan.maxHp));
+                var group = slot.frame.transform.parent.GetComponent<CanvasGroup>();
+                if (group == null) group = slot.frame.transform.parent.gameObject.AddComponent<CanvasGroup>();
+                group.alpha = dead ? 0.28f : 1f;
+            }
         }
 
         private void FillCard(Battle3DController.UnitState unit)
@@ -453,6 +900,7 @@ namespace Srpg.Battle
                 }
                 else if (sel == null)
                 {
+                    entries.Add(("detail", "戦況", OpenStatus, true));
                     entries.Add(("wait", "ターン終了", () => controller.EndTurn(), true));
                 }
             }
@@ -512,8 +960,9 @@ namespace Srpg.Battle
         public bool IsOverHud(Vector2 screenPosition)
         {
             if (!Built) return false;
+            if (statusOpen) return true;   // 戦況の画面が開いている間は盤面を押せない
             var cam = canvas.worldCamera;
-            foreach (var rt in new[] { commandList, unitCard, weaponCard })
+            foreach (var rt in new[] { commandList, unitCard, weaponCard, roster })
                 if (rt != null && rt.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(rt, screenPosition, cam)) return true;
             if (forecastRoot != null && forecastRoot.gameObject.activeInHierarchy)
             {
@@ -631,7 +1080,8 @@ namespace Srpg.Battle
                 text.rectTransform.localScale = new Vector3(k, k, 1f);
                 text.rectTransform.sizeDelta = new Vector2(w / k, h / k);
             }
-            text.fontStyle = style;
+            if (style == FontStyle.Bold && boldFont != null) { text.font = boldFont; text.fontStyle = FontStyle.Normal; }
+            else text.fontStyle = style;
             text.color = color;
             text.alignment = anchor;
             text.horizontalOverflow = HorizontalWrapMode.Overflow;
@@ -693,6 +1143,24 @@ namespace Srpg.Battle
             var sprite = UnityEngine.Sprite.Create(tex, new Rect(0, 0, W, 1), new Vector2(0.5f, 0.5f));
             gradients[key] = sprite;
             return sprite;
+        }
+
+        /// <summary>横のグラデーション（色の段階つき。t は 0〜1）</summary>
+        private static Sprite StopsSprite(params (float t, Color c)[] stops)
+        {
+            const int W = 128;
+            var tex = new Texture2D(W, 1, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
+            for (int i = 0; i < W; i++)
+            {
+                float t = i / (W - 1f);
+                int k = 0;
+                while (k < stops.Length - 2 && t > stops[k + 1].t) k++;
+                var (t0, c0) = stops[k];
+                var (t1, c1) = stops[Math.Min(k + 1, stops.Length - 1)];
+                tex.SetPixel(i, 0, Color.Lerp(c0, c1, Mathf.InverseLerp(t0, t1, t)));
+            }
+            tex.Apply();
+            return UnityEngine.Sprite.Create(tex, new Rect(0, 0, W, 1), new Vector2(0.5f, 0.5f));
         }
 
         private static Color Hex(string hex, float alpha = 1f)
