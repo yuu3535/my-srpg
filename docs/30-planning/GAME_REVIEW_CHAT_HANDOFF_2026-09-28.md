@@ -55,9 +55,19 @@
 - 答え合わせのデータ `unity-prototype/Assets/Tests/EditMode/Fixtures/battle_plan_cases.json` に、全員×全員の予測と交戦の結果がある（520件）。偏りを調べるのに使える。
 - 調べるための使い捨ての台本は、リポジトリではなくスクラッチパッドに置く。
 
-## 6. 1手ごとの画像を撮りたいとき
+## 6. 1手ごとの画像
 
-今の組み立ては決まった場面だけを撮る。1手ごとに撮る仕組み（自動で進めて毎手撮る）が要るときは、**総合担当に頼む**（レビュー担当はコードを書き換えない）。頼むときは「どの場面を、何手目まで、どの向きで」を書く。
+**できた（2026-09-28）**: 試験の戦闘を最初から決着まで自動で進め、1手ごとに撮る（味方も敵と同じ評価で動く。乱数は決まった種なので毎回同じ戦闘）。
+- 画像と一覧: `unity-prototype/PlaythroughShots/`（Git には入れない。手元で見る）。一覧と戦闘の記録（ダメージ・外れ・倒れた）は同じ所の `playthrough.md`。
+- 名前は `t<ターン>_<番号>_<キャラ>_<場面>.png`（moved＝動いたあと・forecast＝戦闘予測・preview＝敵の攻撃の前の予測・acted＝行動のあと・turn＝ターンの始まり）。
+- ダメージの数字（仮の表示）は画像に写らない。`playthrough.md` の記録で見る。
+- 撮り直すとき（Unity を閉じてから。先に §4 の組み立てを実行しておく）:
+
+```powershell
+& "C:\Program Files\Unity\Hub\Editor\6000.3.24f1\Editor\Unity.exe" -batchmode -projectPath "C:\Users\jade-\Desktop\自作srpg 2\unity-prototype" -executeMethod Srpg.EditorAgent.Battle3DPlaythrough.Run -quit -logFile <スクラッチパッド>\play.log
+```
+
+- 別の動かし方（別の種・別の順番・ある場面だけ）が要るときは、総合担当に頼む。
 
 ## 7. 報告のしかた
 

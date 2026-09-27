@@ -116,11 +116,13 @@
 
 | ツール | 今 | これから |
 |---|---|---|
-| 下絵を作る | 国境監視路だけ（`Board3DTestBuilder.WriteGroundImages`） | 配置表のファイルから、どの場所の下絵も作れるようにする |
-| ①を取り込む | `tools/import_ground_image.py`（監視路の大きさで固定） | 場所の名前・広さ・余白を引数で渡せるようにする |
+| 配置表のファイル | **できた（2026-09-28）**: `docs/10-design/map/layouts/<mapId>.json`。書き方はひな形 `_template.json` と `tools/map_layout.py` の説明。国境監視路は `watchroad.json` | ― |
+| 下絵を作る | **できた**: `py -3.12 tools/map_layout.py guide <配置表>` → `マップチップ/<mapId>/<mapId>_guide_square.png`（正方形・戦う範囲に赤い線）。監視路で、前の下絵とピクセルまで同じになることを確かめた | ― |
+| 発注書を作る | **できた**: `py -3.12 tools/map_layout.py order <配置表>` → `マップチップ/<mapId>/<mapId>_床の発注書.md`（§5 ①の依頼文に、使っている記号の色の意味を入れる） | ― |
+| ①を取り込む | **できた**: `py -3.12 tools/map_layout.py import <配置表> <届いた絵>` → `unity-prototype/Assets/Art/Board3D/Ground/<mapId>_ground.png`（余白を切り、1マス64px）。監視路で、前の取り込みと同じ絵になることを確かめた。前の `tools/import_ground_image.py` は監視路専用のまま残す | ― |
 | ②を取り込む | なし | 左右のつながりを確かめ、Unity の側面の模様に入れる |
 | ③を分ける | `tools/split_props.py` | そのまま使う |
-| 盤面のデータ | 監視路は `Board3DLayout.cs` に直接書いている | 配置表をファイル（JSON）で読み込む |
+| 盤面のデータ | 監視路は `Board3DLayout.cs` に直接書いている | Unity が配置表（JSON）を読み込んで盤面を作る（次の作業。高い物・小物の表の書き方もそのときに決める） |
 
 ## 7. 屋内の地形の記号（案・検討中。マップ担当が決める）
 
