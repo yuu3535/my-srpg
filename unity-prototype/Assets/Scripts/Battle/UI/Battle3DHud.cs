@@ -346,7 +346,7 @@ namespace Srpg.Battle
             var mode = controller.CurrentMode;
             bool showSelected = sel != null && sel.Side == "ally" && (mode == Battle3DController.Mode.Moving || mode == Battle3DController.Mode.Acting);
             PlaceHeadMark(markSelected, showSelected ? sel : null, 2f);
-            PlaceHeadMark(markTarget, mode == Battle3DController.Mode.Forecast ? controller.Target : null, 0f);
+            PlaceHeadMark(markTarget, controller.EnemyPreview?.target ?? (mode == Battle3DController.Mode.Forecast ? controller.Target : null), 0f);
         }
 
         /// <summary>
@@ -378,7 +378,8 @@ namespace Srpg.Battle
             if (!Built || terrainPanel == null || controller == null || controller.View == null) return;
             var map = controller.View.Map;
             Vector2Int? cell = controller.View.HoverCell ?? controller.Selected?.cell;
-            bool show = cell.HasValue && map != null && map.InBounds(cell.Value) && controller.CurrentMode != Battle3DController.Mode.Forecast;
+            bool show = cell.HasValue && map != null && map.InBounds(cell.Value) && controller.CurrentMode != Battle3DController.Mode.Forecast
+                && controller.EnemyPreview == null;
             terrainPanel.gameObject.SetActive(show);
             if (!show || shownTerrainCell == cell) return;
             shownTerrainCell = cell;
@@ -732,19 +733,22 @@ namespace Srpg.Battle
             if (!Built || controller == null || controller.Data == null) return;
             var sel = controller.Selected;
             var tgt = controller.Target;
-            string key = $"{statusOpen}|{subList}|{controller.CurrentOption?.label}|{controller.CurrentPhase}|{controller.CurrentMode}|{sel?.Id}|{sel?.plan?.hp}|{sel?.plan?.mp}|{sel?.cell}|{tgt?.Id}|{tgt?.plan?.hp}|{controller.Turn}|{controller.Units.Count(u => u.acted)}"
+            string key = $"{statusOpen}|{subList}|{controller.CurrentOption?.label}|{controller.EnemyPreview?.attacker?.Id}|{controller.CurrentPhase}|{controller.CurrentMode}|{sel?.Id}|{sel?.plan?.hp}|{sel?.plan?.mp}|{sel?.cell}|{tgt?.Id}|{tgt?.plan?.hp}|{controller.Turn}|{controller.Units.Count(u => u.acted)}"
                 + $"|{controller.Declarations.Count}|{string.Join(",", controller.Units.Select(u => u.plan?.hp ?? 0))}";
             if (key == stateKey) return;
             stateKey = key;
 
-            bool forecastOpen = controller.CurrentMode == Battle3DController.Mode.Forecast && controller.CurrentForecast != null && sel != null && tgt != null;
+            var preview = controller.EnemyPreview;
+            bool forecastOpen = preview != null
+                || (controller.CurrentMode == Battle3DController.Mode.Forecast && controller.CurrentForecast != null && sel != null && tgt != null);
             forecastRoot.gameObject.SetActive(forecastOpen);
             if (!forecastOpen) fcDetailBox.gameObject.SetActive(false);
             bool showCard = sel != null && !forecastOpen;
             unitCard.gameObject.SetActive(showCard);
             weaponCard.gameObject.SetActive(showCard);
             if (showCard) FillCard(sel);
-            if (forecastOpen) FillForecast(sel, tgt, controller.CurrentForecast);
+            if (preview != null) FillForecast(preview.attacker, preview.target, preview.forecast, preview.option, true);
+            else if (forecastOpen) FillForecast(sel, tgt, controller.CurrentForecast, controller.CurrentOption, false);
             FillCommands(forecastOpen);
             FillTopStrip(forecastOpen);
             FillRoster(forecastOpen);
@@ -815,12 +819,16 @@ namespace Srpg.Battle
             for (int i = 0; i < 4; i++) weaponValues[i].text = values[i] ?? "―";
         }
 
-        private void FillForecast(Battle3DController.UnitState attacker, Battle3DController.UnitState defender, BattlePlan.Forecast fc)
+        private void FillForecast(Battle3DController.UnitState attacker, Battle3DController.UnitState defender, BattlePlan.Forecast fc, BattleOption option, bool readOnly)
         {
-            var option = controller.CurrentOption;
             bool magic = option != null ? option.isMagic : attacker.plan.HasGrimoireSpell;
             bool special = option != null && (option.isArt || option.isMagic);
-            fcTitle.text = "戦闘予測";
+            // 敵の攻撃の前の予測は見るだけ（ボタンなし・見出しは赤。ブラウザ版の「敵の攻撃」）
+            fcTitle.text = readOnly ? "敵の攻撃" : "戦闘予測";
+            fcTitle.color = readOnly ? Hex("#e9927e") : Hex("#efd081");
+            fcCancel.gameObject.SetActive(!readOnly);
+            fcConfirm.gameObject.SetActive(!readOnly);
+            fcDetail.gameObject.SetActive(!readOnly);
             uiUnits.TryGetValue(attacker.Id, out var a);
             uiUnits.TryGetValue(defender.Id, out var d);
             SetPortrait(leftBust, a, a?.bustUv);
@@ -833,7 +841,7 @@ namespace Srpg.Battle
             FillSide(leftSide, attacker, a, attackName, attackType, fc.attackerHpAfter, fc.first, fc.followUp, null);
             // 攻撃の切り替え
             var switchable = controller.ForecastOptions;
-            bool canSwitch = switchable.Count > 1;
+            bool canSwitch = !readOnly && switchable.Count > 1;
             fcPrev.gameObject.SetActive(canSwitch);
             fcNext.gameObject.SetActive(canSwitch);
             fcCount.gameObject.SetActive(canSwitch);
@@ -898,10 +906,15 @@ namespace Srpg.Battle
                     foreach (var entry in list ?? Array.Empty<UiListEntry>())
                     {
                         var option = entry.index >= 0 && entry.index < options.Count ? options[entry.index] : null;
-                        // Unity版でまだ使えない戦技・魔法（回復・補助・範囲など）は「準備中」
-                        string sub = option == null ? "準備中" : subList == "magic" && !string.IsNullOrEmpty(entry.mpCost) ? $"MP {entry.mpCost}" : "";
-                        entries.Add((subList == "magic" ? "magic" : "skill", entry.label, () => { subList = null; controller.ChooseOption(option); },
-                            option != null && controller.CanUseFromHere(option)));
+                        var supports = controller.SupportsOf(sel);
+                        var support = entry.supportIndex >= 0 && entry.supportIndex < supports.Count ? supports[entry.supportIndex] : null;
+                        // Unity版でまだ使えない戦技・魔法（虚像・封印・転移・範囲・召喚など）は「準備中」
+                        string sub = option == null && support == null ? "準備中" : subList == "magic" && !string.IsNullOrEmpty(entry.mpCost) ? $"MP {entry.mpCost}" : "";
+                        if (support != null)
+                            entries.Add(("magic", entry.label, () => { subList = null; controller.ChooseSupport(support); }, controller.CanSupportFromHere(support)));
+                        else
+                            entries.Add((subList == "magic" ? "magic" : "skill", entry.label, () => { subList = null; controller.ChooseOption(option); },
+                                option != null && controller.CanUseFromHere(option)));
                         subTexts.Add(sub);
                     }
                     entries.Add(("back", "戻る", () => { subList = null; stateKey = null; }, true));
@@ -919,7 +932,7 @@ namespace Srpg.Battle
                     entries.Add(("wait", "待機", () => controller.ChooseWait(), true));
                     if (controller.CanUndoMove) entries.Add(("back", "戻る", () => controller.UndoMove(), true));
                 }
-                else if (sel != null && mode == Battle3DController.Mode.Targeting)
+                else if (sel != null && (mode == Battle3DController.Mode.Targeting || mode == Battle3DController.Mode.Support))
                 {
                     entries.Add(("back", "取り消し", () => controller.CancelTargeting(), true));
                 }
@@ -973,18 +986,21 @@ namespace Srpg.Battle
         private string HintText(bool forecastOpen)
         {
             var sel = controller.Selected;
+            if (controller.EnemyPreview != null) return $"{controller.EnemyPreview.attacker.Name}が{controller.EnemyPreview.target.Name}を攻撃する。";
             switch (controller.CurrentPhase)
             {
                 case Battle3DController.Phase.Enemy: return "敵フェーズ";
                 case Battle3DController.Phase.Victory: return "勝利";
                 case Battle3DController.Phase.Defeat: return "敗北";
             }
+            if (controller.EnemyPreview != null) return $"{controller.EnemyPreview.attacker.Name}が{controller.EnemyPreview.target.Name}を攻撃する。";
             if (forecastOpen) return $"{controller.Target.Name}への攻撃を実行しますか。";
             if (sel == null) return "動かす味方を選んでください。";
             return controller.CurrentMode switch
             {
                 Battle3DController.Mode.Moving => $"{sel.Name}の移動先を選ぶか、右のコマンドを選んでください。",
                 Battle3DController.Mode.Targeting => "攻撃する相手を選んでください。",
+                Battle3DController.Mode.Support => $"{controller.CurrentOption?.ActionName}を使う味方を選んでください（緑のマス）。",
                 _ => $"{sel.Name}の行動を選んでください。",
             };
         }

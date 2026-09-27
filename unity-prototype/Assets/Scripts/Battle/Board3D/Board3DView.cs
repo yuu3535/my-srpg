@@ -83,6 +83,7 @@ namespace Srpg.Battle
 
         private static readonly Color RangeColor = new Color(0.30f, 0.60f, 1f, 0.42f);   // 移動範囲は従来の青（原作者 2026-09-25）
         public static readonly Color AttackRangeColor = new Color(1f, 0.30f, 0.26f, 0.40f); // 攻撃の範囲は赤
+        public static readonly Color SupportRangeColor = new Color(0.35f, 0.9f, 0.55f, 0.40f); // 補助の範囲は緑
         private static readonly Color TargetRingColor = new Color(1f, 0.24f, 0.30f, 1f); // 狙われている印（赤い丸。原作者 2026-09-27）
 
         private Board3DMap map;

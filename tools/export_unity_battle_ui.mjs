@@ -154,13 +154,23 @@ const result = await evaluate(`(async () => {
             enemyOptions: enemyOptions(unit),
             // コマンドの一覧（使えないものも出す。index は options の番号、使えなければ −1）
             artList: [], magicList: [],
+            supports: [],
         };
         const findOption = (label, isMagic) => entry.options.findIndex(o => o.label === label && o.isMagic === isMagic);
         trialPhysicalArtsFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null).forEach(art => {
             entry.artList.push({ label: art.name, sub: art.desc || "", index: art.implemented ? findOption(art.name, false) : -1 });
         });
+        // 補助の魔法のうち Unity 版で使えるもの（味方が対象の 回復・結界・加速 の戦技と、治癒の魔核）。
+        // ブラウザ版の trialCastSupportArt・trialCastHeal と同じ効果を Unity 側で行う
+        const supportable = spell => spell && spell.targetType === "ally" && typeof spell.range === "number"
+            && (["回復", "結界", "加速"].includes(spell.trialArtName) || (spell.trialItemId && spell.effectType === "heal"));
         getLandscapeMagicEntries(unit).forEach(({ spell, label, sub }) => {
-            entry.magicList.push({ label, sub: sub || "", mpCost: String(spell?.mpCost ?? ""), index: attackable(spell) ? findOption(label, true) : -1 });
+            let supportIndex = -1;
+            if (supportable(spell)) {
+                supportIndex = entry.supports.length;
+                entry.supports.push({ ...magicOption(unit, spell, label), kind: "support", rangeMin: 0 });
+            }
+            entry.magicList.push({ label, sub: sub || "", mpCost: String(spell?.mpCost ?? ""), index: attackable(spell) ? findOption(label, true) : -1, supportIndex });
         });
         const src = getPortraitSrc(unit) || unit.tokenImage || "";
         const face = q(".lcPortrait");

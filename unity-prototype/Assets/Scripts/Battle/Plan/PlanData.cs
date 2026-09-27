@@ -20,6 +20,7 @@ namespace Srpg.Battle.Plan
         public int value;
         public int duration;
         public bool holdOwnPhase;
+        public bool phaseSeen;       // holdOwnPhase: 相手の番を一度過ごしたか（ブラウザ版 tickStatusEffects）
         public string name;
 
         public PlanStatus Clone() => (PlanStatus)MemberwiseClone();

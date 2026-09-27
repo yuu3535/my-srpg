@@ -23,7 +23,7 @@ namespace Srpg.Battle
         [SerializeField] private float enemyStepSeconds = 0.6f;
 
         public enum Phase { Ally, Enemy, Victory, Defeat }
-        public enum Mode { Idle, Moving, Acting, Targeting, Forecast }
+        public enum Mode { Idle, Moving, Acting, Targeting, Forecast, Support }
 
         private BattleDataFile data;
         private Board3DMap map;
@@ -55,6 +55,158 @@ namespace Srpg.Battle
         [SerializeField] private TextAsset uiJson;  // 攻撃の選択肢（通常攻撃・戦技・魔法。tools/export_unity_battle_ui.mjs）
 
         private readonly Dictionary<string, UiUnit> uiUnits = new Dictionary<string, UiUnit>();
+        private readonly HashSet<Vector2Int> supportCells = new HashSet<Vector2Int>();
+
+        /// <summary>敵が攻撃する前に見せる戦闘予測（ブラウザ版 trialShowEnemyForecast。1.2秒）</summary>
+        public class EnemyPreviewInfo
+        {
+            public UnitState attacker, target;
+            public BattleOption option;
+            public BattlePlan.Forecast forecast;
+        }
+        public EnemyPreviewInfo EnemyPreview { get; private set; }
+        [SerializeField] private float enemyPreviewSeconds = 1.2f;
+
+        /// <summary>そのキャラの補助の魔法（回復・結界・加速・治癒の魔核）</summary>
+        public IReadOnlyList<BattleOption> SupportsOf(UnitState unit) => (IReadOnlyList<BattleOption>)UiOf(unit)?.supports ?? Array.Empty<BattleOption>();
+
+        /// <summary>今のマスから、その補助が届く味方（自分も含む）がいるか</summary>
+        public bool CanSupportFromHere(BattleOption option) =>
+            selected != null && option != null && units.Any(u => u.Alive && u.Side == selected.Side && Distance(u.cell, selected.cell) <= option.rangeMax);
+
+        /// <summary>補助の魔法を選び、届く味方（緑）から対象を選ぶ</summary>
+        public void ChooseSupport(BattleOption option)
+        {
+            StayIfMoving();
+            if (CurrentMode != Mode.Acting || selected == null || option == null) return;
+            currentOption = option;
+            supportCells.Clear();
+            foreach (var ally in units.Where(u => u.Alive && u.Side == selected.Side && Distance(u.cell, selected.cell) <= option.rangeMax))
+                supportCells.Add(ally.cell);
+            view.ShowRange(supportCells, Board3DView.SupportRangeColor);
+            CurrentMode = Mode.Support;
+        }
+
+        /// <summary>魔法のMPを払う（詠唱破棄の判定つき。ブラウザ版 trialPayMagicMp）</summary>
+        private int PayMagicMp(UnitState caster, PlanSpell spell, IPlanRolls rolls)
+        {
+            int cost = rolls.Dice(string.IsNullOrEmpty(spell?.mpCost) ? "1d6" : spell.mpCost);
+            if (caster.plan.Has("詠唱破棄"))
+            {
+                int chance = TrialRules.AbilityChance("詠唱破棄", caster.plan.stats, caster.plan.maxHp, caster.plan.luck);
+                int roll = rolls.Percent("詠唱破棄");
+                if (roll <= chance) { AddLog($"  詠唱破棄！MP消費なし（{roll}/{chance}%）"); cost = 0; }
+            }
+            caster.plan.mp = Math.Max(0, caster.plan.mp - cost);
+            return cost;
+        }
+
+        /// <summary>
+        /// 補助の魔法の効果（ブラウザ版 trialCastSupportArt・trialCastHeal と同じ）:
+        /// 回復＝回復量×3、治癒の魔核＝回復量（6＋魔攻÷4）、結界＝魔防÷2の装甲（次の自分の番まで）、加速＝もう一度行動できる
+        /// </summary>
+        private void CastSupport(UnitState caster, UnitState target, BattleOption option)
+        {
+            var rolls = RollsOverride ?? new RandomRolls();
+            if (!string.IsNullOrEmpty(option.itemId)) option.ApplyEquip(caster.plan, UiOf(caster)?.weaponItemId);   // 治癒の魔核に持ち替え
+            int cost = PayMagicMp(caster, option.spell, rolls);
+            string art = option.artName;
+            supportCells.Clear();
+            view.ShowRange(null);
+            if (art == "回復" || (string.IsNullOrEmpty(art) && option.spell?.effectType == "heal"))
+            {
+                int amount = (6 + caster.plan.stats.mag / 4) * (art == "回復" ? 3 : 1);
+                int before = target.plan.hp;
+                target.plan.hp = Math.Min(target.plan.maxHp, before + amount);
+                AddLog($"{caster.Name}が {option.ActionName} 使用  MP-{cost} → {target.Name}のHPを{target.plan.hp - before}回復（HP {target.plan.hp}/{target.plan.maxHp}）");
+                AddPopup(target.Id, $"+{target.plan.hp - before}", new Color(0.45f, 1f, 0.6f));
+            }
+            else if (art == "結界")
+            {
+                int value = caster.plan.stats.res / 2;
+                target.plan.statusEffects.RemoveAll(e => e.type == "barrier");
+                target.plan.statusEffects.Add(new PlanStatus { type = "barrier", value = value, duration = 1, name = "結界" });
+                AddLog($"{caster.Name}が 結界 使用  MP-{cost} → {target.Name}に装甲+{value}（魔防÷2。次の自分の番まで）");
+                AddPopup(target.Id, "結界", new Color(0.6f, 0.8f, 1f));
+            }
+            else if (art == "加速")
+            {
+                target.moved = false;
+                target.acted = false;
+                view.SetUnitDimmed(target.Id, false);
+                AddLog($"{caster.Name}が 加速 使用  MP-{cost} → {target.Name}が再行動できる");
+                AddPopup(target.Id, "加速", new Color(1f, 0.9f, 0.5f));
+                if (target == caster)
+                {
+                    // 自分に使ったときは、そのまま続けて行動できる（ブラウザ版と同じ）
+                    Select(caster);
+                    return;
+                }
+            }
+            FinishAction(caster);
+        }
+
+        /// <summary>
+        /// 状態の時間を進める（ブラウザ版 tickStatusEffects）: side の番の始まりに呼ぶ。
+        /// 「相手の次の番まで」の状態は、相手の番を過ごしたあと、次の番が始まるときに消える。火傷は1d3のダメージ
+        /// </summary>
+        private void TickStatusEffects(string side)
+        {
+            var rolls = RollsOverride ?? new RandomRolls();
+            foreach (var u in units.Where(u => u.Side != side && u.Alive && u.plan != null))
+            {
+                foreach (var e in u.plan.statusEffects.Where(e => e.holdOwnPhase && e.phaseSeen).ToList())
+                {
+                    AddLog($"  {u.Name}の【{(string.IsNullOrEmpty(e.name) ? e.type : e.name)}】効果が切れた");
+                    u.plan.statusEffects.Remove(e);
+                }
+            }
+            foreach (var u in units.Where(u => u.Side == side && u.Alive && u.plan != null).ToList())
+            {
+                var next = new List<PlanStatus>();
+                foreach (var e in u.plan.statusEffects)
+                {
+                    if (e.holdOwnPhase) { e.phaseSeen = true; next.Add(e); continue; }
+                    if (e.type == "burn")
+                    {
+                        int dmg = rolls.Dice("1d3");
+                        u.plan.hp = Math.Max(0, u.plan.hp - dmg);
+                        AddPopup(u.Id, dmg.ToString(), new Color(1f, 0.55f, 0.3f));
+                        AddLog($"  {u.Name}は火傷で {dmg} ダメージ（HP {u.plan.hp}/{u.plan.maxHp}）");
+                    }
+                    else if (e.type == "gravityField")
+                    {
+                        int dmg = Math.Max(1, e.value);
+                        u.plan.hp = Math.Max(0, u.plan.hp - dmg);
+                        AddLog($"  {u.Name}は重力場で {dmg} ダメージ");
+                    }
+                    e.duration--;
+                    if (e.duration <= 0) AddLog($"  {u.Name}の【{(string.IsNullOrEmpty(e.name) ? e.type : e.name)}】効果が切れた");
+                    else next.Add(e);
+                }
+                u.plan.statusEffects = next;
+                if (!u.Alive)
+                {
+                    AddLog($"  {u.Name}は倒れた！");
+                    view.RemoveUnit(u.Id);
+                }
+            }
+        }
+
+        /// <summary>確認用: 敵がいまの位置から攻撃するときの予測を出す（動かない）</summary>
+        public void PreviewEnemyAttack(string enemyId)
+        {
+            var enemy = units.FirstOrDefault(u => u.Id == enemyId);
+            if (enemy == null) return;
+            var (_, target, option) = ChooseEnemyAttackWithOption(enemy, units.Where(u => u.Alive && u.Side == "ally"));
+            EnemyPreview = target == null ? null : new EnemyPreviewInfo
+            {
+                attacker = enemy, target = target, option = option,
+                forecast = BattlePlan.ForecastOf(enemy.plan, target.plan, option.ToAction(), PlanUnits()),
+            };
+        }
+
+        public void ClearEnemyPreview() => EnemyPreview = null;
         private BattleOption currentOption;
         /// <summary>今選んでいる攻撃（狙う相手を選ぶ・戦闘予測の間）</summary>
         public BattleOption CurrentOption => currentOption;
@@ -291,6 +443,10 @@ namespace Srpg.Battle
                     if (unit != null && unit.Side != selected.Side && attackCells.Contains(cell)) { ShowForecast(unit); return; }
                     BackToActing();
                     return;
+                case Mode.Support:
+                    if (unit != null && unit.Side == selected.Side && supportCells.Contains(cell)) { CastSupport(selected, unit, currentOption); return; }
+                    BackToActing();
+                    return;
                 case Mode.Acting:
                 case Mode.Forecast:
                     return;   // 操作の欄で選ぶ
@@ -401,11 +557,12 @@ namespace Srpg.Battle
         /// <summary>「取り消し」: 相手を選ぶのをやめて、コマンドを選ぶところへ戻る</summary>
         public void CancelTargeting()
         {
-            if (CurrentMode == Mode.Targeting) BackToActing();
+            if (CurrentMode == Mode.Targeting || CurrentMode == Mode.Support) BackToActing();
         }
 
         private void BackToActing()
         {
+            supportCells.Clear();
             attackCells.Clear();
             view.ShowRange(null);
             CurrentMode = Mode.Acting;
@@ -422,7 +579,8 @@ namespace Srpg.Battle
         /// <summary>「移動を取り消す」（まだ行動していなければ、動く前のマスへ戻す）</summary>
         public void UndoMove()
         {
-            if ((CurrentMode != Mode.Acting && CurrentMode != Mode.Targeting) || selected == null) return;
+            if ((CurrentMode != Mode.Acting && CurrentMode != Mode.Targeting && CurrentMode != Mode.Support) || selected == null) return;
+            supportCells.Clear();
             var unit = selected;
             if (unit.cell != moveFrom)
             {
@@ -554,6 +712,8 @@ namespace Srpg.Battle
             CancelToIdle();
             CurrentPhase = Phase.Enemy;
             AddLog($"敵フェーズ ターン{Turn}");
+            TickStatusEffects("enemy");
+            if (CheckEnd()) return;
             if (Application.isPlaying) StartCoroutine(EnemyPhase());
             else RunEnemyPhaseImmediately();
         }
@@ -564,7 +724,18 @@ namespace Srpg.Battle
             {
                 if (!enemy.Alive || CurrentPhase != Phase.Enemy) continue;
                 yield return new WaitForSeconds(enemyStepSeconds);
-                EnemyAct(enemy);
+                var plan = PrepareEnemyAct(enemy);
+                if (plan.target != null)
+                {
+                    EnemyPreview = new EnemyPreviewInfo
+                    {
+                        attacker = enemy, target = plan.target, option = plan.option,
+                        forecast = BattlePlan.ForecastOf(enemy.plan, plan.target.plan, plan.option.ToAction(), PlanUnits()),
+                    };
+                    yield return new WaitForSeconds(enemyPreviewSeconds);
+                    EnemyPreview = null;
+                }
+                PerformEnemyAct(enemy, plan);
                 if (CheckEnd()) yield break;
             }
             yield return new WaitForSeconds(enemyStepSeconds * 0.5f);
@@ -587,11 +758,20 @@ namespace Srpg.Battle
         /// 敵1人の行動: 動ける先（今のマスも含む）×届く相手のすべてを戦闘予測で評価し、いちばん良いものを選ぶ
         /// （ブラウザ版の敵の行動選びと同じ評価 BattlePlan.ScoreAttack）。攻撃できなければ、いちばん近い味方へ近づく
         /// </summary>
-        private void EnemyAct(UnitState enemy)
+        private void EnemyAct(UnitState enemy) => PerformEnemyAct(enemy, PrepareEnemyAct(enemy));
+
+        private struct EnemyPlan
+        {
+            public UnitState target;
+            public BattleOption option;
+        }
+
+        /// <summary>敵1人の行動の準備: 予告した相手を攻撃できる一番よい立ち位置と攻撃を選び直して、そこへ動く</summary>
+        private EnemyPlan PrepareEnemyAct(UnitState enemy)
         {
             view.FocusOn(enemy.cell);
             var allies = units.Where(u => u.Alive && u.Side == "ally").ToList();
-            if (allies.Count == 0) return;
+            if (allies.Count == 0) return default;
             declarations.TryGetValue(enemy.Id, out var decl);
             // 予告した相手がいれば、その相手を攻撃できる一番よい立ち位置を選び直す。倒れていたら相手を選び直す
             var victim = decl?.type == "attack" ? allies.FirstOrDefault(u => u.Id == decl.targetId) : null;
@@ -606,7 +786,12 @@ namespace Srpg.Battle
             }
             declarations.Remove(enemy.Id);
             RefreshTargetRings();
-            if (target != null) Execute(enemy, target, option, switchEquip: false);
+            return new EnemyPlan { target = target, option = option };
+        }
+
+        private void PerformEnemyAct(UnitState enemy, EnemyPlan plan)
+        {
+            if (plan.target != null) Execute(enemy, plan.target, plan.option, switchEquip: false);
             else AddLog($"{enemy.Name}は近づいてきた");
         }
 
@@ -622,6 +807,8 @@ namespace Srpg.Battle
                 if (unit.Alive) view.SetUnitDimmed(unit.Id, false);
             }
             AddLog($"味方フェーズ ターン{Turn}");
+            TickStatusEffects("ally");
+            if (CheckEnd()) return;
             PlanEnemyActions();
         }
 

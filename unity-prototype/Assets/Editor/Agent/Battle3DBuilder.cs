@@ -184,7 +184,16 @@ namespace Srpg.EditorAgent
             // コマンド「魔法」の一覧（入れ替えた一覧）
             hud.GetComponentsInChildren<UnityEngine.UI.Button>(true).First(x => x.name == "Command_魔法").onClick.Invoke();
             RenderWithHud(hud, camera, rt, "Battle3D_ui_magic_list");
-            hud.GetComponentsInChildren<UnityEngine.UI.Button>(true).First(x => x.name == "Command_戻る").onClick.Invoke();
+            // 補助の魔法「回復」: 届く味方（緑）から対象を選ぶ
+            hud.GetComponentsInChildren<UnityEngine.UI.Button>(true).First(x => x.name == "Command_回復").onClick.Invoke();
+            RenderWithHud(hud, camera, rt, "Battle3D_ui_support");
+            controller.CancelTargeting();
+            // 敵の攻撃の前の予測（見るだけ）
+            controller.PreviewEnemyAttack("albas_rival");
+            if (controller.EnemyPreview == null) throw new InvalidOperationException("UIの確認: 敵の攻撃の予測が出なかった");
+            RenderWithHud(hud, camera, rt, "Battle3D_ui_enemy_preview");
+            controller.ClearEnemyPreview();
+            controller.Select("albas");
             var albasUi = controller.Units.First(u => u.source.id == "albas");
             controller.TapCell(albasUi.cell + new Vector2Int(0, -2));
             RenderWithHud(hud, camera, rt, "Battle3D_ui_acting");

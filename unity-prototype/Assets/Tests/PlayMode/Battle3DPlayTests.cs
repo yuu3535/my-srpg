@@ -100,6 +100,47 @@ namespace Srpg.Tests
             }
         }
 
+        /// <summary>補助の魔法（回復・加速）: 届く味方を選んで使う</summary>
+        [UnityTest]
+        public IEnumerator SupportMagic()
+        {
+            SceneManager.LoadScene("Battle3D");
+            yield return null;
+            yield return null;
+            var controller = Object.FindFirstObjectByType<Battle3DController>();
+            controller.RollsOverride = new ForecastRolls();
+            var albas = controller.Units.First(u => u.Id == "albas");
+            var ringholm = controller.Units.First(u => u.Id == "ringholm");
+            ringholm.plan.hp = 5;
+
+            // 回復: 範囲の味方を押すと、回復量（6＋魔攻÷4）×3 だけ回復し、アルバスは行動済み
+            controller.Select("albas");
+            var heal = controller.SupportsOf(albas).First(o => o.label == "回復");
+            Assert.IsTrue(controller.CanSupportFromHere(heal), "回復が届く味方がいる");
+            int mpBefore = albas.plan.mp;
+            controller.ChooseSupport(heal);
+            Assert.AreEqual(Battle3DController.Mode.Support, controller.CurrentMode);
+            var target = controller.Units.Where(u => u.Side == "ally" && u.Alive && Mathf.Abs(u.cell.x - albas.cell.x) + Mathf.Abs(u.cell.y - albas.cell.y) <= heal.rangeMax)
+                .OrderBy(u => u.plan.hp).First();
+            int hpBefore = target.plan.hp;
+            controller.TapCell(target.cell);
+            int expected = Mathf.Min(target.plan.maxHp, hpBefore + (6 + albas.plan.stats.mag / 4) * 3);
+            Assert.AreEqual(expected, target.plan.hp, "回復量");
+            Assert.Less(albas.plan.mp, mpBefore, "MPを払う");
+            Assert.IsTrue(albas.acted, "回復したら行動済み");
+
+            // 加速を自分に: そのまま続けて行動できる
+            albas.acted = false;
+            albas.moved = false;
+            controller.Select("albas");
+            var haste = controller.SupportsOf(albas).First(o => o.label == "加速");
+            controller.ChooseSupport(haste);
+            controller.TapCell(albas.cell);
+            Assert.IsFalse(albas.acted, "加速を自分に使うと、もう一度行動できる");
+            Assert.AreSame(albas, controller.Selected);
+            controller.RollsOverride = null;
+        }
+
         /// <summary>画面のUI（コマンド一覧）のボタンで操作する</summary>
         [UnityTest]
         public IEnumerator PlayWithHudButtons()

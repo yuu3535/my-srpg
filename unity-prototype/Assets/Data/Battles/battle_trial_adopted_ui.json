@@ -104,9 +104,11 @@
           "label": "召喚「ヒトダマ」",
           "sub": "戦技",
           "mpCost": "1d4",
-          "index": -1
+          "index": -1,
+          "supportIndex": -1
         }
-      ]
+      ],
+      "supports": []
     },
     {
       "id": "arshe",
@@ -282,21 +284,25 @@
           "label": "破壊",
           "sub": "戦技",
           "mpCost": "1d6",
-          "index": 2
+          "index": 2,
+          "supportIndex": -1
         },
         {
           "label": "落雷",
           "sub": "戦技",
           "mpCost": "1d6",
-          "index": 3
+          "index": 3,
+          "supportIndex": -1
         },
         {
           "label": "封印",
           "sub": "戦技",
           "mpCost": "1d8",
-          "index": -1
+          "index": -1,
+          "supportIndex": -1
         }
-      ]
+      ],
+      "supports": []
     },
     {
       "id": "albas",
@@ -380,25 +386,69 @@
           "label": "破壊",
           "sub": "戦技",
           "mpCost": "1d6",
-          "index": 0
+          "index": 0,
+          "supportIndex": -1
         },
         {
           "label": "回復",
           "sub": "戦技",
           "mpCost": "1d6",
-          "index": -1
+          "index": -1,
+          "supportIndex": 0
         },
         {
           "label": "加速",
           "sub": "戦技",
           "mpCost": "1d6",
-          "index": -1
+          "index": -1,
+          "supportIndex": 1
         },
         {
           "label": "転移",
           "sub": "戦技",
           "mpCost": "1d8",
-          "index": -1
+          "index": -1,
+          "supportIndex": -1
+        }
+      ],
+      "supports": [
+        {
+          "label": "回復",
+          "kind": "support",
+          "artName": "回復",
+          "itemId": "",
+          "rangeMin": 0,
+          "rangeMax": 3,
+          "isArt": true,
+          "isMagic": true,
+          "spell": {
+            "id": "治癒",
+            "name": "回復",
+            "targetType": "ally",
+            "mpCost": "1d6",
+            "effectType": "heal",
+            "statusEffect": ""
+          },
+          "equipSpell": null
+        },
+        {
+          "label": "加速",
+          "kind": "support",
+          "artName": "加速",
+          "itemId": "",
+          "rangeMin": 0,
+          "rangeMax": 3,
+          "isArt": true,
+          "isMagic": true,
+          "spell": {
+            "id": "加速",
+            "name": "加速",
+            "targetType": "ally",
+            "mpCost": "1d6",
+            "effectType": "extraAction",
+            "statusEffect": ""
+          },
+          "equipSpell": null
         }
       ]
     },
@@ -419,9 +469,9 @@
       "portrait": "young_karima",
       "cardUv": {
         "x": 0.3666666666666667,
-        "y": 0.6798420388101458,
+        "y": 0.6798421708431399,
         "w": 0.3333333333333333,
-        "h": 0.3201579611898541
+        "h": 0.32015782915686003
       },
       "bustUv": {
         "x": 0.3666666666666667,
@@ -508,25 +558,50 @@
           "label": "結界",
           "sub": "戦技",
           "mpCost": "1d6",
-          "index": -1
+          "index": -1,
+          "supportIndex": 0
         },
         {
           "label": "破壊",
           "sub": "戦技",
           "mpCost": "1d6",
-          "index": 1
+          "index": 1,
+          "supportIndex": -1
         },
         {
           "label": "虚像",
           "sub": "戦技",
           "mpCost": "1d8",
-          "index": -1
+          "index": -1,
+          "supportIndex": -1
         },
         {
           "label": "封印",
           "sub": "戦技",
           "mpCost": "1d8",
-          "index": -1
+          "index": -1,
+          "supportIndex": -1
+        }
+      ],
+      "supports": [
+        {
+          "label": "結界",
+          "kind": "support",
+          "artName": "結界",
+          "itemId": "",
+          "rangeMin": 0,
+          "rangeMax": 2,
+          "isArt": true,
+          "isMagic": true,
+          "spell": {
+            "id": "結界",
+            "name": "結界",
+            "targetType": "ally",
+            "mpCost": "1d6",
+            "effectType": "barrier",
+            "statusEffect": ""
+          },
+          "equipSpell": null
         }
       ]
     },
@@ -547,9 +622,9 @@
       "portrait": "forest_guard",
       "cardUv": {
         "x": 0.3785714285714286,
-        "y": 0.5610599078341014,
+        "y": 0.5610600133096018,
         "w": 0.2857142857142857,
-        "h": 0.30069124423963134
+        "h": 0.30069113876413095
       },
       "bustUv": {
         "x": 0.3785714285714286,
@@ -593,7 +668,8 @@
         }
       ],
       "artList": [],
-      "magicList": []
+      "magicList": [],
+      "supports": []
     },
     {
       "id": "dylan",
@@ -658,7 +734,8 @@
         }
       ],
       "artList": [],
-      "magicList": []
+      "magicList": [],
+      "supports": []
     },
     {
       "id": "herel",
@@ -756,9 +833,11 @@
           "label": "星の魔核",
           "sub": "装備",
           "mpCost": "1d8",
-          "index": 0
+          "index": 0,
+          "supportIndex": -1
         }
-      ]
+      ],
+      "supports": []
     },
     {
       "id": "albas_rival",
@@ -842,25 +921,69 @@
           "label": "破壊",
           "sub": "戦技",
           "mpCost": "1d6",
-          "index": 0
+          "index": 0,
+          "supportIndex": -1
         },
         {
           "label": "回復",
           "sub": "戦技",
           "mpCost": "1d6",
-          "index": -1
+          "index": -1,
+          "supportIndex": 0
         },
         {
           "label": "加速",
           "sub": "戦技",
           "mpCost": "1d6",
-          "index": -1
+          "index": -1,
+          "supportIndex": 1
         },
         {
           "label": "転移",
           "sub": "戦技",
           "mpCost": "1d8",
-          "index": -1
+          "index": -1,
+          "supportIndex": -1
+        }
+      ],
+      "supports": [
+        {
+          "label": "回復",
+          "kind": "support",
+          "artName": "回復",
+          "itemId": "",
+          "rangeMin": 0,
+          "rangeMax": 3,
+          "isArt": true,
+          "isMagic": true,
+          "spell": {
+            "id": "治癒",
+            "name": "回復",
+            "targetType": "ally",
+            "mpCost": "1d6",
+            "effectType": "heal",
+            "statusEffect": ""
+          },
+          "equipSpell": null
+        },
+        {
+          "label": "加速",
+          "kind": "support",
+          "artName": "加速",
+          "itemId": "",
+          "rangeMin": 0,
+          "rangeMax": 3,
+          "isArt": true,
+          "isMagic": true,
+          "spell": {
+            "id": "加速",
+            "name": "加速",
+            "targetType": "ally",
+            "mpCost": "1d6",
+            "effectType": "extraAction",
+            "statusEffect": ""
+          },
+          "equipSpell": null
         }
       ]
     }

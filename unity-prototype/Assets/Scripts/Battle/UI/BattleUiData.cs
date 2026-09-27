@@ -20,7 +20,8 @@ namespace Srpg.Battle
     public class UiListEntry
     {
         public string label, sub, mpCost;
-        public int index = -1;
+        public int index = -1;          // 攻撃（options の番号）
+        public int supportIndex = -1;   // 補助（supports の番号）
     }
 
     [Serializable]
@@ -35,6 +36,7 @@ namespace Srpg.Battle
         public BattleOption[] options;           // 味方が選べる攻撃（距離はまだ見ていない）
         public BattleOption[] enemyOptions;      // 敵として選ぶ攻撃（ブラウザ版 trialEnemyAttackOptions）
         public UiListEntry[] artList, magicList; // コマンド「戦技」「魔法」の一覧（使えないものも出す）
+        public BattleOption[] supports;          // 補助の魔法（回復・結界・加速・治癒の魔核。kind = "support"）
     }
 
     [Serializable]
