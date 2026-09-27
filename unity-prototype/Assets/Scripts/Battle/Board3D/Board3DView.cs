@@ -18,7 +18,7 @@ namespace Srpg.Battle
     /// 操作: 押す＝マスを知らせる（CellTapped。受け手がいなければそのマスを選ぶ。キャラの体を押したら、そのキャラのマス）
     ///       ／ 横にスワイプ・Q/E・画面のボタン＝45°回す ／ T・ボタン＝真上と斜め
     /// </summary>
-    public class Board3DView : MonoBehaviour
+    public partial class Board3DView : MonoBehaviour
     {
         /// <summary>キャラの足元の見せ方（台座を外すかの比較。原作者 2026-09-27）</summary>
         public enum FootStyle
@@ -180,6 +180,7 @@ namespace Srpg.Battle
             {
                 var cell = new Vector2Int(c, r);
                 tiles[cell] = textured && TextureMaterial("top_stone") != null ? BuildTexturedTile(cell) : BuildColoredTile(cell);
+                RegisterTallTile(cell, tiles[cell]);
                 AddMarker(cell);
             }
 
@@ -190,6 +191,7 @@ namespace Srpg.Battle
                 tile.name = $"Scenery_{cell.x}_{cell.y}";
                 var collider = tile.GetComponent<Collider>();
                 if (collider != null) Object.DestroyImmediate(collider);
+                RegisterTallTile(cell, tile);
             }
             foreach (var cell in map.SceneryTrees) AddModelTree(cell);
             AddBackdrop();
@@ -220,6 +222,7 @@ namespace Srpg.Battle
             unitVisuals.Clear();
             unitBodies.Clear();
             rangeTiles.Clear();
+            ClearOccluders();
             boardRoot = null;
             backdropRect = null;
         }
@@ -557,6 +560,7 @@ namespace Srpg.Battle
             foreach (var visual in unitVisuals.Values)
                 if (visual.targetRing != null && visual.targetRing.gameObject.activeSelf)
                     visual.targetRing.color = new Color(TargetRingColor.r, TargetRingColor.g, TargetRingColor.b, pulse);
+            UpdateOcclusion();
         }
 
         private void LateUpdate() => UpdateBillboards();
@@ -595,6 +599,7 @@ namespace Srpg.Battle
                 crown.GetComponent<Renderer>().sharedMaterial = textured && TextureMaterial("top_moss") != null
                     ? TextureMaterial("top_moss") : LitMaterial(new Color32(46, 78, 50, 255));
             }
+            RegisterOccluder(root.gameObject);
         }
 
         /// <summary>
@@ -622,6 +627,7 @@ namespace Srpg.Battle
             }
             AddBox(root, "Beam", new Vector3(0f, h + 0.06f, 0f), new Vector3(1.08f, 0.16f, 0.24f), wood);
             AddBox(root, "Cap", new Vector3(0f, h + 0.2f, 0f), new Vector3(1.2f, 0.1f, 0.34f), stone);
+            RegisterOccluder(root.gameObject);
             if (lanterns)
                 AddPointLight($"GateGlow_{cell.x}_{cell.y}", map.TopCenter(cell) + Vector3.up * 0.6f, new Color32(255, 214, 150, 255), 2.6f, 1.6f);
         }

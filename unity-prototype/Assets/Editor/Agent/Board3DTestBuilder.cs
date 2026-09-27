@@ -189,6 +189,14 @@ namespace Srpg.EditorAgent
             Render(camera, rt, "Board3D_T6_close_front");
             controller.SetView(false, 0, true);
             Render(camera, rt, "Board3D_T6_close_top");
+            // 隠れたキャラの見せ方: 隠している木・壁・門だけ半透明（4方向から）
+            controller.FocusOnPoint(Board3DLayout.TopCenter(new Vector2Int(2, 4)), true);
+            foreach (int turn in new[] { 0, 2, 4, 6 })
+            {
+                controller.SetView(true, turn, true);
+                Debug.Log($"[Board3DTestBuilder] 半透明にした物（向き {turn * 45}°）: {controller.FadedCount}");
+                Render(camera, rt, $"Board3D_T6_occlusion_{turn * 45}");
+            }
             controller.SetOverview(true, true);
             controller.SetView(true, 0, true);
 
