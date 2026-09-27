@@ -54,7 +54,9 @@ namespace Srpg.Battle
         [SerializeField] private bool showCellInfo = true;                  // 左上の「列・行・地形」（戦闘の画面では戦闘の表示を出すので消す）
         [SerializeField] private NamedTexture[] boardTextures = Array.Empty<NamedTexture>();
         [SerializeField] private UnitSprite[] unitSprites = Array.Empty<UnitSprite>();
-        [SerializeField] private Sprite treeSprite;                         // 板に貼る木の絵
+        [SerializeField] private Sprite treeSprite;                         // 板に貼る木の絵（T4 の仮の絵）
+        // 描いてもらった木の絵（原作者 2026-09-27）。あれば、3Dの木の模型の代わりに、キャラと同じ板の絵で立てる
+        [SerializeField] private Sprite[] paintedTrees = Array.Empty<Sprite>();
         [SerializeField] private float unitHeight = 1.25f;                  // キャラの絵の高さ（1マス＝1）
         [SerializeField] private FootStyle footStyle = FootStyle.TeamFrame;  // 原作者 2026-09-27: C'（UI素材の枠 D4・D5）
         [SerializeField] private Sprite allyFrameSprite;                    // UI素材 D4（assets/ui/select_ally_d4.png）
@@ -98,6 +100,35 @@ namespace Srpg.Battle
             return groundMaterial;
         }
 
+        /// <summary>景色のマスを、すき間のない1枚の平らな面（地面の1枚絵を貼る）にまとめる</summary>
+        private void BuildFlatScenery()
+        {
+            var vertices = new List<Vector3>();
+            var uvs = new List<Vector2>();
+            var tris = new List<int>();
+            foreach (var cell in map.SceneryCells)
+            {
+                var c = map.CellCenter(cell);
+                var r = GroundUv(cell);
+                int i = vertices.Count;
+                vertices.Add(c + new Vector3(-0.5f, 0f, -0.5f)); uvs.Add(new Vector2(r.xMin, r.yMin));
+                vertices.Add(c + new Vector3(-0.5f, 0f, 0.5f)); uvs.Add(new Vector2(r.xMin, r.yMax));
+                vertices.Add(c + new Vector3(0.5f, 0f, 0.5f)); uvs.Add(new Vector2(r.xMax, r.yMax));
+                vertices.Add(c + new Vector3(0.5f, 0f, -0.5f)); uvs.Add(new Vector2(r.xMax, r.yMin));
+                tris.AddRange(new[] { i, i + 1, i + 2, i, i + 2, i + 3 });
+            }
+            var mesh = new Mesh { name = "FlatScenery", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+            mesh.SetVertices(vertices);
+            mesh.SetUVs(0, uvs);
+            mesh.SetTriangles(tris, 0);
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            var go = new GameObject("Scenery_Flat");
+            go.transform.SetParent(boardRoot, false);
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
+            go.AddComponent<MeshRenderer>().sharedMaterial = GroundMaterial();
+        }
+
         /// <summary>地面の1枚絵の中の、そのマスの範囲（uv。左下が 0）</summary>
         private Rect GroundUv(Vector2Int cell)
         {
@@ -115,9 +146,10 @@ namespace Srpg.Battle
         // 半透明の絵を重ねる順（大きいほど手前）。キャラ＞陣営の目印＞移動範囲＞足元の影＞マップ（原作者 2026-09-27）
         private const int OrderShadow = -30, OrderRange = -20, OrderMark = -10, OrderCharacter = 10;
 
-        private static readonly Color RangeColor = new Color(0.30f, 0.60f, 1f, 0.42f);   // 移動範囲は従来の青（原作者 2026-09-25）
-        public static readonly Color AttackRangeColor = new Color(1f, 0.30f, 0.26f, 0.40f); // 攻撃の範囲は赤
-        public static readonly Color SupportRangeColor = new Color(0.35f, 0.9f, 0.55f, 0.40f); // 補助の範囲は緑
+        // 範囲の色（明るい地面の1枚絵でも読めるよう濃くした。原作者 2026-09-28）。面は RangeSprite で、縁ほど濃い
+        private static readonly Color RangeColor = new Color(0.12f, 0.42f, 1f, 0.78f);   // 移動範囲は青（原作者 2026-09-25）
+        public static readonly Color AttackRangeColor = new Color(0.95f, 0.16f, 0.14f, 0.74f); // 攻撃の範囲は赤
+        public static readonly Color SupportRangeColor = new Color(0.14f, 0.78f, 0.38f, 0.74f); // 補助の範囲は緑
         private static readonly Color TargetRingColor = new Color(1f, 0.24f, 0.30f, 1f); // 狙われている印（赤い丸。原作者 2026-09-27）
 
         private Board3DMap map;
@@ -220,8 +252,14 @@ namespace Srpg.Battle
                 AddMarker(cell);
             }
 
-            // まわりの景色（押せない。当たり判定を外す）
-            foreach (var cell in map.SceneryCells)
+            // まわりの景色（押せない。当たり判定を外す）。
+            // 地面の1枚絵のときは、段差をなくした1枚の平らな面にし、マス目も付けない（原作者 2026-09-27。森らしさは3Dの木で出す）
+            if (GroundMaterial() != null)
+            {
+                map.FlattenScenery();
+                BuildFlatScenery();
+            }
+            else foreach (var cell in map.SceneryCells)
             {
                 var tile = textured && TextureMaterial("top_stone") != null ? BuildTexturedTile(cell) : BuildColoredTile(cell);
                 tile.name = $"Scenery_{cell.x}_{cell.y}";
@@ -229,12 +267,12 @@ namespace Srpg.Battle
                 if (collider != null) Object.DestroyImmediate(collider);
                 RegisterTallTile(cell, tile);
             }
-            foreach (var cell in map.SceneryTrees) AddModelTree(cell);
+            foreach (var cell in map.SceneryTrees) AddTree(cell);
             AddGrassEdges();
             AddBackdrop();
 
             foreach (var unit in map.Units) AddUnit(unit);
-            foreach (var cell in map.ModelTrees) AddModelTree(cell);
+            foreach (var cell in map.ModelTrees) AddTree(cell);
             foreach (var cell in map.PictureTrees) AddPictureTree(cell);
             foreach (var cell in map.Gates) AddGate(cell);
             foreach (var cell in map.Railings) AddRailings(cell);
@@ -319,7 +357,8 @@ namespace Srpg.Battle
             }
             else
             {
-                visual.footParts.Add(AddFlat($"Shadow_{unit.id}", ShadowSprite(), top + Vector3.up * 0.012f, 0.78f, Color.white, OrderShadow).transform);
+                // 足元の影（明るい地面でキャラが沈まないよう、濃く大きくした。原作者 2026-09-28）
+                visual.footParts.Add(AddFlat($"Shadow_{unit.id}", ShadowSprite(), top + Vector3.up * 0.012f, 1.15f, Color.white, OrderShadow).transform);
                 if (footStyle == FootStyle.TeamRing)
                     visual.footParts.Add(AddFlat($"Ring_{unit.id}", RingSprite(), top + Vector3.up * 0.016f, 0.86f,
                         unit.enemy ? new Color32(224, 72, 60, 230) : new Color32(77, 140, 255, 230), OrderMark).transform);
@@ -373,7 +412,10 @@ namespace Srpg.Battle
         public void SetTargeted(string id, bool targeted)
         {
             if (unitVisuals.TryGetValue(id, out var visual) && visual.targetRing != null)
+            {
                 visual.targetRing.gameObject.SetActive(targeted);
+                if (targeted) UpdateBillboards();   // 出したその場で、今の見え方の位置に合わせる
+            }
         }
 
         public bool IsTargeted(string id) =>
@@ -393,7 +435,7 @@ namespace Srpg.Battle
             rangeTiles.Clear();
             if (cells == null) return;
             foreach (var cell in cells)
-                rangeTiles.Add(AddFlat($"Range_{cell.x}_{cell.y}", SquareSprite(), map.TopCenter(cell) + Vector3.up * 0.01f, 1f - TileGap, color ?? RangeColor, OrderRange).gameObject);
+                rangeTiles.Add(AddFlat($"Range_{cell.x}_{cell.y}", RangeSprite(), map.TopCenter(cell) + Vector3.up * 0.01f, 1f - TileGap, color ?? RangeColor, OrderRange).gameObject);
         }
 
         /// <summary>倒れたキャラを盤面から消す</summary>
@@ -512,7 +554,8 @@ namespace Srpg.Battle
         private Sprite ShadowSprite()
         {
             if (shadowSprite == null)
-                shadowSprite = RadialSprite(r => new Color(0.03f, 0.02f, 0.05f, 0.6f * Mathf.Clamp01(1f - r) * Mathf.Clamp01(1f - r)));
+                // キャラの絵に真ん中が隠れるので、マスより少し大きくし、外側（半径0.4まで）も濃さを保って縁でなめらかに消す
+                shadowSprite = RadialSprite(r => new Color(0.05f, 0.04f, 0.07f, 0.72f * (1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.4f, 1f, r)))));
             return shadowSprite;
         }
 
@@ -525,6 +568,26 @@ namespace Srpg.Battle
         }
 
         /// <summary>白い正方形（色は後から付ける）。1ユニット四方</summary>
+        private Sprite rangeSprite;
+
+        /// <summary>範囲のマス: 中は薄め（地面が透けて見える）、縁は濃い線（白。色は Color で付ける）</summary>
+        private Sprite RangeSprite()
+        {
+            if (rangeSprite != null) return rangeSprite;
+            const int n = 64;
+            var tex = new Texture2D(n, n, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+            for (int y = 0; y < n; y++)
+            for (int x = 0; x < n; x++)
+            {
+                int edge = Mathf.Min(Mathf.Min(x, y), Mathf.Min(n - 1 - x, n - 1 - y));
+                float a = edge < 3 ? 1f : edge < 7 ? Mathf.Lerp(1f, 0.55f, (edge - 3) / 4f) : 0.55f;
+                tex.SetPixel(x, y, new Color(1f, 1f, 1f, a));
+            }
+            tex.Apply();
+            rangeSprite = Sprite.Create(tex, new Rect(0, 0, n, n), new Vector2(0.5f, 0.5f), n);
+            return rangeSprite;
+        }
+
         private Sprite SquareSprite()
         {
             if (squareSprite == null)
@@ -651,8 +714,14 @@ namespace Srpg.Battle
             // 狙われている印はゆっくり明滅する
             float pulse = 0.7f + 0.3f * Mathf.Sin(Time.realtimeSinceStartup * 5.5f);
             foreach (var visual in unitVisuals.Values)
-                if (visual.targetRing != null && visual.targetRing.gameObject.activeSelf)
-                    visual.targetRing.color = new Color(TargetRingColor.r, TargetRingColor.g, TargetRingColor.b, pulse);
+            {
+                if (visual.targetRing == null || !visual.targetRing.gameObject.activeSelf) continue;
+                visual.targetRing.color = new Color(TargetRingColor.r, TargetRingColor.g, TargetRingColor.b, pulse);
+                // 丸はキャラの絵の真ん中に合わせる（真上から見ると絵はマスの中央へ動くので、それに付いていく。原作者の指摘 2026-09-28）
+                var body = visual.billboard.sprite.GetComponent<SpriteRenderer>();
+                if (body != null) visual.targetRing.transform.position = body.bounds.center;
+                visual.targetRing.transform.localScale = Vector3.one * Mathf.Lerp(unitHeight * 0.95f, topViewUnitSize * 1.1f, t);
+            }
             UpdateOcclusion();
         }
 
@@ -753,6 +822,26 @@ namespace Srpg.Battle
         }
 
         /// <summary>仮の木（板に貼った絵）。キャラと同じく常にカメラの方を向く</summary>
+        private void AddTree(Vector2Int cell)
+        {
+            if (paintedTrees != null && paintedTrees.Length > 0 && paintedTrees.Any(s => s != null)) AddPaintedTree(cell);
+            else AddModelTree(cell);
+        }
+
+        /// <summary>描いた木の絵を立てる（種類・大きさ・位置をマスごとに少しずつ変える。同じマップなら毎回同じ）</summary>
+        private void AddPaintedTree(Vector2Int cell)
+        {
+            var sprites = paintedTrees.Where(s => s != null).ToArray();
+            float h = Board3DScenery.Hash(cell.x * 3 + 1, cell.y * 5 + 2);
+            var sprite = sprites[Mathf.Min(sprites.Length - 1, (int)(h * sprites.Length))];
+            float height = 2.3f * (0.85f + 0.35f * Board3DScenery.Hash(cell.y, cell.x));
+            var position = map.TopCenter(cell);
+            if (!map.InBounds(cell))
+                position += new Vector3((h - 0.5f) * 0.35f, 0f, (Board3DScenery.Hash(cell.x + 7, cell.y) - 0.5f) * 0.35f);
+            var tree = AddBillboard("Tree_Painted", sprite, position, height);
+            RegisterSpriteOccluder(tree.sprite.GetComponent<SpriteRenderer>());
+        }
+
         private void AddPictureTree(Vector2Int cell)
         {
             if (treeSprite == null) return;
@@ -1236,6 +1325,18 @@ namespace Srpg.Battle
         /// <summary>そのマスを画面に入れる（寄りのとき。全体のときは覚えておくだけ）</summary>
         public void FocusOn(Vector2Int cell, bool immediate = false) => FocusOnPoint(map.TopCenter(cell), immediate);
 
+        /// <summary>
+        /// そのマス（のキャラ）が画面の見やすい所から外れていたら寄る（原作者 2026-09-28: 押しにくい所・動いた先にカメラが付いてこない）。
+        /// 見やすい所: 左右の端・上の帯・下のカード・右のコマンドにかからない、画面の真ん中あたり
+        /// </summary>
+        public void FollowCell(Vector2Int cell)
+        {
+            if (targetCamera == null || overview || map == null) return;
+            var p = targetCamera.WorldToViewportPoint(transform.TransformPoint(map.TopCenter(cell) + Vector3.up * unitHeight * 0.5f));
+            if (p.x >= 0.25f && p.x <= 0.72f && p.y >= 0.32f && p.y <= 0.8f) return;
+            FocusOn(cell);
+        }
+
         public void FocusOnPoint(Vector3 point, bool immediate = false)
         {
             closeFocus = ClampFocus(point);
@@ -1412,9 +1513,9 @@ namespace Srpg.Battle
                 dragging = false;
                 pressPosition = lastDrag = position;
             }
-            else if (pressing && pointer.press.isPressed && !overview)
+            else if (pressing && pointer.press.isPressed)
             {
-                // 寄りのときは、指でずらして見回す（回すのはボタン・Q/E）
+                // 指でずらして見回す（寄り・全体とも。原作者 2026-09-28: 全体のときも動かせないと、選び直さないといけない）。回すのはボタン・Q/E
                 if (!dragging && (position - pressPosition).magnitude > TapPixels) dragging = true;
                 if (dragging) PanByScreen(position - lastDrag);
                 lastDrag = position;
@@ -1424,8 +1525,6 @@ namespace Srpg.Battle
                 pressing = false;
                 var delta = position - pressPosition;
                 if (dragging) dragging = false;
-                else if (overview && Mathf.Abs(delta.x) >= SwipePixels && Mathf.Abs(delta.x) > Mathf.Abs(delta.y))
-                    TurnBy((delta.x > 0 ? 1 : -1) * (tilted ? 1 : 2));
                 else if (delta.magnitude <= TapPixels)
                     Tap(position);
             }

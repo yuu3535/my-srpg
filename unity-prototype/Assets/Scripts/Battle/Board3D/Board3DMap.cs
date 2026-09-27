@@ -70,6 +70,12 @@ namespace Srpg.Battle
 
         public bool IsScenery(Vector2Int cell) => !InBounds(cell) && scenery.ContainsKey(cell);
 
+        /// <summary>景色の段差をなくす（地面の1枚絵のとき。絵は平らな地面として描いてあるため）</summary>
+        public void FlattenScenery()
+        {
+            foreach (var cell in new List<Vector2Int>(scenery.Keys)) scenery[cell] = (scenery[cell].type, 0f);
+        }
+
         public char TerrainAt(Vector2Int cell)
         {
             if (InBounds(cell)) return terrain[cell.x, cell.y];

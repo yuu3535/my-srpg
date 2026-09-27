@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -20,6 +21,13 @@ namespace Srpg.Battle
             public Material[][] originals;
             public Bounds bounds;
             public bool faded;
+            public SpriteRenderer sprite;   // 板の絵（木の絵）。カメラの向きで形が変わるので、毎回の大きさで見る
+        }
+
+        /// <summary>板の絵（描いた木）を、隠す物として登録する（半透明は絵の色の不透明度で）</summary>
+        private void RegisterSpriteOccluder(SpriteRenderer sprite)
+        {
+            if (sprite != null) occluders.Add(new Occluder { sprite = sprite, renderers = Array.Empty<Renderer>(), originals = Array.Empty<Material[]>() });
         }
 
         private const float TallTile = 0.45f;   // これより高いマス（石の基礎・茂み・壁・景色の崖）は隠す物になりうる
@@ -74,10 +82,12 @@ namespace Srpg.Battle
             foreach (var o in occluders)
             {
                 bool hide = false;
+                var bounds = o.sprite != null ? o.sprite.bounds : o.bounds;
+                if (o.sprite != null) bounds.Expand(new Vector3(-bounds.size.x * 0.3f, 0f, -bounds.size.z * 0.3f));   // 絵の外側の透明な所は除く
                 foreach (var p in occlusionPoints)
                 {
                     var ray = new Ray(p - forward * back, forward);
-                    if (o.bounds.IntersectRay(ray, out float d) && d < back - 0.3f) { hide = true; break; }
+                    if (bounds.IntersectRay(ray, out float d) && d < back - 0.3f) { hide = true; break; }
                 }
                 SetFaded(o, hide);
             }
@@ -87,6 +97,12 @@ namespace Srpg.Battle
         {
             if (o.faded == fade) return;
             o.faded = fade;
+            if (o.sprite != null)
+            {
+                var c = o.sprite.color;
+                o.sprite.color = new Color(c.r, c.g, c.b, fade ? occluderAlpha : 1f);
+                return;
+            }
             for (int i = 0; i < o.renderers.Length; i++)
             {
                 var r = o.renderers[i];

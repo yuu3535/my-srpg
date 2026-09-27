@@ -85,6 +85,20 @@ namespace Srpg.EditorAgent
             Board3DTestBuilder.ConfigureView(view, camera, light, data.units.Select(u => u.id), buildOnStart: false, startOverview: false);
             var viewSo = new SerializedObject(view);
             viewSo.FindProperty("showCellInfo").boolValue = false;   // 左上は戦闘の表示（フェーズ・ログ）
+            // 盤面は国境監視路（Battle3DController.layout）。地面は描いてもらった1枚絵（あれば）
+            const string groundPath = Board3DTestBuilder.GroundDir + "/watchroad_ground.png";
+            if (File.Exists(groundPath))
+            {
+                AssetDatabase.ImportAsset(groundPath, ImportAssetOptions.ForceSynchronousImport);
+                var groundImporter = (TextureImporter)AssetImporter.GetAtPath(groundPath);
+                groundImporter.wrapMode = TextureWrapMode.Clamp;
+                groundImporter.filterMode = FilterMode.Trilinear;
+                groundImporter.mipmapEnabled = true;
+                groundImporter.maxTextureSize = 4096;
+                groundImporter.textureCompression = TextureImporterCompression.Uncompressed;
+                groundImporter.SaveAndReimport();
+                viewSo.FindProperty("groundTexture").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Texture2D>(groundPath);
+            }
             viewSo.ApplyModifiedPropertiesWithoutUndo();
 
             var controllerObject = new GameObject("Battle3D");
@@ -118,7 +132,8 @@ namespace Srpg.EditorAgent
             Board3DTestBuilder.Render(camera, rt, "Battle3D_select");
 
             // 2マス奥を押して動かし、待機
-            var dest = arshe.cell + new Vector2Int(0, -2);
+            // いちばん奥へ動ける（地形の決まりで行けるマスから選ぶ）
+            var dest = controller.MoveCells.OrderBy(c => c.y).ThenBy(c => Mathf.Abs(c.x - arshe.cell.x)).First();
             TapOnScreen(view, camera, dest);
             if (arshe.cell != dest) throw new InvalidOperationException("移動範囲のマスを押して動かせなかった");
             controller.ChooseWait();
@@ -131,6 +146,8 @@ namespace Srpg.EditorAgent
             // アルバスが敵のアルバスへ攻撃する: 動いて「攻撃」→ 攻撃の範囲（赤）→ 相手を選んで戦闘予測 → 実行
             view.SetView(true, 0, true);
             var albas = controller.Units.First(u => u.source.id == "albas");
+            // 敵のアルバスを、橋の向こうの近くに置いて戦わせる（画像のため）
+            controller.TeleportForTest("albas_rival", albas.cell + new Vector2Int(0, -3));
             TapOnScreen(view, camera, albas.cell);
             TapOnScreen(view, camera, albas.cell + new Vector2Int(0, -2));
             controller.ChooseAttack();
@@ -169,6 +186,12 @@ namespace Srpg.EditorAgent
             Board3DTestBuilder.Render(camera, rt, "Battle3D_close_front");
             view.SetView(false, 0, true);
             Board3DTestBuilder.Render(camera, rt, "Battle3D_close_top");
+            // 赤い丸（狙われている印）の位置: 斜めと真上で、キャラの絵に合っているか
+            foreach (var ally in controller.Units.Where(u => u.Side == "ally")) controller.SetTargeted(ally.Id, true);
+            Board3DTestBuilder.Render(camera, rt, "Battle3D_ring_top");
+            view.SetView(true, 0, true);
+            Board3DTestBuilder.Render(camera, rt, "Battle3D_ring_tilt");
+            foreach (var ally in controller.Units.Where(u => u.Side == "ally")) controller.SetTargeted(ally.Id, false);
 
             // 画面のUI（1段目: コマンド・ユニットと武器のカード・戦闘予測の帯）
             controller.Setup();
@@ -209,6 +232,7 @@ namespace Srpg.EditorAgent
             controller.ClearEnemyPreview();
             controller.Select("albas");
             var albasUi = controller.Units.First(u => u.source.id == "albas");
+            controller.TeleportForTest("albas_rival", albasUi.cell + new Vector2Int(0, -3));
             controller.TapCell(albasUi.cell + new Vector2Int(0, -2));
             RenderWithHud(hud, camera, rt, "Battle3D_ui_acting");
             controller.ChooseAttack();
@@ -243,8 +267,7 @@ namespace Srpg.EditorAgent
             var summonEntry = controller.UiOf(ringholmS).magicList.First(m => !string.IsNullOrEmpty(m.summonUnitId));
             controller.Select("ringholm");
             controller.ChooseSummon(summonEntry);
-            foreach (var d in new[] { Vector2Int.left, Vector2Int.up, Vector2Int.right, Vector2Int.down })
-                if (controller.PendingSummons.Count == 0) controller.TapCell(ringholmS.cell + d);
+            controller.TapCell(controller.TargetCells.First());   // 隣の空いているマス（地形の決まりで置けるマス）
             if (controller.PendingSummons.Count != 1 || controller.PendingSummons[0].dueTurn != 3)
                 throw new InvalidOperationException("召喚の確認: ターン1に陣を置いてターン3に出る予定にならなかった");
             view.FocusOn(ringholmS.cell, true);

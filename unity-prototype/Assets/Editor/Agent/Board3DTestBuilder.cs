@@ -386,9 +386,21 @@ namespace Srpg.EditorAgent
             guide.Apply();
             tiles.Apply();
             string guidePath = $"{GroundDir}/watchroad_guide.png", tilesPath = $"{GroundDir}/watchroad_ground_provisional.png";
-            File.WriteAllBytes(guidePath, guide.EncodeToPNG());
-            File.WriteAllBytes(tilesPath, tiles.EncodeToPNG());
-            File.WriteAllBytes(GuideDocPath, guide.EncodeToPNG());
+            // 中身が変わったときだけ書く（読み込み中の絵は上書きできないことがあるため）
+            void WriteIfChanged(string path, byte[] bytes)
+            {
+                if (File.Exists(path) && File.ReadAllBytes(path).AsSpan().SequenceEqual(bytes)) return;
+                WriteWithRetry(path, bytes);
+            }
+            WriteIfChanged(guidePath, guide.EncodeToPNG());
+            WriteIfChanged(tilesPath, tiles.EncodeToPNG());
+            // docs の下絵は、中身が変わったときだけ書く（画像を開いていると書けないことがあるため）
+            var guideBytes = guide.EncodeToPNG();
+            if (!File.Exists(GuideDocPath) || !File.ReadAllBytes(GuideDocPath).AsSpan().SequenceEqual(guideBytes))
+            {
+                try { File.WriteAllBytes(GuideDocPath, guideBytes); }
+                catch (IOException e) { Debug.LogWarning($"[Board3DTestBuilder] 下絵を docs に書けなかった（開いている？）: {e.Message}"); }
+            }
             foreach (var path in new[] { guidePath, tilesPath })
             {
                 AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
@@ -495,7 +507,9 @@ namespace Srpg.EditorAgent
             tex.SetPixels32(pixels);
             tex.Apply();
             Directory.CreateDirectory(Path.GetDirectoryName(TreePicturePath));
-            File.WriteAllBytes(TreePicturePath, tex.EncodeToPNG());
+            var treeBytes = tex.EncodeToPNG();
+            if (!File.Exists(TreePicturePath) || !File.ReadAllBytes(TreePicturePath).AsSpan().SequenceEqual(treeBytes))
+                WriteWithRetry(TreePicturePath, treeBytes);   // 中身が同じなら書かない（読み込み中の絵は上書きできないことがある）
             UnityEngine.Object.DestroyImmediate(tex);
             AssetDatabase.ImportAsset(TreePicturePath, ImportAssetOptions.ForceSynchronousImport);
             var importer = (TextureImporter)AssetImporter.GetAtPath(TreePicturePath);
@@ -542,6 +556,7 @@ namespace Srpg.EditorAgent
         /// <summary>盤面の表示（Board3DView）に、カメラ・光・模様・木の絵・陣営の枠・キャラの絵（足の裏の位置つき）を渡す</summary>
         // いちばん奥の背景（発注書 第3版 M1。アイコン素材/発注UI_v3/M1.png を写したもの）
         internal const string BackdropPath = "Assets/Art/Board3D/bg_battle_m1.png";
+        internal const string PaintedTreeDir = "Assets/Art/Board3D/Trees";
 
         internal static void ConfigureView(Board3DView view, Camera camera, Light light, IEnumerable<string> unitIds, bool buildOnStart, bool startOverview = true)
         {
@@ -552,6 +567,30 @@ namespace Srpg.EditorAgent
             so.FindProperty("keyLight").objectReferenceValue = light;
             so.FindProperty("buildOnStart").boolValue = buildOnStart;
             so.FindProperty("treeSprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(TreePicturePath);
+            // 描いてもらった木の絵（tools/split_props.py が Assets/Art/Board3D/Trees に置く）
+            var treePaths = Directory.Exists(PaintedTreeDir)
+                ? Directory.GetFiles(PaintedTreeDir, "*.png").Select(p => p.Replace(Path.DirectorySeparatorChar, '/')).OrderBy(p => p, StringComparer.Ordinal).ToArray()
+                : Array.Empty<string>();
+            var treesProp = so.FindProperty("paintedTrees");
+            treesProp.arraySize = treePaths.Length;
+            for (int i = 0; i < treePaths.Length; i++)
+            {
+                AssetDatabase.ImportAsset(treePaths[i], ImportAssetOptions.ForceSynchronousImport);
+                var importer = (TextureImporter)AssetImporter.GetAtPath(treePaths[i]);
+                importer.textureType = TextureImporterType.Sprite;
+                importer.spriteImportMode = SpriteImportMode.Single;
+                var settings = new TextureImporterSettings();
+                importer.ReadTextureSettings(settings);
+                settings.spriteAlignment = (int)SpriteAlignment.BottomCenter;
+                importer.SetTextureSettings(settings);
+                importer.spritePixelsPerUnit = 400;
+                importer.alphaIsTransparency = true;
+                importer.mipmapEnabled = true;
+                importer.filterMode = FilterMode.Trilinear;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
+                importer.SaveAndReimport();
+                treesProp.GetArrayElementAtIndex(i).objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(treePaths[i]);
+            }
             var texturePaths = ConfigureBoardTextures();
             var texturesProp = so.FindProperty("boardTextures");
             texturesProp.arraySize = texturePaths.Length;

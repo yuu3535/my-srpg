@@ -38,7 +38,7 @@ namespace Srpg.Tests
             controller.TapCell(start);
             Assert.AreSame(arshe, controller.Selected, "アルシェのマスを押すと選ばれる");
             Assert.Greater(controller.View.RangeCount, 0, "移動範囲が出る");
-            var dest = start + new Vector2Int(0, -2);
+            var dest = controller.MoveCells.OrderBy(c => c.y).ThenBy(c => Mathf.Abs(c.x - start.x)).First();
             controller.TapCell(dest);
             Assert.AreEqual(dest, arshe.cell, "移動範囲のマスを押すと動く");
             Assert.AreEqual(Battle3DController.Mode.Acting, controller.CurrentMode, "動いたら「攻撃／待機」を選ぶ");
@@ -51,6 +51,7 @@ namespace Srpg.Tests
             // アルバス: 2マス奥へ動いて、敵のアルバスを攻撃（戦闘予測どおりの結果になる）
             var albas = controller.Units.First(u => u.source.id == "albas");
             var rival = controller.Units.First(u => u.source.id == "albas_rival");
+            controller.TeleportForTest("albas_rival", albas.cell + new Vector2Int(0, -3));   // 橋の向こうの近くに置く
             controller.TapCell(albas.cell);
             controller.TapCell(albas.cell + new Vector2Int(0, -2));
             controller.ChooseAttack();
@@ -144,8 +145,7 @@ namespace Srpg.Tests
             controller.ChooseSupport(transfer);
             controller.TapCell(ringholm.cell);
             Assert.AreSame(ringholm, controller.TransferAlly, "1段目で味方を選ぶ");
-            var dest = ringholm.cell + new Vector2Int(0, -1);
-            if (controller.Units.Any(u => u.Alive && u.cell == dest)) dest = ringholm.cell + new Vector2Int(1, -1);
+            var dest = controller.TargetCells.OrderBy(c => Mathf.Abs(c.x - ringholm.cell.x) + Mathf.Abs(c.y - ringholm.cell.y)).First();
             controller.TapCell(dest);
             Assert.AreEqual(dest, ringholm.cell, "2段目で選んだマスへ移る");
             Assert.IsTrue(albas.acted);
@@ -249,7 +249,7 @@ namespace Srpg.Tests
             var arshe = controller.Units.First(u => u.Id == "arshe");
             var start = arshe.cell;
             controller.Select("arshe");
-            controller.TapCell(start + new Vector2Int(0, -2));
+            controller.TapCell(controller.MoveCells.First(c => c != start));
             hud.Refresh();
             Assert.IsNotNull(Command("攻撃"), "剣を持つアルシェは「攻撃」");
             Command("戻る").onClick.Invoke();

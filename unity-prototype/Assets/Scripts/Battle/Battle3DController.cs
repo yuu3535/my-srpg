@@ -53,6 +53,23 @@ namespace Srpg.Battle
 
         [SerializeField] private Battle3DHud hud;   // 画面のUI（あれば仮の操作の欄 IMGUI は出さない）
         [SerializeField] private TextAsset uiJson;  // 攻撃の選択肢（通常攻撃・戦技・魔法。tools/export_unity_battle_ui.mjs）
+        // 盤面の配置（原作者 2026-09-27）: "watchroad"＝国境監視路（地形・高い物・最初の位置・地面の1枚絵）。空なら戦闘データから作る平らな盤面
+        [SerializeField] private string layout = "watchroad";
+
+        /// <summary>選んだキャラが動けるマス（確認用）</summary>
+        public IReadOnlyCollection<Vector2Int> MoveCells => moveCells;
+        /// <summary>補助・召喚で押せるマス（確認用）</summary>
+        public IReadOnlyCollection<Vector2Int> TargetCells => supportCells;
+
+        /// <summary>確認用: キャラを別のマスへ置く（行動にならない）</summary>
+        public void TeleportForTest(string unitId, Vector2Int cell)
+        {
+            var unit = units.FirstOrDefault(u => u.Id == unitId);
+            if (unit == null) return;
+            unit.cell = cell;
+            if (unit.plan != null) { unit.plan.x = cell.x; unit.plan.y = cell.y; }
+            view.MoveUnit(unitId, cell);
+        }
 
         private readonly Dictionary<string, UiUnit> uiUnits = new Dictionary<string, UiUnit>();
         private readonly HashSet<Vector2Int> supportCells = new HashSet<Vector2Int>();
@@ -656,7 +673,13 @@ namespace Srpg.Battle
             foreach (var tile in data.tiles ?? Array.Empty<TileData>())
                 if (tile.type == "wall" || tile.type == "void") blocked.Add(new Vector2Int(tile.x, tile.y));
 
-            map = BuildMap(data, blocked);
+            if (layout == "watchroad" && data.cols == Board3DLayout.Columns && data.rows == Board3DLayout.Rows)
+            {
+                // 国境監視路: 地形・高い物・まわりの景色は配置のとおり。キャラはこのあと足す
+                map = Board3DLayout.Watchroad();
+                map.Units.Clear();
+            }
+            else map = BuildMap(data, blocked);
             mapItems.Clear();
             usedSpecials.Clear();
             pickedThisMove = null;
@@ -664,7 +687,13 @@ namespace Srpg.Battle
                 if (mi?.item != null) mapItems[new Vector2Int(mi.x, mi.y)] = mi.item;
             foreach (var source in data.units)
             {
-                var state = new UnitState { source = source, cell = new Vector2Int(source.x, source.y) };
+                var start = new Vector2Int(source.x, source.y);
+                if (layout == "watchroad")
+                {
+                    // 監視路の最初の位置（マップ担当の配置）
+                    foreach (var (cell, id) in Board3DLayout.Units) if (id == source.id) start = cell;
+                }
+                var state = new UnitState { source = source, cell = start };
                 var snapshot = planState?.units?.FirstOrDefault(u => u.id == source.id);
                 if (snapshot != null)
                 {
@@ -796,7 +825,7 @@ namespace Srpg.Battle
             view.ShowRange(range);
             view.Select(unit.cell);
             view.SetUnitHighlighted(unit.Id, true);
-            view.FocusOn(unit.cell);
+            view.FollowCell(unit.cell);
         }
 
         private void MoveSelectedTo(Vector2Int cell)
@@ -808,6 +837,7 @@ namespace Srpg.Battle
                 view.MoveUnit(selected.Id, cell);
             }
             selected.moved = true;
+            view.FollowCell(cell);   // 動いた先が画面の端なら付いていく
             pickedThisMove = null;
             if (selected.Side == "ally" && mapItems.TryGetValue(cell, out var found))
             {
@@ -856,6 +886,8 @@ namespace Srpg.Battle
             if (currentOption == null || !currentOption.InRange(Distance(selected.cell, defender.cell)))
                 currentOption = OptionsOf(selected).FirstOrDefault(o => o.InRange(Distance(selected.cell, defender.cell))) ?? BasicOption(selected);
             forecast = ForecastFor(selected, defender, currentOption);
+            // 戦闘予測: 攻める側と受ける側のまん中に寄る（下の帯に隠れないよう、見ている所は画面の少し上）
+            view.FocusOnPoint((map.TopCenter(selected.cell) + map.TopCenter(defender.cell)) * 0.5f);
             view.ShowRange(new[] { defender.cell }, Board3DView.AttackRangeColor);
             CurrentMode = Mode.Forecast;
         }
