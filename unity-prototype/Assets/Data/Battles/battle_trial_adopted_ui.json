@@ -1,0 +1,229 @@
+{
+  "battleId": "battle_trial_adopted",
+  "units": [
+    {
+      "id": "ringholm",
+      "name": "リングホルム",
+      "side": "ally",
+      "levelLabel": "因果Lv 30",
+      "className": "ならずもの",
+      "moveLabel": "移動3・通常",
+      "maxMp": 28,
+      "weaponName": "仮の剣",
+      "weaponType": "剣",
+      "weaponPower": "6",
+      "weaponRange": "1",
+      "weaponHit": "135",
+      "weaponCrit": "48",
+      "portrait": "ringholm",
+      "cardUv": {
+        "x": 0.3755555555555556,
+        "y": 0.6841397849462365,
+        "w": 0.2777777777777778,
+        "h": 0.24865591397849465
+      },
+      "bustUv": {
+        "x": 0.3755555555555556,
+        "y": 0.7186147186147186,
+        "w": 0.2777777777777778,
+        "h": 0.15963203463203465
+      }
+    },
+    {
+      "id": "arshe",
+      "name": "アルシェ",
+      "side": "ally",
+      "levelLabel": "因果Lv 25",
+      "className": "王子",
+      "moveLabel": "移動3・通常",
+      "maxMp": 18,
+      "weaponName": "仮の剣",
+      "weaponType": "剣",
+      "weaponPower": "6",
+      "weaponRange": "1",
+      "weaponHit": "128",
+      "weaponCrit": "45",
+      "portrait": "arshe",
+      "cardUv": {
+        "x": 0.4,
+        "y": 0.7016129032258065,
+        "w": 0.3333333333333333,
+        "h": 0.29838709677419356
+      },
+      "bustUv": {
+        "x": 0.4,
+        "y": 0.6785714285714286,
+        "w": 0.3333333333333333,
+        "h": 0.19155844155844157
+      }
+    },
+    {
+      "id": "albas",
+      "name": "アルバス",
+      "side": "ally",
+      "levelLabel": "因果Lv 30",
+      "className": "ロード",
+      "moveLabel": "移動3・通常",
+      "maxMp": 36,
+      "weaponName": "仮の魔導書",
+      "weaponType": "魔法",
+      "weaponPower": "6",
+      "weaponRange": "1〜3",
+      "weaponHit": "150",
+      "weaponCrit": "49",
+      "portrait": "albas",
+      "cardUv": {
+        "x": 0.4125,
+        "y": 0.7308467741935484,
+        "w": 0.25,
+        "h": 0.22379032258064516
+      },
+      "bustUv": {
+        "x": 0.4125,
+        "y": 0.7808441558441559,
+        "w": 0.25,
+        "h": 0.14366883116883117
+      }
+    },
+    {
+      "id": "young_karima",
+      "name": "カリマ",
+      "side": "ally",
+      "levelLabel": "因果Lv 25",
+      "className": "王子",
+      "moveLabel": "移動3・通常",
+      "maxMp": 18,
+      "weaponName": "仮の剣",
+      "weaponType": "剣",
+      "weaponPower": "6",
+      "weaponRange": "1",
+      "weaponHit": "128",
+      "weaponCrit": "45",
+      "portrait": "young_karima",
+      "cardUv": {
+        "x": 0.3666666666666667,
+        "y": 0.6798421708431399,
+        "w": 0.3333333333333333,
+        "h": 0.32015782915686003
+      },
+      "bustUv": {
+        "x": 0.3666666666666667,
+        "y": 0.6551195585530349,
+        "w": 0.3333333333333333,
+        "h": 0.2055348085391004
+      }
+    },
+    {
+      "id": "forest_guard",
+      "name": "森の番人",
+      "side": "enemy",
+      "levelLabel": "因果Lv 10",
+      "className": "戦士（仮）",
+      "moveLabel": "移動3・通常",
+      "maxMp": 12,
+      "weaponName": "仮の剣",
+      "weaponType": "剣",
+      "weaponPower": "6",
+      "weaponRange": "1",
+      "weaponHit": "90",
+      "weaponCrit": "22",
+      "portrait": "forest_guard",
+      "cardUv": {
+        "x": 0.3785714285714286,
+        "y": 0.5610599078341014,
+        "w": 0.2857142857142857,
+        "h": 0.30069124423963134
+      },
+      "bustUv": {
+        "x": 0.3785714285714286,
+        "y": 0.6966604823747681,
+        "w": 0.2857142857142857,
+        "h": 0.16419294990723562
+      }
+    },
+    {
+      "id": "dylan",
+      "name": "ディラン",
+      "side": "enemy",
+      "levelLabel": "因果Lv 25",
+      "className": "未設定",
+      "moveLabel": "移動3・通常",
+      "maxMp": 17,
+      "weaponName": "仮の剣",
+      "weaponType": "剣",
+      "weaponPower": "6",
+      "weaponRange": "1",
+      "weaponHit": "113",
+      "weaponCrit": "33",
+      "portrait": "dylan",
+      "cardUv": {
+        "x": 0.3214285714285714,
+        "y": 0.6241359447004609,
+        "w": 0.35714285714285715,
+        "h": 0.37586405529953915
+      },
+      "bustUv": {
+        "x": 0.3214285714285714,
+        "y": 0.6556122448979591,
+        "w": 0.35714285714285715,
+        "h": 0.20524118738404454
+      }
+    },
+    {
+      "id": "herel",
+      "name": "ヘレル",
+      "side": "enemy",
+      "levelLabel": "因果Lv 25",
+      "className": "未設定",
+      "moveLabel": "移動3・通常",
+      "maxMp": 23,
+      "weaponName": "星の魔導書",
+      "weaponType": "魔法",
+      "weaponPower": "6",
+      "weaponRange": "1〜2",
+      "weaponHit": "113",
+      "weaponCrit": "35",
+      "portrait": "herel",
+      "cardUv": {
+        "x": 0.32456140350877194,
+        "y": 0.5246179966044142,
+        "w": 0.3508771929824562,
+        "h": 0.36926994906621396
+      },
+      "bustUv": {
+        "x": 0.32456140350877194,
+        "y": 0.747095010252905,
+        "w": 0.3508771929824562,
+        "h": 0.20164046479835956
+      }
+    },
+    {
+      "id": "albas_rival",
+      "name": "アルバス（敵）",
+      "side": "enemy",
+      "levelLabel": "因果Lv 30",
+      "className": "ロード",
+      "moveLabel": "移動3・通常",
+      "maxMp": 36,
+      "weaponName": "仮の魔導書",
+      "weaponType": "魔法",
+      "weaponPower": "6",
+      "weaponRange": "1〜3",
+      "weaponHit": "150",
+      "weaponCrit": "49",
+      "portrait": "albas_rival",
+      "cardUv": {
+        "x": 0.4125,
+        "y": 0.6915322580645161,
+        "w": 0.25,
+        "h": 0.2631048387096774
+      },
+      "bustUv": {
+        "x": 0.4125,
+        "y": 0.7808441558441559,
+        "w": 0.25,
+        "h": 0.14366883116883117
+      }
+    }
+  ]
+}

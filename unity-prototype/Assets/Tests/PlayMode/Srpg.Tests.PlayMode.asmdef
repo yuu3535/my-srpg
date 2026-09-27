@@ -3,6 +3,7 @@
     "rootNamespace": "Srpg.Tests",
     "references": [
         "Srpg.Battle",
+        "UnityEngine.UI",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

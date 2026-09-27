@@ -51,6 +51,14 @@ namespace Srpg.Battle
         /// <summary>テスト用: 乱数を決めたものに差し替える（null なら本物の乱数）</summary>
         public IPlanRolls RollsOverride { get; set; }
 
+        [SerializeField] private Battle3DHud hud;   // 画面のUI（あれば仮の操作の欄 IMGUI は出さない）
+        public Battle3DHud Hud => hud;
+
+        /// <summary>今のマスから攻撃が届く相手がいるか（「攻撃」を押せるか）</summary>
+        public bool CanAttackFromHere => selected != null && TargetsFrom(selected, selected.cell).Any();
+        /// <summary>動いたあとで、動く前のマスへ戻せるか</summary>
+        public bool CanUndoMove => selected != null && selected.moved && selected.cell != moveFrom && !selected.acted;
+
         /// <summary>盤面の上のユニット（位置・陣営・戦闘の状態）</summary>
         public class UnitState : MoveRange.IOccupant
         {
@@ -250,6 +258,7 @@ namespace Srpg.Battle
         /// <summary>「攻撃」: 攻撃の範囲（赤）を出して、相手を選ぶ</summary>
         public void ChooseAttack()
         {
+            StayIfMoving();
             if (CurrentMode != Mode.Acting || selected == null) return;
             attackCells.Clear();
             var (min, max) = AttackReach(selected.plan);
@@ -295,6 +304,18 @@ namespace Srpg.Battle
             ChooseAttack();
         }
 
+        /// <summary>選んだだけで動かずにコマンドを選んだときは、その場に止まったことにする（ブラウザ版と同じ）</summary>
+        private void StayIfMoving()
+        {
+            if (CurrentMode == Mode.Moving && selected != null) MoveSelectedTo(selected.cell);
+        }
+
+        /// <summary>「取り消し」: 相手を選ぶのをやめて、コマンドを選ぶところへ戻る</summary>
+        public void CancelTargeting()
+        {
+            if (CurrentMode == Mode.Targeting) BackToActing();
+        }
+
         private void BackToActing()
         {
             attackCells.Clear();
@@ -305,6 +326,7 @@ namespace Srpg.Battle
         /// <summary>「待機」</summary>
         public void ChooseWait()
         {
+            StayIfMoving();
             if (CurrentMode != Mode.Acting && CurrentMode != Mode.Targeting) return;
             FinishAction(selected);
         }
@@ -544,6 +566,7 @@ namespace Srpg.Battle
 
         private bool IsOverPanel(Vector2 screenPosition)
         {
+            if (hud != null) return hud.IsOverHud(screenPosition);
             var p = new Vector2(screenPosition.x, Screen.height - screenPosition.y) / GuiScale;
             if (CommandRect.Contains(p) && selected != null) return true;
             if (ForecastRect.Contains(p) && CurrentMode == Mode.Forecast) return true;
@@ -567,6 +590,8 @@ namespace Srpg.Battle
             GUI.skin.font = guiFont;
             float s = GuiScale;
             GUI.matrix = Matrix4x4.Scale(new Vector3(s, s, 1f));
+
+            if (hud != null) { DrawPopupsAndResult(s); return; }
 
             // 左上: フェーズとターン、ログの最後の数行
             string phaseText = CurrentPhase == Phase.Ally ? "味方フェーズ" : CurrentPhase == Phase.Enemy ? "敵フェーズ" : CurrentPhase == Phase.Victory ? "勝利" : "敗北";
@@ -613,6 +638,12 @@ namespace Srpg.Battle
             }
 
             if (CurrentPhase == Phase.Ally && GUI.Button(EndTurnRect, "ターン終了")) EndTurn();
+            DrawPopupsAndResult(s);
+        }
+
+        /// <summary>勝敗の文字と、頭の上のダメージの数字（UIを作るまでの仮）</summary>
+        private void DrawPopupsAndResult(float s)
+        {
             if (CurrentPhase == Phase.Victory || CurrentPhase == Phase.Defeat)
                 GUI.Label(new Rect(0f, 150f, GuiWidth, 60f), CurrentPhase == Phase.Victory ? "勝利" : "敗北", bigStyle);
 

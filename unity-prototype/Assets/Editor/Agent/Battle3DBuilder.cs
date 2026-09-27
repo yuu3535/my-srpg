@@ -24,6 +24,30 @@ namespace Srpg.EditorAgent
         private const string DataPath = "Assets/Data/Battles/battle_trial_adopted.json";
         private const string PlanPath = "Assets/Data/Battles/battle_trial_adopted_plan.json";   // 戦闘の状態（tools/export_unity_battle_plan.mjs）
         private const string ScenePath = "Assets/Scenes/Battle3D.unity";
+        private const string UiDataPath = "Assets/Data/Battles/battle_trial_adopted_ui.json";   // 表示（tools/export_unity_battle_ui.mjs）
+        private const string UiDir = "Assets/Art/UI";
+        private const string PortraitDir = "Assets/Art/Portraits";
+
+        // 画面のUIに使う素材（ブラウザ版の assets/ui から写す）と、9分割の枠の幅（左・下・右・上。元の絵の px）
+        private static readonly (string name, Vector4 border)[] HudSprites =
+        {
+            ("panel_even", new Vector4(26, 26, 26, 26)),
+            ("panel_even_enemy", new Vector4(26, 26, 26, 26)),
+            ("button_b2_normal", new Vector4(64, 0, 64, 0)),
+            ("button_b2_pressed", new Vector4(64, 0, 64, 0)),
+            ("button_b2_disabled", new Vector4(64, 0, 64, 0)),
+            ("button_f3_normal", new Vector4(24, 0, 24, 0)),
+            ("button_f3_pressed", new Vector4(24, 0, 24, 0)),
+            ("fc_band", Vector4.zero),
+            ("fc_emblem_sword", Vector4.zero),
+            ("heading_flourish", Vector4.zero),
+            ("weapon_sword", Vector4.zero),
+            ("weapon_lance", Vector4.zero),
+            ("weapon_axe", Vector4.zero),
+            ("weapon_bow", Vector4.zero),
+            ("weapon_staff", Vector4.zero),
+            ("weapon_magic", Vector4.zero),
+        };
 
         public static void BuildAll()
         {
@@ -63,6 +87,7 @@ namespace Srpg.EditorAgent
             so.FindProperty("planJson").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(PlanPath);
             so.FindProperty("view").objectReferenceValue = view;
             so.ApplyModifiedPropertiesWithoutUndo();
+            var hud = CreateHud(controller, camera);
 
             // 見え方は T5 の C を原作の素材の色に寄せたもの（MAP_COLOR_MOOD_DIRECTION_2026-09-27.md）
             Board3DTestBuilder.SetMoodC2();
@@ -136,11 +161,30 @@ namespace Srpg.EditorAgent
             Board3DTestBuilder.Render(camera, rt, "Battle3D_close_front");
             view.SetView(false, 0, true);
             Board3DTestBuilder.Render(camera, rt, "Battle3D_close_top");
+
+            // 画面のUI（1段目: コマンド・ユニットと武器のカード・戦闘予測の帯）
+            controller.Setup();
+            view.SetView(true, 0, true);
+            controller.FocusOnAllies(true);
+            hud.Build();
+            RenderWithHud(hud, camera, rt, "Battle3D_ui_idle");
+            controller.Select("albas");
+            RenderWithHud(hud, camera, rt, "Battle3D_ui_select");
+            var albasUi = controller.Units.First(u => u.source.id == "albas");
+            controller.TapCell(albasUi.cell + new Vector2Int(0, -2));
+            RenderWithHud(hud, camera, rt, "Battle3D_ui_acting");
+            controller.ChooseAttack();
+            controller.ShowForecast("albas_rival");
+            if (controller.CurrentForecast == null) throw new InvalidOperationException("UIの確認: 戦闘予測が出なかった");
+            view.FocusOnPoint((view.Map.TopCenter(albasUi.cell) + view.Map.TopCenter(controller.Target.cell)) * 0.5f, true);
+            RenderWithHud(hud, camera, rt, "Battle3D_ui_forecast");
+            hud.Clear();
             view.SetOverview(true, true);
             view.SetView(true, 0, true);
 
             camera.targetTexture = null;
             UnityEngine.Object.DestroyImmediate(rt);
+            hud.Clear();         // UIは再生したときに作る（作った絵はシーンに保存できないため）
             controller.Setup();  // シーンには始まりの状態を保存する（盤面の見た目はこのあと消す）
             view.ClearBoard();   // 盤面は再生したときに作る（作ったマテリアルはシーンに保存できないため）
             EditorSceneManager.SaveScene(scene, ScenePath);
@@ -153,6 +197,85 @@ namespace Srpg.EditorAgent
         }
 
         /// <summary>画面上でそのマスを押したことにする（押す判定から戦闘の処理までを通して確かめる）</summary>
+        /// <summary>画面のUIを作り、素材（ブラウザ版の assets/ui・立ち絵・コマンドのアイコン）をつなぐ</summary>
+        private static Battle3DHud CreateHud(Battle3DController controller, Camera camera)
+        {
+            Directory.CreateDirectory(UiDir);
+            var sprites = new System.Collections.Generic.List<(string name, Sprite sprite)>();
+            foreach (var (name, border) in HudSprites)
+            {
+                string dest = $"{UiDir}/{name}.png";
+                File.Copy($"../assets/ui/{name}.png", dest, true);
+                sprites.Add((name, ImportSprite(dest, border)));
+            }
+            foreach (var path in Directory.GetFiles($"{UiDir}/Icons", "*.png"))
+                sprites.Add(("icon_" + Path.GetFileNameWithoutExtension(path), ImportSprite(path.Replace(Path.DirectorySeparatorChar, '/'), Vector4.zero)));
+            var portraitList = new System.Collections.Generic.List<(string name, Texture2D texture)>();
+            foreach (var path in Directory.GetFiles(PortraitDir, "*.png"))
+            {
+                string asset = path.Replace(Path.DirectorySeparatorChar, '/');
+                AssetDatabase.ImportAsset(asset, ImportAssetOptions.ForceSynchronousImport);
+                var importer = (TextureImporter)AssetImporter.GetAtPath(asset);
+                importer.textureType = TextureImporterType.Default;
+                importer.alphaIsTransparency = true;
+                importer.mipmapEnabled = false;
+                importer.maxTextureSize = 1024;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
+                importer.SaveAndReimport();
+                portraitList.Add((Path.GetFileNameWithoutExtension(path), AssetDatabase.LoadAssetAtPath<Texture2D>(asset)));
+            }
+
+            var hudObject = new GameObject("Battle3DHud");
+            var hud = hudObject.AddComponent<Battle3DHud>();
+            var so = new SerializedObject(hud);
+            so.FindProperty("controller").objectReferenceValue = controller;
+            so.FindProperty("targetCamera").objectReferenceValue = camera;
+            so.FindProperty("uiJson").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(UiDataPath);
+            var spritesProp = so.FindProperty("sprites");
+            spritesProp.arraySize = sprites.Count;
+            for (int i = 0; i < sprites.Count; i++)
+            {
+                spritesProp.GetArrayElementAtIndex(i).FindPropertyRelative("name").stringValue = sprites[i].name;
+                spritesProp.GetArrayElementAtIndex(i).FindPropertyRelative("sprite").objectReferenceValue = sprites[i].sprite;
+            }
+            var portraitsProp = so.FindProperty("portraits");
+            portraitsProp.arraySize = portraitList.Count;
+            for (int i = 0; i < portraitList.Count; i++)
+            {
+                portraitsProp.GetArrayElementAtIndex(i).FindPropertyRelative("name").stringValue = portraitList[i].name;
+                portraitsProp.GetArrayElementAtIndex(i).FindPropertyRelative("texture").objectReferenceValue = portraitList[i].texture;
+            }
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            var controllerSo = new SerializedObject(controller);
+            controllerSo.FindProperty("hud").objectReferenceValue = hud;
+            controllerSo.ApplyModifiedPropertiesWithoutUndo();
+            return hud;
+        }
+
+        private static Sprite ImportSprite(string asset, Vector4 border)
+        {
+            AssetDatabase.ImportAsset(asset, ImportAssetOptions.ForceSynchronousImport);
+            var importer = (TextureImporter)AssetImporter.GetAtPath(asset);
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Single;
+            importer.spritePixelsPerUnit = 100;
+            importer.spriteBorder = border;
+            importer.alphaIsTransparency = true;
+            importer.mipmapEnabled = false;
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.SaveAndReimport();
+            return AssetDatabase.LoadAssetAtPath<Sprite>(asset);
+        }
+
+        /// <summary>UIを今の状態にしてから撮る</summary>
+        private static void RenderWithHud(Battle3DHud hud, Camera camera, RenderTexture rt, string name)
+        {
+            hud.Refresh();
+            Canvas.ForceUpdateCanvases();
+            Board3DTestBuilder.Render(camera, rt, name);
+        }
+
         private static void TapOnScreen(Board3DView view, Camera camera, Vector2Int cell)
         {
             var screen = view.CellToScreen(cell);

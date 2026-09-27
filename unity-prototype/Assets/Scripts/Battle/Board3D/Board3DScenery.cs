@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Srpg.Battle
 {
     /// <summary>
-    /// 戦えるマスのまわり（8マス）に置く、見た目だけの地形（原作者 2026-09-27: 寄りの画面を基本にし、盤面の外を透明にしない）。
+    /// 戦えるマスのまわり（10マス）に置く、見た目だけの地形（原作者 2026-09-27: 寄りの画面を基本にし、盤面の外を透明にしない）。
     /// 寄りの画面の端まで景色で埋めて、盤面が闇に浮いた島に見えないようにする。
     /// - 盤面の辺から出ている道（石畳・土道・水堀）は、そのまま外へ続ける
     /// - すぐ外の1マスは低い下草と茂み（盤面の端のキャラを隠さない）
@@ -13,7 +13,7 @@ namespace Srpg.Battle
     /// </summary>
     public static class Board3DScenery
     {
-        public const int DefaultMargin = 8;   // 寄りの画面で、盤面の端に寄っても景色の外が見えない幅（斜めのときは画面の角まで）
+        public const int DefaultMargin = 10;  // 寄りの画面で、盤面の端に寄っても景色の外が見えない幅（斜めのときは画面の角まで）
 
         public static void Surround(Board3DMap map, int margin = DefaultMargin)
         {

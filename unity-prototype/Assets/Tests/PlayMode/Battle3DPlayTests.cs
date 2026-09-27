@@ -6,6 +6,7 @@ using Srpg.Battle.Plan;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using UnityEngine.UI;
 
 namespace Srpg.Tests
 {
@@ -87,6 +88,49 @@ namespace Srpg.Tests
                 Assert.IsTrue(controller.View.TryPickCell(controller.View.UnitHeadToScreen("arshe") + new Vector3(0f, -20f, 0f), out var body));
                 Assert.AreEqual(arshe.cell, body, "キャラの体を押すと、そのキャラのマス");
             }
+        }
+
+        /// <summary>画面のUI（コマンド一覧）のボタンで操作する</summary>
+        [UnityTest]
+        public IEnumerator PlayWithHudButtons()
+        {
+            SceneManager.LoadScene("Battle3D");
+            yield return null;
+            yield return null;
+
+            var controller = Object.FindFirstObjectByType<Battle3DController>();
+            var hud = controller.Hud;
+            Assert.IsNotNull(hud, "画面のUIがある");
+            Assert.IsTrue(hud.Built, "▶で画面のUIを作る");
+            Button Command(string label) => hud.GetComponentsInChildren<Button>(true).FirstOrDefault(b => b.name == "Command_" + label);
+
+            hud.Refresh();
+            Assert.IsNotNull(Command("ターン終了"), "誰も選んでいないときは「ターン終了」");
+
+            // 魔導書を持つアルバス: 選んだだけで「魔法」を押すと、その場に止まって相手を選ぶ
+            controller.Select("albas");
+            hud.Refresh();
+            Assert.IsNotNull(Command("魔法"), "魔導書を持つアルバスは「魔法」");
+            Assert.IsNotNull(Command("待機"));
+            Command("魔法").onClick.Invoke();
+            Assert.AreEqual(Battle3DController.Mode.Targeting, controller.CurrentMode);
+            hud.Refresh();
+            Command("取り消し").onClick.Invoke();
+            Assert.AreEqual(Battle3DController.Mode.Acting, controller.CurrentMode, "取り消すとコマンドを選ぶところへ戻る");
+            hud.Refresh();
+            Command("待機").onClick.Invoke();
+            Assert.IsTrue(controller.Units.First(u => u.Id == "albas").acted, "待機で行動済み");
+
+            // 剣を持つアルシェ: 「攻撃」。動いたら「戻る」で動く前のマスへ
+            var arshe = controller.Units.First(u => u.Id == "arshe");
+            var start = arshe.cell;
+            controller.Select("arshe");
+            controller.TapCell(start + new Vector2Int(0, -2));
+            hud.Refresh();
+            Assert.IsNotNull(Command("攻撃"), "剣を持つアルシェは「攻撃」");
+            Command("戻る").onClick.Invoke();
+            Assert.AreEqual(start, arshe.cell, "「戻る」で動く前のマスへ");
+            Assert.AreEqual(Battle3DController.Mode.Moving, controller.CurrentMode);
         }
     }
 }
