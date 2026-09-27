@@ -59,6 +59,16 @@ namespace Srpg.Tests
             Assert.AreEqual(Battle3DController.Mode.Forecast, controller.CurrentMode, "敵を押すと戦闘予測が出る");
             var forecast = controller.CurrentForecast;
             Assert.IsNotNull(forecast.first);
+            // 届く攻撃が2つ以上あれば、予測で切り替えられる（戻すと同じ予測）
+            if (controller.ForecastOptions.Count > 1)
+            {
+                var first = controller.CurrentOption;
+                controller.CycleForecastOption(1);
+                Assert.AreNotSame(first, controller.CurrentOption, "‹ › で攻撃を切り替える");
+                controller.CycleForecastOption(-1);
+                Assert.AreSame(first, controller.CurrentOption);
+                forecast = controller.CurrentForecast;
+            }
             controller.RollsOverride = new ForecastRolls();
             controller.ConfirmAttack();
             Assert.AreEqual(forecast.defenderHpAfter, rival.plan.hp, "予測どおりのHPになる");
@@ -117,9 +127,15 @@ namespace Srpg.Tests
             controller.Select("albas");
             hud.Refresh();
             Assert.IsNotNull(Command("魔法"), "魔導書を持つアルバスは「魔法」");
+            Assert.IsNull(Command("攻撃"), "武器を持たないアルバスに「攻撃」はない（ブラウザ版と同じ）");
             Assert.IsNotNull(Command("待機"));
             Command("魔法").onClick.Invoke();
+            hud.Refresh();
+            Assert.IsNotNull(Command("破壊"), "「魔法」で魔法の一覧に入れ替わる");
+            Assert.IsNotNull(Command("回復"), "使えない魔法も一覧に出す");
+            Command("破壊").onClick.Invoke();
             Assert.AreEqual(Battle3DController.Mode.Targeting, controller.CurrentMode);
+            Assert.AreEqual("破壊", controller.CurrentOption.label);
             hud.Refresh();
             Command("取り消し").onClick.Invoke();
             Assert.AreEqual(Battle3DController.Mode.Acting, controller.CurrentMode, "取り消すとコマンドを選ぶところへ戻る");

@@ -34,30 +34,6 @@ namespace Srpg.Battle
             public Texture2D texture;
         }
 
-        [Serializable]
-        public class UvRect
-        {
-            public float x, y, w, h;
-            public Rect ToRect() => new Rect(x, y, w, h);
-        }
-
-        [Serializable]
-        public class UiUnit
-        {
-            public string id, name, side, levelLabel, className, moveLabel;
-            public int maxMp;
-            public string weaponName, weaponType, weaponPower, weaponRange, weaponHit, weaponCrit;
-            public string portrait;
-            public UvRect cardUv, bustUv, rosterUv;
-        }
-
-        [Serializable]
-        public class UiDataFile
-        {
-            public string battleId;
-            public UiUnit[] units;
-        }
-
         [SerializeField] private Battle3DController controller;
         [SerializeField] private Camera targetCamera;                                     // 盤面を映すカメラ（UIもこのカメラの前に描く）
         [SerializeField] private TextAsset uiJson;
@@ -135,6 +111,10 @@ namespace Srpg.Battle
             public Text hp;
             public Image fill, intent;
         }
+
+        private string subList;   // コマンドの一覧を入れ替えている（"skill" 戦技・"magic" 魔法）。null なら最初の一覧
+        private Button fcPrev, fcNext;
+        private Text fcCount;
 
         private class ForecastSide
         {
@@ -713,6 +693,15 @@ namespace Srpg.Battle
             side.weaponIcon = Place(NewRect("Icon", iconBox), 1, 1, 15, 15).gameObject.AddComponent<Image>();
             side.weaponIcon.preserveAspect = true;
             side.weapon = Label(root, "Weapon", 25, 21, 90, 19, 9.5f, Parchment, FontStyle.Bold);
+            if (name == "SideLeft")
+            {
+                // 攻撃の切り替え（届く攻撃が2つ以上あるとき。ブラウザ版の ‹ 破壊 1/2 ›）
+                fcPrev = TextButton(root, "Prev", 22, 21, 12, 19, "‹");
+                fcNext = TextButton(root, "Next", 131, 21, 12, 19, "›");
+                fcCount = Label(root, "Count", 104, 22, 26, 17, 7.5f, Hex("#e2d4b4", 0.55f), anchor: TextAnchor.MiddleRight);
+                fcPrev.onClick.AddListener(() => { controller.CycleForecastOption(-1); stateKey = null; });
+                fcNext.onClick.AddListener(() => { controller.CycleForecastOption(1); stateKey = null; });
+            }
             side.note = Label(root, "Note", 100, 22, 43, 17, 7.5f, Hex("#e9927e", 0.85f), anchor: TextAnchor.MiddleRight);
             Place(NewRect("Rule", root), 3, 41, 139, 1).gameObject.AddComponent<Image>().color = Hex("#c8922a", 0.16f);
             Label(root, "HP", 3, 42, 16, 22, 8, GoldDeep, FontStyle.Bold);
@@ -743,7 +732,7 @@ namespace Srpg.Battle
             if (!Built || controller == null || controller.Data == null) return;
             var sel = controller.Selected;
             var tgt = controller.Target;
-            string key = $"{statusOpen}|{controller.CurrentPhase}|{controller.CurrentMode}|{sel?.Id}|{sel?.plan?.hp}|{sel?.plan?.mp}|{sel?.cell}|{tgt?.Id}|{tgt?.plan?.hp}|{controller.Turn}|{controller.Units.Count(u => u.acted)}"
+            string key = $"{statusOpen}|{subList}|{controller.CurrentOption?.label}|{controller.CurrentPhase}|{controller.CurrentMode}|{sel?.Id}|{sel?.plan?.hp}|{sel?.plan?.mp}|{sel?.cell}|{tgt?.Id}|{tgt?.plan?.hp}|{controller.Turn}|{controller.Units.Count(u => u.acted)}"
                 + $"|{controller.Declarations.Count}|{string.Join(",", controller.Units.Select(u => u.plan?.hp ?? 0))}";
             if (key == stateKey) return;
             stateKey = key;
@@ -828,7 +817,9 @@ namespace Srpg.Battle
 
         private void FillForecast(Battle3DController.UnitState attacker, Battle3DController.UnitState defender, BattlePlan.Forecast fc)
         {
-            bool magic = attacker.plan.HasGrimoireSpell;
+            var option = controller.CurrentOption;
+            bool magic = option != null ? option.isMagic : attacker.plan.HasGrimoireSpell;
+            bool special = option != null && (option.isArt || option.isMagic);
             fcTitle.text = "戦闘予測";
             uiUnits.TryGetValue(attacker.Id, out var a);
             uiUnits.TryGetValue(defender.Id, out var d);
@@ -837,11 +828,20 @@ namespace Srpg.Battle
 
             var check = fc.counterCheck;
             bool canCounter = fc.counter != null;
-            string attackName = magic ? (attacker.plan.grimoireSpell?.name ?? "魔法") : "通常攻撃";
-            FillSide(leftSide, attacker, a, attackName, magic ? "魔法" : a?.weaponType, fc.attackerHpAfter, fc.first, fc.followUp, null);
+            string attackName = option?.ActionName ?? (magic ? (attacker.plan.grimoireSpell?.name ?? "魔法") : "通常攻撃");
+            string attackType = magic ? "魔法" : (a?.weaponType == "魔法" || string.IsNullOrEmpty(a?.weaponType) ? "剣" : a.weaponType);
+            FillSide(leftSide, attacker, a, attackName, attackType, fc.attackerHpAfter, fc.first, fc.followUp, null);
+            // 攻撃の切り替え
+            var switchable = controller.ForecastOptions;
+            bool canSwitch = switchable.Count > 1;
+            fcPrev.gameObject.SetActive(canSwitch);
+            fcNext.gameObject.SetActive(canSwitch);
+            fcCount.gameObject.SetActive(canSwitch);
+            leftSide.weapon.rectTransform.anchoredPosition = new Vector2(canSwitch ? 36 : 25, leftSide.weapon.rectTransform.anchoredPosition.y);
+            if (canSwitch) fcCount.text = $"{Math.Max(1, switchable.ToList().IndexOf(option) + 1)}/{switchable.Count}";
             FillSide(rightSide, defender, d, d?.weaponName ?? "装備なし", d?.weaponType, fc.defenderHpAfter, fc.counter, fc.counterFollowUp, canCounter ? null : "反撃なし");
 
-            fcConfirmLabel.text = magic ? "実行する" : "攻撃する";
+            fcConfirmLabel.text = special ? "実行する" : "攻撃する";
             fcConfirmIcon.sprite = magic ? WeaponSprite("魔法") : SpriteOf("icon_cross");
             fcConfirmIcon.color = magic ? Color.white : Hex("#fff2d0");
             string counter = check == null ? "反撃なし"
@@ -883,14 +883,39 @@ namespace Srpg.Battle
             foreach (var item in commandItems) Object.DestroyImmediate(item);
             commandItems.Clear();
             var entries = new List<(string icon, string label, Action action, bool enabled)>();
+            var subTexts = new List<string>();
             var sel = controller.Selected;
             var mode = controller.CurrentMode;
+            if (sel == null || (mode != Battle3DController.Mode.Moving && mode != Battle3DController.Mode.Acting)) subList = null;
             if (controller.CurrentPhase == Battle3DController.Phase.Ally && !forecastOpen)
             {
-                if (sel != null && (mode == Battle3DController.Mode.Moving || mode == Battle3DController.Mode.Acting))
+                var ui = controller.UiOf(sel);
+                if (sel != null && (mode == Battle3DController.Mode.Moving || mode == Battle3DController.Mode.Acting) && subList != null)
                 {
-                    bool magic = sel.plan != null && sel.plan.HasGrimoireSpell;
-                    entries.Add((magic ? "magic" : "attack", magic ? "魔法" : "攻撃", () => controller.ChooseAttack(), controller.CanAttackFromHere));
+                    // 戦技・魔法の一覧（使えないもの・届く相手がいないものは暗く）
+                    var list = subList == "skill" ? ui?.artList : ui?.magicList;
+                    var options = controller.OptionsOf(sel);
+                    foreach (var entry in list ?? Array.Empty<UiListEntry>())
+                    {
+                        var option = entry.index >= 0 && entry.index < options.Count ? options[entry.index] : null;
+                        // Unity版でまだ使えない戦技・魔法（回復・補助・範囲など）は「準備中」
+                        string sub = option == null ? "準備中" : subList == "magic" && !string.IsNullOrEmpty(entry.mpCost) ? $"MP {entry.mpCost}" : "";
+                        entries.Add((subList == "magic" ? "magic" : "skill", entry.label, () => { subList = null; controller.ChooseOption(option); },
+                            option != null && controller.CanUseFromHere(option)));
+                        subTexts.Add(sub);
+                    }
+                    entries.Add(("back", "戻る", () => { subList = null; stateKey = null; }, true));
+                    subTexts.Add("");
+                }
+                else if (sel != null && (mode == Battle3DController.Mode.Moving || mode == Battle3DController.Mode.Acting))
+                {
+                    subList = null;
+                    var basic = controller.OptionsOf(sel).FirstOrDefault(o => o.kind == "weapon" && string.IsNullOrEmpty(o.artName));
+                    if (basic != null) entries.Add(("attack", "攻撃", () => controller.ChooseOption(basic), controller.CanUseFromHere(basic)));
+                    if (ui?.artList != null && ui.artList.Length > 0) entries.Add(("skill", "戦技", () => { subList = "skill"; stateKey = null; }, true));
+                    if (ui?.magicList != null && ui.magicList.Length > 0) entries.Add(("magic", "魔法", () => { subList = "magic"; stateKey = null; }, true));
+                    if (basic == null && (ui?.magicList == null || ui.magicList.Length == 0))
+                        entries.Add(("attack", "攻撃", () => controller.ChooseAttack(), controller.CanAttackFromHere));
                     entries.Add(("wait", "待機", () => controller.ChooseWait(), true));
                     if (controller.CanUndoMove) entries.Add(("back", "戻る", () => controller.UndoMove(), true));
                 }
@@ -906,11 +931,14 @@ namespace Srpg.Battle
             }
             commandList.gameObject.SetActive(entries.Count > 0);
             if (entries.Count == 0) return;
-            commandList.sizeDelta = new Vector2(118, entries.Count * 30 + 15);
+            // 入れ替えた一覧（戦技・魔法）は、名前とMPが入るように少し広げる
+            float width = subList != null ? 150f : 118f;
+            commandList.anchoredPosition = new Vector2(758f - width, commandList.anchoredPosition.y);
+            commandList.sizeDelta = new Vector2(width, entries.Count * 30 + 15);
             for (int i = 0; i < entries.Count; i++)
             {
                 var (icon, label, action, enabled) = entries[i];
-                var row = Place(NewRect("Command_" + label, commandList), 8, 7 + i * 30, 102, 30);
+                var row = Place(NewRect("Command_" + label, commandList), 8, 7 + i * 30, width - 16, 30);
                 var hit = row.gameObject.AddComponent<Image>();
                 hit.color = new Color(1f, 0.9f, 0.6f, 0f);
                 var button = row.gameObject.AddComponent<Button>();
@@ -930,9 +958,14 @@ namespace Srpg.Battle
                 img.color = icon == "magic" ? (enabled ? Color.white : new Color(1, 1, 1, 0.45f)) : color;
                 img.preserveAspect = true;
                 img.raycastTarget = false;
-                var text = Label(row, "Label", 36, 0, 64, 30, 12, color);
+                var text = Label(row, "Label", 36, 0, width - 60, 30, subList != null ? 11 : 12, color);
                 text.text = label;
-                if (i > 0) Place(NewRect("Rule", row), 4, 0, 94, 1).gameObject.AddComponent<Image>().color = Hex("#c8922a", 0.2f);
+                if (i < subTexts.Count && !string.IsNullOrEmpty(subTexts[i]))
+                {
+                    var sub = Label(row, "Sub", width - 70, 0, 50, 30, 7.5f, enabled ? Hex("#e0bd73", 0.7f) : Hex("#a096aa", 0.45f), anchor: TextAnchor.MiddleRight);
+                    sub.text = subTexts[i];
+                }
+                if (i > 0) Place(NewRect("Rule", row), 4, 0, width - 24, 1).gameObject.AddComponent<Image>().color = Hex("#c8922a", 0.2f);
                 commandItems.Add(row.gameObject);
             }
         }
@@ -1063,6 +1096,18 @@ namespace Srpg.Battle
             iconImage.raycastTarget = false;
             text = Label(rt, "Label", start + 19, 0, textWidth + 8, h, size, color, FontStyle.Bold);
             text.text = label;
+            return button;
+        }
+
+        private Button TextButton(RectTransform parent, string name, float x, float y, float w, float h, string text)
+        {
+            var rt = Place(NewRect(name, parent), x, y, w, h);
+            var hit = rt.gameObject.AddComponent<Image>();
+            hit.color = new Color(0, 0, 0, 0);
+            var button = rt.gameObject.AddComponent<Button>();
+            button.targetGraphic = hit;
+            var label = Label(rt, "Text", 0, 0, w, h, 13, Hex("#efd081", 0.85f), anchor: TextAnchor.MiddleCenter);
+            label.text = text;
             return button;
         }
 

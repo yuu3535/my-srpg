@@ -94,6 +94,40 @@ const result = await evaluate(`(async () => {
         return c.toDataURL("image/png").split(",")[1];
     };
 
+    // 攻撃の選択肢（ブラウザ版と同じ決め方）。Unity の BattleOption の形にする
+    const planSpell = sp => sp ? {
+        id: sp.id || "", name: sp.name || "", targetType: sp.targetType || "", mpCost: String(sp.mpCost ?? ""),
+        effectType: sp.effectType || "", statusEffect: sp.statusEffect || "",
+    } : null;
+    const weaponRangeOf = unit => {
+        const weapon = trialCarriedWeapon(trialGearOf(unit));
+        return weapon ? Math.max(1, Number(TRIAL_ITEMS[weapon]?.range || 1)) : 1;
+    };
+    const magicOption = (unit, spell, label) => ({
+        label, kind: spell.trialItemId ? "grimoire" : "magicArt", artName: spell.trialArtName || "", itemId: spell.trialItemId || "",
+        rangeMin: 1, rangeMax: spell.range, isArt: !!spell.trialArtName, isMagic: true,
+        spell: planSpell(spell), equipSpell: spell.trialItemId ? planSpell(trialGrimoireSpell(spell.trialItemId)) : null,
+    });
+    const attackable = spell => spell && spell.targetType === "enemy" && TRIAL_DAMAGING_SPELL_TYPES.has(spell.effectType)
+        && spell.trialArtName !== "万雷" && typeof spell.range === "number";
+    // 味方が選べる攻撃（landscapeForecastOptions と同じ。距離はここでは見ない）
+    const playerOptions = unit => {
+        const list = [];
+        if (trialCarriedWeapon(trialGearOf(unit))) {
+            const range = weaponRangeOf(unit);
+            list.push({ label: "通常攻撃", kind: "weapon", artName: "", itemId: "", rangeMin: 1, rangeMax: range, isArt: false, isMagic: false, spell: null, equipSpell: null });
+            trialPhysicalArtsFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null)
+                .filter(art => art.implemented && art.name !== "円舞")
+                .forEach(art => list.push({ label: art.name, kind: "weapon", artName: art.name, itemId: "", rangeMin: 1, rangeMax: range, isArt: true, isMagic: false, spell: null, equipSpell: null }));
+        }
+        getLandscapeMagicEntries(unit).forEach(({ spell, label }) => { if (attackable(spell)) list.push(magicOption(unit, spell, label)); });
+        return list;
+    };
+    // 敵が選ぶ攻撃（trialEnemyAttackOptions と同じ）
+    const enemyOptions = unit => trialEnemyAttackOptions(unit).map(o => o.isMagic
+        ? magicOption(unit, o.spell, o.label)
+        : { label: o.label === "攻撃" ? "通常攻撃" : o.label, kind: "weapon", artName: o.action.artName || "", itemId: "", rangeMin: 1, rangeMax: o.range, isArt: !!o.isArt, isMagic: false, spell: null, equipSpell: null });
+
     const units = [];
     const portraits = {};
     for (const unit of battleUnits.filter(u => u.trialStats)) {
@@ -115,7 +149,19 @@ const result = await evaluate(`(async () => {
             weaponType: item ? weaponTypeOf(item) : "",
             weaponPower: stats["威力"] || "―", weaponRange: stats["射程"] || "―", weaponHit: stats["命中"] || "―", weaponCrit: stats["必殺"] || "―",
             portrait: "", cardUv: null, bustUv: null, rosterUv: null,
+            weaponItemId: trialCarriedWeapon(trialGearOf(unit)) || "",
+            options: playerOptions(unit),
+            enemyOptions: enemyOptions(unit),
+            // コマンドの一覧（使えないものも出す。index は options の番号、使えなければ −1）
+            artList: [], magicList: [],
         };
+        const findOption = (label, isMagic) => entry.options.findIndex(o => o.label === label && o.isMagic === isMagic);
+        trialPhysicalArtsFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null).forEach(art => {
+            entry.artList.push({ label: art.name, sub: art.desc || "", index: art.implemented ? findOption(art.name, false) : -1 });
+        });
+        getLandscapeMagicEntries(unit).forEach(({ spell, label, sub }) => {
+            entry.magicList.push({ label, sub: sub || "", mpCost: String(spell?.mpCost ?? ""), index: attackable(spell) ? findOption(label, true) : -1 });
+        });
         const src = getPortraitSrc(unit) || unit.tokenImage || "";
         const face = q(".lcPortrait");
         if (src && face) {

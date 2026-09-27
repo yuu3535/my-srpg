@@ -52,6 +52,60 @@ namespace Srpg.Battle
         public IPlanRolls RollsOverride { get; set; }
 
         [SerializeField] private Battle3DHud hud;   // 画面のUI（あれば仮の操作の欄 IMGUI は出さない）
+        [SerializeField] private TextAsset uiJson;  // 攻撃の選択肢（通常攻撃・戦技・魔法。tools/export_unity_battle_ui.mjs）
+
+        private readonly Dictionary<string, UiUnit> uiUnits = new Dictionary<string, UiUnit>();
+        private BattleOption currentOption;
+        /// <summary>今選んでいる攻撃（狙う相手を選ぶ・戦闘予測の間）</summary>
+        public BattleOption CurrentOption => currentOption;
+        public UiUnit UiOf(UnitState unit) => unit != null && uiUnits.TryGetValue(unit.Id, out var ui) ? ui : null;
+
+        /// <summary>そのキャラが選べる攻撃（なければ今の装備の攻撃だけ）</summary>
+        public IReadOnlyList<BattleOption> OptionsOf(UnitState unit)
+        {
+            var ui = UiOf(unit);
+            if (ui?.options != null && ui.options.Length > 0) return ui.options;
+            var (min, max) = AttackReach(unit.plan);
+            return new[] { new BattleOption { label = "通常攻撃", kind = unit.plan != null && unit.plan.HasGrimoireSpell ? "grimoire" : "weapon",
+                spell = unit.plan?.grimoireSpell, equipSpell = unit.plan?.grimoireSpell, itemId = unit.plan?.equippedItem, rangeMin = min, rangeMax = max,
+                isMagic = unit.plan != null && unit.plan.HasGrimoireSpell } };
+        }
+
+        /// <summary>コマンド「攻撃」: 武器の通常攻撃（武器を持っていなければ最初の攻撃）</summary>
+        public BattleOption BasicOption(UnitState unit)
+        {
+            var options = OptionsOf(unit);
+            return options.FirstOrDefault(o => o.kind == "weapon" && string.IsNullOrEmpty(o.artName)) ?? options.FirstOrDefault();
+        }
+
+        /// <summary>今のマスから、その攻撃が届く相手がいるか</summary>
+        public bool CanUseFromHere(BattleOption option) =>
+            selected != null && option != null && units.Any(u => u.Alive && u.Side != selected.Side && option.InRange(Distance(u.cell, selected.cell)));
+
+        /// <summary>戦闘予測で切り替えられる攻撃（この相手に届くものだけ。ブラウザ版の ‹ › と同じ）</summary>
+        public IReadOnlyList<BattleOption> ForecastOptions =>
+            selected == null || target == null ? Array.Empty<BattleOption>()
+                : OptionsOf(selected).Where(o => o.InRange(Distance(selected.cell, target.cell))).ToList();
+
+        /// <summary>戦闘予測の攻撃を1つ前・次に切り替える</summary>
+        public void CycleForecastOption(int step)
+        {
+            if (CurrentMode != Mode.Forecast) return;
+            var list = ForecastOptions;
+            if (list.Count < 2) return;
+            int i = Math.Max(0, list.ToList().IndexOf(currentOption));
+            currentOption = list[((i + step) % list.Count + list.Count) % list.Count];
+            forecast = ForecastFor(selected, target, currentOption);
+        }
+
+        /// <summary>予測（使うときの持ち替えも入れる）</summary>
+        private BattlePlan.Forecast ForecastFor(UnitState attacker, UnitState defender, BattleOption option)
+        {
+            var a = attacker.plan.Clone();
+            option.ApplyEquip(a, UiOf(attacker)?.weaponItemId);
+            var env = PlanUnits().Select(u => u.id == a.id ? a : u).ToList();
+            return BattlePlan.ForecastOf(a, defender.plan, option.ToAction(), env);
+        }
         public Battle3DHud Hud => hud;
 
         /// <summary>
@@ -74,7 +128,7 @@ namespace Srpg.Battle
         public string DefeatText => "味方の全滅";
 
         /// <summary>今のマスから攻撃が届く相手がいるか（「攻撃」を押せるか）</summary>
-        public bool CanAttackFromHere => selected != null && TargetsFrom(selected, selected.cell).Any();
+        public bool CanAttackFromHere => selected != null && CanUseFromHere(BasicOption(selected));
         /// <summary>動いたあとで、動く前のマスへ戻せるか</summary>
         public bool CanUndoMove => selected != null && selected.moved && selected.cell != moveFrom && !selected.acted;
 
@@ -124,6 +178,11 @@ namespace Srpg.Battle
             if (battleJson == null) throw new InvalidOperationException("battleJson が設定されていない");
             if (view == null) throw new InvalidOperationException("view（Board3DView）が設定されていない");
             data = JsonUtility.FromJson<BattleDataFile>(battleJson.text);
+            uiUnits.Clear();
+            if (uiJson != null)
+                foreach (var u in JsonUtility.FromJson<UiDataFile>(uiJson.text).units ?? Array.Empty<UiUnit>())
+                    uiUnits[u.id] = u;
+            currentOption = null;
             var planState = planJson != null ? JsonUtility.FromJson<PlanStateFile>(planJson.text) : null;
             if (planState != null) BattlePlan.SetItems(planState.items);
 
@@ -278,10 +337,17 @@ namespace Srpg.Battle
         /// <summary>「攻撃」: 攻撃の範囲（赤）を出して、相手を選ぶ</summary>
         public void ChooseAttack()
         {
+            if (selected != null) ChooseOption(BasicOption(selected));
+        }
+
+        /// <summary>攻撃（通常攻撃・戦技・魔法）を選び、その射程で狙う相手を選ぶ</summary>
+        public void ChooseOption(BattleOption option)
+        {
             StayIfMoving();
-            if (CurrentMode != Mode.Acting || selected == null) return;
+            if (CurrentMode != Mode.Acting || selected == null || option == null) return;
+            currentOption = option;
             attackCells.Clear();
-            var (min, max) = AttackReach(selected.plan);
+            int min = option.rangeMin, max = option.rangeMax;
             for (int x = 0; x < data.cols; x++)
             for (int y = 0; y < data.rows; y++)
             {
@@ -298,7 +364,9 @@ namespace Srpg.Battle
         {
             if (selected == null || defender == null || defender.Side == selected.Side || selected.plan == null || defender.plan == null) return;
             target = defender;
-            forecast = BattlePlan.ForecastOf(selected.plan, defender.plan, PlanAction.ForEquipped(selected.plan), PlanUnits());
+            if (currentOption == null || !currentOption.InRange(Distance(selected.cell, defender.cell)))
+                currentOption = OptionsOf(selected).FirstOrDefault(o => o.InRange(Distance(selected.cell, defender.cell))) ?? BasicOption(selected);
+            forecast = ForecastFor(selected, defender, currentOption);
             view.ShowRange(new[] { defender.cell }, Board3DView.AttackRangeColor);
             CurrentMode = Mode.Forecast;
         }
@@ -310,7 +378,7 @@ namespace Srpg.Battle
         {
             if (CurrentMode != Mode.Forecast || selected == null || target == null) return;
             var attacker = selected;
-            Execute(attacker, target);
+            Execute(attacker, target, currentOption);
             FinishAction(attacker);
         }
 
@@ -321,7 +389,7 @@ namespace Srpg.Battle
             target = null;
             forecast = null;
             CurrentMode = Mode.Acting;
-            ChooseAttack();
+            ChooseOption(currentOption ?? BasicOption(selected));   // 同じ攻撃のまま相手を選び直す
         }
 
         /// <summary>選んだだけで動かずにコマンドを選んだときは、その場に止まったことにする（ブラウザ版と同じ）</summary>
@@ -416,10 +484,14 @@ namespace Srpg.Battle
         private List<PlanUnit> PlanUnits() => units.Where(u => u.Alive && u.plan != null).Select(u => u.plan).ToList();
 
         /// <summary>1回の交戦を計画どおりに反映する（ブラウザ版 trialExecuteExchange と同じ流れ）</summary>
-        private PlanResult Execute(UnitState attacker, UnitState defender)
+        private PlanResult Execute(UnitState attacker, UnitState defender, BattleOption option = null, bool switchEquip = true)
         {
             var rolls = RollsOverride ?? new RandomRolls();
-            var plan = BattlePlan.PlanExchange(attacker.plan, defender.plan, PlanAction.ForEquipped(attacker.plan), PlanUnits(), rolls);
+            // 味方は使うときに持ち替える（ブラウザ版と同じ。敵は持ち替えない）
+            if (option != null && switchEquip) option.ApplyEquip(attacker.plan, UiOf(attacker)?.weaponItemId);
+            var action = option != null ? option.ToAction() : PlanAction.ForEquipped(attacker.plan);
+            var plan = BattlePlan.PlanExchange(attacker.plan, defender.plan, action, PlanUnits(), rolls);
+            if (option != null && (option.isArt || option.isMagic)) AddLog($"{attacker.Name}の{option.ActionName}");
             var byId = new Dictionary<string, UnitState> { { attacker.Id, attacker }, { defender.Id, defender } };
             AddLog($"{attacker.Name} → {defender.Name}");
             foreach (var step in plan.steps)
@@ -523,7 +595,7 @@ namespace Srpg.Battle
             declarations.TryGetValue(enemy.Id, out var decl);
             // 予告した相手がいれば、その相手を攻撃できる一番よい立ち位置を選び直す。倒れていたら相手を選び直す
             var victim = decl?.type == "attack" ? allies.FirstOrDefault(u => u.Id == decl.targetId) : null;
-            var (cell, target) = victim != null ? ChooseEnemyAttack(enemy, new[] { victim }) : ChooseEnemyAttack(enemy, allies);
+            var (cell, target, option) = victim != null ? ChooseEnemyAttackWithOption(enemy, new[] { victim }) : ChooseEnemyAttackWithOption(enemy, allies);
             if (decl?.type == "attack" && victim == null && target != null) AddLog($"{enemy.Name}は目標を {target.Name} に切り替えた");
             if (target == null) cell = ApproachCell(enemy, victim != null ? new[] { victim } : (IEnumerable<UnitState>)allies);
             if (cell != enemy.cell)
@@ -534,7 +606,7 @@ namespace Srpg.Battle
             }
             declarations.Remove(enemy.Id);
             RefreshTargetRings();
-            if (target != null) Execute(enemy, target);
+            if (target != null) Execute(enemy, target, option, switchEquip: false);
             else AddLog($"{enemy.Name}は近づいてきた");
         }
 
@@ -589,26 +661,50 @@ namespace Srpg.Battle
         /// </summary>
         private (Vector2Int cell, UnitState target) ChooseEnemyAttack(UnitState enemy, IEnumerable<UnitState> candidates, ICollection<Vector2Int> reserved = null)
         {
+            var (cell, target, _) = ChooseEnemyAttackWithOption(enemy, candidates, reserved);
+            return (cell, target);
+        }
+
+        /// <summary>敵の攻撃の選択肢（魔法は MP があるときだけ。ブラウザ版 trialEnemyAttackOptions）</summary>
+        private List<BattleOption> EnemyOptionsOf(UnitState enemy)
+        {
+            var ui = UiOf(enemy);
+            var list = ui?.enemyOptions != null && ui.enemyOptions.Length > 0 ? ui.enemyOptions.ToList() : OptionsOf(enemy).ToList();
+            return list.Where(o => !o.isMagic || (enemy.plan != null && enemy.plan.mp > 0)).ToList();
+        }
+
+        /// <summary>
+        /// 敵が攻撃する立ち位置・相手・攻撃を選ぶ（ブラウザ版の trialChooseEnemyAttack と同じ）: 相手×動ける先×攻撃のすべてを
+        /// 戦闘予測で評価する（BattlePlan.ScoreAttack）。同じ評価なら、動く距離が短いほう・通常攻撃（MPや戦技を使わないほう）
+        /// </summary>
+        private (Vector2Int cell, UnitState target, BattleOption option) ChooseEnemyAttackWithOption(UnitState enemy, IEnumerable<UnitState> candidates, ICollection<Vector2Int> reserved = null)
+        {
             var cells = new List<Vector2Int> { enemy.cell };
             cells.AddRange(MoveCellsOf(enemy));
-            var targets = candidates.Where(u => u.Alive).ToList();
+            var options = EnemyOptionsOf(enemy);
             double bestScore = double.NegativeInfinity;
             Vector2Int bestCell = enemy.cell;
             UnitState bestTarget = null;
+            BattleOption bestOption = null;
+            foreach (var ally in candidates.Where(u => u.Alive && u.plan != null))
             foreach (var cell in cells)
             {
                 if (reserved != null && cell != enemy.cell && reserved.Contains(cell)) continue;
+                int distance = Distance(cell, ally.cell);
+                if (distance < 1) continue;
                 var attacker = enemy.plan.Clone();
                 attacker.x = cell.x; attacker.y = cell.y;
-                foreach (var ally in TargetsFrom(enemy, cell).Where(targets.Contains))
+                var env = PlanUnits().Select(u => u.id == enemy.Id ? attacker : u).ToList();
+                foreach (var option in options)
                 {
-                    var env = PlanUnits().Select(u => u.id == enemy.Id ? attacker : u).ToList();
-                    var f = BattlePlan.ForecastOf(attacker, ally.plan, PlanAction.ForEquipped(attacker), env);
-                    double score = BattlePlan.ScoreAttack(f, ally.plan.hp, attacker.hp) - Distance(cell, enemy.cell) * 0.01;   // 同点なら動かない方
-                    if (score > bestScore) { bestScore = score; bestCell = cell; bestTarget = ally; }
+                    if (!option.InRange(distance)) continue;
+                    var f = BattlePlan.ForecastOf(attacker, ally.plan, option.ToAction(), env);
+                    double score = BattlePlan.ScoreAttack(f, ally.plan.hp, enemy.plan.hp) - Distance(cell, enemy.cell) * 0.01
+                        - (option.isArt || option.isMagic ? 0.005 : 0);
+                    if (score > bestScore) { bestScore = score; bestCell = cell; bestTarget = ally; bestOption = option; }
                 }
             }
-            return (bestCell, bestTarget);
+            return (bestCell, bestTarget, bestOption);
         }
 
         /// <summary>攻撃できないとき: 相手（いちばん近い味方）にいちばん近づけるマス</summary>

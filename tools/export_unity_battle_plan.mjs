@@ -125,6 +125,52 @@ const result = await evaluate(`(async () => {
             });
         }
     }
+    // 攻撃の選択肢（戦技・魔法の戦技・魔導書）: 味方と敵の全員の選択肢で、届く距離の相手へ（持ち替えも予測と同じにする）
+    const planSpell = sp => sp ? {
+        id: sp.id || "", name: sp.name || "", targetType: sp.targetType || "", mpCost: String(sp.mpCost ?? ""),
+        effectType: sp.effectType || "", statusEffect: sp.statusEffect || "",
+    } : null;
+    const attackable = spell => spell && spell.targetType === "enemy" && TRIAL_DAMAGING_SPELL_TYPES.has(spell.effectType)
+        && spell.trialArtName !== "万雷" && typeof spell.range === "number";
+    for (const unit of battleUnits.filter(u => u.trialStats)) {
+        const weaponId = trialCarriedWeapon(trialGearOf(unit));
+        const options = [];
+        if (weaponId) {
+            trialPhysicalArtsFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null)
+                .filter(art => art.implemented && art.name !== "円舞")
+                .forEach(art => options.push({ kind: "weapon", artName: art.name, range: Math.max(1, Number(TRIAL_ITEMS[weaponId]?.range || 1)) }));
+        }
+        getLandscapeMagicEntries(unit).forEach(({ spell }) => {
+            if (attackable(spell)) options.push({ kind: spell.trialItemId ? "grimoire" : "magicArt", artName: spell.trialArtName || "", spell, range: spell.range });
+        });
+        const a = units.find(u => u.id === unit.id);
+        for (const option of options) {
+            for (const d of units.filter(u => u.side !== a.side)) {
+                for (const distance of [...new Set([1, Math.min(2, option.range)])]) {
+                    const attacker = { ...a, x: 5, y: 4 };
+                    // 予測と同じ持ち替え（trialPlanPrediction）
+                    if (option.kind === "grimoire") { attacker.equippedItem = option.spell.trialItemId; attacker.grimoireSpell = trialGrimoireSpell(option.spell.trialItemId); }
+                    else if (option.kind === "weapon" && trialItemKind(attacker.equippedItem) !== "weapon") attacker.equippedItem = weaponId ?? attacker.equippedItem;
+                    const defender = { ...d, x: 5 + distance, y: 4 };
+                    const env = { units: units.map(u => u.id === a.id ? attacker : u.id === d.id ? defender : u), passiveBattle: false };
+                    const action = option.kind === "weapon" ? { kind: "weapon", artName: option.artName } : trialPlanAction(true, option.spell, null);
+                    for (const set of [rollSets[0], rollSets[2]]) {
+                        const rolls = set.name === "forecast" ? bpForecastRolls() : bpFixedRolls(set.percents, set.dice);
+                        const plan = bpPlanExchange(attacker, defender, action, env, rolls);
+                        cases.push({
+                            attackerId: a.id, defenderId: d.id, distance, rolls: set.name, attackerHp: a.hp,
+                            optionKind: option.kind, artName: option.artName || "", spell: planSpell(option.spell),
+                            itemId: option.spell?.trialItemId || "", equipSpell: option.kind === "grimoire" ? planSpell(trialGrimoireSpell(option.spell.trialItemId)) : null,
+                            weaponItemId: weaponId || "",
+                            percents: set.percents || [], dice: set.dice || [], steps: plan.steps.map(summarize),
+                            attackerHpAfter: plan.attacker.hp, attackerMpAfter: plan.attacker.mp,
+                            defenderHpAfter: plan.defender.hp, defenderMpAfter: plan.defender.mp,
+                        });
+                    }
+                }
+            }
+        }
+    }
     return { units, items, cases };
 })()`);
 

@@ -93,6 +93,7 @@ namespace Srpg.EditorAgent
             so.FindProperty("battleJson").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(DataPath);
             so.FindProperty("planJson").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(PlanPath);
             so.FindProperty("view").objectReferenceValue = view;
+            so.FindProperty("uiJson").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(UiDataPath);   // 攻撃の選択肢
             so.ApplyModifiedPropertiesWithoutUndo();
             var hud = CreateHud(controller, camera);
 
@@ -180,6 +181,10 @@ namespace Srpg.EditorAgent
             hud.CloseStatus();
             controller.Select("albas");
             RenderWithHud(hud, camera, rt, "Battle3D_ui_select");
+            // コマンド「魔法」の一覧（入れ替えた一覧）
+            hud.GetComponentsInChildren<UnityEngine.UI.Button>(true).First(x => x.name == "Command_魔法").onClick.Invoke();
+            RenderWithHud(hud, camera, rt, "Battle3D_ui_magic_list");
+            hud.GetComponentsInChildren<UnityEngine.UI.Button>(true).First(x => x.name == "Command_戻る").onClick.Invoke();
             var albasUi = controller.Units.First(u => u.source.id == "albas");
             controller.TapCell(albasUi.cell + new Vector2Int(0, -2));
             RenderWithHud(hud, camera, rt, "Battle3D_ui_acting");
@@ -188,6 +193,10 @@ namespace Srpg.EditorAgent
             if (controller.CurrentForecast == null) throw new InvalidOperationException("UIの確認: 戦闘予測が出なかった");
             view.FocusOnPoint((view.Map.TopCenter(albasUi.cell) + view.Map.TopCenter(controller.Target.cell)) * 0.5f, true);
             RenderWithHud(hud, camera, rt, "Battle3D_ui_forecast");
+            // 攻撃の切り替え（‹ ›）: 次の攻撃の予測
+            controller.CycleForecastOption(1);
+            RenderWithHud(hud, camera, rt, "Battle3D_ui_forecast_next");
+            controller.CycleForecastOption(-1);
             // 味方全員を待機させて敵の番へ（敵が予告どおりに動いたあと、次の味方の番の予告と赤い丸）
             controller.CancelForecast();
             controller.CancelTargeting();

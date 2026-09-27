@@ -33,7 +33,138 @@
         "y": 0.6614583333333333,
         "w": 0.2777777777777778,
         "h": 0.20833333333333334
-      }
+      },
+      "weaponItemId": "trial_sword",
+      "options": [
+        {
+          "label": "通常攻撃",
+          "kind": "weapon",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 1,
+          "isArt": false,
+          "isMagic": false,
+          "spell": null,
+          "equipSpell": null
+        },
+        {
+          "label": "復讐",
+          "kind": "weapon",
+          "artName": "復讐",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 1,
+          "isArt": true,
+          "isMagic": false,
+          "spell": null,
+          "equipSpell": null
+        },
+        {
+          "label": "火の魔導書",
+          "kind": "grimoire",
+          "artName": "",
+          "itemId": "fire_book",
+          "rangeMin": 1,
+          "rangeMax": 2,
+          "isArt": false,
+          "isMagic": true,
+          "spell": {
+            "id": "火",
+            "name": "火",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          },
+          "equipSpell": {
+            "id": "火",
+            "name": "火",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          }
+        }
+      ],
+      "enemyOptions": [
+        {
+          "label": "通常攻撃",
+          "kind": "weapon",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 1,
+          "isArt": false,
+          "isMagic": false,
+          "spell": null,
+          "equipSpell": null
+        },
+        {
+          "label": "復讐",
+          "kind": "weapon",
+          "artName": "復讐",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 1,
+          "isArt": true,
+          "isMagic": false,
+          "spell": null,
+          "equipSpell": null
+        },
+        {
+          "label": "火",
+          "kind": "grimoire",
+          "artName": "",
+          "itemId": "fire_book",
+          "rangeMin": 1,
+          "rangeMax": 2,
+          "isArt": false,
+          "isMagic": true,
+          "spell": {
+            "id": "火",
+            "name": "火",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          },
+          "equipSpell": {
+            "id": "火",
+            "name": "火",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          }
+        }
+      ],
+      "artList": [
+        {
+          "label": "円舞",
+          "sub": "攻撃時に、隣接するすべての敵に物理ダメ－ジを与える",
+          "index": -1
+        },
+        {
+          "label": "復讐",
+          "sub": "攻撃時、自分のＨＰの減っている分を威力に加算する",
+          "index": 1
+        }
+      ],
+      "magicList": [
+        {
+          "label": "召喚「ヒトダマ」",
+          "sub": "戦技",
+          "mpCost": "1d4",
+          "index": -1
+        },
+        {
+          "label": "火の魔導書",
+          "sub": "装備",
+          "mpCost": "1d6",
+          "index": 2
+        }
+      ]
     },
     {
       "id": "arshe",
@@ -52,9 +183,9 @@
       "portrait": "arshe",
       "cardUv": {
         "x": 0.4,
-        "y": 0.6935483870967742,
+        "y": 0.7016130262805569,
         "w": 0.3333333333333333,
-        "h": 0.3064516129032258
+        "h": 0.29838697371944306
       },
       "bustUv": {
         "x": 0.4,
@@ -67,7 +198,221 @@
         "y": 0.75,
         "w": 0.3333333333333333,
         "h": 0.25
-      }
+      },
+      "weaponItemId": "trial_sword",
+      "options": [
+        {
+          "label": "通常攻撃",
+          "kind": "weapon",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 1,
+          "isArt": false,
+          "isMagic": false,
+          "spell": null,
+          "equipSpell": null
+        },
+        {
+          "label": "両断",
+          "kind": "weapon",
+          "artName": "両断",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 1,
+          "isArt": true,
+          "isMagic": false,
+          "spell": null,
+          "equipSpell": null
+        },
+        {
+          "label": "破壊",
+          "kind": "magicArt",
+          "artName": "破壊",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 2,
+          "isArt": true,
+          "isMagic": true,
+          "spell": {
+            "id": "破壊",
+            "name": "破壊",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "break",
+            "statusEffect": ""
+          },
+          "equipSpell": null
+        },
+        {
+          "label": "落雷",
+          "kind": "magicArt",
+          "artName": "落雷",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 3,
+          "isArt": true,
+          "isMagic": true,
+          "spell": {
+            "id": "落雷",
+            "name": "落雷",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": ""
+          },
+          "equipSpell": null
+        },
+        {
+          "label": "火の魔導書",
+          "kind": "grimoire",
+          "artName": "",
+          "itemId": "fire_book",
+          "rangeMin": 1,
+          "rangeMax": 2,
+          "isArt": false,
+          "isMagic": true,
+          "spell": {
+            "id": "火",
+            "name": "火",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          },
+          "equipSpell": {
+            "id": "火",
+            "name": "火",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          }
+        }
+      ],
+      "enemyOptions": [
+        {
+          "label": "通常攻撃",
+          "kind": "weapon",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 1,
+          "isArt": false,
+          "isMagic": false,
+          "spell": null,
+          "equipSpell": null
+        },
+        {
+          "label": "両断",
+          "kind": "weapon",
+          "artName": "両断",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 1,
+          "isArt": true,
+          "isMagic": false,
+          "spell": null,
+          "equipSpell": null
+        },
+        {
+          "label": "破壊",
+          "kind": "magicArt",
+          "artName": "破壊",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 2,
+          "isArt": true,
+          "isMagic": true,
+          "spell": {
+            "id": "破壊",
+            "name": "破壊",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "break",
+            "statusEffect": ""
+          },
+          "equipSpell": null
+        },
+        {
+          "label": "落雷",
+          "kind": "magicArt",
+          "artName": "落雷",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 3,
+          "isArt": true,
+          "isMagic": true,
+          "spell": {
+            "id": "落雷",
+            "name": "落雷",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": ""
+          },
+          "equipSpell": null
+        },
+        {
+          "label": "火",
+          "kind": "grimoire",
+          "artName": "",
+          "itemId": "fire_book",
+          "rangeMin": 1,
+          "rangeMax": 2,
+          "isArt": false,
+          "isMagic": true,
+          "spell": {
+            "id": "火",
+            "name": "火",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          },
+          "equipSpell": {
+            "id": "火",
+            "name": "火",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          }
+        }
+      ],
+      "artList": [
+        {
+          "label": "両断",
+          "sub": "物理攻撃1.5倍",
+          "index": 1
+        }
+      ],
+      "magicList": [
+        {
+          "label": "破壊",
+          "sub": "戦技",
+          "mpCost": "1d6",
+          "index": 2
+        },
+        {
+          "label": "落雷",
+          "sub": "戦技",
+          "mpCost": "1d6",
+          "index": 3
+        },
+        {
+          "label": "封印",
+          "sub": "戦技",
+          "mpCost": "1d8",
+          "index": -1
+        },
+        {
+          "label": "火の魔導書",
+          "sub": "装備",
+          "mpCost": "1d6",
+          "index": 4
+        }
+      ]
     },
     {
       "id": "albas",
@@ -101,7 +446,135 @@
         "y": 0.724609375,
         "w": 0.25,
         "h": 0.1875
-      }
+      },
+      "weaponItemId": "",
+      "options": [
+        {
+          "label": "破壊",
+          "kind": "magicArt",
+          "artName": "破壊",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 3,
+          "isArt": true,
+          "isMagic": true,
+          "spell": {
+            "id": "破壊",
+            "name": "破壊",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "break",
+            "statusEffect": ""
+          },
+          "equipSpell": null
+        },
+        {
+          "label": "仮の魔導書",
+          "kind": "grimoire",
+          "artName": "",
+          "itemId": "trial_book",
+          "rangeMin": 1,
+          "rangeMax": 3,
+          "isArt": false,
+          "isMagic": true,
+          "spell": {
+            "id": "火",
+            "name": "魔弾",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          },
+          "equipSpell": {
+            "id": "火",
+            "name": "魔弾",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          }
+        }
+      ],
+      "enemyOptions": [
+        {
+          "label": "破壊",
+          "kind": "magicArt",
+          "artName": "破壊",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 3,
+          "isArt": true,
+          "isMagic": true,
+          "spell": {
+            "id": "破壊",
+            "name": "破壊",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "break",
+            "statusEffect": ""
+          },
+          "equipSpell": null
+        },
+        {
+          "label": "魔弾",
+          "kind": "grimoire",
+          "artName": "",
+          "itemId": "trial_book",
+          "rangeMin": 1,
+          "rangeMax": 3,
+          "isArt": false,
+          "isMagic": true,
+          "spell": {
+            "id": "火",
+            "name": "魔弾",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          },
+          "equipSpell": {
+            "id": "火",
+            "name": "魔弾",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          }
+        }
+      ],
+      "artList": [],
+      "magicList": [
+        {
+          "label": "破壊",
+          "sub": "戦技",
+          "mpCost": "1d6",
+          "index": 0
+        },
+        {
+          "label": "回復",
+          "sub": "戦技",
+          "mpCost": "1d6",
+          "index": -1
+        },
+        {
+          "label": "加速",
+          "sub": "戦技",
+          "mpCost": "1d6",
+          "index": -1
+        },
+        {
+          "label": "転移",
+          "sub": "戦技",
+          "mpCost": "1d8",
+          "index": -1
+        },
+        {
+          "label": "仮の魔導書",
+          "sub": "装備",
+          "mpCost": "1d6",
+          "index": 1
+        }
+      ]
     },
     {
       "id": "young_karima",
@@ -135,7 +608,107 @@
         "y": 0.7317596566523605,
         "w": 0.3333333333333333,
         "h": 0.26824034334763946
-      }
+      },
+      "weaponItemId": "trial_sword",
+      "options": [
+        {
+          "label": "通常攻撃",
+          "kind": "weapon",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 1,
+          "isArt": false,
+          "isMagic": false,
+          "spell": null,
+          "equipSpell": null
+        },
+        {
+          "label": "破壊",
+          "kind": "magicArt",
+          "artName": "破壊",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 2,
+          "isArt": true,
+          "isMagic": true,
+          "spell": {
+            "id": "破壊",
+            "name": "破壊",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "break",
+            "statusEffect": ""
+          },
+          "equipSpell": null
+        }
+      ],
+      "enemyOptions": [
+        {
+          "label": "通常攻撃",
+          "kind": "weapon",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 1,
+          "isArt": false,
+          "isMagic": false,
+          "spell": null,
+          "equipSpell": null
+        },
+        {
+          "label": "破壊",
+          "kind": "magicArt",
+          "artName": "破壊",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 2,
+          "isArt": true,
+          "isMagic": true,
+          "spell": {
+            "id": "破壊",
+            "name": "破壊",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "break",
+            "statusEffect": ""
+          },
+          "equipSpell": null
+        }
+      ],
+      "artList": [],
+      "magicList": [
+        {
+          "label": "結界",
+          "sub": "戦技",
+          "mpCost": "1d6",
+          "index": -1
+        },
+        {
+          "label": "破壊",
+          "sub": "戦技",
+          "mpCost": "1d6",
+          "index": 1
+        },
+        {
+          "label": "虚像",
+          "sub": "戦技",
+          "mpCost": "1d8",
+          "index": -1
+        },
+        {
+          "label": "封印",
+          "sub": "戦技",
+          "mpCost": "1d8",
+          "index": -1
+        },
+        {
+          "label": "治癒の魔導書",
+          "sub": "装備",
+          "mpCost": "1d6",
+          "index": -1
+        }
+      ]
     },
     {
       "id": "forest_guard",
@@ -169,7 +742,38 @@
         "y": 0.5178571428571429,
         "w": 0.2857142857142857,
         "h": 0.21428571428571427
-      }
+      },
+      "weaponItemId": "trial_sword",
+      "options": [
+        {
+          "label": "通常攻撃",
+          "kind": "weapon",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 1,
+          "isArt": false,
+          "isMagic": false,
+          "spell": null,
+          "equipSpell": null
+        }
+      ],
+      "enemyOptions": [
+        {
+          "label": "通常攻撃",
+          "kind": "weapon",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 1,
+          "isArt": false,
+          "isMagic": false,
+          "spell": null,
+          "equipSpell": null
+        }
+      ],
+      "artList": [],
+      "magicList": []
     },
     {
       "id": "dylan",
@@ -203,7 +807,38 @@
         "y": 0.7321428571428571,
         "w": 0.35714285714285715,
         "h": 0.2678571428571429
-      }
+      },
+      "weaponItemId": "trial_sword",
+      "options": [
+        {
+          "label": "通常攻撃",
+          "kind": "weapon",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 1,
+          "isArt": false,
+          "isMagic": false,
+          "spell": null,
+          "equipSpell": null
+        }
+      ],
+      "enemyOptions": [
+        {
+          "label": "通常攻撃",
+          "kind": "weapon",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 1,
+          "isArt": false,
+          "isMagic": false,
+          "spell": null,
+          "equipSpell": null
+        }
+      ],
+      "artList": [],
+      "magicList": []
     },
     {
       "id": "herel",
@@ -237,7 +872,73 @@
         "y": 0.53125,
         "w": 0.3508771929824561,
         "h": 0.2631578947368421
-      }
+      },
+      "weaponItemId": "",
+      "options": [
+        {
+          "label": "星の魔導書",
+          "kind": "grimoire",
+          "artName": "",
+          "itemId": "star_book",
+          "rangeMin": 1,
+          "rangeMax": 2,
+          "isArt": false,
+          "isMagic": true,
+          "spell": {
+            "id": "隕石",
+            "name": "隕石",
+            "targetType": "enemy",
+            "mpCost": "1d8",
+            "effectType": "magicDamage",
+            "statusEffect": ""
+          },
+          "equipSpell": {
+            "id": "隕石",
+            "name": "隕石",
+            "targetType": "enemy",
+            "mpCost": "1d8",
+            "effectType": "magicDamage",
+            "statusEffect": ""
+          }
+        }
+      ],
+      "enemyOptions": [
+        {
+          "label": "隕石",
+          "kind": "grimoire",
+          "artName": "",
+          "itemId": "star_book",
+          "rangeMin": 1,
+          "rangeMax": 2,
+          "isArt": false,
+          "isMagic": true,
+          "spell": {
+            "id": "隕石",
+            "name": "隕石",
+            "targetType": "enemy",
+            "mpCost": "1d8",
+            "effectType": "magicDamage",
+            "statusEffect": ""
+          },
+          "equipSpell": {
+            "id": "隕石",
+            "name": "隕石",
+            "targetType": "enemy",
+            "mpCost": "1d8",
+            "effectType": "magicDamage",
+            "statusEffect": ""
+          }
+        }
+      ],
+      "artList": [],
+      "magicList": [
+        {
+          "label": "星の魔導書",
+          "sub": "装備",
+          "mpCost": "1d8",
+          "index": 0
+        }
+      ]
     },
     {
       "id": "albas_rival",
@@ -271,7 +972,135 @@
         "y": 0.724609375,
         "w": 0.25,
         "h": 0.1875
-      }
+      },
+      "weaponItemId": "",
+      "options": [
+        {
+          "label": "破壊",
+          "kind": "magicArt",
+          "artName": "破壊",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 3,
+          "isArt": true,
+          "isMagic": true,
+          "spell": {
+            "id": "破壊",
+            "name": "破壊",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "break",
+            "statusEffect": ""
+          },
+          "equipSpell": null
+        },
+        {
+          "label": "仮の魔導書",
+          "kind": "grimoire",
+          "artName": "",
+          "itemId": "trial_book",
+          "rangeMin": 1,
+          "rangeMax": 3,
+          "isArt": false,
+          "isMagic": true,
+          "spell": {
+            "id": "火",
+            "name": "魔弾",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          },
+          "equipSpell": {
+            "id": "火",
+            "name": "魔弾",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          }
+        }
+      ],
+      "enemyOptions": [
+        {
+          "label": "破壊",
+          "kind": "magicArt",
+          "artName": "破壊",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 3,
+          "isArt": true,
+          "isMagic": true,
+          "spell": {
+            "id": "破壊",
+            "name": "破壊",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "break",
+            "statusEffect": ""
+          },
+          "equipSpell": null
+        },
+        {
+          "label": "魔弾",
+          "kind": "grimoire",
+          "artName": "",
+          "itemId": "trial_book",
+          "rangeMin": 1,
+          "rangeMax": 3,
+          "isArt": false,
+          "isMagic": true,
+          "spell": {
+            "id": "火",
+            "name": "魔弾",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          },
+          "equipSpell": {
+            "id": "火",
+            "name": "魔弾",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          }
+        }
+      ],
+      "artList": [],
+      "magicList": [
+        {
+          "label": "破壊",
+          "sub": "戦技",
+          "mpCost": "1d6",
+          "index": 0
+        },
+        {
+          "label": "回復",
+          "sub": "戦技",
+          "mpCost": "1d6",
+          "index": -1
+        },
+        {
+          "label": "加速",
+          "sub": "戦技",
+          "mpCost": "1d6",
+          "index": -1
+        },
+        {
+          "label": "転移",
+          "sub": "戦技",
+          "mpCost": "1d8",
+          "index": -1
+        },
+        {
+          "label": "仮の魔導書",
+          "sub": "装備",
+          "mpCost": "1d6",
+          "index": 1
+        }
+      ]
     }
   ]
 }

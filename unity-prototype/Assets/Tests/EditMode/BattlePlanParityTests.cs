@@ -30,6 +30,8 @@ namespace Srpg.Tests
         private class Case
         {
             public string attackerId, defenderId, rolls, artName;
+            public string optionKind, itemId, weaponItemId;   // 攻撃の選択肢（戦技・魔法の戦技・魔導書）の答え合わせ
+            public PlanSpell spell, equipSpell;
             public int distance, attackerHp;
             public int[] percents, dice;
             public StepSummary[] steps;
@@ -56,14 +58,21 @@ namespace Srpg.Tests
                 var a = state.units.First(u => u.id == c.attackerId);
                 var d = state.units.First(u => u.id == c.defenderId);
                 var attacker = a.Clone(); attacker.x = 5; attacker.y = 4;
-                if (!string.IsNullOrEmpty(c.artName)) attacker.hp = c.attackerHp;
+                if (!string.IsNullOrEmpty(c.artName) || !string.IsNullOrEmpty(c.optionKind)) attacker.hp = c.attackerHp;
                 var defender = d.Clone(); defender.x = 5 + c.distance; defender.y = 4;
                 var env = state.units.Select(u => u.id == a.id ? attacker : u.id == d.id ? defender : u).ToList();
-                var action = string.IsNullOrEmpty(c.artName) ? PlanAction.ForEquipped(a) : new PlanAction { kind = "weapon", artName = c.artName };
+                PlanAction action;
+                if (!string.IsNullOrEmpty(c.optionKind))
+                {
+                    var option = new BattleOption { kind = c.optionKind, artName = c.artName, itemId = c.itemId, spell = c.spell, equipSpell = c.equipSpell };
+                    option.ApplyEquip(attacker, c.weaponItemId);
+                    action = option.ToAction();
+                }
+                else action = string.IsNullOrEmpty(c.artName) ? PlanAction.ForEquipped(a) : new PlanAction { kind = "weapon", artName = c.artName };
                 IPlanRolls rolls = c.rolls == "forecast" ? new ForecastRolls() : new FixedRolls(c.percents, c.dice);
                 var plan = BattlePlan.PlanExchange(attacker, defender, action, env, rolls);
 
-                string where = $"{c.attackerId}→{c.defenderId} 距離{c.distance} {c.rolls}{(string.IsNullOrEmpty(c.artName) ? "" : " " + c.artName)}";
+                string where = $"{c.attackerId}→{c.defenderId} 距離{c.distance} {c.rolls}{(string.IsNullOrEmpty(c.artName) ? "" : " " + c.artName)}{(string.IsNullOrEmpty(c.optionKind) ? "" : $" [{c.optionKind} {c.spell?.id}]")}";
                 if (plan.steps.Count != c.steps.Length)
                 {
                     failures.Add($"{where}: 段の数 {plan.steps.Count}（ブラウザ版 {c.steps.Length}）");
