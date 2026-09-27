@@ -631,9 +631,10 @@ namespace Srpg.EditorAgent
         /// 画像を書き出す。downscale が2以上なら、その分だけ粗い解像度で描いてから、ぼかさず点のまま元の大きさへ拡大する
         /// （T5 の「粗い解像度で描いて拡大」。3Dの盤面もキャラのドット絵と同じ粗さになる）
         /// </summary>
-        internal static void Render(Camera camera, RenderTexture rt, string name, int downscale = 1)
+        internal static void Render(Camera camera, RenderTexture rt, string name, int downscale = 1, string dir = null)
         {
-            Directory.CreateDirectory(PreviewDir);
+            dir ??= PreviewDir;
+            Directory.CreateDirectory(dir);
             var previous = RenderTexture.active;
             Texture2D tex;
             if (downscale <= 1)
@@ -666,7 +667,7 @@ namespace Srpg.EditorAgent
                 UnityEngine.Object.DestroyImmediate(small);
             }
             RenderTexture.active = previous;
-            var path = $"{PreviewDir}/{name}.png";
+            var path = $"{dir}/{name}.png";
             WriteWithRetry(path, tex.EncodeToPNG());
             UnityEngine.Object.DestroyImmediate(tex);
             Debug.Log($"[Board3DTestBuilder] preview: {path}");

@@ -994,8 +994,11 @@ namespace Srpg.Battle
             view.ClearSelection();
             CurrentMode = Mode.Idle;
             if (CheckEnd()) return;
-            if (units.Where(u => u.Alive && u.Side == "ally").All(u => u.acted)) EndTurn();
+            if (AutoEndTurn && units.Where(u => u.Alive && u.Side == "ally").All(u => u.acted)) EndTurn();
         }
+
+        /// <summary>味方が全員行動したら、自動で敵の番へ進む（確認用の自動の進行では止めて、最後の味方の画像を撮ってから進める）</summary>
+        public bool AutoEndTurn { get; set; } = true;
 
         private void CancelToIdle()
         {
@@ -1131,17 +1134,51 @@ namespace Srpg.Battle
             StartAllyTurn();
         }
 
+        /// <summary>
+        /// 確認用（1手ごとの画像）: 敵の番で、敵が動いたあと（"moved"）・攻撃の前の予測（"preview"）・行動のあと（"acted"）に呼ぶ。
+        /// 空なら、敵の番は今までどおり1度に進む
+        /// </summary>
+        public Action<string, UnitState> EnemyStepHook { get; set; }
+
         /// <summary>確認用（エディタ上）: 待たずに敵の番を進める</summary>
         public void RunEnemyPhaseImmediately()
         {
             foreach (var enemy in units.Where(u => u.Side == "enemy").ToList())
             {
                 if (!enemy.Alive || CurrentPhase != Phase.Enemy) continue;
-                EnemyAct(enemy);
+                if (EnemyStepHook == null) EnemyAct(enemy);
+                else
+                {
+                    var plan = PrepareEnemyAct(enemy);
+                    EnemyStepHook("moved", enemy);
+                    if (plan.target != null)
+                    {
+                        EnemyPreview = new EnemyPreviewInfo
+                        {
+                            attacker = enemy, target = plan.target, option = plan.option,
+                            forecast = BattlePlan.ForecastOf(enemy.plan, plan.target.plan, plan.option.ToAction(), PlanUnits()),
+                        };
+                        FocusOnPair(enemy, plan.target);
+                        EnemyStepHook("preview", enemy);
+                        EnemyPreview = null;
+                    }
+                    PerformEnemyAct(enemy, plan);
+                    EnemyStepHook("acted", enemy);
+                }
                 if (CheckEnd()) return;
             }
             StartAllyTurn();
         }
+
+        /// <summary>確認用（自動で進める）: このキャラが攻撃するなら、敵の行動選びと同じ評価で どこから・誰を・どの攻撃で</summary>
+        public (Vector2Int cell, UnitState target, BattleOption option) SuggestAttack(UnitState unit) =>
+            ChooseEnemyAttackWithOption(unit, units.Where(u => u.Alive && IsOpponent(unit, u)));
+
+        /// <summary>確認用（自動で進める）: 攻撃できないとき、いちばん近い相手へ近づけるマス</summary>
+        public Vector2Int SuggestApproach(UnitState unit) =>
+            ApproachCell(unit, units.Where(u => u.Alive && IsOpponent(unit, u)));
+
+        private static bool IsOpponent(UnitState a, UnitState b) => (a.Side == "enemy") != (b.Side == "enemy");
 
         /// <summary>
         /// 敵1人の行動: 動ける先（今のマスも含む）×届く相手のすべてを戦闘予測で評価し、いちばん良いものを選ぶ
@@ -1296,8 +1333,12 @@ namespace Srpg.Battle
 
         // ── 表示（仮の操作の欄。IMGUI） ──
 
+        /// <summary>これまでに足した記録の行数（記録は新しい60行だけ残すので、確認用に数える）</summary>
+        public int LogTotal { get; private set; }
+
         private void AddLog(string line)
         {
+            LogTotal++;
             log.Add(line);
             if (log.Count > 60) log.RemoveAt(0);
         }

@@ -26,3 +26,4 @@ unity-prototype/Recordings/
 # Unity Pipeline transient assets
 unity-prototype/Assets/Settings/Pipeline/Resources/RuntimePipelineConfig.asset*
 unity-prototype/Assets/Settings/Pipeline/Resources/RuntimePipelineBuildInfo.asset*
+unity-prototype/PlaythroughShots/
