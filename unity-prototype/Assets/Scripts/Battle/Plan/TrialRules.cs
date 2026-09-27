@@ -67,11 +67,12 @@ namespace Srpg.Battle.Plan
         public struct Aura
         {
             public int accuracy;
+            public int critical;
             public int critGuard;
             public List<string> notes;
         }
 
-        /// <summary>周囲に効く能力（死神・王威）による補正（4マス以内）</summary>
+        /// <summary>周囲に効く能力（死神・王威は4マス以内、アシストは隣接）による補正</summary>
         public static Aura AuraModifiers(PlanUnit attacker, PlanUnit defender, IEnumerable<PlanUnit> units)
         {
             var result = new Aura { notes = new List<string>() };
@@ -91,6 +92,15 @@ namespace Srpg.Battle.Plan
                 if (owner.side == defender.side && owner.id != defender.id && Distance(owner, defender) <= 4)
                 {
                     result.accuracy -= 10; result.critGuard += 10; result.notes.Add($"{Who(owner)}の王威:相手の回避・必殺耐性+10");
+                }
+            }
+            // アシスト: 隣接する味方の命中・必殺+5
+            foreach (var owner in living)
+            {
+                if (!owner.Has("アシスト")) continue;
+                if (owner.side == attacker.side && owner.id != attacker.id && Distance(owner, attacker) == 1)
+                {
+                    result.accuracy += 5; result.critical += 5; result.notes.Add($"{Who(owner)}のアシスト:命中・必殺+5");
                 }
             }
             return result;

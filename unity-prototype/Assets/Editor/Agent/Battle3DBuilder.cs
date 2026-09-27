@@ -98,7 +98,7 @@ namespace Srpg.EditorAgent
             var hud = CreateHud(controller, camera);
 
             // 見え方は T5 の C を原作の素材の色に寄せたもの（MAP_COLOR_MOOD_DIRECTION_2026-09-27.md）
-            Board3DTestBuilder.SetMoodC2();
+            Board3DTestBuilder.SetMood(string.IsNullOrEmpty(data.timeOfDay) ? Board3DMood.Dusk : data.timeOfDay);   // 戦闘データの時間帯
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.LandscapeLeft;
 
             var rt = new RenderTexture(Board3DTestBuilder.PreviewWidth, Board3DTestBuilder.PreviewHeight, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
@@ -234,6 +234,34 @@ namespace Srpg.EditorAgent
                 throw new InvalidOperationException($"UIの確認: 敵の番のあとターン2になっていない（ターン{controller.Turn}・{controller.CurrentPhase}）");
             controller.FocusOnAllies(true);
             RenderWithHud(hud, camera, rt, "Battle3D_ui_turn2");
+            // 召喚「ヒトダマ」: ターン1に陣を置く → ターン3の始まりに出る → リングホルムが倒れたら消える（敵の攻撃は全部外れにする）
+            controller.Setup();
+            view.SetView(true, 0, true);
+            hud.Build();
+            controller.RollsOverride = new Srpg.Battle.Plan.FixedRolls(Enumerable.Repeat(100, 2000), Enumerable.Repeat(1, 2000));
+            var ringholmS = controller.Units.First(u => u.source.id == "ringholm");
+            var summonEntry = controller.UiOf(ringholmS).magicList.First(m => !string.IsNullOrEmpty(m.summonUnitId));
+            controller.Select("ringholm");
+            controller.ChooseSummon(summonEntry);
+            foreach (var d in new[] { Vector2Int.left, Vector2Int.up, Vector2Int.right, Vector2Int.down })
+                if (controller.PendingSummons.Count == 0) controller.TapCell(ringholmS.cell + d);
+            if (controller.PendingSummons.Count != 1 || controller.PendingSummons[0].dueTurn != 3)
+                throw new InvalidOperationException("召喚の確認: ターン1に陣を置いてターン3に出る予定にならなかった");
+            view.FocusOn(ringholmS.cell, true);
+            RenderWithHud(hud, camera, rt, "Battle3D_ui_summon_circle");
+            controller.EndTurn();
+            if (controller.Units.Any(u => u.source.id == "hitodama")) throw new InvalidOperationException("召喚の確認: ターン2に出てしまった");
+            controller.EndTurn();
+            var hitodama = controller.Units.FirstOrDefault(u => u.source.id == "hitodama");
+            if (controller.Turn != 3 || hitodama == null || !hitodama.Alive) throw new InvalidOperationException($"召喚の確認: ターン3にヒトダマが出なかった（ターン{controller.Turn}）");
+            controller.Select("hitodama");
+            view.FocusOn(hitodama.cell, true);
+            RenderWithHud(hud, camera, rt, "Battle3D_ui_summon");
+            Debug.Log($"[Battle3DBuilder] ヒトダマ: HP {hitodama.plan.hp}/{hitodama.plan.maxHp} MP {hitodama.plan.mp} 魔攻 {hitodama.plan.stats.mag} 能力 {string.Join(",", hitodama.plan.abilityNames)}");
+            ringholmS.plan.hp = 0;
+            controller.CheckBattleEnd();
+            if (hitodama.Alive) throw new InvalidOperationException("召喚の確認: リングホルムが倒れてもヒトダマが消えなかった");
+            controller.RollsOverride = null;
             hud.Clear();
             view.SetOverview(true, true);
             view.SetView(true, 0, true);

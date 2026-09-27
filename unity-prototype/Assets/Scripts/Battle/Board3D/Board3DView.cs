@@ -72,8 +72,42 @@ namespace Srpg.Battle
         [SerializeField] private float closeSize = 4.0f;                    // 寄りの画面の大きさ（正投影の縦の半分。理想の画面と同じくらいのマスの大きさ）
         [SerializeField] private float focusRaise = 0.35f;                  // 寄りのとき、見ている所を画面のどれだけ上に置くか（下にUIがある）
         [SerializeField] private Texture2D backdrop;                        // いちばん奥の背景（発注書 第3版 M1）
+        // 地面の1枚絵（原作者 2026-09-27 に試す）: 真上から見たマップの地面を1枚で描き、すべてのマスの天面にまとめて貼る。
+        // 絵の範囲は、戦えるマスとまわりの景色（SceneryMargin）を合わせた長方形。上が北（行0の側）。側面は今までの模様のまま
+        [SerializeField] private Texture2D groundTexture;
+        public Texture2D Ground { get => groundTexture; set => groundTexture = value; }
 
-        private const float TileGap = 0.06f;       // マスの間のすき間（盤面の目地）
+        /// <summary>地面の1枚絵の範囲（マスの数）。左上のマス（列・行）と、横・縦のマスの数</summary>
+        public (Vector2Int origin, int columns, int rows) GroundExtent =>
+            map == null ? (Vector2Int.zero, 0, 0)
+                : (new Vector2Int(-map.SceneryMargin, -map.SceneryMargin), map.Columns + map.SceneryMargin * 2, map.Rows + map.SceneryMargin * 2);
+
+        /// <summary>そのマスの天面の模様の名前（地面の1枚絵の下絵・仮の1枚絵を作るときにも使う）</summary>
+        public string TopTextureOf(Vector2Int cell) => TopTextureName(cell);
+
+        private Material groundMaterial;
+
+        private Material GroundMaterial()
+        {
+            if (groundTexture == null) return null;
+            if (groundMaterial != null && groundMaterial.mainTexture == groundTexture) return groundMaterial;
+            var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+            groundMaterial = new Material(shader) { mainTexture = groundTexture, name = "Ground" };
+            if (groundMaterial.HasProperty("_BaseMap")) groundMaterial.SetTexture("_BaseMap", groundTexture);
+            if (groundMaterial.HasProperty("_Smoothness")) groundMaterial.SetFloat("_Smoothness", 0.05f);
+            return groundMaterial;
+        }
+
+        /// <summary>地面の1枚絵の中の、そのマスの範囲（uv。左下が 0）</summary>
+        private Rect GroundUv(Vector2Int cell)
+        {
+            var (origin, columns, rows) = GroundExtent;
+            float u0 = (cell.x - origin.x) / (float)columns, u1 = (cell.x - origin.x + 1) / (float)columns;
+            float v1 = 1f - (cell.y - origin.y) / (float)rows, v0 = 1f - (cell.y - origin.y + 1) / (float)rows;
+            return Rect.MinMaxRect(u0, v0, u1, v1);
+        }
+
+        private const float TileGap = 0.03f;       // マスの間のすき間（盤面の目地）。描いた草・土になってから細くした（2026-09-27）
         private const float TileHeight = 0.3f;     // マスのブロックの厚み
         private const float BaseHeight = 0.5f;     // 盤面の下の台の厚み
         private const float SwipePixels = 60f;     // これより長く横に動かしたら回す
@@ -125,6 +159,7 @@ namespace Srpg.Battle
         public bool Textured { get => textured; set => textured = value; }
         public bool Lanterns { get => lanterns; set => lanterns = value; }
         public Board3DMap Map { get => map; set => map = value; }
+        public Light KeyLight => keyLight;
 
         private bool tilted;
         private int turn;                  // 45°の何回目か（0〜7）。偶数＝斜め、奇数＝正面（真上では90°ずつ）
@@ -174,7 +209,7 @@ namespace Srpg.Battle
             int margin = map.SceneryMargin;
             baseBlock.transform.localScale = new Vector3(map.Columns + margin * 2 + 0.1f, BaseHeight, map.Rows + margin * 2 + 0.1f);
             baseBlock.transform.localPosition = new Vector3(0, -TileHeight - BaseHeight * 0.5f + 0.02f, 0);
-            baseBlock.GetComponent<Renderer>().sharedMaterial = LitMaterial(new Color32(24, 20, 30, 255));
+            baseBlock.GetComponent<Renderer>().sharedMaterial = LitMaterial(new Color32(58, 50, 38, 255));   // 目地の色: 暗い土
 
             for (int r = 0; r < map.Rows; r++)
             for (int c = 0; c < map.Columns; c++)
@@ -195,6 +230,7 @@ namespace Srpg.Battle
                 RegisterTallTile(cell, tile);
             }
             foreach (var cell in map.SceneryTrees) AddModelTree(cell);
+            AddGrassEdges();
             AddBackdrop();
 
             foreach (var unit in map.Units) AddUnit(unit);
@@ -224,6 +260,7 @@ namespace Srpg.Battle
             unitBodies.Clear();
             rangeTiles.Clear();
             pickups.Clear();
+            summonCircles.Clear();
             ClearOccluders();
             boardRoot = null;
             backdropRect = null;
@@ -298,6 +335,7 @@ namespace Srpg.Battle
             float footFromPivot = 0f;
             foreach (var entry in unitSprites)
                 if (entry.id == unit.id) { sprite = entry.sprite; footFromPivot = entry.footFromPivot; }
+            if (sprite == null) sprite = OrbSprite();   // 絵がまだないキャラ（召喚獣など）は、仮の青白い火の玉
             if (sprite != null)
             {
                 visual.billboard = AddBillboard($"Unit_{unit.id}", sprite, top + Vector3.up * feet, unitHeight, true, footFromPivot);
@@ -501,6 +539,59 @@ namespace Srpg.Battle
             return squareSprite;
         }
 
+        private static Sprite orbSprite;
+
+        /// <summary>絵がまだないキャラの仮の絵: 宙に浮く青白い火の玉（下の1/3は透明。足元が絵の下端）</summary>
+        private static Sprite OrbSprite()
+        {
+            if (orbSprite != null) return orbSprite;
+            const int w = 64, h = 96;
+            var tex = new Texture2D(w, h, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
+            var center = new Vector2(w * 0.5f, h * 0.62f);
+            for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+            {
+                // 丸い核と、上へ細く伸びる炎
+                var d = new Vector2(x + 0.5f, y + 0.5f) - center;
+                float flame = d.y > 0 ? d.y * 0.55f : 0f;
+                float r = new Vector2(d.x * (1f + flame / 20f), d.y * 0.8f).magnitude / 20f;
+                float a = Mathf.Clamp01(1.25f - r);
+                var core = Color.Lerp(new Color(0.85f, 0.95f, 1f), new Color(0.35f, 0.6f, 1f), Mathf.Clamp01(r));
+                tex.SetPixel(x, y, new Color(core.r, core.g, core.b, a * a));
+            }
+            tex.Apply();
+            orbSprite = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(0.5f, 0f), h);
+            return orbSprite;
+        }
+
+        /// <summary>戦闘の途中でキャラを盤面に足す（召喚獣）</summary>
+        public void AddUnitToBoard(Board3DMap.Unit unit)
+        {
+            map.Units.Add(unit);
+            AddUnit(unit);
+            UpdateBillboards();
+        }
+
+        private readonly Dictionary<Vector2Int, GameObject> summonCircles = new Dictionary<Vector2Int, GameObject>();
+
+        /// <summary>召喚の陣（マスに寝かせた青白い輪）</summary>
+        public void AddSummonCircle(Vector2Int cell)
+        {
+            RemoveSummonCircle(cell);
+            var ring = AddFlat($"SummonCircle_{cell.x}_{cell.y}", RingSprite(), map.TopCenter(cell) + Vector3.up * 0.016f, 0.8f,
+                new Color(0.55f, 0.8f, 1f, 0.9f), OrderMark);
+            summonCircles[cell] = ring.gameObject;
+        }
+
+        public void RemoveSummonCircle(Vector2Int cell)
+        {
+            if (!summonCircles.TryGetValue(cell, out var go)) return;
+            if (go != null) Object.DestroyImmediate(go);
+            summonCircles.Remove(cell);
+        }
+
+        public bool HasSummonCircle(Vector2Int cell) => summonCircles.ContainsKey(cell);
+
         private static Sprite RadialSprite(Func<float, Color> colorAt)
         {
             const int n = 128;
@@ -598,8 +689,8 @@ namespace Srpg.Battle
                 crown.transform.SetParent(root, false);
                 crown.transform.localScale = new Vector3(width, width * 0.8f, width);
                 crown.transform.localPosition = new Vector3(0, y, 0);
-                crown.GetComponent<Renderer>().sharedMaterial = textured && TextureMaterial("top_moss") != null
-                    ? TextureMaterial("top_moss") : LitMaterial(new Color32(46, 78, 50, 255));
+                // 葉は草原の模様（明るい草）を借りない。木の緑（高い物の模様 M5b が届くまで）
+                crown.GetComponent<Renderer>().sharedMaterial = LitMaterial(new Color32(52, 86, 54, 255));
             }
             RegisterOccluder(root.gameObject);
         }
@@ -669,6 +760,104 @@ namespace Srpg.Battle
         }
 
         /// <summary>仮のたいまつ: 細い柱の上に光る炎と、橙の点の光（原作の背景素材の「暗い中のはっきりした光」）</summary>
+        /// <summary>
+        /// 草の縁（マップチップの EDGE）: 草のマスと同じ高さで隣り合う、草でない床のマス（土・石畳）に、草がはみ出した絵を重ねる。
+        /// 辺で隣り合えば「縁」、角でだけ隣り合えば「角」。絵は草の側が上（奥）向きに描いてあり、90°ずつ回して向きを合わせる
+        /// </summary>
+        private void AddGrassEdges()
+        {
+            if (groundTexture != null) return;   // 地面の1枚絵には境界も描いてあるので、重ねない
+            var straight = TextureMaterial("edge_grass_straight");
+            var outer = TextureMaterial("edge_grass_outer");
+            var inner = TextureMaterial("edge_grass_inner");   // 2つの辺（隣り合う辺）が草（あれば縁2枚の代わりに使う）
+            if (straight == null) return;
+            var cutStraight = CutoutMaterial(straight);
+            var cutOuter = outer != null ? CutoutMaterial(outer) : null;
+            var cutInner = inner != null ? CutoutMaterial(inner) : null;
+            bool IsGrass(Vector2Int c) => (map.InBounds(c) || map.IsScenery(c)) && TopTextureName(c) == "top_moss";
+            var cells = new List<Vector2Int>();
+            for (int r = 0; r < map.Rows; r++) for (int c = 0; c < map.Columns; c++) cells.Add(new Vector2Int(c, r));
+            cells.AddRange(map.SceneryCells);
+            // 向き: 奥（行が小さい＝+z）を0°として、右回り
+            var sides = new[] { (new Vector2Int(0, -1), 0f), (new Vector2Int(1, 0), 90f), (new Vector2Int(0, 1), 180f), (new Vector2Int(-1, 0), 270f) };
+            var corners = new[] { (new Vector2Int(-1, -1), 0f), (new Vector2Int(1, -1), 90f), (new Vector2Int(1, 1), 180f), (new Vector2Int(-1, 1), 270f) };
+            foreach (var cell in cells)
+            {
+                if (IsGrass(cell)) continue;
+                string top = TopTextureName(cell);
+                if (top != "top_dirt" && top != "top_stone") continue;
+                float h = map.TopHeight(cell);
+                bool Same(Vector2Int c) => IsGrass(c) && Mathf.Abs(map.TopHeight(c) - h) < 0.01f;
+                var sideHits = new List<Vector2Int>();
+                foreach (var (d, _) in sides) if (Same(cell + d)) sideHits.Add(d);
+                var covered = new HashSet<Vector2Int>();
+                if (cutInner != null)
+                {
+                    // 隣り合う2辺が草: 内側の角の絵（絵は上と左が草。90°ずつ回す）
+                    var innerPairs = new[] { (new Vector2Int(0, -1), new Vector2Int(-1, 0), 0f), (new Vector2Int(0, -1), new Vector2Int(1, 0), 90f),
+                        (new Vector2Int(1, 0), new Vector2Int(0, 1), 180f), (new Vector2Int(0, 1), new Vector2Int(-1, 0), 270f) };
+                    foreach (var (a, b, yaw) in innerPairs)
+                    {
+                        if (!sideHits.Contains(a) || !sideHits.Contains(b) || covered.Contains(a) || covered.Contains(b)) continue;
+                        AddEdgeQuad(cell, cutInner, yaw);
+                        covered.Add(a); covered.Add(b);
+                    }
+                }
+                foreach (var (d, yaw) in sides)
+                    if (sideHits.Contains(d) && !covered.Contains(d)) AddEdgeQuad(cell, cutStraight, yaw);
+                if (cutOuter == null) continue;
+                foreach (var (d, yaw) in corners)
+                {
+                    // 角でだけ隣り合う草（その角の両側の辺には草がない）
+                    if (!Same(cell + d) || sideHits.Contains(new Vector2Int(d.x, 0)) || sideHits.Contains(new Vector2Int(0, d.y))) continue;
+                    AddEdgeQuad(cell, cutOuter, yaw);
+                }
+            }
+        }
+
+        private readonly Dictionary<Material, Material> cutoutMaterials = new Dictionary<Material, Material>();
+
+        /// <summary>背景が透明の絵を、半分より薄い所を切り抜いて描く材質（半透明の並べ替えの問題を避ける）</summary>
+        private Material CutoutMaterial(Material source)
+        {
+            if (cutoutMaterials.TryGetValue(source, out var cached)) return cached;
+            var m = new Material(source) { name = source.name + " (cutout)" };
+            if (m.HasProperty("_AlphaClip"))
+            {
+                m.SetFloat("_AlphaClip", 1f);
+                m.SetFloat("_Cutoff", 0.45f);
+                m.EnableKeyword("_ALPHATEST_ON");
+                m.renderQueue = (int)UnityEngine.Rendering.RenderQueue.AlphaTest;
+            }
+            cutoutMaterials[source] = m;
+            return m;
+        }
+
+        private static Mesh edgeQuad;
+
+        /// <summary>マスの天面に寝かせた四角（絵の上がマスの奥の辺）を、yaw だけ回して置く</summary>
+        private void AddEdgeQuad(Vector2Int cell, Material material, float yaw)
+        {
+            if (edgeQuad == null)
+            {
+                float s = (1f - TileGap) * 0.5f;
+                edgeQuad = new Mesh { name = "EdgeQuad" };
+                edgeQuad.vertices = new[] { new Vector3(-s, 0, -s), new Vector3(s, 0, -s), new Vector3(s, 0, s), new Vector3(-s, 0, s) };
+                edgeQuad.uv = new[] { new Vector2(0, 0), new Vector2(1, 0), new Vector2(1, 1), new Vector2(0, 1) };
+                edgeQuad.triangles = new[] { 0, 2, 1, 0, 3, 2 };
+                edgeQuad.RecalculateNormals();
+                edgeQuad.RecalculateBounds();
+            }
+            var go = new GameObject($"GrassEdge_{cell.x}_{cell.y}_{yaw}");
+            go.transform.SetParent(boardRoot, false);
+            go.transform.localPosition = map.TopCenter(cell) + Vector3.up * 0.004f;
+            go.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
+            go.AddComponent<MeshFilter>().sharedMesh = edgeQuad;
+            var renderer = go.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        }
+
         private readonly Dictionary<Vector2Int, GameObject> pickups = new Dictionary<Vector2Int, GameObject>();
 
         /// <summary>拾える消耗品の印（マスの上で光る小さな瓶）</summary>
@@ -801,11 +990,15 @@ namespace Srpg.Battle
             var tile = new GameObject($"Tile_{cell.x}_{cell.y}");
             tile.transform.SetParent(boardRoot, false);
             tile.transform.localPosition = map.TopCenter(cell);
-            int turnUv = (cell.x * 7 + cell.y * 13) % 4;
-            tile.AddComponent<MeshFilter>().sharedMesh = BlockMesh(1f - TileGap, height, turnUv);
+            // 仮の模様は繰り返しを目立たなくするため90°ずつ回す。描いた絵（草の向きがある）は回さない
+            var topMaterial = TextureMaterial(TopTextureName(cell));
+            int turnUv = topMaterial != null && topMaterial.mainTexture != null && topMaterial.mainTexture.width > 64
+                ? 0 : ((cell.x * 7 + cell.y * 13) % 4 + 4) % 4;
+            var ground = GroundMaterial();
+            tile.AddComponent<MeshFilter>().sharedMesh = BlockMesh(1f - TileGap, height, turnUv, ground != null ? GroundUv(cell) : (Rect?)null);
             tile.AddComponent<MeshRenderer>().sharedMaterials = new[]
             {
-                TextureMaterial(TopTextureName(cell)),
+                ground != null ? ground : TextureMaterial(TopTextureName(cell)),
                 TextureMaterial(SideTextureName(cell)),
             };
             var box = tile.AddComponent<BoxCollider>();
@@ -815,7 +1008,7 @@ namespace Srpg.Battle
         }
 
         /// <summary>天面（部分0）と4つの側面（部分1）だけの箱。天面は y=0、底は y=-height。側面の模様は高さ1ごとに繰り返す</summary>
-        private static Mesh BlockMesh(float width, float height, int turnUv)
+        private static Mesh BlockMesh(float width, float height, int turnUv, Rect? topUv = null)
         {
             float h = width * 0.5f;
             var vertices = new List<Vector3>();
@@ -838,9 +1031,16 @@ namespace Srpg.Battle
                 tris.AddRange(new[] { start, start + 1, start + 2, start, start + 2, start + 3 });
             }
 
-            // 天面（上から見て時計回り）
-            Quad(new Vector3(-h, 0, -h), new Vector3(-h, 0, h), new Vector3(h, 0, h), new Vector3(h, 0, -h), Vector3.up,
-                Turn(new Vector2(0, 0)), Turn(new Vector2(0, 1)), Turn(new Vector2(1, 1)), Turn(new Vector2(1, 0)), topTris);
+            // 天面（上から見て時計回り）。地面の1枚絵のときは、絵の中のそのマスの範囲（回さない）
+            if (topUv.HasValue)
+            {
+                var r = topUv.Value;
+                Quad(new Vector3(-h, 0, -h), new Vector3(-h, 0, h), new Vector3(h, 0, h), new Vector3(h, 0, -h), Vector3.up,
+                    new Vector2(r.xMin, r.yMin), new Vector2(r.xMin, r.yMax), new Vector2(r.xMax, r.yMax), new Vector2(r.xMax, r.yMin), topTris);
+            }
+            else
+                Quad(new Vector3(-h, 0, -h), new Vector3(-h, 0, h), new Vector3(h, 0, h), new Vector3(h, 0, -h), Vector3.up,
+                    Turn(new Vector2(0, 0)), Turn(new Vector2(0, 1)), Turn(new Vector2(1, 1)), Turn(new Vector2(1, 0)), topTris);
             // 側面: 模様の上端（v=1）を天面にそろえる
             float vb = 1f - height;
             var sides = new (Vector3 normal, Vector3 left, Vector3 right)[]

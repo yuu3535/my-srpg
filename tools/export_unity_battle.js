@@ -89,6 +89,7 @@ function main() {
         tiles: def.tiles || [],
         iso,
         units,
+        timeOfDay: def.timeOfDay || "dusk",
         // 拾える消耗品（{ x, y, item: { id, name, type, value } }）
         mapItems: (def.mapItems || []).map(mi => ({ x: mi.x, y: mi.y, item: { ...mi.item } })),
     };

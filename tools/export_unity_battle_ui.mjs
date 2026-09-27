@@ -153,6 +153,10 @@ const result = await evaluate(`(async () => {
         return c.toDataURL("image/png").split(",")[1];
     };
 
+    // 召喚獣（ヒトダマ）も書き出す: 空いているマス (0,7) に仮に置いて、ほかのキャラと同じように扱う（戦闘には出ていない）
+    const summoner = battleUnits.find(u => u.id === "ringholm");
+    if (summoner && typeof trialCreateSummonUnit === "function" && !battleUnits.some(u => u.id === "hitodama"))
+        battleUnits.push(trialCreateSummonUnit("hitodama", summoner, 0, 7));
     const units = [];
     const portraits = {};
     for (const unit of battleUnits.filter(u => u.trialStats)) {
@@ -170,6 +174,8 @@ const result = await evaluate(`(async () => {
             className: cls ? [...cls.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join("").trim() : "",
             moveLabel: text(".lcClass em"),
             maxMp: unit.maxMp || 0,
+            move: unit.move || 0,
+            summon: !!unit.trialSummon,
             weaponName: item ? item.name : "装備なし",
             weaponType: item ? weaponTypeOf(item) : "",
             weaponPower: stats["威力"] || "―", weaponRange: stats["射程"] || "―", weaponHit: stats["命中"] || "―", weaponCrit: stats["必殺"] || "―",
@@ -180,23 +186,30 @@ const result = await evaluate(`(async () => {
             // コマンドの一覧（使えないものも出す。index は options の番号、使えなければ −1）
             artList: [], magicList: [],
             supports: [],
+            // 専用戦技（月詠・生命吸収。ブラウザ版 trialSpecialArtsFor）: radius マス以内の敵のHPを percent% 削る。1戦闘に1回
+            specials: (TRIAL_ABILITY_SOURCE[unit.id] ? trialSpecialArtsFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null) : [])
+                .map(a => ({ name: a.name, desc: a.desc || "", radius: a.radius, percent: a.percent, drain: !!a.drain })),
         };
         const findOption = (label, isMagic) => entry.options.findIndex(o => o.label === label && o.isMagic === isMagic);
         trialPhysicalArtsFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null).forEach(art => {
             entry.artList.push({ label: art.name, sub: art.desc || "", index: art.implemented ? findOption(art.name, false) : -1 });
         });
+        entry.specials.forEach((sp, i) => entry.artList.push({ label: sp.name, sub: "", index: -1, specialIndex: i }));
         // 補助の魔法のうち Unity 版で使えるもの（味方が対象の 回復・結界・加速 の戦技と、治癒の魔核）。
         // ブラウザ版の trialCastSupportArt・trialCastHeal と同じ効果を Unity 側で行う
         // 虚像・封印（敵が対象。命中の判定あり）と転移（味方と行き先を選ぶ）も入れる
         const supportable = spell => spell && typeof spell.range === "number"
-            && (["回復", "結界", "加速", "虚像", "封印", "転移"].includes(spell.trialArtName) || (spell.trialItemId && spell.effectType === "heal"));
+            && (["回復", "結界", "加速", "虚像", "封印", "転移"].includes(spell.trialArtName) || ((spell.trialItemId || spell.trialFixed) && spell.effectType === "heal"));
         getLandscapeMagicEntries(unit).forEach(({ spell, label, sub }) => {
             let supportIndex = -1;
             if (supportable(spell)) {
                 supportIndex = entry.supports.length;
                 entry.supports.push({ ...magicOption(unit, spell, label), kind: "support", rangeMin: spell.targetType === "enemy" ? 1 : 0 });
             }
-            entry.magicList.push({ label, sub: sub || "", mpCost: String(spell?.mpCost ?? ""), index: attackable(spell) ? findOption(label, true) : -1, supportIndex });
+            // 召喚の戦技（TRIAL_SUMMONS）: 呼ぶ召喚獣と、出るまでのターン
+            const summon = spell && typeof TRIAL_SUMMONS !== "undefined" ? TRIAL_SUMMONS[spell.trialArtName] : null;
+            entry.magicList.push({ label, sub: sub || "", mpCost: String(spell?.mpCost ?? ""), index: attackable(spell) ? findOption(label, true) : -1, supportIndex,
+                summonUnitId: summon ? summon.unitId : "", summonDelay: summon ? summon.delayTurns : 0 });
         });
         const src = getPortraitSrc(unit) || unit.tokenImage || "";
         const face = q(".lcPortrait");

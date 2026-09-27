@@ -734,7 +734,7 @@ namespace Srpg.Battle
             if (!Built || controller == null || controller.Data == null) return;
             var sel = controller.Selected;
             var tgt = controller.Target;
-            string key = $"{statusOpen}|{subList}|{sel?.items.Count}|{controller.CurrentOption?.label}|{controller.TransferAlly?.Id}|{controller.EnemyPreview?.attacker?.Id}|{controller.CurrentPhase}|{controller.CurrentMode}|{sel?.Id}|{sel?.plan?.hp}|{sel?.plan?.mp}|{sel?.cell}|{tgt?.Id}|{tgt?.plan?.hp}|{controller.Turn}|{controller.Units.Count(u => u.acted)}"
+            string key = $"{statusOpen}|{subList}|{sel?.items.Count}|{controller.Units.Count}|{controller.PendingSummons.Count}|{controller.CurrentOption?.label}|{controller.TransferAlly?.Id}|{controller.EnemyPreview?.attacker?.Id}|{controller.CurrentPhase}|{controller.CurrentMode}|{sel?.Id}|{sel?.plan?.hp}|{sel?.plan?.mp}|{sel?.cell}|{tgt?.Id}|{tgt?.plan?.hp}|{controller.Turn}|{controller.Units.Count(u => u.acted)}"
                 + $"|{controller.Declarations.Count}|{string.Join(",", controller.Units.Select(u => u.plan?.hp ?? 0))}";
             if (key == stateKey) return;
             stateKey = key;
@@ -777,6 +777,12 @@ namespace Srpg.Battle
 
         private void FillRoster(bool forecastOpen)
         {
+            if (controller.Units.Count(u => u.Side == "ally") != rosterSlots.Count)
+            {
+                Object.DestroyImmediate(roster.gameObject);
+                BuildRoster();
+                roster.SetSiblingIndex(1);
+            }
             roster.gameObject.SetActive(!forecastOpen);
             foreach (var slot in rosterSlots)
             {
@@ -920,6 +926,25 @@ namespace Srpg.Battle
                     var options = controller.OptionsOf(sel);
                     foreach (var entry in list ?? Array.Empty<UiListEntry>())
                     {
+                        if (!string.IsNullOrEmpty(entry.summonUnitId))
+                        {
+                            // 召喚（1戦闘に1回。隣の空いているマスに陣を置く）
+                            var summon = entry;
+                            bool usedSummon = controller.SummonUsed(sel, summon);
+                            entries.Add(("magic", entry.label, () => { subList = null; controller.ChooseSummon(summon); }, controller.CanSummon(sel, summon)));
+                            subTexts.Add(usedSummon ? "使用済み" : $"MP {entry.mpCost}");
+                            continue;
+                        }
+                        var specials = controller.SpecialsOf(sel);
+                        if (entry.specialIndex >= 0 && entry.specialIndex < specials.Count)
+                        {
+                            // 専用戦技（範囲の割合ダメージ。1戦闘に1回）
+                            var special = specials[entry.specialIndex];
+                            bool used = controller.SpecialUsed(sel, special);
+                            entries.Add(("skill", entry.label, () => { subList = null; controller.UseSpecial(special); }, !used));
+                            subTexts.Add(used ? "使用済み" : $"{special.radius}マス・1回");
+                            continue;
+                        }
                         var option = entry.index >= 0 && entry.index < options.Count ? options[entry.index] : null;
                         var supports = controller.SupportsOf(sel);
                         var support = entry.supportIndex >= 0 && entry.supportIndex < supports.Count ? supports[entry.supportIndex] : null;
@@ -948,7 +973,7 @@ namespace Srpg.Battle
                     entries.Add(("wait", "待機", () => controller.ChooseWait(), true));
                     if (controller.CanUndoMove) entries.Add(("back", "戻る", () => controller.UndoMove(), true));
                 }
-                else if (sel != null && (mode == Battle3DController.Mode.Targeting || mode == Battle3DController.Mode.Support))
+                else if (sel != null && (mode == Battle3DController.Mode.Targeting || mode == Battle3DController.Mode.Support || mode == Battle3DController.Mode.Summon))
                 {
                     entries.Add(("back", "取り消し", () => controller.CancelTargeting(), true));
                 }
@@ -1028,6 +1053,7 @@ namespace Srpg.Battle
                 Battle3DController.Mode.Moving => $"{sel.Name}の移動先を選ぶか、右のコマンドを選んでください。",
                 Battle3DController.Mode.Targeting => "攻撃する相手を選んでください。",
                 Battle3DController.Mode.Support => SupportHint(),
+                Battle3DController.Mode.Summon => "召喚の陣を置くマスを選んでください（隣の空いているマス。2ターン後に出ます）。",
                 _ => $"{sel.Name}の行動を選んでください。",
             };
         }

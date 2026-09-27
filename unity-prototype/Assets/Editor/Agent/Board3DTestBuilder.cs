@@ -174,7 +174,9 @@ namespace Srpg.EditorAgent
             controller.SetView(true, 1, true);   // 正面（原作者 2026-09-27）
             Render(camera, rt, "Board3D_T5_C2_front");
 
-            // T6: 寄りの画面を基本にする（原作者 2026-09-27）。盤面のまわりの景色と、いちばん奥の背景（M1）
+            // T6: 寄りの画面を基本にする（原作者 2026-09-27）。盤面のまわりの景色と、いちばん奥の背景（M1）。
+            // マップチップ（明るい土の道・草原）に合わせて昼の光（原作者 2026-09-27）
+            SetMood(Board3DMood.Day);
             controller.SetView(true, 0, true);
             Render(camera, rt, "Board3D_T6_overview");
             controller.SetOverview(false, true);
@@ -198,6 +200,57 @@ namespace Srpg.EditorAgent
                 Render(camera, rt, $"Board3D_T6_occlusion_{turn * 45}");
             }
             controller.SetOverview(true, true);
+            controller.SetView(true, 0, true);
+
+            // T7: 地面の1枚絵（原作者 2026-09-27 に試す）。下絵（地形の色分け）と、今のタイルをつなげた仮の1枚絵を作り、仮の1枚絵を貼って撮る
+            var guide = WriteGroundImages(controller);
+            controller.Ground = guide.provisional;
+            controller.Setup();
+            controller.SetOverview(false, true);
+            controller.SetView(true, 0, true);
+            controller.FocusOnPoint(Board3DLayout.TopCenter(new Vector2Int(4, 5)), true);
+            Render(camera, rt, "Board3D_T7_ground_close");
+            controller.SetView(false, 0, true);
+            Render(camera, rt, "Board3D_T7_ground_top");
+            controller.SetView(true, 3, true);
+            Render(camera, rt, "Board3D_T7_ground_turn");
+            controller.SetOverview(true, true);
+            controller.SetView(true, 0, true);
+            Render(camera, rt, "Board3D_T7_ground_overview");
+            controller.Ground = guide.guide;   // 下絵そのものを貼ったところ（配置の確かめ）
+            controller.Setup();
+            Render(camera, rt, "Board3D_T7_guide_overview");
+            // T8: 描いてもらった地面の1枚絵（tools/import_ground_image.py が置く）
+            const string paintedPath = GroundDir + "/watchroad_ground.png";
+            if (File.Exists(paintedPath))
+            {
+                AssetDatabase.ImportAsset(paintedPath, ImportAssetOptions.ForceSynchronousImport);
+                var importer = (TextureImporter)AssetImporter.GetAtPath(paintedPath);
+                importer.wrapMode = TextureWrapMode.Clamp;
+                importer.filterMode = FilterMode.Trilinear;
+                importer.mipmapEnabled = true;
+                importer.maxTextureSize = 4096;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
+                importer.SaveAndReimport();
+                controller.Ground = AssetDatabase.LoadAssetAtPath<Texture2D>(paintedPath);
+                controller.Setup();
+                controller.SetOverview(false, true);
+                controller.SetView(true, 0, true);
+                controller.FocusOnPoint(Board3DLayout.TopCenter(new Vector2Int(4, 5)), true);
+                Render(camera, rt, "Board3D_T8_painted_close");
+                controller.FocusOnPoint(Board3DLayout.TopCenter(new Vector2Int(6, 2)), true);
+                Render(camera, rt, "Board3D_T8_painted_close_gate");
+                controller.SetView(true, 1, true);
+                Render(camera, rt, "Board3D_T8_painted_front");
+                controller.SetView(false, 0, true);
+                Render(camera, rt, "Board3D_T8_painted_top");
+                controller.SetOverview(true, true);
+                controller.SetView(true, 0, true);
+                Render(camera, rt, "Board3D_T8_painted_overview");
+            }
+            // 試作のシーンには、地面の1枚絵があればそれを残す（▶で見られるように）
+            controller.Ground = File.Exists(paintedPath) ? AssetDatabase.LoadAssetAtPath<Texture2D>(paintedPath) : null;
+            controller.Setup();
             controller.SetView(true, 0, true);
 
             camera.targetTexture = null;
@@ -256,21 +309,100 @@ namespace Srpg.EditorAgent
         /// 作り直した C（docs/10-design/map/MAP_COLOR_MOOD_DIRECTION_2026-09-27.md）:
         /// 主な光は琥珀、まわりの明るさ（影の色）は青緑、霧は弱めの深い藍。シーンにもこの設定で保存する
         /// </summary>
-        internal static void SetMoodC2()
+        internal static void SetMoodC2() => SetMood(Board3DMood.Dusk);
+
+        /// <summary>盤面の時間帯（Board3DMood）をシーンに入れる</summary>
+        internal static void SetMood(string mood)
         {
             var light = UnityEngine.Object.FindObjectsByType<Light>(FindObjectsSortMode.None).FirstOrDefault(l => l.type == LightType.Directional);
-            RenderSettings.fog = true;
-            RenderSettings.fogMode = FogMode.Linear;
-            RenderSettings.fogColor = new Color32(16, 34, 44, 255);
-            RenderSettings.fogStartDistance = 29f;
-            RenderSettings.fogEndDistance = 46f;
-            RenderSettings.ambientMode = AmbientMode.Flat;
-            RenderSettings.ambientLight = new Color32(76, 102, 108, 255);
-            if (light != null)
+            Board3DMood.Apply(mood, light);
+        }
+
+        internal const string GroundDir = "Assets/Art/Board3D/Ground";
+        internal const string GuideDocPath = "../docs/10-design/map/graybox/watchroad_topdown_guide.png";
+
+        // 下絵の色（地形の記号ごと）。ChatGPT に「この配置で描いて」と渡す真上の配置図
+        private static readonly Dictionary<char, Color32> GuideColors = new Dictionary<char, Color32>
+        {
+            { 's', new Color32(150, 146, 138, 255) },   // 旧石畳
+            { 'd', new Color32(176, 132, 84, 255) },    // 土道
+            { 'g', new Color32(104, 156, 72, 255) },    // 草・苔
+            { '=', new Color32(128, 88, 52, 255) },     // 補修橋
+            { '~', new Color32(48, 96, 150, 255) },     // 水堀
+            { 'o', new Color32(120, 110, 96, 255) },    // 遮蔽物（瓦礫）
+            { '#', new Color32(90, 86, 84, 255) },      // 石の基礎・壁
+            { 't', new Color32(40, 84, 48, 255) },      // 密な茂み・森
+            { 'c', new Color32(110, 104, 100, 255) },   // 岩の崖
+        };
+
+        /// <summary>
+        /// 地面の1枚絵の下絵と仮の1枚絵を書き出す（範囲は戦えるマス＋まわりの景色。上が北）。
+        ///   下絵: 地形ごとの色でマスを塗り、戦えるマスの外周に赤い線（ChatGPT へ渡す。docs にも写す）
+        ///   仮の1枚絵: 今の天面の模様をマスごとに並べたもの（1枚絵の貼り方を確かめるため）
+        /// </summary>
+        internal static (Texture2D guide, Texture2D provisional) WriteGroundImages(Board3DView view)
+        {
+            Directory.CreateDirectory(GroundDir);
+            var (origin, columns, rows) = view.GroundExtent;
+            var map = view.Map;
+            const int guideCell = 40, tileCell = 64;
+            var guide = new Texture2D(columns * guideCell, rows * guideCell, TextureFormat.RGBA32, false);
+            var tiles = new Texture2D(columns * tileCell, rows * tileCell, TextureFormat.RGBA32, false);
+            var sources = new Dictionary<string, Color32[]>();
+            Color32[] Source(string name)
             {
-                light.color = new Color32(255, 216, 168, 255);
-                light.intensity = 1.45f;
+                if (sources.TryGetValue(name, out var cached)) return cached;
+                var path = $"{TextureDir}/{name}.png";
+                if (!File.Exists(path)) return sources[name] = null;
+                var t = new Texture2D(2, 2);
+                t.LoadImage(File.ReadAllBytes(path));
+                var scaled = new Texture2D(tileCell, tileCell, TextureFormat.RGBA32, false);
+                for (int y = 0; y < tileCell; y++)
+                for (int x = 0; x < tileCell; x++)
+                    scaled.SetPixel(x, y, t.GetPixelBilinear((x + 0.5f) / tileCell, (y + 0.5f) / tileCell));
+                return sources[name] = scaled.GetPixels32();
             }
+            for (int r = 0; r < rows; r++)
+            for (int c = 0; c < columns; c++)
+            {
+                var cell = new Vector2Int(origin.x + c, origin.y + r);
+                bool inside = map.InBounds(cell);
+                char t = inside || map.IsScenery(cell) ? map.TerrainAt(cell) : 'g';
+                if (inside && map.IsWall(cell)) t = '#';
+                var color = GuideColors.TryGetValue(t, out var col) ? col : new Color32(255, 0, 255, 255);
+                int gx = c * guideCell, gy = (rows - 1 - r) * guideCell;   // テクスチャは下が 0
+                var block = new Color32[guideCell * guideCell];
+                for (int i = 0; i < block.Length; i++) block[i] = color;
+                guide.SetPixels32(gx, gy, guideCell, guideCell, block);
+                var src = Source(view.TopTextureOf(cell));
+                if (src != null) tiles.SetPixels32(c * tileCell, (rows - 1 - r) * tileCell, tileCell, tileCell, src);
+            }
+            // 戦えるマスの外周（赤い線 2px）
+            int x0 = (0 - origin.x) * guideCell, x1 = (map.Columns - origin.x) * guideCell;
+            int y1 = (rows - (0 - origin.y)) * guideCell, y0 = (rows - (map.Rows - origin.y)) * guideCell;
+            var red = new Color32(220, 40, 40, 255);
+            for (int x = x0; x < x1; x++) for (int k = 0; k < 2; k++) { guide.SetPixel(x, y0 + k, red); guide.SetPixel(x, y1 - 1 - k, red); }
+            for (int y = y0; y < y1; y++) for (int k = 0; k < 2; k++) { guide.SetPixel(x0 + k, y, red); guide.SetPixel(x1 - 1 - k, y, red); }
+            guide.Apply();
+            tiles.Apply();
+            string guidePath = $"{GroundDir}/watchroad_guide.png", tilesPath = $"{GroundDir}/watchroad_ground_provisional.png";
+            File.WriteAllBytes(guidePath, guide.EncodeToPNG());
+            File.WriteAllBytes(tilesPath, tiles.EncodeToPNG());
+            File.WriteAllBytes(GuideDocPath, guide.EncodeToPNG());
+            foreach (var path in new[] { guidePath, tilesPath })
+            {
+                AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
+                var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+                importer.textureType = TextureImporterType.Default;
+                importer.wrapMode = TextureWrapMode.Clamp;
+                importer.filterMode = path == guidePath ? FilterMode.Point : FilterMode.Trilinear;
+                importer.mipmapEnabled = path != guidePath;
+                importer.maxTextureSize = 4096;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
+                importer.SaveAndReimport();
+            }
+            Debug.Log($"[Board3DTestBuilder] 地面の1枚絵: {columns}×{rows} マス（左上 {origin}）、下絵 {guide.width}×{guide.height}px");
+            return (AssetDatabase.LoadAssetAtPath<Texture2D>(guidePath), AssetDatabase.LoadAssetAtPath<Texture2D>(tilesPath));
         }
 
         /// <summary>光のにじみ（ブルーム）の設定を用意する。明るい光（炎・門の光）だけがにじむ</summary>
@@ -300,9 +432,16 @@ namespace Srpg.EditorAgent
                 AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
                 var importer = (TextureImporter)AssetImporter.GetAtPath(path);
                 importer.textureType = TextureImporterType.Default;
-                importer.filterMode = FilterMode.Point;
-                importer.wrapMode = TextureWrapMode.Repeat;
-                importer.mipmapEnabled = false;
+                // 仮の模様（32×32のドット絵）は点のまま拡大。描いた絵（マップチップ。tools/import_map_chips.py）はなめらかに縮める
+                // PNG の幅（ヘッダーの16〜19バイト目）
+                var header = new byte[24];
+                using (var fs = File.OpenRead(path)) fs.Read(header, 0, 24);
+                int width = (header[16] << 24) | (header[17] << 16) | (header[18] << 8) | header[19];
+                bool painted = width > 64;
+                importer.filterMode = painted ? FilterMode.Trilinear : FilterMode.Point;
+                importer.mipmapEnabled = painted;
+                importer.wrapMode = Path.GetFileName(path).StartsWith("edge_") ? TextureWrapMode.Clamp : TextureWrapMode.Repeat;
+                importer.alphaIsTransparency = Path.GetFileName(path).StartsWith("edge_");
                 importer.textureCompression = TextureImporterCompression.Uncompressed;
                 importer.SaveAndReimport();
             }

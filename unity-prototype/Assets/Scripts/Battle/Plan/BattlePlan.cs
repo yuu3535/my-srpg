@@ -174,7 +174,7 @@ namespace Srpg.Battle.Plan
             // 必殺
             int criticalModifier = attacker.criticalBonus + StatusSum(attacker, new[] { "criticalBonus" })
                 - defender.criticalAvoidanceBonus - StatusSum(defender, new[] { "criticalAvoidance" })
-                + (sakki ? 10 : 0) + attack.critical - aura.critGuard;
+                + (sakki ? 10 : 0) + attack.critical + aura.critical - aura.critGuard;
             int critRate = TrialRules.CriticalRate(attacker.stats, attacker.courage, defender.stats, criticalModifier);
 
             return new Strike { autoHit = autoHit, hitRate = hitRate, damage = damage, critRate = critRate, critDamage = damage * CriticalMultiplier, notes = notes };
@@ -335,6 +335,29 @@ namespace Srpg.Battle.Plan
         }
 
         private static bool Alive(PlanUnit unit) => unit.hp > 0;
+
+        /// <summary>割合でHPを削る（battlePlan.js の bpPlanDrain）。命中判定なし、最低1。drain なら削った合計だけ自分のHP・MPを回復</summary>
+        public class DrainResult
+        {
+            public List<(string targetId, int damage, int targetHpAfter)> hits = new List<(string, int, int)>();
+            public int healed, attackerHpAfter, attackerMpAfter;
+        }
+
+        public static DrainResult PlanDrain(PlanUnit attacker, IList<PlanUnit> targets, int percent, bool drain, int maxMp)
+        {
+            var result = new DrainResult();
+            int total = 0;
+            foreach (var t in targets.Where(Alive))
+            {
+                int damage = Math.Max(1, t.maxHp * percent / 100);
+                result.hits.Add((t.id, damage, Math.Max(0, t.hp - damage)));
+                total += Math.Min(damage, t.hp);
+            }
+            result.healed = drain ? total : 0;
+            result.attackerHpAfter = Math.Min(attacker.maxHp, attacker.hp + result.healed);
+            result.attackerMpAfter = Math.Min(maxMp, attacker.mp + result.healed);
+            return result;
+        }
 
         /// <summary>範囲の攻撃の計画（battlePlan.js の bpPlanArea）: 対象ごとに1撃ずつ。反撃・追撃はない。魔法は2人目からMPを払わない</summary>
         public class AreaResult

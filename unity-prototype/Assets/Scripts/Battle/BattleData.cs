@@ -16,6 +16,7 @@ namespace Srpg.Battle
         public IsoData iso;
         public UnitData[] units;
         public MapItemData[] mapItems;   // 拾える消耗品
+        public string timeOfDay;         // 3Dの盤面の時間帯（Board3DMood: day / dusk）
     }
 
     /// <summary>消耗品（ブラウザ版の mapItems の item。type: heal なら value だけHPを回復）</summary>

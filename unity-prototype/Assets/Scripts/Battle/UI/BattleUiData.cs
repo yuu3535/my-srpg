@@ -22,6 +22,9 @@ namespace Srpg.Battle
         public string label, sub, mpCost;
         public int index = -1;          // 攻撃（options の番号）
         public int supportIndex = -1;   // 補助（supports の番号）
+        public int specialIndex = -1;   // 専用戦技（specials の番号）
+        public string summonUnitId;     // 召喚の戦技: 呼ぶ召喚獣（なければ空）
+        public int summonDelay;         // 召喚獣が出るまでのターン（使ったターン＋summonDelay の味方の番の始まり）
     }
 
     [Serializable]
@@ -29,6 +32,8 @@ namespace Srpg.Battle
     {
         public string id, name, side, levelLabel, className, moveLabel;
         public int maxMp;
+        public int move;
+        public bool summon;   // 召喚獣（戦闘の始まりには出ていない）
         public string weaponName, weaponType, weaponPower, weaponRange, weaponHit, weaponCrit;
         public string portrait;
         public UvRect cardUv, bustUv, rosterUv;
@@ -37,6 +42,16 @@ namespace Srpg.Battle
         public BattleOption[] enemyOptions;      // 敵として選ぶ攻撃（ブラウザ版 trialEnemyAttackOptions）
         public UiListEntry[] artList, magicList; // コマンド「戦技」「魔法」の一覧（使えないものも出す）
         public BattleOption[] supports;          // 補助の魔法（回復・結界・加速・治癒の魔核。kind = "support"）
+        public SpecialArt[] specials;            // 専用戦技（月詠・生命吸収）
+    }
+
+    /// <summary>専用戦技: radius マス以内の敵のHPを percent% 削る（drain なら削った分だけ自分のHP・MPを回復）。1戦闘に1回</summary>
+    [Serializable]
+    public class SpecialArt
+    {
+        public string name, desc;
+        public int radius, percent;
+        public bool drain;
     }
 
     [Serializable]

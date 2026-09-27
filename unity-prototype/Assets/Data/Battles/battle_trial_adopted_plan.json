@@ -307,6 +307,39 @@
       "criticalAvoidanceBonus": 0,
       "canCounterBase": true,
       "prayerUsed": false
+    },
+    {
+      "id": "hitodama",
+      "name": "ヒトダマ",
+      "side": "ally",
+      "x": 0,
+      "y": 7,
+      "hp": 20,
+      "maxHp": 20,
+      "mp": 29,
+      "stats": {
+        "hp": 20,
+        "atk": 6,
+        "def": 8,
+        "mag": 22,
+        "res": 20,
+        "tec": 14,
+        "spd": 20,
+        "cha": 12
+      },
+      "siz": 3,
+      "courage": 0,
+      "luck": 15,
+      "abilityNames": [
+        "アシスト"
+      ],
+      "statusEffects": [],
+      "equippedItem": null,
+      "grimoireSpell": null,
+      "criticalBonus": 0,
+      "criticalAvoidanceBonus": 0,
+      "canCounterBase": true,
+      "prayerUsed": false
     }
   ],
   "items": [

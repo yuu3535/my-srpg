@@ -23,7 +23,7 @@ namespace Srpg.Battle
         [SerializeField] private float enemyStepSeconds = 0.6f;
 
         public enum Phase { Ally, Enemy, Victory, Defeat }
-        public enum Mode { Idle, Moving, Acting, Targeting, Forecast, Support }
+        public enum Mode { Idle, Moving, Acting, Targeting, Forecast, Support, Summon }
 
         private BattleDataFile data;
         private Board3DMap map;
@@ -89,6 +89,148 @@ namespace Srpg.Battle
         }
         public EnemyPreviewInfo EnemyPreview { get; private set; }
         [SerializeField] private float enemyPreviewSeconds = 1.2f;
+
+        private readonly HashSet<string> usedSpecials = new HashSet<string>();   // 「キャラ:専用戦技」（1戦闘に1回）
+
+        // ── 召喚（ブラウザ版 trialStartSummon・trialResolveSummons と同じ。原作者 2026-09-27）──
+        //   戦技に入っている召喚だけ・1戦闘に1回。隣の空いているマスに陣を置き、使ったターン＋2 の味方の番の始まりに出る。
+        //   呼んだキャラが倒れたら、出る前の召喚も出ている召喚獣も消える。召喚獣は負けの判定に数えない
+        public class PendingSummon
+        {
+            public string unitId, casterId, artName;
+            public Vector2Int cell;
+            public int dueTurn;
+        }
+
+        private readonly List<PendingSummon> pendingSummons = new List<PendingSummon>();
+        private readonly HashSet<string> usedSummons = new HashSet<string>();
+        private UiListEntry summonEntry;
+        private PlanUnit[] planSnapshots = Array.Empty<PlanUnit>();
+        public IReadOnlyList<PendingSummon> PendingSummons => pendingSummons;
+
+        public bool SummonUsed(UnitState unit, UiListEntry entry) => usedSummons.Contains(unit.Id + ":" + entry.label);
+
+        /// <summary>その召喚が使えるか（まだ使っていない・MPがある・隣に空いているマスがある）</summary>
+        public bool CanSummon(UnitState unit, UiListEntry entry) =>
+            unit != null && entry != null && !string.IsNullOrEmpty(entry.summonUnitId) && !SummonUsed(unit, entry)
+            && unit.plan != null && unit.plan.mp > 0 && SummonCells(unit.cell).Any();
+
+        private IEnumerable<Vector2Int> SummonCells(Vector2Int from)
+        {
+            foreach (var d in new[] { Vector2Int.right, Vector2Int.left, Vector2Int.up, Vector2Int.down })
+            {
+                var cell = from + d;
+                if (!map.InBounds(cell) || !map.CanStop(cell, false)) continue;
+                if (units.Any(u => u.Alive && u.cell == cell) || view.HasSummonCircle(cell)) continue;
+                yield return cell;
+            }
+        }
+
+        /// <summary>召喚を選び、陣を置くマス（隣の空いているマス）を出す</summary>
+        public void ChooseSummon(UiListEntry entry)
+        {
+            StayIfMoving();
+            if (CurrentMode != Mode.Acting || !CanSummon(selected, entry)) return;
+            summonEntry = entry;
+            supportCells.Clear();
+            foreach (var cell in SummonCells(selected.cell)) supportCells.Add(cell);
+            view.ShowRange(supportCells, Board3DView.SupportRangeColor);
+            CurrentMode = Mode.Summon;
+        }
+
+        private void PlaceSummon(Vector2Int cell)
+        {
+            var caster = selected;
+            var rolls = RollsOverride ?? new RandomRolls();
+            int cost = PayMagicMp(caster, new PlanSpell { mpCost = summonEntry.mpCost }, rolls);
+            usedSummons.Add(caster.Id + ":" + summonEntry.label);
+            int due = Turn + summonEntry.summonDelay;
+            pendingSummons.Add(new PendingSummon { unitId = summonEntry.summonUnitId, casterId = caster.Id, artName = summonEntry.label, cell = cell, dueTurn = due });
+            view.AddSummonCircle(cell);
+            AddLog($"{caster.Name}が {summonEntry.label} 使用  MP-{cost} → {cell}に召喚の陣（ターン{due}に出る）");
+            summonEntry = null;
+            supportCells.Clear();
+            view.ShowRange(null);
+            FinishAction(caster);
+        }
+
+        /// <summary>味方の番の始まり: 時が来た召喚を出す（陣がふさがっていたら、いちばん近い空いているマス）</summary>
+        private void ResolveSummons()
+        {
+            foreach (var p in pendingSummons.Where(p => p.dueTurn <= Turn).ToList())
+            {
+                pendingSummons.Remove(p);
+                view.RemoveSummonCircle(p.cell);
+                var caster = units.FirstOrDefault(u => u.Id == p.casterId && u.Alive);
+                if (caster == null) continue;
+                var spot = Enumerable.Range(0, data.cols * data.rows)
+                    .Select(i => new Vector2Int(i % data.cols, i / data.cols))
+                    .Where(c => map.CanStop(c, false) && !units.Any(u => u.Alive && u.cell == c))
+                    .OrderBy(c => Distance(c, p.cell)).ThenBy(c => c.y).ThenBy(c => c.x)
+                    .Cast<Vector2Int?>().FirstOrDefault();
+                if (spot == null) continue;
+                var ui = uiUnits.TryGetValue(p.unitId, out var found) ? found : null;
+                var snapshot = planSnapshots.FirstOrDefault(u => u.id == p.unitId);
+                var source = new UnitData { id = p.unitId, name = ui?.name ?? p.unitId, side = caster.Side, x = spot.Value.x, y = spot.Value.y, move = ui?.move ?? 4, attackRange = 1 };
+                var state = new UnitState { source = source, cell = spot.Value, summoned = true, summonerId = caster.Id, plan = snapshot?.Clone() };
+                if (state.plan != null) { state.plan.x = spot.Value.x; state.plan.y = spot.Value.y; state.plan.side = caster.Side; }
+                units.Add(state);
+                view.AddUnitToBoard(new Board3DMap.Unit { cell = spot.Value, id = source.id, enemy = caster.Side == "enemy" });
+                AddLog($"召喚の陣から {source.name} が現れた！");
+            }
+        }
+
+        /// <summary>呼んだキャラが倒れたら、出る前の召喚と、出ている召喚獣を消す</summary>
+        private void CleanupSummons()
+        {
+            foreach (var p in pendingSummons.Where(p => !units.Any(u => u.Id == p.casterId && u.Alive)).ToList())
+            {
+                pendingSummons.Remove(p);
+                view.RemoveSummonCircle(p.cell);
+            }
+            foreach (var unit in units.Where(u => u.summoned && u.Alive && !units.Any(c => c.Id == u.summonerId && c.Alive)).ToList())
+            {
+                unit.plan.hp = 0;
+                view.RemoveUnit(unit.Id);
+                AddLog($"{unit.Name}は呼んだ者が倒れ、消えた");
+            }
+        }
+
+        public IReadOnlyList<SpecialArt> SpecialsOf(UnitState unit) => (IReadOnlyList<SpecialArt>)UiOf(unit)?.specials ?? Array.Empty<SpecialArt>();
+        public bool SpecialUsed(UnitState unit, SpecialArt art) => usedSpecials.Contains(unit.Id + ":" + art.name);
+
+        /// <summary>
+        /// 専用戦技（ブラウザ版 trialCastSpecialArt）: radius マス以内の敵すべてのHPを percent% 削る（命中判定なし・最低1）。
+        /// 生命吸収は削った合計だけ自分のHP・MPを回復。1戦闘に1回。使うと行動済み
+        /// </summary>
+        public void UseSpecial(SpecialArt art)
+        {
+            StayIfMoving();
+            if (CurrentMode != Mode.Acting || selected == null || art == null || SpecialUsed(selected, art)) return;
+            var unit = selected;
+            var foes = units.Where(u => u.Alive && u.Side != unit.Side && Distance(u.cell, unit.cell) <= art.radius).ToList();
+            int maxMp = UiOf(unit)?.maxMp ?? unit.plan.mp;
+            var plan = BattlePlan.PlanDrain(unit.plan, foes.Select(f => f.plan).ToList(), art.percent, art.drain, maxMp);
+            usedSpecials.Add(unit.Id + ":" + art.name);
+            AddLog($"{unit.Name}の{art.name}！（{art.radius}マス以内の敵のHPを{art.percent}%削る）");
+            if (plan.hits.Count == 0) AddLog("  範囲内に敵がいない");
+            foreach (var (targetId, damage, hpAfter) in plan.hits)
+            {
+                var foe = foes.First(f => f.Id == targetId);
+                foe.plan.hp = hpAfter;
+                AddPopup(foe.Id, damage.ToString(), Color.white);
+                AddLog($"  {foe.Name}に{damage}ダメージ → HP {foe.plan.hp}/{foe.plan.maxHp}");
+                if (!foe.Alive) { AddLog($"  {foe.Name}は倒れた！"); view.RemoveUnit(foe.Id); }
+            }
+            if (art.drain && plan.healed > 0)
+            {
+                unit.plan.hp = plan.attackerHpAfter;
+                unit.plan.mp = plan.attackerMpAfter;
+                AddPopup(unit.Id, $"+{plan.healed}", new Color(0.45f, 1f, 0.6f));
+                AddLog($"  {unit.Name}のHP・MPを{plan.healed}回復");
+            }
+            FinishAction(unit);
+        }
 
         /// <summary>そのキャラの補助の魔法（回復・結界・加速・治癒の魔核）</summary>
         public IReadOnlyList<BattleOption> SupportsOf(UnitState unit) => (IReadOnlyList<BattleOption>)UiOf(unit)?.supports ?? Array.Empty<BattleOption>();
@@ -447,6 +589,8 @@ namespace Srpg.Battle
             public bool moved;
             public bool acted;
             public readonly List<ItemData> items = new List<ItemData>();   // 拾った消耗品
+            public bool summoned;          // 召喚獣（負けの判定に数えない）
+            public string summonerId;      // 呼んだキャラ（倒れたら召喚獣も消える）
             public Vector2Int Cell => cell;
             public string Side => source.side;
             public bool Alive => plan == null || plan.hp > 0;
@@ -492,6 +636,10 @@ namespace Srpg.Battle
             currentOption = null;
             var planState = planJson != null ? JsonUtility.FromJson<PlanStateFile>(planJson.text) : null;
             if (planState != null) BattlePlan.SetItems(planState.items);
+            planSnapshots = planState?.units ?? Array.Empty<PlanUnit>();
+            pendingSummons.Clear();
+            usedSummons.Clear();
+            summonEntry = null;
 
             units.Clear();
             moveCells.Clear();
@@ -510,6 +658,7 @@ namespace Srpg.Battle
 
             map = BuildMap(data, blocked);
             mapItems.Clear();
+            usedSpecials.Clear();
             pickedThisMove = null;
             foreach (var mi in data.mapItems ?? Array.Empty<MapItemData>())
                 if (mi?.item != null) mapItems[new Vector2Int(mi.x, mi.y)] = mi.item;
@@ -531,6 +680,7 @@ namespace Srpg.Battle
             view.CellTapped += TapCell;
             view.IsOverOtherGui = IsOverPanel;
             view.Setup();
+            Board3DMood.Apply(string.IsNullOrEmpty(data.timeOfDay) ? Board3DMood.Dusk : data.timeOfDay, view.KeyLight);
             foreach (var cell in mapItems.Keys) view.AddPickup(cell);
             AddLog("味方フェーズ ターン1");
             PlanEnemyActions();
@@ -603,6 +753,10 @@ namespace Srpg.Battle
                     break;
                 case Mode.Targeting:
                     if (unit != null && unit.Side != selected.Side && attackCells.Contains(cell)) { ShowForecast(unit); return; }
+                    BackToActing();
+                    return;
+                case Mode.Summon:
+                    if (unit == null && supportCells.Contains(cell)) { PlaceSummon(cell); return; }
                     BackToActing();
                     return;
                 case Mode.Support:
@@ -737,7 +891,7 @@ namespace Srpg.Battle
         /// <summary>「取り消し」: 相手を選ぶのをやめて、コマンドを選ぶところへ戻る</summary>
         public void CancelTargeting()
         {
-            if (CurrentMode == Mode.Targeting || CurrentMode == Mode.Support) BackToActing();
+            if (CurrentMode == Mode.Targeting || CurrentMode == Mode.Support || CurrentMode == Mode.Summon) BackToActing();
         }
 
         private void BackToActing()
@@ -760,7 +914,7 @@ namespace Srpg.Battle
         /// <summary>「移動を取り消す」（まだ行動していなければ、動く前のマスへ戻す）</summary>
         public void UndoMove()
         {
-            if ((CurrentMode != Mode.Acting && CurrentMode != Mode.Targeting && CurrentMode != Mode.Support) || selected == null) return;
+            if ((CurrentMode != Mode.Acting && CurrentMode != Mode.Targeting && CurrentMode != Mode.Support && CurrentMode != Mode.Summon) || selected == null) return;
             supportCells.Clear();
             var unit = selected;
             if (pickedThisMove.HasValue)
@@ -886,10 +1040,14 @@ namespace Srpg.Battle
             unit.plan.prayerUsed = after.prayerUsed;
         }
 
+        /// <summary>確認用: 勝敗と召喚の片付けを今すぐ行う</summary>
+        public bool CheckBattleEnd() => CheckEnd();
+
         private bool CheckEnd()
         {
+            CleanupSummons();
             if (!units.Any(u => u.Alive && u.Side == "enemy")) { CurrentPhase = Phase.Victory; AddLog("勝利！ すべての敵を倒した"); return true; }
-            if (!units.Any(u => u.Alive && u.Side == "ally")) { CurrentPhase = Phase.Defeat; AddLog("敗北…"); return true; }
+            if (!units.Any(u => u.Alive && u.Side == "ally" && !u.summoned)) { CurrentPhase = Phase.Defeat; AddLog("敗北…"); return true; }
             return false;
         }
 
@@ -999,6 +1157,7 @@ namespace Srpg.Battle
             AddLog($"味方フェーズ ターン{Turn}");
             TickStatusEffects("ally");
             if (CheckEnd()) return;
+            ResolveSummons();
             PlanEnemyActions();
         }
 

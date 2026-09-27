@@ -101,6 +101,7 @@
       "flying": false
     }
   ],
+  "timeOfDay": "day",
   "mapItems": [
     {
       "x": 2,

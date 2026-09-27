@@ -62,6 +62,10 @@ const result = await evaluate(`(async () => {
     [...document.querySelectorAll("*")].find(e => e.children.length <= 2 && e.textContent.trim() === "戦闘開始")?.click();
     await wait(1500);
 
+    // 召喚獣（ヒトダマ）も書き出す: 空いているマス (0,7) に仮に置いて、ほかのキャラと同じように扱う（戦闘には出ていない）
+    const summoner = battleUnits.find(u => u.id === "ringholm");
+    if (summoner && typeof trialCreateSummonUnit === "function" && !battleUnits.some(u => u.id === "hitodama"))
+        battleUnits.push(trialCreateSummonUnit("hitodama", summoner, 0, 7));
     const units = battleUnits.filter(u => u.trialStats).map(trialPlanSnapshot);
     const items = Object.entries(TRIAL_ITEMS).map(([id, item]) => ({ id, name: item.name, kind: item.kind, power: item.power ?? 0, range: item.range ?? 0 }));
 
@@ -209,7 +213,19 @@ const result = await evaluate(`(async () => {
             }
         }
     }
-    return { units, items, cases, hits };
+    // 専用戦技（bpPlanDrain）: 全員を相手に、月詠（20%）と生命吸収（10%・吸収）
+    const drains = [];
+    for (const a of units.filter(u => u.side === "ally")) {
+        for (const [percent, drain] of [[20, false], [10, true]]) {
+            const foes = units.filter(u => u.side !== a.side);
+            const hurt = { ...a, hp: Math.max(1, a.hp - 10), mp: Math.max(0, a.mp - 10), maxMp: a.mp };
+            const plan = bpPlanDrain(hurt, foes, percent, drain);
+            drains.push({ attackerId: a.id, attackerHp: hurt.hp, attackerMp: hurt.mp, targetIds: foes.map(f => f.id), percent, drain,
+                damages: plan.hits.map(h => h.damage), targetHpAfter: plan.hits.map(h => h.targetHpAfter), healed: plan.healed,
+                attackerHpAfter: plan.attackerHpAfter, attackerMpAfter: plan.attackerMpAfter });
+        }
+    }
+    return { units, items, cases, hits, drains };
 })()`);
 
 const dataFile = join(ROOT, "unity-prototype", "Assets", "Data", "Battles", "battle_trial_adopted_plan.json");
@@ -217,7 +233,7 @@ const fixtureFile = join(ROOT, "unity-prototype", "Assets", "Tests", "EditMode",
 mkdirSync(dirname(dataFile), { recursive: true });
 mkdirSync(dirname(fixtureFile), { recursive: true });
 writeFileSync(dataFile, JSON.stringify({ battleId: "battle_trial_adopted", units: result.units, items: result.items }, null, 2) + "\n", "utf8");
-writeFileSync(fixtureFile, JSON.stringify({ cases: result.cases, hits: result.hits }, null, 1) + "\n", "utf8");
+writeFileSync(fixtureFile, JSON.stringify({ cases: result.cases, hits: result.hits, drains: result.drains }, null, 1) + "\n", "utf8");
 console.log(`書き出し: 戦闘の状態 ${result.units.length}人・持ち物 ${result.items.length}種、答え合わせ ${result.cases.length}件・命中 ${result.hits.length}件`);
 
 ws.close();

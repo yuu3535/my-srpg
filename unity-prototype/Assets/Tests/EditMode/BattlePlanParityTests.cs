@@ -56,10 +56,44 @@ namespace Srpg.Tests
         }
 
         [Serializable]
+        private class DrainCase
+        {
+            public string attackerId;
+            public int attackerHp, attackerMp, percent, healed, attackerHpAfter, attackerMpAfter;
+            public bool drain;
+            public string[] targetIds;
+            public int[] damages, targetHpAfter;
+        }
+
+        [Serializable]
         private class CaseFile
         {
             public Case[] cases;
             public HitCase[] hits;
+            public DrainCase[] drains;
+        }
+
+        /// <summary>専用戦技（月詠・生命吸収）の割合ダメージと吸収がブラウザ版と同じ</summary>
+        [Test]
+        public void DrainMatchesTheBrowserVersion()
+        {
+            var state = JsonUtility.FromJson<PlanStateFile>(File.ReadAllText(StatePath));
+            var drains = JsonUtility.FromJson<CaseFile>(File.ReadAllText(CasesPath)).drains;
+            Assert.Greater(drains.Length, 0);
+            var failures = new List<string>();
+            foreach (var d in drains)
+            {
+                var a = state.units.First(u => u.id == d.attackerId).Clone();
+                int maxMp = a.mp;   // 書き出しの状態は満タン
+                a.hp = d.attackerHp; a.mp = d.attackerMp;
+                var targets = d.targetIds.Select(id => state.units.First(u => u.id == id)).ToList();
+                var r = BattlePlan.PlanDrain(a, targets, d.percent, d.drain, maxMp);
+                string where = $"{d.attackerId} {d.percent}%{(d.drain ? " 吸収" : "")}";
+                if (!r.hits.Select(h => h.damage).SequenceEqual(d.damages)) failures.Add($"{where}: ダメージ {string.Join(",", r.hits.Select(h => h.damage))}（ブラウザ版 {string.Join(",", d.damages)}）");
+                if (r.healed != d.healed || r.attackerHpAfter != d.attackerHpAfter || r.attackerMpAfter != d.attackerMpAfter)
+                    failures.Add($"{where}: 回復 {r.healed}/{d.healed} HP {r.attackerHpAfter}/{d.attackerHpAfter} MP {r.attackerMpAfter}/{d.attackerMpAfter}");
+            }
+            Assert.IsEmpty(failures, string.Join("\n", failures));
         }
 
         /// <summary>虚像・封印の命中率がブラウザ版と同じ</summary>
