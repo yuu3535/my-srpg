@@ -134,6 +134,25 @@ const result = await evaluate(`(async () => {
         ? magicOption(unit, o.spell, o.label)
         : { label: o.label === "攻撃" ? "通常攻撃" : o.label, kind: "weapon", artName: o.action.artName || "", itemId: "", rangeMin: 1, rangeMax: o.range, isArt: !!o.isArt, isMagic: false, spell: null, equipSpell: null });
 
+    // カードの顔: 見えている範囲を切り抜き、右・下・左の端を透明へ溶かした絵（ブラウザ版 .lcPortrait の mask と同じ）
+    const cardFace = (im, uv) => {
+        const W = 248, H = 288;   // 箱 62×72 の4倍
+        const c = document.createElement("canvas"); c.width = W; c.height = H;
+        const g = c.getContext("2d");
+        const iw = im.naturalWidth, ih = im.naturalHeight;
+        // uv は左下が原点（Unity）。絵の上からの位置に直す
+        const sx = uv.x * iw, sy = (1 - uv.y - uv.h) * ih, sw = uv.w * iw, sh = uv.h * ih;
+        g.drawImage(im, sx, sy, sw, sh, 0, 0, W, H);
+        g.globalCompositeOperation = "destination-in";
+        const h = g.createLinearGradient(0, 0, W, 0);
+        h.addColorStop(0, "rgba(0,0,0,0.5)"); h.addColorStop(0.12, "#000"); h.addColorStop(0.66, "#000"); h.addColorStop(1, "rgba(0,0,0,0)");
+        g.fillStyle = h; g.fillRect(0, 0, W, H);
+        const v = g.createLinearGradient(0, 0, 0, H);
+        v.addColorStop(0, "#000"); v.addColorStop(0.68, "#000"); v.addColorStop(1, "rgba(0,0,0,0)");
+        g.fillStyle = v; g.fillRect(0, 0, W, H);
+        return c.toDataURL("image/png").split(",")[1];
+    };
+
     const units = [];
     const portraits = {};
     for (const unit of battleUnits.filter(u => u.trialStats)) {
@@ -196,6 +215,7 @@ const result = await evaluate(`(async () => {
             const pos = unit.forecastBustPos || (posX + " " + Math.round((/px$/.test(y) ? parseFloat(y) : 0) * 0.5 - 80) + "px");
             entry.bustUv = uvOf(154, 118, im.naturalWidth, im.naturalHeight, size + "% auto", pos);
             portraits[unit.id] = shrink(im);
+            portraits[unit.id + "_card"] = cardFace(im, entry.cardUv);
         }
         units.push(entry);
     }

@@ -2649,6 +2649,7 @@ function renderLandscapeUnitPanel(unit = selectedUnit) {
 function renderLandscapeUnitCard(unit, src, hpPct, mpPct, declLabel) {
     const trial = !!unit.trialStats;
     const className = trial ? (TRIAL_UNIT_CLASS[unit.id]?.name || "") : (unit.className || "");
+    // 顔の後ろには何も敷かない。切り抜いた感じは、輪郭に沿った淡い青の光で和らげる（style.css の .lcPortrait。原作者 2026-09-27）
     const faceStyle = src
         ? `background-image:url('${src}');background-size:${unit.portraitBgSize || "cover"};background-position:${unit.portraitBgPos || "center top"}`
         : "";

@@ -562,7 +562,8 @@ namespace Srpg.Battle
             unitCard = Place(NewRect("UnitCard", frame), 130, 279, 244, 86);
             cardFrame = Framed(unitCard, "panel_even", 7f);
             var face = Place(NewRect("Portrait", unitCard), 7, 7, 62, 72);
-            face.gameObject.AddComponent<Image>().color = new Color(3 / 255f, 4 / 255f, 10 / 255f, 0.8f);
+            face.gameObject.AddComponent<RectMask2D>();
+            // 顔の後ろには何も敷かない（透過）。端を透明へ溶かした絵（<id>_card.png。書き出しで作る）を出す（原作者 2026-09-27）
             cardPortrait = NewRect("Image", face).gameObject.AddComponent<RawImage>();
             Stretch(cardPortrait.rectTransform);
             cardName = Label(unitCard, "Name", 77, 9, 110, 19, 13, Ivory, FontStyle.Bold);
@@ -801,7 +802,9 @@ namespace Srpg.Battle
             cardLevel.text = ui?.levelLabel ?? "";
             cardClass.text = ui?.className ?? "";
             cardMove.text = ui?.moveLabel ?? $"移動{unit.source.move}";
-            SetPortrait(cardPortrait, ui, ui?.cardUv);
+            var cardFace = ui != null ? portraits.FirstOrDefault(p => p.name == ui.portrait + "_card").texture : null;
+            if (cardFace != null) { cardPortrait.texture = cardFace; cardPortrait.enabled = true; cardPortrait.uvRect = new Rect(0, 0, 1, 1); }
+            else SetPortrait(cardPortrait, ui, ui?.cardUv);
             int hp = unit.plan?.hp ?? 0, maxHp = Math.Max(1, unit.plan?.maxHp ?? 1);
             int mp = unit.plan?.mp ?? 0, maxMp = Math.Max(1, ui?.maxMp ?? Math.Max(mp, 1));
             cardHpFill.rectTransform.anchorMax = new Vector2(Mathf.Clamp01((float)hp / maxHp), 1f);
@@ -810,6 +813,7 @@ namespace Srpg.Battle
             cardMpValue.text = $"{mp}<size=8><color=#e0bd738c>/{maxMp}</color></size>";
             bool enemy = unit.Side == "enemy";
             cardFrame.sprite = SpriteOf(enemy ? "panel_even_enemy" : "panel_even") ?? cardFrame.sprite;
+
             cardHpFill.sprite = enemy ? GradientSprite(Hex("#b8423c"), Hex("#e0645a")) : GradientSprite(Hex("#3fbf82"), Hex("#59e48c"));
 
             weaponName.text = ui?.weaponName ?? "装備なし";
@@ -1227,6 +1231,54 @@ namespace Srpg.Battle
             var sprite = UnityEngine.Sprite.Create(tex, new Rect(0, 0, W, 1), new Vector2(0.5f, 0.5f));
             gradients[key] = sprite;
             return sprite;
+        }
+
+        /// <summary>
+        /// 箱の端へ向かって color に溶ける重ね（ブラウザ版の linear-gradient と同じ）。from までは透明、mid で 0.85、端で maxAlpha。
+        /// horizontal なら右へ（reverse なら左へ）、そうでなければ下へ
+        /// </summary>
+        private static void FadeOverlay(RectTransform parent, Color color, bool horizontal, float from, float mid, bool reverse = false, float maxAlpha = 1f)
+        {
+            const int N = 64;
+            var tex = horizontal ? new Texture2D(N, 1, TextureFormat.RGBA32, false) : new Texture2D(1, N, TextureFormat.RGBA32, false);
+            tex.wrapMode = TextureWrapMode.Clamp;
+            for (int i = 0; i < N; i++)
+            {
+                float t = i / (N - 1f);
+                if (reverse) t = 1f - t;
+                if (!horizontal) t = 1f - t;   // テクスチャは下が 0。上から下へ濃くする
+                float a = t <= from ? 0f : t <= mid ? Mathf.Lerp(0f, 0.85f * maxAlpha, (t - from) / Mathf.Max(0.0001f, mid - from))
+                    : Mathf.Lerp(0.85f * maxAlpha, maxAlpha, (t - mid) / Mathf.Max(0.0001f, 1f - mid));
+                var c = new Color(color.r, color.g, color.b, a);
+                if (horizontal) tex.SetPixel(i, 0, c); else tex.SetPixel(0, i, c);
+            }
+            tex.Apply();
+            var image = NewRect("Fade", parent).gameObject.AddComponent<RawImage>();
+            Stretch(image.rectTransform);
+            image.texture = tex;
+            image.raycastTarget = false;
+        }
+
+        private static Sprite glowSprite;
+
+        /// <summary>中心（少し下）が明るく、70%で消える丸い光（白。色は Image の色で付ける。ブラウザ版の radial-gradient と同じ形）</summary>
+        private static Sprite GlowSprite()
+        {
+            if (glowSprite != null) return glowSprite;
+            const int S = 64;
+            var tex = new Texture2D(S, S, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
+            // 箱の横と縦のうち長いほうの対角を基準にした円（circle at 50% 60% の farthest-corner）
+            var center = new Vector2(0.5f, 0.4f);   // テクスチャは下が 0 なので、上から60%＝下から40%
+            float far = new Vector2(0.5f, 0.6f).magnitude;
+            for (int y = 0; y < S; y++)
+            for (int x = 0; x < S; x++)
+            {
+                float d = (new Vector2((x + 0.5f) / S, (y + 0.5f) / S) - center).magnitude / far;
+                tex.SetPixel(x, y, new Color(1f, 1f, 1f, Mathf.Clamp01(1f - d / 0.7f)));
+            }
+            tex.Apply();
+            glowSprite = UnityEngine.Sprite.Create(tex, new Rect(0, 0, S, S), new Vector2(0.5f, 0.5f));
+            return glowSprite;
         }
 
         /// <summary>横のグラデーション（色の段階つき。t は 0〜1）</summary>
