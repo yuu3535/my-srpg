@@ -7064,11 +7064,11 @@ html, body {
 #gameScreen[data-mode="battle"] .lcWeapon,
 #gameScreen[data-mode="battle"] .refFc {
     border-width: 7px;
-    border-image: url("assets/ui/panel_even.png") 26 fill / 7px stretch;
+    border-image: url("assets/ui/panel_even.png?v=even-3") 26 fill / 7px stretch;
 }
 #gameScreen[data-mode="battle"] .lcCard.enemy,
 #gameScreen[data-mode="battle"] .refFc.readOnly {
-    border-image-source: url("assets/ui/panel_even_enemy.png");
+    border-image-source: url("assets/ui/panel_even_enemy.png?v=even-3");
 }
 
 /* 2. 戦闘予測 */
@@ -7244,7 +7244,7 @@ html, body {
     align-items: stretch;
     overflow: hidden;
     border: 7px solid transparent;
-    border-image: url("assets/ui/panel_even.png") 26 fill / 7px stretch;
+    border-image: url("assets/ui/panel_even.png?v=even-3") 26 fill / 7px stretch;
     box-shadow: 0 -6px 18px rgba(4,3,10,0.55);
 }
 #lsForecast .fcbPanel.readOnly { bottom: 6px; }
@@ -7388,7 +7388,7 @@ html, body {
     font-size: 8px;
     line-height: 1.6;
     border: 5px solid transparent;
-    border-image: url("assets/ui/panel_even.png") 26 fill / 5px stretch;
+    border-image: url("assets/ui/panel_even.png?v=even-3") 26 fill / 5px stretch;
 }
 #lsForecast .fcbDetail.hidden { display: none; }
 #lsForecast .fcbDetail p { margin: 0; }

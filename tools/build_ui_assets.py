@@ -50,7 +50,8 @@ ASSETS = {
 # (元のファイル, 書き出す名前, 切り落としのしきい値, 縮める先 ("width"|"height"|"square", px) または None)
 ORDERED_ASSETS = [
     # ChatGPT（アイコン素材/発注UI/）: 光沢なし・細い金の線の枠
-    ("アイコン素材/発注UI/A1.png", "panel_a1", 128, ("width", 512)),     # 基本パネル（上辺だけ太い金の線）
+    # 基本パネル（上辺だけ太い金の線）。A1-2 は原作者が四隅の小さな突起を消したもの（縮めると潰れて見えたため。2026-09-27）
+    ("アイコン素材/発注UI/A1-2.png", "panel_a1", 128, ("width", 512)),
     ("アイコン素材/発注UI/A2.png", "panel_a2", 128, ("width", 512)),     # 基本パネル（敵: 上辺が赤）
     ("アイコン素材/発注UI/A3.png", "heading_bar", 64, ("height", 256)),  # 見出しの飾り（縦の金の線）
     ("アイコン素材/発注UI/A4.png", "separator_a4", 64, ("width", 1024)), # 区切り線（中央に菱形）
@@ -105,10 +106,15 @@ BAND_X = [(0, 200, False), (200, 870, True), (870, 1167, False), (1167, 1837, Tr
 BAND_Y = [(0, 138, False), (138, 166, True), (166, 233, False), (233, 261, True), (261, 399, False)]
 
 
-def even_frame(image: Image.Image, rows: int = 28) -> Image.Image:
-    """上辺だけ太いA1の枠を、上下同じ太さにする（下辺を上下反転して上辺に貼る。原作者 2026-09-26）"""
+def even_frame(image: Image.Image) -> Image.Image:
+    """
+    上辺だけ太いA1の枠を、上下同じ太さにする（原作者 2026-09-26）。
+    下半分をまるごと上下反転して上半分に貼る。以前は下辺の28pxだけを貼っていたため、
+    それより背の高い四隅の飾りが上と下の飾りの継ぎはぎになっていた（原作者の指摘 2026-09-27）
+    """
     out = image.copy()
-    bottom = image.crop((0, image.height - rows, image.width, image.height)).transpose(Image.FLIP_TOP_BOTTOM)
+    half = image.height // 2
+    bottom = image.crop((0, image.height - half, image.width, image.height)).transpose(Image.FLIP_TOP_BOTTOM)
     out.paste(bottom, (0, 0))
     return out
 
