@@ -18,6 +18,9 @@
 | 直近の作業内容 | [`90-worklogs/WORK_MEMO_2026-09-26.md`](90-worklogs/WORK_MEMO_2026-09-26.md) |
 | マップ資料の最新版と旧案の区分 | [`10-design/map/README.md`](10-design/map/README.md) |
 | マップの絵の作り方（ChatGPTへの頼み方の標準） | [`10-design/map/MAP_ART_PIPELINE_v1_2026-09-28.md`](10-design/map/MAP_ART_PIPELINE_v1_2026-09-28.md) |
+| 会話劇の見せ方（立ち絵を左右に寄せる） | [`10-design/ui/DIALOGUE_STAGING_DIRECTION_2026-09-28.md`](10-design/ui/DIALOGUE_STAGING_DIRECTION_2026-09-28.md) |
+| 会話用の立ち絵の発注書（ChatGPT向け） | [`30-planning/TACHIE_DIALOGUE_ORDER_2026-09-28.md`](30-planning/TACHIE_DIALOGUE_ORDER_2026-09-28.md) |
+| Codexの追いつき用の引き継ぎ（9/26〜9/28） | [`30-planning/CODEX_HANDOFF_2026-09-28.md`](30-planning/CODEX_HANDOFF_2026-09-28.md) |
 | Unityアイソメマップの制作仕様 | [`10-design/map/UNITY_ISOMETRIC_MAP_PRODUCTION_GUIDE_2026-09-26.md`](10-design/map/UNITY_ISOMETRIC_MAP_PRODUCTION_GUIDE_2026-09-26.md) |
 
 ## フォルダの役割
