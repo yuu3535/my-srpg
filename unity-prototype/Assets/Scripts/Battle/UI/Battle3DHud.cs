@@ -74,6 +74,8 @@ namespace Srpg.Battle
         private RawImage leftBust, rightBust;
         private Button fcCancel, fcConfirm, fcDetail;
         private Text fcConfirmLabel, fcTitle;
+        private RectTransform fcExtraBox;
+        private Text fcExtra;
         private Image fcConfirmIcon;
         private RectTransform fcDetailBox;
         private Text fcDetailText;
@@ -380,7 +382,8 @@ namespace Srpg.Battle
         {
             if (!Built || terrainPanel == null || controller == null || controller.View == null) return;
             var map = controller.View.Map;
-            Vector2Int? cell = controller.View.HoverCell ?? controller.Selected?.cell;
+            // 誰も選んでいないときは出さない（レビュー 2026-09-28 B1: 盤面の奥のキャラに重なっていた）
+            Vector2Int? cell = controller.Selected == null ? null : controller.View.HoverCell ?? controller.Selected.cell;
             bool show = cell.HasValue && map != null && map.InBounds(cell.Value) && controller.CurrentMode != Battle3DController.Mode.Forecast
                 && controller.EnemyPreview == null;
             terrainPanel.gameObject.SetActive(show);
@@ -655,6 +658,15 @@ namespace Srpg.Battle
             rightSide = Side(panel, "SideRight", 371);
             SpriteImage(panel, "fc_emblem_sword", 312, 7, 57, 118, preserve: true);
 
+            // 攻める側の技の付け足し（MPの消費・封じ・状態）。帯の左の上に1行（レビュー 2026-09-28 D1）
+            fcExtraBox = Place(NewRect("Extra", forecastRoot), 244, 206, 300, 16);
+            var extraBg = fcExtraBox.gameObject.AddComponent<Image>();
+            // 色は線形で混ぜるので、見た目より強めの値にする（右の端だけ薄く消す）
+            var extraColor = new Color(8 / 255f, 6 / 255f, 16 / 255f, 1f);
+            extraBg.sprite = GradientSprite(extraColor, extraColor, 0.72f, 1f, 0.97f, 0f);
+            extraBg.raycastTarget = false;
+            fcExtra = Label(fcExtraBox, "Text", 8, 0, 290, 16, 9.5f, Hex("#f3dc9a"), FontStyle.Bold);
+
             // 戦闘詳細（反撃・スキルの効果）
             fcDetailBox = Place(NewRect("Detail", forecastRoot), 310, 180, 300, 36);
             Framed(fcDetailBox, "panel_even", 5f);
@@ -864,6 +876,10 @@ namespace Srpg.Battle
             if (canSwitch) fcCount.text = $"{Math.Max(1, switchable.ToList().IndexOf(option) + 1)}/{switchable.Count}";
             FillSide(rightSide, defender, d, d?.weaponName ?? "装備なし", d?.weaponType, fc.defenderHpAfter, fc.counter, fc.counterFollowUp, canCounter ? null : "反撃なし");
 
+            var extra = ExtraNotes(attacker, option, fc);
+            fcExtraBox.gameObject.SetActive(extra.Length > 0);
+            fcExtra.text = extra;
+
             fcConfirmLabel.text = special ? "実行する" : "攻撃する";
             fcConfirmIcon.sprite = magic ? WeaponSprite("魔法") : SpriteOf("icon_cross");
             fcConfirmIcon.color = magic ? Color.white : Hex("#fff2d0");
@@ -872,6 +888,26 @@ namespace Srpg.Battle
                 : check.sealChance.HasValue && check.sealChance.Value >= 0 ? $"反撃あり（野望で{check.sealChance}%封じる）" : "反撃あり";
             var notes = fc.plan?.steps?.SelectMany(s => s.notes ?? new List<string>()).Distinct().ToList() ?? new List<string>();
             fcDetailText.text = counter + (notes.Count > 0 ? "\n" + string.Join(" / ", notes) : "");
+        }
+
+        /// <summary>
+        /// 攻める側の技で、ダメージ・命中・必殺の欄に出ないこと（MPの消費・封じの確率・付く状態）。
+        /// 追撃はダメージの「×2」で出している
+        /// </summary>
+        private static string ExtraNotes(Battle3DController.UnitState attacker, BattleOption option, BattlePlan.Forecast fc)
+        {
+            var parts = new List<string>();
+            var first = fc.first;
+            string formula = option?.spell?.mpCost ?? attacker.plan?.grimoireSpell?.mpCost;
+            if (first?.mpCost is int mp && mp > 0)
+                parts.Add(string.IsNullOrEmpty(formula) ? $"MP {mp}" : $"MP {formula}（見込み{mp}）");
+            if (first?.artSealChance is int seal) parts.Add($"封じ {seal}%");
+            if (!string.IsNullOrEmpty(first?.status))
+            {
+                string name = first.status == "burn" ? "火傷" : first.status == "accuracyDown" ? "命中低下" : first.status == "knockback" ? "押し出し" : first.status;
+                parts.Add(first.statusDuration is int turns && turns > 0 ? $"{name}（{turns}ターン）" : name);
+            }
+            return string.Join("　／　", parts);
         }
 
         private void FillSide(ForecastSide side, Battle3DController.UnitState unit, UiUnit ui, string weapon, string weaponType, int hpAfter, PlanStep strike, PlanStep follow, string note)
@@ -937,8 +973,10 @@ namespace Srpg.Battle
                             // 召喚（1戦闘に1回。隣の空いているマスに陣を置く）
                             var summon = entry;
                             bool usedSummon = controller.SummonUsed(sel, summon);
-                            entries.Add(("magic", entry.label, () => { subList = null; controller.ChooseSummon(summon); }, controller.CanSummon(sel, summon)));
-                            subTexts.Add(usedSummon ? "使用済み" : $"MP {entry.mpCost}");
+                            bool canSummon = controller.CanSummon(sel, summon);
+                            entries.Add(("magic", entry.label, () => { subList = null; controller.ChooseSummon(summon); }, canSummon));
+                            // 使えないときは理由（レビュー 2026-09-28 D5）
+                            subTexts.Add(usedSummon ? "使用済み" : canSummon ? $"MP {entry.mpCost}" : (sel.plan?.mp ?? 0) <= 0 ? "MP不足" : "置く所なし");
                             continue;
                         }
                         var specials = controller.SpecialsOf(sel);
@@ -956,11 +994,19 @@ namespace Srpg.Battle
                         var support = entry.supportIndex >= 0 && entry.supportIndex < supports.Count ? supports[entry.supportIndex] : null;
                         // Unity版でまだ使えない戦技・魔法（虚像・封印・転移・範囲・召喚など）は「準備中」
                         string sub = option == null && support == null ? "準備中" : subList == "magic" && !string.IsNullOrEmpty(entry.mpCost) ? $"MP {entry.mpCost}" : "";
+                        bool usable;
                         if (support != null)
-                            entries.Add(("magic", entry.label, () => { subList = null; controller.ChooseSupport(support); }, controller.CanSupportFromHere(support)));
+                        {
+                            usable = controller.CanSupportFromHere(support);
+                            entries.Add(("magic", entry.label, () => { subList = null; controller.ChooseSupport(support); }, usable));
+                            if (!usable) sub = "対象なし";
+                        }
                         else
-                            entries.Add((subList == "magic" ? "magic" : "skill", entry.label, () => { subList = null; controller.ChooseOption(option); },
-                                option != null && controller.CanUseFromHere(option)));
+                        {
+                            usable = option != null && controller.CanUseFromHere(option);
+                            entries.Add((subList == "magic" ? "magic" : "skill", entry.label, () => { subList = null; controller.ChooseOption(option); }, usable));
+                            if (option != null && !usable) sub = "届かない";   // 使えない理由（レビュー 2026-09-28 D5: 暗いだけで理由がなかった）
+                        }
                         subTexts.Add(sub);
                     }
                     entries.Add(("back", "戻る", () => { subList = null; stateKey = null; }, true));

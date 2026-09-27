@@ -375,7 +375,7 @@ namespace Srpg.Battle
                 if (units.Any(u => u.Alive && u.cell == cell)) continue;
                 supportCells.Add(cell);
             }
-            view.ShowRange(supportCells);
+            view.ShowRange(supportCells, Board3DView.TransferRangeColor);
             view.Select(ally.cell);
         }
 

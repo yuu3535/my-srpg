@@ -149,7 +149,9 @@ namespace Srpg.Battle
         // 範囲の色（明るい地面の1枚絵でも読めるよう濃くした。原作者 2026-09-28）。面は RangeSprite で、縁ほど濃い
         private static readonly Color RangeColor = new Color(0.12f, 0.42f, 1f, 0.78f);   // 移動範囲は青（原作者 2026-09-25）
         public static readonly Color AttackRangeColor = new Color(0.95f, 0.16f, 0.14f, 0.74f); // 攻撃の範囲は赤
-        public static readonly Color SupportRangeColor = new Color(0.14f, 0.78f, 0.38f, 0.74f); // 補助の範囲は緑
+        // 補助の範囲は緑。草の上で消えないよう、黄緑の草から離れた青みの緑にした（レビュー 2026-09-28 A4）
+        public static readonly Color SupportRangeColor = new Color(0.1f, 0.95f, 0.78f, 0.8f);
+        public static readonly Color TransferRangeColor = new Color(0.72f, 0.36f, 1f, 0.78f);   // 転移の行き先は紫（魔法の色。移動の青と分ける。レビュー 2026-09-28 A4）
         private static readonly Color TargetRingColor = new Color(1f, 0.24f, 0.30f, 1f); // 狙われている印（赤い丸。原作者 2026-09-27）
 
         private Board3DMap map;

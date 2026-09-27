@@ -254,6 +254,10 @@ namespace Srpg.EditorAgent
             controller.CycleForecastOption(1);
             view.FocusOnPoint((view.Map.TopCenter(arsheUi.cell) + view.Map.TopCenter(rivalUi.cell)) * 0.5f, true);
             RenderWithHud(hud, camera, rt, "Battle3D_ui_forecast_next");
+            // 封じの付く落雷: 予測の帯の上に「MP・封じ」の1行が出る（レビュー 2026-09-28 D1）
+            for (int i = 0; i < controller.ForecastOptions.Count && controller.CurrentOption?.label != "落雷"; i++) controller.CycleForecastOption(1);
+            if (controller.CurrentOption?.label == "落雷") RenderWithHud(hud, camera, rt, "Battle3D_ui_forecast_seal");
+            else Debug.LogWarning("UIの確認: アルシェの落雷が戦闘予測の選択肢にない");
             controller.CycleForecastOption(-1);
             // 味方全員を待機させて敵の番へ（敵が予告どおりに動いたあと、次の味方の番の予告と赤い丸）
             controller.CancelForecast();
