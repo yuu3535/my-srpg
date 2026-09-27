@@ -12,6 +12,7 @@
 3. [`UNITY_3D_BOARD_MAP_PRODUCTION_GUIDE_2026-09-27.md`](UNITY_3D_BOARD_MAP_PRODUCTION_GUIDE_2026-09-27.md)
    - なぜ3Dか: [`MAP_BOARD_METHOD_DECISION_2026-09-27.md`](MAP_BOARD_METHOD_DECISION_2026-09-27.md)
    - 色・明るさ: [`MAP_COLOR_MOOD_DIRECTION_2026-09-27.md`](MAP_COLOR_MOOD_DIRECTION_2026-09-27.md)
+   - **絵の頼み方（探索と戦闘で使う場所の、床・壁・小物の絵）**: [`MAP_ART_PIPELINE_v1_2026-09-28.md`](MAP_ART_PIPELINE_v1_2026-09-28.md)
 4. [`MAP_PROTOTYPE_BORDER_WATCHROAD_2026-09-26.md`](MAP_PROTOTYPE_BORDER_WATCHROAD_2026-09-26.md)
 5. [`../../30-planning/UNITY_M1_PLAN_2026-09-26.md`](../../30-planning/UNITY_M1_PLAN_2026-09-26.md)
 6. [`../../30-planning/MAP_IMAGE_CHAT_HANDOFF_2026-09-26.md`](../../30-planning/MAP_IMAGE_CHAT_HANDOFF_2026-09-26.md)
@@ -25,6 +26,7 @@
 | 文書・素材 | 状態 | 現在の用途 |
 |---|---|---|
 | `MAP_WORLD_AND_ART_DIRECTION_2026-09-26.md` | 現行の設計基盤 | 原作TRPG、世界観、物語をマップへ翻訳する基準 |
+| `MAP_ART_PIPELINE_v1_2026-09-28.md` | **現行の絵の作り方** | 床の1枚絵・壁の模様・小物の3種類の頼み方、下絵の大きさ、流れ、依頼文のひな形、屋内の記号（案）、作る順番 |
 | `UNITY_3D_BOARD_MAP_PRODUCTION_GUIDE_2026-09-27.md` | **現行の制作仕様** | 3Dの盤面の決まり・重ねる層・マップのデータ（地形の表）・画像素材・Unityへの受け渡し |
 | `MAP_BOARD_METHOD_DECISION_2026-09-27.md` | 決定の記録 | 作り方・回し方・角度・高い物・明るさを最上位方針の物差しで比べた |
 | `MAP_COLOR_MOOD_DIRECTION_2026-09-27.md` | 方針案 | 原作TRPGの背景素材から読み取った彩度・色・雰囲気 |

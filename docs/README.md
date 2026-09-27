@@ -17,6 +17,7 @@
 | 次に何をするか | [`30-planning/NEXT_ACTION_QUEUE.md`](30-planning/NEXT_ACTION_QUEUE.md) |
 | 直近の作業内容 | [`90-worklogs/WORK_MEMO_2026-09-26.md`](90-worklogs/WORK_MEMO_2026-09-26.md) |
 | マップ資料の最新版と旧案の区分 | [`10-design/map/README.md`](10-design/map/README.md) |
+| マップの絵の作り方（ChatGPTへの頼み方の標準） | [`10-design/map/MAP_ART_PIPELINE_v1_2026-09-28.md`](10-design/map/MAP_ART_PIPELINE_v1_2026-09-28.md) |
 | Unityアイソメマップの制作仕様 | [`10-design/map/UNITY_ISOMETRIC_MAP_PRODUCTION_GUIDE_2026-09-26.md`](10-design/map/UNITY_ISOMETRIC_MAP_PRODUCTION_GUIDE_2026-09-26.md) |
 
 ## フォルダの役割
