@@ -15,6 +15,25 @@ namespace Srpg.Battle
         public TileData[] tiles;
         public IsoData iso;
         public UnitData[] units;
+        public MapItemData[] mapItems;   // 拾える消耗品
+    }
+
+    /// <summary>消耗品（ブラウザ版の mapItems の item。type: heal なら value だけHPを回復）</summary>
+    [Serializable]
+    public class ItemData
+    {
+        public string id;
+        public string name;
+        public string type;
+        public int value;
+    }
+
+    [Serializable]
+    public class MapItemData
+    {
+        public int x;
+        public int y;
+        public ItemData item;
     }
 
     [Serializable]

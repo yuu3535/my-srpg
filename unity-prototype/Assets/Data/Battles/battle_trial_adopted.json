@@ -100,5 +100,17 @@
       "token": "Assets/Art/Tokens/albas_rival.png",
       "flying": false
     }
+  ],
+  "mapItems": [
+    {
+      "x": 2,
+      "y": 5,
+      "item": {
+        "id": "small_potion",
+        "name": "ポーション小",
+        "type": "heal",
+        "value": 5
+      }
+    }
   ]
 }

@@ -733,7 +733,7 @@ namespace Srpg.Battle
             if (!Built || controller == null || controller.Data == null) return;
             var sel = controller.Selected;
             var tgt = controller.Target;
-            string key = $"{statusOpen}|{subList}|{controller.CurrentOption?.label}|{controller.TransferAlly?.Id}|{controller.EnemyPreview?.attacker?.Id}|{controller.CurrentPhase}|{controller.CurrentMode}|{sel?.Id}|{sel?.plan?.hp}|{sel?.plan?.mp}|{sel?.cell}|{tgt?.Id}|{tgt?.plan?.hp}|{controller.Turn}|{controller.Units.Count(u => u.acted)}"
+            string key = $"{statusOpen}|{subList}|{sel?.items.Count}|{controller.CurrentOption?.label}|{controller.TransferAlly?.Id}|{controller.EnemyPreview?.attacker?.Id}|{controller.CurrentPhase}|{controller.CurrentMode}|{sel?.Id}|{sel?.plan?.hp}|{sel?.plan?.mp}|{sel?.cell}|{tgt?.Id}|{tgt?.plan?.hp}|{controller.Turn}|{controller.Units.Count(u => u.acted)}"
                 + $"|{controller.Declarations.Count}|{string.Join(",", controller.Units.Select(u => u.plan?.hp ?? 0))}";
             if (key == stateKey) return;
             stateKey = key;
@@ -900,8 +900,19 @@ namespace Srpg.Battle
                 var ui = controller.UiOf(sel);
                 if (sel != null && (mode == Battle3DController.Mode.Moving || mode == Battle3DController.Mode.Acting) && subList != null)
                 {
+                    if (subList == "item")
+                    {
+                        // 持ち物（消耗品）: 押すとすぐ使う
+                        for (int k = 0; k < sel.items.Count; k++)
+                        {
+                            int index = k;
+                            entries.Add(("item", sel.items[k].name, () => { subList = null; controller.UseItem(index); }, true));
+                            subTexts.Add("使う");
+                        }
+                        if (sel.items.Count == 0) { entries.Add(("item", "持ち物なし", () => { }, false)); subTexts.Add(""); }
+                    }
                     // 戦技・魔法の一覧（使えないもの・届く相手がいないものは暗く）
-                    var list = subList == "skill" ? ui?.artList : ui?.magicList;
+                    var list = subList == "skill" ? ui?.artList : subList == "magic" ? ui?.magicList : null;
                     var options = controller.OptionsOf(sel);
                     foreach (var entry in list ?? Array.Empty<UiListEntry>())
                     {
@@ -927,6 +938,7 @@ namespace Srpg.Battle
                     if (basic != null) entries.Add(("attack", "攻撃", () => controller.ChooseOption(basic), controller.CanUseFromHere(basic)));
                     if (ui?.artList != null && ui.artList.Length > 0) entries.Add(("skill", "戦技", () => { subList = "skill"; stateKey = null; }, true));
                     if (ui?.magicList != null && ui.magicList.Length > 0) entries.Add(("magic", "魔法", () => { subList = "magic"; stateKey = null; }, true));
+                    if (sel.items.Count > 0) entries.Add(("item", "持ち物", () => { subList = "item"; stateKey = null; }, true));
                     if (basic == null && (ui?.magicList == null || ui.magicList.Length == 0))
                         entries.Add(("attack", "攻撃", () => controller.ChooseAttack(), controller.CanAttackFromHere));
                     entries.Add(("wait", "待機", () => controller.ChooseWait(), true));

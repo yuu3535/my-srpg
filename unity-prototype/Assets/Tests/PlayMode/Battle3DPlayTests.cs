@@ -174,6 +174,34 @@ namespace Srpg.Tests
             controller.RollsOverride = null;
         }
 
+        /// <summary>消耗品: 止まったマスで拾い、移動を取り消すと戻り、「持ち物」で使う（ブラウザ版と同じ）</summary>
+        [UnityTest]
+        public IEnumerator PickUpAndUseItem()
+        {
+            SceneManager.LoadScene("Battle3D");
+            yield return null;
+            yield return null;
+            var controller = Object.FindFirstObjectByType<Battle3DController>();
+            var spot = controller.MapItems.Keys.First();
+            var ringholm = controller.Units.First(u => u.Id == "ringholm");
+            ringholm.plan.hp = 10;
+
+            controller.Select("ringholm");
+            controller.TapCell(spot);
+            Assert.AreEqual(1, ringholm.items.Count, "止まったマスの物を拾う");
+            Assert.IsFalse(controller.MapItems.ContainsKey(spot));
+            controller.UndoMove();
+            Assert.AreEqual(0, ringholm.items.Count, "移動を取り消すと物もマスへ戻る");
+            Assert.IsTrue(controller.MapItems.ContainsKey(spot));
+
+            controller.TapCell(spot);
+            int value = ringholm.items[0].value;
+            controller.UseItem(0);
+            Assert.AreEqual(10 + value, ringholm.plan.hp, "使うと回復する");
+            Assert.AreEqual(0, ringholm.items.Count);
+            Assert.IsTrue(ringholm.acted, "使うと行動済み");
+        }
+
         /// <summary>画面のUI（コマンド一覧）のボタンで操作する</summary>
         [UnityTest]
         public IEnumerator PlayWithHudButtons()

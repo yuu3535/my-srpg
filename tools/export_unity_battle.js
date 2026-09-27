@@ -89,6 +89,8 @@ function main() {
         tiles: def.tiles || [],
         iso,
         units,
+        // 拾える消耗品（{ x, y, item: { id, name, type, value } }）
+        mapItems: (def.mapItems || []).map(mi => ({ x: mi.x, y: mi.y, item: { ...mi.item } })),
     };
     const dataDir = path.join(UNITY_ASSETS, "Data", "Battles");
     fs.mkdirSync(dataDir, { recursive: true });

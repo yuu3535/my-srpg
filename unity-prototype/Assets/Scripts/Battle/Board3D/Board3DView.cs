@@ -223,6 +223,7 @@ namespace Srpg.Battle
             unitVisuals.Clear();
             unitBodies.Clear();
             rangeTiles.Clear();
+            pickups.Clear();
             ClearOccluders();
             boardRoot = null;
             backdropRect = null;
@@ -668,6 +669,29 @@ namespace Srpg.Battle
         }
 
         /// <summary>仮のたいまつ: 細い柱の上に光る炎と、橙の点の光（原作の背景素材の「暗い中のはっきりした光」）</summary>
+        private readonly Dictionary<Vector2Int, GameObject> pickups = new Dictionary<Vector2Int, GameObject>();
+
+        /// <summary>拾える消耗品の印（マスの上で光る小さな瓶）</summary>
+        public void AddPickup(Vector2Int cell)
+        {
+            RemovePickup(cell);
+            var root = new GameObject($"Pickup_{cell.x}_{cell.y}").transform;
+            root.SetParent(boardRoot, false);
+            root.localPosition = map.TopCenter(cell) + new Vector3(0.28f, 0f, 0.28f);   // キャラと重ならないよう、マスの奥の角
+            AddBox(root, "Bottle", new Vector3(0f, 0.11f, 0f), new Vector3(0.14f, 0.2f, 0.14f), GlowMaterial(new Color(0.35f, 1f, 0.55f), 1.4f));
+            AddBox(root, "Cork", new Vector3(0f, 0.25f, 0f), new Vector3(0.07f, 0.07f, 0.07f), LitMaterial(new Color32(120, 84, 52, 255)));
+            pickups[cell] = root.gameObject;
+        }
+
+        public void RemovePickup(Vector2Int cell)
+        {
+            if (!pickups.TryGetValue(cell, out var go)) return;
+            if (go != null) Object.DestroyImmediate(go);
+            pickups.Remove(cell);
+        }
+
+        public bool HasPickup(Vector2Int cell) => pickups.ContainsKey(cell);
+
         private void AddTorch(Vector2Int cell)
         {
             var root = new GameObject($"Torch_{cell.x}_{cell.y}").transform;

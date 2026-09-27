@@ -65,6 +65,10 @@ const BATTLE_DEFINITIONS = Object.freeze({
         },
         victory: { type: "defeatAll" },
         defeat: { type: "allAlliesDefeated" },
+        // 持ち物（消耗品）を試すため、拾える物を1つ置く（原作者 2026-09-27）
+        mapItems: [
+            { x: 2, y: 5, item: { id: "small_potion", name: "ポーション小", type: "heal", value: 5 } },
+        ],
         unitIds: ["ringholm", "arshe", "albas", "young_karima", "forest_guard", "dylan", "herel"],
         // 既存のキャラを複製して置く（id: { from: 元のキャラ, 上書きする項目 }）。
         // アルバス同士で破壊・反撃を試すため、敵のアルバスを置く（原作者 2026-09-25）

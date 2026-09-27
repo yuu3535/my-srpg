@@ -194,6 +194,14 @@ namespace Srpg.EditorAgent
             controller.TapCell(controller.Units.First(u => u.source.id == "ringholm").cell);
             RenderWithHud(hud, camera, rt, "Battle3D_ui_transfer");
             controller.CancelTargeting();
+            // 持ち物: リングホルムがポーション小を拾ったところ
+            controller.Select("ringholm");
+            controller.TapCell(controller.MapItems.Keys.First());
+            hud.Refresh();
+            hud.GetComponentsInChildren<UnityEngine.UI.Button>(true).First(x => x.name == "Command_持ち物").onClick.Invoke();
+            RenderWithHud(hud, camera, rt, "Battle3D_ui_items");
+            controller.UndoMove();
+            controller.Select("albas");
             // 敵の攻撃の前の予測（見るだけ）
             controller.PreviewEnemyAttack("albas_rival");
             if (controller.EnemyPreview == null) throw new InvalidOperationException("UIの確認: 敵の攻撃の予測が出なかった");
@@ -253,7 +261,10 @@ namespace Srpg.EditorAgent
             foreach (var (name, border) in HudSprites)
             {
                 string dest = $"{UiDir}/{name}.png";
-                File.Copy($"../assets/ui/{name}.png", dest, true);
+                // 中身が同じなら写さない（読み込み中の絵は上書きできないことがある）
+                string source = $"../assets/ui/{name}.png";
+                if (!File.Exists(dest) || !File.ReadAllBytes(source).AsSpan().SequenceEqual(File.ReadAllBytes(dest)))
+                    File.Copy(source, dest, true);
                 sprites.Add((name, ImportSprite(dest, border)));
             }
             foreach (var path in Directory.GetFiles($"{UiDir}/Icons", "*.png"))

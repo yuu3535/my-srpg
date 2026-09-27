@@ -57,6 +57,29 @@ namespace Srpg.Battle
         private readonly Dictionary<string, UiUnit> uiUnits = new Dictionary<string, UiUnit>();
         private readonly HashSet<Vector2Int> supportCells = new HashSet<Vector2Int>();
 
+        // 拾える消耗品（ブラウザ版の currentMapItems）と、この移動で拾った物（移動の取り消しで戻す）
+        private readonly Dictionary<Vector2Int, ItemData> mapItems = new Dictionary<Vector2Int, ItemData>();
+        private (Vector2Int cell, ItemData item)? pickedThisMove;
+        public IReadOnlyDictionary<Vector2Int, ItemData> MapItems => mapItems;
+
+        /// <summary>消耗品を使う（ブラウザ版と同じ: 回復の物は value だけHPを回復。使うと行動済み）</summary>
+        public void UseItem(int index)
+        {
+            StayIfMoving();
+            if (CurrentMode != Mode.Acting || selected == null || index < 0 || index >= selected.items.Count) return;
+            var unit = selected;
+            var used = unit.items[index];
+            unit.items.RemoveAt(index);
+            if (used.type == "heal" && unit.plan != null)
+            {
+                int before = unit.plan.hp;
+                unit.plan.hp = Math.Min(unit.plan.maxHp, before + used.value);
+                AddPopup(unit.Id, $"+{unit.plan.hp - before}", new Color(0.45f, 1f, 0.6f));
+                AddLog($"{unit.Name}は {used.name} を使用 → HP +{unit.plan.hp - before}");
+            }
+            FinishAction(unit);
+        }
+
         /// <summary>敵が攻撃する前に見せる戦闘予測（ブラウザ版 trialShowEnemyForecast。1.2秒）</summary>
         public class EnemyPreviewInfo
         {
@@ -423,6 +446,7 @@ namespace Srpg.Battle
             public Vector2Int cell;
             public bool moved;
             public bool acted;
+            public readonly List<ItemData> items = new List<ItemData>();   // 拾った消耗品
             public Vector2Int Cell => cell;
             public string Side => source.side;
             public bool Alive => plan == null || plan.hp > 0;
@@ -485,6 +509,10 @@ namespace Srpg.Battle
                 if (tile.type == "wall" || tile.type == "void") blocked.Add(new Vector2Int(tile.x, tile.y));
 
             map = BuildMap(data, blocked);
+            mapItems.Clear();
+            pickedThisMove = null;
+            foreach (var mi in data.mapItems ?? Array.Empty<MapItemData>())
+                if (mi?.item != null) mapItems[new Vector2Int(mi.x, mi.y)] = mi.item;
             foreach (var source in data.units)
             {
                 var state = new UnitState { source = source, cell = new Vector2Int(source.x, source.y) };
@@ -503,6 +531,7 @@ namespace Srpg.Battle
             view.CellTapped += TapCell;
             view.IsOverOtherGui = IsOverPanel;
             view.Setup();
+            foreach (var cell in mapItems.Keys) view.AddPickup(cell);
             AddLog("味方フェーズ ターン1");
             PlanEnemyActions();
         }
@@ -625,6 +654,15 @@ namespace Srpg.Battle
                 view.MoveUnit(selected.Id, cell);
             }
             selected.moved = true;
+            pickedThisMove = null;
+            if (selected.Side == "ally" && mapItems.TryGetValue(cell, out var found))
+            {
+                mapItems.Remove(cell);
+                selected.items.Add(found);
+                pickedThisMove = (cell, found);
+                view.RemovePickup(cell);
+                AddLog($"{selected.Name}は {found.name} を拾った");
+            }
             moveCells.Clear();
             view.ShowRange(null);
             view.Select(cell);
@@ -725,6 +763,15 @@ namespace Srpg.Battle
             if ((CurrentMode != Mode.Acting && CurrentMode != Mode.Targeting && CurrentMode != Mode.Support) || selected == null) return;
             supportCells.Clear();
             var unit = selected;
+            if (pickedThisMove.HasValue)
+            {
+                // 移動を取り消したら、拾った物もマスへ戻す（ブラウザ版と同じ）
+                var (cell, item) = pickedThisMove.Value;
+                unit.items.Remove(item);
+                mapItems[cell] = item;
+                view.AddPickup(cell);
+                pickedThisMove = null;
+            }
             if (unit.cell != moveFrom)
             {
                 unit.cell = moveFrom;
