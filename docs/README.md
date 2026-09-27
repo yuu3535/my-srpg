@@ -58,6 +58,7 @@
 
 - [`NEXT_ACTION_QUEUE.md`](30-planning/NEXT_ACTION_QUEUE.md)：作業候補と優先順
 - [`SYNC_AGENDA.md`](30-planning/SYNC_AGENDA.md)：担当間で確認する議題
+- [`MAGIC_CORE_DESIGN_NOTES_2026-09-27.md`](30-planning/MAGIC_CORE_DESIGN_NOTES_2026-09-27.md)：魔法の扱いと魔法武器「魔核」（一部決定・検討中）
 
 ### `40-reviews` — 調査・レビュー結果
 
