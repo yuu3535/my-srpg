@@ -114,23 +114,8 @@
         "転移"
       ],
       "statusEffects": [],
-      "equippedItem": "trial_book",
-      "grimoireSpell": {
-        "id": "火",
-        "name": "魔弾",
-        "category": "basic",
-        "type": "attack",
-        "targetType": "enemy",
-        "range": 2,
-        "mpCost": "1d6",
-        "powerFormula": "1d6+MB",
-        "effectType": "magicDamage",
-        "statusEffect": "burn",
-        "statusChanceNote": "10ダメージ以上で火傷",
-        "description": "火を操り敵単体に魔法ダメージ。",
-        "trialGrimoire": true,
-        "trialItemId": "trial_book"
-      },
+      "equippedItem": null,
+      "grimoireSpell": null,
       "criticalBonus": 0,
       "criticalAvoidanceBonus": 0,
       "canCounterBase": true,
@@ -316,23 +301,8 @@
         "転移"
       ],
       "statusEffects": [],
-      "equippedItem": "trial_book",
-      "grimoireSpell": {
-        "id": "火",
-        "name": "魔弾",
-        "category": "basic",
-        "type": "attack",
-        "targetType": "enemy",
-        "range": 2,
-        "mpCost": "1d6",
-        "powerFormula": "1d6+MB",
-        "effectType": "magicDamage",
-        "statusEffect": "burn",
-        "statusChanceNote": "10ダメージ以上で火傷",
-        "description": "火を操り敵単体に魔法ダメージ。",
-        "trialGrimoire": true,
-        "trialItemId": "trial_book"
-      },
+      "equippedItem": null,
+      "grimoireSpell": null,
       "criticalBonus": 0,
       "criticalAvoidanceBonus": 0,
       "canCounterBase": true,
@@ -356,28 +326,28 @@
     },
     {
       "id": "fire_book",
-      "name": "火の魔導書",
+      "name": "火の魔核",
       "kind": "grimoire",
       "power": 0,
       "range": 0
     },
     {
       "id": "heal_book",
-      "name": "治癒の魔導書",
+      "name": "治癒の魔核",
       "kind": "grimoire",
       "power": 0,
       "range": 0
     },
     {
       "id": "star_book",
-      "name": "星の魔導書",
+      "name": "星の魔核",
       "kind": "grimoire",
       "power": 0,
       "range": 0
     },
     {
       "id": "trial_book",
-      "name": "仮の魔導書",
+      "name": "仮の魔核",
       "kind": "grimoire",
       "power": 6,
       "range": 0
