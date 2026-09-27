@@ -505,7 +505,15 @@ namespace Srpg.Battle
                 attacker = enemy, target = target, option = option,
                 forecast = BattlePlan.ForecastOf(enemy.plan, target.plan, option.ToAction(), PlanUnits()),
             };
+            if (target != null) FocusOnPair(enemy, target);
         }
+
+        /// <summary>
+        /// 攻める側と受ける側のまん中に寄る。味方の攻撃・敵の攻撃の前の予測のどちらも同じ寄せ方
+        /// （レビュー 2026-09-28 D3: 敵の番の予測で、受ける味方が下の帯に隠れていた）
+        /// </summary>
+        private void FocusOnPair(UnitState attacker, UnitState defender) =>
+            view.FocusOnPoint((map.TopCenter(attacker.cell) + map.TopCenter(defender.cell)) * 0.5f);
 
         public void ClearEnemyPreview() => EnemyPreview = null;
         private BattleOption currentOption;
@@ -887,7 +895,7 @@ namespace Srpg.Battle
                 currentOption = OptionsOf(selected).FirstOrDefault(o => o.InRange(Distance(selected.cell, defender.cell))) ?? BasicOption(selected);
             forecast = ForecastFor(selected, defender, currentOption);
             // 戦闘予測: 攻める側と受ける側のまん中に寄る（下の帯に隠れないよう、見ている所は画面の少し上）
-            view.FocusOnPoint((map.TopCenter(selected.cell) + map.TopCenter(defender.cell)) * 0.5f);
+            FocusOnPair(selected, defender);
             view.ShowRange(new[] { defender.cell }, Board3DView.AttackRangeColor);
             CurrentMode = Mode.Forecast;
         }
@@ -1112,6 +1120,7 @@ namespace Srpg.Battle
                         attacker = enemy, target = plan.target, option = plan.option,
                         forecast = BattlePlan.ForecastOf(enemy.plan, plan.target.plan, plan.option.ToAction(), PlanUnits()),
                     };
+                    FocusOnPair(enemy, plan.target);
                     yield return new WaitForSeconds(enemyPreviewSeconds);
                     EnemyPreview = null;
                 }

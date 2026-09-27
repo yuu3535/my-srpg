@@ -240,8 +240,19 @@ namespace Srpg.EditorAgent
             if (controller.CurrentForecast == null) throw new InvalidOperationException("UIの確認: 戦闘予測が出なかった");
             view.FocusOnPoint((view.Map.TopCenter(albasUi.cell) + view.Map.TopCenter(controller.Target.cell)) * 0.5f, true);
             RenderWithHud(hud, camera, rt, "Battle3D_ui_forecast");
-            // 攻撃の切り替え（‹ ›）: 次の攻撃の予測
+            // 攻撃の切り替え（‹ ›）: 次の攻撃の予測。攻撃の選択肢が2つ以上ある味方（アルシェ）で撮る（レビュー 2026-09-28: アルバスは1つで、切り替えが撮れていなかった）
+            controller.CancelForecast();
+            controller.CancelTargeting();
+            controller.UndoMove();
+            var arsheUi = controller.Units.First(u => u.source.id == "arshe");
+            var rivalUi = controller.Units.First(u => u.source.id == "albas_rival");
+            controller.TeleportForTest("albas_rival", arsheUi.cell + new Vector2Int(0, -1));
+            controller.Select("arshe");
+            controller.ChooseAttack();
+            controller.ShowForecast("albas_rival");
+            if (controller.ForecastOptions.Count < 2) throw new InvalidOperationException("UIの確認: アルシェの攻撃の選択肢が2つ以上ない");
             controller.CycleForecastOption(1);
+            view.FocusOnPoint((view.Map.TopCenter(arsheUi.cell) + view.Map.TopCenter(rivalUi.cell)) * 0.5f, true);
             RenderWithHud(hud, camera, rt, "Battle3D_ui_forecast_next");
             controller.CycleForecastOption(-1);
             // 味方全員を待機させて敵の番へ（敵が予告どおりに動いたあと、次の味方の番の予告と赤い丸）

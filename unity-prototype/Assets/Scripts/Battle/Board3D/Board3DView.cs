@@ -61,7 +61,7 @@ namespace Srpg.Battle
         [SerializeField] private FootStyle footStyle = FootStyle.TeamFrame;  // 原作者 2026-09-27: C'（UI素材の枠 D4・D5）
         [SerializeField] private Sprite allyFrameSprite;                    // UI素材 D4（assets/ui/select_ally_d4.png）
         [SerializeField] private Sprite enemyFrameSprite;                   // UI素材 D5（assets/ui/select_enemy_d5.png）
-        [SerializeField, Range(0f, 1f)] private float teamFrameAlpha = 0.6f;
+        [SerializeField, Range(0f, 1f)] private float teamFrameAlpha = 1f;   // 描いた地面の上でも読めるよう不透明に（レビュー 2026-09-28 A3。前は0.6）
         [SerializeField] private float topViewUnitSize = 0.86f;             // 真上から見たときのキャラの絵の大きさ（マスの中に収める）
         [SerializeField] private Light keyLight;                            // カメラと一緒に回す光
         [SerializeField] private float lightPitch = 55f;
@@ -365,7 +365,7 @@ namespace Srpg.Battle
                 var frame = unit.enemy ? enemyFrameSprite : allyFrameSprite;
                 if (footStyle == FootStyle.TeamFrame && frame != null)
                 {
-                    visual.frame = AddFlat($"Frame_{unit.id}", frame, top + Vector3.up * 0.014f, 0.98f / frame.bounds.size.x, new Color(1f, 1f, 1f, teamFrameAlpha), OrderMark);
+                    visual.frame = AddFlat($"Frame_{unit.id}", frame, top + Vector3.up * 0.014f, 0.98f / frame.bounds.size.x, FrameTint(unit.enemy), OrderMark);
                     visual.footParts.Add(visual.frame.transform);
                 }
             }
@@ -421,12 +421,16 @@ namespace Srpg.Battle
         public bool IsTargeted(string id) =>
             unitVisuals.TryGetValue(id, out var visual) && visual.targetRing != null && visual.targetRing.gameObject.activeSelf;
 
-        /// <summary>陣営の枠の濃さ。選んでいるキャラは濃く（100%）して、ふだんの目印（60%）と区別する</summary>
+        /// <summary>陣営の枠の濃さ。ふだんも不透明（2026-09-28）。選んでいるキャラは水色のマスと▼で区別する</summary>
         public void SetUnitHighlighted(string id, bool highlighted)
         {
             if (unitVisuals.TryGetValue(id, out var visual) && visual.frame != null)
-                visual.frame.color = new Color(1f, 1f, 1f, highlighted ? 1f : teamFrameAlpha);
+                visual.frame.color = FrameTint(visual.unit.enemy);
         }
+
+        /// <summary>陣営の枠の色: 枠の中の明るい面を陣営の色に寄せ、描いた地面の上でも味方・敵が分かるようにする（レビュー 2026-09-28 A3）</summary>
+        private Color FrameTint(bool enemy) =>
+            enemy ? new Color(1f, 0.62f, 0.56f, teamFrameAlpha) : new Color(0.62f, 0.8f, 1f, teamFrameAlpha);
 
         /// <summary>範囲のマス（移動は半透明の青、攻撃は赤）を出す。空なら消す</summary>
         public void ShowRange(IEnumerable<Vector2Int> cells, Color? color = null)

@@ -113,6 +113,7 @@ namespace Srpg.Battle
         }
 
         private string subList;   // コマンドの一覧を入れ替えている（"skill" 戦技・"magic" 魔法）。null なら最初の一覧
+        private string subListOwner;   // 一覧を開いたキャラ。別のキャラを選んだら最初の一覧に戻す
         private Button fcPrev, fcNext;
         private Text fcCount;
 
@@ -300,15 +301,16 @@ namespace Srpg.Battle
             o = new UnitOverlay { root = NewRect("Overlay_" + unit.Id, overlayRoot) };
             o.root.anchorMin = o.root.anchorMax = new Vector2(0.5f, 0.5f);
             o.root.pivot = new Vector2(0.5f, 1f);
-            o.root.sizeDelta = new Vector2(46, 8);
-            o.intent = Place(NewRect("Intent", o.root), -2, 0, 8, 8).gameObject.AddComponent<Image>();
+            // HPの数字はスマホの横画面でも読める大きさにし、濃い縁取りを付ける（レビュー 2026-09-28 F3: 7では約6pxで読めなかった）
+            o.root.sizeDelta = new Vector2(58, 12);
+            o.intent = Place(NewRect("Intent", o.root), -6, 1, 10, 10).gameObject.AddComponent<Image>();
             o.intent.sprite = SpriteOf("mark_intent");
             o.intent.raycastTarget = false;
-            o.hp = Label(o.root, "Hp", 7, 0, 12, 8, 7, Hex("#55ee88"), FontStyle.Bold, TextAnchor.MiddleRight);
-            var shadow = o.hp.gameObject.AddComponent<Shadow>();
-            shadow.effectColor = new Color(0, 0, 0, 0.9f);
-            shadow.effectDistance = new Vector2(0.6f, -0.6f);
-            var bar = Place(NewRect("Bar", o.root), 21, 3, 26, 2);
+            o.hp = Label(o.root, "Hp", 5, 0, 18, 12, 11, Hex("#55ee88"), FontStyle.Bold, TextAnchor.MiddleRight);
+            var edge = o.hp.gameObject.AddComponent<Outline>();
+            edge.effectColor = new Color(0.04f, 0.02f, 0.06f, 0.95f);
+            edge.effectDistance = new Vector2(0.9f, -0.9f);
+            var bar = Place(NewRect("Bar", o.root), 25, 4, 32, 3.5f);
             bar.gameObject.AddComponent<Image>().color = new Color(0, 0, 0, 0.6f);
             o.fill = NewRect("Fill", bar).gameObject.AddComponent<Image>();
             o.fill.raycastTarget = false;
@@ -333,7 +335,8 @@ namespace Srpg.Battle
                 float t = (float)hp / maxHp;
                 var color = t <= 0.25f ? Hex("#ff5555") : t <= 0.5f ? Hex("#ffcc44") : Hex("#55ee88");
                 o.hp.text = hp.ToString();
-                o.hp.color = color;
+                // 敵の数字はバーと同じ赤系にして、味方の緑と見分ける（レビュー 2026-09-28 A3）
+                o.hp.color = unit.Side == "enemy" && t > 0.5f ? Hex("#ff9a8a") : color;
                 o.fill.color = unit.Side == "enemy" && t > 0.5f ? Hex("#e0645a") : color;
                 SetBar(o.fill.rectTransform, t);
                 bool intent = unit.Side == "enemy" && controller.Declarations.TryGetValue(unit.Id, out var d) && d.type == "attack"
@@ -428,7 +431,9 @@ namespace Srpg.Battle
             statusOthers = StatusChip(body, "友軍", 100, 222, Hex("#59c47a"));
             statusTurn = StatusChip(body, "ターン", 258, 222, Hex("#d6a740"));
             StatusHeading(body, "敵の行動予告", 100, 258);
-            statusTargets = Label(body, "Targets", 112, 282, 290, 64, 9, Hex("#e8d5a4"));
+            // 行動予告の一覧: 盤面の上でも読めるよう、暗い板を敷いて大きくする（レビュー 2026-09-28 F3）
+            Framed(Place(NewRect("TargetsPanel", body), 100, 280, 300, 70), "panel_even", 7f);
+            statusTargets = Label(body, "Targets", 114, 287, 276, 58, 11, Hex("#f1e2bb"));
             statusTargets.alignment = TextAnchor.UpperLeft;
             statusTargets.verticalOverflow = VerticalWrapMode.Truncate;
             statusTargets.horizontalOverflow = HorizontalWrapMode.Wrap;
@@ -904,7 +909,8 @@ namespace Srpg.Battle
             var subTexts = new List<string>();
             var sel = controller.Selected;
             var mode = controller.CurrentMode;
-            if (sel == null || (mode != Battle3DController.Mode.Moving && mode != Battle3DController.Mode.Acting)) subList = null;
+            if (sel == null || sel.Id != subListOwner || (mode != Battle3DController.Mode.Moving && mode != Battle3DController.Mode.Acting)) subList = null;
+            subListOwner = sel?.Id;
             if (controller.CurrentPhase == Battle3DController.Phase.Ally && !forecastOpen)
             {
                 var ui = controller.UiOf(sel);
