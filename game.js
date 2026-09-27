@@ -556,6 +556,14 @@ function onCellClick(row, col) {
     // コマンド一覧: 何もないマスを押すと取り消し（2段目 → 一覧 → 移動の取り消し、対象選択 → 2段目）
     if (landscapeTapCancel()) return;
 
+    // [trial] 召喚の陣を置くマス
+    if (actionState === "trialSummonTile" && trialSummonState) {
+        const cell = getCell(row, col);
+        if (!cell || !cell.classList.contains("highlightMove")) return;
+        trialPlaceSummon(col, row);
+        return;
+    }
+
     // [trial] 転移（戦技）の移動先
     if (actionState === "trialTransferTile" && trialTransferState) {
         const cell = getCell(row, col);
@@ -1214,7 +1222,7 @@ function trialCombatModifiers(attacker, defender, options = {}) {
     const artHit = Number(TRIAL_ART_HIT_MODIFIERS[options.combatArtId] || 0);
     return {
         accuracy: aura.accuracy + attack.accuracy + artHit,
-        critical: attack.critical,
+        critical: attack.critical + (aura.critical || 0),
         critGuard: aura.critGuard,
         damageMultiplier: attack.damageMultiplier,
         notes: [...aura.notes, ...attack.notes],
@@ -1615,6 +1623,122 @@ function trialExecuteTransfer(row, col) {
     endUnitTurn(caster);
 }
 
+// ── [trial] 召喚（原作者 2026-09-27）: 戦技に入っている召喚だけ。1戦闘に1回 ──
+//   隣の空いているマスに陣を置く → ターン N+2 の味方の番の始まりに、陣から召喚獣が出る（出たその番から動ける）。
+//   呼んだ者が倒れたら、出る前の召喚も出ている召喚獣も消える。召喚獣は負けの判定に数えない
+let trialSummonState = null;        // 陣を置くマスを選んでいる間 { caster, spell }
+let trialPendingSummons = [];       // 出るのを待っている召喚 { artName, casterId, x, y, dueTurn }
+let trialSummonsUsed = new Set();   // 「呼んだ者の id:戦技」（1戦闘に1回）
+
+function trialResetSummons() {
+    trialSummonState = null;
+    trialPendingSummons = [];
+    trialSummonsUsed = new Set();
+}
+
+function trialStartSummon(caster, spell) {
+    const key = `${caster.id}:${spell.trialArtName}`;
+    if (trialSummonsUsed.has(key)) {
+        showMessage("SYSTEM", `${spell.trialArtName}はこの戦闘ですでに使った`);
+        return;
+    }
+    trialSummonState = { caster, spell };
+    selectedSpell = spell;
+    actionState = "trialSummonTile";
+    clearHighlights();
+    hideForecastLayer();
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const x = caster.x + dx, y = caster.y + dy;
+        if (x < 0 || y < 0 || x >= GRID_COLS || y >= GRID_ROWS || isTileBlocked(x, y)) continue;
+        if (battleUnits.some(u => u.hp > 0 && u.x === x && u.y === y)) continue;
+        getCell(y, x)?.classList.add("highlightMove");
+    }
+    setLandscapeHint("召喚の陣を置くマスを選んでください（隣の空いているマス。2ターン後に出ます）。");
+    syncLandscapeBattleUi(caster);
+}
+
+function trialPlaceSummon(x, y) {
+    const { caster, spell } = trialSummonState;
+    trialSummonState = null;
+    clearHighlights();
+    const mpCost = trialPayMagicMp(caster, spell);
+    const artName = spell.trialArtName;
+    trialSummonsUsed.add(`${caster.id}:${artName}`);
+    trialPendingSummons.push({ artName, casterId: caster.id, x, y, dueTurn: trialSummonDueTurn(turnCount, artName) });
+    addLog(`・${caster.name}が ${artName} 使用  MP-${mpCost} → (${x},${y})に召喚の陣（ターン${trialSummonDueTurn(turnCount, artName)}に出る）`);
+    renderSummonCircles();
+    endUnitTurn(caster);
+}
+
+/** 召喚獣のユニットを作る（試験用プロフィールで能力を決める） */
+function trialCreateSummonUnit(unitId, caster, x, y) {
+    const profile = TRIAL_PROFILES[unitId];
+    const unit = {
+        id: unitId, name: profile.name, side: caster.side, char: profile.name.slice(0, 1),
+        x, y, hp: 1, maxHp: 1, mp: 29, maxMp: 29, move: 5, attackRange: 1,
+        items: [], spells: {}, skills: {}, statusEffects: [], combatArtUses: {},
+        moved: false, acted: false, trialSummon: true, trialSummonerId: caster.id,
+    };
+    applyTrialProfile(unit);
+    unit.battleStats = calcBattleStats(unit);
+    return unit;
+}
+
+/** 味方の番の始まり: 時が来た召喚を出す */
+function trialResolveSummons() {
+    const ready = trialPendingSummons.filter(p => p.dueTurn <= turnCount);
+    trialPendingSummons = trialPendingSummons.filter(p => p.dueTurn > turnCount);
+    for (const pending of ready) {
+        const caster = battleUnits.find(u => u.id === pending.casterId && u.hp > 0);
+        if (!caster) continue;
+        const unitId = TRIAL_SUMMONS[pending.artName].unitId;
+        // 陣がふさがっていたら、陣にいちばん近い空いているマス
+        const free = (x, y) => x >= 0 && y >= 0 && x < GRID_COLS && y < GRID_ROWS && !isTileBlocked(x, y)
+            && !battleUnits.some(u => u.hp > 0 && u.x === x && u.y === y);
+        let spot = free(pending.x, pending.y) ? { x: pending.x, y: pending.y } : null;
+        for (let r = 1; !spot && r < GRID_COLS + GRID_ROWS; r++) {
+            for (let dy = -r; dy <= r && !spot; dy++) {
+                const dx = r - Math.abs(dy);
+                for (const sx of dx === 0 ? [0] : [dx, -dx]) {
+                    if (free(pending.x + sx, pending.y + dy)) { spot = { x: pending.x + sx, y: pending.y + dy }; break; }
+                }
+            }
+        }
+        if (!spot) continue;
+        const unit = trialCreateSummonUnit(unitId, caster, spot.x, spot.y);
+        battleUnits.push(unit);
+        addLog(`・召喚の陣から ${unit.name} が現れた！`);
+        showMessage("SYSTEM", `${caster.name}の召喚！${unit.name}が現れた`);
+    }
+    renderSummonCircles();
+}
+
+/** 呼んだ者が倒れたら、出る前の召喚と、出ている召喚獣を消す */
+function trialCleanupSummons() {
+    const aliveIds = new Set(battleUnits.filter(u => u.hp > 0).map(u => u.id));
+    trialPendingSummons = trialPendingSummons.filter(p => aliveIds.has(p.casterId));
+    for (const unit of battleUnits) {
+        if (unit.trialSummon && unit.hp > 0 && !aliveIds.has(unit.trialSummonerId)) {
+            unit.hp = 0;
+            addLog(`・${unit.name}は呼んだ者が倒れ、消えた`);
+        }
+    }
+    renderSummonCircles();
+}
+
+function renderSummonCircles() {
+    if (!battleGrid) return;
+    for (const el of battleGrid.querySelectorAll(".summonCircle")) el.remove();
+    for (const p of trialPendingSummons) {
+        const cell = getCell(p.y, p.x);
+        if (!cell) continue;
+        const mark = document.createElement("div");
+        mark.className = "summonCircle";
+        mark.title = `${p.artName}（ターン${p.dueTurn}に出る）`;
+        cell.appendChild(mark);
+    }
+}
+
 /** 範囲の攻撃（円舞・万雷）を計画どおりに反映する */
 function trialExecuteArea(attacker, targets, action) {
     const plan = bpPlanArea(trialPlanSnapshot(attacker), targets.map(trialPlanSnapshot), action, trialPlanEnv(), bpRandomRolls());
@@ -1634,7 +1758,8 @@ function trialCastSpecialArt(unit, artName) {
     }
     const foes = battleUnits.filter(u => u.hp > 0 && u.side !== unit.side
         && Math.abs(u.x - unit.x) + Math.abs(u.y - unit.y) <= spec.radius);
-    const plan = bpPlanDrain(trialPlanSnapshot(unit), foes.map(trialPlanSnapshot), spec.percent, spec.drain);
+    // 最大MPも渡す（渡さないと、吸収でMPが今の値より増えなかった）
+    const plan = bpPlanDrain({ ...trialPlanSnapshot(unit), maxMp: unit.maxMp }, foes.map(trialPlanSnapshot), spec.percent, spec.drain);
     unit.trialArtUses[artName] = true;
     addLog(`・${unit.name}の${artName}！（${spec.radius}マス以内の敵のHPを${spec.percent}%削る）`);
     if (!plan.hits.length) addLog("  範囲内に敵がいない");
@@ -2851,7 +2976,7 @@ const LS_COMMAND_ICON_PATHS = {
 // 対象を選んでいる間の状態と、取り消しで戻る先のコマンド
 const LS_TARGETING_STATES = {
     attacking: "攻撃", throwing: "攻撃", magic: "魔法",
-    trialTransferAlly: "魔法", trialTransferTile: "魔法",
+    trialTransferAlly: "魔法", trialTransferTile: "魔法", trialSummonTile: "魔法",
 };
 
 // 絵のアイコン（発注書 第3版 F4）。「魔法」は本ではなく、本人の内の魔力を燃やす「燃える生命核」
@@ -3029,7 +3154,7 @@ function landscapeTapCancel() {
         return true;
     }
     // マスを選ぶ魔法（転移の移動先など）は、マスを押すのが本来の操作なので取り消しにしない
-    if (LS_TARGETING_STATES[actionState] && actionState !== "trialTransferTile" && selectedSpell?.effectType !== "teleport") {
+    if (LS_TARGETING_STATES[actionState] && actionState !== "trialTransferTile" && actionState !== "trialSummonTile" && selectedSpell?.effectType !== "teleport") {
         cancelLandscapeTargeting(unit);
         return true;
     }
@@ -3234,6 +3359,7 @@ function getLandscapeMagicEntries(unit) {
                 const spell = {
                     ...base,
                     ...(artName ? { trialArtName: artName, name: artName } : {}),
+                    ...(item.source === "固有" ? { trialFixed: true, name: item.name } : {}),
                     ...(typeof range === "number" ? { range: range + rangeBonus } : {}),
                 };
                 return { id: item.spell, spell, label: item.name, sub: item.source === "魔導書" ? "装備" : "戦技" };
@@ -3348,6 +3474,10 @@ function renderLandscapeSubCommandRail(unit, kind) {
                 }
                 if (sp.trialArtName === "転移") {   // [trial] 味方を選ぶ → 移動先を選ぶ
                     trialStartTransfer(unit, sp);
+                    return;
+                }
+                if (unit.trialStats && TRIAL_SUMMONS[sp.trialArtName]) {   // [trial] 召喚: 隣の空いているマスを選ぶ
+                    trialStartSummon(unit, sp);
                     return;
                 }
                 if (sp.effectType === "teleport") {
@@ -4087,7 +4217,7 @@ function executeMagic(caster, spell, target) {
         trialCastSupportArt(caster, spell, target);
         return;
     }
-    if (caster.trialStats && spell?.trialItemId && spell.effectType === "heal") {   // [trial] 治癒の魔導書
+    if (caster.trialStats && (spell?.trialItemId || spell?.trialFixed) && spell.effectType === "heal") {   // [trial] 治癒の魔核・召喚獣の治癒
         trialCastHeal(caster, spell, target, 1);
         return;
     }
@@ -4504,6 +4634,7 @@ function startAllyPhase() {
         }
     }
     tickStatusEffects("ally");
+    if (typeof trialResolveSummons === "function") trialResolveSummons();
     renderUnits();
     planEnemyActions();
     renderIdlePanel();
@@ -6216,7 +6347,8 @@ function isBattleConditionMet(condition, aliveEnemies, aliveAllies) {
 
 function checkVictoryCondition() {
     const aliveEnemies = battleUnits.filter(u => u.side === "enemy" && u.hp > 0);
-    const aliveAllies  = battleUnits.filter(u => u.side === "ally"  && u.hp > 0);
+    trialCleanupSummons();
+    const aliveAllies  = battleUnits.filter(u => u.side === "ally"  && u.hp > 0 && !u.trialSummon);
     const definition = BATTLE_DEFINITIONS[currentBattleId];
     const victory = definition?.victory || { type: "defeatAll" };
     const defeat = definition?.defeat || { type: "allAlliesDefeated" };
@@ -7535,6 +7667,7 @@ function setBattleMode(battleId) {
             battleStats,
         };
     });
+    trialResetSummons();
     // [trial] テスト戦闘だけ、採用版ステータスの試験用プロフィールを適用する
     if (isTrialBattleSession(battleId)) {
         for (const unit of battleUnits) applyTrialProfile(unit);

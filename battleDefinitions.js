@@ -65,6 +65,8 @@ const BATTLE_DEFINITIONS = Object.freeze({
         },
         victory: { type: "defeatAll" },
         defeat: { type: "allAlliesDefeated" },
+        // 3Dの盤面の時間帯（Unity版）: day＝明るい昼 / dusk＝暗めの琥珀色（原作者 2026-09-27: 明るいマップチップに合わせて昼）
+        timeOfDay: "day",
         // 持ち物（消耗品）を試すため、拾える物を1つ置く（原作者 2026-09-27）
         mapItems: [
             { x: 2, y: 5, item: { id: "small_potion", name: "ポーション小", type: "heal", value: 5 } },

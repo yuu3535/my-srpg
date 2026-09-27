@@ -7646,3 +7646,16 @@ img.lsMenuIcon.wpnIcon {
     margin-right: -1px;
     background: url("assets/ui/mark_intent.png?v=ui-v3-1") center / contain no-repeat;
 }
+
+/* [trial] 召喚の陣（原作者 2026-09-27）と、召喚獣（絵が届くまでの仮の火の玉） */
+.summonCircle {
+    position: absolute;
+    inset: 12%;
+    border: 1px solid rgba(140,200,255,0.85);
+    border-radius: 50%;
+    box-shadow: inset 0 0 8px rgba(120,180,255,0.5), 0 0 6px rgba(120,180,255,0.45);
+    pointer-events: none;
+    animation: summonPulse 1.6s ease-in-out infinite;
+}
+@keyframes summonPulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+.battleUnit .unitLabel { color: #d8ecff; text-shadow: 0 0 6px rgba(120,180,255,0.9); }

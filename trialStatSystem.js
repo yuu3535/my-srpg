@@ -92,6 +92,15 @@ const TRIAL_PROFILES = Object.freeze({
         caps:   { hp: 130, atk: 110, def: 105, mag: 108, res: 61, tec: 97, spd: 94, cha: 107 },
         luck: 25, courage: 60, siz: 25,
     },
+    // 召喚「ヒトダマ」で出る幻獣（原作者 2026-09-27）。TRPGの召喚獣メモ（Lv4・HP20・Dex26・Pow29・SIZ3）から置き換えた仮の値。
+    // 能力は成長しない（成長率0）。因果Lvの表示はTRPG Lv4 相当の25
+    hitodama: {
+        name: "ヒトダマ", race: "幻獣", trpgLevel: 4, causeLevel: 25,
+        base:   { hp: 20, atk: 6, def: 8, mag: 22, res: 20, tec: 14, spd: 20, cha: 12 },
+        growth: { hp: 0, atk: 0, def: 0, mag: 0, res: 0, tec: 0, spd: 0, cha: 0 },
+        caps:   { hp: 99, atk: 99, def: 99, mag: 99, res: 99, tec: 99, spd: 99, cha: 99 },
+        luck: 15, courage: 75, siz: 3,
+    },
     herel: {
         // 星飼い。隕石・重力を使う魔法型
         name: "ヘレル", race: "ヒト", trpgLevel: 4,
@@ -155,6 +164,7 @@ const TRIAL_UNIT_CLASS = Object.freeze({
     forest_guard: { name: "戦士（仮）", line: "戦列下級" },
     dylan:        { name: "未設定",     line: null },
     herel:        { name: "未設定",     line: null },
+    hitodama:     { name: "幻獣",       line: null },   // 召喚獣（兵種なし）
 });
 
 // 採用済みのセット枠。試験画面では「装備中の枠」を見るだけとし、
@@ -213,6 +223,22 @@ const TRIAL_MAGIC_ART_SPELLS = Object.freeze({
     "召喚「ヒトダマ」": "ヒトダマ",
     "万雷": "落雷",   // 落雷の魔法データを使い、直線3マスの敵を巻き込む（game.js の万雷の処理）
 });
+
+// 召喚（原作者 2026-09-27）: 戦技に入っている召喚だけ。召喚は1戦闘に1回（召喚を繰り返して増えないように）。
+//   delayTurns: 使ったターンを N として、ターン N+delayTurns の味方の番の始まりに出る（「召喚に2ターンかかる」）
+//   呼んだ者が倒れたら、出る前の召喚も、出ている召喚獣も消える
+const TRIAL_SUMMONS = Object.freeze({
+    "召喚「ヒトダマ」": { unitId: "hitodama", delayTurns: 2 },
+});
+
+/** 召喚獣が出るターン */
+function trialSummonDueTurn(castTurn, artName) {
+    return Number(castTurn) + (TRIAL_SUMMONS[artName]?.delayTurns ?? 0);
+}
+
+// 能力表にないキャラ（召喚獣）の、決まったスキルと魔法（原作者 2026-09-27: ヒトダマは火・治癒と、補助の代わりにアシスト）
+const TRIAL_FIXED_ABILITIES = Object.freeze({ hitodama: ["アシスト"] });
+const TRIAL_FIXED_MAGIC = Object.freeze({ hitodama: ["火", "治癒"] });
 
 // 物理の戦技のうち、試験の戦闘で効果を実装済みのもの（game.js の [trial] 戦技フック）
 const TRIAL_IMPLEMENTED_PHYSICAL_ARTS = new Set(["両断", "復讐", "大振り", "破天", "奇襲", "円舞"]);
@@ -369,7 +395,8 @@ function trialMagicMenuFor(unitId, causeLevel, selection = null, grimoireIds = [
         const item = TRIAL_ITEMS[itemId];
         if (item?.kind === "grimoire") menu.push({ name: item.name, spell: item.spell, source: "魔導書", itemId });
     }
-    return menu;
+    const fixed = (TRIAL_FIXED_MAGIC[unitId] || []).map(spell => ({ name: spell, spell, source: "固有" }));
+    return fixed.concat(menu);
 }
 
 /** 攻撃コマンドに出す物理の戦技（implemented=false は効果未実装で選べない） */
@@ -471,7 +498,7 @@ function trialAbilityNamesFor(unitId, causeLevel, selection = null) {
         ...loadout.classUnique,
         ...loadout.causeSkills,
         ...loadout.combatArts,
-    ].filter(Boolean).map(item => item.name);
+    ].filter(Boolean).map(item => item.name).concat(TRIAL_FIXED_ABILITIES[unitId] || []);
 }
 
 /** セット中のスキルの無条件の能力値上昇（「技・魅力+10」など）を合計する */
@@ -497,11 +524,11 @@ function trialDistance(a, b) {
 /**
  * 周囲に効く能力（死神・王威）による補正。
  *   units: { id, side, x, y, hp, abilityNames: string[] } の配列
- *   返り値 accuracy: 攻撃側の命中率に足す値 / critGuard: 防御側の必殺耐性に足す値
+ *   返り値 accuracy: 攻撃側の命中率に足す値 / critical: 攻撃側の必殺率に足す値 / critGuard: 防御側の必殺耐性に足す値
  *   死神の「速さ−5」は未実装
  */
 function trialAuraModifiers(attacker, defender, units) {
-    const result = { accuracy: 0, critGuard: 0, notes: [] };
+    const result = { accuracy: 0, critical: 0, critGuard: 0, notes: [] };
     const living = (units || []).filter(u => u && u.hp > 0);
     const owners = name => living.filter(u => (u.abilityNames || []).includes(name));
     const who = owner => owner.name || owner.id;
@@ -519,6 +546,12 @@ function trialAuraModifiers(attacker, defender, units) {
         }
         if (owner.side === defender.side && owner.id !== defender.id && trialDistance(owner, defender) <= 4) {
             result.accuracy -= 10; result.critGuard += 10; result.notes.push(`${who(owner)}の王威:相手の回避・必殺耐性+10`);
+        }
+    }
+    // アシスト: 隣接する味方の命中・必殺+5（能力表の効果文。原作者 2026-09-27 にヒトダマのスキルとして使う）
+    for (const owner of owners("アシスト")) {
+        if (owner.side === attacker.side && owner.id !== attacker.id && trialDistance(owner, attacker) === 1) {
+            result.accuracy += 5; result.critical += 5; result.notes.push(`${who(owner)}のアシスト:命中・必殺+5`);
         }
     }
     return result;
@@ -672,6 +705,9 @@ if (typeof module !== "undefined") {
         TRIAL_ITEM_CAPACITY,
         TRIAL_STARTING_GEAR,
         TRIAL_STARTING_STOCK,
+        TRIAL_SUMMONS,
+        trialSummonDueTurn,
+        TRIAL_FIXED_MAGIC,
         trialStartingGear,
         trialItemKind,
         trialCarriedGrimoires,

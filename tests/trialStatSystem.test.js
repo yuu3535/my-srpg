@@ -27,6 +27,8 @@ const {
     TRIAL_ITEM_CAPACITY,
     trialStartingGear,
     TRIAL_STARTING_STOCK,
+    TRIAL_SUMMONS,
+    trialSummonDueTurn,
     trialCarriedGrimoires,
     trialCarriedWeapon,
     trialGearEquip,
@@ -290,5 +292,17 @@ const albasArts = trialLearnedAbilitiesFor("albas", 30, 5).combatArts;
 assert.equal(albasArts.some(art => art.name === "威光" && art.source === "兵種Lv5"), true);
 assert.equal(albasArts[albasArts.length - 1].name, "威光");
 assert.equal(trialLearnedAbilitiesFor("albas", 30, 5).classSkills.some(skill => skill.name === "威光"), false);
+
+// 召喚（原作者 2026-09-27）: ヒトダマは能力が成長しない。固有の魔法は火・治癒、スキルはアシスト。召喚は使ったターン＋2 に出る
+assert.deepEqual(trialStatsAt(P.hitodama, 25), P.hitodama.base);
+assert.deepEqual(trialMagicMenuFor("hitodama", 25).map(m => [m.name, m.source]), [["火", "固有"], ["治癒", "固有"]]);
+assert.equal(trialAbilityNamesFor("hitodama", 25).includes("アシスト"), true);
+assert.equal(trialSummonDueTurn(3, "召喚「ヒトダマ」"), 5);
+assert.equal(TRIAL_SUMMONS["召喚「ヒトダマ」"].unitId, "hitodama");
+// アシスト: 隣接する味方の命中・必殺+5（離れていたら、敵なら効かない）
+const assistUnits = [{ id: "h", side: "ally", x: 1, y: 0, hp: 5, abilityNames: ["アシスト"] }];
+const aura = trialAuraModifiers({ id: "a", side: "ally", x: 0, y: 0 }, { id: "e", side: "enemy", x: 0, y: 1 }, assistUnits);
+assert.deepEqual([aura.accuracy, aura.critical], [5, 5]);
+assert.equal(trialAuraModifiers({ id: "a", side: "ally", x: 3, y: 0 }, { id: "e", side: "enemy", x: 4, y: 0 }, assistUnits).critical, 0);
 
 console.log("trialStatSystem: all tests passed");

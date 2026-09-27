@@ -194,7 +194,7 @@ function bpStrike(attacker, defender, action, env = {}) {
     // 必殺
     const criticalModifier = Number(attacker.criticalBonus || 0) + bpStatusSum(attacker, ["criticalBonus"])
         - Number(defender.criticalAvoidanceBonus || 0) - bpStatusSum(defender, ["criticalAvoidance"])
-        + (sakki ? 10 : 0) + attack.critical - aura.critGuard;
+        + (sakki ? 10 : 0) + attack.critical + (aura.critical || 0) - aura.critGuard;
     const critRate = bpCriticalRate(attacker.stats, attacker.courage, defender.stats, criticalModifier);
 
     return {
