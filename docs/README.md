@@ -61,9 +61,11 @@
 - [`MAGIC_CORE_DESIGN_NOTES_2026-09-27.md`](30-planning/MAGIC_CORE_DESIGN_NOTES_2026-09-27.md)：魔法の扱いと魔法武器「魔核」（一部決定・検討中）
 - [`SUMMON_HITODAMA_DRAFT_2026-09-27.md`](30-planning/SUMMON_HITODAMA_DRAFT_2026-09-27.md)：召喚「ヒトダマ」の仕様（試作対象）
 - [`GROUND_IMAGE_ORDER_WATCHROAD_2026-09-27.md`](30-planning/GROUND_IMAGE_ORDER_WATCHROAD_2026-09-27.md)：地面の1枚絵の発注書（国境監視路・ChatGPT向け）
+- [`GAME_REVIEW_CHAT_HANDOFF_2026-09-28.md`](30-planning/GAME_REVIEW_CHAT_HANDOFF_2026-09-28.md)：ゲームレビュー担当（別チャット）への引き継ぎ
 
 ### `40-reviews` — 調査・レビュー結果
 
+- [`PLAYTEST_CHECKLIST_v1.md`](40-reviews/PLAYTEST_CHECKLIST_v1.md)：遊びやすさの点検表（戦闘）
 - [`CLEANUP_REVIEW.md`](40-reviews/CLEANUP_REVIEW.md)：整理・清掃観点のレビュー
 - [`DECLARATION_PATCH_REVIEW.md`](40-reviews/DECLARATION_PATCH_REVIEW.md)：宣言や仕様差分のレビュー
 - [`DEVELOPMENT_REVIEW_MEMO.md`](40-reviews/DEVELOPMENT_REVIEW_MEMO.md)：開発全体のレビュー記録
