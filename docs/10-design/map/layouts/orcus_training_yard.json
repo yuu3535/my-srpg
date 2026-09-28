@@ -94,7 +94,7 @@
     "WWWWWWWWWWWWDWWWWWWWWWWW"
   ],
   "exploration": {
-    "note": "探索の項目（マップ担当 2026-09-28。項目の名前・書き方は仮。Unity が読む形は総合担当が決める。計画書 docs/10-design/map/PROLOGUE_1-1_MAP_PLAN_2026-09-28.md §3）",
+    "note": "探索の項目（マップ担当 2026-09-28。項目の名前・書き方は仮。Unity が読む形は総合担当が決める。計画書 docs/10-design/map/PROLOGUE_1-1_MAP_PLAN_2026-09-28.md §3）。objects＝マスを占める高い物（blocks: 通れないか・height: 見た目の高さ）、props＝板の絵の小物（通行に影響しない。edge: マスのどの辺に置くか）、lights＝点の光（color: violet 紫の魔灯 / warm 暖かい炎）",
     "exits": [
       {
         "id": "from_corridor",
@@ -285,6 +285,351 @@
           7
         ],
         "text": "（案）城壁ぎわの紫の花"
+      }
+    ],
+    "objects": [
+      {
+        "id": "tent",
+        "cells": [
+          [
+            12,
+            1
+          ],
+          [
+            13,
+            1
+          ],
+          [
+            14,
+            1
+          ],
+          [
+            15,
+            1
+          ]
+        ],
+        "kind": "天幕（屋根だけ。濃い紫の布に紋章）",
+        "height": 1.8,
+        "blocks": false,
+        "note": "大扉の前に張り出す屋根。下を通れる"
+      },
+      {
+        "id": "dummy_1",
+        "cells": [
+          [
+            7,
+            6
+          ]
+        ],
+        "kind": "木の訓練用の人形",
+        "height": 1.0,
+        "blocks": true
+      },
+      {
+        "id": "dummy_2",
+        "cells": [
+          [
+            15,
+            6
+          ]
+        ],
+        "kind": "木の訓練用の人形",
+        "height": 1.0,
+        "blocks": true
+      },
+      {
+        "id": "dummy_3",
+        "cells": [
+          [
+            7,
+            13
+          ]
+        ],
+        "kind": "木の訓練用の人形",
+        "height": 1.0,
+        "blocks": true
+      },
+      {
+        "id": "dummy_big",
+        "cells": [
+          [
+            15,
+            13
+          ]
+        ],
+        "kind": "大きな訓練用の人形（大きな種族の兵用）",
+        "height": 1.6,
+        "blocks": true
+      },
+      {
+        "id": "weapon_rack_1",
+        "cells": [
+          [
+            5,
+            6
+          ]
+        ],
+        "kind": "武器立て（木剣・槍）",
+        "height": 1.0,
+        "blocks": true
+      },
+      {
+        "id": "weapon_rack_2",
+        "cells": [
+          [
+            5,
+            12
+          ]
+        ],
+        "kind": "武器立て（木剣・槍）",
+        "height": 1.0,
+        "blocks": true
+      },
+      {
+        "id": "barrels_1",
+        "cells": [
+          [
+            20,
+            14
+          ]
+        ],
+        "kind": "樽と木箱",
+        "height": 0.6,
+        "blocks": true
+      },
+      {
+        "id": "barrels_2",
+        "cells": [
+          [
+            22,
+            15
+          ],
+          [
+            22,
+            16
+          ]
+        ],
+        "kind": "樽と木箱",
+        "height": 0.6,
+        "blocks": true
+      },
+      {
+        "id": "terrace_racks",
+        "cells": [
+          [
+            20,
+            18
+          ],
+          [
+            21,
+            18
+          ],
+          [
+            22,
+            18
+          ]
+        ],
+        "kind": "武器立て（剣と盾）",
+        "height": 1.0,
+        "blocks": true
+      },
+      {
+        "id": "terrace_table",
+        "cells": [
+          [
+            21,
+            20
+          ]
+        ],
+        "kind": "机（兜と布）",
+        "height": 0.8,
+        "blocks": true
+      },
+      {
+        "id": "terrace_barrel",
+        "cells": [
+          [
+            22,
+            20
+          ]
+        ],
+        "kind": "樽",
+        "height": 0.6,
+        "blocks": true
+      }
+    ],
+    "props": [
+      {
+        "id": "banner_1",
+        "cell": [
+          2,
+          9
+        ],
+        "kind": "紋章の旗（旗竿）",
+        "edge": "north"
+      },
+      {
+        "id": "banner_2",
+        "cell": [
+          20,
+          5
+        ],
+        "kind": "紋章の旗（旗竿）",
+        "edge": "north"
+      },
+      {
+        "id": "banner_3",
+        "cell": [
+          8,
+          16
+        ],
+        "kind": "紋章の旗（旗竿）",
+        "edge": "north"
+      },
+      {
+        "id": "banner_4",
+        "cell": [
+          15,
+          16
+        ],
+        "kind": "紋章の旗（旗竿）",
+        "edge": "north"
+      },
+      {
+        "id": "cloth_1",
+        "cell": [
+          6,
+          17
+        ],
+        "kind": "柵に干した布",
+        "edge": "center"
+      },
+      {
+        "id": "cloth_2",
+        "cell": [
+          14,
+          17
+        ],
+        "kind": "柵に干した紫のマント",
+        "edge": "center"
+      },
+      {
+        "id": "shield_sword",
+        "cell": [
+          20,
+          12
+        ],
+        "kind": "盾と剣を立て掛けたもの",
+        "edge": "east"
+      },
+      {
+        "id": "bucket",
+        "cell": [
+          5,
+          14
+        ],
+        "kind": "水桶と柄杓",
+        "edge": "west"
+      },
+      {
+        "id": "flowers_1",
+        "cell": [
+          1,
+          1
+        ],
+        "kind": "鉢植え・紫の花",
+        "edge": "center"
+      },
+      {
+        "id": "flowers_2",
+        "cell": [
+          1,
+          7
+        ],
+        "kind": "鉢植え・紫の花",
+        "edge": "center"
+      }
+    ],
+    "lights": [
+      {
+        "cell": [
+          5,
+          3
+        ],
+        "kind": "紫の魔灯（灯籠）",
+        "color": "violet"
+      },
+      {
+        "cell": [
+          17,
+          3
+        ],
+        "kind": "紫の魔灯（灯籠）",
+        "color": "violet"
+      },
+      {
+        "cell": [
+          5,
+          15
+        ],
+        "kind": "紫の魔灯（灯籠）",
+        "color": "violet"
+      },
+      {
+        "cell": [
+          17,
+          15
+        ],
+        "kind": "紫の魔灯（灯籠）",
+        "color": "violet"
+      },
+      {
+        "cell": [
+          12,
+          0
+        ],
+        "kind": "大扉の柱の魔灯",
+        "color": "violet"
+      },
+      {
+        "cell": [
+          15,
+          0
+        ],
+        "kind": "大扉の柱の魔灯",
+        "color": "violet"
+      },
+      {
+        "cell": [
+          1,
+          9
+        ],
+        "kind": "門のランタン",
+        "color": "warm"
+      },
+      {
+        "cell": [
+          21,
+          7
+        ],
+        "kind": "兵舎の扉のランタン",
+        "color": "warm"
+      },
+      {
+        "cell": [
+          2,
+          18
+        ],
+        "kind": "通路のランタン",
+        "color": "warm"
+      },
+      {
+        "cell": [
+          21,
+          18
+        ],
+        "kind": "通路のランタン",
+        "color": "warm"
       }
     ]
   }

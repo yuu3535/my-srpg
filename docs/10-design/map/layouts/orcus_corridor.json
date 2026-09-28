@@ -309,6 +309,48 @@
           }
         ]
       }
+    ],
+    "lights": [
+      {
+        "cell": [
+          5,
+          6
+        ],
+        "kind": "壁の燭台",
+        "color": "warm"
+      },
+      {
+        "cell": [
+          5,
+          13
+        ],
+        "kind": "壁の魔灯",
+        "color": "violet"
+      },
+      {
+        "cell": [
+          5,
+          19
+        ],
+        "kind": "壁の燭台",
+        "color": "warm"
+      },
+      {
+        "cell": [
+          9,
+          7
+        ],
+        "kind": "謁見の間の大扉の魔灯",
+        "color": "violet"
+      },
+      {
+        "cell": [
+          9,
+          8
+        ],
+        "kind": "謁見の間の大扉の魔灯",
+        "color": "violet"
+      }
     ]
   }
 }
