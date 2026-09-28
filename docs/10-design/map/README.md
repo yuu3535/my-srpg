@@ -52,7 +52,7 @@
 | `UNITY_ISOMETRIC_MAP_PRODUCTION_GUIDE_2026-09-26.md` | 旧制作仕様（2Dの斜めの1枚絵） | 論理マップ先行・高い物の分離・見やすさの基準は3Dへ引き継いだ |
 | `docs/30-planning/MAP_ORDER_BORDER_WATCHROAD_2026-09-26.md` | 取りやめ | 斜めの地面マップの依頼文（当時の記録） |
 | `docs/30-planning/ISO_MAP_ORDER_2026-09-26.md` | 旧案 | ブラウザ試作の斜めの絵の依頼文 |
-| `assets/maps/iso_trial_12x8*.png`、`unity-prototype/Assets/Art/Maps/iso_trial_12x8.png` | 旧素材 | 2Dの斜めの仮マップと下絵。ブラウザ版と Unity の `BattleM1`（比べるために残す）が使う |
+| `assets/maps/iso_trial_12x8*.png` | 旧素材 | 2Dの斜めの仮マップと下絵。ブラウザ版の試し（`isoView`）だけが使う。Unity の `BattleM1` と Unity 側の iso の絵は 2026-09-28 に削除（総合担当） |
 | `MAP_VIEWPOINT_COMPARISON_2026-09-24.md` | 方針変更前の比較記録 | A・B・C視点を比較した判断過程を残す |
 | `MAP_CAMERA_VIEW_POLICY_DRAFT.md` | 旧カメラ案 | B視点を標準とした案。遮蔽対策だけはUnity設計にも活かせる |
 | `concepts/map_viewpoint_A_topdown_wide.png` | 雰囲気確認用 | 真上視点の参考。実装素材ではない |
