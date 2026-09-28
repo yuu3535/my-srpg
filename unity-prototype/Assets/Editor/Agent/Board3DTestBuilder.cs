@@ -247,6 +247,14 @@ namespace Srpg.EditorAgent
                 controller.SetOverview(true, true);
                 controller.SetView(true, 0, true);
                 Render(camera, rt, "Board3D_T8_painted_overview");
+                // 朝の光（原作者 2026-09-28: 鍛錬場のために足す方向）。同じ盤面で昼と比べる
+                SetMood(Board3DMood.Morning);
+                controller.SetOverview(false, true);
+                controller.FocusOnPoint(Board3DLayout.TopCenter(new Vector2Int(4, 5)), true);
+                Render(camera, rt, "Board3D_T8_painted_close_morning");
+                SetMood(Board3DMood.Day);
+                controller.SetOverview(true, true);
+                controller.SetView(true, 0, true);
             }
             // 試作のシーンには、地面の1枚絵があればそれを残す（▶で見られるように）
             controller.Ground = File.Exists(paintedPath) ? AssetDatabase.LoadAssetAtPath<Texture2D>(paintedPath) : null;
