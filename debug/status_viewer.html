@@ -145,6 +145,8 @@ section.compare h2::before { content: "◆"; color: var(--gold); margin-right: 8
     const DOC = "../採用版md/SRPG_CHARACTER_STAT_GROWTH_STANDARD.md";
     // 採用版の表の名前 → ゲームのプロフィールの id（体格と、ゲームとの食い違いを見るため）
     const GAME_ID = { 幼アルシェ: "young_arshe", リングホルム: "ringholm", アルバス: "albas", 幼カリマ: "young_karima" };
+    // ゲームのプロフィールがない人の体格（TRPGのシートから。回避の体格補正に使う）
+    const SIZ = { サタン: 25, 幼ギュンター: 4 };
     const GAME_ONLY = [
         ["gunter", "ギュンター（訓練・チュートリアル仕様）"], ["forest_guard", "森の番人（敵・仮）"],
         ["dylan", "ディラン（敵・仮）"], ["herel", "ヘレル（敵・仮）"], ["hitodama", "ヒトダマ（召喚・仮）"],
@@ -166,7 +168,7 @@ section.compare h2::before { content: "◆"; color: var(--gold); margin-right: 8
         if (state.view === "adopted") {
             return adoptedRows.map(r => {
                 const gameId = GAME_ID[r.name];
-                const siz = gameId ? TRIAL_PROFILES[gameId]?.siz ?? null : null;
+                const siz = gameId ? TRIAL_PROFILES[gameId]?.siz ?? null : SIZ[r.name] ?? null;
                 return { name: r.name, sub: r.race + (r.group ? "・" + r.group : ""), lv: state.lv,
                     profile: adoptedProfile(r, siz), check: gameId ? diffWithGame(r, gameId) : null };
             });
