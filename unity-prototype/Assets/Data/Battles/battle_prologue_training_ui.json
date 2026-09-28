@@ -1,0 +1,370 @@
+{
+  "battleId": "battle_prologue_training",
+  "units": [
+    {
+      "id": "young_arshe",
+      "name": "アルシェ",
+      "side": "ally",
+      "levelLabel": "因果Lv 1",
+      "className": "王子",
+      "moveLabel": "移動3・通常",
+      "maxMp": 18,
+      "move": 3,
+      "summon": false,
+      "weaponName": "黒陽の双剣",
+      "weaponType": "剣",
+      "weaponPower": "6",
+      "weaponRange": "1",
+      "weaponHit": "83",
+      "weaponCrit": "27",
+      "portrait": "young_arshe",
+      "cardUv": {
+        "x": 0.4,
+        "y": 0.6935483870967742,
+        "w": 0.3333333333333333,
+        "h": 0.3064516129032258
+      },
+      "bustUv": {
+        "x": 0.4,
+        "y": 0.6785714285714286,
+        "w": 0.3333333333333333,
+        "h": 0.19155844155844157
+      },
+      "rosterUv": {
+        "x": 0.39999999999999997,
+        "y": 0.75,
+        "w": 0.3333333333333333,
+        "h": 0.25
+      },
+      "weaponItemId": "kokuyou_swords",
+      "options": [
+        {
+          "label": "通常攻撃",
+          "kind": "weapon",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 1,
+          "isArt": false,
+          "isMagic": false,
+          "spell": null,
+          "equipSpell": null,
+          "area": ""
+        },
+        {
+          "label": "両断",
+          "kind": "weapon",
+          "artName": "両断",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 1,
+          "isArt": true,
+          "isMagic": false,
+          "spell": null,
+          "equipSpell": null,
+          "area": ""
+        },
+        {
+          "label": "火の魔核",
+          "kind": "grimoire",
+          "artName": "",
+          "itemId": "fire_book",
+          "rangeMin": 1,
+          "rangeMax": 2,
+          "isArt": false,
+          "isMagic": true,
+          "spell": {
+            "id": "火",
+            "name": "火",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          },
+          "equipSpell": {
+            "id": "火",
+            "name": "火",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          }
+        }
+      ],
+      "enemyOptions": [
+        {
+          "label": "通常攻撃",
+          "kind": "weapon",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 1,
+          "isArt": false,
+          "isMagic": false,
+          "spell": null,
+          "equipSpell": null
+        },
+        {
+          "label": "両断",
+          "kind": "weapon",
+          "artName": "両断",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 1,
+          "isArt": true,
+          "isMagic": false,
+          "spell": null,
+          "equipSpell": null
+        },
+        {
+          "label": "火",
+          "kind": "grimoire",
+          "artName": "",
+          "itemId": "fire_book",
+          "rangeMin": 1,
+          "rangeMax": 2,
+          "isArt": false,
+          "isMagic": true,
+          "spell": {
+            "id": "火",
+            "name": "火",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          },
+          "equipSpell": {
+            "id": "火",
+            "name": "火",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          }
+        }
+      ],
+      "artList": [
+        {
+          "label": "両断",
+          "sub": "物理攻撃1.5倍",
+          "index": 1
+        }
+      ],
+      "magicList": [
+        {
+          "label": "火の魔核",
+          "sub": "装備",
+          "mpCost": "1d6",
+          "index": 2,
+          "supportIndex": -1,
+          "summonUnitId": "",
+          "summonDelay": 0
+        }
+      ],
+      "supports": [],
+      "specials": []
+    },
+    {
+      "id": "young_karima",
+      "name": "カリマ",
+      "side": "ally",
+      "levelLabel": "因果Lv 1",
+      "className": "王子",
+      "moveLabel": "移動3・通常",
+      "maxMp": 18,
+      "move": 3,
+      "summon": false,
+      "weaponName": "仮の剣",
+      "weaponType": "剣",
+      "weaponPower": "6",
+      "weaponRange": "1",
+      "weaponHit": "83",
+      "weaponCrit": "27",
+      "portrait": "young_karima",
+      "cardUv": {
+        "x": 0.3666666666666667,
+        "y": 0.6798421708431399,
+        "w": 0.3333333333333333,
+        "h": 0.32015782915686003
+      },
+      "bustUv": {
+        "x": 0.3666666666666667,
+        "y": 0.6551195585530349,
+        "w": 0.3333333333333333,
+        "h": 0.2055348085391004
+      },
+      "rosterUv": {
+        "x": 0.3666666666666667,
+        "y": 0.7317596566523605,
+        "w": 0.3333333333333333,
+        "h": 0.26824034334763946
+      },
+      "weaponItemId": "trial_sword",
+      "options": [
+        {
+          "label": "通常攻撃",
+          "kind": "weapon",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 1,
+          "isArt": false,
+          "isMagic": false,
+          "spell": null,
+          "equipSpell": null,
+          "area": ""
+        },
+        {
+          "label": "火の魔核",
+          "kind": "grimoire",
+          "artName": "",
+          "itemId": "fire_book",
+          "rangeMin": 1,
+          "rangeMax": 2,
+          "isArt": false,
+          "isMagic": true,
+          "spell": {
+            "id": "火",
+            "name": "火",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          },
+          "equipSpell": {
+            "id": "火",
+            "name": "火",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          }
+        }
+      ],
+      "enemyOptions": [
+        {
+          "label": "通常攻撃",
+          "kind": "weapon",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 1,
+          "isArt": false,
+          "isMagic": false,
+          "spell": null,
+          "equipSpell": null
+        },
+        {
+          "label": "火",
+          "kind": "grimoire",
+          "artName": "",
+          "itemId": "fire_book",
+          "rangeMin": 1,
+          "rangeMax": 2,
+          "isArt": false,
+          "isMagic": true,
+          "spell": {
+            "id": "火",
+            "name": "火",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          },
+          "equipSpell": {
+            "id": "火",
+            "name": "火",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          }
+        }
+      ],
+      "artList": [],
+      "magicList": [
+        {
+          "label": "火の魔核",
+          "sub": "装備",
+          "mpCost": "1d6",
+          "index": 1,
+          "supportIndex": -1,
+          "summonUnitId": "",
+          "summonDelay": 0
+        }
+      ],
+      "supports": [],
+      "specials": []
+    },
+    {
+      "id": "gunter",
+      "name": "ギュンター",
+      "side": "enemy",
+      "levelLabel": "因果Lv 1",
+      "className": "師範（仮）",
+      "moveLabel": "移動3・通常",
+      "maxMp": 27,
+      "move": 3,
+      "summon": false,
+      "weaponName": "仮の剣",
+      "weaponType": "剣",
+      "weaponPower": "6",
+      "weaponRange": "1",
+      "weaponHit": "90",
+      "weaponCrit": "26",
+      "portrait": "gunter",
+      "cardUv": {
+        "x": 0.3214285714285714,
+        "y": 0.6241360765448364,
+        "w": 0.35714285714285715,
+        "h": 0.3758639234551636
+      },
+      "bustUv": {
+        "x": 0.3214285714285714,
+        "y": 0.6556122448979591,
+        "w": 0.35714285714285715,
+        "h": 0.20524118738404454
+      },
+      "rosterUv": {
+        "x": 0.3214285714285714,
+        "y": 0.7321428571428571,
+        "w": 0.35714285714285715,
+        "h": 0.2678571428571429
+      },
+      "weaponItemId": "trial_sword",
+      "options": [
+        {
+          "label": "通常攻撃",
+          "kind": "weapon",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 1,
+          "isArt": false,
+          "isMagic": false,
+          "spell": null,
+          "equipSpell": null,
+          "area": ""
+        }
+      ],
+      "enemyOptions": [
+        {
+          "label": "通常攻撃",
+          "kind": "weapon",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 1,
+          "isArt": false,
+          "isMagic": false,
+          "spell": null,
+          "equipSpell": null
+        }
+      ],
+      "artList": [],
+      "magicList": [],
+      "supports": [],
+      "specials": []
+    }
+  ]
+}

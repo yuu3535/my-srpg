@@ -1,0 +1,83 @@
+{
+  "battleId": "battle_prologue_training",
+  "block": "prologue_1_1.b11",
+  "note": "訓練の戦闘の手引き（docs/30-planning/PROLOGUE_TRAINING_BATTLE_TUTORIAL_PROPOSAL_2026-09-28.md）。rows はシナリオの表の行（b11）。draft の台詞は総合担当の下書き（原作者の確認待ち）。{target} は敵が狙っている味方の名前。when: declared＝敵が攻撃を予告している / hurt＝傷ついた味方がいて回復の物がある（条件のある手引きは先に出し、次の味方の番で引っ込める）。done: dismiss＝行動では済まない（次の味方の番で引っ込む）",
+  "finishGuide": "ギュンターのHPを0にすれば一本！",
+  "lessons": [
+    {
+      "id": "trade",
+      "when": "",
+      "done": "trade",
+      "rows": [70],
+      "lines": [],
+      "after": [71, 72, 73, 74, 75],
+      "guide": "アルシェを押し、右の「交換」→ ツノをカリマに渡し、ポーションをもらおう（交換は行動になりません）"
+    },
+    {
+      "id": "intent",
+      "when": "declared",
+      "done": "dismiss",
+      "rows": [],
+      "lines": [
+        { "speaker": "ギュンター", "text": "次は{target}を狙うぞ。……と、わざわざ教えてやる。\n戦場では、相手の目線を読め。", "draft": true }
+      ],
+      "after": [],
+      "guide": "赤い矢印は、敵が次に狙う相手。狙われた味方は離れるか、先に攻めよう"
+    },
+    {
+      "id": "move",
+      "when": "",
+      "done": "move",
+      "rows": [],
+      "lines": [
+        { "speaker": "ギュンター", "text": "足を使え。間合いに入らねば、何も始まらんぞ。", "draft": true }
+      ],
+      "after": [],
+      "guide": "味方を押すと青いマスが出ます。青いマスを押すと、そこへ動きます"
+    },
+    {
+      "id": "attack",
+      "when": "",
+      "done": "attack",
+      "rows": [],
+      "lines": [
+        { "speaker": "ギュンター", "text": "打ち込む前に、当たるか・どれだけ効くかを見極めろ。", "draft": true }
+      ],
+      "after": [],
+      "guide": "ギュンターの隣で「攻撃」→ ギュンターを押すと戦闘予測。命中とダメージを見て「実行」"
+    },
+    {
+      "id": "art",
+      "when": "",
+      "done": "art",
+      "rows": [],
+      "lines": [
+        { "speaker": "アルシェ", "text": "そうだ、この剣……なんだか力が湧いてくる！", "draft": true }
+      ],
+      "after": [],
+      "guide": "アルシェの「戦技」→「両断」（黒陽の双剣の戦技。物理攻撃1.5倍）"
+    },
+    {
+      "id": "magic",
+      "when": "",
+      "done": "magic",
+      "rows": [],
+      "lines": [
+        { "speaker": "カリマ", "text": "僕は魔法でいくよ。離れていても届くから。", "draft": true }
+      ],
+      "after": [],
+      "guide": "「魔法」→「火の魔核」。魔法は2マス先まで届きます"
+    },
+    {
+      "id": "item",
+      "when": "hurt",
+      "done": "item",
+      "rows": [],
+      "lines": [
+        { "speaker": "カリマ", "text": "アル、さっきのポーション使って！", "draft": true }
+      ],
+      "after": [],
+      "guide": "ポーションは持っている人が「持ち物」から使うとHP5回復（使うと行動済み）。傷ついた味方が持っていなければ、隣で「交換」して渡そう"
+    }
+  ]
+}

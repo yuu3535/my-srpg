@@ -1,0 +1,153 @@
+{
+  "battleId": "battle_prologue_training",
+  "units": [
+    {
+      "id": "young_arshe",
+      "name": "アルシェ",
+      "side": "ally",
+      "x": 2,
+      "y": 6,
+      "hp": 13,
+      "maxHp": 13,
+      "mp": 18,
+      "stats": {
+        "hp": 13,
+        "atk": 14,
+        "def": 13,
+        "mag": 18,
+        "res": 15,
+        "tec": 9,
+        "spd": 10,
+        "cha": 15
+      },
+      "siz": 13,
+      "courage": 90,
+      "luck": 90,
+      "abilityNames": [
+        "双蛇の逆針"
+      ],
+      "statusEffects": [],
+      "equippedItem": "kokuyou_swords",
+      "grimoireSpell": null,
+      "criticalBonus": 0,
+      "criticalAvoidanceBonus": 0,
+      "canCounterBase": true,
+      "prayerUsed": false
+    },
+    {
+      "id": "young_karima",
+      "name": "カリマ",
+      "side": "ally",
+      "x": 3,
+      "y": 6,
+      "hp": 12,
+      "maxHp": 12,
+      "mp": 18,
+      "stats": {
+        "hp": 12,
+        "atk": 14,
+        "def": 13,
+        "mag": 18,
+        "res": 15,
+        "tec": 9,
+        "spd": 11,
+        "cha": 15
+      },
+      "siz": 13,
+      "courage": 90,
+      "luck": 90,
+      "abilityNames": [
+        "双蛇の逆針"
+      ],
+      "statusEffects": [],
+      "equippedItem": "trial_sword",
+      "grimoireSpell": null,
+      "criticalBonus": 0,
+      "criticalAvoidanceBonus": 0,
+      "canCounterBase": true,
+      "prayerUsed": false
+    },
+    {
+      "id": "gunter",
+      "name": "ギュンター",
+      "side": "enemy",
+      "x": 3,
+      "y": 1,
+      "hp": 20,
+      "maxHp": 20,
+      "mp": 27,
+      "stats": {
+        "hp": 20,
+        "atk": 10,
+        "def": 12,
+        "mag": 10,
+        "res": 16,
+        "tec": 12,
+        "spd": 7,
+        "cha": 14
+      },
+      "siz": 11,
+      "courage": 70,
+      "luck": 65,
+      "abilityNames": [],
+      "statusEffects": [],
+      "equippedItem": "trial_sword",
+      "grimoireSpell": null,
+      "criticalBonus": 0,
+      "criticalAvoidanceBonus": 0,
+      "canCounterBase": true,
+      "prayerUsed": false
+    }
+  ],
+  "items": [
+    {
+      "id": "trial_sword",
+      "name": "仮の剣",
+      "kind": "weapon",
+      "power": 6,
+      "range": 1
+    },
+    {
+      "id": "albas_sword",
+      "name": "アルバスの剣",
+      "kind": "weapon",
+      "power": 6,
+      "range": 1
+    },
+    {
+      "id": "fire_book",
+      "name": "火の魔核",
+      "kind": "grimoire",
+      "power": 0,
+      "range": 0
+    },
+    {
+      "id": "heal_book",
+      "name": "治癒の魔核",
+      "kind": "grimoire",
+      "power": 0,
+      "range": 0
+    },
+    {
+      "id": "star_book",
+      "name": "星の魔核",
+      "kind": "grimoire",
+      "power": 0,
+      "range": 0
+    },
+    {
+      "id": "trial_book",
+      "name": "仮の魔核",
+      "kind": "grimoire",
+      "power": 6,
+      "range": 0
+    },
+    {
+      "id": "kokuyou_swords",
+      "name": "黒陽の双剣",
+      "kind": "weapon",
+      "power": 6,
+      "range": 1
+    }
+  ]
+}

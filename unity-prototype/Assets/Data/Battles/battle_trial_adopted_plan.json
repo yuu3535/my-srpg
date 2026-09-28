@@ -384,6 +384,13 @@
       "kind": "grimoire",
       "power": 6,
       "range": 0
+    },
+    {
+      "id": "kokuyou_swords",
+      "name": "黒陽の双剣",
+      "kind": "weapon",
+      "power": 6,
+      "range": 1
     }
   ]
 }

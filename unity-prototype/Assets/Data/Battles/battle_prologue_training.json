@@ -1,0 +1,65 @@
+{
+  "battleId": "battle_prologue_training",
+  "cols": 7,
+  "rows": 8,
+  "tiles": [],
+  "iso": null,
+  "units": [
+    {
+      "id": "young_arshe",
+      "name": "アルシェ",
+      "side": "ally",
+      "x": 2,
+      "y": 6,
+      "move": 3,
+      "attackRange": 1,
+      "token": "Assets/Art/Tokens/young_arshe.png",
+      "flying": false,
+      "items": [
+        {
+          "id": "horn",
+          "name": "ツノ",
+          "type": "key",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "young_karima",
+      "name": "カリマ",
+      "side": "ally",
+      "x": 3,
+      "y": 6,
+      "move": 3,
+      "attackRange": 1,
+      "token": "Assets/Art/Tokens/young_karima.png",
+      "flying": false,
+      "items": [
+        {
+          "id": "small_potion",
+          "name": "ポーション",
+          "type": "heal",
+          "value": 5
+        }
+      ]
+    },
+    {
+      "id": "gunter",
+      "name": "ギュンター",
+      "side": "enemy",
+      "x": 3,
+      "y": 1,
+      "move": 3,
+      "attackRange": 1,
+      "token": "Assets/Art/Tokens/gunter.png",
+      "flying": false,
+      "items": []
+    }
+  ],
+  "timeOfDay": "morning",
+  "title": "訓練",
+  "victoryText": "ギュンターから一本取る（HPを0にする）",
+  "defeatText": "なし（訓練。ギュンターは寸止めする）",
+  "mercy": true,
+  "mapItems": []
+}
