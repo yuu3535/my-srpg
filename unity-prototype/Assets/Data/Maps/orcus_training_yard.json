@@ -7,27 +7,27 @@
  "rows": 22,
  "terrain": [
   "WWWWWWWWWWWWPDDPWWWWWWWW",
-  "WgggggggfffffffffffffWWW",
-  "Wgffffffff+++++++ffffWWW",
-  "Wgffffffff+++++++ffffWWW",
-  "WgffffFFFF+++++++ffffWWW",
-  "WgffffFaaaaaa/aaFffffWWW",
-  "WgffffFaaaaaaaaaFffffWWW",
-  "WgffffFaaaaaaaaaFffffDWW",
-  "WgffffFaaaaaaaaaFffffWWW",
-  "WfffffFaaaaaaaaaaffffWWW",
-  "DfffffFaaaaaaaaaaffffWWW",
-  "WfffffFaaaaaaaaaFffffWWW",
-  "WfffffFaaaaaaaaaFffffWWW",
-  "WfffffFaaaaaaaaaFffffWWW",
-  "WfffffFaaaaaaaaaFffffffW",
-  "WfffffFFFFFaFFFFFffffffW",
+  "WgggggggffffffffffffffWW",
+  "Wgffffffff+++++++fffffWW",
+  "Wgffffffff+++++++fffffWW",
+  "WgffffFFFF+++++++FFfffWW",
+  "WgffffFaaaaaaaaaaaFfffWW",
+  "WgffffFaaaaaaaaaaaFfffDW",
+  "WgffffFaaaaaaaaaaaFfffWW",
+  "DfffffFaaaaaaaaaaaafffWW",
+  "WfffffFaaaaaaaaaaaafffWW",
+  "WfffffFaaaaaaaaaaaFfffWW",
+  "WfffffFaaaaaaaaaaaFfffWW",
+  "WfffffFaaaaaaaaaaaFffffW",
+  "WfffffFaaaaaaaaaaaFffffW",
+  "WfffffFFFFFaaFFFFFFffffW",
   "WffffffffffffffffffffffW",
-  "WFFF/FFFFFF/FFFFFF/FFFFW",
+  "WffffffffffffffffffffffW",
+  "WFFF/FFFFFFF/FFFFFF/FFFW",
   "WuuuuuuuuuuuuuuuuuuuuuuW",
   "WuuuuuuuuuuuuuuuuuuuuuuW",
   "WuuuuuuuuuuuuuuuuuuuuuuW",
-  "WWWWWWWWWWWDWWWWWWWWWWWW"
+  "WWWWWWWWWWWWDWWWWWWWWWWW"
  ],
  "symbols": [
   {
@@ -131,7 +131,7 @@
    "cells": [
     {
      "x": 0,
-     "y": 10
+     "y": 8
     }
    ],
    "hasTarget": false,
@@ -148,8 +148,8 @@
    "facing": "",
    "cells": [
     {
-     "x": 21,
-     "y": 7
+     "x": 22,
+     "y": 6
     }
    ],
    "hasTarget": false,
@@ -166,7 +166,7 @@
    "facing": "",
    "cells": [
     {
-     "x": 11,
+     "x": 12,
      "y": 21
     }
    ],
@@ -324,7 +324,7 @@
    "cells": [
     {
      "x": 1,
-     "y": 8
+     "y": 7
     }
    ],
    "required": false
