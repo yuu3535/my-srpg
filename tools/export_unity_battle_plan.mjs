@@ -2,7 +2,7 @@
 //  ブラウザ版の戦闘の状態と、交戦の計画（battlePlan.js）の答え合わせ用の結果を、Unity版に書き出す。
 //
 //  使い方（静的サーバーで index.html を開ける状態にしてから）:
-//    node tools/export_unity_battle_plan.mjs [ポート番号（既定 8931）]
+//    node tools/export_unity_battle_plan.mjs [ポート番号（既定 8931）] [戦闘の id（既定 battle_trial_adopted）]
 //
 //  画面なしの Edge でブラウザ版を開き、テスト戦闘（battle_trial_adopted）を始めて、
 //  ブラウザ版の関数（trialPlanSnapshot・bpForecast・bpPlanExchange・bpFixedRolls）をそのまま呼ぶ。
@@ -22,6 +22,7 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PORT_SERVER = Number(process.argv[2] || 8931);
+const BATTLE_ID = process.argv[3] || "battle_trial_adopted";   // 戦闘（既定はテスト戦闘。プロローグの訓練は battle_prologue_training）
 const EDGE = "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe";
 const PORT_DEBUG = 9334;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -57,7 +58,7 @@ await sleep(2500);
 // ブラウザの中で実行する（ブラウザ版の関数をそのまま使う）
 const result = await evaluate(`(async () => {
     const wait = ms => new Promise(r => setTimeout(r, ms));
-    launchDebugBattle("battle_trial_adopted", "test");
+    launchDebugBattle(${JSON.stringify(BATTLE_ID)}, "test");
     await wait(1200);
     [...document.querySelectorAll("*")].find(e => e.children.length <= 2 && e.textContent.trim() === "戦闘開始")?.click();
     await wait(1500);
@@ -117,6 +118,7 @@ const result = await evaluate(`(async () => {
     for (const [id, art, hp] of arts) {
         for (const d of units.filter(u => u.side === "enemy")) {
             const a = units.find(u => u.id === id);
+            if (!a) continue;   // その戦闘にいないキャラ（テスト戦闘以外）
             const attacker = { ...a, x: 5, y: 4, hp: hp ?? a.hp };
             const defender = { ...d, x: 6, y: 4 };
             const env = { units: units.map(u => u.id === a.id ? attacker : u.id === d.id ? defender : u), passiveBattle: false };
@@ -140,7 +142,7 @@ const result = await evaluate(`(async () => {
         const weaponId = trialCarriedWeapon(trialGearOf(unit));
         const options = [];
         if (weaponId) {
-            trialPhysicalArtsFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null)
+            trialUnitPhysicalArts(unit)
                 .filter(art => art.implemented && art.name !== "円舞")
                 .forEach(art => options.push({ kind: "weapon", artName: art.name, range: Math.max(1, Number(TRIAL_ITEMS[weaponId]?.range || 1)) }));
         }
@@ -183,6 +185,7 @@ const result = await evaluate(`(async () => {
     ];
     for (const area of areaActions) {
         const a = units.find(u => u.id === area.attackerId);
+        if (!a) continue;
         for (let i = 0; i < foes.length; i++) for (let j = 0; j < foes.length; j++) {
             if (i === j) continue;
             const attacker = { ...a, x: 5, y: 4 };
@@ -228,12 +231,13 @@ const result = await evaluate(`(async () => {
     return { units, items, cases, hits, drains };
 })()`);
 
-const dataFile = join(ROOT, "unity-prototype", "Assets", "Data", "Battles", "battle_trial_adopted_plan.json");
+const dataFile = join(ROOT, "unity-prototype", "Assets", "Data", "Battles", `${BATTLE_ID}_plan.json`);
 const fixtureFile = join(ROOT, "unity-prototype", "Assets", "Tests", "EditMode", "Fixtures", "battle_plan_cases.json");
 mkdirSync(dirname(dataFile), { recursive: true });
 mkdirSync(dirname(fixtureFile), { recursive: true });
-writeFileSync(dataFile, JSON.stringify({ battleId: "battle_trial_adopted", units: result.units, items: result.items }, null, 2) + "\n", "utf8");
-writeFileSync(fixtureFile, JSON.stringify({ cases: result.cases, hits: result.hits, drains: result.drains }, null, 1) + "\n", "utf8");
+writeFileSync(dataFile, JSON.stringify({ battleId: BATTLE_ID, units: result.units, items: result.items }, null, 2) + "\n", "utf8");
+// 答え合わせの一覧はテスト戦闘のものだけ（ほかの戦闘では書き換えない）
+if (BATTLE_ID === "battle_trial_adopted") writeFileSync(fixtureFile, JSON.stringify({ cases: result.cases, hits: result.hits, drains: result.drains }, null, 1) + "\n", "utf8");
 console.log(`書き出し: 戦闘の状態 ${result.units.length}人・持ち物 ${result.items.length}種、答え合わせ ${result.cases.length}件・命中 ${result.hits.length}件`);
 
 ws.close();

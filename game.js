@@ -1150,7 +1150,7 @@ const TRIAL_BORROWED_FIELDS = [
 ];
 
 function applyTrialProfile(unit) {
-    const profile = TRIAL_PROFILES[unit.id];
+    const profile = trialProfileFor(unit.id, currentBattleId);   // 戦闘ごとの上書き（プロローグの訓練の因果Lv1など）を重ねる
     if (!profile) return;
     const source = profile.sourceCharacterId
         ? CHARACTERS_DATA.find(c => c.id === profile.sourceCharacterId)
@@ -1170,7 +1170,9 @@ function applyTrialProfile(unit) {
     unit.trialLuck = profile.luck;
     unit.trialPrayerUsed = false;
     // 持ち物（武器・魔導書）と今の装備。反撃の射程は今の装備で決まる
-    const gear = (typeof getPartyGear === "function" ? getPartyGear(partyState, unit.id) : null) || trialStartingGear(unit.id);
+    // 戦闘で持ち物が決まっているとき（プロローグの訓練）は、パーティの持ち物を使わない
+    const partyGear = !trialBattleFixesGear(unit.id, currentBattleId) && typeof getPartyGear === "function" ? getPartyGear(partyState, unit.id) : null;
+    const gear = partyGear || trialStartingGear(unit.id, currentBattleId);
     unit.trialItems = gear.items;
     unit.trialEquippedItem = gear.equipped;
     // 敵は今の装備で攻撃する（魔導書なら射程2で魔法攻撃）。味方の通常攻撃は武器の射程
@@ -1199,6 +1201,14 @@ function refreshTrialLoadout(unit) {
     unit.trialAbilityNames = trialAbilityNamesFor(unit.id, unit.trialAbilityLevel, selection);
     unit.maxHp = stats.hp;
     unit.hp = wasFull ? stats.hp : Math.min(unit.hp, stats.hp);
+}
+
+/** [trial] 攻撃コマンドに出す物理の戦技（セット中の戦技＋持っている武器に付いた戦技。黒陽の双剣の両断など） */
+function trialUnitPhysicalArts(unit) {
+    const arts = trialPhysicalArtsFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null);
+    const weaponArts = trialWeaponArtsFor(trialCarriedWeapon(trialGearOf(unit)))
+        .filter(art => !arts.some(a => a.name === art.name));
+    return arts.concat(weaponArts);
 }
 
 function trialHasAbility(unit, name) {
@@ -2937,7 +2947,7 @@ function landscapeCanWeaponAttack(unit) {
 function landscapeArtCount(unit) {
     const weapon = landscapeCanWeaponAttack(unit);
     const physical = unit.trialStats && weapon
-        ? trialPhysicalArtsFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null).length : 0;
+        ? trialUnitPhysicalArts(unit).length : 0;
     const specials = unit.trialStats && TRIAL_ABILITY_SOURCE[unit.id]
         ? trialSpecialArtsFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null).length : 0;
     const legacy = weapon ? getAvailableCombatArts(unit, "attack").length : 0;
@@ -3220,7 +3230,7 @@ function landscapeForecastOptions(attacker, target) {
         const base = getAttackSkillVal(attacker).name;
         options.push({ kind: "attack", label: attacker.trialStats ? "通常攻撃" : base, skill: base, artId: null });
         if (attacker.trialStats) {
-            trialPhysicalArtsFor(attacker.id, attacker.trialAbilityLevel, attacker.trialLoadoutSelection || null)
+            trialUnitPhysicalArts(attacker)
                 .filter(art => art.implemented)
                 .forEach(art => options.push({ kind: "attack", label: art.name, skill: base, artId: `trial:${art.name}` }));
         }
@@ -3428,7 +3438,7 @@ function renderLandscapeSubCommandRail(unit, kind) {
             syncLandscapeBattleUi(unit);
         }));
         if (unit.trialStats && canWeapon) {
-            trialPhysicalArtsFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null).forEach(art => {
+            trialUnitPhysicalArts(unit).forEach(art => {
                 const baseSkill = getAttackSkillVal(unit);
                 const btn = addButton(art.name, art.implemented ? "戦技" : "未実装", () => {
                     if (!art.implemented) return;
@@ -5803,7 +5813,7 @@ function trialEnemyAttackOptions(enemy) {
         const range = Math.max(1, Number(TRIAL_ITEMS[enemy.trialEquippedItem]?.range || 1));
         options.push({ label: "攻撃", action: { kind: "weapon" }, range, isMagic: false });
         if (TRIAL_ABILITY_SOURCE[enemy.id]) {
-            trialPhysicalArtsFor(enemy.id, enemy.trialAbilityLevel, enemy.trialLoadoutSelection || null)
+            trialUnitPhysicalArts(enemy)
                 .filter(art => art.implemented && art.name !== "円舞")
                 .forEach(art => options.push({ label: art.name, action: { kind: "weapon", artName: art.name }, range, isMagic: false, isArt: true }));
         }
@@ -6751,7 +6761,7 @@ function getAvailablePassiveSkills(unit) {
  * 外枠・配置・意匠は既存の .adventure* をそのまま使い、中身だけを採用版ステータスへ入れ替える。
  */
 function renderTrialStatusSheet(unit) {
-    const profile = TRIAL_PROFILES[unit.id];
+    const profile = trialProfileFor(unit.id, currentBattleId);
     const stats = unit.trialStats;
     const courage = getEffectiveCourage(unit);
     const d = trialDerivedValues(stats, unit.trialSiz, courage);
@@ -6894,7 +6904,7 @@ function bindStatusAbilityDetail() {
  * [trial] ステータスの「詳細」: スキル・戦技の説明を全文で並べる（一覧と同じ意匠）
  */
 function renderTrialStatusDetail(unit) {
-    const profile = TRIAL_PROFILES[unit.id] || {};
+    const profile = trialProfileFor(unit.id, currentBattleId) || {};
     const cls = TRIAL_UNIT_CLASS[unit.id] || { name: "未設定", line: null };
     const loadout = trialSkillLoadoutFor(unit.id, unit.trialAbilityLevel, TRIAL_CLASS_LEVEL, unit.trialLoadoutSelection || null);
     const portrait = getPortraitSrc(unit) || unit.tokenImage || "";

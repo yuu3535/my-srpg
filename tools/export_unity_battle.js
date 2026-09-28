@@ -66,6 +66,8 @@ function main() {
             attackRange: c.attackRange ?? 1,
             token: c.tokenImage ? copyAsset(c.tokenImage, tokenDir, `${c.id}.png`) : null,
             flying: !!c.flying,   // 飛行（キャラのデータにあれば。移動の規則は Unity の TerrainRules）
+            // 最初から持っている消耗品（戦闘定義の unitItems。Unity の交換で渡す）
+            items: (def.unitItems?.[c.id] || []).map(item => ({ ...item })),
         };
     });
 

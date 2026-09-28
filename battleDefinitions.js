@@ -22,6 +22,34 @@ const BATTLE_DEFINITIONS = Object.freeze({
             gunter:       { x: 3, y: 1 },
         },
     },
+    // プロローグ1-1 の訓練（Unity版の本編。シナリオ「シナリオプロローグ1-1」68〜75行。原作者 2026-09-28）。
+    // 案と決定: docs/30-planning/PROLOGUE_TRAINING_BATTLE_TUTORIAL_PROPOSAL_2026-09-28.md
+    //   能力値は採用版の因果Lv1（trialStatSystem.js の TRIAL_PROFILES・TRIAL_BATTLE_SETUPS）。ギュンターはチュートリアル仕様
+    //   盤面は訓練場の戦う範囲（配置表 orcus_training_yard の x8〜14・y6〜13）。ここでの座標は範囲の左上 (8,6) を (0,0) にしたもの
+    //   ポーションは落ちていない。アルシェのツノをカリマに渡し、ポーションをもらう（交換の手引き）
+    // ブラウザ版では DEBUG から試すだけ（ブラウザ版のプロローグは battle_tutorial のまま）
+    battle_prologue_training: {
+        uiTheme: "orcus",
+        background: "背景/オルクス魔王城鍛錬場.png",
+        cols: 7,
+        rows: 8,
+        tiles: [],
+        trialRules: "adopted-stats-v1",
+        victory: { type: "defeatAll" },
+        defeat: { type: "allAlliesDefeated" },
+        timeOfDay: "morning",
+        // 最初から持っている消耗品（Unity版の交換で渡す。ブラウザ版には交換がないので、ここは Unity への書き出しだけで使う）
+        unitItems: {
+            young_arshe:  [{ id: "horn", name: "ツノ", type: "key", value: 0 }],
+            young_karima: [{ id: "small_potion", name: "ポーション", type: "heal", value: 5 }],
+        },
+        unitIds: ["young_arshe", "young_karima", "gunter"],
+        positions: {
+            young_arshe:  { x: 2, y: 6 },
+            young_karima: { x: 3, y: 6 },
+            gunter:       { x: 3, y: 1 },
+        },
+    },
     battle_ch1: {
         uiTheme: "mixed",
         background: "assets/background_forest.png",

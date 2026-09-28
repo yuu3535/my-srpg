@@ -92,6 +92,28 @@ const TRIAL_PROFILES = Object.freeze({
         caps:   { hp: 130, atk: 110, def: 105, mag: 108, res: 61, tec: 97, spd: 94, cha: 107 },
         luck: 25, courage: 60, siz: 25,
     },
+    // ── プロローグの訓練（battle_prologue_training。原作者 2026-09-28: 採用版の因果Lv1の値で動かす・HPは案②） ──
+    // 幼アルシェ: 採用版§5 の因果Lv1基礎値（HPは案②の13）。成長率・上限は arshe と同じ
+    young_arshe: {
+        name: "アルシェ", race: "ヒト", trpgLevel: 1, causeLevel: 1, abilityLevel: 1,
+        base:   { hp: 13, atk: 14, def: 13, mag: 18, res: 15, tec: 9,  spd: 10, cha: 15 },
+        growth: { hp: 70, atk: 60, def: 55, mag: 55, res: 50, tec: 70, spd: 70, cha: 60 },
+        caps:   { hp: 122, atk: 90, def: 108, mag: 104, res: 106, tec: 87, spd: 71, cha: 102 },
+        luck: 90, courage: 90, siz: 13,
+    },
+    // ギュンター（訓練の相手）: チュートリアル仕様（原作者 2026-09-28）。
+    // 採用版§5.3 の幼ギュンター（HP17・力21・防御12・魔攻19・魔防19・技11・速さ12・魅力14）を元に、訓練用に調えた仮の値。
+    //   HP20: 両断（約10）＋火（7）＋通常攻撃（7）で倒れるくらい
+    //   力10: 子どもへのダメージ約5（HP13・12 に3回まで耐える）
+    //   速さ7: 子ども（速さ10・11）が追撃しない（差5未満）。技12: ギュンターの攻撃が6〜7割当たる（行動予告と道具の手引きのため）
+    //   魔防16: 火の魔核で7。siz は 11（体格の補正なし。本来は4）
+    gunter: {
+        name: "ギュンター", race: "魔物", trpgLevel: 1, causeLevel: 1, abilityLevel: 1,
+        base:   { hp: 20, atk: 10, def: 12, mag: 10, res: 16, tec: 12, spd: 7,  cha: 14 },
+        growth: { hp: 65, atk: 70, def: 60, mag: 50, res: 60, tec: 60, spd: 50, cha: 55 },
+        caps:   { hp: 99, atk: 99, def: 99, mag: 99, res: 99, tec: 99, spd: 99, cha: 99 },
+        luck: 65, courage: 55, siz: 11,
+    },
     // 召喚「ヒトダマ」で出る幻獣（原作者 2026-09-27）。TRPGの召喚獣メモ（Lv4・HP20・Dex26・Pow29・SIZ3）から置き換えた仮の値。
     // 能力は成長しない（成長率0）。因果Lvの表示はTRPG Lv4 相当の25
     hitodama: {
@@ -129,6 +151,7 @@ const TRIAL_ABILITY_SOURCE = Object.freeze({
     arshe: "アルシェ",
     albas: "アルバス",
     young_karima: "カリマ",
+    young_arshe: "アルシェ",   // プロローグの訓練（因果Lv1）
     albas_rival: "アルバス",   // テスト戦闘の敵アルバス（スキル・戦技は味方のアルバスと同じ）
 });
 
@@ -165,6 +188,7 @@ const TRIAL_UNIT_CLASS = Object.freeze({
     dylan:        { name: "未設定",     line: null },
     herel:        { name: "未設定",     line: null },
     hitodama:     { name: "幻獣",       line: null },   // 召喚獣（兵種なし）
+    gunter:       { name: "師範（仮）", line: null },   // プロローグの訓練の相手。兵種表に載っていない（チュートリアル仕様）
 });
 
 // 採用済みのセット枠。試験画面では「装備中の枠」を見るだけとし、
@@ -272,7 +296,17 @@ const TRIAL_ITEMS = Object.freeze({
     star_book:   { name: "星の魔核",   kind: "grimoire", spell: "隕石", effectType: "magicDamage" },
     // 仮の魔核: 属性なしの攻撃魔法（威力6＝魔核の標準の威力）。魔法データは火を借り、名前だけ「魔弾」にする
     trial_book:  { name: "仮の魔核",   kind: "grimoire", spell: "火", spellName: "魔弾", power: 6 },
+    // 黒陽の双剣: 父上（魔王）からもらった王族の剣（シナリオ プロローグ1-1 で入手）。
+    // 戦技「両断」が付いている（原作者 2026-09-28: 因果Lv1 でも訓練で戦技を使えるよう、剣に付ける）。持っている間は戦技の一覧に出る
+    kokuyou_swords: { name: "黒陽の双剣", kind: "weapon", power: TRIAL_WEAPON_POWER.mid, range: 1,
+        arts: [{ name: "両断", desc: "物理攻撃1.5倍" }] },
 });
+
+/** 武器に付いている戦技（持っている武器から。implemented は効果が実装済みか） */
+function trialWeaponArtsFor(itemId) {
+    return (TRIAL_ITEMS[itemId]?.arts || [])
+        .map(art => ({ name: art.name, desc: art.desc, implemented: TRIAL_IMPLEMENTED_PHYSICAL_ARTS.has(art.name), weapon: itemId }));
+}
 
 const TRIAL_ITEM_CAPACITY = 5;
 
@@ -294,8 +328,40 @@ const TRIAL_STARTING_GEAR = Object.freeze({
 // パーティ共有の持ち物（誰も持っていない武器・魔導書）
 const TRIAL_STARTING_STOCK = Object.freeze(["albas_sword", "fire_book", "fire_book", "heal_book", "trial_book"]);
 
-function trialStartingGear(unitId) {
-    const gear = TRIAL_STARTING_GEAR[unitId];
+/*
+ * 戦闘ごとの上書き（同じキャラを、戦闘によって別の因果Lv・持ち物で出すとき）
+ *   profiles: unitId → TRIAL_PROFILES への差分 / gear: unitId → 最初の持ち物と装備（パーティの持ち物より優先）
+ */
+const TRIAL_BATTLE_SETUPS = Object.freeze({
+    // プロローグの訓練（原作者 2026-09-28）: 採用版の因果Lv1。2人とも魔核を持つ。戦技はアルシェの黒陽の双剣に付いた両断
+    battle_prologue_training: {
+        profiles: {
+            young_karima: { causeLevel: 1, abilityLevel: 1 },   // テスト戦闘では因果Lv25
+        },
+        gear: {
+            young_arshe:  { items: ["kokuyou_swords", "fire_book"], equipped: "kokuyou_swords" },
+            // カリマの剣（「僕ももらったよ。アルとおそろい」）の名前と戦技は未定。仮の剣にしておく
+            young_karima: { items: ["trial_sword", "fire_book"], equipped: "trial_sword" },
+            gunter:       { items: ["trial_sword"], equipped: "trial_sword" },
+        },
+    },
+});
+
+/** その戦闘で使う試験用プロフィール（戦闘ごとの上書きを重ねる）。なければ null */
+function trialProfileFor(unitId, battleId = null) {
+    const base = TRIAL_PROFILES[unitId];
+    const override = TRIAL_BATTLE_SETUPS[battleId]?.profiles?.[unitId];
+    if (!base) return null;
+    return override ? { ...base, ...override } : base;
+}
+
+/** その戦闘で持ち物が決まっているか（決まっていれば、パーティの持ち物を使わない） */
+function trialBattleFixesGear(unitId, battleId) {
+    return !!TRIAL_BATTLE_SETUPS[battleId]?.gear?.[unitId];
+}
+
+function trialStartingGear(unitId, battleId = null) {
+    const gear = TRIAL_BATTLE_SETUPS[battleId]?.gear?.[unitId] || TRIAL_STARTING_GEAR[unitId];
     return gear ? { items: [...gear.items], equipped: gear.equipped } : { items: [], equipped: null };
 }
 
@@ -708,6 +774,10 @@ if (typeof module !== "undefined") {
         TRIAL_SUMMONS,
         trialSummonDueTurn,
         TRIAL_FIXED_MAGIC,
+        TRIAL_BATTLE_SETUPS,
+        trialProfileFor,
+        trialBattleFixesGear,
+        trialWeaponArtsFor,
         trialStartingGear,
         trialItemKind,
         trialCarriedGrimoires,

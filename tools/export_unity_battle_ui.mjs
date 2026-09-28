@@ -2,7 +2,7 @@
 //  ブラウザ版の戦闘画面の表示（ユニットのカード・武器のカード・戦闘予測の立ち絵）を、Unity版のUIに書き出す。
 //
 //  使い方（静的サーバーで index.html を開ける状態にしてから）:
-//    node tools/export_unity_battle_ui.mjs [ポート番号（既定 8931）]
+//    node tools/export_unity_battle_ui.mjs [ポート番号（既定 8931）] [戦闘の id（既定 battle_trial_adopted）]
 //
 //  画面なしの Edge でテスト戦闘（battle_trial_adopted）を始め、ブラウザ版のカードを実際に描いて読み取る。
 //  表示の正本はブラウザ版のまま（兵種名・因果Lv・移動の書き方・武器の命中や必殺・立ち絵の切り抜き）。
@@ -20,6 +20,7 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PORT_SERVER = Number(process.argv[2] || 8931);
+const BATTLE_ID = process.argv[3] || "battle_trial_adopted";   // 戦闘（既定はテスト戦闘。プロローグの訓練は battle_prologue_training）
 const EDGE = "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe";
 const PORT_DEBUG = 9337;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -56,7 +57,7 @@ await sleep(2500);
 
 const result = await evaluate(`(async () => {
     const wait = ms => new Promise(r => setTimeout(r, ms));
-    launchDebugBattle("battle_trial_adopted", "test");
+    launchDebugBattle(${JSON.stringify(BATTLE_ID)}, "test");
     await wait(1200);
     [...document.querySelectorAll("*")].find(e => e.children.length <= 2 && e.textContent.trim() === "戦闘開始")?.click();
     await wait(1500);
@@ -117,7 +118,7 @@ const result = await evaluate(`(async () => {
             const range = weaponRangeOf(unit);
             list.push({ label: "通常攻撃", kind: "weapon", artName: "", itemId: "", rangeMin: 1, rangeMax: range, isArt: false, isMagic: false, spell: null, equipSpell: null, area: "" });
             // 円舞は隣接する敵すべて（範囲。area = "adjacent"）
-            trialPhysicalArtsFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null)
+            trialUnitPhysicalArts(unit)
                 .filter(art => art.implemented)
                 .forEach(art => list.push({ label: art.name, kind: "weapon", artName: art.name === "円舞" ? "" : art.name, itemId: "", rangeMin: 1, rangeMax: art.name === "円舞" ? 1 : range,
                     isArt: true, isMagic: false, spell: null, equipSpell: null, area: art.name === "円舞" ? "adjacent" : "" }));
@@ -191,7 +192,7 @@ const result = await evaluate(`(async () => {
                 .map(a => ({ name: a.name, desc: a.desc || "", radius: a.radius, percent: a.percent, drain: !!a.drain })),
         };
         const findOption = (label, isMagic) => entry.options.findIndex(o => o.label === label && o.isMagic === isMagic);
-        trialPhysicalArtsFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null).forEach(art => {
+        trialUnitPhysicalArts(unit).forEach(art => {
             entry.artList.push({ label: art.name, sub: art.desc || "", index: art.implemented ? findOption(art.name, false) : -1 });
         });
         entry.specials.forEach((sp, i) => entry.artList.push({ label: sp.name, sub: "", index: -1, specialIndex: i }));
@@ -249,11 +250,11 @@ const result = await evaluate(`(async () => {
     return { units, portraits, icons };
 })()`);
 
-const dataFile = join(ROOT, "unity-prototype", "Assets", "Data", "Battles", "battle_trial_adopted_ui.json");
+const dataFile = join(ROOT, "unity-prototype", "Assets", "Data", "Battles", `${BATTLE_ID}_ui.json`);
 const portraitDir = join(ROOT, "unity-prototype", "Assets", "Art", "Portraits");
 const iconDir = join(ROOT, "unity-prototype", "Assets", "Art", "UI", "Icons");
 for (const dir of [dirname(dataFile), portraitDir, iconDir]) mkdirSync(dir, { recursive: true });
-writeFileSync(dataFile, JSON.stringify({ battleId: "battle_trial_adopted", units: result.units }, null, 2) + "\n", "utf8");
+writeFileSync(dataFile, JSON.stringify({ battleId: BATTLE_ID, units: result.units }, null, 2) + "\n", "utf8");
 for (const [id, b64] of Object.entries(result.portraits)) writeFileSync(join(portraitDir, `${id}.png`), Buffer.from(b64, "base64"));
 for (const [name, b64] of Object.entries(result.icons)) writeFileSync(join(iconDir, `${name}.png`), Buffer.from(b64, "base64"));
 console.log(`書き出し: 表示 ${result.units.length}人・立ち絵 ${Object.keys(result.portraits).length}枚・アイコン ${Object.keys(result.icons).length}個`);

@@ -305,4 +305,29 @@ const aura = trialAuraModifiers({ id: "a", side: "ally", x: 0, y: 0 }, { id: "e"
 assert.deepEqual([aura.accuracy, aura.critical], [5, 5]);
 assert.equal(trialAuraModifiers({ id: "a", side: "ally", x: 3, y: 0 }, { id: "e", side: "enemy", x: 4, y: 0 }, assistUnits).critical, 0);
 
+// プロローグの訓練（battle_prologue_training。原作者 2026-09-28）: 採用版の因果Lv1・HPは案②
+{
+    const T = require("../trialStatSystem.js");
+    const B = "battle_prologue_training";
+    const at1 = id => T.trialStatsAt(T.trialProfileFor(id, B), T.trialCauseLevelFor(T.trialProfileFor(id, B)));
+    assert.deepEqual(at1("young_arshe"), { hp: 13, atk: 14, def: 13, mag: 18, res: 15, tec: 9, spd: 10, cha: 15 });   // 採用版§5
+    assert.deepEqual(at1("young_karima"), { hp: 12, atk: 14, def: 13, mag: 18, res: 15, tec: 9, spd: 11, cha: 15 });  // 採用版§5.3
+    // 戦闘ごとの上書きは、その戦闘だけ（テスト戦闘のカリマは因果Lv25のまま）
+    assert.equal(T.trialCauseLevelFor(T.trialProfileFor("young_karima")), 25);
+    assert.equal(T.trialCauseLevelFor(T.trialProfileFor("young_karima", B)), 1);
+    // 因果Lv1 ではまだ戦技を覚えていない。戦技は黒陽の双剣に付いた両断
+    assert.deepEqual(T.trialPhysicalArtsFor("young_arshe", 1), []);
+    assert.deepEqual(T.trialWeaponArtsFor("kokuyou_swords").map(a => [a.name, a.implemented]), [["両断", true]]);
+    assert.deepEqual(T.trialWeaponArtsFor("trial_sword"), []);
+    // 2人とも魔核を持つ。持ち物の決まった戦闘では、パーティの持ち物を使わない
+    assert.deepEqual(T.trialStartingGear("young_arshe", B), { items: ["kokuyou_swords", "fire_book"], equipped: "kokuyou_swords" });
+    assert.equal(T.trialCarriedGrimoires(T.trialStartingGear("young_karima", B)).length, 1);
+    assert.equal(T.trialBattleFixesGear("young_arshe", B), true);
+    assert.equal(T.trialBattleFixesGear("young_arshe", "battle_trial_adopted"), false);
+    // ギュンター（チュートリアル仕様）: 子どもは追撃しない・子どもへのダメージは3回耐えられる
+    const g = at1("gunter");
+    assert.equal(T.trialCanFollowUp(at1("young_karima"), g), false);
+    assert.ok(T.trialPhysicalDamage(g.atk, 13) * 2 < 12);
+}
+
 console.log("trialStatSystem: all tests passed");
