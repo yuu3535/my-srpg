@@ -47,5 +47,17 @@ namespace Srpg.Tests
             Assert.IsNull(stage.Speaker, "場面説明のあいだは話している人なし");
             Assert.AreEqual(2, stage.left.Count, "場面説明では舞台の人は変わらない");
         }
+
+        [Test]
+        public void CastEntersBeforeSpeaking()
+        {
+            var stage = new DialogueCast.Stage();
+            stage.Enter(new[] { "キャリー", "アルシェ", "キャリー", "カリマ" });
+            CollectionAssert.AreEqual(new[] { "アルシェ", "カリマ" }, stage.left, "話す前から左に立つ");
+            CollectionAssert.AreEqual(new[] { "キャリー" }, stage.right, "同じ人は1回だけ");
+            Assert.IsNull(stage.Speaker, "立てただけでは誰も話していない");
+            stage.Speak("キャリー");
+            Assert.AreEqual(1, stage.right.Count, "立っている人が話しても増えない");
+        }
     }
 }

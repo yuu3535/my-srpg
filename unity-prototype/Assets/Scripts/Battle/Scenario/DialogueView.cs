@@ -35,7 +35,9 @@ namespace Srpg.Battle
         private static readonly Color Dim = new Color(0.34f, 0.33f, 0.42f, 1f);   // 黙っている人（色は線形で混ぜるので強めに暗くする）
 
         private Canvas canvas;
-        private RectTransform root, stageRoot, box, namePlate, logPanel;
+        private RectTransform root, stageRoot, box, namePlate, logPanel, letterTop, letterBottom;
+        private const float LetterHeight = 30f;
+        private float letterStart = -1f;
         private Text nameText, bodyText, logText, nextMark;
         private readonly Dictionary<string, RawImage> actors = new Dictionary<string, RawImage>();
         private readonly List<string> log = new List<string>();
@@ -65,9 +67,12 @@ namespace Srpg.Battle
             onEnd = onFinished;
             index = -1;
             stage = new DialogueCast.Stage();
+            stage.Enter(lines.Where(l => l.type == "line").Select(l => l.speaker));
             foreach (var a in actors.Values) if (a != null) Remove(a.gameObject);
             actors.Clear();
             root.gameObject.SetActive(true);
+            letterStart = Application.isPlaying ? Time.unscaledTime : -1f;
+            SetLetterbox(Application.isPlaying ? 0f : 1f);
             Advance();
         }
 
@@ -104,9 +109,8 @@ namespace Srpg.Battle
             string name = line.type == "phone" ? "携帯端末" : narration ? "" : line.speaker;
             namePlate.gameObject.SetActive(!string.IsNullOrEmpty(name));
             nameText.text = name;
-            // 名前の札は話している人の側に寄せる（右の人なら右）
-            bool right = line.type == "line" && !DialogueCast.IsLeft(line.speaker);
-            namePlate.anchoredPosition = new Vector2(right ? box.sizeDelta.x - 150f : 18f, 14f);
+            // 名前の札はテキストボックスの左上に固定（話す側で左右に動くと落ち着かない。原作者 2026-09-28）
+            namePlate.anchoredPosition = new Vector2(28f, 14f);
             bodyText.text = line.text;
             bodyText.fontStyle = narration ? FontStyle.Italic : FontStyle.Normal;
             bodyText.color = narration ? new Color(Ivory.r, Ivory.g, Ivory.b, 0.86f) : Ivory;
@@ -222,6 +226,23 @@ namespace Srpg.Battle
             shadeRt.anchorMax = new Vector2(1f, 0.52f);
             shadeRt.offsetMin = shadeRt.offsetMax = Vector2.zero;
 
+            // 上下の黒帯（イベントの場面だと分かるように。原作者 2026-09-28）。会話が始まると差し込む
+            letterTop = NewRect("LetterTop", root);
+            letterTop.anchorMin = new Vector2(0f, 1f);
+            letterTop.anchorMax = new Vector2(1f, 1f);
+            letterTop.pivot = new Vector2(0.5f, 1f);
+            letterBottom = NewRect("LetterBottom", root);
+            letterBottom.anchorMin = new Vector2(0f, 0f);
+            letterBottom.anchorMax = new Vector2(1f, 0f);
+            letterBottom.pivot = new Vector2(0.5f, 0f);
+            foreach (var bar in new[] { letterTop, letterBottom })
+            {
+                var img = bar.gameObject.AddComponent<Image>();
+                img.color = new Color32(8, 5, 12, 255);
+                img.raycastTarget = false;
+            }
+            SetLetterbox(1f);
+
             // テキストボックス（仮の位置: 下の中央）
             box = NewRect("Box", root);
             box.anchorMin = box.anchorMax = new Vector2(0.5f, 0f);
@@ -251,8 +272,9 @@ namespace Srpg.Battle
             bodyText = NewText("Body", box, font, 13, Ivory, TextAnchor.UpperLeft);
             bodyText.rectTransform.anchorMin = Vector2.zero;
             bodyText.rectTransform.anchorMax = Vector2.one;
-            bodyText.rectTransform.offsetMin = new Vector2(22f, 14f);
-            bodyText.rectTransform.offsetMax = new Vector2(-22f, -14f);
+            // 四隅の菱形の飾りに重ならないよう、内側へ（原作者 2026-09-28）
+            bodyText.rectTransform.offsetMin = new Vector2(40f, 16f);
+            bodyText.rectTransform.offsetMax = new Vector2(-40f, -22f);
             bodyText.lineSpacing = 1.15f;
 
             nextMark = NewText("Next", box, font, 10, GoldDeep, TextAnchor.MiddleCenter);
@@ -316,7 +338,22 @@ namespace Srpg.Battle
                 else if (Time.unscaledTime - holdStart > 0.45f && Time.unscaledTime - lastFast > 0.07f) { lastFast = Time.unscaledTime; Advance(); }
             }
             if (logPanel != null && logPanel.gameObject.activeSelf) logText.text = string.Join("\n", log.Skip(Math.Max(0, log.Count - 16)));
+            if (letterStart >= 0f)
+            {
+                float t = Mathf.Clamp01((Time.unscaledTime - letterStart) / 0.35f);
+                SetLetterbox(1f - (1f - t) * (1f - t) * (1f - t));   // 速く入って静かに止まる
+                if (t >= 1f) letterStart = -1f;
+            }
             if (nextMark != null && Application.isPlaying) nextMark.color = new Color(GoldDeep.r, GoldDeep.g, GoldDeep.b, 0.55f + 0.45f * Mathf.Sin(Time.time * 4f));
+        }
+
+        /// <summary>黒帯の出方（0＝なし、1＝出きった）。高さでなく位置を動かす（画面の外から差し込む）</summary>
+        private void SetLetterbox(float amount)
+        {
+            if (letterTop == null) return;
+            letterTop.sizeDelta = letterBottom.sizeDelta = new Vector2(0f, LetterHeight);
+            letterTop.anchoredPosition = new Vector2(0f, LetterHeight * (1f - amount));
+            letterBottom.anchoredPosition = new Vector2(0f, -LetterHeight * (1f - amount));
         }
 
         private static void Remove(GameObject go)

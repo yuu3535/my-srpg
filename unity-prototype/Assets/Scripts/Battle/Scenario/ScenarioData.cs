@@ -70,6 +70,21 @@ namespace Srpg.Battle
             private int step;
             public string Speaker { get; private set; }
 
+            /// <summary>
+            /// 会話の最初に、話す人を先に舞台へ立てる（話す順。片側2人まで）。
+            /// 話していない人も最初から見える（原作者 2026-09-28: 同じ画面に出し、黙っている人は暗く）
+            /// </summary>
+            public void Enter(IEnumerable<string> speakers)
+            {
+                foreach (var who in speakers)
+                {
+                    if (string.IsNullOrEmpty(who)) continue;
+                    var side = IsLeft(who) ? left : right;
+                    if (side.Contains(who) || side.Count >= 2) continue;
+                    side.Add(who);
+                }
+            }
+
             public void Speak(string speaker)
             {
                 step++;

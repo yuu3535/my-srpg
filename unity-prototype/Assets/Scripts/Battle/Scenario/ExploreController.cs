@@ -52,7 +52,8 @@ namespace Srpg.Battle
         public string PlayerId { get; private set; } = "arshe";
         public IReadOnlyList<string> Items => items;
         public IReadOnlyCollection<string> Seen => seen;
-        public bool Busy => dialogue != null && dialogue.IsPlaying;
+        public bool Busy => autoWalking || (dialogue != null && dialogue.IsPlaying);
+        private bool autoWalking;
         /// <summary>目的地に着いて、戦闘へ進むところ（段5でつなぐ）</summary>
         public string PendingBattleArea { get; private set; }
         public event Action<string> Log;
@@ -89,6 +90,7 @@ namespace Srpg.Battle
                 view.CellTapped -= Tap;
                 view.CellTapped += Tap;
                 view.IsOverOtherGui = _ => Busy;
+                view.HideGuiButtons = () => Busy;   // 会話中は回すボタンを隠す（テキストボックスに重なっていた）
             }
             if (hud == null)
             {
@@ -132,10 +134,13 @@ namespace Srpg.Battle
             }
             view.Ground = grounds.FirstOrDefault(g => g.mapId == mapId).texture;
             view.Map = map;
+            // 探索はマス目の線を出さない（細くするだけでは、画素に乗った列だけ線が残ってまだらになった）。戦闘は 0.03 のまま
+            view.TileGap = 0f;
             view.Setup();
             Board3DMood.Apply(string.IsNullOrEmpty(layout.timeOfDay) ? Board3DMood.Day : layout.timeOfDay, view.KeyLight, layout.indoor);
             view.ApplyPropTint();
-            view.SetView(true, 0, true);
+            // 探索は正面から見下ろす向きが基本（斜め45°は3Dで酔いやすい。原作者 2026-09-28）。回すボタンは残す
+            view.SetView(true, 1, true);
             view.SetOverview(false, true);
             // 入った直後は、アルシェから場所の真ん中の方へ少し寄せて見る（レビュー J6: 画面の半分が場所の外の黒になった）
             var center = WalkableCenter(map);
@@ -360,8 +365,7 @@ namespace Srpg.Battle
             if (area != null)
             {
                 played.Add(Place.mapId + "/" + area.id);
-                LookAtTalk(State?.people?.FirstOrDefault(p => p.talkBlock == area.block));
-                PlayBlocks(new List<string> { area.block }, null);
+                ApproachThen(area.block, () => PlayBlocks(new List<string> { area.block }, null));
                 return true;
             }
             // 目的地（着いたら会話 → 戦闘など）
@@ -370,7 +374,7 @@ namespace Srpg.Battle
             {
                 var blocks = new List<string>();
                 if (!string.IsNullOrEmpty(goal.block)) blocks.Add(goal.block);
-                PlayBlocks(blocks, () =>
+                ApproachThen(goal.block, () => PlayBlocks(blocks, () =>
                 {
                     seen.Add(goal.id);
                     if (!string.IsNullOrEmpty(goal.thenBattleArea))
@@ -378,7 +382,7 @@ namespace Srpg.Battle
                         PendingBattleArea = goal.thenBattleArea;
                         Log?.Invoke($"戦闘へ（{goal.thenBattleArea}）");   // 段5で戦闘につなぐ
                     }
-                });
+                }));
                 return true;
             }
             // 扉
@@ -402,6 +406,60 @@ namespace Srpg.Battle
                 return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// 会話の前に、アルシェが相手の隣まで自動で歩いてから始める（原作者 2026-09-28: 離れた所からいきなり会話が始まると違和感）。
+        /// 相手がいない・もう隣にいる・道がないときは、その場で始める。歩いている間は押しても動かない（Busy）
+        /// </summary>
+        private void ApproachThen(string blockId, Action play)
+        {
+            var partner = PartnerOf(blockId);
+            List<Vector2Int> path = null;
+            if (partner != null && personCells.TryGetValue(partner.id, out var cell)
+                && Mathf.Abs(cell.x - Player.x) + Mathf.Abs(cell.y - Player.y) > 1)
+                path = FindPath(Player, cell, adjacent: true);
+            if (path == null || path.Count == 0) { LookAtTalk(partner); play(); return; }
+            if (!Application.isPlaying)
+            {
+                // エディタの確認用: 待たずに着く
+                foreach (var c in path) { Player = c; view.MoveUnit(PlayerId, c); }
+                LookAtTalk(partner);
+                play();
+                return;
+            }
+            StartCoroutine(AutoWalk(path, () => { LookAtTalk(partner); play(); }));
+        }
+
+        private IEnumerator AutoWalk(List<Vector2Int> path, Action then)
+        {
+            autoWalking = true;
+            foreach (var c in path)
+            {
+                yield return new WaitForSeconds(stepSeconds);
+                Player = c;
+                view.MoveUnit(PlayerId, c);
+                view.FollowCell(c);
+            }
+            autoWalking = false;
+            then();
+        }
+
+        /// <summary>そのブロックの会話の相手（この場所にいて、話しかける会話がそのブロックの人。なければ、アルシェ以外で話す人）</summary>
+        private MapPerson PartnerOf(string blockId)
+        {
+            if (string.IsNullOrEmpty(blockId)) return null;
+            var people = (State?.people ?? Array.Empty<MapPerson>()).Where(p => personCells.ContainsKey(p.id)).ToList();
+            var byTalk = people.FirstOrDefault(p => p.talkBlock == blockId);
+            if (byTalk != null) return byTalk;
+            var speakers = scenario?.Block(blockId)?.Shown.Where(l => l.type == "line" && l.speaker != "アルシェ").Select(l => l.speaker).Distinct()
+                ?? Enumerable.Empty<string>();
+            foreach (var s in speakers)
+            {
+                var p = people.FirstOrDefault(x => (People.TryGetValue(x.id, out var v) ? v.name : x.name) == s);
+                if (p != null) return p;
+            }
+            return null;
         }
 
         /// <summary>確認用: そのマスに踏み込んだときに起きること（会話・扉の止める一言など）を、歩かずに起こす</summary>

@@ -182,7 +182,9 @@ namespace Srpg.Battle
             return Rect.MinMaxRect(u0, v0, u1, v1);
         }
 
-        private const float TileGap = 0.03f;       // マスの間のすき間（盤面の目地）。描いた草・土になってから細くした（2026-09-27）
+        // マスの間のすき間（盤面の目地＝マス目の線）。描いた草・土になってから細くした（2026-09-27）。
+        // 探索ではもっと細くする（マス目の主張を弱め、場所に入り込めるように。原作者 2026-09-28）。Setup の前に決める
+        public float TileGap { get; set; } = 0.03f;
         private const float TileHeight = 0.3f;     // マスのブロックの厚み
         private const float BaseHeight = 0.5f;     // 盤面の下の台の厚み
         private const float SwipePixels = 60f;     // これより長く横に動かしたら回す
@@ -1724,6 +1726,9 @@ namespace Srpg.Battle
         /// <summary>ほかの画面の部品（戦闘の操作の欄など）の上を押したときは、マスを押したことにしない</summary>
         public Func<Vector2, bool> IsOverOtherGui;
 
+        /// <summary>画面のボタン（回す・真上・全体）と向きの印を隠すとき（探索の会話中など）</summary>
+        public Func<bool> HideGuiButtons;
+
         private bool IsOverButtons(Vector2 screenPosition)
         {
             if (IsOverOtherGui != null && IsOverOtherGui(screenPosition)) return true;
@@ -1736,7 +1741,7 @@ namespace Srpg.Battle
 
         private void OnGUI()
         {
-            if (!showGuiButtons || map == null) return;
+            if (!showGuiButtons || map == null || (HideGuiButtons != null && HideGuiButtons())) return;
             // 簡易ボタンの字体には日本語が入っていないので、端末の日本語の字体を使う（ブラウザではゲームに入れた字体）
             if (guiFont == null)
                 guiFont = JapaneseFont.Get(new[] { "Yu Gothic UI", "Meiryo", "MS Gothic", "Hiragino Sans", "Noto Sans CJK JP" }, 14);
