@@ -6,7 +6,7 @@
   "description": "魔王城の本丸の前の中庭にある、兵の鍛錬場。黒い石畳の中に、木の柵で囲んだ砂の稽古場。稽古場の北の辺に一段高い木の演台があり、その奥の本丸の壁ぎわに天幕。南は一段高い石の通路。",
   "mood": "晴れた朝の光（日が昇ってまもない、やわらかい光）。石は黒〜紫がかった黒の切り石だが、盤面は暗く潰さない。砂は明るい砂色。落ち着いた色で、鮮やかすぎる色は使わない",
   "moodReference": "背景/ブラッシュアップ版/オルクス鍛錬場.png（ブラッシュアップ版。配置はこの絵に合わせた）",
-  "note": "マップ担当 2026-09-28。高い物・小物・明かり・出入口・物語は orcus_training_yard.md。timeOfDay は morning（総合担当が Board3DMood.Morning を足した 2026-09-28）。記号 u（一段高い石の通路）・/（階段）・F（木の柵）を足した。+ はこの場所では木の演台として描く。2026-09-28 ブラッシュアップ版の背景に合わせて、演台を稽古場の北の辺へ、天幕を本丸の大扉の前へ移した",
+  "note": "マップ担当 2026-09-28。高い物・小物・明かり・出入口・物語は orcus_training_yard.md。timeOfDay は morning（総合担当が Board3DMood.Morning を足した 2026-09-28）。記号 u（一段高い石の通路）・/（階段）・F（木の柵）を足した。+ はこの場所では木の演台として描く。2026-09-28 ブラッシュアップ版の背景に合わせて、演台を稽古場の北の辺へ、天幕を本丸の大扉の前へ移した。2026-09-28 届いた床の1枚絵（マップチップ/orcus_training_yard/オルクス鍛錬場.png）に合わせて、柵の輪・兵舎・門・階段の位置を直した",
   "battleAreas": [
     {
       "id": "prologue",
@@ -71,27 +71,27 @@
   },
   "terrain": [
     "WWWWWWWWWWWWPDDPWWWWWWWW",
-    "WgggggggfffffffffffffWWW",
-    "Wgffffffff+++++++ffffWWW",
-    "Wgffffffff+++++++ffffWWW",
-    "WgffffFFFF+++++++ffffWWW",
-    "WgffffFaaaaaa/aaFffffWWW",
-    "WgffffFaaaaaaaaaFffffWWW",
-    "WgffffFaaaaaaaaaFffffDWW",
-    "WgffffFaaaaaaaaaFffffWWW",
-    "WfffffFaaaaaaaaaaffffWWW",
-    "DfffffFaaaaaaaaaaffffWWW",
-    "WfffffFaaaaaaaaaFffffWWW",
-    "WfffffFaaaaaaaaaFffffWWW",
-    "WfffffFaaaaaaaaaFffffWWW",
-    "WfffffFaaaaaaaaaFffffffW",
-    "WfffffFFFFFaFFFFFffffffW",
+    "WgggggggffffffffffffffWW",
+    "Wgffffffff+++++++fffffWW",
+    "Wgffffffff+++++++fffffWW",
+    "WgffffFFFF+++++++FFfffWW",
+    "WgffffFaaaaaaaaaaaFfffWW",
+    "WgffffFaaaaaaaaaaaFfffDW",
+    "WgffffFaaaaaaaaaaaFfffWW",
+    "DfffffFaaaaaaaaaaaafffWW",
+    "WfffffFaaaaaaaaaaaafffWW",
+    "WfffffFaaaaaaaaaaaFfffWW",
+    "WfffffFaaaaaaaaaaaFfffWW",
+    "WfffffFaaaaaaaaaaaFffffW",
+    "WfffffFaaaaaaaaaaaFffffW",
+    "WfffffFFFFFaaFFFFFFffffW",
     "WffffffffffffffffffffffW",
-    "WFFF/FFFFFF/FFFFFF/FFFFW",
+    "WffffffffffffffffffffffW",
+    "WFFF/FFFFFFF/FFFFFF/FFFW",
     "WuuuuuuuuuuuuuuuuuuuuuuW",
     "WuuuuuuuuuuuuuuuuuuuuuuW",
     "WuuuuuuuuuuuuuuuuuuuuuuW",
-    "WWWWWWWWWWWDWWWWWWWWWWWW"
+    "WWWWWWWWWWWWDWWWWWWWWWWW"
   ],
   "exploration": {
     "note": "探索の項目（マップ担当 2026-09-28。項目の名前・書き方は仮。Unity が読む形は総合担当が決める。計画書 docs/10-design/map/PROLOGUE_1-1_MAP_PLAN_2026-09-28.md §3）",
@@ -123,7 +123,7 @@
         "cells": [
           [
             0,
-            10
+            8
           ]
         ],
         "to": {
@@ -137,8 +137,8 @@
         "id": "barracks",
         "cells": [
           [
-            21,
-            7
+            22,
+            6
           ]
         ],
         "to": null,
@@ -148,7 +148,7 @@
         "id": "south",
         "cells": [
           [
-            11,
+            12,
             21
           ]
         ],
@@ -282,7 +282,7 @@
         "id": "flowers",
         "cell": [
           1,
-          8
+          7
         ],
         "text": "（案）城壁ぎわの紫の花"
       }
