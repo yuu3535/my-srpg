@@ -1,7 +1,7 @@
 # 配置表 オルクス魔王城の鍛錬場（orcus_training_yard）
 
 作成: 2026-09-28 / マップ担当（Claude Code）
-状態: 試作対象（最初のマップ）。原作者の確認待ち
+状態: 試作対象（最初のマップ）。配置は背景のブラッシュアップ版を見てから原作者が決める（2026-09-28）。朝の光は足す方向で検討（原作者 2026-09-28）
 地形の表: `orcus_training_yard.json`（24×22マス。上が北）
 下絵: `マップチップ/orcus_training_yard/orcus_training_yard_guide_square.png`、記録用 `docs/10-design/map/graybox/orcus_training_yard_topdown_guide.png`
 作り方: `docs/10-design/map/MAP_ART_PIPELINE_v1_2026-09-28.md`
