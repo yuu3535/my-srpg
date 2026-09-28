@@ -3,8 +3,12 @@
 計画: docs/30-planning/PROLOGUE_1_1_UNITY_PLAN_2026-09-28.md（段1）
 
 使い方:
-    py -3.12 tools/import_scenario.py <表.xlsx> <シート名> <シナリオのid>
-    例: py -3.12 tools/import_scenario.py "シナリオ集/シナリオブラッシュアップ/第1章プロローグ｜シナリオ執筆用.xlsx" シナリオプロローグ1-1 prologue_1_1
+    py -3.12 tools/import_scenario.py <表.xlsx> <シート名> <シナリオのid> [--split 行番号 ...]
+    例: py -3.12 tools/import_scenario.py "シナリオ集/シナリオブラッシュアップ/第1章プロローグ｜シナリオ執筆用.xlsx" シナリオプロローグ1-1 prologue_1_1 --split 9
+
+--split: その行（Excel の行番号）から、次のブロックの手前までを別のブロックにする（例: 剣立てを調べたときだけ流す行）。
+         id は分けたブロックの id に _r行番号 を付ける（prologue_1_1.b02_r09）。ほかのブロックの id はずれない。
+         プロローグ1-1 は --split 9（マップ担当 2026-09-28: 自室の剣立てを調べたときに流す）
 
 表の列（1行目の見出しで探す）: No・シーン・パート・話者・表情・本文・台詞・区分・演出・備考・ゲーム処理・背景
 
@@ -53,6 +57,7 @@ def main():
         print(__doc__)
         return
     src, sheet, scenario_id = Path(sys.argv[1]), sys.argv[2], sys.argv[3]
+    splits = {int(a) for a in sys.argv[5:]} if len(sys.argv) > 5 and sys.argv[4] == "--split" else set()
     wb = openpyxl.load_workbook(src, read_only=True, data_only=True)
     rows = list(wb[sheet].iter_rows(values_only=True))
     headers = {str(v).strip(): i for i, v in enumerate(rows[0]) if v is not None}
@@ -80,9 +85,15 @@ def main():
             location = background
         start_new = (current is None or bool(new_scene) or (label and label != current["label"])
                      or (part and part != current["part"]) or (background and background != current["location"]))
-        if start_new:
+        numbered = [b for b in blocks if "_r" not in b["id"]]
+        if not start_new and index in splits:
+            # 分ける行: 前のブロックの id に _r行番号 を付けた別のブロック（同じパート・場所）
+            base = numbered[-1]["id"] if numbered else f"{scenario_id}.b00"
+            current = dict(current, id=f"{base}_r{index:02d}", row=index, lines=[], label=current["label"], process=process, note=note)
+            blocks.append(current)
+        elif start_new:
             current = {
-                "id": f"{scenario_id}.b{len(blocks) + 1:02d}",
+                "id": f"{scenario_id}.b{len(numbered) + 1:02d}",
                 "part": part or (current["part"] if current else "story"),
                 "scene": scene, "label": label, "location": location,
                 "process": process, "note": note, "row": index, "lines": [],
