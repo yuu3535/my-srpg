@@ -167,7 +167,7 @@
         "to": {
           "map": "orcus_training_yard",
           "cell": [
-            11,
+            13,
             1
           ],
           "facing": "south"

@@ -3,10 +3,10 @@
   "name": "オルクス魔王城の訓練場",
   "indoor": false,
   "timeOfDay": "morning",
-  "description": "魔王城の本丸の前の中庭にある、兵の鍛錬場。黒い石畳の中に、木の柵で囲んだ砂の稽古場と、一段高い木の演台がある。南は一段高い石の通路。",
+  "description": "魔王城の本丸の前の中庭にある、兵の鍛錬場。黒い石畳の中に、木の柵で囲んだ砂の稽古場。稽古場の北の辺に一段高い木の演台があり、その奥の本丸の壁ぎわに天幕。南は一段高い石の通路。",
   "mood": "晴れた朝の光（日が昇ってまもない、やわらかい光）。石は黒〜紫がかった黒の切り石だが、盤面は暗く潰さない。砂は明るい砂色。落ち着いた色で、鮮やかすぎる色は使わない",
-  "moodReference": "背景/オルクス魔王城鍛錬場.png（雰囲気の見本。ブラッシュアップ版が届いたらそちらに替える）",
-  "note": "マップ担当 2026-09-28。高い物・小物・明かり・出入口・物語は orcus_training_yard.md。timeOfDay は morning（総合担当が Board3DMood.Morning を足した 2026-09-28）。記号 u（一段高い石の通路）・/（階段）・F（木の柵）を足した。+ はこの場所では木の演台として描く",
+  "moodReference": "背景/ブラッシュアップ版/オルクス鍛錬場.png（ブラッシュアップ版。配置はこの絵に合わせた）",
+  "note": "マップ担当 2026-09-28。高い物・小物・明かり・出入口・物語は orcus_training_yard.md。timeOfDay は morning（総合担当が Board3DMood.Morning を足した 2026-09-28）。記号 u（一段高い石の通路）・/（階段）・F（木の柵）を足した。+ はこの場所では木の演台として描く。2026-09-28 ブラッシュアップ版の背景に合わせて、演台を稽古場の北の辺へ、天幕を本丸の大扉の前へ移した",
   "battleAreas": [
     {
       "id": "prologue",
@@ -70,18 +70,18 @@
     }
   },
   "terrain": [
-    "WWWWWWWWWWPDDPWWWWWWWWWW",
+    "WWWWWWWWWWWWPDDPWWWWWWWW",
     "WgggggggfffffffffffffWWW",
-    "WgfffffffffffffffffffWWW",
-    "WgfffffffffffffffffffWWW",
-    "WgffffFFFFFaFFFFFffffWWW",
-    "WgffffFaaaaaaaaaFffffWWW",
+    "Wgffffffff+++++++ffffWWW",
+    "Wgffffffff+++++++ffffWWW",
+    "WgffffFFFF+++++++ffffWWW",
+    "WgffffFaaaaaa/aaFffffWWW",
     "WgffffFaaaaaaaaaFffffWWW",
     "WgffffFaaaaaaaaaFffffDWW",
-    "WgffffFaaaaaaaaaF+++fWWW",
-    "WfffffFaaaaaaaaaa+++fWWW",
-    "DfffffFaaaaaaaaaa+++fWWW",
-    "WfffffFaaaaaaaaaF+++fWWW",
+    "WgffffFaaaaaaaaaFffffWWW",
+    "WfffffFaaaaaaaaaaffffWWW",
+    "DfffffFaaaaaaaaaaffffWWW",
+    "WfffffFaaaaaaaaaFffffWWW",
     "WfffffFaaaaaaaaaFffffWWW",
     "WfffffFaaaaaaaaaFffffWWW",
     "WfffffFaaaaaaaaaFffffffW",
@@ -100,11 +100,11 @@
         "id": "from_corridor",
         "cells": [
           [
-            11,
+            13,
             0
           ],
           [
-            12,
+            14,
             0
           ]
         ],
@@ -163,7 +163,7 @@
         "player": {
           "id": "young_arshe",
           "cell": [
-            11,
+            13,
             1
           ],
           "facing": "south"
@@ -191,11 +191,11 @@
             "id": "enter_yard",
             "cells": [
               [
-                11,
+                13,
                 1
               ],
               [
-                12,
+                14,
                 1
               ]
             ],
@@ -257,10 +257,10 @@
       {
         "id": "tent",
         "cell": [
-          18,
-          5
+          15,
+          1
         ],
-        "text": "（案）祝宴の準備の品"
+        "text": "（案）祝宴の準備の品。天幕の下"
       },
       {
         "id": "crest_banner",
@@ -273,8 +273,8 @@
       {
         "id": "stage",
         "cell": [
-          18,
-          9
+          11,
+          3
         ],
         "text": "（案）ギュンターがいつも稽古を見ている演台"
       },
