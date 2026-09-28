@@ -92,6 +92,11 @@ function main() {
         iso,
         units,
         timeOfDay: def.timeOfDay || "dusk",
+        // 戦況の画面の文と、手加減（訓練。味方のHPは1より下がらない）
+        title: def.title || "",
+        victoryText: def.victoryText || "",
+        defeatText: def.defeatText || "",
+        mercy: !!def.mercy,
         // 拾える消耗品（{ x, y, item: { id, name, type, value } }）
         mapItems: (def.mapItems || []).map(mi => ({ x: mi.x, y: mi.y, item: { ...mi.item } })),
     };

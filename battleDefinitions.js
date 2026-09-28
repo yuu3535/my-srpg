@@ -38,6 +38,11 @@ const BATTLE_DEFINITIONS = Object.freeze({
         victory: { type: "defeatAll" },
         defeat: { type: "allAlliesDefeated" },
         timeOfDay: "morning",
+        // Unity版の戦況の画面の文。ギュンターは手加減する（原作者 2026-09-28: 動くが手加減。子どものHPは1より下がらない＝寸止め。負けはない）
+        title: "訓練",
+        victoryText: "ギュンターから一本取る（HPを0にする）",
+        defeatText: "なし（訓練。ギュンターは寸止めする）",
+        mercy: true,
         // 最初から持っている消耗品（Unity版の交換で渡す。ブラウザ版には交換がないので、ここは Unity への書き出しだけで使う）
         unitItems: {
             young_arshe:  [{ id: "horn", name: "ツノ", type: "key", value: 0 }],
