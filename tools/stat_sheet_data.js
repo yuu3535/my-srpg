@@ -7,54 +7,11 @@ const ROOT = path.resolve(__dirname, "..");
 const T = require(path.join(ROOT, "trialStatSystem.js"));
 const { ABILITY_DATA: A } = require(path.join(ROOT, "abilityData.js"));
 const DEFS = require(path.join(ROOT, "battleDefinitions.js"));
-const md = fs.readFileSync(path.join(ROOT, "採用版md/SRPG_CHARACTER_STAT_GROWTH_STANDARD.md"), "utf8").split(/\r?\n/);
+const { parseAdoptedStatTables } = require(path.join(ROOT, "debug", "adoptedStatTables.js"));
+const rows = parseAdoptedStatTables(fs.readFileSync(path.join(ROOT, "採用版md/SRPG_CHARACTER_STAT_GROWTH_STANDARD.md"), "utf8"));
 
 const KEYS = ["hp", "atk", "def", "mag", "res", "tec", "spd", "cha"];
 
-// 見出し（### x.y ...）の下の最初の表を読む
-function tableAfter(heading) {
-    const i = md.findIndex(l => l.startsWith(heading));
-    if (i < 0) throw new Error("見出しがない: " + heading);
-    let j = i + 1;
-    while (!md[j].startsWith("|")) j++;
-    const rows = [];
-    for (; j < md.length && md[j].startsWith("|"); j++) rows.push(md[j].split("|").slice(1, -1).map(s => s.trim()));
-    return { head: rows[0], body: rows.slice(2) };
-}
-const num = s => Number(String(s).replace("%", ""));
-
-// 因果Lv1（HPは表では案①。案②＝半分）
-const base = {};
-const main = tableAfter("## 5. メイン3人の因果Lv1基礎ステータス");
-for (const r of main.body) base[r[0]] = { race: null, group: null, v: r.slice(1, 9).map(num) };
-const others = tableAfter("### 5.3 その他のネームドキャラクター");
-for (const r of others.body) base[r[0]] = { race: r[1], group: r[2], v: r.slice(3, 11).map(num) };
-Object.assign(base["幼アルシェ"], { race: "ヒト", group: "オルクス王族" });
-Object.assign(base["リングホルム"], { race: "ヒト", group: "" });
-Object.assign(base["アルバス"], { race: "魔物", group: "" });
-
-// 成長率（表は 行＝能力、列＝キャラ）
-function growthTable(heading) {
-    const t = tableAfter(heading);
-    const names = t.head.slice(1);
-    const out = {};
-    names.forEach((n, k) => (out[n] = {}));
-    for (const r of t.body) names.forEach((n, k) => (out[n][r[0]] = r[k + 1]));
-    return out;
-}
-const labels = ["HP", "力", "防御", "魔攻", "魔防", "技", "速さ", "魅力"];
-const growth = {};
-for (const [n, g] of Object.entries({ ...growthTable("## 6. 個人成長率"), ...growthTable("### 6.2 その他のネームドキャラクターの個人成長率") })) {
-    growth[n] = { v: labels.map(l => num(g[l])) };
-    if (g["幸運 / 最大勇気"]) { const [lk, cg] = g["幸運 / 最大勇気"].split("/").map(num); growth[n].luck = lk; growth[n].courage = cg; }
-}
-// メイン3人の幸運・勇気（§6.1）
-for (const r of tableAfter("### 6.1 幸運・勇気の成長率補正").body) Object.assign(growth[r[0]], { luck: num(r[1]), courage: num(r[2]) });
-
-// 上限
-const caps = {};
-for (const h of ["### 8.2 メイン3人の能力上限", "### 8.4 その他のネームドキャラクターの能力上限"])
-    for (const r of tableAfter(h).body) caps[r[0]] = r.slice(1, 9).map(num);
 
 // 最初の兵種（兵種表CSV。ギュンターは表では「ベル」）
 const classOf = name => {
@@ -63,13 +20,8 @@ const classOf = name => {
 };
 const classKey = { 幼アルシェ: "アルシェ", 幼カリマ: "カリマ", 幼ギュンター: "ベル" };
 
-const adopted = Object.keys(base).map(n => ({
-    name: n, race: base[n].race, group: base[n].group,
-    cls: classOf(classKey[n] || n),
-    base1: base[n].v, // HP 案①
-    growth: growth[n].v, luck: growth[n].luck, courage: growth[n].courage,
-    caps: caps[n],
-}));
+// 幼アルシェの所属は文書の表にないので足す（ほかのメイン2人は文書に所属の欄がない）
+const adopted = rows.map(r => ({ ...r, group: r.group || (r.name === "幼アルシェ" ? "オルクス王族" : ""), cls: classOf(classKey[r.name] || r.name) }));
 
 // ゲームにだけある仮の値（採用版に表がない）
 const gameOnly = [

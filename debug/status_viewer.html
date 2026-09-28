@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ステータス確認（デバッグ）</title>
+<!--
+  デバッグ用: 採用版の文書（採用版md/SRPG_CHARACTER_STAT_GROWTH_STANDARD.md）と、ゲームの計算（trialStatSystem.js）を
+  そのまま読んで、因果Lvごとの能力値・命中などを見る。ゲーム本編の実行経路ではない。
+  開き方: 静的サーバーでリポジトリを開き、debug/status_viewer.html（GitHub Pages でも開ける）
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+    --bg: #0b0712;
+    --panel: #140b1f;
+    --band: #381547;
+    --gold: #c8922a;
+    --gold-soft: rgba(200, 146, 42, 0.35);
+    --gold-faint: rgba(200, 146, 42, 0.14);
+    --text: #e8d5a4;
+    --text-sub: rgba(232, 213, 164, 0.66);
+    --amber: #efd081;
+    --violet: #8b5fb8;
+    --warn: #e38a6a;
+    --ok: #7fcf9a;
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Noto Serif JP", "Yu Mincho", "Hiragino Mincho ProN", serif;
+    font-size: 14px; line-height: 1.5;
+}
+header {
+    position: sticky; top: 0; z-index: 2;
+    background: linear-gradient(90deg, var(--band), #1c0f28 70%, var(--bg));
+    border-bottom: 1px solid var(--gold-soft);
+    padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: center;
+}
+h1 { margin: 0; font-size: 17px; color: var(--amber); letter-spacing: 0.08em; }
+h1::before { content: "◆"; color: var(--gold); margin-right: 8px; font-size: 12px; vertical-align: 2px; }
+.control { display: flex; align-items: center; gap: 8px; color: var(--text-sub); }
+.control b { color: var(--text); font-weight: 700; }
+input[type=range] { width: 180px; accent-color: var(--gold); }
+input[type=number], select {
+    background: var(--panel); color: var(--text); border: 1px solid var(--gold-soft);
+    font: inherit; padding: 2px 6px; border-radius: 2px;
+}
+input[type=number] { width: 64px; }
+.seg { display: inline-flex; border: 1px solid var(--gold-soft); }
+.seg button {
+    background: transparent; color: var(--text-sub); border: 0; font: inherit; padding: 3px 12px; cursor: pointer;
+}
+.seg button + button { border-left: 1px solid var(--gold-soft); }
+.seg button[aria-pressed=true] { background: var(--band); color: var(--amber); }
+.seg button:active { transform: translateY(1px); }
+main { padding: 14px 16px 40px; max-width: 1400px; }
+.note { color: var(--text-sub); font-size: 12px; margin: 4px 0 12px; }
+.wrap { overflow-x: auto; border: 1px solid var(--gold-soft); background: var(--panel); }
+table { border-collapse: collapse; width: 100%; min-width: 1100px; }
+th, td { padding: 5px 8px; border-bottom: 1px solid var(--gold-faint); white-space: nowrap; }
+th {
+    background: var(--band); color: var(--amber); font-weight: 700; font-size: 12px;
+    border-bottom: 1px solid var(--gold-soft); position: sticky; top: 0;
+}
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+td.name { color: var(--amber); font-weight: 700; }
+td.sub { color: var(--text-sub); font-size: 12px; }
+tr:hover td { background: rgba(56, 21, 71, 0.45); }
+.stat { position: relative; min-width: 54px; }
+.stat .bar { position: absolute; left: 4px; right: 4px; bottom: 2px; height: 2px; background: var(--gold-faint); }
+.stat .bar i { display: block; height: 100%; background: var(--violet); }
+.stat.capped { color: var(--amber); }
+.flag { font-size: 12px; }
+.flag.ok { color: var(--ok); }
+.flag.warn { color: var(--warn); white-space: normal; min-width: 220px; }
+section.compare { margin-top: 22px; border: 1px solid var(--gold-soft); background: var(--panel); padding: 12px 14px; }
+section.compare h2 { margin: 0 0 8px; font-size: 15px; color: var(--amber); }
+section.compare h2::before { content: "◆"; color: var(--gold); margin-right: 8px; font-size: 11px; vertical-align: 2px; }
+.pickers { display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: center; margin-bottom: 10px; }
+.duel { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.duel div { border-top: 1px solid var(--gold-soft); padding-top: 6px; }
+.duel h3 { margin: 0 0 4px; font-size: 13px; color: var(--text-sub); font-weight: 400; }
+.duel dl { display: grid; grid-template-columns: auto auto; gap: 2px 16px; margin: 0; justify-content: start; }
+.duel dt { color: var(--text-sub); }
+.duel dd { margin: 0; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+.state { padding: 30px; text-align: center; color: var(--text-sub); }
+.state.error { color: var(--warn); }
+.skeleton td { height: 26px; background: linear-gradient(90deg, var(--panel), #1f1230, var(--panel)); background-size: 200% 100%; animation: shimmer 1.4s infinite linear; }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (max-width: 700px) {
+    header { padding: 10px 16px; }
+    .duel { grid-template-columns: minmax(0, 1fr); }
+}
+</style>
+</head>
+<body>
+<header>
+    <h1>ステータス確認</h1>
+    <label class="control">因果Lv
+        <input id="lvRange" type="range" min="1" max="99" value="1">
+        <input id="lvNumber" type="number" min="1" max="200" value="1">
+    </label>
+    <div class="control">HP
+        <span class="seg" id="hpPlan">
+            <button type="button" data-plan="2" aria-pressed="true">案②（×1）</button>
+            <button type="button" data-plan="1" aria-pressed="false">案①（×2）</button>
+        </span>
+    </div>
+    <div class="control">表示
+        <span class="seg" id="view">
+            <button type="button" data-view="adopted" aria-pressed="true">採用版の10人</button>
+            <button type="button" data-view="game" aria-pressed="false">ゲームの仮キャラ</button>
+            <button type="button" data-view="battle" aria-pressed="false">今の戦闘</button>
+        </span>
+    </div>
+</header>
+<main>
+    <p class="note" id="note"></p>
+    <div class="wrap">
+        <table>
+            <thead id="head"></thead>
+            <tbody id="body">
+                <tr class="skeleton"><td colspan="20"></td></tr>
+                <tr class="skeleton"><td colspan="20"></td></tr>
+                <tr class="skeleton"><td colspan="20"></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <section class="compare">
+        <h2>2人を比べる（スキル・兵種・地形・装備の補正なし）</h2>
+        <div class="pickers">
+            <label class="control">A <select id="pickA"></select></label>
+            <label class="control">B <select id="pickB"></select></label>
+            <label class="control">武器・魔核の威力 <input id="power" type="number" min="0" max="30" value="6"></label>
+        </div>
+        <div class="duel" id="duel"></div>
+    </section>
+</main>
+
+<script src="../abilityData.js"></script>
+<script src="../trialStatSystem.js"></script>
+<script src="../battleDefinitions.js"></script>
+<script src="adoptedStatTables.js"></script>
+<script>
+(() => {
+    const KEYS = ADOPTED_STAT_KEYS, LABELS = ADOPTED_STAT_LABELS;
+    const DOC = "../採用版md/SRPG_CHARACTER_STAT_GROWTH_STANDARD.md";
+    // 採用版の表の名前 → ゲームのプロフィールの id（体格と、ゲームとの食い違いを見るため）
+    const GAME_ID = { 幼アルシェ: "young_arshe", リングホルム: "ringholm", アルバス: "albas", 幼カリマ: "young_karima" };
+    const GAME_ONLY = [
+        ["gunter", "ギュンター（訓練・チュートリアル仕様）"], ["forest_guard", "森の番人（敵・仮）"],
+        ["dylan", "ディラン（敵・仮）"], ["herel", "ヘレル（敵・仮）"], ["hitodama", "ヒトダマ（召喚・仮）"],
+    ];
+    const BATTLES = [["battle_prologue_training", "プロローグの訓練"], ["battle_trial_adopted", "テスト戦闘"]];
+
+    const store = {
+        get(k, d) { try { return localStorage.getItem("statusViewer." + k) ?? d; } catch { return d; } },
+        set(k, v) { try { localStorage.setItem("statusViewer." + k, v); } catch { /* 保存できなくても動く */ } },
+    };
+    const state = { lv: Number(store.get("lv", 1)) || 1, hpPlan: Number(store.get("hpPlan", 2)) || 2, view: store.get("view", "adopted") };
+    let adoptedRows = [];
+
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+    /** HP の案を当てたプロフィール（ゲームのプロフィールは案②。案①なら HP を2倍） */
+    function withHpPlan(profile) {
+        if (state.hpPlan === 2) return profile;
+        return { ...profile, base: { ...profile.base, hp: profile.base.hp * 2 } };
+    }
+
+    /** 表に出す人（{ name, sub, lv, profile, note }） */
+    function rows() {
+        if (state.view === "adopted") {
+            return adoptedRows.map(r => {
+                const gameId = GAME_ID[r.name];
+                const siz = gameId ? TRIAL_PROFILES[gameId]?.siz ?? null : null;
+                return { name: r.name, sub: r.race + (r.group ? "・" + r.group : ""), lv: state.lv,
+                    profile: adoptedProfile(r, state.hpPlan, siz), check: gameId ? diffWithGame(r, gameId) : null };
+            });
+        }
+        if (state.view === "game") {
+            return GAME_ONLY.map(([id, label]) => ({ name: label, sub: TRIAL_PROFILES[id].race, lv: state.lv, profile: withHpPlan(TRIAL_PROFILES[id]) }));
+        }
+        const list = [];
+        for (const [bid, label] of BATTLES) {
+            const def = BATTLE_DEFINITIONS[bid];
+            if (!def) continue;
+            for (const id of [...def.unitIds, ...Object.keys(def.unitCopies || {})]) {
+                const p = trialProfileFor(id, bid);
+                if (!p) continue;
+                list.push({ name: p.name + (id === "albas_rival" ? "（敵）" : ""), sub: label, lv: trialCauseLevelFor(p), profile: withHpPlan(p),
+                    skillLv: trialAbilityLevelFor(p) });
+            }
+        }
+        return list;
+    }
+
+    /** 採用版の文書とゲームのプロフィールの食い違い（HPは案②で比べる） */
+    function diffWithGame(row, gameId) {
+        const game = TRIAL_PROFILES[gameId];
+        const doc = adoptedProfile(row, 2);
+        const out = [];
+        for (const [part, label] of [["base", "Lv1"], ["growth", "成長率"], ["caps", "上限"]])
+            KEYS.forEach((k, i) => { if (doc[part][k] !== game[part][k]) out.push(`${label}の${LABELS[i]} 文書${doc[part][k]}・ゲーム${game[part][k]}`); });
+        if (doc.luck !== game.luck) out.push(`幸運 文書${doc.luck}・ゲーム${game.luck}`);
+        if (doc.courage !== game.courage) out.push(`勇気 文書${doc.courage}・ゲーム${game.courage}`);
+        return out;
+    }
+
+    function statsOf(row) { return trialStatsAt(row.profile, row.lv); }
+
+    function render() {
+        const list = rows();
+        const battle = state.view === "battle";
+        $("note").textContent = battle
+            ? "今の戦闘で使っている因果Lv（戦闘ごとに決まっている）での値。上の因果Lvのつまみは効かない。"
+            : state.view === "game"
+                ? "採用版の表になく、ゲーム（trialStatSystem.js）の中だけにある仮の値。"
+                : "採用版の文書から読んだ値。「ゲーム」の欄は、ゲームの計算に入っている同じキャラの値と比べた結果。体格（SIZ）が分からない人は11として回避を出している。";
+        $("head").innerHTML = "<tr><th>キャラ</th><th></th><th>因果Lv</th>" + LABELS.map(l => `<th>${l}</th>`).join("")
+            + "<th>成長率<br>（補正込み）</th><th>命中</th><th>回避</th><th>必殺</th><th>必殺回避</th><th>追撃できる<br>相手の速さ</th>"
+            + (state.view === "adopted" ? "<th>ゲーム</th>" : battle ? "<th>習得の<br>因果Lv</th>" : "") + "</tr>";
+        $("body").innerHTML = list.map(row => {
+            const s = statsOf(row);
+            const p = row.profile;
+            const bonus = trialGrowthBonus(p);
+            const growthTotal = KEYS.reduce((n, k) => n + p.growth[k] + bonus, 0);
+            const d = trialDerivedValues(s, p.siz ?? 11, p.courage);
+            const cells = KEYS.map(k => {
+                const ratio = Math.min(1, s[k] / p.caps[k]);
+                return `<td class="num stat${s[k] >= p.caps[k] ? " capped" : ""}" title="上限 ${p.caps[k]}">${s[k]}<span class="bar"><i style="width:${(ratio * 100).toFixed(1)}%"></i></span></td>`;
+            }).join("");
+            let extra = "";
+            if (state.view === "adopted") {
+                extra = row.check === null ? `<td class="flag">―</td>`
+                    : row.check.length === 0 ? `<td class="flag ok">一致</td>`
+                    : `<td class="flag warn">${esc(row.check.join(" / "))}</td>`;
+            } else if (battle) extra = `<td class="num">${row.skillLv}</td>`;
+            return `<tr><td class="name">${esc(row.name)}</td><td class="sub">${esc(row.sub)}</td><td class="num">${row.lv}</td>${cells}`
+                + `<td class="num">${growthTotal}%</td><td class="num">${d.hit}</td><td class="num">${d.evade}${p.siz == null ? "*" : ""}</td>`
+                + `<td class="num">${d.crit}</td><td class="num">${d.critGuard}</td><td class="num">${d.followUp}以下</td>${extra}</tr>`;
+        }).join("") || `<tr><td class="state" colspan="20">表示する人がいません</td></tr>`;
+        fillPickers(list);
+        renderDuel(list);
+    }
+
+    function fillPickers(list) {
+        for (const [id, fallback] of [["pickA", 0], ["pickB", 1]]) {
+            const sel = $(id);
+            const keep = sel.value;
+            sel.innerHTML = list.map((r, i) => `<option value="${i}">${esc(r.name)}（Lv${r.lv}）</option>`).join("");
+            sel.value = keep && Number(keep) < list.length ? keep : String(Math.min(fallback, list.length - 1));
+        }
+    }
+
+    function renderDuel(list) {
+        const a = list[Number($("pickA").value)], b = list[Number($("pickB").value)];
+        if (!a || !b) { $("duel").innerHTML = ""; return; }
+        const power = Math.max(0, Number($("power").value) || 0);
+        const side = (x, y) => {
+            const sx = statsOf(x), sy = statsOf(y);
+            const hit = trialHitRate(sx, sy, y.profile.siz ?? 11);
+            return `<div><h3>${esc(x.name)} → ${esc(y.name)}</h3><dl>`
+                + `<dt>命中</dt><dd>${hit}%</dd>`
+                + `<dt>物理ダメージ</dt><dd>${trialPhysicalDamage(sx.atk, sy.def, power)}</dd>`
+                + `<dt>魔法ダメージ</dt><dd>${trialDamage(sx.mag, sy.res, power)}</dd>`
+                + `<dt>必殺</dt><dd>${trialCriticalRate(sx, x.profile.courage, sy)}%</dd>`
+                + `<dt>追撃</dt><dd>${trialCanFollowUp(sx, sy) ? "する" : "しない"}</dd>`
+                + `<dt>倒すのに（物理）</dt><dd>${Math.ceil(sy.hp / Math.max(1, trialPhysicalDamage(sx.atk, sy.def, power)))}回</dd>`
+                + `</dl></div>`;
+        };
+        $("duel").innerHTML = side(a, b) + side(b, a);
+    }
+
+    function setLv(v) {
+        state.lv = Math.max(1, Math.min(200, Math.round(Number(v) || 1)));
+        $("lvRange").value = Math.min(99, state.lv);
+        $("lvNumber").value = state.lv;
+        store.set("lv", state.lv);
+        render();
+    }
+    function bindSeg(id, key, attr) {
+        $(id).addEventListener("click", e => {
+            const btn = e.target.closest("button");
+            if (!btn) return;
+            const v = btn.dataset[attr];
+            state[key] = key === "hpPlan" ? Number(v) : v;
+            store.set(key, v);
+            for (const b of $(id).querySelectorAll("button")) b.setAttribute("aria-pressed", String(b === btn));
+            render();
+        });
+        for (const b of $(id).querySelectorAll("button"))
+            b.setAttribute("aria-pressed", String(String(state[key]) === b.dataset[attr]));
+    }
+
+    $("lvRange").addEventListener("input", e => setLv(e.target.value));
+    $("lvNumber").addEventListener("change", e => setLv(e.target.value));
+    for (const id of ["pickA", "pickB", "power"]) $(id).addEventListener("input", () => renderDuel(rows()));
+    bindSeg("hpPlan", "hpPlan", "plan");
+    bindSeg("view", "view", "view");
+
+    fetch(encodeURI(DOC))
+        .then(r => { if (!r.ok) throw new Error(r.status + " " + r.statusText); return r.text(); })
+        .then(text => { adoptedRows = parseAdoptedStatTables(text); setLv(state.lv); })
+        .catch(err => {
+            $("body").innerHTML = `<tr><td class="state error" colspan="20">採用版の文書を読めませんでした（${esc(err.message)}）。`
+                + `ファイルを直接開くと読めません。静的サーバーでリポジトリを開いてから debug/status_viewer.html を開いてください。</td></tr>`;
+        });
+})();
+</script>
+</body>
+</html>
