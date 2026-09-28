@@ -162,6 +162,9 @@ namespace Srpg.Battle
             }
         }
 
+        /// <summary>その人の立ち絵（なければ null。探索で、盤面の絵がない人の仮の姿に使う）</summary>
+        public Texture2D PortraitOf(string who) => FindPortrait(who, null).texture;
+
         private Portrait FindPortrait(string who, string expression)
         {
             if (!string.IsNullOrEmpty(expression))

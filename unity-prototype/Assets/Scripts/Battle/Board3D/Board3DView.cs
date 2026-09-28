@@ -54,6 +54,17 @@ namespace Srpg.Battle
         [SerializeField] private bool showCellInfo = true;                  // 左上の「列・行・地形」（戦闘の画面では戦闘の表示を出すので消す）
         [SerializeField] private NamedTexture[] boardTextures = Array.Empty<NamedTexture>();
         [SerializeField] private UnitSprite[] unitSprites = Array.Empty<UnitSprite>();
+
+        /// <summary>盤面の絵を足す・差し替える（探索で、盤面の絵がない人に仮の絵を当てるとき。次の Setup から効く）</summary>
+        public void SetUnitSprite(string id, Sprite sprite, float footFromPivot = 0f)
+        {
+            var list = new List<UnitSprite>(unitSprites);
+            list.RemoveAll(u => u.id == id);
+            list.Add(new UnitSprite { id = id, sprite = sprite, footFromPivot = footFromPivot });
+            unitSprites = list.ToArray();
+        }
+
+        public bool HasUnitSprite(string id) => Array.Exists(unitSprites, u => u.id == id && u.sprite != null);
         [SerializeField] private Sprite treeSprite;                         // 板に貼る木の絵（T4 の仮の絵）
         // 描いてもらった木の絵（原作者 2026-09-27）。あれば、3Dの木の模型の代わりに、キャラと同じ板の絵で立てる
         [SerializeField] private Sprite[] paintedTrees = Array.Empty<Sprite>();
