@@ -44,10 +44,11 @@ namespace Srpg.Battle
         /// <summary>屋内の時間帯か（霧を使わない）</summary>
         public static bool IsIndoor(string mood) => mood != null && mood.StartsWith("hall_");
 
-        public static void Apply(string mood, Light light)
+        /// <param name="indoor">屋内の場所（配置表の indoor）。朝・昼・夜の光のまま、霧だけかけない（マップ担当 2026-09-28: 自室・廊下は窓からの朝の光）</param>
+        public static void Apply(string mood, Light light, bool indoor = false)
         {
             CurrentPropTint = PropTint(mood);
-            RenderSettings.fog = !IsIndoor(mood);
+            RenderSettings.fog = !IsIndoor(mood) && !indoor;
             RenderSettings.fogMode = FogMode.Linear;
             RenderSettings.ambientMode = AmbientMode.Flat;
             if (IsIndoor(mood))
