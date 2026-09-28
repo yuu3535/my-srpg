@@ -91,6 +91,7 @@ namespace Srpg.EditorAgent
             camera.Render();
             view.SetOverview(true, true);
             view.SetView(true, 0, true);
+            view.UpdateBillboards();
             Board3DTestBuilder.Render(camera, rt, $"Map_{layout.mapId}_overview");
             view.SetOverview(false, true);
             var focus = state?.player != null ? state.player.Cell : new Vector2Int(layout.columns / 2, layout.rows / 2);
@@ -99,7 +100,14 @@ namespace Srpg.EditorAgent
             Board3DTestBuilder.Render(camera, rt, $"Map_{layout.mapId}_close");
             view.SetView(false, 0, true);
             view.SetOverview(true, true);
+            view.UpdateBillboards();
             Board3DTestBuilder.Render(camera, rt, $"Map_{layout.mapId}_top");
+            // 回したとき: カメラ側の辺が変わり、切る壁も変わる
+            view.SetView(true, 4, true);
+            view.SetOverview(false, true);
+            view.FocusOn(focus, true);
+            view.UpdateBillboards();
+            Board3DTestBuilder.Render(camera, rt, $"Map_{layout.mapId}_turn180");
             camera.targetTexture = null;
             UnityEngine.Object.DestroyImmediate(rt);
             Debug.Log($"[MapLayoutBuilder] {layout.mapId}: {layout.columns}×{layout.rows}、物 {map.Obstacles.Count()}、人物（絵あり）{map.Units.Count}、床 {(view.Ground != null ? view.Ground.name : "なし")}");

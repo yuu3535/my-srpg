@@ -347,6 +347,7 @@ namespace Srpg.Battle
         public void ClearBoard()
         {
             intentArrows.Clear();   // 線は盤面と一緒に消える
+            lastCutYaw = float.NaN;   // 次の盤面で断面を選び直す
             for (int i = transform.childCount - 1; i >= 0; i--)
                 Object.DestroyImmediate(transform.GetChild(i).gameObject);
             tiles.Clear();
@@ -759,6 +760,7 @@ namespace Srpg.Battle
         public void UpdateBillboards()
         {
             if (targetCamera == null) return;
+            UpdateCutaway();   // 屋内・城の場所: カメラ側の壁を切る（Board3DView.Cutaway）
             var rotation = targetCamera.transform.rotation;
             float t = Mathf.InverseLerp(tiltPitch, 90f, pitch);
             t = t * t * (3f - 2f * t);

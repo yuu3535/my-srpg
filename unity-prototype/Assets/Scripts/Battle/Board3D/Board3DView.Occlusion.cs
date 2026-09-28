@@ -81,6 +81,8 @@ namespace Srpg.Battle
             const float back = 60f;
             foreach (var o in occluders)
             {
+                // 断面で低く切った壁は、隠す物にしない（登録したときの高さのままなので）
+                if (o.renderers.Length > 0 && o.renderers[0] != null && o.renderers[0].transform.localScale.y < 0.99f) { SetFaded(o, false); continue; }
                 bool hide = false;
                 var bounds = o.sprite != null ? o.sprite.bounds : o.bounds;
                 if (o.sprite != null) bounds.Expand(new Vector3(-bounds.size.x * 0.3f, 0f, -bounds.size.z * 0.3f));   // 絵の外側の透明な所は除く
