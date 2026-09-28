@@ -23,7 +23,7 @@ namespace Srpg.Battle
         [SerializeField] private float enemyStepSeconds = 0.6f;
 
         public enum Phase { Ally, Enemy, Victory, Defeat }
-        public enum Mode { Idle, Moving, Acting, Targeting, Forecast, Support, Summon }
+        public enum Mode { Idle, Moving, Acting, Targeting, Forecast, Support, Summon, Trade }
 
         private BattleDataFile data;
         private Board3DMap map;
@@ -702,6 +702,7 @@ namespace Srpg.Battle
                     foreach (var (cell, id) in Board3DLayout.Units) if (id == source.id) start = cell;
                 }
                 var state = new UnitState { source = source, cell = start };
+                if (source.items != null) state.items.AddRange(source.items.Where(i => i != null && !string.IsNullOrEmpty(i.name)));
                 var snapshot = planState?.units?.FirstOrDefault(u => u.id == source.id);
                 if (snapshot != null)
                 {
@@ -808,6 +809,11 @@ namespace Srpg.Battle
                     }
                     if (unit != null && supportCells.Contains(cell)) { CastSupport(selected, unit, currentOption); return; }
                     BackToActing();
+                    return;
+                case Mode.Trade:
+                    // 交換: 隣の味方を押して相手を選ぶ（相手を選んだあとは、操作の欄で品物を選ぶ）
+                    if (TradePartner == null && unit != null && supportCells.Contains(cell)) { PickTradePartner(unit); return; }
+                    if (TradePartner == null) EndTrade();
                     return;
                 case Mode.Acting:
                 case Mode.Forecast:
@@ -928,6 +934,83 @@ namespace Srpg.Battle
         {
             if (CurrentMode == Mode.Moving && selected != null) MoveSelectedTo(selected.cell);
         }
+
+        // ── 交換（原作者 2026-09-28: 落ちているアイテム拾いではなく、物交換にする。プロローグではカリマからポーションをもらう） ──
+
+        /// <summary>交換している相手（相手を選ぶ前は null）</summary>
+        public UnitState TradePartner { get; private set; }
+        private bool tradedThisAction;
+
+        /// <summary>交換できる相手: 隣の味方で、自分か相手が持ち物を持っている</summary>
+        private IEnumerable<UnitState> TradeCandidates() =>
+            selected == null ? Enumerable.Empty<UnitState>()
+                : units.Where(u => u.Alive && u != selected && u.Side == selected.Side && !u.summoned && Distance(u.cell, selected.cell) == 1
+                    && (selected.items.Count > 0 || u.items.Count > 0));
+
+        public bool CanTradeFromHere => TradeCandidates().Any();
+
+        /// <summary>「交換」: 隣の味方（緑）から相手を選ぶ。1人なら、すぐその相手にする</summary>
+        public void ChooseTrade()
+        {
+            StayIfMoving();
+            if (CurrentMode != Mode.Acting || selected == null) return;
+            var candidates = TradeCandidates().ToList();
+            if (candidates.Count == 0) return;
+            supportCells.Clear();
+            foreach (var u in candidates) supportCells.Add(u.cell);
+            TradePartner = null;
+            CurrentMode = Mode.Trade;
+            if (candidates.Count == 1) PickTradePartner(candidates[0]);
+            else view.ShowRange(supportCells, Board3DView.SupportRangeColor);
+        }
+
+        private void PickTradePartner(UnitState partner)
+        {
+            TradePartner = partner;
+            view.ShowRange(new[] { partner.cell }, Board3DView.SupportRangeColor);
+        }
+
+        /// <summary>自分の持ち物を相手に渡す</summary>
+        public void GiveItem(int index)
+        {
+            if (CurrentMode != Mode.Trade || TradePartner == null || index < 0 || index >= selected.items.Count) return;
+            var item = selected.items[index];
+            selected.items.RemoveAt(index);
+            TradePartner.items.Add(item);
+            tradedThisAction = true;
+            AddLog($"{selected.Name}は {item.name} を {TradePartner.Name} に渡した");
+        }
+
+        /// <summary>相手の持ち物をもらう</summary>
+        public void TakeItem(int index)
+        {
+            if (CurrentMode != Mode.Trade || TradePartner == null || index < 0 || index >= TradePartner.items.Count) return;
+            var item = TradePartner.items[index];
+            TradePartner.items.RemoveAt(index);
+            selected.items.Add(item);
+            tradedThisAction = true;
+            AddLog($"{selected.Name}は {TradePartner.Name} から {item.name} をもらった");
+        }
+
+        /// <summary>
+        /// 交換を終えて、行動を選ぶところへ戻る（交換は行動にならない。ただし交換したら、その場所で確定して移動は取り消せない。
+        /// 動いた先で拾った物も、そのまま持つ）
+        /// </summary>
+        public void EndTrade()
+        {
+            if (CurrentMode != Mode.Trade) return;
+            TradePartner = null;
+            if (tradedThisAction && selected != null)
+            {
+                moveFrom = selected.cell;
+                pickedThisMove = null;
+            }
+            tradedThisAction = false;
+            BackToActing();
+        }
+
+        /// <summary>確認用: キャラに持ち物を持たせる</summary>
+        public void GiveItemForTest(string unitId, ItemData item) => units.FirstOrDefault(u => u.Id == unitId)?.items.Add(item);
 
         /// <summary>「取り消し」: 相手を選ぶのをやめて、コマンドを選ぶところへ戻る</summary>
         public void CancelTargeting()

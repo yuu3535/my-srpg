@@ -202,6 +202,42 @@ namespace Srpg.Tests
             Assert.IsTrue(ringholm.acted, "使うと行動済み");
         }
 
+        /// <summary>交換（原作者 2026-09-28: 落ちている物を拾うより、味方どうしの交換）と、行動予告の矢印</summary>
+        [UnityTest]
+        public IEnumerator TradeItemsAndIntentArrows()
+        {
+            SceneManager.LoadScene("Battle3D");
+            yield return null;
+            yield return null;
+            var controller = Object.FindFirstObjectByType<Battle3DController>();
+            int attacks = controller.Declarations.Values.Count(d => d.type == "attack");
+            Assert.AreEqual(attacks, controller.View.IntentArrowCount, "攻撃の予告ごとに矢印が出る");
+
+            var arshe = controller.Units.First(u => u.Id == "arshe");
+            var beside = new[] { Vector2Int.right, Vector2Int.left, Vector2Int.up, Vector2Int.down }.Select(d => arshe.cell + d)
+                .First(c => controller.View.Map.InBounds(c) && controller.View.Map.CanStop(c, false) && !controller.Units.Any(u => u.Alive && u.cell == c));
+            controller.TeleportForTest("young_karima", beside);
+            var karima = controller.Units.First(u => u.Id == "young_karima");
+            controller.GiveItemForTest("young_karima", new ItemData { id = "small_potion", name = "ポーション小", type = "heal", value = 5 });
+
+            controller.Select("arshe");
+            controller.TapCell(arshe.cell);
+            Assert.IsTrue(controller.CanTradeFromHere, "隣の味方が持ち物を持っていれば交換できる");
+            controller.ChooseTrade();
+            Assert.AreEqual(karima, controller.TradePartner, "隣の味方が1人なら、すぐ相手になる");
+            controller.TakeItem(0);
+            Assert.AreEqual(1, arshe.items.Count, "もらった");
+            Assert.AreEqual(0, karima.items.Count);
+            controller.GiveItem(0);
+            Assert.AreEqual(1, karima.items.Count, "渡した");
+            controller.TakeItem(0);
+            controller.EndTrade();
+            Assert.AreEqual(Battle3DController.Mode.Acting, controller.CurrentMode, "交換は行動にならない（行動を選ぶ所へ戻る）");
+            Assert.IsFalse(arshe.acted);
+            controller.UseItem(0);
+            Assert.IsTrue(arshe.acted, "もらった物を使える");
+        }
+
         /// <summary>画面のUI（コマンド一覧）のボタンで操作する</summary>
         [UnityTest]
         public IEnumerator PlayWithHudButtons()

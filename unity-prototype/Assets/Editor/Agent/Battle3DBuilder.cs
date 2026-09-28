@@ -273,6 +273,26 @@ namespace Srpg.EditorAgent
                 throw new InvalidOperationException($"UIの確認: 敵の番のあとターン2になっていない（ターン{controller.Turn}・{controller.CurrentPhase}）");
             controller.FocusOnAllies(true);
             RenderWithHud(hud, camera, rt, "Battle3D_ui_turn2");
+            // 交換（原作者 2026-09-28: 落ちている物を拾うより、味方どうしの交換）: カリマのポーションをアルシェがもらう
+            controller.Setup();
+            view.SetView(true, 0, true);
+            var arsheTrade = controller.Units.First(u => u.source.id == "arshe");
+            var besideArshe = new[] { Vector2Int.right, Vector2Int.left, Vector2Int.up, Vector2Int.down }.Select(d => arsheTrade.cell + d)
+                .First(c => view.Map.InBounds(c) && view.Map.CanStop(c, false) && !controller.Units.Any(u => u.Alive && u.cell == c));
+            controller.TeleportForTest("young_karima", besideArshe);
+            controller.GiveItemForTest("young_karima", new ItemData { id = "small_potion", name = "ポーション小", type = "heal", value = 5 });
+            controller.Select("arshe");
+            controller.TapCell(arsheTrade.cell);
+            view.FocusOn(arsheTrade.cell, true);
+            RenderWithHud(hud, camera, rt, "Battle3D_ui_trade_command");
+            controller.ChooseTrade();
+            if (controller.TradePartner == null) throw new InvalidOperationException("交換の確認: 隣のカリマが相手にならなかった");
+            RenderWithHud(hud, camera, rt, "Battle3D_ui_trade");
+            controller.TakeItem(0);
+            if (arsheTrade.items.Count != 1) throw new InvalidOperationException("交換の確認: ポーションをもらえなかった");
+            RenderWithHud(hud, camera, rt, "Battle3D_ui_trade_after");
+            controller.EndTrade();
+
             // 召喚「ヒトダマ」: ターン1に陣を置く → ターン3の始まりに出る → リングホルムが倒れたら消える（敵の攻撃は全部外れにする）
             controller.Setup();
             view.SetView(true, 0, true);

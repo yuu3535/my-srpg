@@ -69,5 +69,6 @@ namespace Srpg.Battle
         public int attackRange;
         public string token;
         public bool flying;   // 飛行（水堀・遮蔽物・石の基礎・茂みを通り抜けられる。止まれるマスは TerrainRules）
+        public ItemData[] items;   // 最初から持っている消耗品（なければ空。原作者 2026-09-28: 落ちている物を拾うより、味方どうしの交換で渡す）
     }
 }

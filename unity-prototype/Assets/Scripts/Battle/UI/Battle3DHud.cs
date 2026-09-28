@@ -751,7 +751,7 @@ namespace Srpg.Battle
             if (!Built || controller == null || controller.Data == null) return;
             var sel = controller.Selected;
             var tgt = controller.Target;
-            string key = $"{statusOpen}|{subList}|{sel?.items.Count}|{controller.Units.Count}|{controller.PendingSummons.Count}|{controller.CurrentOption?.label}|{controller.TransferAlly?.Id}|{controller.EnemyPreview?.attacker?.Id}|{controller.CurrentPhase}|{controller.CurrentMode}|{sel?.Id}|{sel?.plan?.hp}|{sel?.plan?.mp}|{sel?.cell}|{tgt?.Id}|{tgt?.plan?.hp}|{controller.Turn}|{controller.Units.Count(u => u.acted)}"
+            string key = $"{statusOpen}|{subList}|{sel?.items.Count}|{controller.Units.Count}|{controller.PendingSummons.Count}|{controller.CurrentOption?.label}|{controller.TransferAlly?.Id}|{controller.TradePartner?.Id}|{controller.TradePartner?.items.Count}|{controller.EnemyPreview?.attacker?.Id}|{controller.CurrentPhase}|{controller.CurrentMode}|{sel?.Id}|{sel?.plan?.hp}|{sel?.plan?.mp}|{sel?.cell}|{tgt?.Id}|{tgt?.plan?.hp}|{controller.Turn}|{controller.Units.Count(u => u.acted)}"
                 + $"|{controller.Declarations.Count}|{string.Join(",", controller.Units.Select(u => u.plan?.hp ?? 0))}";
             if (key == stateKey) return;
             stateKey = key;
@@ -943,6 +943,7 @@ namespace Srpg.Battle
             commandItems.Clear();
             var entries = new List<(string icon, string label, Action action, bool enabled)>();
             var subTexts = new List<string>();
+            bool wide = false;   // 名前と説明が入るよう一覧を広げる（交換）
             var sel = controller.Selected;
             var mode = controller.CurrentMode;
             if (sel == null || sel.Id != subListOwner || (mode != Battle3DController.Mode.Moving && mode != Battle3DController.Mode.Acting)) subList = null;
@@ -1020,10 +1021,36 @@ namespace Srpg.Battle
                     if (ui?.artList != null && ui.artList.Length > 0) entries.Add(("skill", "戦技", () => { subList = "skill"; stateKey = null; }, true));
                     if (ui?.magicList != null && ui.magicList.Length > 0) entries.Add(("magic", "魔法", () => { subList = "magic"; stateKey = null; }, true));
                     if (sel.items.Count > 0) entries.Add(("item", "持ち物", () => { subList = "item"; stateKey = null; }, true));
+                    // 交換（隣の味方と持ち物をやりとりする。原作者 2026-09-28）
+                    if (controller.CanTradeFromHere) entries.Add(("item", "交換", () => controller.ChooseTrade(), true));
                     if (basic == null && (ui?.magicList == null || ui.magicList.Length == 0))
                         entries.Add(("attack", "攻撃", () => controller.ChooseAttack(), controller.CanAttackFromHere));
                     entries.Add(("wait", "待機", () => controller.ChooseWait(), true));
                     if (controller.CanUndoMove) entries.Add(("back", "戻る", () => controller.UndoMove(), true));
+                }
+                else if (sel != null && mode == Battle3DController.Mode.Trade)
+                {
+                    var partner = controller.TradePartner;
+                    if (partner != null)
+                    {
+                        // 押した物が相手へ移る（自分の物＝渡す、相手の物＝もらう）
+                        for (int k = 0; k < sel.items.Count; k++)
+                        {
+                            int index = k;
+                            entries.Add(("item", sel.items[k].name, () => controller.GiveItem(index), true));
+                            subTexts.Add("渡す →");
+                        }
+                        for (int k = 0; k < partner.items.Count; k++)
+                        {
+                            int index = k;
+                            entries.Add(("item", partner.items[k].name, () => controller.TakeItem(index), true));
+                            subTexts.Add("← もらう");
+                        }
+                        entries.Add(("back", "終わる", () => controller.EndTrade(), true));
+                        subTexts.Add("");
+                        wide = true;
+                    }
+                    else entries.Add(("back", "取り消し", () => controller.EndTrade(), true));
                 }
                 else if (sel != null && (mode == Battle3DController.Mode.Targeting || mode == Battle3DController.Mode.Support || mode == Battle3DController.Mode.Summon))
                 {
@@ -1038,7 +1065,7 @@ namespace Srpg.Battle
             commandList.gameObject.SetActive(entries.Count > 0);
             if (entries.Count == 0) return;
             // 入れ替えた一覧（戦技・魔法）は、名前とMPが入るように少し広げる
-            float width = subList != null ? 150f : 118f;
+            float width = wide ? 178f : subList != null ? 150f : 118f;   // 交換は品物の名前と「渡す →」「← もらう」が入る幅
             commandList.anchoredPosition = new Vector2(758f - width, commandList.anchoredPosition.y);
             commandList.sizeDelta = new Vector2(width, entries.Count * 30 + 15);
             for (int i = 0; i < entries.Count; i++)
@@ -1064,7 +1091,7 @@ namespace Srpg.Battle
                 img.color = icon == "magic" ? (enabled ? Color.white : new Color(1, 1, 1, 0.45f)) : color;
                 img.preserveAspect = true;
                 img.raycastTarget = false;
-                var text = Label(row, "Label", 36, 0, width - 60, 30, subList != null ? 11 : 12, color);
+                var text = Label(row, "Label", 36, 0, width - 60, 30, subList != null || wide ? 11 : 12, color);
                 text.text = label;
                 if (i < subTexts.Count && !string.IsNullOrEmpty(subTexts[i]))
                 {
@@ -1106,6 +1133,8 @@ namespace Srpg.Battle
                 Battle3DController.Mode.Targeting => "攻撃する相手を選んでください。",
                 Battle3DController.Mode.Support => SupportHint(),
                 Battle3DController.Mode.Summon => "召喚の陣を置くマスを選んでください（隣の空いているマス。2ターン後に出ます）。",
+                Battle3DController.Mode.Trade => controller.TradePartner == null ? "交換する味方を選んでください（隣の味方）。"
+                    : $"{controller.TradePartner.Name}と持ち物を交換します。押した物が相手へ移ります。",
                 _ => $"{sel.Name}の行動を選んでください。",
             };
         }
