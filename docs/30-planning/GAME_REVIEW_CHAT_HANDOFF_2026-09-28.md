@@ -69,6 +69,20 @@
 
 - 別の動かし方（別の種・別の順番・ある場面だけ）が要るときは、総合担当に頼む。
 
+## 6b. 探索（2026-09-28 追加。プロローグ1-1）
+
+- シーン: `unity-prototype/Assets/Scenes/Explore3D.unity`（原作者が▶で遊べる）。自室で起きる → 剣立てを調べて剣を取る → 廊下（キャリー・ヘンリーとの会話は必須、井戸端会議は寄り道）→ 訓練場に着くと合流の会話 → 戦闘の手前で止まる（戦闘へのつなぎは次の段階）。
+- 計画: `docs/30-planning/PROLOGUE_1_1_UNITY_PLAN_2026-09-28.md`。シナリオの表: `シナリオ集/シナリオブラッシュアップ/第1章プロローグ｜シナリオ執筆用.xlsx`（シート「シナリオプロローグ1-1」）。ブロックの一覧: `docs/30-planning/scenario/prologue_1_1_blocks.md`。場所の配置表: `docs/10-design/map/layouts/*.json・*.md`。
+- 確認の画像: `Explore_*`（最初から訓練場まで自動で進めたもの）、`Map_<場所>_*`（場所ごと）、`Dialogue_*`（会話の画面）。
+- 撮り直すとき（Unity を閉じてから。総合担当が組み立てている間は実行しない）:
+
+```powershell
+& "C:\Program Files\Unity\Hub\Editor\6000.3.24f1\Editor\Unity.exe" -batchmode -projectPath "C:\Users\jade-\Desktop\自作srpg 2\unity-prototype" -executeMethod Srpg.EditorAgent.ExploreBuilder.BuildAll -quit -logFile <スクラッチパッド>\explore.log
+```
+
+- 点検表は J（探索と会話）を使う。
+- 仮の所（指摘しなくてよい）: 自室・廊下の床は下絵の色分け（床の絵は発注中）、家具・小物は仮の箱と柱、キャリー・ヘンリー・ギュンターは会話の立ち絵を小さくした仮の姿、名前のない従者は青白い火の玉、立ち絵は全員仮（会話用を作り直し中）、テキストボックスの位置は仮、訓練場の遠景は仮の森、謁見の間はまだない、携帯端末のメニューはまだない、戦闘へのつなぎはまだない。
+
 ## 7. 報告のしかた
 
 - 1回のレビューを1つのファイルにする: `docs/40-reviews/PLAYTEST_REVIEW_YYYY-MM-DD.md`（同じ日に2回目なら `_2`）。
