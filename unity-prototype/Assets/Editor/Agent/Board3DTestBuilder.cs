@@ -252,6 +252,25 @@ namespace Srpg.EditorAgent
                 controller.SetOverview(false, true);
                 controller.FocusOnPoint(Board3DLayout.TopCenter(new Vector2Int(4, 5)), true);
                 Render(camera, rt, "Board3D_T8_painted_close_morning");
+                // 夜（原作者 2026-09-28: 朝・昼・夜は光で変える）。監視門のたいまつが見える所
+                SetMood(Board3DMood.Night);
+                controller.FocusOnPoint(Board3DLayout.TopCenter(new Vector2Int(6, 2)), true);
+                Render(camera, rt, "Board3D_T8_painted_close_night");
+                // 屋内の暗い広間（謁見の間の光。盤面は監視路のまま、燭台の代わりにたいまつを4本置いて光だけ確かめる）
+                var hall = Board3DLayout.Watchroad();
+                hall.Torches.AddRange(new[] { new Vector2Int(1, 2), new Vector2Int(10, 2), new Vector2Int(1, 6), new Vector2Int(10, 5) });
+                controller.Map = hall;
+                controller.Setup();
+                controller.SetOverview(false, true);
+                controller.SetView(true, 0, true);
+                controller.FocusOnPoint(Board3DLayout.TopCenter(new Vector2Int(5, 4)), true);
+                foreach (var mood in new[] { Board3DMood.HallMorning, Board3DMood.HallDay, Board3DMood.HallNight })
+                {
+                    SetMood(mood);
+                    Render(camera, rt, "Board3D_T8_light_" + mood);
+                }
+                controller.Map = null;
+                controller.Setup();
                 SetMood(Board3DMood.Day);
                 controller.SetOverview(true, true);
                 controller.SetView(true, 0, true);
