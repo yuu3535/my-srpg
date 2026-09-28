@@ -1,0 +1,333 @@
+{
+ "mapId": "orcus_training_yard",
+ "name": "オルクス魔王城の訓練場",
+ "indoor": false,
+ "timeOfDay": "morning",
+ "columns": 24,
+ "rows": 22,
+ "terrain": [
+  "WWWWWWWWWWWWPDDPWWWWWWWW",
+  "WgggggggfffffffffffffWWW",
+  "Wgffffffff+++++++ffffWWW",
+  "Wgffffffff+++++++ffffWWW",
+  "WgffffFFFF+++++++ffffWWW",
+  "WgffffFaaaaaa/aaFffffWWW",
+  "WgffffFaaaaaaaaaFffffWWW",
+  "WgffffFaaaaaaaaaFffffDWW",
+  "WgffffFaaaaaaaaaFffffWWW",
+  "WfffffFaaaaaaaaaaffffWWW",
+  "DfffffFaaaaaaaaaaffffWWW",
+  "WfffffFaaaaaaaaaFffffWWW",
+  "WfffffFaaaaaaaaaFffffWWW",
+  "WfffffFaaaaaaaaaFffffWWW",
+  "WfffffFaaaaaaaaaFffffffW",
+  "WfffffFFFFFaFFFFFffffffW",
+  "WffffffffffffffffffffffW",
+  "WFFF/FFFFFF/FFFFFF/FFFFW",
+  "WuuuuuuuuuuuuuuuuuuuuuuW",
+  "WuuuuuuuuuuuuuuuuuuuuuuW",
+  "WuuuuuuuuuuuuuuuuuuuuuuW",
+  "WWWWWWWWWWWDWWWWWWWWWWWW"
+ ],
+ "symbols": [
+  {
+   "symbol": "f",
+   "name": "",
+   "color": [],
+   "rules": ""
+  },
+  {
+   "symbol": "g",
+   "name": "",
+   "color": [],
+   "rules": ""
+  },
+  {
+   "symbol": "+",
+   "name": "木の演台",
+   "color": [
+    150,
+    104,
+    64
+   ],
+   "rules": ""
+  },
+  {
+   "symbol": "u",
+   "name": "一段高い石の通路",
+   "color": [
+    120,
+    112,
+    128
+   ],
+   "rules": ""
+  },
+  {
+   "symbol": "/",
+   "name": "階段",
+   "color": [
+    214,
+    214,
+    222
+   ],
+   "rules": ""
+  },
+  {
+   "symbol": "F",
+   "name": "木の柵",
+   "color": [
+    70,
+    40,
+    24
+   ],
+   "rules": ""
+  },
+  {
+   "symbol": "W",
+   "name": "",
+   "color": [],
+   "rules": ""
+  }
+ ],
+ "battleAreas": [
+  {
+   "id": "prologue",
+   "battleId": "battle_tutorial",
+   "x": 8,
+   "y": 6,
+   "w": 7,
+   "h": 8
+  }
+ ],
+ "objects": [],
+ "exits": [
+  {
+   "id": "from_corridor",
+   "label": "本丸の大扉（城の廊下へ）",
+   "toMap": "orcus_corridor",
+   "facing": "south",
+   "cells": [
+    {
+     "x": 13,
+     "y": 0
+    },
+    {
+     "x": 14,
+     "y": 0
+    }
+   ],
+   "hasTarget": true,
+   "toCell": {
+    "x": 3,
+    "y": 1
+   },
+   "requires": []
+  },
+  {
+   "id": "to_town",
+   "label": "城門へ抜ける門",
+   "toMap": "orcus_town",
+   "facing": "",
+   "cells": [
+    {
+     "x": 0,
+     "y": 10
+    }
+   ],
+   "hasTarget": false,
+   "toCell": {
+    "x": 0,
+    "y": 0
+   },
+   "requires": []
+  },
+  {
+   "id": "barracks",
+   "label": "兵舎の扉（当面は鍵がかかっている）",
+   "toMap": "",
+   "facing": "",
+   "cells": [
+    {
+     "x": 21,
+     "y": 7
+    }
+   ],
+   "hasTarget": false,
+   "toCell": {
+    "x": 0,
+    "y": 0
+   },
+   "requires": []
+  },
+  {
+   "id": "south",
+   "label": "通路の奥の扉（行き先は廊下の配置を決めるときに見直す）",
+   "toMap": "",
+   "facing": "",
+   "cells": [
+    {
+     "x": 11,
+     "y": 21
+    }
+   ],
+   "hasTarget": false,
+   "toCell": {
+    "x": 0,
+    "y": 0
+   },
+   "requires": []
+  }
+ ],
+ "states": [
+  {
+   "id": "prologue_1_1_arrival",
+   "scene": "シナリオプロローグ1-1 No.56〜67",
+   "player": {
+    "id": "young_arshe",
+    "name": "",
+    "facing": "south",
+    "talkBlock": "",
+    "x": 13,
+    "y": 1
+   },
+   "onEnter": [],
+   "people": [
+    {
+     "id": "young_karima",
+     "name": "",
+     "facing": "north",
+     "talkBlock": "",
+     "x": 12,
+     "y": 12
+    },
+    {
+     "id": "gunter",
+     "name": "",
+     "facing": "south",
+     "talkBlock": "",
+     "x": 11,
+     "y": 7
+    }
+   ],
+   "talkAreas": [],
+   "inspect": [],
+   "goals": [
+    {
+     "id": "enter_yard",
+     "exit": "",
+     "block": "prologue_1_1.b10",
+     "thenBattleArea": "prologue",
+     "thenBlock": "prologue_1_1.b11",
+     "cells": [
+      {
+       "x": 13,
+       "y": 1
+      },
+      {
+       "x": 14,
+       "y": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "prologue_1_1_after_training",
+   "scene": "プロローグ1-1 戦闘のあと（b12）",
+   "player": {
+    "id": "young_arshe",
+    "name": "",
+    "facing": "north",
+    "talkBlock": "",
+    "x": 10,
+    "y": 12
+   },
+   "onEnter": [
+    "prologue_1_1.b12"
+   ],
+   "people": [
+    {
+     "id": "young_karima",
+     "name": "",
+     "facing": "north",
+     "talkBlock": "",
+     "x": 12,
+     "y": 12
+    },
+    {
+     "id": "gunter",
+     "name": "",
+     "facing": "south",
+     "talkBlock": "",
+     "x": 11,
+     "y": 7
+    }
+   ],
+   "talkAreas": [],
+   "inspect": [],
+   "goals": []
+  }
+ ],
+ "inspect": [
+  {
+   "id": "weapon_rack",
+   "block": "",
+   "text": "（案）稽古用の木剣。ギュンターが毎朝手入れしている",
+   "cells": [
+    {
+     "x": 5,
+     "y": 6
+    }
+   ],
+   "required": false
+  },
+  {
+   "id": "tent",
+   "block": "",
+   "text": "（案）祝宴の準備の品。天幕の下",
+   "cells": [
+    {
+     "x": 15,
+     "y": 1
+    }
+   ],
+   "required": false
+  },
+  {
+   "id": "crest_banner",
+   "block": "",
+   "text": "（案）オルクスの紋章（ツノ・蛇・冠・6枚の翼）",
+   "cells": [
+    {
+     "x": 2,
+     "y": 9
+    }
+   ],
+   "required": false
+  },
+  {
+   "id": "stage",
+   "block": "",
+   "text": "（案）ギュンターがいつも稽古を見ている演台",
+   "cells": [
+    {
+     "x": 11,
+     "y": 3
+    }
+   ],
+   "required": false
+  },
+  {
+   "id": "flowers",
+   "block": "",
+   "text": "（案）城壁ぎわの紫の花",
+   "cells": [
+    {
+     "x": 1,
+     "y": 8
+    }
+   ],
+   "required": false
+  }
+ ]
+}

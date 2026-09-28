@@ -1,0 +1,314 @@
+{
+ "mapId": "orcus_corridor",
+ "name": "オルクス魔王城の廊下（回廊）",
+ "indoor": true,
+ "timeOfDay": "morning",
+ "columns": 11,
+ "rows": 24,
+ "terrain": [
+  "WWWDWWWWWWW",
+  "bfffffWWWWW",
+  "PfffffWWWWW",
+  "bfffffWWWWW",
+  "bfffffWWWWW",
+  "PfffffPfffW",
+  "bfffffffffW",
+  "bfffffrrrrD",
+  "PfffffrrrrD",
+  "bfffffffffW",
+  "bfffffPfffW",
+  "PfffffWWWWW",
+  "bfffffWWWWW",
+  "bfffffWWWWW",
+  "PfffffWWWWW",
+  "bfffffWWWWW",
+  "bfffffWWWWW",
+  "PfffffWWWWW",
+  "bfffffWWWWW",
+  "bfffffWWWWW",
+  "PfffffDWWWW",
+  "bfffffWWWWW",
+  "bfffffWWWWW",
+  "WWWWWWWWWWW"
+ ],
+ "symbols": [
+  {
+   "symbol": "b",
+   "name": "石の手すり",
+   "color": [
+    112,
+    100,
+    120
+   ],
+   "rules": ""
+  },
+  {
+   "symbol": "f",
+   "name": "",
+   "color": [],
+   "rules": ""
+  },
+  {
+   "symbol": "r",
+   "name": "",
+   "color": [
+    120,
+    52,
+    96
+   ],
+   "rules": ""
+  }
+ ],
+ "battleAreas": [],
+ "objects": [
+  {
+   "id": "bench_1",
+   "kind": "ベンチ（東の壁ぎわ）",
+   "cells": [
+    {
+     "x": 5,
+     "y": 15
+    }
+   ],
+   "blocks": true,
+   "height": 0.0
+  },
+  {
+   "id": "bench_2",
+   "kind": "ベンチ（東の壁ぎわ）",
+   "cells": [
+    {
+     "x": 5,
+     "y": 3
+    }
+   ],
+   "blocks": true,
+   "height": 0.0
+  },
+  {
+   "id": "planter_1",
+   "kind": "鉢植え",
+   "cells": [
+    {
+     "x": 5,
+     "y": 12
+    }
+   ],
+   "blocks": true,
+   "height": 0.0
+  },
+  {
+   "id": "planter_2",
+   "kind": "鉢植え",
+   "cells": [
+    {
+     "x": 5,
+     "y": 18
+    }
+   ],
+   "blocks": true,
+   "height": 0.0
+  },
+  {
+   "id": "crates",
+   "kind": "祝宴の準備の荷（布・花の箱）",
+   "cells": [
+    {
+     "x": 1,
+     "y": 19
+    }
+   ],
+   "blocks": true,
+   "height": 0.0
+  }
+ ],
+ "exits": [
+  {
+   "id": "to_room",
+   "label": "アルシェとカリマの部屋",
+   "toMap": "orcus_room_arshe_karima",
+   "facing": "east",
+   "cells": [
+    {
+     "x": 6,
+     "y": 20
+    }
+   ],
+   "hasTarget": true,
+   "toCell": {
+    "x": 1,
+    "y": 4
+   },
+   "requires": []
+  },
+  {
+   "id": "to_throne",
+   "label": "謁見の間（配置表は後で）",
+   "toMap": "orcus_throne_room",
+   "facing": "",
+   "cells": [
+    {
+     "x": 10,
+     "y": 7
+    },
+    {
+     "x": 10,
+     "y": 8
+    }
+   ],
+   "hasTarget": false,
+   "toCell": {
+    "x": 0,
+    "y": 0
+   },
+   "requires": []
+  },
+  {
+   "id": "to_yard",
+   "label": "訓練場へ下りる階段",
+   "toMap": "orcus_training_yard",
+   "facing": "south",
+   "cells": [
+    {
+     "x": 3,
+     "y": 0
+    }
+   ],
+   "hasTarget": true,
+   "toCell": {
+    "x": 13,
+    "y": 1
+   },
+   "requires": [
+    "block:prologue_1_1.b06",
+    "block:prologue_1_1.b08"
+   ]
+  }
+ ],
+ "states": [
+  {
+   "id": "prologue_1_1_corridor",
+   "scene": "プロローグ1-1 廊下",
+   "player": {
+    "id": "young_arshe",
+    "name": "",
+    "facing": "north",
+    "talkBlock": "",
+    "x": 5,
+    "y": 20
+   },
+   "onEnter": [
+    "prologue_1_1.b05"
+   ],
+   "people": [
+    {
+     "id": "carrie",
+     "name": "キャリー",
+     "facing": "south",
+     "talkBlock": "prologue_1_1.b06",
+     "x": 3,
+     "y": 17
+    },
+    {
+     "id": "servant_1",
+     "name": "従者（モブ１）",
+     "facing": "east",
+     "talkBlock": "",
+     "x": 1,
+     "y": 13
+    },
+    {
+     "id": "servant_2",
+     "name": "従者（モブ２）",
+     "facing": "west",
+     "talkBlock": "",
+     "x": 2,
+     "y": 13
+    },
+    {
+     "id": "henry",
+     "name": "ヘンリー",
+     "facing": "south",
+     "talkBlock": "prologue_1_1.b08",
+     "x": 3,
+     "y": 9
+    },
+    {
+     "id": "servant_3",
+     "name": "謁見の間を準備する従者",
+     "facing": "east",
+     "talkBlock": "",
+     "x": 8,
+     "y": 6
+    }
+   ],
+   "talkAreas": [
+    {
+     "id": "carrie_greet",
+     "block": "prologue_1_1.b06",
+     "trigger": "approach",
+     "x": 1,
+     "y": 16,
+     "w": 5,
+     "h": 3,
+     "required": true,
+     "ambient": false,
+     "once": true
+    },
+    {
+     "id": "servants_gossip",
+     "block": "prologue_1_1.b07",
+     "trigger": "approach",
+     "x": 1,
+     "y": 11,
+     "w": 3,
+     "h": 5,
+     "required": false,
+     "ambient": true,
+     "once": true
+    },
+    {
+     "id": "henry_greet",
+     "block": "prologue_1_1.b08",
+     "trigger": "approach",
+     "x": 1,
+     "y": 9,
+     "w": 5,
+     "h": 2,
+     "required": true,
+     "ambient": false,
+     "once": true
+    }
+   ],
+   "inspect": [
+    {
+     "id": "throne_door",
+     "block": "prologue_1_1.b09",
+     "text": "",
+     "cells": [
+      {
+       "x": 10,
+       "y": 7
+      },
+      {
+       "x": 10,
+       "y": 8
+      }
+     ],
+     "required": false
+    }
+   ],
+   "goals": [
+    {
+     "id": "to_yard",
+     "exit": "to_yard",
+     "block": "",
+     "thenBattleArea": "",
+     "thenBlock": "",
+     "cells": []
+    }
+   ]
+  }
+ ],
+ "inspect": []
+}

@@ -1,0 +1,245 @@
+{
+ "mapId": "orcus_room_arshe_karima",
+ "name": "アルシェとカリマの部屋",
+ "indoor": true,
+ "timeOfDay": "morning",
+ "columns": 10,
+ "rows": 9,
+ "terrain": [
+  "WWWWWWWWWW",
+  "WwwwwwwwwW",
+  "WwwwwwwwwW",
+  "WwwrrrrwwW",
+  "DwwrrrrwwW",
+  "WwwrrrrwwW",
+  "WwwwwwwwwW",
+  "WwwwwwwwwW",
+  "WWWWWWWWWW"
+ ],
+ "symbols": [
+  {
+   "symbol": "w",
+   "name": "木の床",
+   "color": [
+    150,
+    112,
+    78
+   ],
+   "rules": ""
+  },
+  {
+   "symbol": "r",
+   "name": "",
+   "color": [
+    120,
+    52,
+    96
+   ],
+   "rules": ""
+  },
+  {
+   "symbol": "W",
+   "name": "",
+   "color": [],
+   "rules": ""
+  }
+ ],
+ "battleAreas": [],
+ "objects": [
+  {
+   "id": "bed_arshe",
+   "kind": "ベッド（アルシェ・散らかっている）",
+   "cells": [
+    {
+     "x": 2,
+     "y": 1
+    },
+    {
+     "x": 2,
+     "y": 2
+    }
+   ],
+   "blocks": true,
+   "height": 0.0
+  },
+  {
+   "id": "bed_karima",
+   "kind": "ベッド（カリマ・整っている）",
+   "cells": [
+    {
+     "x": 7,
+     "y": 1
+    },
+    {
+     "x": 7,
+     "y": 2
+    }
+   ],
+   "blocks": true,
+   "height": 0.0
+  },
+  {
+   "id": "desk_arshe",
+   "kind": "机（アルシェ）",
+   "cells": [
+    {
+     "x": 2,
+     "y": 7
+    }
+   ],
+   "blocks": true,
+   "height": 0.0
+  },
+  {
+   "id": "sword_stand",
+   "kind": "剣立て（黒陽の双剣）",
+   "cells": [
+    {
+     "x": 1,
+     "y": 7
+    }
+   ],
+   "blocks": true,
+   "height": 0.0
+  },
+  {
+   "id": "desk_karima",
+   "kind": "机（カリマ。本が積んである）",
+   "cells": [
+    {
+     "x": 7,
+     "y": 7
+    }
+   ],
+   "blocks": true,
+   "height": 0.0
+  },
+  {
+   "id": "bookshelf",
+   "kind": "本棚（カリマの本。勇者リングホルムの本など）",
+   "cells": [
+    {
+     "x": 8,
+     "y": 4
+    },
+    {
+     "x": 8,
+     "y": 5
+    }
+   ],
+   "blocks": true,
+   "height": 0.0
+  },
+  {
+   "id": "wardrobe",
+   "kind": "衣装棚（カリマのツノの頭飾りの箱）",
+   "cells": [
+    {
+     "x": 8,
+     "y": 1
+    }
+   ],
+   "blocks": true,
+   "height": 0.0
+  }
+ ],
+ "exits": [
+  {
+   "id": "to_corridor",
+   "label": "廊下へ",
+   "toMap": "orcus_corridor",
+   "facing": "north",
+   "cells": [
+    {
+     "x": 0,
+     "y": 4
+    }
+   ],
+   "hasTarget": true,
+   "toCell": {
+    "x": 5,
+    "y": 20
+   },
+   "requires": [
+    "item:黒陽の双剣"
+   ]
+  }
+ ],
+ "states": [
+  {
+   "id": "prologue_1_1_wake",
+   "scene": "プロローグ1-1 自室",
+   "player": {
+    "id": "young_arshe",
+    "name": "",
+    "facing": "south",
+    "talkBlock": "",
+    "x": 3,
+    "y": 2
+   },
+   "onEnter": [
+    "prologue_1_1.b01",
+    "prologue_1_1.b02"
+   ],
+   "people": [],
+   "talkAreas": [],
+   "inspect": [
+    {
+     "id": "find_sword",
+     "block": "prologue_1_1.b02_r09",
+     "text": "",
+     "cells": [
+      {
+       "x": 1,
+       "y": 7
+      }
+     ],
+     "required": true
+    },
+    {
+     "id": "karima_bed",
+     "block": "prologue_1_1.b03",
+     "text": "",
+     "cells": [
+      {
+       "x": 7,
+       "y": 1
+      },
+      {
+       "x": 7,
+       "y": 2
+      }
+     ],
+     "required": false
+    },
+    {
+     "id": "arshe_bed",
+     "block": "prologue_1_1.b04",
+     "text": "",
+     "cells": [
+      {
+       "x": 2,
+       "y": 1
+      },
+      {
+       "x": 2,
+       "y": 2
+      }
+     ],
+     "required": false
+    }
+   ],
+   "goals": [
+    {
+     "id": "leave_room",
+     "exit": "to_corridor",
+     "block": "",
+     "thenBattleArea": "",
+     "thenBlock": "",
+     "cells": []
+    }
+   ]
+  }
+ ],
+ "inspect": []
+}

@@ -7,6 +7,7 @@
     py -3.12 tools/map_layout.py order  <配置表.json>             # 床の1枚絵の発注書（依頼文つき）を作る
     py -3.12 tools/map_layout.py import <配置表.json> <届いた絵>   # 余白を切り、1マス64pxにして Unity へ
     py -3.12 tools/map_layout.py from-guide <下絵.png> <mapId> <名前>  # 前の下絵（1マス40px）から配置表を起こす
+    py -3.12 tools/map_layout.py unity  <配置表.json> [...]        # Unity が読む形（Assets/Data/Maps/<mapId>.json）と仮の床（下絵）を書き出す
 
 配置表（docs/10-design/map/layouts/<mapId>.json）:
     {
@@ -222,6 +223,88 @@ def from_guide(picture, map_id, name):
     print(json.dumps(layout, ensure_ascii=False, indent=2))
 
 
+def cells_of(v):
+    """[[x, y], ...] / [x, y] / {x, y} を [{x, y}, ...] にする"""
+    if v is None:
+        return []
+    if isinstance(v, dict):
+        return [{"x": v["x"], "y": v["y"]}]
+    if v and isinstance(v[0], (int, float)):
+        return [{"x": int(v[0]), "y": int(v[1])}]
+    return [{"x": int(c[0]), "y": int(c[1])} for c in v]
+
+
+def area_of(v):
+    return {"x": v.get("x", 0), "y": v.get("y", 0), "w": v.get("w", 1), "h": v.get("h", 1)} if v else {"x": 0, "y": 0, "w": 0, "h": 0}
+
+
+def person_of(v):
+    if not v:
+        return None
+    cell = cells_of(v.get("cell"))
+    c = cell[0] if cell else {"x": 0, "y": 0}
+    return {"id": v.get("id", ""), "name": v.get("name", ""), "facing": v.get("facing") or "", "talkBlock": v.get("talkBlock") or "", "x": c["x"], "y": c["y"]}
+
+
+def inspect_of(v):
+    cells = cells_of(v.get("cells")) or cells_of(v.get("cell"))
+    return {"id": v.get("id", ""), "block": v.get("block") or "", "text": v.get("text") or "", "cells": cells, "required": bool(v.get("required"))}
+
+
+def to_unity(path):
+    """配置表を Unity の JsonUtility で読める形にする（入れ子の配列・記号の辞書をやめ、マスは {x, y} に）"""
+    layout = load(path)
+    raw = json.loads(Path(path).read_text(encoding="utf-8"))
+    map_id = layout["mapId"]
+    rows, cols = len(layout["terrain"]), len(layout["terrain"][0])
+    symbols = []
+    for ch, v in (raw.get("legend") or {}).items():
+        rules = ",".join(f"{k}={int(v[k]) if isinstance(v[k], bool) else v[k]}" for k in ("walk", "flyEnter", "flyStop", "height") if k in v)
+        symbols.append({"symbol": ch, "name": v.get("name", ""), "color": v.get("color", []), "rules": rules})
+    ex = raw.get("exploration") or {}
+    objects = [{"id": o.get("id", ""), "kind": o.get("kind", ""), "cells": cells_of(o.get("cells")), "blocks": bool(o.get("blocks")),
+                "height": float(o.get("height", 0))} for o in ex.get("objects", [])]
+    exits = []
+    for e in ex.get("exits", []):
+        to = e.get("to") or {}
+        target = cells_of(to.get("cell")) if to else []
+        exits.append({"id": e.get("id", ""), "label": e.get("label", ""), "toMap": to.get("map") or "", "facing": to.get("facing") or "",
+                      "cells": cells_of(e.get("cells")), "hasTarget": bool(target), "toCell": target[0] if target else {"x": 0, "y": 0},
+                      "requires": e.get("requires") or []})
+    states = []
+    for st in ex.get("states", []):
+        goals = []
+        for g in st.get("goals", []):
+            then = g.get("then") or {}
+            goals.append({"id": g.get("id", ""), "exit": g.get("exit") or "", "block": g.get("block") or "",
+                          "thenBattleArea": then.get("battleArea") or "", "thenBlock": then.get("block") or "", "cells": cells_of(g.get("cells"))})
+        talks = []
+        for t in st.get("talkAreas", []):
+            a = area_of(t.get("area"))
+            talks.append({"id": t.get("id", ""), "block": t.get("block") or "", "trigger": t.get("trigger") or "", **a,
+                          "required": bool(t.get("required")), "ambient": bool(t.get("ambient")), "once": bool(t.get("once", True))})
+        states.append({"id": st.get("id", ""), "scene": st.get("scene", ""), "player": person_of(st.get("player")),
+                       "onEnter": st.get("onEnter") or [], "people": [person_of(p) for p in st.get("people", [])],
+                       "talkAreas": talks, "inspect": [inspect_of(i) for i in st.get("inspect", [])], "goals": goals})
+    data = {"mapId": map_id, "name": layout["name"], "indoor": bool(layout.get("indoor")), "timeOfDay": layout.get("timeOfDay") or "day",
+            "columns": cols, "rows": rows, "terrain": layout["terrain"], "symbols": symbols,
+            "battleAreas": [{"id": b.get("id", ""), "battleId": b.get("battleId") or "", "x": b["x"], "y": b["y"], "w": b["w"], "h": b["h"]}
+                            for b in layout.get("battleAreas", [])],
+            "objects": objects, "exits": exits, "states": states,
+            "inspect": [inspect_of(i) for i in (raw.get("inspect") or ex.get("inspect") or [])]}
+    out = ROOT / "unity-prototype" / "Assets" / "Data" / "Maps" / f"{map_id}.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    text = json.dumps(data, ensure_ascii=False, indent=1) + "\n"
+    if not out.exists() or out.read_text(encoding="utf-8") != text:
+        out.write_text(text, encoding="utf-8")
+    # 仮の床: 余白なしの下絵（床の絵が届いて import したら <mapId>_ground.png が使われる）
+    ground = ROOT / "unity-prototype" / "Assets" / "Art" / "Board3D" / "Ground" / f"{map_id}_guide.png"
+    picture = draw(layout, False)
+    if not ground.exists() or Image.open(ground).convert("RGB").tobytes() != picture.tobytes():
+        picture.save(ground)
+    print(f"{out.relative_to(ROOT).as_posix()}（{cols}×{rows}・物 {len(objects)}・出口 {len(exits)}・場面 {len(states)}）")
+
+
 def main():
     args = sys.argv[1:]
     if len(args) == 2 and args[0] == "guide":
@@ -230,6 +313,9 @@ def main():
         order(args[1])
     elif len(args) == 3 and args[0] == "import":
         import_ground(args[1], args[2])
+    elif len(args) >= 2 and args[0] == "unity":
+        for path in args[1:]:
+            to_unity(path)
     elif len(args) == 4 and args[0] == "from-guide":
         from_guide(args[1], args[2], args[3])
     else:
