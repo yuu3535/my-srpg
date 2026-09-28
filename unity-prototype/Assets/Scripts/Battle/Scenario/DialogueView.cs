@@ -12,7 +12,7 @@ namespace Srpg.Battle
     /// 立ち絵の足元は下の暗いにじみに溶かす。テキストボックスの位置は仮（原作者: あとで決める）。
     /// 押すと次の行へ。制作メモの行は出さない。物を手に入れる行では OnItem を呼ぶ
     /// </summary>
-    public class DialogueView : MonoBehaviour
+    public partial class DialogueView : MonoBehaviour
     {
         [Serializable]
         public struct Portrait
@@ -74,7 +74,7 @@ namespace Srpg.Battle
         /// <summary>次の行へ（最後の行のあとは閉じる）</summary>
         public void Advance()
         {
-            if (block == null) return;
+            if (block == null || AdjusterOpen) return;   // 立ち絵の調整中は進めない
             index++;
             if (index >= lines.Length) { Close(); return; }
             var line = lines[index];
@@ -85,6 +85,8 @@ namespace Srpg.Battle
 
         public void Close()
         {
+            if (adjustPanel != null) adjustPanel.gameObject.SetActive(false);
+            adjustWho = null;
             block = null;
             lines = Array.Empty<ScenarioLine>();
             index = -1;
@@ -136,13 +138,18 @@ namespace Srpg.Battle
                 {
                     if (portrait.texture == null) continue;   // 絵のない人（モブ）は名前だけ
                     image = NewRect("Actor_" + who, stageRoot).gameObject.AddComponent<RawImage>();
-                    image.raycastTarget = false;
+                    // 立ち絵をたたく: 1回目は会話を進め、素早く5回で位置の調整（DialogueView.Adjust）
+                    var tap = image.gameObject.AddComponent<Button>();
+                    tap.transition = Selectable.Transition.None;
+                    string tapped = who;
+                    tap.onClick.AddListener(() => OnPortraitTap(tapped));
                     actors[who] = image;
                 }
                 if (portrait.texture != null)
                 {
                     image.texture = portrait.texture;
-                    image.uvRect = portrait.uv;
+                    string expression = who == stage.Speaker ? line.expression : null;
+                    image.uvRect = AdjustedUv(portrait.uv, AdjustOf(who, expression));   // 原作者が調整した位置（portrait_adjust.json）
                 }
                 bool speaking = who == stage.Speaker || (stage.Speaker == null && line.type != "line");
                 // 端から内側へ: 1人目は端寄り、2人目はその内側で少し奥（小さく）。話している人は内側へ少し出る
@@ -285,13 +292,15 @@ namespace Srpg.Battle
             logText.verticalOverflow = VerticalWrapMode.Truncate;
             logPanel.gameObject.SetActive(false);
 
+            LoadAdjustments();
+            BuildAdjuster(font);
             root.gameObject.SetActive(false);
         }
 
         private void Update()
         {
             // 長押しで早送り（レビュー 2026-09-28_2 J8）
-            if (Application.isPlaying && IsPlaying)
+            if (Application.isPlaying && IsPlaying && !AdjusterOpen)
             {
                 var pointer = UnityEngine.InputSystem.Pointer.current;
                 bool held = pointer != null && pointer.press.isPressed;

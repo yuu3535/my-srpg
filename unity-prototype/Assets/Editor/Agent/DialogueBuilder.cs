@@ -106,6 +106,8 @@ namespace Srpg.EditorAgent
             so.FindProperty("regularFont").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/NotoSerifJP-Regular.ttf");
             so.FindProperty("boldFont").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/NotoSerifJP-Bold.ttf");
             so.FindProperty("panelSprite").objectReferenceValue = AssetDatabase.LoadAllAssetsAtPath("Assets/Art/UI/panel_even.png").OfType<Sprite>().FirstOrDefault();
+            // 原作者が調整した立ち絵の位置（会話中に立ち絵を5回たたく → 保存。あれば）
+            so.FindProperty("adjustJson").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Data/portrait_adjust.json");
             var portraits = ImportPortraits();
             var prop = so.FindProperty("portraits");
             prop.arraySize = portraits.Length;
@@ -160,6 +162,14 @@ namespace Srpg.EditorAgent
             Shot("prologue_1_1.b06", 0, 1, 2);     // キャリーとの挨拶（キャリー右・アルシェ左）
             Shot("prologue_1_1.b08", 0, 1);        // ヘンリー
             Shot("prologue_1_1.b10", 0, 3, 4);     // 訓練場（カリマ・アルシェ左、ギュンター右）
+            // 立ち絵の位置の調整パネル（会話中に立ち絵を5回たたくと開く）
+            view.Play(scenario.Block("prologue_1_1.b06"));
+            view.Advance();
+            view.OpenAdjuster("キャリー");
+            Canvas.ForceUpdateCanvases();
+            Board3DTestBuilder.Render(camera, rt, "Dialogue_adjust");
+            if (!view.AdjusterOpen) throw new InvalidOperationException("調整パネルが開かなかった");
+            view.Close();
             Debug.Log($"[DialogueBuilder] 手に入れた物: {string.Join("・", items)}");
 
             camera.targetTexture = null;
