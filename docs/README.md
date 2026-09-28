@@ -6,7 +6,7 @@
 
 ## まず読む文書
 
-> **いまの状態（作業ブランチ・方針・担当・進み具合）は [`00-core/PROJECT_STATUS_2026-09-28.md`](00-core/PROJECT_STATUS_2026-09-28.md)。作業ブランチは `ui/battle-reference-layout`（`main` は古い）。**
+> **いまの状態（作業ブランチ・方針・担当・進み具合）は [`00-core/PROJECT_STATUS_2026-09-28.md`](00-core/PROJECT_STATUS_2026-09-28.md)。作業ブランチは `main`（2026-09-28 から）。**
 
 | 知りたいこと | 開く文書 |
 |---|---|

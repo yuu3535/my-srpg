@@ -5,13 +5,9 @@
 
 ## 1. ブランチ（いちばん大事）
 
-| ブランチ | 中身 | 使い方 |
-|---|---|---|
-| **`ui/battle-reference-layout`** | **今の作業のすべて**（Unity版の3Dの戦闘・探索・会話、ブラウザ版の試験の戦闘とUI、文書） | **ここで作業する**。作業の前に `git branch` と `git pull` で確かめる |
-| `main` | 古い状態（上のブランチより342コミット遅れている。2026-09-28）。GitHub Pages の公開元 | 作業に使わない。上のブランチを合わせるかは、原作者が決める（§5） |
-| `battle-v2`・`refactor/combat-pipeline`・`trial/adopted-stats` | 上のブランチに取り込み済み | 使わない |
-| `worktree-agent-af543bd9…`（`.claude/worktrees/` の作業場所） | 前のエージェントの作業場所。コミットしていない game.js・style.css の変更が残っている | 使わない。要るかどうかを確かめてから片付ける |
-| `codex-world-ui-theme-experiment` | Codex の試し（1コミット、取り込んでいない） | 使わない |
+- **作業ブランチは `main`**（原作者の決定 2026-09-28）。この日に `ui/battle-reference-layout` のすべてを main へ取り込んだ（早送りで同じ中身にした）。以後は main で作業し、`git pull` してから始める。
+- main は GitHub Pages の公開元（https://yuu3535.github.io/my-srpg/）。ブラウザ版のファイルを変えたら、テストを通してからプッシュする。
+- `ui/battle-reference-layout` は取り込み済み（残してあるが使わない）。古いブランチ（battle-v2・refactor/combat-pipeline・trial/adopted-stats・codex-world-ui-theme-experiment）と、前のエージェントの作業場所は 2026-09-28 に削除した（中身はすべて main に入っているか、今の形に置き換わっていた）。
 
 ## 2. 作品の方針（今の決定）
 
@@ -40,4 +36,4 @@
 
 - Unity の確認用の画像（`unity-prototype/Assets/Previews/`）を Git に入れないようにした（組み立てのたびに約214MBを撮り直し、履歴がふくらんでプッシュが途中で切れていたため）。画像は手元のフォルダに残り、レビュー担当はそこを見る。
 - Unity の2Dの斜めの盤面の試作（BattleM1・IsoGrid・iso の絵・SampleScene）を削除した（3Dの盤面に決まったため）。
-- **原作者の判断待ち**: `ui/battle-reference-layout` を `main` に合わせるか（main は GitHub Pages の公開元なので、合わせると公開中のブラウザ版も今の状態に変わる）。取り込み済みの古いブランチを GitHub から消すか。
+- 原作者の決定（2026-09-28）: main に合わせる（済み）、取り込み済みの古いブランチを消す（済み）。

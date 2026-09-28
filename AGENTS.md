@@ -133,7 +133,7 @@ py -3.12 tools/prepare_tachie_batch.py 立ち絵AI生成 立ち絵透過下処�
 
 ## Git
 
-- **作業ブランチは `ui/battle-reference-layout`**（2026-09-28 時点。`main` は大きく遅れた古い状態で、GitHub Pages の公開元）。作業の前に `git branch` と `git pull` で確かめ、`main` から作業を始めない。今の状態の一覧は `docs/00-core/PROJECT_STATUS_2026-09-28.md`。
+- **作業ブランチは `main`**（2026-09-28 に `ui/battle-reference-layout` を取り込み、以後は main で作業する。原作者の決定）。main は GitHub Pages の公開元でもあるので、ブラウザ版を壊す変更はテストを通してからプッシュする。作業の前に `git pull` する。今の状態の一覧は `docs/00-core/PROJECT_STATUS_2026-09-28.md`。
 - Unity の確認用の画像（`unity-prototype/Assets/Previews/`）は Git に入れない（大きく、組み立てのたびに変わるため）。手元のフォルダで見る。
 - `git add .` / `git add -A` は使わない。未追跡の素材・作業ファイルが多いため、保存対象はファイル名を指定してステージする。
 - 1コミット1目的。素材・文書・コードの変更を混ぜない。
