@@ -80,6 +80,7 @@
 & "C:\Program Files\Unity\Hub\Editor\6000.3.24f1\Editor\Unity.exe" -batchmode -projectPath "C:\Users\jade-\Desktop\自作srpg 2\unity-prototype" -executeMethod Srpg.EditorAgent.ExploreBuilder.BuildAll -quit -logFile <スクラッチパッド>\explore.log
 ```
 
+- **ブラウザ・スマホで遊べる版**（2026-09-28 から）: https://yuu3535.github.io/my-srpg/unity/ （探索。最初の読み込みは約45MB）。区切りのときだけ更新するので、手元の最新より古いことがある。画像と食い違ったら、どちらで見たかを報告に書く。
 - 点検表は J（探索と会話）を使う。
 - 仮の所（指摘しなくてよい）: 自室・廊下の床は下絵の色分け（床の絵は発注中）、家具・小物は仮の箱と柱、キャリー・ヘンリー・ギュンターは会話の立ち絵を小さくした仮の姿、名前のない従者は青白い火の玉、立ち絵は全員仮（会話用を作り直し中）、テキストボックスの位置は仮、訓練場の遠景は仮の森、謁見の間はまだない、携帯端末のメニューはまだない、戦闘へのつなぎはまだない。
 
