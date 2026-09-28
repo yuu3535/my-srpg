@@ -9,21 +9,20 @@ namespace Srpg.Battle
     /// </summary>
     public static class TerrainRules
     {
+        // 記号ごとの値は TerrainTable（城の場所の記号も含む。2026-09-28 から表にした）
+
         /// <summary>そのマスに入れる（通り抜けられる）か</summary>
         public static bool CanEnter(char terrain, bool flying)
         {
-            if (flying) return terrain != '\0';
-            return IsGround(terrain);
+            if (!TerrainTable.TryGet(terrain, out var info)) return false;
+            return flying ? info.flyEnter : info.walk;
         }
 
         /// <summary>そのマスに止まれるか</summary>
         public static bool CanStop(char terrain, bool flying)
         {
-            if (!flying) return IsGround(terrain);
-            return IsGround(terrain) || terrain == '~' || terrain == 'o';
+            if (!TerrainTable.TryGet(terrain, out var info)) return false;
+            return flying ? info.flyStop || info.walk : info.walk;
         }
-
-        private static bool IsGround(char terrain) =>
-            terrain == 's' || terrain == 'd' || terrain == 'g' || terrain == '=';
     }
 }

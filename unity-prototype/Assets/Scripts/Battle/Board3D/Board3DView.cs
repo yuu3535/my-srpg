@@ -118,10 +118,12 @@ namespace Srpg.Battle
                 tris.AddRange(new[] { i, i + 1, i + 2, i, i + 2, i + 3 });
             }
             // 地面の絵の外: 絵を鏡に映したように続ける（レビュー 2026-09-28 A2: 寄りの画面の角に景色の面の端と黒が見えていた）。
-            // 盤面を回しても画面の角まで埋まるよう、絵の外に OuterMargin マス
+            // 盤面を回しても画面の角まで埋まるよう、絵の外に OuterMargin マス。
+            // 配置表から作った場所（城の部屋・廊下・訓練場）は、壁で囲まれているので続けない（外は背景）
             var (origin, columns, rows) = GroundExtent;
-            for (int y = origin.y - OuterMargin; y < origin.y + rows + OuterMargin; y++)
-            for (int x = origin.x - OuterMargin; x < origin.x + columns + OuterMargin; x++)
+            int outer = map.FromLayoutFile ? 0 : OuterMargin;
+            for (int y = origin.y - outer; y < origin.y + rows + outer; y++)
+            for (int x = origin.x - outer; x < origin.x + columns + outer; x++)
             {
                 bool insideX = x >= origin.x && x < origin.x + columns, insideY = y >= origin.y && y < origin.y + rows;
                 if (insideX && insideY) continue;
@@ -274,13 +276,20 @@ namespace Srpg.Battle
             int margin = map.SceneryMargin;
             baseBlock.transform.localScale = new Vector3(map.Columns + margin * 2 + 0.1f, BaseHeight, map.Rows + margin * 2 + 0.1f);
             baseBlock.transform.localPosition = new Vector3(0, -TileHeight - BaseHeight * 0.5f + 0.02f, 0);
-            baseBlock.GetComponent<Renderer>().sharedMaterial = LitMaterial(new Color32(58, 50, 38, 255));   // 目地の色: 暗い土
+            // 目地の色: 暗い土。配置表の場所（城）は、描かない壁の中身から見えるので背景に近い暗さ
+            baseBlock.GetComponent<Renderer>().sharedMaterial = LitMaterial(map.FromLayoutFile ? new Color32(22, 18, 30, 255) : new Color32(58, 50, 38, 255));
 
             for (int r = 0; r < map.Rows; r++)
             for (int c = 0; c < map.Columns; c++)
             {
                 var cell = new Vector2Int(c, r);
                 tiles[cell] = textured && TextureMaterial("top_stone") != null ? BuildTexturedTile(cell) : BuildColoredTile(cell);
+                if (map.IsVoid(cell))
+                {
+                    // 壁のかたまりの中身は描かない（Board3DMap.IsVoid）
+                    foreach (var renderer in tiles[cell].GetComponentsInChildren<Renderer>()) renderer.enabled = false;
+                    continue;
+                }
                 RegisterTallTile(cell, tiles[cell]);
                 AddMarker(cell);
             }
@@ -301,6 +310,7 @@ namespace Srpg.Battle
                 RegisterTallTile(cell, tile);
             }
             foreach (var cell in map.SceneryTrees) AddTree(cell);
+            foreach (var o in map.Obstacles) AddObstacleModel(o.Key, o.Value.id, o.Value.kind, o.Value.height);
             AddGrassEdges();
             AddBackdrop();
 
@@ -861,6 +871,24 @@ namespace Srpg.Battle
             }
         }
 
+        /// <summary>
+        /// 置いてある物（ベッド・机・ベンチなど）の仮の模型: マスに収まる箱。色は種類の名前から（木の物は茶、石の物は灰、布の物は紫）。
+        /// 清書は小物の絵（板の絵。MAP_ART_PIPELINE ③）に置き換える
+        /// </summary>
+        private void AddObstacleModel(Vector2Int cell, string id, string kind, float height)
+        {
+            kind ??= "";
+            Color32 color = kind.Contains("石") || kind.Contains("像") ? new Color32(120, 114, 124, 255)
+                : kind.Contains("布") || kind.Contains("ベッド") || kind.Contains("絨毯") ? new Color32(96, 64, 110, 255)
+                : kind.Contains("鉢") || kind.Contains("花") ? new Color32(70, 104, 64, 255)
+                : new Color32(116, 82, 52, 255);
+            var root = new GameObject($"Object_{id}_{cell.x}_{cell.y}").transform;
+            root.SetParent(boardRoot, false);
+            root.localPosition = map.TopCenter(cell);
+            AddBox(root, "Body", new Vector3(0f, height * 0.5f, 0f), new Vector3(0.78f, height, 0.78f), LitMaterial(color));
+            if (height >= TallTile) RegisterOccluder(root.gameObject);
+        }
+
         private static GameObject AddBox(Transform parent, string objectName, Vector3 localPosition, Vector3 size, Material material)
         {
             var box = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -1118,7 +1146,7 @@ namespace Srpg.Battle
 
         private string SideTextureName(Vector2Int cell)
         {
-            if (map.IsWall(cell)) return "side_stone";
+            if (map.IsWall(cell) || map.FromLayoutFile) return "side_stone";   // 城の場所は石（清書はマップごとの側面の模様。MAP_ART_PIPELINE ②）
             char t = map.TerrainAt(cell);
             return t == '~' || t == '=' || t == 'o' || t == '#' || t == 'c' ? "side_stone" : "side_earth";
         }

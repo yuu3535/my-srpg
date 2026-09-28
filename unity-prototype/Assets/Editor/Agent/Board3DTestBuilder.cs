@@ -339,10 +339,10 @@ namespace Srpg.EditorAgent
         internal static void SetMoodC2() => SetMood(Board3DMood.Dusk);
 
         /// <summary>盤面の時間帯（Board3DMood）をシーンに入れる</summary>
-        internal static void SetMood(string mood)
+        internal static void SetMood(string mood, bool indoor = false)
         {
             var light = UnityEngine.Object.FindObjectsByType<Light>(FindObjectsSortMode.None).FirstOrDefault(l => l.type == LightType.Directional);
-            Board3DMood.Apply(mood, light);
+            Board3DMood.Apply(mood, light, indoor);
             foreach (var view in UnityEngine.Object.FindObjectsByType<Board3DView>(FindObjectsSortMode.None)) view.ApplyPropTint();
         }
 
