@@ -718,6 +718,7 @@ namespace Srpg.Battle
             view.IsOverOtherGui = IsOverPanel;
             view.Setup();
             Board3DMood.Apply(string.IsNullOrEmpty(data.timeOfDay) ? Board3DMood.Dusk : data.timeOfDay, view.KeyLight);
+            view.ApplyPropTint();
             foreach (var cell in mapItems.Keys) view.AddPickup(cell);
             AddLog("味方フェーズ ターン1");
             PlanEnemyActions();

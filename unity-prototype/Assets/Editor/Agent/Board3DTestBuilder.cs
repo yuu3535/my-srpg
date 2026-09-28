@@ -343,6 +343,7 @@ namespace Srpg.EditorAgent
         {
             var light = UnityEngine.Object.FindObjectsByType<Light>(FindObjectsSortMode.None).FirstOrDefault(l => l.type == LightType.Directional);
             Board3DMood.Apply(mood, light);
+            foreach (var view in UnityEngine.Object.FindObjectsByType<Board3DView>(FindObjectsSortMode.None)) view.ApplyPropTint();
         }
 
         internal const string GroundDir = "Assets/Art/Board3D/Ground";

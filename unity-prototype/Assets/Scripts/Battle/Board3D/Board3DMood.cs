@@ -24,11 +24,29 @@ namespace Srpg.Battle
         public const string HallDay = "hall_day";
         public const string HallNight = "hall_night";
 
+        /// <summary>
+        /// 板の絵の木・小物にかける色（光を受けない材質なので、時間帯の環境光の色でなじませる。マップ担当の所見 2026-09-28）。
+        /// キャラには かけない（読みやすさのため）
+        /// </summary>
+        public static Color CurrentPropTint { get; private set; } = Color.white;
+
+        public static Color PropTint(string mood) => mood switch
+        {
+            Morning => new Color(0.96f, 0.95f, 1f),
+            Dusk => new Color(0.82f, 0.8f, 0.8f),
+            Night => new Color(0.5f, 0.56f, 0.76f),
+            HallMorning => new Color(0.74f, 0.7f, 0.9f),
+            HallDay => new Color(0.78f, 0.76f, 0.84f),
+            HallNight => new Color(0.46f, 0.46f, 0.62f),
+            _ => Color.white,
+        };
+
         /// <summary>屋内の時間帯か（霧を使わない）</summary>
         public static bool IsIndoor(string mood) => mood != null && mood.StartsWith("hall_");
 
         public static void Apply(string mood, Light light)
         {
+            CurrentPropTint = PropTint(mood);
             RenderSettings.fog = !IsIndoor(mood);
             RenderSettings.fogMode = FogMode.Linear;
             RenderSettings.ambientMode = AmbientMode.Flat;
@@ -37,7 +55,8 @@ namespace Srpg.Battle
                 // 屋内の暗い広間: 環境光は暗めの紫がかった灰。窓（主の光）の強さと色で時間を表す
                 (Color32 ambient, Color32 window, float strength) = mood switch
                 {
-                    HallMorning => (new Color32(78, 70, 96, 255), new Color32(255, 196, 176, 255), 0.8f),   // ステンドグラスの色の光
+                    // ステンドグラス（オルクスの紋章: 深い紫・藍・金）から差す紫〜藍の光。橙にすると夕方に見える（マップ担当の所見 2026-09-28）
+                    HallMorning => (new Color32(72, 70, 100, 255), new Color32(176, 150, 246, 255), 0.9f),
                     HallNight => (new Color32(58, 54, 80, 255), new Color32(150, 160, 210, 255), 0.18f),   // 窓はほぼ暗い。燭台だけ
                     _ => (new Color32(74, 68, 90, 255), new Color32(255, 232, 210, 255), 0.7f),   // 昼も外より暗い（もともと暗い広間）
                 };
@@ -51,14 +70,15 @@ namespace Srpg.Battle
             }
             if (mood == Night)
             {
-                RenderSettings.fogColor = new Color32(20, 26, 46, 255);
-                RenderSettings.fogStartDistance = 32f;
-                RenderSettings.fogEndDistance = 58f;
-                RenderSettings.ambientLight = new Color32(62, 72, 106, 255);
+                // もう一段暗く青く（マップ担当の所見 2026-09-28: 昼に近い明るさと緑に見えた）
+                RenderSettings.fogColor = new Color32(12, 18, 38, 255);
+                RenderSettings.fogStartDistance = 28f;
+                RenderSettings.fogEndDistance = 52f;
+                RenderSettings.ambientLight = new Color32(40, 50, 88, 255);
                 if (light != null)
                 {
-                    light.color = new Color32(170, 190, 236, 255);   // 月の光
-                    light.intensity = 0.6f;
+                    light.color = new Color32(140, 164, 230, 255);   // 月の光
+                    light.intensity = 0.42f;
                 }
                 return;
             }

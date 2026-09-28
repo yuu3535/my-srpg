@@ -319,6 +319,19 @@ namespace Srpg.Battle
             selectionFrame = BuildSelectionFrame();
             selectionFrame.SetActive(false);
             Selected = null;
+            ApplyPropTint();
+        }
+
+        /// <summary>板の絵の木・小物に、時間帯の色をかける（キャラの板の絵は除く）。時間帯を変えたら呼ぶ</summary>
+        public void ApplyPropTint()
+        {
+            var tint = Board3DMood.CurrentPropTint;
+            foreach (var b in billboards)
+            {
+                if (b.fitCell || b.sprite == null) continue;   // fitCell はキャラ
+                var sr = b.sprite.GetComponent<SpriteRenderer>();
+                if (sr != null) sr.color = new Color(tint.r, tint.g, tint.b, sr.color.a);
+            }
         }
 
         public void ClearBoard()
