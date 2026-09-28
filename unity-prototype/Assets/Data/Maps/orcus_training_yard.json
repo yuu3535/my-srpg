@@ -406,7 +406,8 @@
  "exits": [
   {
    "id": "from_corridor",
-   "label": "本丸の大扉（城の廊下へ）",
+   "label": "本丸の大扉",
+   "lockedText": "",
    "toMap": "orcus_corridor",
    "facing": "south",
    "cells": [
@@ -429,6 +430,7 @@
   {
    "id": "to_town",
    "label": "城門へ抜ける門",
+   "lockedText": "",
    "toMap": "orcus_town",
    "facing": "",
    "cells": [
@@ -446,7 +448,8 @@
   },
   {
    "id": "barracks",
-   "label": "兵舎の扉（当面は鍵がかかっている）",
+   "label": "兵舎の扉",
+   "lockedText": "",
    "toMap": "",
    "facing": "",
    "cells": [
@@ -464,7 +467,8 @@
   },
   {
    "id": "south",
-   "label": "通路の奥の扉（行き先は廊下の配置を決めるときに見直す）",
+   "label": "通路の奥の扉",
+   "lockedText": "",
    "toMap": "",
    "facing": "",
    "cells": [
@@ -575,62 +579,67 @@
   {
    "id": "weapon_rack",
    "block": "",
-   "text": "（案）稽古用の木剣。ギュンターが毎朝手入れしている",
+   "text": "稽古用の木剣。ギュンターが毎朝手入れしている",
    "cells": [
     {
      "x": 5,
      "y": 6
     }
    ],
-   "required": false
+   "required": false,
+   "label": ""
   },
   {
    "id": "tent",
    "block": "",
-   "text": "（案）祝宴の準備の品。天幕の下",
+   "text": "祝宴の準備の品。天幕の下",
    "cells": [
     {
      "x": 15,
      "y": 1
     }
    ],
-   "required": false
+   "required": false,
+   "label": ""
   },
   {
    "id": "crest_banner",
    "block": "",
-   "text": "（案）オルクスの紋章（ツノ・蛇・冠・6枚の翼）",
+   "text": "オルクスの紋章",
    "cells": [
     {
      "x": 2,
      "y": 9
     }
    ],
-   "required": false
+   "required": false,
+   "label": ""
   },
   {
    "id": "stage",
    "block": "",
-   "text": "（案）ギュンターがいつも稽古を見ている演台",
+   "text": "ギュンターがいつも稽古を見ている演台",
    "cells": [
     {
      "x": 11,
      "y": 3
     }
    ],
-   "required": false
+   "required": false,
+   "label": ""
   },
   {
    "id": "flowers",
    "block": "",
-   "text": "（案）城壁ぎわの紫の花",
+   "text": "城壁ぎわの紫の花",
    "cells": [
     {
      "x": 1,
      "y": 7
     }
    ],
-   "required": false
+   "required": false,
+   "label": ""
   }
  ]
 }

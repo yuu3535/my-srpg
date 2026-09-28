@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 382bf529ab29de24f858bc23ecd5961d
+guid: 4dfc1a48e7da00448a1ed430099fd780
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -559013290217296275
-    second: Explore_08_to_battle_0
+      213: 705206423302096279
+    second: Explore_12_to_battle_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,7 +113,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Explore_08_to_battle_0
+      name: Explore_12_to_battle_0
       rect:
         serializedVersion: 2
         x: 0
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: d6e20e3df5cfd38f0800000000000000
-      internalID: -559013290217296275
+      spriteID: 795ce32718569c900800000000000000
+      internalID: 705206423302096279
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Explore_08_to_battle_0: -559013290217296275
+      Explore_12_to_battle_0: 705206423302096279
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

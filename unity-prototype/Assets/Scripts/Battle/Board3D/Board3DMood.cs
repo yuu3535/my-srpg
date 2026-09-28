@@ -86,14 +86,15 @@ namespace Srpg.Battle
             if (mood == Morning)
             {
                 // 晴れた朝（シナリオ「今日もいい天気だな」。マップ担当 2026-09-28）: 霧は昼より遠くから、薄く
-                RenderSettings.fogColor = new Color32(184, 192, 214, 255);
+                // 白〜淡い金の朝の光（レビュー 2026-09-28_2 J7: 訓練場が紫の夕暮れに見えた。環境光の青みを減らした）
+                RenderSettings.fogColor = new Color32(200, 204, 214, 255);
                 RenderSettings.fogStartDistance = 44f;
                 RenderSettings.fogEndDistance = 80f;
-                RenderSettings.ambientLight = new Color32(130, 140, 164, 255);
+                RenderSettings.ambientLight = new Color32(148, 148, 156, 255);
                 if (light != null)
                 {
-                    light.color = new Color32(255, 236, 224, 255);
-                    light.intensity = 1.35f;
+                    light.color = new Color32(255, 246, 228, 255);
+                    light.intensity = 1.4f;
                 }
                 return;
             }

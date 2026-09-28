@@ -60,6 +60,7 @@ namespace Srpg.Battle
     public class MapExit
     {
         public string id, label, toMap, facing;
+        public string lockedText;   // 条件を満たさないときに出す一言（なければ、足りない物・会う人から作る）
         public MapCell[] cells;
         public bool hasTarget;
         public MapCell toCell;
@@ -92,9 +93,9 @@ namespace Srpg.Battle
     [Serializable]
     public class MapInspect
     {
-        public string id, block, text;
+        public string id, block, text, label;
         public MapCell[] cells;
-        public bool required;
+        public bool required;   // 先へ進むのに要る（印を目立たせる）
     }
 
     [Serializable]

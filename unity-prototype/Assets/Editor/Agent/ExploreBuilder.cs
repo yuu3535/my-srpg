@@ -93,6 +93,7 @@ namespace Srpg.EditorAgent
             void Shot(string name)
             {
                 view.UpdateBillboards();
+                explore.Hud?.Refresh();
                 Canvas.ForceUpdateCanvases();
                 Board3DTestBuilder.Render(camera, rt, $"Explore_{++shot:00}_{name}");
                 var line = dialogue.CurrentLine;
@@ -109,6 +110,15 @@ namespace Srpg.EditorAgent
             Shot("wake");
             FinishTalk();
             Shot("room");
+
+            // 行けないマス（壁）を押した → 赤く光り「そこへは行けない」（レビュー J1）
+            explore.Tap(new Vector2Int(0, 0));
+            Shot("cannot_go");
+            // 剣を取る前に部屋の扉へ → アルシェの一言で止まる（レビュー J3）
+            explore.Tap(explore.Place.exits.First(e => e.id == "to_corridor").cells[0].V);
+            if (!dialogue.IsPlaying) throw new InvalidOperationException("探索の確認: 剣を持たずに部屋を出られてしまった");
+            Shot("door_locked");
+            FinishTalk();
 
             // 剣立てを調べる（必須の調べる所）
             var sword = explore.State.inspect.First(i => i.id == "find_sword");
@@ -131,8 +141,17 @@ namespace Srpg.EditorAgent
                 explore.Tap(toYard.cells[0].V);
                 if (dialogue.IsPlaying && explore.Place.mapId == "orcus_corridor")
                 {
-                    Shot("talk_" + (dialogue.CurrentLine?.speaker == "アルシェ" ? "henry" : "carrie"));
+                    bool carrie = dialogue.CurrentLine?.speaker != "アルシェ";
+                    Shot("talk_" + (carrie ? "carrie" : "henry"));
                     FinishTalk();
+                    if (carrie)
+                    {
+                        // キャリーとだけ話して階段へ行ったとき（ヘンリーの前）→ 止める一言（レビュー J3）
+                        explore.CheckCellForTest(explore.Place.exits.First(e => e.id == "to_yard").cells[0].V);
+                        Shot("stairs_locked");
+                        FinishTalk();
+                        Shot("corridor_after_carrie");
+                    }
                 }
             }
             if (explore.Place.mapId != "orcus_training_yard") throw new InvalidOperationException($"探索の確認: 訓練場に着かなかった（{explore.Place.mapId}・{explore.Player}）");

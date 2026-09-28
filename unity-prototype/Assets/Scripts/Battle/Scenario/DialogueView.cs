@@ -47,6 +47,9 @@ namespace Srpg.Battle
         private Action onEnd;
 
         public event Action<string> OnItem;
+        public Font RegularFont => regularFont;
+        public Font BoldFont => boldFont;
+        private float holdStart = -1f, lastFast;
         public bool IsPlaying => block != null;
         public ScenarioLine CurrentLine => index >= 0 && index < lines.Length ? lines[index] : null;
         public IReadOnlyList<string> Log => log;
@@ -287,6 +290,15 @@ namespace Srpg.Battle
 
         private void Update()
         {
+            // 長押しで早送り（レビュー 2026-09-28_2 J8）
+            if (Application.isPlaying && IsPlaying)
+            {
+                var pointer = UnityEngine.InputSystem.Pointer.current;
+                bool held = pointer != null && pointer.press.isPressed;
+                if (!held) holdStart = -1f;
+                else if (holdStart < 0f) holdStart = Time.unscaledTime;
+                else if (Time.unscaledTime - holdStart > 0.45f && Time.unscaledTime - lastFast > 0.07f) { lastFast = Time.unscaledTime; Advance(); }
+            }
             if (logPanel != null && logPanel.gameObject.activeSelf) logText.text = string.Join("\n", log.Skip(Math.Max(0, log.Count - 16)));
             if (nextMark != null && Application.isPlaying) nextMark.color = new Color(GoldDeep.r, GoldDeep.g, GoldDeep.b, 0.55f + 0.45f * Mathf.Sin(Time.time * 4f));
         }

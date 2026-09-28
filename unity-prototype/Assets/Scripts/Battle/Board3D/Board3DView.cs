@@ -238,6 +238,11 @@ namespace Srpg.Battle
         public bool Lanterns { get => lanterns; set => lanterns = value; }
         public Board3DMap Map { get => map; set => map = value; }
         public Light KeyLight => keyLight;
+        public Camera TargetCamera => targetCamera;
+
+        /// <summary>マスの天面から height 上の点の、画面の位置（px。z が負なら画面の後ろ）</summary>
+        public Vector3 CellPointToScreen(Vector2Int cell, float height) =>
+            targetCamera == null || map == null ? new Vector3(0, 0, -1) : targetCamera.WorldToScreenPoint(transform.TransformPoint(map.TopCenter(cell) + Vector3.up * height));
 
         private bool tilted;
         private int turn;                  // 45°の何回目か（0〜7）。偶数＝斜め、奇数＝正面（真上では90°ずつ）
@@ -334,8 +339,11 @@ namespace Srpg.Battle
                 foreach (var l in map.Lights)
                 {
                     // 配置表の明かり: 紫の魔灯・暖かい炎・窓の光
-                    Color32 color = l.color == "violet" ? new Color32(186, 120, 255, 255) : l.color == "window" ? new Color32(206, 216, 255, 255) : new Color32(255, 150, 72, 255);
-                    AddPointLight($"Light_{l.x}_{l.y}", map.TopCenter(l.Cell) + Vector3.up * 1.1f, color, l.color == "window" ? 4f : 3.2f, l.color == "window" ? 1.6f : 2.4f);
+                    Color32 color = l.color == "violet" ? new Color32(186, 120, 255, 255) : l.color == "window" ? new Color32(236, 240, 255, 255) : new Color32(255, 170, 96, 255);
+                    // 窓の光は強く広く、炎（ランプ）は弱く狭く（レビュー 2026-09-28_2 J7: 朝なのに夜のランプの部屋に見えた）
+                    float range = l.color == "window" ? 5.5f : l.color == "warm" ? 2.4f : 3.2f;
+                    float power = l.color == "window" ? 2.6f : l.color == "warm" ? 1.3f : 2.2f;
+                    AddPointLight($"Light_{l.x}_{l.y}", map.TopCenter(l.Cell) + Vector3.up * 1.1f, color, range, power);
                 }
             AddGrassEdges();
             AddBackdrop();
@@ -443,11 +451,11 @@ namespace Srpg.Battle
             {
                 // 足元の影（明るい地面でキャラが沈まないよう、濃く大きくした。原作者 2026-09-28）
                 visual.footParts.Add(AddFlat($"Shadow_{unit.id}", ShadowSprite(), top + Vector3.up * 0.012f, 1.15f, Color.white, OrderShadow).transform);
-                if (footStyle == FootStyle.TeamRing)
+                if (footStyle == FootStyle.TeamRing && !unit.neutral)
                     visual.footParts.Add(AddFlat($"Ring_{unit.id}", RingSprite(), top + Vector3.up * 0.016f, 0.86f,
                         unit.enemy ? new Color32(224, 72, 60, 230) : new Color32(77, 140, 255, 230), OrderMark).transform);
                 var frame = unit.enemy ? enemyFrameSprite : allyFrameSprite;
-                if (footStyle == FootStyle.TeamFrame && frame != null)
+                if (footStyle == FootStyle.TeamFrame && frame != null && !unit.neutral)
                 {
                     visual.frame = AddFlat($"Frame_{unit.id}", frame, top + Vector3.up * 0.014f, 0.98f / frame.bounds.size.x, FrameTint(unit.enemy), OrderMark);
                     visual.footParts.Add(visual.frame.transform);

@@ -15,6 +15,7 @@ namespace Srpg.Battle
             public Vector2Int cell;
             public string id;
             public bool enemy;
+            public bool neutral;   // 探索の人物（陣営の枠を付けない。足元の影だけ）
         }
 
         public readonly int Columns;

@@ -159,6 +159,7 @@
   {
    "id": "to_room",
    "label": "アルシェとカリマの部屋",
+   "lockedText": "",
    "toMap": "orcus_room_arshe_karima",
    "facing": "east",
    "cells": [
@@ -176,7 +177,8 @@
   },
   {
    "id": "to_throne",
-   "label": "謁見の間（配置表は後で）",
+   "label": "謁見の間",
+   "lockedText": "",
    "toMap": "orcus_throne_room",
    "facing": "",
    "cells": [
@@ -199,6 +201,7 @@
   {
    "id": "to_yard",
    "label": "訓練場へ下りる階段",
+   "lockedText": "",
    "toMap": "orcus_training_yard",
    "facing": "south",
    "cells": [
@@ -328,7 +331,8 @@
        "y": 8
       }
      ],
-     "required": false
+     "required": false,
+     "label": ""
     }
    ],
    "goals": [

@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: fff7541f3ca7e714a8e8754a86fce333
+guid: f2ed443b79bde8448b38c2ed85080bec
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -4726709020598741447
-    second: Explore_01_wake_0
+      213: -9178513416135849241
+    second: Explore_03_cannot_go_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,7 +113,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Explore_01_wake_0
+      name: Explore_03_cannot_go_0
       rect:
         serializedVersion: 2
         x: 0
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 936d39e503b576eb0800000000000000
-      internalID: -4726709020598741447
+      spriteID: 7eac0198dae5f9080800000000000000
+      internalID: -9178513416135849241
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Explore_01_wake_0: -4726709020598741447
+      Explore_03_cannot_go_0: -9178513416135849241
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

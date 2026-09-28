@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 712a72c9aef4f814988f520dca2aba3a
+guid: ab4765ed724de874e935df9f955ef560
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -5889347406835936011
-    second: Explore_06_talk_henry_0
+      213: 3743503727580471049
+    second: Explore_06_corridor_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,7 +113,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Explore_06_talk_henry_0
+      name: Explore_06_corridor_0
       rect:
         serializedVersion: 2
         x: 0
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 5f41da09cb5d44ea0800000000000000
-      internalID: -5889347406835936011
+      spriteID: 90fd8c96ec893f330800000000000000
+      internalID: 3743503727580471049
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Explore_06_talk_henry_0: -5889347406835936011
+      Explore_06_corridor_0: 3743503727580471049
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

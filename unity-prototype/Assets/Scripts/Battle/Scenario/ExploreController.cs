@@ -42,6 +42,9 @@ namespace Srpg.Battle
         private readonly List<string> items = new List<string>();
         private readonly Dictionary<string, Vector2Int> personCells = new Dictionary<string, Vector2Int>();
         private Coroutine walking;
+        private ExploreHud hud;
+        private bool walkedOnce;
+        public ExploreHud Hud => hud;
 
         public MapLayoutFile Place { get; private set; }
         public MapState State { get; private set; }
@@ -87,11 +90,17 @@ namespace Srpg.Battle
                 view.CellTapped += Tap;
                 view.IsOverOtherGui = _ => Busy;
             }
+            if (hud == null)
+            {
+                hud = GetComponent<ExploreHud>() ?? gameObject.AddComponent<ExploreHud>();
+                hud.Build(view != null ? view.TargetCamera : Camera.main, dialogue != null ? dialogue.RegularFont : null, dialogue != null ? dialogue.BoldFont : null);
+                hud.Hidden = () => Busy;
+            }
         }
 
         private void GotItem(string item)
         {
-            if (!items.Contains(item)) { items.Add(item); Log?.Invoke($"「{item}」を手に入れた"); }
+            if (!items.Contains(item)) { items.Add(item); Log?.Invoke($"「{item}」を手に入れた"); hud?.Toast($"「{item}」を手に入れた"); }
         }
 
         // ── 場所に入る ──
@@ -106,7 +115,7 @@ namespace Srpg.Battle
             var map = Board3DMap.FromLayout(layout);
             Player = cell ?? State?.player?.Cell ?? new Vector2Int(layout.columns / 2, layout.rows / 2);
             PlayerId = State?.player != null && People.TryGetValue(State.player.id, out var p) ? p.token : "arshe";
-            map.Units.Add(new Board3DMap.Unit { cell = Player, id = PlayerId });
+            map.Units.Add(new Board3DMap.Unit { cell = Player, id = PlayerId, neutral = true });   // 探索では陣営の枠を付けない
             personCells.Clear();
             foreach (var person in State?.people ?? Array.Empty<MapPerson>())
             {
@@ -119,7 +128,7 @@ namespace Srpg.Battle
                     if (tex != null) view.SetUnitSprite(token, Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.02f), tex.height));
                 }
                 personCells[person.id] = person.Cell;
-                map.Units.Add(new Board3DMap.Unit { cell = person.Cell, id = token });
+                map.Units.Add(new Board3DMap.Unit { cell = person.Cell, id = token, neutral = true });
             }
             view.Ground = grounds.FirstOrDefault(g => g.mapId == mapId).texture;
             view.Map = map;
@@ -128,10 +137,17 @@ namespace Srpg.Battle
             view.ApplyPropTint();
             view.SetView(true, 0, true);
             view.SetOverview(false, true);
-            view.FocusOn(Player, true);
+            // 入った直後は、アルシェから場所の真ん中の方へ少し寄せて見る（レビュー J6: 画面の半分が場所の外の黒になった）
+            var center = WalkableCenter(map);
+            view.FocusOnPoint(Vector3.Lerp(map.TopCenter(Player), center, 0.4f), true);
             Log?.Invoke($"{layout.name}に入った");
+            hud?.Toast(layout.name);
+            RefreshHud();
             // 入ったときの会話 → 着いたマスの目的地
-            PlayBlocks((State?.onEnter ?? Array.Empty<string>()).Where(b => !seen.Contains(b)).ToList(), () => CheckCell(Player, arrived: true));
+            PlayBlocks((State?.onEnter ?? Array.Empty<string>()).Where(b => !seen.Contains(b)).ToList(), () =>
+            {
+                if (!CheckCell(Player, arrived: true) && !walkedOnce) hud?.Toast("行きたい所を押すと歩きます", 4f);
+            });
         }
 
         // ── 押す ──
@@ -148,6 +164,116 @@ namespace Srpg.Battle
             var inspect = AllInspects().FirstOrDefault(i => i.cells != null && i.cells.Any(c => c.V == cell));
             if (inspect != null) { WalkThen(cell, adjacent: !map.CanStop(cell, false), () => Inspect(inspect)); return; }
             if (map.CanStop(cell, false)) WalkThen(cell, adjacent: false, null);
+            else CannotGo(cell);
+        }
+
+        /// <summary>行けないマスを押した: 一瞬赤く光らせ、短く知らせる（レビュー J1）</summary>
+        private void CannotGo(Vector2Int cell)
+        {
+            Log?.Invoke("そこへは行けない");
+            hud?.Toast("そこへは行けない", 1.2f);
+            view.ShowRange(new[] { cell }, Board3DView.AttackRangeColor);
+            if (Application.isPlaying) StartCoroutine(ClearFlash());
+        }
+
+        private IEnumerator ClearFlash()
+        {
+            yield return new WaitForSeconds(0.35f);
+            view.ShowRange(null);
+        }
+
+        /// <summary>通れるマスの真ん中（入った直後のカメラの寄せ先）</summary>
+        private static Vector3 WalkableCenter(Board3DMap map)
+        {
+            var sum = Vector3.zero;
+            int n = 0;
+            for (int y = 0; y < map.Rows; y++)
+            for (int x = 0; x < map.Columns; x++)
+            {
+                var c = new Vector2Int(x, y);
+                if (!map.CanStop(c, false)) continue;
+                sum += map.TopCenter(c);
+                n++;
+            }
+            return n > 0 ? sum / n : Vector3.zero;
+        }
+
+        // ── 画面の表示（印・目的） ──
+
+        private static string Short(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return "";
+            int i = text.IndexOf('（');
+            return (i > 0 ? text.Substring(0, i) : text).Trim();
+        }
+
+        /// <summary>調べる所の名前（配置表の label、なければそのマスの物の種類）</summary>
+        private string InspectName(MapInspect inspect)
+        {
+            if (!string.IsNullOrEmpty(inspect.label)) return Short(inspect.label);
+            var cell = inspect.cells != null && inspect.cells.Length > 0 ? inspect.cells[0].V : Vector2Int.zero;
+            var obj = Place?.objects?.FirstOrDefault(o => o.cells != null && o.cells.Any(c => c.V == cell));
+            return obj != null ? Short(obj.kind) : "調べる所";
+        }
+
+        /// <summary>そのブロックで最初に話す、アルシェ以外の人（「〜に会う」に使う）</summary>
+        private string SpeakerOf(string blockId)
+        {
+            var block = scenario?.Block(blockId);
+            return block?.Shown.Select(l => l.speaker).FirstOrDefault(s => !string.IsNullOrEmpty(s) && s != "アルシェ" && !s.Contains("携帯端末"));
+        }
+
+        /// <summary>頭上の印・扉の札・今の目的を、今の状態に合わせて作り直す</summary>
+        public void RefreshHud()
+        {
+            if (hud == null || Place == null) return;
+            hud.ClearMarks();
+            foreach (var person in State?.people ?? Array.Empty<MapPerson>())
+            {
+                if (string.IsNullOrEmpty(person.talkBlock) || !personCells.ContainsKey(person.id)) continue;
+                string token = People.TryGetValue(person.id, out var pp) ? pp.token : person.id;
+                hud.AddMark(seen.Contains(person.talkBlock) ? ExploreHud.MarkKind.Talked : ExploreHud.MarkKind.Talk,
+                    () => view.UnitHeadToScreen(token) + new Vector3(0f, 6f, 0f));
+            }
+            foreach (var inspect in AllInspects())
+            {
+                if (inspect.cells == null || inspect.cells.Length == 0) continue;
+                var cell = inspect.cells[0].V;
+                bool done = !string.IsNullOrEmpty(inspect.block) && seen.Contains(inspect.block);
+                var kind = done ? ExploreHud.MarkKind.Inspected : inspect.required ? ExploreHud.MarkKind.InspectRequired : ExploreHud.MarkKind.Inspect;
+                float height = view.Map.IsObstacle(cell) ? 1.0f : 0.5f;
+                hud.AddMark(kind, () => view.CellPointToScreen(cell, height));
+            }
+            foreach (var exit in Place.exits ?? Array.Empty<MapExit>())
+            {
+                if (exit.cells == null || exit.cells.Length == 0 || string.IsNullOrEmpty(exit.label)) continue;
+                var cell = exit.cells[0].V;
+                bool open = exit.hasTarget && places.ContainsKey(exit.toMap ?? "") && (exit.requires ?? Array.Empty<string>()).All(Satisfied);
+                hud.AddMark(open ? ExploreHud.MarkKind.Door : ExploreHud.MarkKind.DoorLocked, () => view.CellPointToScreen(cell, 0.25f), Short(exit.label));
+            }
+            hud.SetObjective(Objective());
+        }
+
+        /// <summary>今の目的（携帯端末のタスクができるまでの代わり。レビュー J2）</summary>
+        public string Objective()
+        {
+            // 先へ進むのに要る「調べる所」
+            var needInspect = AllInspects().FirstOrDefault(i => i.required && !string.IsNullOrEmpty(i.block) && !seen.Contains(i.block));
+            if (needInspect != null) return $"{InspectName(needInspect)}を調べる";
+            foreach (var goal in State?.goals ?? Array.Empty<MapGoal>())
+            {
+                if (seen.Contains(goal.id)) continue;
+                var exit = Place.exits?.FirstOrDefault(e => e.id == goal.exit);
+                if (exit != null)
+                {
+                    var missing = (exit.requires ?? Array.Empty<string>()).FirstOrDefault(r => !Satisfied(r));
+                    if (missing != null && missing.StartsWith("block:") && SpeakerOf(missing.Substring(6)) is string who) return $"{who}に会う";
+                    if (missing != null && missing.StartsWith("item:")) return $"{missing.Substring(5)}を持っていく";
+                    return $"{Short(exit.label).TrimEnd('へ')}へ進む";
+                }
+                if (!string.IsNullOrEmpty(goal.block) && !seen.Contains(goal.block)) return $"{Place.name}に入る";
+            }
+            return "";
         }
 
         private IEnumerable<MapInspect> AllInspects() =>
@@ -156,7 +282,16 @@ namespace Srpg.Battle
         private void Talk(MapPerson person)
         {
             if (string.IsNullOrEmpty(person.talkBlock)) { Log?.Invoke($"{person.name}"); return; }
+            LookAtTalk(person);
             PlayBlocks(new List<string> { person.talkBlock }, null, replay: true);
+        }
+
+        /// <summary>会話が始まったら、話す2人のまん中へ寄せる（レビュー J5）</summary>
+        private void LookAtTalk(MapPerson person)
+        {
+            if (person == null || !personCells.TryGetValue(person.id, out var cell)) return;
+            var map = view.Map;
+            view.FocusOnPoint((map.TopCenter(Player) + map.TopCenter(cell)) * 0.5f);
         }
 
         private void Inspect(MapInspect inspect)
@@ -171,8 +306,9 @@ namespace Srpg.Battle
         public void WalkThen(Vector2Int target, bool adjacent, Action then)
         {
             var path = FindPath(Player, target, adjacent);
-            if (path == null) { Log?.Invoke("そこへは行けない"); return; }
+            if (path == null) { CannotGo(target); return; }
             StopWalking();
+            StartedWalking();
             if (Application.isPlaying) walking = StartCoroutine(Walk(path, then));
             else
             {
@@ -200,6 +336,13 @@ namespace Srpg.Battle
             walking = null;
         }
 
+        private void StartedWalking()
+        {
+            walkedOnce = true;
+            view.ShowRange(null);
+            hud?.HideToast();
+        }
+
         /// <summary>1マス進む。会話・扉などで止まったら false</summary>
         private bool Step(Vector2Int cell)
         {
@@ -217,6 +360,7 @@ namespace Srpg.Battle
             if (area != null)
             {
                 played.Add(Place.mapId + "/" + area.id);
+                LookAtTalk(State?.people?.FirstOrDefault(p => p.talkBlock == area.block));
                 PlayBlocks(new List<string> { area.block }, null);
                 return true;
             }
@@ -243,13 +387,15 @@ namespace Srpg.Battle
             {
                 if (!exit.hasTarget || string.IsNullOrEmpty(exit.toMap) || !places.ContainsKey(exit.toMap))
                 {
-                    PlayLines(new[] { new ScenarioLine { type = "narration", text = $"{exit.label}（まだ入れない）" } }, null);
+                    PlayLines(new[] { new ScenarioLine { type = "narration", text = $"{Short(exit.label)}は、今は入れない。" } }, null);
                     return true;
                 }
                 var missing = (exit.requires ?? Array.Empty<string>()).FirstOrDefault(r => !Satisfied(r));
                 if (missing != null)
                 {
-                    PlayLines(new[] { new ScenarioLine { type = "narration", text = LockedText(missing) } }, null);
+                    // 扉ごとの一言（配置表の lockedText）。なければ、アルシェの独り言として足りない物・会う人から作る（レビュー J3）
+                    string text = !string.IsNullOrEmpty(exit.lockedText) ? exit.lockedText : LockedText(missing);
+                    PlayLines(new[] { new ScenarioLine { type = "line", speaker = "アルシェ", text = text } }, null);
                     return true;
                 }
                 EnterPlace(exit.toMap, exit.toCell.V, exit.facing);
@@ -258,6 +404,9 @@ namespace Srpg.Battle
             return false;
         }
 
+        /// <summary>確認用: そのマスに踏み込んだときに起きること（会話・扉の止める一言など）を、歩かずに起こす</summary>
+        public bool CheckCellForTest(Vector2Int cell) => CheckCell(cell, arrived: false);
+
         private bool Satisfied(string requirement)
         {
             if (requirement.StartsWith("item:")) return items.Contains(requirement.Substring(5));
@@ -265,9 +414,12 @@ namespace Srpg.Battle
             return true;
         }
 
-        private static string LockedText(string requirement) =>
-            requirement.StartsWith("item:") ? $"まだ準備ができていない。（{requirement.Substring(5)}）"
-                : "先にやることがある。";
+        private string LockedText(string requirement)
+        {
+            if (requirement.StartsWith("item:")) return $"おっと、{requirement.Substring(5)}を忘れてた。";
+            if (requirement.StartsWith("block:") && SpeakerOf(requirement.Substring(6)) is string who) return $"その前に、{who}にも挨拶していこう。";
+            return "先にやることがあったな。";
+        }
 
         /// <summary>
         /// 歩く道（上下左右。止まれるマスと、扉・目的地のマスを通る。人のいるマスは通らない）。adjacent なら、目標の隣のマスまで。
@@ -311,7 +463,7 @@ namespace Srpg.Battle
             var queue = new Queue<string>(blockIds.Where(b => replay || !seen.Contains(b)));
             void Next()
             {
-                if (queue.Count == 0) { then?.Invoke(); return; }
+                if (queue.Count == 0) { RefreshHud(); then?.Invoke(); return; }
                 var id = queue.Dequeue();
                 var block = scenario?.Block(id);
                 seen.Add(id);

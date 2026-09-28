@@ -169,6 +169,7 @@
   {
    "id": "to_corridor",
    "label": "廊下へ",
+   "lockedText": "",
    "toMap": "orcus_corridor",
    "facing": "north",
    "cells": [
@@ -216,7 +217,8 @@
        "y": 8
       }
      ],
-     "required": true
+     "required": true,
+     "label": ""
     },
     {
      "id": "karima_bed",
@@ -232,7 +234,8 @@
        "y": 2
       }
      ],
-     "required": false
+     "required": false,
+     "label": ""
     },
     {
      "id": "arshe_bed",
@@ -248,7 +251,8 @@
        "y": 2
       }
      ],
-     "required": false
+     "required": false,
+     "label": ""
     }
    ],
    "goals": [

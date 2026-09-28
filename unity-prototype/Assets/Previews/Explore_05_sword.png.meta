@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 4fe9ae442f2d8cd49856d4111dbe998d
+guid: 29849f5eacdba6a419357a4bc81699bf
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -932665317817734631
-    second: Explore_07_yard_0
+      213: -2820113780059270078
+    second: Explore_05_sword_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,7 +113,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Explore_07_yard_0
+      name: Explore_05_sword_0
       rect:
         serializedVersion: 2
         x: 0
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 91aa52db5d18e03f0800000000000000
-      internalID: -932665317817734631
+      spriteID: 24412696571fcd8d0800000000000000
+      internalID: -2820113780059270078
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Explore_07_yard_0: -932665317817734631
+      Explore_05_sword_0: -2820113780059270078
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

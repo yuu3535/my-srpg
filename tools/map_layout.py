@@ -248,7 +248,15 @@ def person_of(v):
 
 def inspect_of(v):
     cells = cells_of(v.get("cells")) or cells_of(v.get("cell"))
-    return {"id": v.get("id", ""), "block": v.get("block") or "", "text": v.get("text") or "", "cells": cells, "required": bool(v.get("required"))}
+    return {"id": v.get("id", ""), "block": v.get("block") or "", "text": clean_text(v.get("text")), "cells": cells, "required": bool(v.get("required")),
+            "label": clean_text(v.get("label") or v.get("kind"))}
+
+
+def clean_text(text):
+    """画面に出す文言から、作業用のメモを外す（レビュー 2026-09-28 J9）: 「（案）」、括弧の中の注意書き（…後で・見直す・当面…）"""
+    import re
+    text = (text or "").replace("（案）", "").strip()
+    return re.sub(r"（[^）]*）", "", text).strip()
 
 
 def to_unity(path):
@@ -278,7 +286,8 @@ def to_unity(path):
     for e in ex.get("exits", []):
         to = e.get("to") or {}
         target = cells_of(to.get("cell")) if to else []
-        exits.append({"id": e.get("id", ""), "label": e.get("label", ""), "toMap": to.get("map") or "", "facing": to.get("facing") or "",
+        exits.append({"id": e.get("id", ""), "label": clean_text(e.get("label", "")), "lockedText": e.get("lockedText") or "",
+                      "toMap": to.get("map") or "", "facing": to.get("facing") or "",
                       "cells": cells_of(e.get("cells")), "hasTarget": bool(target), "toCell": target[0] if target else {"x": 0, "y": 0},
                       "requires": e.get("requires") or []})
     states = []

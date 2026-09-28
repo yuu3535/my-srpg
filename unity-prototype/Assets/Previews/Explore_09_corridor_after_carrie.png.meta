@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: f9d145ac19a4b8a438513843b0f77097
+guid: 509b4785901a2fc47b9370c1e4941cb7
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 7943709930763186508
-    second: Explore_04_corridor_0
+      213: 8583675453407542969
+    second: Explore_09_corridor_after_carrie_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,7 +113,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Explore_04_corridor_0
+      name: Explore_09_corridor_after_carrie_0
       rect:
         serializedVersion: 2
         x: 0
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: c41f1ed281abd3e60800000000000000
-      internalID: 7943709930763186508
+      spriteID: 9beb89bb8575f1770800000000000000
+      internalID: 8583675453407542969
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Explore_04_corridor_0: 7943709930763186508
+      Explore_09_corridor_after_carrie_0: 8583675453407542969
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
