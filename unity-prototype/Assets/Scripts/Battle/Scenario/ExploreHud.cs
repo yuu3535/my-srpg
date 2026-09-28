@@ -42,7 +42,7 @@ namespace Srpg.Battle
         public void Build(Camera camera, Font regular, Font bold)
         {
             targetCamera = camera;
-            font = regular != null ? regular : Font.CreateDynamicFontFromOSFont(new[] { "Noto Serif JP", "Yu Mincho" }, 16);
+            font = regular != null ? regular : JapaneseFont.Get(new[] { "Noto Serif JP", "Yu Mincho" }, 16);
             boldFont = bold != null ? bold : font;
             if (canvas != null) return;
             var go = new GameObject("ExploreHud", typeof(Canvas), typeof(CanvasScaler));

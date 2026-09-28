@@ -1456,7 +1456,7 @@ namespace Srpg.Battle
             if (data == null) return;
             if (guiFont == null)
             {
-                guiFont = Font.CreateDynamicFontFromOSFont(new[] { "Yu Gothic UI", "Meiryo", "MS Gothic", "Hiragino Sans", "Noto Sans CJK JP" }, 14);
+                guiFont = JapaneseFont.Get(new[] { "Yu Gothic UI", "Meiryo", "MS Gothic", "Hiragino Sans", "Noto Sans CJK JP" }, 14);
                 boxStyle = new GUIStyle(GUI.skin.box) { font = guiFont, alignment = TextAnchor.UpperLeft, fontSize = 12, wordWrap = true };
                 labelStyle = new GUIStyle(GUI.skin.label) { font = guiFont, fontSize = 12, wordWrap = true };
                 bigStyle = new GUIStyle(GUI.skin.label) { font = guiFont, fontSize = 30, alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };

@@ -187,7 +187,7 @@ namespace Srpg.Battle
 
         private void Build()
         {
-            var font = regularFont != null ? regularFont : Font.CreateDynamicFontFromOSFont(new[] { "Noto Serif JP", "Yu Mincho", "MS PMincho" }, 16);
+            var font = regularFont != null ? regularFont : JapaneseFont.Get(new[] { "Noto Serif JP", "Yu Mincho", "MS PMincho" }, 16);
             var canvasObject = new GameObject("Dialogue", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             canvasObject.transform.SetParent(transform, false);
             canvas = canvasObject.GetComponent<Canvas>();
@@ -295,6 +295,13 @@ namespace Srpg.Battle
             LoadAdjustments();
             BuildAdjuster(font);
             root.gameObject.SetActive(false);
+
+            // 押す操作をUIに届ける仕組み（探索のシーンには戦闘のUIがなく、これがないと会話を進められない）
+            if (Application.isPlaying && UnityEngine.EventSystems.EventSystem.current == null)
+            {
+                var es = new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem), typeof(UnityEngine.InputSystem.UI.InputSystemUIInputModule));
+                es.transform.SetParent(transform, false);
+            }
         }
 
         private void Update()

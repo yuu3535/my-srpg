@@ -1737,9 +1737,9 @@ namespace Srpg.Battle
         private void OnGUI()
         {
             if (!showGuiButtons || map == null) return;
-            // 簡易ボタンの字体には日本語が入っていないので、端末の日本語の字体を使う
+            // 簡易ボタンの字体には日本語が入っていないので、端末の日本語の字体を使う（ブラウザではゲームに入れた字体）
             if (guiFont == null)
-                guiFont = Font.CreateDynamicFontFromOSFont(new[] { "Yu Gothic UI", "Meiryo", "MS Gothic", "Hiragino Sans", "Noto Sans CJK JP" }, 14);
+                guiFont = JapaneseFont.Get(new[] { "Yu Gothic UI", "Meiryo", "MS Gothic", "Hiragino Sans", "Noto Sans CJK JP" }, 14);
             GUI.skin.font = guiFont;
             float s = GuiScale;
             GUI.matrix = Matrix4x4.Scale(new Vector3(s, s, 1f));
