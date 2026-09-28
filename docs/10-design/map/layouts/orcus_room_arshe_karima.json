@@ -1,0 +1,234 @@
+{
+  "mapId": "orcus_room_arshe_karima",
+  "name": "アルシェとカリマの部屋",
+  "indoor": true,
+  "timeOfDay": "morning",
+  "description": "魔王城の中の、アルシェとカリマの2人部屋。北の壁ぎわにベッドが2つ。西の扉から城の廊下へ出る。",
+  "mood": "晴れた朝の光が窓から入る、明るく温かい子ども部屋。床は木の板、中央に絨毯。城の黒い石の壁だが、部屋の中は暖かい色の布と木の家具で柔らかい",
+  "moodReference": "（背景の絵はまだない。新しく頼む）",
+  "note": "マップ担当 2026-09-28。高い物（ベッド・机・本棚・剣立て）と物語は orcus_room_arshe_karima.md。記号 w（木の床）を足した。探索のみ（戦闘はしない）",
+  "battleAreas": [],
+  "padTerrain": "W",
+  "legend": {
+    "w": {
+      "name": "木の床",
+      "color": [
+        150,
+        112,
+        78
+      ],
+      "colorName": "木の茶色",
+      "describe": "部屋の木の床（板張り。板の継ぎ目）"
+    },
+    "r": {
+      "colorName": "赤紫",
+      "color": [
+        120,
+        52,
+        96
+      ],
+      "describe": "部屋の中央に敷いた絨毯（深い紫〜赤紫、縁取りの模様）"
+    },
+    "W": {
+      "describe": "部屋の壁が立つ所。壁はゲーム側で立てるので、足元の床だけ"
+    }
+  },
+  "terrain": [
+    "WWWWWWWWWW",
+    "WwwwwwwwwW",
+    "WwwwwwwwwW",
+    "WwwrrrrwwW",
+    "DwwrrrrwwW",
+    "WwwrrrrwwW",
+    "WwwwwwwwwW",
+    "WwwwwwwwwW",
+    "WWWWWWWWWW"
+  ],
+  "exploration": {
+    "note": "探索の項目（マップ担当 2026-09-28。書き方は PROLOGUE_1-1_MAP_PLAN §3 の案）。area は {x,y,w,h} の長方形。block は docs/30-planning/scenario/prologue_1_1_blocks.md の id",
+    "objects": [
+      {
+        "id": "bed_arshe",
+        "cells": [
+          [
+            2,
+            1
+          ],
+          [
+            2,
+            2
+          ]
+        ],
+        "kind": "ベッド（アルシェ・散らかっている）",
+        "blocks": true
+      },
+      {
+        "id": "bed_karima",
+        "cells": [
+          [
+            7,
+            1
+          ],
+          [
+            7,
+            2
+          ]
+        ],
+        "kind": "ベッド（カリマ・整っている）",
+        "blocks": true
+      },
+      {
+        "id": "desk_arshe",
+        "cells": [
+          [
+            2,
+            7
+          ]
+        ],
+        "kind": "机（アルシェ）",
+        "blocks": true
+      },
+      {
+        "id": "sword_stand",
+        "cells": [
+          [
+            1,
+            7
+          ]
+        ],
+        "kind": "剣立て（黒陽の双剣）",
+        "blocks": true
+      },
+      {
+        "id": "desk_karima",
+        "cells": [
+          [
+            7,
+            7
+          ]
+        ],
+        "kind": "机（カリマ。本が積んである）",
+        "blocks": true
+      },
+      {
+        "id": "bookshelf",
+        "cells": [
+          [
+            8,
+            4
+          ],
+          [
+            8,
+            5
+          ]
+        ],
+        "kind": "本棚（カリマの本。勇者リングホルムの本など）",
+        "blocks": true
+      },
+      {
+        "id": "wardrobe",
+        "cells": [
+          [
+            8,
+            1
+          ]
+        ],
+        "kind": "衣装棚（カリマのツノの頭飾りの箱）",
+        "blocks": true
+      }
+    ],
+    "exits": [
+      {
+        "id": "to_corridor",
+        "cells": [
+          [
+            0,
+            4
+          ]
+        ],
+        "to": {
+          "map": "orcus_corridor",
+          "cell": [
+            5,
+            20
+          ],
+          "facing": "north"
+        },
+        "label": "廊下へ",
+        "requires": [
+          "item:黒陽の双剣"
+        ],
+        "lockedNote": "（案）剣を持っていないと出られない。7行目「準備しないとなぁ」"
+      }
+    ],
+    "states": [
+      {
+        "id": "prologue_1_1_wake",
+        "scene": "プロローグ1-1 自室",
+        "player": {
+          "id": "young_arshe",
+          "cell": [
+            3,
+            2
+          ],
+          "facing": "south"
+        },
+        "onEnter": [
+          "prologue_1_1.b01",
+          "prologue_1_1.b02"
+        ],
+        "people": [],
+        "talkAreas": [],
+        "inspect": [
+          {
+            "id": "find_sword",
+            "cells": [
+              [
+                1,
+                7
+              ]
+            ],
+            "block": "prologue_1_1.b02",
+            "row": 9,
+            "required": true,
+            "note": "剣を見つける（表の9行目）。b02 の中に入っているので、9行目だけ別のブロックに分けてほしい（総合担当へ）"
+          },
+          {
+            "id": "karima_bed",
+            "cells": [
+              [
+                7,
+                1
+              ],
+              [
+                7,
+                2
+              ]
+            ],
+            "block": "prologue_1_1.b03"
+          },
+          {
+            "id": "arshe_bed",
+            "cells": [
+              [
+                2,
+                1
+              ],
+              [
+                2,
+                2
+              ]
+            ],
+            "block": "prologue_1_1.b04"
+          }
+        ],
+        "goals": [
+          {
+            "id": "leave_room",
+            "exit": "to_corridor"
+          }
+        ]
+      }
+    ]
+  }
+}

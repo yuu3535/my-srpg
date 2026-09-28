@@ -108,7 +108,14 @@
             0
           ]
         ],
-        "to": "orcus_corridor",
+        "to": {
+          "map": "orcus_corridor",
+          "cell": [
+            3,
+            1
+          ],
+          "facing": "south"
+        },
         "label": "本丸の大扉（城の廊下へ）"
       },
       {
@@ -119,7 +126,11 @@
             10
           ]
         ],
-        "to": "orcus_town",
+        "to": {
+          "map": "orcus_town",
+          "cell": null,
+          "facing": null
+        },
         "label": "城門へ抜ける門"
       },
       {
@@ -188,14 +199,19 @@
                 1
               ]
             ],
-            "event": "訓練場へ入ると探索パート終了 → 合流の会話 → 戦闘 battleAreas.prologue"
+            "block": "prologue_1_1.b10",
+            "then": {
+              "battleArea": "prologue",
+              "block": "prologue_1_1.b11"
+            },
+            "note": "訓練場へ入ると探索パート終了 → b10 合流の会話 → 戦闘（b11 の会話は戦闘中。カリマとの交換の手引き）"
           }
         ],
         "talkAreas": []
       },
       {
         "id": "prologue_1_1_after_training",
-        "scene": "シナリオプロローグ1-1 No.76〜96 のあと",
+        "scene": "プロローグ1-1 戦闘のあと（b12）",
         "player": {
           "id": "young_arshe",
           "cell": [
@@ -223,7 +239,10 @@
           }
         ],
         "goals": [],
-        "talkAreas": []
+        "talkAreas": [],
+        "onEnter": [
+          "prologue_1_1.b12"
+        ]
       }
     ],
     "inspect": [

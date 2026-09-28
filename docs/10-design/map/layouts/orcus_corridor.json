@@ -1,0 +1,314 @@
+{
+  "mapId": "orcus_corridor",
+  "name": "オルクス魔王城の廊下（回廊）",
+  "indoor": true,
+  "timeOfDay": "morning",
+  "description": "魔王城の2階の回廊。西はアーチの柱が並び中庭へ開け、東は窓と壁。南寄りに自室の扉、中ほどに謁見の間へ続く前室、北の端に訓練場へ下りる扉。",
+  "mood": "晴れた朝。アーチから朝の光が差し込む。床は黒〜紫がかった黒の磨かれた石だが、盤面は暗く潰さない。映り込みは控えめ",
+  "moodReference": "背景/オルクス城回廊.png（ブラッシュアップ版が届いたらそちらに替える）",
+  "note": "マップ担当 2026-09-28。探索のチュートリアルの場所（戦闘はしない）。記号 b（石の手すり）を足した。高い物・物語は orcus_corridor.md",
+  "battleAreas": [],
+  "padTerrain": "W",
+  "legend": {
+    "b": {
+      "name": "石の手すり",
+      "color": [
+        112,
+        100,
+        120
+      ],
+      "colorName": "灰紫",
+      "describe": "アーチの間の低い石の手すりが立つ所。手すりはゲーム側で立てるので、足元の床だけ"
+    },
+    "f": {
+      "describe": "城の廊下の石の床（黒〜紫がかった黒の大きな切り石。磨かれている）"
+    },
+    "r": {
+      "color": [
+        120,
+        52,
+        96
+      ],
+      "colorName": "赤紫",
+      "describe": "謁見の間の前室に敷いた絨毯（深い赤紫、金の縁取り）"
+    }
+  },
+  "terrain": [
+    "WWWDWWWWWWW",
+    "bfffffWWWWW",
+    "PfffffWWWWW",
+    "bfffffWWWWW",
+    "bfffffWWWWW",
+    "PfffffPfffW",
+    "bfffffffffW",
+    "bfffffrrrrD",
+    "PfffffrrrrD",
+    "bfffffffffW",
+    "bfffffPfffW",
+    "PfffffWWWWW",
+    "bfffffWWWWW",
+    "bfffffWWWWW",
+    "PfffffWWWWW",
+    "bfffffWWWWW",
+    "bfffffWWWWW",
+    "PfffffWWWWW",
+    "bfffffWWWWW",
+    "bfffffWWWWW",
+    "PfffffDWWWW",
+    "bfffffWWWWW",
+    "bfffffWWWWW",
+    "WWWWWWWWWWW"
+  ],
+  "exploration": {
+    "note": "探索の項目（マップ担当 2026-09-28）。area は {x,y,w,h}。required: true の会話は、道幅いっぱいに範囲を取り、避けて通れないようにした",
+    "objects": [
+      {
+        "id": "bench_1",
+        "cells": [
+          [
+            5,
+            15
+          ]
+        ],
+        "kind": "ベンチ（東の壁ぎわ）",
+        "blocks": true
+      },
+      {
+        "id": "bench_2",
+        "cells": [
+          [
+            5,
+            3
+          ]
+        ],
+        "kind": "ベンチ（東の壁ぎわ）",
+        "blocks": true
+      },
+      {
+        "id": "planter_1",
+        "cells": [
+          [
+            5,
+            12
+          ]
+        ],
+        "kind": "鉢植え",
+        "blocks": true
+      },
+      {
+        "id": "planter_2",
+        "cells": [
+          [
+            5,
+            18
+          ]
+        ],
+        "kind": "鉢植え",
+        "blocks": true
+      },
+      {
+        "id": "crates",
+        "cells": [
+          [
+            1,
+            19
+          ]
+        ],
+        "kind": "祝宴の準備の荷（布・花の箱）",
+        "blocks": true
+      }
+    ],
+    "exits": [
+      {
+        "id": "to_room",
+        "cells": [
+          [
+            6,
+            20
+          ]
+        ],
+        "to": {
+          "map": "orcus_room_arshe_karima",
+          "cell": [
+            1,
+            4
+          ],
+          "facing": "east"
+        },
+        "label": "アルシェとカリマの部屋"
+      },
+      {
+        "id": "to_throne",
+        "cells": [
+          [
+            10,
+            7
+          ],
+          [
+            10,
+            8
+          ]
+        ],
+        "to": {
+          "map": "orcus_throne_room",
+          "cell": null,
+          "facing": null
+        },
+        "label": "謁見の間（配置表は後で）"
+      },
+      {
+        "id": "to_yard",
+        "cells": [
+          [
+            3,
+            0
+          ]
+        ],
+        "to": {
+          "map": "orcus_training_yard",
+          "cell": [
+            11,
+            1
+          ],
+          "facing": "south"
+        },
+        "label": "訓練場へ下りる階段",
+        "requires": [
+          "block:prologue_1_1.b06",
+          "block:prologue_1_1.b08"
+        ]
+      }
+    ],
+    "states": [
+      {
+        "id": "prologue_1_1_corridor",
+        "scene": "プロローグ1-1 廊下",
+        "player": {
+          "id": "young_arshe",
+          "cell": [
+            5,
+            20
+          ],
+          "facing": "north"
+        },
+        "onEnter": [
+          "prologue_1_1.b05"
+        ],
+        "people": [
+          {
+            "id": "carrie",
+            "name": "キャリー",
+            "cell": [
+              3,
+              17
+            ],
+            "facing": "south",
+            "talkBlock": "prologue_1_1.b06"
+          },
+          {
+            "id": "servant_1",
+            "name": "従者（モブ１）",
+            "cell": [
+              1,
+              13
+            ],
+            "facing": "east"
+          },
+          {
+            "id": "servant_2",
+            "name": "従者（モブ２）",
+            "cell": [
+              2,
+              13
+            ],
+            "facing": "west"
+          },
+          {
+            "id": "henry",
+            "name": "ヘンリー",
+            "cell": [
+              3,
+              9
+            ],
+            "facing": "south",
+            "talkBlock": "prologue_1_1.b08"
+          },
+          {
+            "id": "servant_3",
+            "name": "謁見の間を準備する従者",
+            "cell": [
+              8,
+              6
+            ],
+            "facing": "east"
+          }
+        ],
+        "talkAreas": [
+          {
+            "id": "carrie_greet",
+            "block": "prologue_1_1.b06",
+            "area": {
+              "x": 1,
+              "y": 16,
+              "w": 5,
+              "h": 3
+            },
+            "trigger": "approach",
+            "required": true,
+            "once": true
+          },
+          {
+            "id": "servants_gossip",
+            "block": "prologue_1_1.b07",
+            "area": {
+              "x": 1,
+              "y": 11,
+              "w": 3,
+              "h": 5
+            },
+            "trigger": "approach",
+            "ambient": true,
+            "once": true,
+            "note": "環境会話。操作を止めない形でも可（構成メモ No.10）。東側 x4〜5 を通れば避けられる"
+          },
+          {
+            "id": "henry_greet",
+            "block": "prologue_1_1.b08",
+            "area": {
+              "x": 1,
+              "y": 9,
+              "w": 5,
+              "h": 2
+            },
+            "trigger": "approach",
+            "required": true,
+            "once": true
+          }
+        ],
+        "inspect": [
+          {
+            "id": "throne_door",
+            "cells": [
+              [
+                10,
+                7
+              ],
+              [
+                10,
+                8
+              ]
+            ],
+            "block": "prologue_1_1.b09",
+            "note": "謁見の間の盤面ができるまでは、扉の前で b09 を流す（構成メモ No.14「入室または入口から確認」）"
+          }
+        ],
+        "goals": [
+          {
+            "id": "to_yard",
+            "exit": "to_yard"
+          }
+        ]
+      }
+    ]
+  }
+}
