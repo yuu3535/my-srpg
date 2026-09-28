@@ -103,12 +103,6 @@ section.compare h2::before { content: "◆"; color: var(--gold); margin-right: 8
         <input id="lvRange" type="range" min="1" max="99" value="1">
         <input id="lvNumber" type="number" min="1" max="200" value="1">
     </label>
-    <div class="control">HP
-        <span class="seg" id="hpPlan">
-            <button type="button" data-plan="2" aria-pressed="true">案②（×1）</button>
-            <button type="button" data-plan="1" aria-pressed="false">案①（×2）</button>
-        </span>
-    </div>
     <div class="control">表示
         <span class="seg" id="view">
             <button type="button" data-view="adopted" aria-pressed="true">採用版の10人</button>
@@ -161,17 +155,11 @@ section.compare h2::before { content: "◆"; color: var(--gold); margin-right: 8
         get(k, d) { try { return localStorage.getItem("statusViewer." + k) ?? d; } catch { return d; } },
         set(k, v) { try { localStorage.setItem("statusViewer." + k, v); } catch { /* 保存できなくても動く */ } },
     };
-    const state = { lv: Number(store.get("lv", 1)) || 1, hpPlan: Number(store.get("hpPlan", 2)) || 2, view: store.get("view", "adopted") };
+    const state = { lv: Number(store.get("lv", 1)) || 1, view: store.get("view", "adopted") };
     let adoptedRows = [];
 
     const $ = id => document.getElementById(id);
     const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-
-    /** HP の案を当てたプロフィール（ゲームのプロフィールは案②。案①なら HP を2倍） */
-    function withHpPlan(profile) {
-        if (state.hpPlan === 2) return profile;
-        return { ...profile, base: { ...profile.base, hp: profile.base.hp * 2 } };
-    }
 
     /** 表に出す人（{ name, sub, lv, profile, note }） */
     function rows() {
@@ -180,11 +168,11 @@ section.compare h2::before { content: "◆"; color: var(--gold); margin-right: 8
                 const gameId = GAME_ID[r.name];
                 const siz = gameId ? TRIAL_PROFILES[gameId]?.siz ?? null : null;
                 return { name: r.name, sub: r.race + (r.group ? "・" + r.group : ""), lv: state.lv,
-                    profile: adoptedProfile(r, state.hpPlan, siz), check: gameId ? diffWithGame(r, gameId) : null };
+                    profile: adoptedProfile(r, siz), check: gameId ? diffWithGame(r, gameId) : null };
             });
         }
         if (state.view === "game") {
-            return GAME_ONLY.map(([id, label]) => ({ name: label, sub: TRIAL_PROFILES[id].race, lv: state.lv, profile: withHpPlan(TRIAL_PROFILES[id]) }));
+            return GAME_ONLY.map(([id, label]) => ({ name: label, sub: TRIAL_PROFILES[id].race, lv: state.lv, profile: TRIAL_PROFILES[id] }));
         }
         const list = [];
         for (const [bid, label] of BATTLES) {
@@ -193,17 +181,17 @@ section.compare h2::before { content: "◆"; color: var(--gold); margin-right: 8
             for (const id of [...def.unitIds, ...Object.keys(def.unitCopies || {})]) {
                 const p = trialProfileFor(id, bid);
                 if (!p) continue;
-                list.push({ name: p.name + (id === "albas_rival" ? "（敵）" : ""), sub: label, lv: trialCauseLevelFor(p), profile: withHpPlan(p),
+                list.push({ name: p.name + (id === "albas_rival" ? "（敵）" : ""), sub: label, lv: trialCauseLevelFor(p), profile: p,
                     skillLv: trialAbilityLevelFor(p) });
             }
         }
         return list;
     }
 
-    /** 採用版の文書とゲームのプロフィールの食い違い（HPは案②で比べる） */
+    /** 採用版の文書とゲームのプロフィールの食い違い */
     function diffWithGame(row, gameId) {
         const game = TRIAL_PROFILES[gameId];
-        const doc = adoptedProfile(row, 2);
+        const doc = adoptedProfile(row);
         const out = [];
         for (const [part, label] of [["base", "Lv1"], ["growth", "成長率"], ["caps", "上限"]])
             KEYS.forEach((k, i) => { if (doc[part][k] !== game[part][k]) out.push(`${label}の${LABELS[i]} 文書${doc[part][k]}・ゲーム${game[part][k]}`); });
@@ -289,7 +277,7 @@ section.compare h2::before { content: "◆"; color: var(--gold); margin-right: 8
             const btn = e.target.closest("button");
             if (!btn) return;
             const v = btn.dataset[attr];
-            state[key] = key === "hpPlan" ? Number(v) : v;
+            state[key] = v;
             store.set(key, v);
             for (const b of $(id).querySelectorAll("button")) b.setAttribute("aria-pressed", String(b === btn));
             render();
@@ -301,7 +289,6 @@ section.compare h2::before { content: "◆"; color: var(--gold); margin-right: 8
     $("lvRange").addEventListener("input", e => setLv(e.target.value));
     $("lvNumber").addEventListener("change", e => setLv(e.target.value));
     for (const id of ["pickA", "pickB", "power"]) $(id).addEventListener("input", () => renderDuel(rows()));
-    bindSeg("hpPlan", "hpPlan", "plan");
     bindSeg("view", "view", "view");
 
     fetch(encodeURI(DOC))

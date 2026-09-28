@@ -91,7 +91,7 @@ def main():
         ("今の戦闘の値 … ゲームが今の戦闘で実際に使っている因果Lvと能力値（作成した日の値）", False),
         ("", False),
         ("注意", True),
-        ("HP: ゲームは案②（TRPGのHP×1）で動いている。採用版の文書の表は案①（×2）で書かれているので、「因果Lv1」には両方を載せた。HPの案はまだ検討中", False),
+        ("HP: 案②（TRPGのHP×1）。採用版 v1.6 で決定（2026-09-29）。HP上限は ×2 の式のまま", False),
         ("能力値の式: 因果Lvの値 ＝ 因果Lv1の値 ＋（個人成長率＋幸運・勇気補正）×（因果Lv−1）を四捨五入。上限を超えない（採用版 §6.1・§8）", False),
         ("兵種の補正・スキル・装備はふくまない（本人の能力値だけ）", False),
         ("最初の兵種は兵種表CSV（各キャラ兵種適正.csv の◎）から。ギュンターは表では「ベル」", False),
@@ -107,22 +107,19 @@ def main():
 
     # ── 因果Lv1 ──
     ws = wb.create_sheet("因果Lv1")
-    title(ws, "因果Lv1の能力値（採用版）", "HPはゲームで使う案②（×1）。右端に文書の案①（×2）も載せた。青い数字は採用版の文書から写したもの")
-    header(ws, 4, ["キャラ", "種族", "所属", "最初の兵種"] + [f"{s}\n(案②)" if s == "HP" else s for s in STATS] + ["HP\n(案①)", "幸運", "最大勇気"],
-           [14, 7, 14, 22] + [8] * 8 + [8, 7, 8])
+    title(ws, "因果Lv1の能力値（採用版）", "HPは案②（TRPGのHP×1）。青い数字は採用版の文書から写したもの")
+    header(ws, 4, ["キャラ", "種族", "所属", "最初の兵種"] + STATS + ["幸運", "最大勇気"],
+           [14, 7, 14, 22] + [8] * 8 + [7, 8])
     for i, a in enumerate(adopted):
         r = 5 + i
         put(ws, r, 1, a["name"])
         put(ws, r, 2, a["race"])
         put(ws, r, 3, a["group"])
         put(ws, r, 4, a["cls"])
-        put(ws, r, 5, f"=M{r}/2")   # 案②＝案①の半分
-        for k in range(1, 8):
-            put(ws, r, 5 + k, a["base1"][k], BLUE)
-        put(ws, r, 13, a["base1"][0], BLUE)
-        put(ws, r, 14, a["luck"], BLUE)
-        put(ws, r, 15, a["courage"], BLUE)
-    ws["E4"].comment = Comment("案②＝案①÷2。ゲーム（テスト戦闘・訓練）はこちらで動いている", "総合担当")
+        for k in range(8):
+            put(ws, r, 5 + k, a["base"][k], BLUE)
+        put(ws, r, 13, a["luck"], BLUE)
+        put(ws, r, 14, a["courage"], BLUE)
     n_adopted = len(adopted)
     last = 4 + n_adopted
 
@@ -136,7 +133,7 @@ def main():
         for k in range(8):
             put(ws, r, 2 + k, a["growth"][k] / 100, BLUE, "0%")
         put(ws, r, 10, f"=SUM(B{r}:I{r})", fmt="0%")
-        put(ws, r, 11, f"=INT((因果Lv1!N{r}+因果Lv1!O{r})/40)/100", fmt="0%")
+        put(ws, r, 11, f"=INT((因果Lv1!M{r}+因果Lv1!N{r})/40)/100", fmt="0%")
         put(ws, r, 12, f"=J{r}+K{r}*8", fmt="0%")
 
     # ── 上限 ──
@@ -151,7 +148,7 @@ def main():
 
     # ── Lv計算 ──
     ws = wb.create_sheet("Lv計算")
-    title(ws, "因果Lvでの能力値（期待値）", "黄色のセル（B3）に因果Lvを入れる。HPは案②。兵種・スキル・装備の補正はふくまない")
+    title(ws, "因果Lvでの能力値（期待値）", "黄色のセル（B3）に因果Lvを入れる。兵種・スキル・装備の補正はふくまない")
     ws["A3"] = "因果Lv"
     ws["A3"].font = Font(name=FONT, bold=True)
     put(ws, 3, 2, 25, BLUE, fill=INPUT_FILL)
@@ -163,7 +160,7 @@ def main():
         r, src = 6 + i, 5 + i
         put(ws, r, 1, f"=因果Lv1!A{src}")
         for k in range(8):
-            base_col = get_column_letter(5 + k)          # 因果Lv1 の E〜L（HPは案②）
+            base_col = get_column_letter(5 + k)          # 因果Lv1 の E〜L
             g_col = get_column_letter(2 + k)              # 成長率 の B〜I
             cap_col = get_column_letter(2 + k)            # 上限 の B〜I
             put(ws, r, 2 + k,
@@ -171,7 +168,7 @@ def main():
 
     # ── ゲームの仮キャラ ──
     ws = wb.create_sheet("ゲームの仮キャラ")
-    title(ws, "ゲームの中だけにある仮の値", "採用版の表にないキャラ（trialStatSystem.js）。因果Lv1の値・成長率・上限。HPは案②")
+    title(ws, "ゲームの中だけにある仮の値", "採用版の表にないキャラ（trialStatSystem.js）。因果Lv1の値・成長率・上限")
     header(ws, 4, ["キャラ", "種族"] + [f"{s}" for s in STATS] + [f"{s}\n成長率" for s in STATS] + [f"{s}\n上限" for s in STATS] + ["幸運", "最大勇気", "体格(SIZ)"],
            [30, 7] + [7] * 24 + [7, 8, 9])
     for i, g in enumerate(game_only):

@@ -3,13 +3,13 @@
 //
 //  因果Lv1の能力値（§5・§5.3）・成長率（§6・§6.2）・幸運と勇気（§6.1・§6.2）・能力上限（§8.2・§8.4）。
 //  ステータスの一覧（tools/build_stat_sheet.py）と、デバッグ用のページ（debug/status_viewer.html）の両方で使う。
-//  文書の表の HP は案①（TRPG HP×2）。ゲームは案②（×1）で動いている（原作者 2026-09-29: 案②の方が自然）
+//  HP は案②（TRPG HP×1）。採用版 v1.6 で決定（原作者 2026-09-29）。ゲームも案②で動いている
 // =====================================================================
 
 const ADOPTED_STAT_KEYS = Object.freeze(["hp", "atk", "def", "mag", "res", "tec", "spd", "cha"]);
 const ADOPTED_STAT_LABELS = Object.freeze(["HP", "力", "防御", "魔攻", "魔防", "技", "速さ", "魅力"]);
 
-/** 文書の本文から、キャラごとの表の値を読む。返り値: [{ name, race, group, base1（HP案①）, growth, luck, courage, caps }] */
+/** 文書の本文から、キャラごとの表の値を読む。返り値: [{ name, race, group, base（因果Lv1。HPは案②）, growth, luck, courage, caps }] */
 function parseAdoptedStatTables(mdText) {
     const md = String(mdText).split(/\r?\n/);
     const num = s => Number(String(s).replace("%", ""));
@@ -59,15 +59,14 @@ function parseAdoptedStatTables(mdText) {
 
     return Object.keys(base).map(name => ({
         name, race: base[name].race, group: base[name].group,
-        base1: base[name].v, growth: growth[name].v, luck: growth[name].luck, courage: growth[name].courage, caps: caps[name],
+        base: base[name].v, growth: growth[name].v, luck: growth[name].luck, courage: growth[name].courage, caps: caps[name],
     }));
 }
 
-/** 採用版の表の1人分を、trialStatSystem.js と同じ形のプロフィールにする（hpPlan: 2＝案②（×1）、1＝案①（×2）） */
-function adoptedProfile(row, hpPlan = 2, siz = null) {
+/** 採用版の表の1人分を、trialStatSystem.js と同じ形のプロフィールにする */
+function adoptedProfile(row, siz = null) {
     const obj = values => Object.fromEntries(ADOPTED_STAT_KEYS.map((k, i) => [k, values[i]]));
-    const base = obj(row.base1);
-    if (hpPlan === 2) base.hp = row.base1[0] / 2;
+    const base = obj(row.base);
     return { name: row.name, race: row.race, base, growth: obj(row.growth), caps: obj(row.caps), luck: row.luck, courage: row.courage, siz };
 }
 
