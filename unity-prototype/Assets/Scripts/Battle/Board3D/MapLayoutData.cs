@@ -20,6 +20,8 @@ namespace Srpg.Battle
         public MapSymbol[] symbols;
         public MapArea[] battleAreas;
         public MapObject[] objects;
+        public MapProp[] props;       // 板の絵の小物（通行に影響しない）
+        public MapLight[] lights;     // 点の光
         public MapExit[] exits;
         public MapState[] states;
         public MapInspect[] inspect;   // 場面によらず調べられる所
@@ -47,6 +49,12 @@ namespace Srpg.Battle
         public bool blocks;
         public float height;   // 見た目の高さ（配置表になければ 0.6）
     }
+
+    /// <summary>板の絵の小物。edge はマスのどの辺に置くか（north / east / south / west / center）</summary>
+    [Serializable] public class MapProp { public string id, kind, edge; public int x, y; public Vector2Int Cell => new Vector2Int(x, y); }
+
+    /// <summary>点の光。color は violet（紫の魔灯）/ warm（暖かい炎）/ window（窓の光）</summary>
+    [Serializable] public class MapLight { public string kind, color; public int x, y; public Vector2Int Cell => new Vector2Int(x, y); }
 
     [Serializable]
     public class MapExit

@@ -122,6 +122,39 @@
    "height": 0.0
   }
  ],
+ "props": [],
+ "lights": [
+  {
+   "kind": "壁の燭台",
+   "color": "warm",
+   "x": 5,
+   "y": 6
+  },
+  {
+   "kind": "壁の魔灯",
+   "color": "violet",
+   "x": 5,
+   "y": 13
+  },
+  {
+   "kind": "壁の燭台",
+   "color": "warm",
+   "x": 5,
+   "y": 19
+  },
+  {
+   "kind": "謁見の間の大扉の魔灯",
+   "color": "violet",
+   "x": 9,
+   "y": 7
+  },
+  {
+   "kind": "謁見の間の大扉の魔灯",
+   "color": "violet",
+   "x": 9,
+   "y": 8
+  }
+ ],
  "exits": [
   {
    "id": "to_room",

@@ -264,6 +264,16 @@ def to_unity(path):
     ex = raw.get("exploration") or {}
     objects = [{"id": o.get("id", ""), "kind": o.get("kind", ""), "cells": cells_of(o.get("cells")), "blocks": bool(o.get("blocks")),
                 "height": float(o.get("height", 0))} for o in ex.get("objects", [])]
+    props = []
+    for pr in ex.get("props", []):
+        c = cells_of(pr.get("cell"))
+        if c:
+            props.append({"id": pr.get("id", ""), "kind": pr.get("kind", ""), "edge": pr.get("edge") or "center", "x": c[0]["x"], "y": c[0]["y"]})
+    lights = []
+    for li in ex.get("lights", []):
+        c = cells_of(li.get("cell"))
+        if c:
+            lights.append({"kind": li.get("kind", ""), "color": li.get("color") or "warm", "x": c[0]["x"], "y": c[0]["y"]})
     exits = []
     for e in ex.get("exits", []):
         to = e.get("to") or {}
@@ -290,7 +300,7 @@ def to_unity(path):
             "columns": cols, "rows": rows, "terrain": layout["terrain"], "symbols": symbols,
             "battleAreas": [{"id": b.get("id", ""), "battleId": b.get("battleId") or "", "x": b["x"], "y": b["y"], "w": b["w"], "h": b["h"]}
                             for b in layout.get("battleAreas", [])],
-            "objects": objects, "exits": exits, "states": states,
+            "objects": objects, "props": props, "lights": lights, "exits": exits, "states": states,
             "inspect": [inspect_of(i) for i in (raw.get("inspect") or ex.get("inspect") or [])]}
     out = ROOT / "unity-prototype" / "Assets" / "Data" / "Maps" / f"{map_id}.json"
     out.parent.mkdir(parents=True, exist_ok=True)

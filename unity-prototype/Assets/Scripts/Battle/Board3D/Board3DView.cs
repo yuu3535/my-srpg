@@ -311,6 +311,15 @@ namespace Srpg.Battle
             }
             foreach (var cell in map.SceneryTrees) AddTree(cell);
             foreach (var o in map.Obstacles) AddObstacleModel(o.Key, o.Value.id, o.Value.kind, o.Value.height);
+            foreach (var c in map.Canopies) AddCanopyModel(c.cell, c.kind, c.height);
+            foreach (var p in map.Props) AddPropModel(p);
+            if (lanterns)
+                foreach (var l in map.Lights)
+                {
+                    // 配置表の明かり: 紫の魔灯・暖かい炎・窓の光
+                    Color32 color = l.color == "violet" ? new Color32(186, 120, 255, 255) : l.color == "window" ? new Color32(206, 216, 255, 255) : new Color32(255, 150, 72, 255);
+                    AddPointLight($"Light_{l.x}_{l.y}", map.TopCenter(l.Cell) + Vector3.up * 1.1f, color, l.color == "window" ? 4f : 3.2f, l.color == "window" ? 1.6f : 2.4f);
+                }
             AddGrassEdges();
             AddBackdrop();
 
@@ -889,6 +898,38 @@ namespace Srpg.Battle
             root.localPosition = map.TopCenter(cell);
             AddBox(root, "Body", new Vector3(0f, height * 0.5f, 0f), new Vector3(0.78f, height, 0.78f), LitMaterial(color));
             if (height >= TallTile) RegisterOccluder(root.gameObject);
+        }
+
+        /// <summary>下を通れる屋根（天幕など）の仮の模型: その高さに薄い板。キャラを隠すときは半透明にする</summary>
+        private void AddCanopyModel(Vector2Int cell, string kind, float height)
+        {
+            var root = new GameObject($"Canopy_{cell.x}_{cell.y}").transform;
+            root.SetParent(boardRoot, false);
+            root.localPosition = map.TopCenter(cell);
+            AddBox(root, "Roof", new Vector3(0f, height, 0f), new Vector3(1f, 0.08f, 1f), LitMaterial(new Color32(72, 34, 92, 255)));
+            RegisterOccluder(root.gameObject);
+        }
+
+        /// <summary>板の絵の小物の仮の模型: マスの辺に寄せた細い柱（旗竿・灯籠など）。清書は小物の絵（MAP_ART_PIPELINE ③）</summary>
+        private void AddPropModel(MapProp prop)
+        {
+            if (!map.InBounds(prop.Cell)) return;
+            var offset = prop.edge switch
+            {
+                "north" => new Vector3(0f, 0f, 0.38f),
+                "south" => new Vector3(0f, 0f, -0.38f),
+                "east" => new Vector3(0.38f, 0f, 0f),
+                "west" => new Vector3(-0.38f, 0f, 0f),
+                _ => Vector3.zero,
+            };
+            var kind = prop.kind ?? "";
+            Color32 color = kind.Contains("旗") ? new Color32(96, 40, 120, 255) : kind.Contains("花") || kind.Contains("鉢") ? new Color32(70, 104, 64, 255)
+                : new Color32(150, 120, 70, 255);
+            var root = new GameObject($"Prop_{prop.id}").transform;
+            root.SetParent(boardRoot, false);
+            root.localPosition = map.TopCenter(prop.Cell) + offset;
+            float h = kind.Contains("旗") ? 1.4f : 0.5f;
+            AddBox(root, "Body", new Vector3(0f, h * 0.5f, 0f), new Vector3(0.14f, h, 0.14f), LitMaterial(color));
         }
 
         private static GameObject AddBox(Transform parent, string objectName, Vector3 localPosition, Vector3 size, Material material)

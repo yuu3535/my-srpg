@@ -46,6 +46,11 @@ namespace Srpg.Battle
         private readonly Dictionary<Vector2Int, (string id, string kind, float height)> obstacles = new Dictionary<Vector2Int, (string, string, float)>();
         public IEnumerable<KeyValuePair<Vector2Int, (string id, string kind, float height)>> Obstacles => obstacles;
         public void AddObstacle(Vector2Int cell, string id, string kind, float height = 0.6f) => obstacles[cell] = (id, kind, height);
+
+        // 下を通れる高い物（天幕の屋根など）・板の絵の小物・点の光（配置表の objects の blocks: false・props・lights）
+        public readonly List<(Vector2Int cell, string kind, float height)> Canopies = new List<(Vector2Int, string, float)>();
+        public readonly List<MapProp> Props = new List<MapProp>();
+        public readonly List<MapLight> Lights = new List<MapLight>();
         public bool IsObstacle(Vector2Int cell) => obstacles.ContainsKey(cell);
 
         /// <summary>
@@ -191,11 +196,14 @@ namespace Srpg.Battle
                 map.SetTerrain(new Vector2Int(c, r), c < row.Length ? row[c] : 'W');
             }
             foreach (var o in layout.objects ?? System.Array.Empty<MapObject>())
+            foreach (var cell in o.cells ?? System.Array.Empty<MapCell>())
             {
-                if (!o.blocks) continue;
-                foreach (var cell in o.cells ?? System.Array.Empty<MapCell>())
-                    if (map.InBounds(cell.V)) map.AddObstacle(cell.V, o.id, o.kind, o.height > 0f ? o.height : 0.6f);
+                if (!map.InBounds(cell.V)) continue;
+                if (o.blocks) map.AddObstacle(cell.V, o.id, o.kind, o.height > 0f ? o.height : 0.6f);
+                else map.Canopies.Add((cell.V, o.kind, o.height > 0f ? o.height : 1.8f));   // 下を通れる（天幕の屋根）
             }
+            map.Props.AddRange(layout.props ?? System.Array.Empty<MapProp>());
+            map.Lights.AddRange(layout.lights ?? System.Array.Empty<MapLight>());
             return map;
         }
     }

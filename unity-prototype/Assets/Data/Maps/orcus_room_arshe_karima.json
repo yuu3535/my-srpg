@@ -143,6 +143,27 @@
    "height": 0.0
   }
  ],
+ "props": [],
+ "lights": [
+  {
+   "kind": "窓の朝の光",
+   "color": "window",
+   "x": 4,
+   "y": 1
+  },
+  {
+   "kind": "机のランプ",
+   "color": "warm",
+   "x": 2,
+   "y": 6
+  },
+  {
+   "kind": "机のランプ",
+   "color": "warm",
+   "x": 7,
+   "y": 6
+  }
+ ],
  "exits": [
   {
    "id": "to_corridor",

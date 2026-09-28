@@ -99,7 +99,310 @@
    "h": 8
   }
  ],
- "objects": [],
+ "objects": [
+  {
+   "id": "tent",
+   "kind": "天幕（屋根だけ。濃い紫の布に紋章）",
+   "cells": [
+    {
+     "x": 12,
+     "y": 1
+    },
+    {
+     "x": 13,
+     "y": 1
+    },
+    {
+     "x": 14,
+     "y": 1
+    },
+    {
+     "x": 15,
+     "y": 1
+    }
+   ],
+   "blocks": false,
+   "height": 1.8
+  },
+  {
+   "id": "dummy_1",
+   "kind": "木の訓練用の人形",
+   "cells": [
+    {
+     "x": 7,
+     "y": 6
+    }
+   ],
+   "blocks": true,
+   "height": 1.0
+  },
+  {
+   "id": "dummy_2",
+   "kind": "木の訓練用の人形",
+   "cells": [
+    {
+     "x": 15,
+     "y": 6
+    }
+   ],
+   "blocks": true,
+   "height": 1.0
+  },
+  {
+   "id": "dummy_3",
+   "kind": "木の訓練用の人形",
+   "cells": [
+    {
+     "x": 7,
+     "y": 13
+    }
+   ],
+   "blocks": true,
+   "height": 1.0
+  },
+  {
+   "id": "dummy_big",
+   "kind": "大きな訓練用の人形（大きな種族の兵用）",
+   "cells": [
+    {
+     "x": 15,
+     "y": 13
+    }
+   ],
+   "blocks": true,
+   "height": 1.6
+  },
+  {
+   "id": "weapon_rack_1",
+   "kind": "武器立て（木剣・槍）",
+   "cells": [
+    {
+     "x": 5,
+     "y": 6
+    }
+   ],
+   "blocks": true,
+   "height": 1.0
+  },
+  {
+   "id": "weapon_rack_2",
+   "kind": "武器立て（木剣・槍）",
+   "cells": [
+    {
+     "x": 5,
+     "y": 12
+    }
+   ],
+   "blocks": true,
+   "height": 1.0
+  },
+  {
+   "id": "barrels_1",
+   "kind": "樽と木箱",
+   "cells": [
+    {
+     "x": 20,
+     "y": 14
+    }
+   ],
+   "blocks": true,
+   "height": 0.6
+  },
+  {
+   "id": "barrels_2",
+   "kind": "樽と木箱",
+   "cells": [
+    {
+     "x": 22,
+     "y": 15
+    },
+    {
+     "x": 22,
+     "y": 16
+    }
+   ],
+   "blocks": true,
+   "height": 0.6
+  },
+  {
+   "id": "terrace_racks",
+   "kind": "武器立て（剣と盾）",
+   "cells": [
+    {
+     "x": 20,
+     "y": 18
+    },
+    {
+     "x": 21,
+     "y": 18
+    },
+    {
+     "x": 22,
+     "y": 18
+    }
+   ],
+   "blocks": true,
+   "height": 1.0
+  },
+  {
+   "id": "terrace_table",
+   "kind": "机（兜と布）",
+   "cells": [
+    {
+     "x": 21,
+     "y": 20
+    }
+   ],
+   "blocks": true,
+   "height": 0.8
+  },
+  {
+   "id": "terrace_barrel",
+   "kind": "樽",
+   "cells": [
+    {
+     "x": 22,
+     "y": 20
+    }
+   ],
+   "blocks": true,
+   "height": 0.6
+  }
+ ],
+ "props": [
+  {
+   "id": "banner_1",
+   "kind": "紋章の旗（旗竿）",
+   "edge": "north",
+   "x": 2,
+   "y": 9
+  },
+  {
+   "id": "banner_2",
+   "kind": "紋章の旗（旗竿）",
+   "edge": "north",
+   "x": 20,
+   "y": 5
+  },
+  {
+   "id": "banner_3",
+   "kind": "紋章の旗（旗竿）",
+   "edge": "north",
+   "x": 8,
+   "y": 16
+  },
+  {
+   "id": "banner_4",
+   "kind": "紋章の旗（旗竿）",
+   "edge": "north",
+   "x": 15,
+   "y": 16
+  },
+  {
+   "id": "cloth_1",
+   "kind": "柵に干した布",
+   "edge": "center",
+   "x": 6,
+   "y": 17
+  },
+  {
+   "id": "cloth_2",
+   "kind": "柵に干した紫のマント",
+   "edge": "center",
+   "x": 14,
+   "y": 17
+  },
+  {
+   "id": "shield_sword",
+   "kind": "盾と剣を立て掛けたもの",
+   "edge": "east",
+   "x": 20,
+   "y": 12
+  },
+  {
+   "id": "bucket",
+   "kind": "水桶と柄杓",
+   "edge": "west",
+   "x": 5,
+   "y": 14
+  },
+  {
+   "id": "flowers_1",
+   "kind": "鉢植え・紫の花",
+   "edge": "center",
+   "x": 1,
+   "y": 1
+  },
+  {
+   "id": "flowers_2",
+   "kind": "鉢植え・紫の花",
+   "edge": "center",
+   "x": 1,
+   "y": 7
+  }
+ ],
+ "lights": [
+  {
+   "kind": "紫の魔灯（灯籠）",
+   "color": "violet",
+   "x": 5,
+   "y": 3
+  },
+  {
+   "kind": "紫の魔灯（灯籠）",
+   "color": "violet",
+   "x": 17,
+   "y": 3
+  },
+  {
+   "kind": "紫の魔灯（灯籠）",
+   "color": "violet",
+   "x": 5,
+   "y": 15
+  },
+  {
+   "kind": "紫の魔灯（灯籠）",
+   "color": "violet",
+   "x": 17,
+   "y": 15
+  },
+  {
+   "kind": "大扉の柱の魔灯",
+   "color": "violet",
+   "x": 12,
+   "y": 0
+  },
+  {
+   "kind": "大扉の柱の魔灯",
+   "color": "violet",
+   "x": 15,
+   "y": 0
+  },
+  {
+   "kind": "門のランタン",
+   "color": "warm",
+   "x": 1,
+   "y": 9
+  },
+  {
+   "kind": "兵舎の扉のランタン",
+   "color": "warm",
+   "x": 21,
+   "y": 7
+  },
+  {
+   "kind": "通路のランタン",
+   "color": "warm",
+   "x": 2,
+   "y": 18
+  },
+  {
+   "kind": "通路のランタン",
+   "color": "warm",
+   "x": 21,
+   "y": 18
+  }
+ ],
  "exits": [
   {
    "id": "from_corridor",
