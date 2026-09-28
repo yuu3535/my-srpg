@@ -1268,6 +1268,9 @@ namespace Srpg.Battle
             var targeted = new HashSet<string>(declarations.Values.Where(d => d.type == "attack").Select(d => d.targetId));
             foreach (var unit in units.Where(u => u.Side == "ally"))
                 view.SetTargeted(unit.Id, unit.Alive && targeted.Contains(unit.Id));
+            // 行動予告の矢印（ブラウザ版の攻撃レーザー。予告した敵 → 狙う味方）
+            view.SetIntentArrows(declarations.Where(kv => kv.Value.type == "attack" && units.Any(u => u.Id == kv.Key && u.Alive))
+                .Select(kv => (kv.Key, kv.Value.targetId)).ToList());
         }
 
         /// <summary>

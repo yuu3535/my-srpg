@@ -336,6 +336,7 @@ namespace Srpg.Battle
 
         public void ClearBoard()
         {
+            intentArrows.Clear();   // 線は盤面と一緒に消える
             for (int i = transform.childCount - 1; i >= 0; i--)
                 Object.DestroyImmediate(transform.GetChild(i).gameObject);
             tiles.Clear();
@@ -772,6 +773,7 @@ namespace Srpg.Battle
                 if (body != null) visual.targetRing.transform.position = body.bounds.center;
                 visual.targetRing.transform.localScale = Vector3.one * Mathf.Lerp(unitHeight * 0.95f, topViewUnitSize * 1.1f, t);
             }
+            UpdateIntentArrows();
             UpdateOcclusion();
         }
 
