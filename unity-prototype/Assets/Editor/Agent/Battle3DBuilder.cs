@@ -15,7 +15,7 @@ namespace Srpg.EditorAgent
     ///
     /// 原作者 2026-09-27: マップは3Dの盤面に置き換える（docs/10-design/map/MAP_BOARD_METHOD_DECISION_2026-09-27.md）。
     /// 1. 3D用の描画設定・模様・陣営の枠・木の絵を用意する（Board3DTestBuilder と同じもの）
-    /// 2. シーン Assets/Scenes/Battle3D.unity を作り直し、ビルドの最初のシーンにする（2Dの BattleM1 は残す）
+    /// 2. シーン Assets/Scenes/Battle3D.unity を作り直し、ビルドの最初のシーンにする
     /// 3. Assets/Previews/Battle3D_*.png を書き出す（全体・アルシェを選んだところ・動かしたところ・狙われた印・真上）
     /// データは tools/export_unity_battle.js（ブラウザ版から書き出し）で用意しておく。
     /// </summary>
@@ -331,7 +331,7 @@ namespace Srpg.EditorAgent
             view.ClearBoard();   // 盤面は再生したときに作る（作ったマテリアルはシーンに保存できないため）
             EditorSceneManager.SaveScene(scene, ScenePath);
 
-            // 3Dの戦闘を最初のシーンにする（2Dの斜めの絵の BattleM1 は比べるために残す）
+            // 3Dの戦闘を最初のシーンにする
             var scenes = EditorBuildSettings.scenes.Where(s => s.path != ScenePath).ToList();
             scenes.Insert(0, new EditorBuildSettingsScene(ScenePath, true));
             EditorBuildSettings.scenes = scenes.ToArray();

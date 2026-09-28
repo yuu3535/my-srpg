@@ -18,7 +18,7 @@ namespace Srpg.EditorAgent
     ///   Unity.exe -batchmode -projectPath unity-prototype -executeMethod Srpg.EditorAgent.Board3DTestBuilder.BuildAll -quit -logFile -
     ///
     /// 1. 3D用の描画設定（Universal Renderer）を用意する。今の設定は2D用で、3Dの陰影が出ないため。
-    ///    既存の2D用の設定（BattleM1 が使う）は変えず、描画設定の一覧に足すだけ。
+    ///    既存の2D用の設定は変えず、描画設定の一覧に足すだけ。
     /// 2. シーン Assets/Scenes/Board3DTest.unity を作り直す（盤面は再生したときに作る）
     /// 3. Assets/Previews/Board3D_*.png を書き出す
     /// 依頼: docs/10-design/map/MAP_3D_BOARD_TEST_REQUEST_2026-09-26.md（T1〜T4）
@@ -28,7 +28,7 @@ namespace Srpg.EditorAgent
         internal const string ScenePath = "Assets/Scenes/Board3DTest.unity";
         internal const string RendererPath = "Assets/Settings/Renderer3D.asset";
         internal const string PreviewDir = "Assets/Previews";
-        internal const string TokenDir = "Assets/Art/Tokens";                         // キャラの盤面の絵（BattleM1 と同じ）
+        internal const string TokenDir = "Assets/Art/Tokens";                         // キャラの盤面の絵
         internal const string TreePicturePath = "Assets/Art/Board3D/tree_picture.png";  // 板に貼る仮の木の絵（ここで描く）
         internal const string TextureDir = "Assets/Art/Board3D/Textures";                // T5 の仮の模様（tools/make_board_textures.py）
         internal const string VolumeProfilePath = "Assets/Settings/Board3DVolume.asset";  // 光のにじみ（ブルーム）の設定

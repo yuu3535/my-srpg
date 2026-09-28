@@ -58,7 +58,7 @@ namespace Srpg.Battle
                 foreach (var dir in dirs)
                 {
                     var next = cell + dir;
-                    if (!IsoGrid.InBounds(next, cols, rows) || visited.Contains(next)) continue;
+                    if (next.x < 0 || next.y < 0 || next.x >= cols || next.y >= rows || visited.Contains(next)) continue;
                     if (!canEnter(next)) continue;
                     if (occupants.TryGetValue(next, out var occ) && occ.Side != side) continue;
                     visited.Add(next);

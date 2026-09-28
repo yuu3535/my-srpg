@@ -16,30 +16,6 @@ namespace Srpg.Tests
         }
 
         [Test]
-        public void CellCenterAndWorldToCellRoundTrip()
-        {
-            for (int col = 0; col < 12; col++)
-            for (int row = 0; row < 8; row++)
-            {
-                var center = IsoGrid.CellCenter(col, row);
-                Assert.AreEqual(new Vector2Int(col, row), IsoGrid.WorldToCell(center), $"({col},{row})");
-            }
-        }
-
-        [Test]
-        public void CellShapeIsTwoToOneDiamond()
-        {
-            // マス(0,0)の中心は上の頂点（原点）から縦に半マス下
-            Assert.AreEqual(new Vector2(0f, -0.25f), IsoGrid.CellCenter(0, 0));
-            // 列が増えると右下、行が増えると左下
-            Assert.AreEqual(new Vector2(0.5f, -0.5f), IsoGrid.CellCenter(1, 0));
-            Assert.AreEqual(new Vector2(-0.5f, -0.5f), IsoGrid.CellCenter(0, 1));
-            // マス(0,0)の右寄りの内側と、その右下のマス(1,0)の内側
-            Assert.AreEqual(new Vector2Int(0, 0), IsoGrid.WorldToCell(new Vector2(0.4f, -0.25f)));
-            Assert.AreEqual(new Vector2Int(1, 0), IsoGrid.WorldToCell(new Vector2(0.4f, -0.45f)));
-        }
-
-        [Test]
         public void MoveRangeMatchesBrowserRules()
         {
             var self = new Occupant { Cell = new Vector2Int(2, 2), Side = "ally" };
