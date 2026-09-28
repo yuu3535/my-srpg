@@ -1,7 +1,7 @@
 # 配置表 アルシェとカリマの部屋（orcus_room_arshe_karima）
 
 作成: 2026-09-28 / マップ担当（Claude Code）
-状態: 試作対象。背景の絵はまだない（新しく頼む）
+状態: 試作対象。背景の絵は新しく頼む（原作者 2026-09-28）。依頼文: `docs/30-planning/MAP_BG_BRUSHUP_ORDER_ORCUS_CASTLE_2026-09-28.md` §4.5
 地形の表・探索の項目: `orcus_room_arshe_karima.json`（10×9マス。上が北。座標は (x, y)、x＝列・y＝行）
 下絵: `マップチップ/orcus_room_arshe_karima/orcus_room_arshe_karima_guide_square.png`
 場所の流れ: `docs/10-design/map/PROLOGUE_1-1_MAP_PLAN_2026-09-28.md`
