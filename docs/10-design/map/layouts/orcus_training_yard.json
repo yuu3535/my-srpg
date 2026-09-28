@@ -92,5 +92,181 @@
     "WuuuuuuuuuuuuuuuuuuuuuuW",
     "WuuuuuuuuuuuuuuuuuuuuuuW",
     "WWWWWWWWWWWDWWWWWWWWWWWW"
-  ]
+  ],
+  "exploration": {
+    "note": "探索の項目（マップ担当 2026-09-28。項目の名前・書き方は仮。Unity が読む形は総合担当が決める。計画書 docs/10-design/map/PROLOGUE_1-1_MAP_PLAN_2026-09-28.md §3）",
+    "exits": [
+      {
+        "id": "from_corridor",
+        "cells": [
+          [
+            11,
+            0
+          ],
+          [
+            12,
+            0
+          ]
+        ],
+        "to": "orcus_corridor",
+        "label": "本丸の大扉（城の廊下へ）"
+      },
+      {
+        "id": "to_town",
+        "cells": [
+          [
+            0,
+            10
+          ]
+        ],
+        "to": "orcus_town",
+        "label": "城門へ抜ける門"
+      },
+      {
+        "id": "barracks",
+        "cells": [
+          [
+            21,
+            7
+          ]
+        ],
+        "to": null,
+        "label": "兵舎の扉（当面は鍵がかかっている）"
+      },
+      {
+        "id": "south",
+        "cells": [
+          [
+            11,
+            21
+          ]
+        ],
+        "to": null,
+        "label": "通路の奥の扉（行き先は廊下の配置を決めるときに見直す）"
+      }
+    ],
+    "states": [
+      {
+        "id": "prologue_1_1_arrival",
+        "scene": "シナリオプロローグ1-1 No.56〜67",
+        "player": {
+          "id": "young_arshe",
+          "cell": [
+            11,
+            1
+          ],
+          "facing": "south"
+        },
+        "people": [
+          {
+            "id": "young_karima",
+            "cell": [
+              12,
+              12
+            ],
+            "facing": "north"
+          },
+          {
+            "id": "gunter",
+            "cell": [
+              11,
+              7
+            ],
+            "facing": "south"
+          }
+        ],
+        "goals": [
+          {
+            "id": "enter_yard",
+            "cells": [
+              [
+                11,
+                1
+              ],
+              [
+                12,
+                1
+              ]
+            ],
+            "event": "訓練場へ入ると探索パート終了 → 合流の会話 → 戦闘 battleAreas.prologue"
+          }
+        ],
+        "talkAreas": []
+      },
+      {
+        "id": "prologue_1_1_after_training",
+        "scene": "シナリオプロローグ1-1 No.76〜96 のあと",
+        "player": {
+          "id": "young_arshe",
+          "cell": [
+            10,
+            12
+          ],
+          "facing": "north"
+        },
+        "people": [
+          {
+            "id": "young_karima",
+            "cell": [
+              12,
+              12
+            ],
+            "facing": "north"
+          },
+          {
+            "id": "gunter",
+            "cell": [
+              11,
+              7
+            ],
+            "facing": "south"
+          }
+        ],
+        "goals": [],
+        "talkAreas": []
+      }
+    ],
+    "inspect": [
+      {
+        "id": "weapon_rack",
+        "cell": [
+          5,
+          6
+        ],
+        "text": "（案）稽古用の木剣。ギュンターが毎朝手入れしている"
+      },
+      {
+        "id": "tent",
+        "cell": [
+          18,
+          5
+        ],
+        "text": "（案）祝宴の準備の品"
+      },
+      {
+        "id": "crest_banner",
+        "cell": [
+          2,
+          9
+        ],
+        "text": "（案）オルクスの紋章（ツノ・蛇・冠・6枚の翼）"
+      },
+      {
+        "id": "stage",
+        "cell": [
+          18,
+          9
+        ],
+        "text": "（案）ギュンターがいつも稽古を見ている演台"
+      },
+      {
+        "id": "flowers",
+        "cell": [
+          1,
+          8
+        ],
+        "text": "（案）城壁ぎわの紫の花"
+      }
+    ]
+  }
 }
