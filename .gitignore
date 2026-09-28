@@ -27,3 +27,6 @@ unity-prototype/Recordings/
 unity-prototype/Assets/Settings/Pipeline/Resources/RuntimePipelineConfig.asset*
 unity-prototype/Assets/Settings/Pipeline/Resources/RuntimePipelineBuildInfo.asset*
 unity-prototype/PlaythroughShots/
+# Unity の確認用の画像（組み立てのたびに撮り直す。数百MBになるので Git に入れない。手元のフォルダで見る。2026-09-28）
+unity-prototype/Assets/Previews/
+unity-prototype/Assets/Previews.meta
