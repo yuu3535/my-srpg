@@ -18,10 +18,11 @@ namespace Srpg.Battle
             public bool flyStop;    // 飛行で止まれる
             public float height;    // 天面の高さ（見た目。戦闘の補正にはまだ使わない）
             public Color color;     // 模様がないときの仮の色
+            public bool fence;      // 床は平らのまま、細い木の柵（柱と横木）を立てる（マップ担当 2026-09-28: 石の低い壁に見えないように）
 
-            public Info(string name, bool walk, bool flyEnter, bool flyStop, float height, Color32 color)
+            public Info(string name, bool walk, bool flyEnter, bool flyStop, float height, Color32 color, bool fence = false)
             {
-                this.name = name; this.walk = walk; this.flyEnter = flyEnter; this.flyStop = flyStop; this.height = height; this.color = color;
+                this.name = name; this.walk = walk; this.flyEnter = flyEnter; this.flyStop = flyStop; this.height = height; this.color = color; this.fence = fence;
             }
         }
 
@@ -45,7 +46,7 @@ namespace Srpg.Battle
             { '+', new Info("一段高い台", true, true, true, 0.3f, new Color32(150, 104, 64, 255)) },
             { 'u', new Info("一段高い石の通路", true, true, true, 0.6f, new Color32(120, 112, 128, 255)) },
             { '/', new Info("階段", true, true, true, 0.3f, new Color32(214, 214, 222, 255)) },
-            { 'F', new Info("木の柵", false, true, true, 0.5f, new Color32(70, 40, 24, 255)) },
+            { 'F', new Info("木の柵", false, true, true, 0f, new Color32(70, 40, 24, 255), fence: true) },
             { 'b', new Info("石の手すり", false, true, false, 0.5f, new Color32(112, 100, 120, 255)) },
             { 'P', new Info("柱", false, true, false, 1.6f, new Color32(96, 80, 110, 255)) },
             { 'W', new Info("壁", false, false, false, 1.6f, new Color32(60, 52, 64, 255)) },

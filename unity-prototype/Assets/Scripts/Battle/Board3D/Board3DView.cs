@@ -312,6 +312,12 @@ namespace Srpg.Battle
             foreach (var cell in map.SceneryTrees) AddTree(cell);
             foreach (var o in map.Obstacles) AddObstacleModel(o.Key, o.Value.id, o.Value.kind, o.Value.height);
             foreach (var c in map.Canopies) AddCanopyModel(c.cell, c.kind, c.height);
+            for (int r = 0; r < map.Rows; r++)
+            for (int c = 0; c < map.Columns; c++)
+            {
+                var cell = new Vector2Int(c, r);
+                if (TerrainTable.Get(map.TerrainAt(cell)).fence) AddFenceModel(cell);
+            }
             foreach (var p in map.Props) AddPropModel(p);
             if (lanterns)
                 foreach (var l in map.Lights)
@@ -898,6 +904,26 @@ namespace Srpg.Battle
             root.localPosition = map.TopCenter(cell);
             AddBox(root, "Body", new Vector3(0f, height * 0.5f, 0f), new Vector3(0.78f, height, 0.78f), LitMaterial(color));
             if (height >= TallTile) RegisterOccluder(root.gameObject);
+        }
+
+        /// <summary>
+        /// 木の柵（地形 F）: 床は平らのまま、マスの中央に柱、隣の柵のマスへ横木を渡す（床の絵の柵の線に重なる）。
+        /// 横木は右と下（奥から手前）の隣へだけ渡して、2本重ならないようにする
+        /// </summary>
+        private void AddFenceModel(Vector2Int cell)
+        {
+            var root = new GameObject($"Fence_{cell.x}_{cell.y}").transform;
+            root.SetParent(boardRoot, false);
+            root.localPosition = map.TopCenter(cell);
+            var wood = LitMaterial(new Color32(96, 62, 38, 255));
+            AddBox(root, "Post", new Vector3(0f, 0.3f, 0f), new Vector3(0.1f, 0.6f, 0.1f), wood);
+            bool IsFence(Vector2Int n) => map.InBounds(n) && TerrainTable.Get(map.TerrainAt(n)).fence;
+            if (IsFence(cell + Vector2Int.right))
+                foreach (float y in new[] { 0.22f, 0.45f })
+                    AddBox(root, "Rail", new Vector3(0.5f, y, 0f), new Vector3(1f, 0.06f, 0.05f), wood);
+            if (IsFence(cell + Vector2Int.up))   // 行+1 は手前（世界の −z）
+                foreach (float y in new[] { 0.22f, 0.45f })
+                    AddBox(root, "Rail", new Vector3(0f, y, -0.5f), new Vector3(0.05f, 0.06f, 1f), wood);
         }
 
         /// <summary>下を通れる屋根（天幕など）の仮の模型: その高さに薄い板。キャラを隠すときは半透明にする</summary>

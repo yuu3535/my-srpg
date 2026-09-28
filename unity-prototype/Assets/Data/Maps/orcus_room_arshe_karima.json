@@ -4,7 +4,7 @@
  "indoor": true,
  "timeOfDay": "morning",
  "columns": 10,
- "rows": 9,
+ "rows": 10,
  "terrain": [
   "WWWWWWWWWW",
   "WwwwwwwwwW",
@@ -12,6 +12,7 @@
   "WwwrrrrwwW",
   "DwwrrrrwwW",
   "WwwrrrrwwW",
+  "WwwwwwwwwW",
   "WwwwwwwwwW",
   "WwwwwwwwwW",
   "WWWWWWWWWW"
@@ -84,7 +85,7 @@
    "cells": [
     {
      "x": 2,
-     "y": 7
+     "y": 8
     }
    ],
    "blocks": true,
@@ -96,7 +97,7 @@
    "cells": [
     {
      "x": 1,
-     "y": 7
+     "y": 8
     }
    ],
    "blocks": true,
@@ -108,7 +109,7 @@
    "cells": [
     {
      "x": 7,
-     "y": 7
+     "y": 8
     }
    ],
    "blocks": true,
@@ -155,13 +156,13 @@
    "kind": "机のランプ",
    "color": "warm",
    "x": 2,
-   "y": 6
+   "y": 7
   },
   {
    "kind": "机のランプ",
    "color": "warm",
    "x": 7,
-   "y": 6
+   "y": 7
   }
  ],
  "exits": [
@@ -212,7 +213,7 @@
      "cells": [
       {
        "x": 1,
-       "y": 7
+       "y": 8
       }
      ],
      "required": true
