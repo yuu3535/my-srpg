@@ -6,6 +6,8 @@
 
 ## まず読む文書
 
+> **いまの状態（作業ブランチ・方針・担当・進み具合）は [`00-core/PROJECT_STATUS_2026-09-28.md`](00-core/PROJECT_STATUS_2026-09-28.md)。作業ブランチは `ui/battle-reference-layout`（`main` は古い）。**
+
 | 知りたいこと | 開く文書 |
 |---|---|
 | このゲームで最優先する方針 | [`../PROJECT_CONSTITUTION.md`](../PROJECT_CONSTITUTION.md) |
@@ -15,7 +17,7 @@
 | UIの方向性と試作方針 | [`10-design/ui/UNITY_SRPG_UI_DESIGN_DIRECTION_DRAFT.md`](10-design/ui/UNITY_SRPG_UI_DESIGN_DIRECTION_DRAFT.md) |
 | 現在のブラウザ版に何が実装されているか | [`20-implementation/CURRENT_GAME_SYSTEM_2026-09-21.md`](20-implementation/CURRENT_GAME_SYSTEM_2026-09-21.md) |
 | 次に何をするか | [`30-planning/NEXT_ACTION_QUEUE.md`](30-planning/NEXT_ACTION_QUEUE.md) |
-| 直近の作業内容 | [`90-worklogs/WORK_MEMO_2026-09-26.md`](90-worklogs/WORK_MEMO_2026-09-26.md) |
+| 直近の作業内容 | [`90-worklogs/WORK_MEMO_2026-09-27.md`](90-worklogs/WORK_MEMO_2026-09-27.md)（9/27〜9/28） |
 | マップ資料の最新版と旧案の区分 | [`10-design/map/README.md`](10-design/map/README.md) |
 | マップの絵の作り方（ChatGPTへの頼み方の標準） | [`10-design/map/MAP_ART_PIPELINE_v1_2026-09-28.md`](10-design/map/MAP_ART_PIPELINE_v1_2026-09-28.md) |
 | 会話劇の見せ方（立ち絵を左右に寄せる） | [`10-design/ui/DIALOGUE_STAGING_DIRECTION_2026-09-28.md`](10-design/ui/DIALOGUE_STAGING_DIRECTION_2026-09-28.md) |
