@@ -1,0 +1,96 @@
+{
+  "mapId": "orcus_training_yard",
+  "name": "オルクス魔王城の鍛錬場",
+  "indoor": false,
+  "timeOfDay": "day",
+  "description": "魔王城の本丸の前の中庭にある、兵の鍛錬場。黒い石畳の中に、木の柵で囲んだ砂の稽古場と、一段高い木の演台がある。南は一段高い石の通路。",
+  "mood": "朝の淡い光（夜明けすぐ。光はやわらかく、少し冷たい）。石は黒〜紫がかった黒の切り石だが、盤面は暗く潰さない。砂は明るい砂色。落ち着いた色で、鮮やかすぎる色は使わない",
+  "moodReference": "背景/オルクス魔王城鍛錬場.png（雰囲気の見本。ブラッシュアップ版が届いたらそちらに替える）",
+  "note": "マップ担当 2026-09-28。高い物・小物・明かり・出入口・物語は orcus_training_yard.md。timeOfDay は今 day と dusk しかないので day（朝の時間帯を Board3DMood に足すかは総合担当と相談）。記号 u（一段高い石の通路）・/（階段）・F（木の柵）を足した。+ はこの場所では木の演台として描く",
+  "battleAreas": [
+    {
+      "id": "prologue",
+      "battleId": "battle_tutorial",
+      "x": 8,
+      "y": 6,
+      "w": 7,
+      "h": 8
+    }
+  ],
+  "padTerrain": "W",
+  "legend": {
+    "f": {
+      "describe": "城の中庭の石畳（黒〜紫がかった黒の大きな切り石。朝の光で少し明るく見える。目地はくっきり）"
+    },
+    "g": {
+      "describe": "城壁ぎわの細い植え込み（低い草と苔、小さな紫の花が少し）"
+    },
+    "+": {
+      "name": "木の演台",
+      "color": [
+        150,
+        104,
+        64
+      ],
+      "colorName": "木の茶色",
+      "describe": "一段高い木の演台の上面（板張り。板の継ぎ目と釘）"
+    },
+    "u": {
+      "name": "一段高い石の通路",
+      "color": [
+        120,
+        112,
+        128
+      ],
+      "colorName": "灰紫",
+      "describe": "中庭より一段高い石の通路の上面（石畳より明るめの切り石）"
+    },
+    "/": {
+      "name": "階段",
+      "color": [
+        214,
+        214,
+        222
+      ],
+      "colorName": "白っぽい灰色",
+      "describe": "石の階段を上から見た段々（一段高い通路と中庭をつなぐ。段は横向き）"
+    },
+    "F": {
+      "name": "木の柵",
+      "color": [
+        70,
+        40,
+        24
+      ],
+      "colorName": "こげ茶",
+      "describe": "木の柵が立つ所。柵はゲーム側で立てるので、足元の地面（砂と石畳の境目）だけ"
+    },
+    "W": {
+      "describe": "城壁・本丸・兵舎の壁が立つ所。壁はゲーム側で立てるので、足元の石だけ（壁ぎわの影は描かない）"
+    }
+  },
+  "terrain": [
+    "WWWWWWWWWWPDDPWWWWWWWWWW",
+    "WgggggggfffffffffffffWWW",
+    "WgfffffffffffffffffffWWW",
+    "WgfffffffffffffffffffWWW",
+    "WgffffFFFFFaFFFFFffffWWW",
+    "WgffffFaaaaaaaaaFffffWWW",
+    "WgffffFaaaaaaaaaFffffWWW",
+    "WgffffFaaaaaaaaaFffffDWW",
+    "WgffffFaaaaaaaaaF+++fWWW",
+    "WfffffFaaaaaaaaaa+++fWWW",
+    "DfffffFaaaaaaaaaa+++fWWW",
+    "WfffffFaaaaaaaaaF+++fWWW",
+    "WfffffFaaaaaaaaaFffffWWW",
+    "WfffffFaaaaaaaaaFffffWWW",
+    "WfffffFaaaaaaaaaFffffffW",
+    "WfffffFFFFFaFFFFFffffffW",
+    "WffffffffffffffffffffffW",
+    "WFFF/FFFFFF/FFFFFF/FFFFW",
+    "WuuuuuuuuuuuuuuuuuuuuuuW",
+    "WuuuuuuuuuuuuuuuuuuuuuuW",
+    "WuuuuuuuuuuuuuuuuuuuuuuW",
+    "WWWWWWWWWWWDWWWWWWWWWWWW"
+  ]
+}
