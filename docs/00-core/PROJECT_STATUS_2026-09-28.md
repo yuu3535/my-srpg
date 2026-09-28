@@ -7,7 +7,7 @@
 
 - **作業ブランチは `main`**（原作者の決定 2026-09-28）。この日に `ui/battle-reference-layout` のすべてを main へ取り込んだ（早送りで同じ中身にした）。以後は main で作業し、`git pull` してから始める。
 - main は GitHub Pages の公開元（https://yuu3535.github.io/my-srpg/）。ブラウザ版のファイルを変えたら、テストを通してからプッシュする。
-- `ui/battle-reference-layout` は取り込み済み（残してあるが使わない）。古いブランチ（battle-v2・refactor/combat-pipeline・trial/adopted-stats・codex-world-ui-theme-experiment）と、前のエージェントの作業場所は 2026-09-28 に削除した（中身はすべて main に入っているか、今の形に置き換わっていた）。
+- `ui/battle-reference-layout` は取り込み済みで、2026-09-28 に削除した（GitHub にも手元にも、ブランチは main だけ）。古いブランチ（battle-v2・refactor/combat-pipeline・trial/adopted-stats・codex-world-ui-theme-experiment）と、前のエージェントの作業場所は 2026-09-28 に削除した（中身はすべて main に入っているか、今の形に置き換わっていた）。
 
 ## 2. 作品の方針（今の決定）
 
