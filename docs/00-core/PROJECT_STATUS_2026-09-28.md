@@ -20,7 +20,7 @@
 
 | 担当 | 役割 | 引き継ぎ |
 |---|---|---|
-| 総合担当（Claude Code の本体） | 実装・組み込み・発注書・下絵 | この文書・作業メモ |
+| 総合担当（Claude Code の本体） | 実装・組み込み・発注書・下絵 | `docs/30-planning/GENERAL_LEAD_HANDOFF_2026-09-28.md`（2代目へ）・この文書・作業メモ |
 | マップ担当（Claude の別チャット） | 配置表・マップの絵のレビュー | `docs/30-planning/MAP_IMAGE_CHAT_HANDOFF_2026-09-26.md` |
 | ゲームレビュー担当（Claude の別チャット） | 点検表でレビュー（コードは変えない） | `docs/30-planning/GAME_REVIEW_CHAT_HANDOFF_2026-09-28.md` |
 | 立ち絵担当（Claude の別チャット） | 会話用の立ち絵の依頼文・確認・透過 | `docs/30-planning/TACHIE_CHAT_HANDOFF_2026-09-28.md` |
