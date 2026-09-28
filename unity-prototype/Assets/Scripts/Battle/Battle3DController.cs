@@ -55,6 +55,63 @@ namespace Srpg.Battle
         [SerializeField] private TextAsset uiJson;  // 攻撃の選択肢（通常攻撃・戦技・魔法。tools/export_unity_battle_ui.mjs）
         // 盤面の配置（原作者 2026-09-27）: "watchroad"＝国境監視路（地形・高い物・最初の位置・地面の1枚絵）。空なら戦闘データから作る平らな盤面
         [SerializeField] private string layout = "watchroad";
+        [SerializeField] private bool setupOnStart = true;   // ▶で自分で組み立てる（探索から始める戦闘は StartOnPlace で組み立てる）
+
+        // 場所の中で戦う（プロローグの訓練: 探索と同じ盤面・同じ絵。原作者 2026-09-28）。null なら戦闘だけの盤面
+        private MapLayoutFile place;
+        private MapArea area;
+        private Texture2D placeGround;
+        /// <summary>戦う範囲の左上のマス（場所の中で戦うとき。戦闘データの位置はここからの位置）</summary>
+        public Vector2Int Origin => area != null ? new Vector2Int(area.x, area.y) : Vector2Int.zero;
+
+        /// <summary>そのマスが戦う範囲の中か（場所の中で戦うときは範囲の外に入れない。原作者 2026-09-28）</summary>
+        public bool InBoard(Vector2Int cell) =>
+            area != null ? area.Contains(cell) : cell.x >= 0 && cell.y >= 0 && cell.x < data.cols && cell.y < data.rows;
+
+        /// <summary>戦う範囲のマス</summary>
+        private IEnumerable<Vector2Int> BoardCells()
+        {
+            var o = Origin;
+            for (int y = 0; y < data.rows; y++)
+            for (int x = 0; x < data.cols; x++)
+                yield return o + new Vector2Int(x, y);
+        }
+
+        /// <summary>
+        /// 場所（配置表）の戦う範囲で戦闘を始める。盤面は探索と同じ（地形・高い物・床の絵）、キャラは戦闘データの位置に置く。
+        /// 例: 訓練場の "prologue"（x8〜14・y6〜13）
+        /// </summary>
+        public void StartOnPlace(MapLayoutFile layoutFile, string areaId, Texture2D ground)
+        {
+            place = layoutFile;
+            area = layoutFile?.battleAreas?.FirstOrDefault(a => a.id == areaId);
+            if (place != null && area == null) throw new InvalidOperationException($"戦う範囲がない: {layoutFile.mapId} / {areaId}");
+            placeGround = ground;
+            Setup();
+            view.SetView(true, 1, true);   // 探索と同じ正面から（原作者 2026-09-28）
+            view.SetOverview(false, true);
+            // 戦う範囲のまん中より2マス奥に寄る（寄る点は画面の少し上に来るので、奥の敵が上の帯・手引きの帯に隠れないように。
+            // 味方だけに寄ると、奥の敵が画面の端に切れた）
+            var topLeft = map.TopCenter(Origin);
+            var bottomRight = map.TopCenter(Origin + new Vector2Int(data.cols - 1, data.rows - 1));
+            var oneRowNorth = map.TopCenter(Origin) - map.TopCenter(Origin + Vector2Int.up);
+            view.FocusOnPoint((topLeft + bottomRight) * 0.5f + oneRowNorth * 2f, true);
+        }
+
+        /// <summary>戦闘が終わった（勝利・敗北）。1回だけ</summary>
+        public event Action<Phase> Finished;
+        private bool finishedRaised;
+
+        /// <summary>
+        /// 行動が済んだ（手引きの進み具合に使う）: "attack"（通常攻撃）/ "art"（戦技）/ "magic"（魔法）/ "item" / "trade" / "move" / "wait" / "allyTurn"（味方の番の始まり）
+        /// </summary>
+        public event Action<string, UnitState> ActionDone;
+
+        /// <summary>盤面を押しても動かさない間（戦闘中の会話など）。敵の番も、この間は待つ</summary>
+        public Func<bool> InputBlocked { get; set; }
+
+        /// <summary>手引きの帯（空なら出さない。BattleTutorial が決める）</summary>
+        public string Guide { get; set; } = "";
 
         /// <summary>選んだキャラが動けるマス（確認用）</summary>
         public IReadOnlyCollection<Vector2Int> MoveCells => moveCells;
@@ -86,6 +143,7 @@ namespace Srpg.Battle
             if (CurrentMode != Mode.Acting || selected == null || index < 0 || index >= selected.items.Count) return;
             var unit = selected;
             var used = unit.items[index];
+            if (used.type != "heal") return;   // 使えない物（ツノなど。渡すだけの物）
             unit.items.RemoveAt(index);
             if (used.type == "heal" && unit.plan != null)
             {
@@ -94,6 +152,7 @@ namespace Srpg.Battle
                 AddPopup(unit.Id, $"+{unit.plan.hp - before}", new Color(0.45f, 1f, 0.6f));
                 AddLog($"{unit.Name}は {used.name} を使用 → HP +{unit.plan.hp - before}");
             }
+            ActionDone?.Invoke("item", unit);
             FinishAction(unit);
         }
 
@@ -180,8 +239,7 @@ namespace Srpg.Battle
                 view.RemoveSummonCircle(p.cell);
                 var caster = units.FirstOrDefault(u => u.Id == p.casterId && u.Alive);
                 if (caster == null) continue;
-                var spot = Enumerable.Range(0, data.cols * data.rows)
-                    .Select(i => new Vector2Int(i % data.cols, i / data.cols))
+                var spot = BoardCells()
                     .Where(c => map.CanStop(c, false) && !units.Any(u => u.Alive && u.cell == c))
                     .OrderBy(c => Distance(c, p.cell)).ThenBy(c => c.y).ThenBy(c => c.x)
                     .Cast<Vector2Int?>().FirstOrDefault();
@@ -366,10 +424,8 @@ namespace Srpg.Battle
         {
             TransferAlly = ally;
             supportCells.Clear();
-            for (int x = 0; x < data.cols; x++)
-            for (int y = 0; y < data.rows; y++)
+            foreach (var cell in BoardCells())
             {
-                var cell = new Vector2Int(x, y);
                 if (Distance(cell, selected.cell) > currentOption.rangeMax) continue;
                 if (!map.CanStop(cell, false)) continue;
                 if (units.Any(u => u.Alive && u.cell == cell)) continue;
@@ -596,9 +652,9 @@ namespace Srpg.Battle
         public IReadOnlyDictionary<string, Declaration> Declarations => declarations;
 
         /// <summary>戦況の画面の見出しと、勝利条件・敗北条件の文（今の試験の戦闘。battleDefinitions の victory・defeat と同じ）</summary>
-        public string BattleTitle => "テスト戦闘";
-        public string VictoryText => "すべての敵を撃破する";
-        public string DefeatText => "味方の全滅";
+        public string BattleTitle => string.IsNullOrEmpty(data?.title) ? "テスト戦闘" : data.title;
+        public string VictoryText => string.IsNullOrEmpty(data?.victoryText) ? "すべての敵を撃破する" : data.victoryText;
+        public string DefeatText => string.IsNullOrEmpty(data?.defeatText) ? "味方の全滅" : data.defeatText;
 
         /// <summary>今のマスから攻撃が届く相手がいるか（「攻撃」を押せるか）</summary>
         public bool CanAttackFromHere => selected != null && CanUseFromHere(BasicOption(selected));
@@ -633,6 +689,7 @@ namespace Srpg.Battle
 
         private void Start()
         {
+            if (!setupOnStart) return;
             Setup();
             view.SetView(true, 0, true);
             FocusOnAllies(true);
@@ -677,11 +734,18 @@ namespace Srpg.Battle
             CurrentPhase = Phase.Ally;
             CurrentMode = Mode.Idle;
             Turn = 1;
+            finishedRaised = false;
             blocked.Clear();
             foreach (var tile in data.tiles ?? Array.Empty<TileData>())
                 if (tile.type == "wall" || tile.type == "void") blocked.Add(new Vector2Int(tile.x, tile.y));
 
-            if (layout == "watchroad" && data.cols == Board3DLayout.Columns && data.rows == Board3DLayout.Rows)
+            if (place != null)
+            {
+                // 場所の中で戦う: 探索と同じ盤面（地形・高い物・床の絵）。キャラはこのあと足す
+                map = Board3DMap.FromLayout(place);
+                map.Units.Clear();
+            }
+            else if (layout == "watchroad" && data.cols == Board3DLayout.Columns && data.rows == Board3DLayout.Rows)
             {
                 // 国境監視路: 地形・高い物・まわりの景色は配置のとおり。キャラはこのあと足す
                 map = Board3DLayout.Watchroad();
@@ -695,8 +759,8 @@ namespace Srpg.Battle
                 if (mi?.item != null) mapItems[new Vector2Int(mi.x, mi.y)] = mi.item;
             foreach (var source in data.units)
             {
-                var start = new Vector2Int(source.x, source.y);
-                if (layout == "watchroad")
+                var start = Origin + new Vector2Int(source.x, source.y);
+                if (place == null && layout == "watchroad")
                 {
                     // 監視路の最初の位置（マップ担当の配置）
                     foreach (var (cell, id) in Board3DLayout.Units) if (id == source.id) start = cell;
@@ -713,12 +777,19 @@ namespace Srpg.Battle
                 units.Add(state);
                 map.Units.Add(new Board3DMap.Unit { cell = state.cell, id = source.id, enemy = source.side == "enemy" });
             }
+            if (place != null)
+            {
+                view.Ground = placeGround;
+                view.TileGap = 0.03f;   // 戦闘はマス目の線を出す（探索は 0）。線は戦う範囲だけ（範囲の外は場所の景色のまま）
+                view.GapCells = InBoard;
+            }
+            else view.GapCells = null;
             view.Map = map;
             view.CellTapped -= TapCell;
             view.CellTapped += TapCell;
             view.IsOverOtherGui = IsOverPanel;
             view.Setup();
-            Board3DMood.Apply(string.IsNullOrEmpty(data.timeOfDay) ? Board3DMood.Dusk : data.timeOfDay, view.KeyLight);
+            Board3DMood.Apply(string.IsNullOrEmpty(data.timeOfDay) ? Board3DMood.Dusk : data.timeOfDay, view.KeyLight, place != null && place.indoor);
             view.ApplyPropTint();
             foreach (var cell in mapItems.Keys) view.AddPickup(cell);
             AddLog("味方フェーズ ターン1");
@@ -755,8 +826,9 @@ namespace Srpg.Battle
             if (unit.plan != null && unit.plan.statusEffects.Any(e => e.type == "immobilize" || e.type == "sealed")) return new List<Vector2Int>();
             // 地形の通行（TerrainRules）: 地上は s d g = だけ。飛行は通り抜けられるが、# と t には止まれない
             bool flying = unit.source.flying;
-            return MoveRange.Compute(unit.cell, unit.source.move, unit.source.side, units.Where(u => u.Alive), data.cols, data.rows,
-                cell => map.CanEnter(cell, flying), cell => map.CanStop(cell, flying), unit);
+            // 場所の中で戦うときは、戦う範囲の外に入れない（原作者 2026-09-28）
+            return MoveRange.Compute(unit.cell, unit.source.move, unit.source.side, units.Where(u => u.Alive), map.Columns, map.Rows,
+                cell => InBoard(cell) && map.CanEnter(cell, flying), cell => InBoard(cell) && map.CanStop(cell, flying), unit);
         }
 
         /// <summary>攻撃が届く距離（武器の射程。魔導書は1〜2、魔法射程+1で1〜3）</summary>
@@ -783,7 +855,8 @@ namespace Srpg.Battle
         public void TapCell(Vector2Int cell)
         {
             if (CurrentPhase != Phase.Ally) return;
-            if (cell.x < 0 || cell.y < 0 || cell.x >= data.cols || cell.y >= data.rows) { CancelToIdle(); return; }
+            if (InputBlocked != null && InputBlocked()) return;
+            if (!InBoard(cell)) { CancelToIdle(); return; }
             var unit = units.FirstOrDefault(u => u.Alive && u.cell == cell);
             switch (CurrentMode)
             {
@@ -851,6 +924,7 @@ namespace Srpg.Battle
                 if (selected.plan != null) { selected.plan.x = cell.x; selected.plan.y = cell.y; }
                 view.MoveUnit(selected.Id, cell);
             }
+            if (cell != moveFrom) ActionDone?.Invoke("move", selected);
             selected.moved = true;
             view.FollowCell(cell);   // 動いた先が画面の端なら付いていく
             pickedThisMove = null;
@@ -882,10 +956,8 @@ namespace Srpg.Battle
             currentOption = option;
             attackCells.Clear();
             int min = option.rangeMin, max = option.rangeMax;
-            for (int x = 0; x < data.cols; x++)
-            for (int y = 0; y < data.rows; y++)
+            foreach (var cell in BoardCells())
             {
-                var cell = new Vector2Int(x, y);
                 int d = Distance(cell, selected.cell);
                 if (d >= min && d <= max) attackCells.Add(cell);
             }
@@ -914,8 +986,10 @@ namespace Srpg.Battle
         {
             if (CurrentMode != Mode.Forecast || selected == null || target == null) return;
             var attacker = selected;
+            var used = currentOption;
             if (currentOption != null && currentOption.IsArea) ExecuteArea(attacker, target, currentOption);
             else Execute(attacker, target, currentOption);
+            ActionDone?.Invoke(used != null && used.isMagic ? "magic" : used != null && used.isArt ? "art" : "attack", attacker);
             FinishAction(attacker);
         }
 
@@ -1005,6 +1079,7 @@ namespace Srpg.Battle
                 moveFrom = selected.cell;
                 pickedThisMove = null;
             }
+            if (tradedThisAction) ActionDone?.Invoke("trade", selected);
             tradedThisAction = false;
             BackToActing();
         }
@@ -1150,6 +1225,14 @@ namespace Srpg.Battle
             // 交戦のあとの状態を、盤面のユニットへ写す（位置はそのまま）
             CopyBack(attacker, plan.attacker);
             CopyBack(defender, plan.defender);
+            // 手加減（訓練）: 味方のHPは1より下がらない（寸止め）
+            if (data.mercy)
+                foreach (var unit in new[] { attacker, defender })
+                    if (unit.Side == "ally" && unit.plan.hp <= 0)
+                    {
+                        unit.plan.hp = 1;
+                        AddLog($"  {(unit == attacker ? defender : attacker).Name}は寸止めした（{unit.Name}はHP1で止まる）");
+                    }
             foreach (var unit in new[] { attacker, defender })
             {
                 if (unit.Alive) continue;
@@ -1173,9 +1256,16 @@ namespace Srpg.Battle
         private bool CheckEnd()
         {
             CleanupSummons();
-            if (!units.Any(u => u.Alive && u.Side == "enemy")) { CurrentPhase = Phase.Victory; AddLog("勝利！ すべての敵を倒した"); return true; }
-            if (!units.Any(u => u.Alive && u.Side == "ally" && !u.summoned)) { CurrentPhase = Phase.Defeat; AddLog("敗北…"); return true; }
+            if (!units.Any(u => u.Alive && u.Side == "enemy")) { CurrentPhase = Phase.Victory; AddLog("勝利！ すべての敵を倒した"); RaiseFinished(); return true; }
+            if (!units.Any(u => u.Alive && u.Side == "ally" && !u.summoned)) { CurrentPhase = Phase.Defeat; AddLog("敗北…"); RaiseFinished(); return true; }
             return false;
+        }
+
+        private void RaiseFinished()
+        {
+            if (finishedRaised) return;
+            finishedRaised = true;
+            Finished?.Invoke(CurrentPhase);
         }
 
         // ── 敵の番 ──
@@ -1198,6 +1288,7 @@ namespace Srpg.Battle
             foreach (var enemy in units.Where(u => u.Side == "enemy").ToList())
             {
                 if (!enemy.Alive || CurrentPhase != Phase.Enemy) continue;
+                while (InputBlocked != null && InputBlocked()) yield return null;   // 会話の間は待つ
                 yield return new WaitForSeconds(enemyStepSeconds);
                 var plan = PrepareEnemyAct(enemy);
                 if (plan.target != null)
@@ -1321,6 +1412,7 @@ namespace Srpg.Battle
             if (CheckEnd()) return;
             ResolveSummons();
             PlanEnemyActions();
+            ActionDone?.Invoke("allyTurn", null);
         }
 
         /// <summary>敵の行動予告を作り、狙われた味方に赤い丸を出す</summary>

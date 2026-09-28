@@ -23,6 +23,9 @@ namespace Srpg.Battle
         [SerializeField] private PlaceGround[] grounds = Array.Empty<PlaceGround>();
         [SerializeField] private string startMap = "orcus_room_arshe_karima";
         [SerializeField] private float stepSeconds = 0.16f;
+        // 段5: 目的地のあとの戦闘（同じ盤面の戦う範囲で戦う。原作者 2026-09-28）
+        [SerializeField] private Battle3DController battle;
+        [SerializeField] private TextAsset tutorialJson;   // 戦闘の手引き（Assets/Data/Scenario/prologue_training_tutorial.json）
 
         // 配置表の人物の id → 盤面の絵の id と、会話の名前（立ち絵）
         private static readonly Dictionary<string, (string token, string name)> People = new Dictionary<string, (string, string)>
@@ -52,7 +55,11 @@ namespace Srpg.Battle
         public string PlayerId { get; private set; } = "arshe";
         public IReadOnlyList<string> Items => items;
         public IReadOnlyCollection<string> Seen => seen;
-        public bool Busy => autoWalking || (dialogue != null && dialogue.IsPlaying);
+        public bool Busy => autoWalking || InBattle || (dialogue != null && dialogue.IsPlaying);
+        /// <summary>戦闘中（探索の操作・表示を止める）</summary>
+        public bool InBattle { get; private set; }
+        public Battle3DController Battle => battle;
+        public BattleTutorial Tutorial { get; private set; }
         private bool autoWalking;
         /// <summary>目的地に着いて、戦闘へ進むところ（段5でつなぐ）</summary>
         public string PendingBattleArea { get; private set; }
@@ -136,6 +143,7 @@ namespace Srpg.Battle
             view.Map = map;
             // 探索はマス目の線を出さない（細くするだけでは、画素に乗った列だけ線が残ってまだらになった）。戦闘は 0.03 のまま
             view.TileGap = 0f;
+            view.GapCells = null;
             view.Setup();
             Board3DMood.Apply(string.IsNullOrEmpty(layout.timeOfDay) ? Board3DMood.Day : layout.timeOfDay, view.KeyLight, layout.indoor);
             view.ApplyPropTint();
@@ -380,7 +388,8 @@ namespace Srpg.Battle
                     if (!string.IsNullOrEmpty(goal.thenBattleArea))
                     {
                         PendingBattleArea = goal.thenBattleArea;
-                        Log?.Invoke($"戦闘へ（{goal.thenBattleArea}）");   // 段5で戦闘につなぐ
+                        Log?.Invoke($"戦闘へ（{goal.thenBattleArea}）");
+                        StartBattle(goal.thenBattleArea);
                     }
                 }));
                 return true;
@@ -511,6 +520,78 @@ namespace Srpg.Battle
                 }
             }
             return null;
+        }
+
+        // ── 戦闘（段5） ──
+
+        /// <summary>
+        /// 今の場所の戦う範囲で戦闘を始める。盤面は探索と同じで、キャラは戦闘データの位置に置き直す。
+        /// 手引き（BattleTutorial）の台詞はこの会話の画面で流す。勝ったら、配置表の次の場面（戦闘のあと）に入り直す
+        /// </summary>
+        public void StartBattle(string areaId)
+        {
+            if (battle == null || Place == null) { Log?.Invoke("戦闘の部品がない"); return; }
+            StopWalking();
+            InBattle = true;
+            view.CellTapped -= Tap;
+            battle.gameObject.SetActive(true);
+            if (battle.Hud != null) battle.Hud.gameObject.SetActive(true);
+            battle.StartOnPlace(Place, areaId, grounds.FirstOrDefault(g => g.mapId == Place.mapId).texture);
+            battle.Finished -= OnBattleFinished;
+            battle.Finished += OnBattleFinished;
+            Tutorial?.Stop();
+            Tutorial = null;
+            if (tutorialJson != null)
+            {
+                var file = JsonUtility.FromJson<TutorialFile>(tutorialJson.text);
+                if (file.battleId == battle.Data?.battleId)
+                {
+                    Tutorial = new BattleTutorial(file, scenario, battle, (block, then) =>
+                    {
+                        if (dialogue == null) return false;
+                        dialogue.Play(block, then);
+                        return true;
+                    });
+                    Tutorial.Begin();
+                }
+            }
+            Log?.Invoke($"戦闘開始（{battle.BattleTitle}）");
+        }
+
+        private void OnBattleFinished(Battle3DController.Phase phase)
+        {
+            Log?.Invoke(phase == Battle3DController.Phase.Victory ? "戦闘に勝った" : "戦闘に負けた");
+            if (Application.isPlaying) StartCoroutine(EndBattleLater(phase));
+            else EndBattle(phase);
+        }
+
+        private IEnumerator EndBattleLater(Battle3DController.Phase phase)
+        {
+            yield return new WaitForSeconds(1.6f);   // 「勝利」を少し見せる
+            while (dialogue != null && dialogue.IsPlaying) yield return null;
+            EndBattle(phase);
+        }
+
+        /// <summary>戦闘を閉じて探索に戻る。勝ったら配置表の次の場面（戦闘のあと。入ったときの会話が流れる）</summary>
+        public void EndBattle(Battle3DController.Phase phase)
+        {
+            if (!InBattle) return;
+            InBattle = false;
+            PendingBattleArea = null;
+            Tutorial?.Stop();
+            battle.Finished -= OnBattleFinished;
+            view.CellTapped -= battle.TapCell;
+            view.CellTapped -= Tap;
+            view.CellTapped += Tap;
+            view.IsOverOtherGui = _ => Busy;
+            if (battle.Hud != null) battle.Hud.gameObject.SetActive(false);
+            battle.gameObject.SetActive(false);
+            if (phase == Battle3DController.Phase.Victory && Place?.states != null)
+            {
+                int i = Array.IndexOf(Place.states, State);
+                if (i >= 0 && i + 1 < Place.states.Length) stateOf[Place.mapId] = Place.states[i + 1].id;
+            }
+            EnterPlace(Place.mapId, null, null);
         }
 
         // ── 会話 ──

@@ -185,6 +185,9 @@ namespace Srpg.Battle
         // マスの間のすき間（盤面の目地＝マス目の線）。描いた草・土になってから細くした（2026-09-27）。
         // 探索ではもっと細くする（マス目の主張を弱め、場所に入り込めるように。原作者 2026-09-28）。Setup の前に決める
         public float TileGap { get; set; } = 0.03f;
+        /// <summary>すき間（マス目の線）を付けるマス。null なら全部（場所の中の戦闘では、戦う範囲だけ。原作者 2026-09-28）</summary>
+        public Func<Vector2Int, bool> GapCells { get; set; }
+        private float GapAt(Vector2Int cell) => GapCells == null || GapCells(cell) ? TileGap : 0f;
         private const float TileHeight = 0.3f;     // マスのブロックの厚み
         private const float BaseHeight = 0.5f;     // 盤面の下の台の厚み
         private const float SwipePixels = 60f;     // これより長く横に動かしたら回す
@@ -406,7 +409,7 @@ namespace Srpg.Battle
             // 天面の高さはマスごと（水堀は低く、壁は高く）。底は台の上でそろえる
             float top = map.TopHeight(cell);
             float height = top + TileHeight;
-            tile.transform.localScale = new Vector3(1f - TileGap, height, 1f - TileGap);
+            tile.transform.localScale = new Vector3(1f - GapAt(cell), height, 1f - GapAt(cell));
             tile.transform.localPosition = map.CellCenter(cell) + Vector3.up * (top - height * 0.5f);
             Color color = map.IsWall(cell) ? new Color32(122, 116, 110, 255) : Board3DMap.TerrainColor(map.TerrainAt(cell));
             tile.GetComponent<Renderer>().sharedMaterial = LitMaterial(color);
@@ -1254,14 +1257,14 @@ namespace Srpg.Battle
             int turnUv = topMaterial != null && topMaterial.mainTexture != null && topMaterial.mainTexture.width > 64
                 ? 0 : ((cell.x * 7 + cell.y * 13) % 4 + 4) % 4;
             var ground = GroundMaterial();
-            tile.AddComponent<MeshFilter>().sharedMesh = BlockMesh(1f - TileGap, height, turnUv, ground != null ? GroundUv(cell) : (Rect?)null);
+            tile.AddComponent<MeshFilter>().sharedMesh = BlockMesh(1f - GapAt(cell), height, turnUv, ground != null ? GroundUv(cell) : (Rect?)null);
             tile.AddComponent<MeshRenderer>().sharedMaterials = new[]
             {
                 ground != null ? ground : TextureMaterial(TopTextureName(cell)),
                 TextureMaterial(SideTextureName(cell)),
             };
             var box = tile.AddComponent<BoxCollider>();
-            box.size = new Vector3(1f - TileGap, height, 1f - TileGap);
+            box.size = new Vector3(1f - GapAt(cell), height, 1f - GapAt(cell));
             box.center = new Vector3(0f, -height * 0.5f, 0f);
             return tile;
         }

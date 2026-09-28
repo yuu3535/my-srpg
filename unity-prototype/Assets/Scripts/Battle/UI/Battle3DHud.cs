@@ -69,6 +69,8 @@ namespace Srpg.Battle
         private Text weaponName;
         private Text[] weaponValues;
         private Text hintText;
+        private RectTransform guideBar;
+        private Text guideText;
         private readonly List<GameObject> commandItems = new List<GameObject>();
         private ForecastSide leftSide, rightSide;
         private RawImage leftBust, rightBust;
@@ -189,6 +191,7 @@ namespace Srpg.Battle
             BuildWeaponCard();
             BuildCommandList();
             BuildHint();
+            BuildGuide();
             BuildForecast();
             BuildStatus();
 
@@ -625,6 +628,24 @@ namespace Srpg.Battle
             Framed(commandList, "panel_even", 7f);
         }
 
+        /// <summary>手引きの帯（訓練の戦闘。原作者 2026-09-28: 台詞＋画面の帯）。上の帯の下、真ん中に金の縁で出す</summary>
+        private void BuildGuide()
+        {
+            guideBar = Place(NewRect("Guide", frame), 140, 42, 490, 30);
+            var bg = guideBar.gameObject.AddComponent<Image>();
+            bg.sprite = StopsSprite((0f, Hex("#381547", 0.96f)), (0.7f, Hex("#140b1f", 0.93f)), (1f, Hex("#140b1f", 0.72f)));
+            bg.raycastTarget = false;
+            Place(NewRect("RuleTop", guideBar), 0, 0, 490, 1).gameObject.AddComponent<Image>().color = Hex("#c8922a", 0.6f);
+            Place(NewRect("RuleBottom", guideBar), 0, 29, 490, 1).gameObject.AddComponent<Image>().color = Hex("#c8922a", 0.6f);
+            Diamond(guideBar, 10, 11, 7, Hex("#d6a740"));
+            guideText = Label(guideBar, "Text", 24, 1, 460, 28, 10, Hex("#efd081"), FontStyle.Bold);
+            guideText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            guideText.resizeTextForBestFit = true;
+            guideText.resizeTextMinSize = 7;
+            guideText.resizeTextMaxSize = 10;
+            guideBar.gameObject.SetActive(false);
+        }
+
         private void BuildHint()
         {
             hintBar = Place(NewRect("Hint", frame), 82, 369, 680, 14);
@@ -752,7 +773,7 @@ namespace Srpg.Battle
             var sel = controller.Selected;
             var tgt = controller.Target;
             string key = $"{statusOpen}|{subList}|{sel?.items.Count}|{controller.Units.Count}|{controller.PendingSummons.Count}|{controller.CurrentOption?.label}|{controller.TransferAlly?.Id}|{controller.TradePartner?.Id}|{controller.TradePartner?.items.Count}|{controller.EnemyPreview?.attacker?.Id}|{controller.CurrentPhase}|{controller.CurrentMode}|{sel?.Id}|{sel?.plan?.hp}|{sel?.plan?.mp}|{sel?.cell}|{tgt?.Id}|{tgt?.plan?.hp}|{controller.Turn}|{controller.Units.Count(u => u.acted)}"
-                + $"|{controller.Declarations.Count}|{string.Join(",", controller.Units.Select(u => u.plan?.hp ?? 0))}";
+                + $"|{controller.Declarations.Count}|{string.Join(",", controller.Units.Select(u => u.plan?.hp ?? 0))}|{controller.Guide}";
             if (key == stateKey) return;
             stateKey = key;
 
@@ -772,6 +793,10 @@ namespace Srpg.Battle
             FillRoster(forecastOpen);
             hintBar.gameObject.SetActive(!forecastOpen);   // 戦闘予測のときは下のボタンが出る
             hintText.text = HintText(forecastOpen);
+            // 手引きの帯: 味方の番で、戦闘予測・戦況の画面を開いていないとき
+            bool guide = !string.IsNullOrEmpty(controller.Guide) && !forecastOpen && !statusOpen && controller.CurrentPhase == Battle3DController.Phase.Ally;
+            guideBar.gameObject.SetActive(guide);
+            if (guide) guideText.text = controller.Guide;
         }
 
         private void FillTopStrip(bool forecastOpen)

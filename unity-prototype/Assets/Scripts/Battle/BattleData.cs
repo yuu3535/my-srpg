@@ -17,6 +17,10 @@ namespace Srpg.Battle
         public UnitData[] units;
         public MapItemData[] mapItems;   // 拾える消耗品
         public string timeOfDay;         // 3Dの盤面の時間帯（Board3DMood: day / dusk）
+        public string title;             // 戦況の画面の見出し（なければ「テスト戦闘」）
+        public string victoryText;       // 勝利条件の文（なければ「すべての敵を撃破する」）
+        public string defeatText;        // 敗北条件の文（なければ「味方の全滅」）
+        public bool mercy;               // 手加減（訓練）: 味方のHPは1より下がらない（プロローグの訓練。原作者 2026-09-28）
     }
 
     /// <summary>消耗品（ブラウザ版の mapItems の item。type: heal なら value だけHPを回復）</summary>

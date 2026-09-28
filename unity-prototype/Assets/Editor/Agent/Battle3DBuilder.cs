@@ -340,7 +340,7 @@ namespace Srpg.EditorAgent
 
         /// <summary>画面上でそのマスを押したことにする（押す判定から戦闘の処理までを通して確かめる）</summary>
         /// <summary>画面のUIを作り、素材（ブラウザ版の assets/ui・立ち絵・コマンドのアイコン）をつなぐ</summary>
-        private static Battle3DHud CreateHud(Battle3DController controller, Camera camera)
+        internal static Battle3DHud CreateHud(Battle3DController controller, Camera camera, string uiDataPath = UiDataPath)
         {
             Directory.CreateDirectory(UiDir);
             var sprites = new System.Collections.Generic.List<(string name, Sprite sprite)>();
@@ -375,7 +375,7 @@ namespace Srpg.EditorAgent
             var so = new SerializedObject(hud);
             so.FindProperty("controller").objectReferenceValue = controller;
             so.FindProperty("targetCamera").objectReferenceValue = camera;
-            so.FindProperty("uiJson").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(UiDataPath);
+            so.FindProperty("uiJson").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(uiDataPath);
             // 明朝体はゲームに同梱する（原作者 2026-09-27。Noto Serif JP の 400・700。OFL）
             so.FindProperty("regularFont").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/NotoSerifJP-Regular.ttf");
             so.FindProperty("boldFont").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Font>("Assets/Fonts/NotoSerifJP-Bold.ttf");
@@ -417,7 +417,7 @@ namespace Srpg.EditorAgent
         }
 
         /// <summary>UIを今の状態にしてから撮る</summary>
-        private static void RenderWithHud(Battle3DHud hud, Camera camera, RenderTexture rt, string name)
+        internal static void RenderWithHud(Battle3DHud hud, Camera camera, RenderTexture rt, string name)
         {
             hud.Refresh();
             hud.UpdateOverlays();

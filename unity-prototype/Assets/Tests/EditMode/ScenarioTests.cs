@@ -29,6 +29,26 @@ namespace Srpg.Tests
             Assert.AreEqual("sidetrack", s.Block("prologue_1_1.b07").part, "井戸端会議は寄り道");
         }
 
+        /// <summary>訓練の戦闘の手引き: 表の行が b11 にある・済む行動の種類が戦闘の知らせにある・最初は交換</summary>
+        [Test]
+        public void TrainingTutorialDataPointsToTheScenario()
+        {
+            var s = Load();
+            var t = JsonUtility.FromJson<TutorialFile>(File.ReadAllText("Assets/Data/Scenario/prologue_training_tutorial.json"));
+            Assert.AreEqual("battle_prologue_training", t.battleId);
+            var block = s.Block(t.block);
+            Assert.IsNotNull(block, t.block);
+            var kinds = new[] { "trade", "move", "attack", "art", "magic", "item", "shown", "dismiss" };
+            foreach (var lesson in t.lessons)
+            {
+                CollectionAssert.Contains(kinds, lesson.done, $"{lesson.id} の済む行動");
+                foreach (int row in (lesson.rows ?? new int[0]).Concat(lesson.after ?? new int[0]))
+                    Assert.IsTrue(block.Shown.Any(l => l.row == row), $"{lesson.id}: 表の {row} 行が {t.block} にない");
+            }
+            Assert.AreEqual("trade", t.lessons[0].id, "最初は交換（ツノ → ポーション）");
+            CollectionAssert.AreEqual(new[] { 70 }, t.lessons[0].rows, "カリマ「僕のツノ知らない？」から");
+        }
+
         [Test]
         public void CastStandsOnTheirSides()
         {
