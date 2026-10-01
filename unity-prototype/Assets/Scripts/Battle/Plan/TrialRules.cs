@@ -10,6 +10,9 @@ namespace Srpg.Battle.Plan
     public static class TrialRules
     {
         public const int WeaponPowerMid = 6;          // TRIAL_WEAPON_POWER.mid
+        public const int SpellBasePower = 3;          // TRIAL_SPELL_BASE_POWER（基本魔法の固有の威力。採用版 v1.4）
+        public const int MagicArtPower = 6;           // TRIAL_MAGIC_ART_POWER（魔法の戦技の固有の威力。仮）
+        public const int PhysicalArtUses = 2;         // TRIAL_PHYSICAL_ART_USES（物理戦技の1戦闘の回数。仮）
         public const int FollowUpSpeedGap = 5;         // TRIAL_FOLLOW_UP_SPEED_GAP
         public const int GrimoireRangeMin = 1;         // TRIAL_GRIMOIRE_RANGE
         public const int GrimoireRangeMax = 2;
@@ -32,6 +35,20 @@ namespace Srpg.Battle.Plan
         {
             double rate = 60 + (attacker.tec - defender.spd) * 2.5 - SizeEvasionModifier(defenderSiz) + modifier;
             return Math.Max(5, Math.Min(100, JsRound(rate)));
+        }
+
+        public struct MagicPowerResult { public int power, hit; public bool staffActive; }
+
+        /// <summary>
+        /// 魔法の威力（固有の威力＋装備中の魔法武器の威力）と命中補正（trialMagicPower）。
+        /// kind: grimoire（基本魔法）/ magicArt（魔法の戦技）。staffDurability が負なら満タン扱い。魔法武器は耐久が残っているときだけ効く
+        /// </summary>
+        public static MagicPowerResult MagicPower(string kind, PlanItem equipped, int staffDurability)
+        {
+            int baseline = kind == "magicArt" ? MagicArtPower : SpellBasePower;
+            int durability = staffDurability < 0 ? (equipped?.durability ?? 0) : staffDurability;
+            bool active = equipped != null && equipped.kind == "grimoire" && durability > 0;
+            return new MagicPowerResult { power = baseline + (active ? equipped.power : 0), hit = active ? equipped.hit : 0, staffActive = active };
         }
 
         /// <summary>ダメージ: max(1, round(武器威力 + (攻撃値 - 守備値) / 2))</summary>

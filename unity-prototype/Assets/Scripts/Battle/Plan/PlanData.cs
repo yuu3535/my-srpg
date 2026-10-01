@@ -54,6 +54,7 @@ namespace Srpg.Battle.Plan
         public List<PlanStatus> statusEffects = new List<PlanStatus>();
         public string equippedItem;
         public PlanSpell grimoireSpell;
+        public int staffDurability = -1;   // 装備中の魔法武器（杖）の今の耐久。負なら満タン（ブラウザ版の「値なし」）
         public int criticalBonus;
         public int criticalAvoidanceBonus;
         public bool canCounterBase;
@@ -80,9 +81,11 @@ namespace Srpg.Battle.Plan
     {
         public string id;
         public string name;
-        public string kind;   // weapon / grimoire
+        public string kind;   // weapon（物理武器）/ grimoire（魔法武器＝杖。旧・魔導書）
         public int power;
         public int range;
+        public int hit;         // 命中補正（採用版 v1.4）
+        public int durability;  // 魔法武器の最大耐久（物理武器は 0＝耐久なし）
     }
 
     [Serializable]
@@ -131,6 +134,7 @@ namespace Srpg.Battle.Plan
         public int dealt;
         public int targetHpAfter;
         public int? mpCost, actorMpAfter;
+        public int? durabilityCost, actorDurabilityAfter;   // 魔法武器の耐久（MP と同じだけ減る）
         public int? quickCastRoll, quickCastChance;
         public bool quickCastActive;
         public int barrierAbsorbed;

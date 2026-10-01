@@ -1169,6 +1169,8 @@ function applyTrialProfile(unit) {
     unit.trialBaseStats = trialStatsAt(profile, level);
     unit.trialLuck = profile.luck;
     unit.trialPrayerUsed = false;
+    unit.trialDurability = {};          // 魔法武器（杖）の今の耐久（item id → 値）。戦闘の始めは満タン（持ち越し・修理は未実装）
+    unit.trialPhysicalArtUses = {};     // 物理戦技の残り回数（戦技名 → 回数）。戦闘ごとに TRIAL_PHYSICAL_ART_USES 回
     // 持ち物（武器・魔導書）と今の装備。反撃の射程は今の装備で決まる
     // 戦闘で持ち物が決まっているとき（プロローグの訓練）は、パーティの持ち物を使わない
     const partyGear = !trialBattleFixesGear(unit.id, currentBattleId) && typeof getPartyGear === "function" ? getPartyGear(partyState, unit.id) : null;
@@ -1305,11 +1307,43 @@ function trialPlanSnapshot(unit) {
         statusEffects: (unit.statusEffects || []).map(effect => ({ ...effect })),
         equippedItem: equipped,
         grimoireSpell: trialItemKind(equipped) === "grimoire" ? trialGrimoireSpell(equipped) : null,
+        staffDurability: trialItemKind(equipped) === "grimoire" ? trialStaffDurability(unit, equipped) : undefined,
         criticalBonus: Number(unit.criticalBonus || 0),
         criticalAvoidanceBonus: Number(unit.criticalAvoidanceBonus || 0),
         canCounterBase: canCounter(unit),
         prayerUsed: !!unit.trialPrayerUsed,
     };
+}
+
+/** [trial] 魔法武器（杖）の今の耐久（まだ使っていなければ満タン） */
+function trialStaffDurability(unit, itemId) {
+    const value = unit?.trialDurability?.[itemId];
+    return typeof value === "number" ? value : trialItemMaxDurability(itemId);
+}
+
+/** [trial] 魔法武器の耐久を減らす（MP と同じだけ。採用版 v1.3 §4.1）。0 になったら壊れた知らせ */
+function trialSpendStaffDurability(unit, cost) {
+    const itemId = unit?.trialEquippedItem;
+    if (!unit?.trialStats || trialItemKind(itemId) !== "grimoire") return;
+    const before = trialStaffDurability(unit, itemId);
+    if (before <= 0) return;
+    trialSetStaffDurability(unit, itemId, before - Math.min(before, cost));
+}
+
+function trialSetStaffDurability(unit, itemId, value) {
+    unit.trialDurability = unit.trialDurability || {};
+    const before = trialStaffDurability(unit, itemId);
+    unit.trialDurability[itemId] = value;
+    if (before > 0 && value <= 0) {
+        addLog(`  ${TRIAL_ITEMS[itemId]?.name || "魔法武器"}が壊れた（威力・命中の補正と付属の魔法を失う）`);
+        showMessage(unit.name, `${TRIAL_ITEMS[itemId]?.name || "魔法武器"}が壊れた`);
+    }
+}
+
+/** [trial] 物理戦技の残り回数（まだ使っていなければ TRIAL_PHYSICAL_ART_USES） */
+function trialPhysicalArtUsesLeft(unit, artName) {
+    const left = unit?.trialPhysicalArtUses?.[artName];
+    return typeof left === "number" ? left : TRIAL_PHYSICAL_ART_USES;
 }
 
 /** [trial] 攻撃の指示を計画の行動にする（魔導書の魔法・魔法の戦技・武器と物理の戦技） */
@@ -1349,6 +1383,10 @@ function trialPlanFormula(step) {
  * 予測と同じ計算を本物の乱数で行うため、予測と実際がずれない。
  */
 function trialExecuteExchange(attacker, defender, action) {
+    if (action.kind === "weapon" && action.artName && attacker.trialStats) {
+        attacker.trialPhysicalArtUses = attacker.trialPhysicalArtUses || {};
+        attacker.trialPhysicalArtUses[action.artName] = Math.max(0, trialPhysicalArtUsesLeft(attacker, action.artName) - 1);
+    }
     const plan = bpPlanExchange(trialPlanSnapshot(attacker), trialPlanSnapshot(defender), action, trialPlanEnv(), bpRandomRolls());
     const unitsById = { [attacker.id]: attacker, [defender.id]: defender };
     for (const step of plan.steps) {
@@ -1378,7 +1416,9 @@ function trialApplyStrike(step, actor, target) {
 
     if (step.quickCast?.active) addLog(`${indent}詠唱破棄！MP消費なし（${step.quickCast.roll}/${step.quickCast.chance}%）`);
     if (typeof step.actorMpAfter === "number") actor.mp = step.actorMpAfter;
-    const mpNote = typeof step.mpCost === "number" && !(step.role === "area" && step.mpCost === 0) ? `  MP-${step.mpCost}` : "";
+    const durabilityNote = typeof step.durabilityCost === "number" && step.durabilityCost > 0 ? `・耐久-${step.durabilityCost}` : "";
+    const mpNote = typeof step.mpCost === "number" && !(step.role === "area" && step.mpCost === 0) ? `  MP-${step.mpCost}${durabilityNote}` : "";
+    if (typeof step.actorDurabilityAfter === "number") trialSetStaffDurability(actor, actor.trialEquippedItem, step.actorDurabilityAfter);
     if (step.role === "area") {
         addLog(`  ${step.kind === "weapon" ? "円舞" : "万雷"} → ${target.name} ${step.kind === "weapon" ? `【命中率 ${step.hitRate}%】 判定 ` : ""}${hitNote}${mpNote} → ${result}`);
     } else if (step.role === "attack") {
@@ -1480,6 +1520,7 @@ function trialPayMagicMp(caster, spell) {
         mpCost = 0;
     }
     caster.mp = Math.max(0, caster.mp - mpCost);
+    trialSpendStaffDurability(caster, mpCost);
     return mpCost;
 }
 
@@ -1795,6 +1836,7 @@ function trialCastSpecialArt(unit, artName) {
 /** [trial] 敵が魔導書を装備していれば、その魔法で攻撃する（MPが足りなければ攻撃しない） */
 function trialEnemyGrimoireSpell(enemy) {
     if (!enemy?.trialStats || trialItemKind(enemy.trialEquippedItem) !== "grimoire") return null;
+    if (trialStaffDurability(enemy, enemy.trialEquippedItem) <= 0) return null;   // 壊れた杖の付属の魔法は使えない
     return trialGrimoireSpell(enemy.trialEquippedItem);
 }
 
@@ -1993,8 +2035,11 @@ function calculateMagicDamage(caster, target, spell, options = {}) {
     const casterDerivedBonus = getDerivedPassiveStatBonus(caster);
     const targetDerivedBonus = getDerivedPassiveStatBonus(target);
     if (isTrialPair(caster, target)) {
-        // [trial] max(1, round(武器威力 + (魔攻 - 魔防) / 2))、呪文は仮の中威力
-        const trialPower = TRIAL_WEAPON_POWER.mid + Number(options.magicPowerBonus || 0);
+        // [trial] max(1, round(魔法の固有の威力 + 魔法武器の威力 + (魔攻 - 魔防) / 2))（採用版 v1.4）
+        const kind = spell?.trialItemId ? "grimoire" : spell?.trialArtName ? "magicArt" : "grimoire";
+        const equipped = spell?.trialItemId || caster.trialEquippedItem;
+        const trialPower = trialMagicPower(kind, equipped, trialItemKind(equipped) === "grimoire" ? trialStaffDurability(caster, equipped) : undefined).power
+            + Number(options.magicPowerBonus || 0);
         const trialMagic = caster.trialStats.mag + casterDerivedBonus;
         const trialWard = target.trialStats.res + targetDerivedBonus;
         const trialRaw = trialDamage(trialMagic, trialWard, trialPower);
@@ -2793,13 +2838,15 @@ function renderLandscapeUnitCard(unit, src, hpPct, mpPct, declLabel) {
         const item = TRIAL_ITEMS[unit.trialEquippedItem];
         const isBook = item?.kind === "grimoire";
         const derived = trialDerivedValues(unit.trialStats, unit.trialSiz, getEffectiveCourage(unit));
-        const power = !item ? "―" : isBook ? (item.spell === "治癒" ? "回復" : TRIAL_WEAPON_POWER.mid) : item.power;
+        const durability = isBook ? trialStaffDurability(unit, unit.trialEquippedItem) : null;
+        const broken = isBook && durability <= 0;
+        const power = !item ? "―" : broken ? "壊れた" : item.power;
         const range = !item ? "―" : isBook ? `${TRIAL_GRIMOIRE_RANGE.min}〜${TRIAL_GRIMOIRE_RANGE.max + (trialHasAbility(unit, "魔法射程+1") ? 1 : 0)}` : item.range;
         const cell = (label, value) => `<div><dt>${label}</dt><dd>${value}</dd></div>`;
         weapon = `
             <div class="lcWeapon${item ? "" : " none"}">
                 <div class="lcWeaponName">${item ? weaponTypeIcon(weaponTypeOf(item)) : lsCommandIcon("攻撃")}<b>${item ? item.name : "装備なし"}</b>${item ? "" : "<small>反撃できません</small>"}</div>
-                <dl>${cell("威力", power)}${cell("射程", range)}${cell("命中", item ? derived.hit : "―")}${cell("必殺", item ? derived.crit : "―")}</dl>
+                <dl>${cell("威力", power)}${cell("射程", range)}${cell("命中", item ? derived.hit + (broken ? 0 : Number(item.hit || 0)) : "―")}${cell("必殺", item ? derived.crit : "―")}${isBook ? cell("耐久", `${durability}/${item.durability}`) : ""}</dl>
             </div>`;
     }
     return `
@@ -3231,7 +3278,7 @@ function landscapeForecastOptions(attacker, target) {
         options.push({ kind: "attack", label: attacker.trialStats ? "通常攻撃" : base, skill: base, artId: null });
         if (attacker.trialStats) {
             trialUnitPhysicalArts(attacker)
-                .filter(art => art.implemented)
+                .filter(art => art.implemented && trialPhysicalArtUsesLeft(attacker, art.name) > 0)
                 .forEach(art => options.push({ kind: "attack", label: art.name, skill: base, artId: `trial:${art.name}` }));
         }
         getAvailableCombatArts(attacker, "attack")
@@ -3353,7 +3400,8 @@ function renderLandscapeCommandRail(unit = selectedUnit) {
 }
 
 /** 魔法コマンドの中身。試験用ユニットは「魔法戦技＋魔導書」、ほかは従来の魔法一覧 */
-function getLandscapeMagicEntries(unit) {
+/** 魔法の一覧。壊れた杖の魔法は、includeBroken のとき（魔法のメニュー）だけ「壊れた」として出す */
+function getLandscapeMagicEntries(unit, { includeBroken = false } = {}) {
     if (unit?.trialStats && typeof trialMagicMenuFor === "function") {
         const rangeBonus = trialHasAbility(unit, "魔法射程+1") ? 1 : 0;
         return trialMagicMenuFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null, trialCarriedGrimoires(trialGearOf(unit)))
@@ -3372,8 +3420,10 @@ function getLandscapeMagicEntries(unit) {
                     ...(item.source === "固有" ? { trialFixed: true, name: item.name } : {}),
                     ...(typeof range === "number" ? { range: range + rangeBonus } : {}),
                 };
-                return { id: item.spell, spell, label: item.name, sub: item.source === "魔導書" ? "装備" : "戦技" };
-            });
+                const broken = item.itemId && trialStaffDurability(unit, item.itemId) <= 0;
+                return { id: item.spell, spell, label: item.name, sub: item.source === "魔導書" ? (broken ? "壊れた" : "装備") : "戦技", disabled: !!broken };
+            })
+            .filter(entry => includeBroken || !entry.disabled);
     }
     return Object.entries(unit?.spells || {})
         .filter(([id]) => SPELLS_DATA[id])
@@ -3440,8 +3490,9 @@ function renderLandscapeSubCommandRail(unit, kind) {
         if (unit.trialStats && canWeapon) {
             trialUnitPhysicalArts(unit).forEach(art => {
                 const baseSkill = getAttackSkillVal(unit);
-                const btn = addButton(art.name, art.implemented ? "戦技" : "未実装", () => {
-                    if (!art.implemented) return;
+                const left = trialPhysicalArtUsesLeft(unit, art.name);
+                const btn = addButton(art.name, !art.implemented ? "未実装" : `残り${left}回`, () => {
+                    if (!art.implemented || left <= 0) return;
                     selectedAttackSkill = baseSkill.name;
                     selectedCombatArtId = `trial:${art.name}`;
                     actionState = "attacking";
@@ -3451,7 +3502,7 @@ function renderLandscapeSubCommandRail(unit, kind) {
                     setLandscapeHint(`${art.name}の対象を選択してください。`);
                     syncLandscapeBattleUi(unit);
                 });
-                if (btn && !art.implemented) btn.disabled = true;
+                if (btn && (!art.implemented || left <= 0)) btn.disabled = true;
             });
         }
         getAvailableCombatArts(unit, "attack").forEach(art => {
@@ -3473,9 +3524,10 @@ function renderLandscapeSubCommandRail(unit, kind) {
     }
 
     if (kind === "magic") {
-        getLandscapeMagicEntries(unit).forEach(({ id, spell, label, sub }) => {
+        getLandscapeMagicEntries(unit, { includeBroken: true }).forEach(({ id, spell, label, sub, disabled }) => {
             const sp = spell || SPELLS_DATA[id];
-            addButton(label, sub, () => {
+            const magicBtn = addButton(label, sub, () => {
+                if (disabled) return;
                 if (sp.range === null) {
                     clearHighlights();
                     addLog(`・${unit.name}は ${sp.name} を使用`);
@@ -3526,6 +3578,7 @@ function renderLandscapeSubCommandRail(unit, kind) {
                 setLandscapeHint(`${sp.name}の対象を選んでください。`);
                 syncLandscapeBattleUi(unit);
             });
+            if (magicBtn && disabled) magicBtn.disabled = true;
         });
         addLandscapeBackButton(unit);
         return;

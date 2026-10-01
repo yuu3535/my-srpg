@@ -115,6 +115,18 @@ namespace Srpg.Battle.Plan
         private static int WeaponPower(PlanUnit unit) =>
             unit.equippedItem != null && Items.TryGetValue(unit.equippedItem, out var item) && item.kind == "weapon" ? item.power : TrialRules.WeaponPowerMid;
 
+        /// <summary>物理武器の命中補正（採用版 v1.4）</summary>
+        private static int WeaponHit(PlanUnit unit) =>
+            unit.equippedItem != null && Items.TryGetValue(unit.equippedItem, out var item) && item.kind == "weapon" ? item.hit : 0;
+
+        /// <summary>魔法の威力と命中補正（固有の威力＋装備中の魔法武器）</summary>
+        private static TrialRules.MagicPowerResult MagicOf(PlanUnit unit, PlanAction action)
+        {
+            PlanItem item = null;
+            if (unit.equippedItem != null) Items.TryGetValue(unit.equippedItem, out item);
+            return TrialRules.MagicPower(action.kind, item, unit.staffDurability);
+        }
+
         public struct Strike
         {
             public bool autoHit;
@@ -144,7 +156,8 @@ namespace Srpg.Battle.Plan
                 - StatusSum(defender, new[] { "evasionUp", "evasionBonus" })
                 + (sakki ? 20 : 0)
                 + aura.accuracy + attack.accuracy
-                + (art != null && ArtHit.TryGetValue(art, out var artHit) ? artHit : 0);
+                + (art != null && ArtHit.TryGetValue(art, out var artHit) ? artHit : 0)
+                + (magic ? MagicOf(attacker, action).hit : WeaponHit(attacker));
             bool stunned = defender.statusEffects.Any(e => e.type == "stun");
             bool usesAccuracy = !magic || action.spell?.targetType == "enemy" || OffensiveEffects.Contains(action.spell?.effectType ?? "");
             bool autoHit = stunned || !usesAccuracy;
@@ -152,7 +165,7 @@ namespace Srpg.Battle.Plan
 
             // ダメージ
             int raw = magic
-                ? TrialRules.Damage(attacker.stats.mag, defender.stats.res, TrialRules.WeaponPowerMid)
+                ? TrialRules.Damage(attacker.stats.mag, defender.stats.res, MagicOf(attacker, action).power)
                 : TrialRules.PhysicalDamage(attacker.stats.atk, defender.stats.def, WeaponPower(attacker), 0);
             if (action.isCounter) raw = Math.Max(1, raw / 2);
             double multiplier = attack.damageMultiplier;
@@ -238,6 +251,15 @@ namespace Srpg.Battle.Plan
             }
 
             var strike = StrikeOf(actor, target, action, units);
+            // 魔法武器を装備して使うと、MP と同じだけ耐久も減る（採用版 v1.3 §4.1）。威力はこの1撃を計算してから減らす
+            if (IsMagic(action) && !action.freeCast && MagicOf(actor, action).staffActive)
+            {
+                int before = actor.staffDurability < 0 && Items.TryGetValue(actor.equippedItem, out var staffItem) ? staffItem.durability : actor.staffDurability;
+                int cost = Math.Min(before, step.mpCost ?? 0);
+                actor.staffDurability = before - cost;
+                step.durabilityCost = cost;
+                step.actorDurabilityAfter = actor.staffDurability;
+            }
             step.autoHit = strike.autoHit;
             step.hitRate = strike.hitRate; step.damage = strike.damage; step.critRate = strike.critRate; step.critDamage = strike.critDamage;
             step.notes = strike.notes;

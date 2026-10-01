@@ -201,8 +201,8 @@ assert.equal(guardLoadout.combatArts.length, 4);
 // 魔法コマンド: セット中の魔法戦技 → 魔導書の順。物理戦技は出さない
 assert.deepEqual(trialMagicMenuFor("albas", 30).map(m => [m.name, m.spell, m.source]),
     [["破壊", "破壊", "戦技"], ["回復", "治癒", "戦技"], ["加速", "加速", "戦技"]]);
-assert.deepEqual(trialMagicMenuFor("ringholm", 30, null, books("ringholm")).map(m => m.name), ["召喚「ヒトダマ」", "火の魔核"]);
-assert.deepEqual(trialMagicMenuFor("young_karima", 25, null, books("young_karima")).map(m => m.name), ["結界", "破壊", "治癒の魔核"]);
+assert.deepEqual(trialMagicMenuFor("ringholm", 30, null, books("ringholm")).map(m => m.name), ["召喚「ヒトダマ」", "火の杖"]);
+assert.deepEqual(trialMagicMenuFor("young_karima", 25, null, books("young_karima")).map(m => m.name), ["結界", "破壊", "治癒の杖"]);
 assert.equal(trialMagicMenuFor("ringholm", 30).some(m => m.source === "魔導書"), false);   // 魔導書を持っていなければ出ない
 assert.equal(trialMagicMenuFor("arshe", 25).some(m => m.name === "両断"), false);
 assert.deepEqual(trialMagicMenuFor("dylan", 25), []);
@@ -229,7 +229,7 @@ assert.equal(trialToggleLoadoutSelection("ringholm", 45, sel, "classUnique", "�
 const noRevenge = trialToggleLoadoutSelection("ringholm", 30, null, "combatArts", "復讐").selection;
 assert.deepEqual(trialPhysicalArtsFor("ringholm", 30, noRevenge).map(a => a.name), ["円舞"]);
 const noHitodama = trialToggleLoadoutSelection("ringholm", 30, null, "combatArts", "召喚「ヒトダマ」").selection;
-assert.deepEqual(trialMagicMenuFor("ringholm", 30, noHitodama, books("ringholm")).map(m => m.name), ["火の魔核"]);
+assert.deepEqual(trialMagicMenuFor("ringholm", 30, noHitodama, books("ringholm")).map(m => m.name), ["火の杖"]);
 
 // 習得に使う因果Lv（味方4人は入れ替えを試せるよう Lv45 相当。能力値の因果Lvは別）
 assert.equal(trialAbilityLevelFor(P.ringholm), 45);

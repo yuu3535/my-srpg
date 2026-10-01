@@ -16,6 +16,15 @@ const TRIAL_STAT_KEYS = Object.freeze(["hp", "atk", "def", "mag", "res", "tec", 
 // 仮の武器威力（WORK_MEMO §12）
 const TRIAL_WEAPON_POWER = Object.freeze({ low: 3, mid: 6, high: 10 });
 
+// 魔法の固有の威力（採用版 DAMAGE_WEAPON_ENEMY_RULES.md v1.4 §2、原作者 2026-10-02 案B）
+//   基本魔法（魔法武器・魔核の魔法）は3。魔法の戦技は仮に6（戦技ごとの値は未決。以前の「どの魔法も中威力6」と同じ）
+//   魔法ダメージ = max(1, round(魔法の固有の威力 + 装備中の魔法武器の威力 + (魔攻 − 魔防) / 2))
+const TRIAL_SPELL_BASE_POWER = 3;
+const TRIAL_MAGIC_ART_POWER = 6;
+
+// 物理戦技の使用回数（1戦闘あたり。採用版 v1.3: 物理武器は耐久なし・物理戦技は使用回数制。戦技ごとの値は未決なので仮に2）
+const TRIAL_PHYSICAL_ART_USES = 2;
+
 // 追撃に必要な速さ差（WORK_MEMO_2026-09-24 §1 の候補）
 const TRIAL_FOLLOW_UP_SPEED_GAP = 5;
 
@@ -103,13 +112,14 @@ const TRIAL_PROFILES = Object.freeze({
     },
     // ギュンター（訓練の相手）: チュートリアル仕様（原作者 2026-09-28）。
     // 採用版§5.3 の幼ギュンター（HP17・力21・防御12・魔攻19・魔防19・技11・速さ12・魅力14）を元に、訓練用に調えた仮の値。
-    //   HP20: 両断（約10）＋火（7）＋通常攻撃（7）で倒れるくらい
+    //   HP28: 両断（約10）＋火（杖つきで10＋火傷）＋通常攻撃（7）で倒れるくらい。
+    //         2026-10-02 に20→28（採用版 v1.4 で火の杖の魔法が 3＋杖6 になり、HP20 だと両断を使う前に倒れたため。仮の値）
     //   力10: 子どもへのダメージ約5（HP13・12 に3回まで耐える）
     //   速さ7: 子ども（速さ10・11）が追撃しない（差5未満）。技12: ギュンターの攻撃が6〜7割当たる（行動予告と道具の手引きのため）
-    //   魔防16: 火の魔核で7。siz は 11（体格の補正なし。本来は4）
+    //   魔防16: 火の杖で10（基本魔法3＋杖6＋(18−16)÷2）。siz は 11（体格の補正なし。本来は4）
     gunter: {
         name: "ギュンター", race: "魔物", trpgLevel: 1, causeLevel: 1, abilityLevel: 1,
-        base:   { hp: 20, atk: 10, def: 12, mag: 10, res: 16, tec: 12, spd: 7,  cha: 14 },
+        base:   { hp: 28, atk: 10, def: 12, mag: 10, res: 16, tec: 12, spd: 7,  cha: 14 },
         growth: { hp: 65, atk: 70, def: 60, mag: 50, res: 60, tec: 60, spd: 50, cha: 55 },
         caps:   { hp: 99, atk: 99, def: 99, mag: 99, res: 99, tec: 99, spd: 99, cha: 99 },
         luck: 65, courage: 55, siz: 11,
@@ -280,27 +290,54 @@ function trialSpecialArtsFor(unitId, causeLevel, selection = null) {
         .map(art => ({ name: art.name, desc: art.desc, ...TRIAL_SPECIAL_ARTS[art.name] }));
 }
 
-// ── 試験用の武器・魔導書（持ち物） ──
-// 1人が持てる数は TRIAL_ITEM_CAPACITY まで。装備できるのは1つ（武器か魔導書）。
-// 魔導書は魔法の扱いで、射程は TRIAL_GRIMOIRE_RANGE（1〜2マス。原作者指定 2026-09-25）。
+// ── 試験用の武器・魔法武器（持ち物） ──
+// 1人が持てる数は TRIAL_ITEM_CAPACITY まで。装備できるのは1つ（武器か魔法武器）。
+// kind: "weapon" … 物理武器（剣など）。耐久なし（採用版 v1.3）。hit は命中補正（採用版 v1.4: 物理武器にも命中補正。値は仮）
+// kind: "grimoire" … **魔法武器（杖）**。旧・魔導書（コードの種類名と id は変えていない）。
+//   威力・命中補正・耐久を持ち、付属の魔法（spell）を使える。魔法を使うと MP と耐久を同じだけ払う（採用版 v1.3 §4.1）。
+//   耐久が0になると壊れ、威力・命中補正と付属の魔法を失う（持ち物には残る。修理は未実装）。射程は TRIAL_GRIMOIRE_RANGE（1〜2マス）。
+//   仮の値（2026-10-02）: 威力6（中）・命中+5・耐久30
 // どのキャラに何を持たせるかは原作者の仮置きの許可による（Claude Code が配置）。
+const TRIAL_STAFF = Object.freeze({ power: TRIAL_WEAPON_POWER.mid, hit: 5, durability: 30 });
 const TRIAL_ITEMS = Object.freeze({
-    trial_sword: { name: "仮の剣", kind: "weapon", power: TRIAL_WEAPON_POWER.mid, range: 1 },
+    trial_sword: { name: "仮の剣", kind: "weapon", power: TRIAL_WEAPON_POWER.mid, hit: 5, range: 1 },
     // アルバスが見た目で持つ剣。アルバス専用の武器ではなく、持ち物にしまったり、ほかの味方に装備させたりできる
-    albas_sword: { name: "アルバスの剣", kind: "weapon", power: TRIAL_WEAPON_POWER.mid, range: 1 },
-    // 魔法武器「魔核」（仮の名前。原作者 2026-09-27: この世界の魔法は書物ではない）。
-    // 仕組みは従来の魔導書のまま（kind: "grimoire"・id も変えない）。表示の名前だけ「魔核」にした
-    fire_book:   { name: "火の魔核",   kind: "grimoire", spell: "火" },   // 黒の一族（火魔法強化）に合わせた
-    heal_book:   { name: "治癒の魔核", kind: "grimoire", spell: "治癒" },
-    // ヘレル（魔法型の敵）の仮の魔核。隕石を単体の攻撃魔法として使う
-    star_book:   { name: "星の魔核",   kind: "grimoire", spell: "隕石", effectType: "magicDamage" },
-    // 仮の魔核: 属性なしの攻撃魔法（威力6＝魔核の標準の威力）。魔法データは火を借り、名前だけ「魔弾」にする
-    trial_book:  { name: "仮の魔核",   kind: "grimoire", spell: "火", spellName: "魔弾", power: 6 },
+    albas_sword: { name: "アルバスの剣", kind: "weapon", power: TRIAL_WEAPON_POWER.mid, hit: 5, range: 1 },
+    fire_book:   { name: "火の杖",   kind: "grimoire", spell: "火", ...TRIAL_STAFF },   // 黒の一族（火魔法強化）に合わせた
+    heal_book:   { name: "治癒の杖", kind: "grimoire", spell: "治癒", ...TRIAL_STAFF },
+    // ヘレル（魔法型の敵）の仮の杖。隕石を単体の攻撃魔法として使う
+    star_book:   { name: "星の杖",   kind: "grimoire", spell: "隕石", effectType: "magicDamage", ...TRIAL_STAFF },
+    // 仮の杖: 属性なしの攻撃魔法。魔法データは火を借り、名前だけ「魔弾」にする
+    trial_book:  { name: "仮の杖",   kind: "grimoire", spell: "火", spellName: "魔弾", ...TRIAL_STAFF },
     // 黒陽の双剣: 父上（魔王）からもらった王族の剣（シナリオ プロローグ1-1 で入手）。
     // 戦技「両断」が付いている（原作者 2026-09-28: 因果Lv1 でも訓練で戦技を使えるよう、剣に付ける）。持っている間は戦技の一覧に出る
-    kokuyou_swords: { name: "黒陽の双剣", kind: "weapon", power: TRIAL_WEAPON_POWER.mid, range: 1,
+    kokuyou_swords: { name: "黒陽の双剣", kind: "weapon", power: TRIAL_WEAPON_POWER.mid, hit: 5, range: 1,
         arts: [{ name: "両断", desc: "物理攻撃1.5倍" }] },
 });
+
+/** 魔法武器の最大耐久（魔法武器でなければ 0） */
+function trialItemMaxDurability(itemId) {
+    const item = TRIAL_ITEMS[itemId];
+    return item?.kind === "grimoire" ? Number(item.durability || 0) : 0;
+}
+
+/**
+ * 魔法の威力（固有の威力＋装備中の魔法武器の威力）と命中補正
+ *   kind: "grimoire"（基本魔法）/ "magicArt"（魔法の戦技）
+ *   equippedItemId: 装備中の物。staffDurability: その魔法武器の今の耐久（省略時は満タン扱い）
+ *   魔法武器は耐久が残っているときだけ効く（0なら壊れている）
+ */
+function trialMagicPower(kind, equippedItemId, staffDurability) {
+    const base = kind === "magicArt" ? TRIAL_MAGIC_ART_POWER : TRIAL_SPELL_BASE_POWER;
+    const item = TRIAL_ITEMS[equippedItemId];
+    const durability = staffDurability === undefined || staffDurability === null ? Number(item?.durability || 0) : Number(staffDurability);
+    const staffActive = item?.kind === "grimoire" && durability > 0;
+    return {
+        power: base + (staffActive ? Number(item.power || 0) : 0),
+        hit: staffActive ? Number(item.hit || 0) : 0,
+        staffActive,
+    };
+}
 
 /** 武器に付いている戦技（持っている武器から。implemented は効果が実装済みか） */
 function trialWeaponArtsFor(itemId) {
@@ -755,6 +792,12 @@ if (typeof module !== "undefined") {
     module.exports = {
         TRIAL_STAT_KEYS,
         TRIAL_WEAPON_POWER,
+        TRIAL_SPELL_BASE_POWER,
+        TRIAL_MAGIC_ART_POWER,
+        TRIAL_PHYSICAL_ART_USES,
+        TRIAL_STAFF,
+        trialItemMaxDurability,
+        trialMagicPower,
         TRIAL_FOLLOW_UP_SPEED_GAP,
         TRIAL_CAUSE_LEVEL_BY_TRPG_LEVEL,
         TRIAL_RULES_ID,

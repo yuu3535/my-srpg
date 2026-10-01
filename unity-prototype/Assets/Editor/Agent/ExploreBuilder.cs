@@ -191,7 +191,7 @@ namespace Srpg.EditorAgent
         }
 
         /// <summary>
-        /// 訓練の戦闘（段5）を手引きどおりに進めて撮る: 交換 → 移動 → カリマの火の魔核 → 敵の番 → ポーション → 両断 → 通常攻撃 → 勝利 → 会話 b12。
+        /// 訓練の戦闘（段5）を手引きどおりに進めて撮る: 交換 → 移動 → カリマの火の杖 → 敵の番 → ポーション → 両断 → 通常攻撃 → 勝利 → 会話 b12。
         /// 乱数は予測どおり（すべて当たる）
         /// </summary>
         private static void Battle(ExploreController explore, DialogueView dialogue, Board3DView view, Camera camera, RenderTexture rt, ref int shot)
@@ -244,7 +244,7 @@ namespace Srpg.EditorAgent
             b.ChooseWait();   // 交換のあと、アルシェはまだ行動できる。ここでは動かしてから待つ（移動は取り消せない）
             FinishTalk();
 
-            // ターンを回して勝つまで（両断・火の魔核を一度ずつ使い、あとは通常攻撃。傷ついたらポーション）
+            // ターンを回して勝つまで（両断・火の杖を一度ずつ使い、あとは通常攻撃。傷ついたらポーション）
             bool usedArt = false, usedMagic = false, usedItem = false;
             string lastLesson = explore.Tutorial?.CurrentId;
             for (int guard = 0; guard < 12 && b.CurrentPhase == Battle3DController.Phase.Ally; guard++)
@@ -300,7 +300,7 @@ namespace Srpg.EditorAgent
             b.RollsOverride = null;
             Debug.Log("[ExploreBuilder] 戦闘の記録: " + string.Join(" / ", b.Log));
             if (explore.InBattle) throw new InvalidOperationException($"手引きの確認: 戦闘が終わらなかった（ターン{b.Turn}・{b.CurrentPhase}・ギュンター HP {gunter.plan.hp}）");
-            if (!usedArt || !usedMagic) throw new InvalidOperationException("手引きの確認: 両断・火の魔核を使わずに終わった");
+            if (!usedArt || !usedMagic) throw new InvalidOperationException("手引きの確認: 両断・火の杖を使わずに終わった");
             // 勝ったら訓練場の「戦闘のあと」の場面に入り、会話 b12 が流れる
             if (!dialogue.IsPlaying || explore.State?.id != "prologue_1_1_after_training") throw new InvalidOperationException($"手引きの確認: 戦闘のあとの会話が始まらなかった（{explore.State?.id}）");
             Shot("after_training");

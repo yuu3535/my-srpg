@@ -31,27 +31,37 @@ const roles = plan => plan.steps.map(step => step.type === "strike" ? step.role 
     const a = unit("a");
     const d = unit("d", { side: "enemy", x: 1 });
     const s = bpStrike(a, d, weapon);
-    assert.equal(s.hitRate, 60, "命中 60 + (技20 - 速さ20) × 2.5");
+    assert.equal(s.hitRate, 65, "命中 60 + (技20 - 速さ20) × 2.5 + 剣の命中補正5");
     assert.equal(s.damage, 11, "武器6 + (力30 - 防御20) ÷ 2");
     assert.equal(s.critRate, 12, "必殺 技20 + 勇気60÷5 - 魅力20");
     assert.equal(s.critDamage, 33, "必殺は3倍");
     // 反撃は半分（切り捨て、最低1）
     assert.equal(bpStrike(d, a, { kind: "weapon", isCounter: true }).damage, 5);
-    // 魔法: 呪文6 + (魔攻30 - 魔防20) ÷ 2
-    assert.equal(bpStrike(a, d, { kind: "grimoire", spell: FIRE }).damage, 11);
+    // 魔法（魔核だけ・剣を装備）: 基本魔法の固有の威力3 + (魔攻30 - 魔防20) ÷ 2。剣の命中補正は魔法には乗らない
+    assert.equal(bpStrike(a, d, { kind: "grimoire", spell: FIRE }).damage, 8);
+    assert.equal(bpStrike(a, d, { kind: "grimoire", spell: FIRE }).hitRate, 60);
+    // 魔法武器（火の杖: 威力6・命中+5・耐久30）を装備: 3 + 6 + 5 = 14、命中+5
+    const staff = unit("staff", { equippedItem: "fire_book", grimoireSpell: FIRE });
+    assert.equal(bpStrike(staff, d, { kind: "grimoire", spell: FIRE }).damage, 14);
+    assert.equal(bpStrike(staff, d, { kind: "grimoire", spell: FIRE }).hitRate, 65);
+    // 壊れた杖（耐久0）は威力・命中補正なし
+    assert.equal(bpStrike({ ...staff, staffDurability: 0 }, d, { kind: "grimoire", spell: FIRE }).damage, 8);
+    // 魔法の戦技は固有の威力6（仮）: 6 + 5 = 11。杖を装備していれば杖の威力も足す
+    assert.equal(bpStrike(a, d, { kind: "magicArt", spell: BREAK }).damage, 11);
+    assert.equal(bpStrike(staff, d, { kind: "magicArt", spell: BREAK }).damage, 17);
     // 殺気: 命中+20（命中+10・相手の回避−10）、必殺+10。反撃では効かない
     const ring = unit("ring", { abilityNames: ["殺気"] });
-    assert.equal(bpStrike(ring, d, weapon).hitRate, 80);
+    assert.equal(bpStrike(ring, d, weapon).hitRate, 85);
     assert.equal(bpStrike(ring, d, weapon).critRate, 22);
-    assert.equal(bpStrike(ring, d, { kind: "weapon", isCounter: true }).hitRate, 60);
+    assert.equal(bpStrike(ring, d, { kind: "weapon", isCounter: true }).hitRate, 65);
     // 戦技は1撃目だけ: 両断1.5倍、復讐は減ったHPを加算
     assert.equal(bpStrike(a, d, { kind: "weapon", artName: "両断" }).damage, 16);
     assert.equal(bpStrike(a, d, { kind: "weapon", artName: "両断", isFollowUp: true }).damage, 11);
     assert.equal(bpStrike(unit("hurt", { hp: 14 }), d, { kind: "weapon", artName: "復讐" }).damage, 27);
-    assert.equal(bpStrike(a, d, { kind: "weapon", artName: "大振り" }).hitRate, 30);
+    assert.equal(bpStrike(a, d, { kind: "weapon", artName: "大振り" }).hitRate, 35);
     // 一族スキル: 対応属性の魔法で命中+20・1.5倍
     const clan = unit("clan", { abilityNames: ["黒の一族"] });
-    assert.deepEqual([bpStrike(clan, d, { kind: "grimoire", spell: FIRE }).hitRate, bpStrike(clan, d, { kind: "grimoire", spell: FIRE }).damage], [80, 16]);
+    assert.deepEqual([bpStrike(clan, d, { kind: "grimoire", spell: FIRE }).hitRate, bpStrike(clan, d, { kind: "grimoire", spell: FIRE }).damage], [80, 12]);
     // スタン中は必ず命中
     assert.equal(bpStrike(a, unit("stun", { statusEffects: [{ type: "stun" }] }), weapon).hitRate, 100);
 }
@@ -95,6 +105,23 @@ const roles = plan => plan.steps.map(step => step.type === "strike" ? step.role 
     const ko = bpPlanExchange(fast, weak, weapon, {}, bpFixedRolls([50, 99]));
     assert.deepEqual(roles(ko), ["attack"]);
     assert.equal(ko.defender.hp, 0);
+}
+
+// ── 魔法武器の耐久（MP と同じだけ減る。採用版 v1.3 §4.1） ──
+{
+    const staff = unit("staff", { equippedItem: "fire_book", grimoireSpell: FIRE, staffDurability: 4 });
+    const foe = unit("foe", { side: "enemy", x: 2 });
+    const plan = bpPlanExchange(staff, foe, { kind: "grimoire", spell: FIRE }, {}, bpFixedRolls([50, 99], [3]));   // MP 1d6 → 3
+    const first = plan.steps[0];
+    assert.equal(first.mpCost, 3);
+    assert.equal(first.durabilityCost, 3);
+    assert.equal(first.actorDurabilityAfter, 1);
+    assert.equal(first.damage, 14, "この1撃は耐久を減らす前の杖の威力で計算する");
+    // 耐久が MP の消費より少なければ、残りの分だけ減って0（壊れる）
+    const last = bpPlanExchange({ ...staff, staffDurability: 2 }, foe, { kind: "grimoire", spell: FIRE }, {}, bpFixedRolls([50, 99], [5])).steps[0];
+    assert.deepEqual([last.durabilityCost, last.actorDurabilityAfter], [2, 0]);
+    // 魔核だけ（剣を装備）では耐久は関係ない
+    assert.equal(bpPlanExchange(unit("core"), foe, { kind: "grimoire", spell: FIRE }, {}, bpFixedRolls([50, 99], [3])).steps[0].durabilityCost, undefined);
 }
 
 // ── 反撃できるか（装備の射程） ──
@@ -163,7 +190,7 @@ const roles = plan => plan.steps.map(step => step.type === "strike" ? step.role 
     // 倒せる相手を優先する
     const low = score(unit("low", { x: 1, hp: 8 }));
     const full = score(unit("full", { x: 1 }));
-    assert.equal(low.killChance, 0.6);
+    assert.equal(low.killChance, 0.65);   // 命中65%（剣の命中補正+5）
     assert.ok(low.score > full.score);
     // 反撃できない相手（装備なし）は、受けるダメージがないぶん高く評価する
     const bare = score(unit("bare", { x: 1, equippedItem: null }));
@@ -201,7 +228,7 @@ const roles = plan => plan.steps.map(step => step.type === "strike" ? step.role 
     const sealedFast = unit("sf", { stats: { hp: 30, atk: 30, def: 20, mag: 30, res: 20, tec: 20, spd: 40, cha: 20 }, statusEffects: [{ type: "sealed" }] });
     assert.equal(bpPlanExchange(sealedFast, unit("s", { side: "enemy", x: 1 }), weapon).steps.some(s => s.role === "followUp"), false);
     // 虚像: 命中−20
-    assert.equal(bpStrike(unit("blind", { statusEffects: [{ type: "hitDown", value: 20 }] }), unit("t", { x: 1 }), weapon).hitRate, 40);
+    assert.equal(bpStrike(unit("blind", { statusEffects: [{ type: "hitDown", value: 20 }] }), unit("t", { x: 1 }), weapon).hitRate, 45);   // 65 − 20
 
     // 円舞・万雷: 範囲の対象それぞれに1撃。反撃はない。魔法のMPは1回だけ
     const area = bpPlanArea(caster, [unit("e1", { side: "enemy", x: 1 }), unit("e2", { side: "enemy", x: 2 })],

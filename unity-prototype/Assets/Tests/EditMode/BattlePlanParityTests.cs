@@ -23,6 +23,7 @@ namespace Srpg.Tests
         {
             public string role, kind, reason, status;
             public int hitRate, damage, critRate, critDamage, hitRoll, critRoll, dealt, targetHpAfter, mpCost, actorMpAfter, reflectDamage, prayerSaved, sealChance, sealActive;
+            public int durabilityCost = -1, actorDurabilityAfter = -1;
             public bool hit, crit, ok;
         }
 
@@ -195,6 +196,8 @@ namespace Srpg.Tests
                     Check("与えたダメージ", e.dealt, s.dealt);
                     Check("相手の残りHP", e.targetHpAfter, s.targetHpAfter);
                     Check("MP消費", e.mpCost, s.mpCost ?? -1);
+                    Check("耐久の消費", e.durabilityCost, s.durabilityCost ?? -1);
+                    Check("残りの耐久", e.actorDurabilityAfter, s.actorDurabilityAfter ?? -1);
                     Check("カウンター", e.reflectDamage, s.reflectDamage ?? -1);
                     Check("祈り", e.prayerSaved, s.prayerSaved.HasValue ? (s.prayerSaved.Value ? 1 : 0) : -1);
                     Check("状態異常", e.status ?? "", s.status ?? "");

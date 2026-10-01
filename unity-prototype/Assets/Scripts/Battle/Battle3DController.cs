@@ -307,7 +307,7 @@ namespace Srpg.Battle
             FinishAction(unit);
         }
 
-        /// <summary>そのキャラの補助の魔法（回復・結界・加速・治癒の魔核）</summary>
+        /// <summary>そのキャラの補助の魔法（回復・結界・加速・治癒の杖）</summary>
         public IReadOnlyList<BattleOption> SupportsOf(UnitState unit) => (IReadOnlyList<BattleOption>)UiOf(unit)?.supports ?? Array.Empty<BattleOption>();
 
         /// <summary>今のマスから、その補助が届く味方（自分も含む）がいるか</summary>
@@ -349,17 +349,30 @@ namespace Srpg.Battle
                 if (roll <= chance) { AddLog($"  詠唱破棄！MP消費なし（{roll}/{chance}%）"); cost = 0; }
             }
             caster.plan.mp = Math.Max(0, caster.plan.mp - cost);
+            string staff = caster.plan.equippedItem;
+            if (!string.IsNullOrEmpty(staff) && BattlePlan.Items.TryGetValue(staff, out var staffItem) && staffItem.kind == "grimoire")
+            {
+                int before = StaffDurability(caster, staff);
+                if (before > 0)
+                {
+                    int after = before - Math.Min(before, cost);
+                    caster.durability[staff] = after;
+                    caster.plan.staffDurability = after;
+                    AddLog($"  {staffItem.name}の耐久 -{before - after}（残り {after}）");
+                    if (after == 0) AddLog($"  {staffItem.name}が壊れた（威力・命中の補正と付属の魔法を失う）");
+                }
+            }
             return cost;
         }
 
         /// <summary>
         /// 補助の魔法の効果（ブラウザ版 trialCastSupportArt・trialCastHeal と同じ）:
-        /// 回復＝回復量×3、治癒の魔核＝回復量（6＋魔攻÷4）、結界＝魔防÷2の装甲（次の自分の番まで）、加速＝もう一度行動できる
+        /// 回復＝回復量×3、治癒の杖＝回復量（6＋魔攻÷4）、結界＝魔防÷2の装甲（次の自分の番まで）、加速＝もう一度行動できる
         /// </summary>
         private void CastSupport(UnitState caster, UnitState target, BattleOption option)
         {
             var rolls = RollsOverride ?? new RandomRolls();
-            if (!string.IsNullOrEmpty(option.itemId)) option.ApplyEquip(caster.plan, UiOf(caster)?.weaponItemId);   // 治癒の魔核に持ち替え
+            if (!string.IsNullOrEmpty(option.itemId)) Equip(caster, caster.plan, option);   // 治癒の杖に持ち替え
             string art = option.artName;
             supportCells.Clear();
             view.ShowRange(null);
@@ -477,12 +490,13 @@ namespace Srpg.Battle
         private void ExecuteArea(UnitState attacker, UnitState target, BattleOption option)
         {
             var rolls = RollsOverride ?? new RandomRolls();
-            option.ApplyEquip(attacker.plan, UiOf(attacker)?.weaponItemId);
+            Equip(attacker, attacker.plan, option);
             var targets = AreaTargets(attacker, target, option);
             var plan = BattlePlan.PlanArea(attacker.plan, targets.Select(t => t.plan).ToList(), option.ToAction(), PlanUnits(), rolls);
             AddLog($"{attacker.Name}の{option.ActionName}！（{string.Join("・", targets.Select(t => t.Name))}）");
             foreach (var step in plan.steps)
             {
+                if (step.durabilityCost > 0) LogDurability(attacker, step);
                 var victim = targets.First(t => t.Id == step.targetId);
                 if (!step.hit)
                 {
@@ -581,7 +595,9 @@ namespace Srpg.Battle
         public IReadOnlyList<BattleOption> OptionsOf(UnitState unit)
         {
             var ui = UiOf(unit);
-            if (ui?.options != null && ui.options.Length > 0) return ui.options;
+            if (ui?.options != null && ui.options.Length > 0)
+                return ui.options.Where(o => !(o.kind == "weapon" && !string.IsNullOrEmpty(o.artName) && ArtUsesLeft(unit, o.artName) <= 0)
+                    && !(o.kind == "grimoire" && StaffBroken(unit, o.itemId))).ToList();
             var (min, max) = AttackReach(unit.plan);
             return new[] { new BattleOption { label = "通常攻撃", kind = unit.plan != null && unit.plan.HasGrimoireSpell ? "grimoire" : "weapon",
                 spell = unit.plan?.grimoireSpell, equipSpell = unit.plan?.grimoireSpell, itemId = unit.plan?.equippedItem, rangeMin = min, rangeMax = max,
@@ -619,7 +635,7 @@ namespace Srpg.Battle
         private BattlePlan.Forecast ForecastFor(UnitState attacker, UnitState defender, BattleOption option)
         {
             var a = attacker.plan.Clone();
-            option.ApplyEquip(a, UiOf(attacker)?.weaponItemId);
+            Equip(attacker, a, option);
             var env = PlanUnits().Select(u => u.id == a.id ? a : u).ToList();
             if (option.IsArea)
             {
@@ -672,6 +688,8 @@ namespace Srpg.Battle
             public readonly List<ItemData> items = new List<ItemData>();   // 拾った消耗品
             public bool summoned;          // 召喚獣（負けの判定に数えない）
             public string summonerId;      // 呼んだキャラ（倒れたら召喚獣も消える）
+            public readonly Dictionary<string, int> durability = new Dictionary<string, int>();   // 魔法武器（杖）の今の耐久（item id → 値。戦闘の始めは満タン）
+            public readonly Dictionary<string, int> artUses = new Dictionary<string, int>();      // 物理戦技の残り回数（戦技名 → 回数）
             public Vector2Int Cell => cell;
             public string Side => source.side;
             public bool Alive => plan == null || plan.hp > 0;
@@ -1192,7 +1210,12 @@ namespace Srpg.Battle
         {
             var rolls = RollsOverride ?? new RandomRolls();
             // 味方は使うときに持ち替える（ブラウザ版と同じ。敵は持ち替えない）
-            if (option != null && switchEquip) option.ApplyEquip(attacker.plan, UiOf(attacker)?.weaponItemId);
+            if (option != null && switchEquip) Equip(attacker, attacker.plan, option);
+            else SyncDurability(attacker, attacker.plan);
+            SyncDurability(defender, defender.plan);
+            // 物理戦技は1戦闘の回数を使う（採用版 v1.3。回数は仮）
+            if (option != null && option.kind == "weapon" && !string.IsNullOrEmpty(option.artName))
+                attacker.artUses[option.artName] = ArtUsesLeft(attacker, option.artName) - 1;
             var action = option != null ? option.ToAction() : PlanAction.ForEquipped(attacker.plan);
             var plan = BattlePlan.PlanExchange(attacker.plan, defender.plan, action, PlanUnits(), rolls);
             if (option != null && (option.isArt || option.isMagic)) AddLog($"{attacker.Name}の{option.ActionName}");
@@ -1200,6 +1223,7 @@ namespace Srpg.Battle
             AddLog($"{attacker.Name} → {defender.Name}");
             foreach (var step in plan.steps)
             {
+                if (step.durabilityCost > 0) LogDurability(byId[step.actorId], step);
                 if (step.type == "counterCheck")
                 {
                     var who = byId[step.actorId];
@@ -1248,6 +1272,46 @@ namespace Srpg.Battle
             unit.plan.mp = after.mp;
             unit.plan.statusEffects = after.statusEffects;
             unit.plan.prayerUsed = after.prayerUsed;
+            unit.plan.staffDurability = after.staffDurability;
+            if (!string.IsNullOrEmpty(unit.plan.equippedItem) && unit.plan.staffDurability >= 0)
+                unit.durability[unit.plan.equippedItem] = unit.plan.staffDurability;
+        }
+
+        // ── 魔法武器の耐久・物理戦技の回数（採用版 v1.3〜1.4。値は仮。ブラウザ版の trialStaffDurability・trialPhysicalArtUsesLeft と同じ） ──
+
+        /// <summary>持ち替え（使うときの持ち替え＋その杖の今の耐久）</summary>
+        private void Equip(UnitState unit, PlanUnit plan, BattleOption option)
+        {
+            option.ApplyEquip(plan, UiOf(unit)?.weaponItemId);
+            SyncDurability(unit, plan);
+        }
+
+        /// <summary>装備中の魔法武器の今の耐久を、計画用の値に入れる（まだ使っていなければ −1＝満タン）</summary>
+        private static void SyncDurability(UnitState unit, PlanUnit plan)
+        {
+            plan.staffDurability = !string.IsNullOrEmpty(plan.equippedItem) && unit.durability.TryGetValue(plan.equippedItem, out var value) ? value : -1;
+        }
+
+        /// <summary>その魔法武器の今の耐久（使っていなければ最大）</summary>
+        public static int StaffDurability(UnitState unit, string itemId)
+        {
+            if (string.IsNullOrEmpty(itemId)) return 0;
+            if (unit.durability.TryGetValue(itemId, out var value)) return value;
+            return BattlePlan.Items.TryGetValue(itemId, out var item) ? item.durability : 0;
+        }
+
+        public static bool StaffBroken(UnitState unit, string itemId) =>
+            !string.IsNullOrEmpty(itemId) && BattlePlan.Items.TryGetValue(itemId, out var item) && item.kind == "grimoire" && StaffDurability(unit, itemId) <= 0;
+
+        /// <summary>物理戦技の残り回数</summary>
+        public static int ArtUsesLeft(UnitState unit, string artName) =>
+            unit.artUses.TryGetValue(artName, out var left) ? left : TrialRules.PhysicalArtUses;
+
+        private void LogDurability(UnitState unit, PlanStep step)
+        {
+            string name = unit.plan.equippedItem != null && BattlePlan.Items.TryGetValue(unit.plan.equippedItem, out var item) ? item.name : "魔法武器";
+            AddLog($"  {name}の耐久 -{step.durabilityCost}（残り {step.actorDurabilityAfter}）");
+            if (step.actorDurabilityAfter == 0) AddLog($"  {name}が壊れた（威力・命中の補正と付属の魔法を失う）");
         }
 
         /// <summary>確認用: 勝敗と召喚の片付けを今すぐ行う</summary>

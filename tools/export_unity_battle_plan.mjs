@@ -68,7 +68,8 @@ const result = await evaluate(`(async () => {
     if (summoner && typeof trialCreateSummonUnit === "function" && !battleUnits.some(u => u.id === "hitodama"))
         battleUnits.push(trialCreateSummonUnit("hitodama", summoner, 0, 7));
     const units = battleUnits.filter(u => u.trialStats).map(trialPlanSnapshot);
-    const items = Object.entries(TRIAL_ITEMS).map(([id, item]) => ({ id, name: item.name, kind: item.kind, power: item.power ?? 0, range: item.range ?? 0 }));
+    // 魔法武器（kind grimoire＝杖）は威力・命中補正・耐久を持つ（採用版 v1.3〜1.4）。物理武器も命中補正を持つ
+    const items = Object.entries(TRIAL_ITEMS).map(([id, item]) => ({ id, name: item.name, kind: item.kind, power: item.power ?? 0, range: item.range ?? 0, hit: item.hit ?? 0, durability: item.durability ?? 0 }));
 
     // 攻撃の行動: 装備が武器なら武器、魔導書なら魔導書の魔法
     const actionFor = u => u.grimoireSpell ? { kind: "grimoire", spell: u.grimoireSpell } : { kind: "weapon" };
@@ -79,6 +80,7 @@ const result = await evaluate(`(async () => {
         role: step.role, kind: step.kind, hitRate: step.hitRate, damage: step.damage, critRate: step.critRate, critDamage: step.critDamage,
         hit: step.hit, hitRoll: n(step.hitRoll), crit: !!step.crit, critRoll: n(step.critRoll), dealt: step.dealt, targetHpAfter: step.targetHpAfter,
         mpCost: n(step.mpCost), actorMpAfter: n(step.actorMpAfter),
+        durabilityCost: n(step.durabilityCost), actorDurabilityAfter: n(step.actorDurabilityAfter),
         reflectDamage: step.reflect ? step.reflect.damage : -1, prayerSaved: b(step.prayer ? step.prayer.saved : null),
         status: step.status ? step.status.type : "",
     } : step && step.type === "counterCheck" ? {
@@ -228,7 +230,8 @@ const result = await evaluate(`(async () => {
                 attackerHpAfter: plan.attackerHpAfter, attackerMpAfter: plan.attackerMpAfter });
         }
     }
-    return { units, items, cases, hits, drains };
+    // Unity の JSON は「値なし」を表せないので、魔法武器の耐久は値なし（満タン扱い）を −1 にして書き出す
+    return { units: units.map(u => ({ ...u, staffDurability: n(u.staffDurability) })), items, cases, hits, drains };
 })()`);
 
 const dataFile = join(ROOT, "unity-prototype", "Assets", "Data", "Battles", `${BATTLE_ID}_plan.json`);

@@ -41,7 +41,7 @@ namespace Srpg.Battle
         public BattleOption[] options;           // 味方が選べる攻撃（距離はまだ見ていない）
         public BattleOption[] enemyOptions;      // 敵として選ぶ攻撃（ブラウザ版 trialEnemyAttackOptions）
         public UiListEntry[] artList, magicList; // コマンド「戦技」「魔法」の一覧（使えないものも出す）
-        public BattleOption[] supports;          // 補助の魔法（回復・結界・加速・治癒の魔核。kind = "support"）
+        public BattleOption[] supports;          // 補助の魔法（回復・結界・加速・治癒の杖。kind = "support"）
         public SpecialArt[] specials;            // 専用戦技（月詠・生命吸収）
     }
 

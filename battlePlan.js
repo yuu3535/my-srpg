@@ -23,12 +23,13 @@ const {
     trialCounterPlan: bpCounterPlan,
     TRIAL_ITEMS: BP_ITEMS,
     TRIAL_WEAPON_POWER: BP_WEAPON_POWER,
+    trialMagicPower: bpMagicPower,
 } = typeof module !== "undefined" && module.exports
     ? require("./trialStatSystem.js")
     : {
         trialHitRate, trialDamage, trialPhysicalDamage, trialCriticalRate, trialCanFollowUp,
         trialAuraModifiers, trialAttackModifiers, trialAbilityChance, trialCounterPlan,
-        TRIAL_ITEMS, TRIAL_WEAPON_POWER,
+        TRIAL_ITEMS, TRIAL_WEAPON_POWER, trialMagicPower,
     };
 
 const BP_DAMAGING_EFFECTS = new Set(["magicDamage", "break"]);
@@ -139,6 +140,17 @@ function bpWeaponPower(unit) {
     return item?.kind === "weapon" ? item.power : BP_WEAPON_POWER.mid;
 }
 
+/** 物理武器の命中補正（採用版 v1.4。装備中の物理武器の hit） */
+function bpWeaponHit(unit) {
+    const item = BP_ITEMS[unit?.equippedItem];
+    return item?.kind === "weapon" ? Number(item.hit || 0) : 0;
+}
+
+/** 魔法の威力と命中補正（固有の威力＋装備中の魔法武器。trialMagicPower） */
+function bpMagic(unit, action) {
+    return bpMagicPower(action.kind, unit?.equippedItem, unit?.staffDurability);
+}
+
 /**
  * 1撃の命中率・ダメージ・必殺率（乱数は振らない）
  *   action: { kind: "weapon"|"grimoire"|"magicArt", artName, spell, isCounter, isFollowUp }
@@ -165,15 +177,17 @@ function bpStrike(attacker, defender, action, env = {}) {
         - bpStatusSum(defender, ["evasionUp", "evasionBonus"])
         + (sakki ? 20 : 0)                       // 殺気: 命中+10・相手の回避−10
         + aura.accuracy + attack.accuracy
-        + (art ? Number(BP_ART_HIT[art] || 0) : 0);
+        + (art ? Number(BP_ART_HIT[art] || 0) : 0)
+        + (magic ? bpMagic(attacker, action).hit : bpWeaponHit(attacker));
     const stunned = (defender.statusEffects || []).some(effect => effect.type === "stun");
     const usesAccuracy = !magic || action.spell?.targetType === "enemy" || BP_OFFENSIVE_EFFECTS.has(action.spell?.effectType);
     const autoHit = stunned || !usesAccuracy;
     const hitRate = autoHit ? 100 : bpHitRate(attacker.stats, defender.stats, defender.siz, accuracy);
 
     // ダメージ
+    const magicPower = magic ? bpMagic(attacker, action).power : 0;
     let raw = magic
-        ? bpMagicDamage(attacker.stats.mag, defender.stats.res, BP_WEAPON_POWER.mid)
+        ? bpMagicDamage(attacker.stats.mag, defender.stats.res, magicPower)
         : bpPhysicalDamage(attacker.stats.atk, defender.stats.def, bpWeaponPower(attacker), 0);
     if (action.isCounter) raw = Math.max(1, Math.floor(raw / 2));
     let multiplier = attack.damageMultiplier;
@@ -204,7 +218,7 @@ function bpStrike(attacker, defender, action, env = {}) {
         critRate,
         critDamage: Math.floor(damage * BP_CRITICAL_MULTIPLIER),
         formula: magic
-            ? { magic: attacker.stats.mag, ward: defender.stats.res, power: BP_WEAPON_POWER.mid }
+            ? { magic: attacker.stats.mag, ward: defender.stats.res, power: magicPower }
             : { attack: attacker.stats.atk, armor: defender.stats.def, power: bpWeaponPower(attacker) },
         notes,
     };
@@ -268,6 +282,14 @@ function bpResolveStrike(actor, target, action, role, env, rolls) {
     }
 
     const strike = bpStrike(actor, target, action, env);
+    // 魔法武器を装備して使うと、MP と同じだけ耐久も減る（採用版 v1.3 §4.1）。威力はこの1撃を計算してから減らす。0 になると壊れる
+    if (bpIsMagic(action) && !action.freeCast && bpMagic(actor, action).staffActive) {
+        const before = actor.staffDurability ?? Number(BP_ITEMS[actor.equippedItem]?.durability || 0);
+        const cost = Math.min(before, Number(step.mpCost || 0));
+        actor.staffDurability = before - cost;
+        step.durabilityCost = cost;
+        step.actorDurabilityAfter = actor.staffDurability;
+    }
     Object.assign(step, {
         hitRate: strike.hitRate, damage: strike.damage, critRate: strike.critRate,
         critDamage: strike.critDamage, formula: strike.formula, notes: strike.notes,
@@ -525,7 +547,8 @@ function bpScoreAttack(forecast, defenderHp, attackerHp) {
  * スナップショットの形（game.js 側で戦闘中のユニットから作る）
  *   { id, name, side, x, y, hp, maxHp, mp, stats: {hp, atk, def, mag, res, tec, spd, cha}, siz,
  *     courage（今の勇気。反撃率・必殺率に使う）, luck, abilityNames: [],
- *     statusEffects: [{ type, value, duration }], equippedItem, grimoireSpell（装備中の魔導書の魔法データ）,
+ *     statusEffects: [{ type, value, duration }], equippedItem, grimoireSpell（装備中の魔法武器の魔法データ）,
+ *     staffDurability（装備中の魔法武器の今の耐久。省略時は満タン）,
  *     criticalBonus, criticalAvoidanceBonus, canCounterBase（反撃しない設定でないか）, prayerUsed }
  */
 
