@@ -137,3 +137,4 @@
 - 台詞はすべて総合担当の下書き（`prologue_training_tutorial.json` の `draft`）。原作者の確認待ち。
 - 作り（Unity版）: `UnitData.reserve`・`passive`、`Battle3DController.Reinforced`（控えが現れた知らせ）・`ActionDone("countered")`（反撃を受けた）、手引きの段（`TutorialLesson.phase`・`reserveGuide`）。ブラウザ版は控え・動かない敵に対応していない（Unity への書き出し用）。
 - 確認: 自動の通し（`ExploreBuilder`）で、人形 → 交換・回復 → ギュンター登場 → 行動予告・両断 → 勝利 → 会話 b12 まで通る。テスト（ブラウザ版8本・EditMode 24・PlayMode 7）通過。
+- **ギュンターの入り方（原作者 2026-10-02）**: 1段目の間は、戦う範囲の外（砂の稽古場の下の柵の門の外の石畳。配置表の x11・y15）に立って見守る（陣営の枠なし・戦いの対象にならない）。人形を全部倒すと「では此処からは、俺と戦うぞ！」（原作者の台詞）と言って、門を通って1マスずつ歩いて入る（門のすぐ内側 x11・y13）。入ってくるまでターンは終わらない。作り: `UnitData.wait`・`Battle3DController.ReserveCalled`・`BringReservesNow`。人形の説明の台詞にも「俺はここで見ている」を足した（下書き）。
