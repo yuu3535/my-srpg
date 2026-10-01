@@ -15,7 +15,7 @@
       "weaponType": "剣",
       "weaponPower": "6",
       "weaponRange": "1",
-      "weaponHit": "135",
+      "weaponHit": "140",
       "weaponCrit": "48",
       "portrait": "ringholm",
       "cardUv": {
@@ -158,14 +158,14 @@
       "weaponType": "剣",
       "weaponPower": "6",
       "weaponRange": "1",
-      "weaponHit": "128",
+      "weaponHit": "133",
       "weaponCrit": "45",
       "portrait": "arshe",
       "cardUv": {
         "x": 0.4,
-        "y": 0.7016129032258065,
+        "y": 0.7016130262805569,
         "w": 0.3333333333333333,
-        "h": 0.29838709677419356
+        "h": 0.29838697371944306
       },
       "bustUv": {
         "x": 0.4,
@@ -561,7 +561,7 @@
       "weaponType": "剣",
       "weaponPower": "6",
       "weaponRange": "1",
-      "weaponHit": "128",
+      "weaponHit": "133",
       "weaponCrit": "45",
       "portrait": "young_karima",
       "cardUv": {
@@ -764,7 +764,7 @@
       "weaponType": "剣",
       "weaponPower": "6",
       "weaponRange": "1",
-      "weaponHit": "90",
+      "weaponHit": "95",
       "weaponCrit": "22",
       "portrait": "forest_guard",
       "cardUv": {
@@ -834,14 +834,14 @@
       "weaponType": "剣",
       "weaponPower": "6",
       "weaponRange": "1",
-      "weaponHit": "113",
+      "weaponHit": "118",
       "weaponCrit": "33",
       "portrait": "dylan",
       "cardUv": {
         "x": 0.3214285714285714,
-        "y": 0.6241358128560852,
+        "y": 0.6241359447004609,
         "w": 0.35714285714285715,
-        "h": 0.37586418714391473
+        "h": 0.37586405529953915
       },
       "bustUv": {
         "x": 0.3214285714285714,
@@ -900,11 +900,11 @@
       "maxMp": 23,
       "move": 3,
       "summon": false,
-      "weaponName": "星の魔核",
+      "weaponName": "星の杖",
       "weaponType": "魔法",
       "weaponPower": "6",
       "weaponRange": "1〜2",
-      "weaponHit": "113",
+      "weaponHit": "118",
       "weaponCrit": "35",
       "portrait": "herel",
       "cardUv": {
@@ -928,7 +928,7 @@
       "weaponItemId": "",
       "options": [
         {
-          "label": "星の魔核",
+          "label": "星の杖",
           "kind": "grimoire",
           "artName": "",
           "itemId": "star_book",
@@ -985,7 +985,7 @@
       "artList": [],
       "magicList": [
         {
-          "label": "星の魔核",
+          "label": "星の杖",
           "sub": "装備",
           "mpCost": "1d8",
           "index": 0,

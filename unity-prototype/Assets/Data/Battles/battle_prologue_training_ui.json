@@ -15,7 +15,7 @@
       "weaponType": "剣",
       "weaponPower": "6",
       "weaponRange": "1",
-      "weaponHit": "83",
+      "weaponHit": "88",
       "weaponCrit": "27",
       "portrait": "young_arshe",
       "cardUv": {
@@ -65,7 +65,7 @@
           "area": ""
         },
         {
-          "label": "火の魔核",
+          "label": "火の杖",
           "kind": "grimoire",
           "artName": "",
           "itemId": "fire_book",
@@ -152,7 +152,7 @@
       ],
       "magicList": [
         {
-          "label": "火の魔核",
+          "label": "火の杖",
           "sub": "装備",
           "mpCost": "1d6",
           "index": 2,
@@ -178,7 +178,7 @@
       "weaponType": "剣",
       "weaponPower": "6",
       "weaponRange": "1",
-      "weaponHit": "83",
+      "weaponHit": "88",
       "weaponCrit": "27",
       "portrait": "young_karima",
       "cardUv": {
@@ -215,7 +215,7 @@
           "area": ""
         },
         {
-          "label": "火の魔核",
+          "label": "火の杖",
           "kind": "grimoire",
           "artName": "",
           "itemId": "fire_book",
@@ -284,7 +284,7 @@
       "artList": [],
       "magicList": [
         {
-          "label": "火の魔核",
+          "label": "火の杖",
           "sub": "装備",
           "mpCost": "1d6",
           "index": 1,
@@ -310,14 +310,14 @@
       "weaponType": "剣",
       "weaponPower": "6",
       "weaponRange": "1",
-      "weaponHit": "90",
+      "weaponHit": "95",
       "weaponCrit": "26",
       "portrait": "gunter",
       "cardUv": {
         "x": 0.3214285714285714,
-        "y": 0.6241360765448364,
+        "y": 0.6241359447004609,
         "w": 0.35714285714285715,
-        "h": 0.3758639234551636
+        "h": 0.37586405529953915
       },
       "bustUv": {
         "x": 0.3214285714285714,

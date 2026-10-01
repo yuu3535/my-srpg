@@ -36,6 +36,7 @@
       "statusEffects": [],
       "equippedItem": "trial_sword",
       "grimoireSpell": null,
+      "staffDurability": -1,
       "criticalBonus": 0,
       "criticalAvoidanceBonus": 0,
       "canCounterBase": true,
@@ -76,6 +77,7 @@
       "statusEffects": [],
       "equippedItem": "trial_sword",
       "grimoireSpell": null,
+      "staffDurability": -1,
       "criticalBonus": 0,
       "criticalAvoidanceBonus": 0,
       "canCounterBase": true,
@@ -116,6 +118,7 @@
       "statusEffects": [],
       "equippedItem": null,
       "grimoireSpell": null,
+      "staffDurability": -1,
       "criticalBonus": 0,
       "criticalAvoidanceBonus": 0,
       "canCounterBase": true,
@@ -156,6 +159,7 @@
       "statusEffects": [],
       "equippedItem": "trial_sword",
       "grimoireSpell": null,
+      "staffDurability": -1,
       "criticalBonus": 0,
       "criticalAvoidanceBonus": 0,
       "canCounterBase": true,
@@ -187,6 +191,7 @@
       "statusEffects": [],
       "equippedItem": "trial_sword",
       "grimoireSpell": null,
+      "staffDurability": -1,
       "criticalBonus": 0,
       "criticalAvoidanceBonus": 0,
       "canCounterBase": true,
@@ -218,6 +223,7 @@
       "statusEffects": [],
       "equippedItem": "trial_sword",
       "grimoireSpell": null,
+      "staffDurability": -1,
       "criticalBonus": 0,
       "criticalAvoidanceBonus": 0,
       "canCounterBase": true,
@@ -263,6 +269,7 @@
         "trialGrimoire": true,
         "trialItemId": "star_book"
       },
+      "staffDurability": 30,
       "criticalBonus": 0,
       "criticalAvoidanceBonus": 0,
       "canCounterBase": true,
@@ -303,6 +310,7 @@
       "statusEffects": [],
       "equippedItem": null,
       "grimoireSpell": null,
+      "staffDurability": -1,
       "criticalBonus": 0,
       "criticalAvoidanceBonus": 0,
       "canCounterBase": true,
@@ -336,6 +344,7 @@
       "statusEffects": [],
       "equippedItem": null,
       "grimoireSpell": null,
+      "staffDurability": -1,
       "criticalBonus": 0,
       "criticalAvoidanceBonus": 0,
       "canCounterBase": true,
@@ -348,49 +357,63 @@
       "name": "仮の剣",
       "kind": "weapon",
       "power": 6,
-      "range": 1
+      "range": 1,
+      "hit": 5,
+      "durability": 0
     },
     {
       "id": "albas_sword",
       "name": "アルバスの剣",
       "kind": "weapon",
       "power": 6,
-      "range": 1
+      "range": 1,
+      "hit": 5,
+      "durability": 0
     },
     {
       "id": "fire_book",
-      "name": "火の魔核",
+      "name": "火の杖",
       "kind": "grimoire",
-      "power": 0,
-      "range": 0
+      "power": 6,
+      "range": 0,
+      "hit": 5,
+      "durability": 30
     },
     {
       "id": "heal_book",
-      "name": "治癒の魔核",
+      "name": "治癒の杖",
       "kind": "grimoire",
-      "power": 0,
-      "range": 0
+      "power": 6,
+      "range": 0,
+      "hit": 5,
+      "durability": 30
     },
     {
       "id": "star_book",
-      "name": "星の魔核",
+      "name": "星の杖",
       "kind": "grimoire",
-      "power": 0,
-      "range": 0
+      "power": 6,
+      "range": 0,
+      "hit": 5,
+      "durability": 30
     },
     {
       "id": "trial_book",
-      "name": "仮の魔核",
+      "name": "仮の杖",
       "kind": "grimoire",
       "power": 6,
-      "range": 0
+      "range": 0,
+      "hit": 5,
+      "durability": 30
     },
     {
       "id": "kokuyou_swords",
       "name": "黒陽の双剣",
       "kind": "weapon",
       "power": 6,
-      "range": 1
+      "range": 1,
+      "hit": 5,
+      "durability": 0
     }
   ]
 }
