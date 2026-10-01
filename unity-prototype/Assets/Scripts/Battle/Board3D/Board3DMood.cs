@@ -29,6 +29,22 @@ namespace Srpg.Battle
         /// キャラには かけない（読みやすさのため）
         /// </summary>
         public static Color CurrentPropTint { get; private set; } = Color.white;
+        /// <summary>今の時間帯（箱庭の背景の色を合わせる）</summary>
+        public static string CurrentMood { get; private set; } = Dusk;
+
+        /// <summary>
+        /// 箱庭の背景（浮かぶ土台のまわりの霧）の色: 上と下。基本は黒紫で、時間帯で明るさと色合いを変える
+        /// （原作者 2026-10-01: 霧は黒紫のまま、光は時間で変えたい）
+        /// </summary>
+        public static (Color top, Color bottom) VoidColors(string mood) => mood switch
+        {
+            Morning => (new Color32(150, 132, 176, 255), new Color32(74, 58, 100, 255)),   // 淡いラベンダーの朝霧
+            Day => (new Color32(132, 120, 164, 255), new Color32(64, 52, 92, 255)),
+            Night => (new Color32(30, 28, 64, 255), new Color32(8, 8, 22, 255)),            // 月夜の紺
+            HallMorning or HallDay => (new Color32(60, 46, 82, 255), new Color32(20, 14, 32, 255)),
+            HallNight => (new Color32(26, 22, 46, 255), new Color32(8, 6, 16, 255)),
+            _ => (new Color32(100, 60, 118, 255), new Color32(32, 18, 46, 255)),            // 夕暮れ・既定: イメージ画像の紫
+        };
 
         public static Color PropTint(string mood) => mood switch
         {
@@ -48,6 +64,7 @@ namespace Srpg.Battle
         public static void Apply(string mood, Light light, bool indoor = false)
         {
             CurrentPropTint = PropTint(mood);
+            CurrentMood = mood;
             RenderSettings.fog = !IsIndoor(mood) && !indoor;
             RenderSettings.fogMode = FogMode.Linear;
             RenderSettings.ambientMode = AmbientMode.Flat;

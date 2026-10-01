@@ -83,6 +83,7 @@ namespace Srpg.EditorAgent
             view.Map = map;
             view.Setup();
             Board3DTestBuilder.SetMood(string.IsNullOrEmpty(layout.timeOfDay) ? Board3DMood.Day : layout.timeOfDay, layout.indoor);
+            view.ApplyPropTint();   // 時間帯の色（箱庭なら背景・霧も）
 
             var rt = new RenderTexture(Board3DTestBuilder.PreviewWidth, Board3DTestBuilder.PreviewHeight, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
             camera.targetTexture = rt;
@@ -108,6 +109,25 @@ namespace Srpg.EditorAgent
             view.FocusOn(focus, true);
             view.UpdateBillboards();
             Board3DTestBuilder.Render(camera, rt, $"Map_{layout.mapId}_turn180");
+            if (view.IsDiorama)
+            {
+                // 箱庭（試作 2026-10-01）: 時間帯ごとの全体（光と背景の色）と、斜めの寄り
+                foreach (var mood in new[] { Board3DMood.Morning, Board3DMood.Dusk, Board3DMood.Night })
+                {
+                    Board3DTestBuilder.SetMood(mood, layout.indoor);
+                    view.ApplyPropTint();
+                    view.SetView(true, 0, true);
+                    view.SetOverview(true, true);
+                    view.UpdateBillboards();
+                    Board3DTestBuilder.Render(camera, rt, $"Map_{layout.mapId}_diorama_{mood}");
+                }
+                Board3DTestBuilder.SetMood(layout.timeOfDay, layout.indoor);
+                view.ApplyPropTint();
+                view.SetView(true, 1, true);
+                view.SetOverview(true, true);
+                view.UpdateBillboards();
+                Board3DTestBuilder.Render(camera, rt, $"Map_{layout.mapId}_diorama_front");
+            }
             camera.targetTexture = null;
             UnityEngine.Object.DestroyImmediate(rt);
             Debug.Log($"[MapLayoutBuilder] {layout.mapId}: {layout.columns}×{layout.rows}、物 {map.Obstacles.Count()}、人物（絵あり）{map.Units.Count}、床 {(view.Ground != null ? view.Ground.name : "なし")}");

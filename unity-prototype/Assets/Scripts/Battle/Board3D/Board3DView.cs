@@ -348,10 +348,17 @@ namespace Srpg.Battle
                     // 窓の光は強く広く、炎（ランプ）は弱く狭く（レビュー 2026-09-28_2 J7: 朝なのに夜のランプの部屋に見えた）
                     float range = l.color == "window" ? 5.5f : l.color == "warm" ? 2.4f : 3.2f;
                     float power = l.color == "window" ? 2.6f : l.color == "warm" ? 1.3f : 2.2f;
-                    AddPointLight($"Light_{l.x}_{l.y}", map.TopCenter(l.Cell) + Vector3.up * 1.1f, color, range, power);
+                    var pointLight = AddPointLight($"Light_{l.x}_{l.y}", map.TopCenter(l.Cell) + Vector3.up * 1.1f, color, range, power);
+                    if (IsDiorama && l.color != "window")
+                    {
+                        // 箱庭: 魔灯・ランタンの台を立て、光をゆらがせる
+                        AddLampModel(map.TopCenter(l.Cell), color, l.color == "violet");
+                        pointLight.gameObject.AddComponent<LightFlicker>().Setup(pointLight, l.x * 1.7f + l.y * 0.3f);
+                    }
                 }
             AddGrassEdges();
             AddBackdrop();
+            if (IsDiorama) BuildIslandUnderside();   // 箱庭（試作。原作者 2026-10-01）
 
             foreach (var unit in map.Units) AddUnit(unit);
             foreach (var cell in map.ModelTrees) AddTree(cell);
@@ -381,6 +388,7 @@ namespace Srpg.Battle
                 var sr = b.sprite.GetComponent<SpriteRenderer>();
                 if (sr != null) sr.color = new Color(tint.r, tint.g, tint.b, sr.color.a);
             }
+            RefreshDiorama();   // 箱庭: 背景・霧・カメラの地の色を時間帯に合わせる
         }
 
         public void ClearBoard()
@@ -926,7 +934,8 @@ namespace Srpg.Battle
             var root = new GameObject($"Object_{id}_{cell.x}_{cell.y}").transform;
             root.SetParent(boardRoot, false);
             root.localPosition = map.TopCenter(cell);
-            AddBox(root, "Body", new Vector3(0f, height * 0.5f, 0f), new Vector3(0.78f, height, 0.78f), LitMaterial(color));
+            if (!(IsDiorama && TryAddShapedObject(root, kind, height)))   // 箱庭: 種類に合う形（試作）
+                AddBox(root, "Body", new Vector3(0f, height * 0.5f, 0f), new Vector3(0.78f, height, 0.78f), LitMaterial(color));
             if (height >= TallTile) RegisterOccluder(root.gameObject);
         }
 
@@ -956,7 +965,8 @@ namespace Srpg.Battle
             var root = new GameObject($"Canopy_{cell.x}_{cell.y}").transform;
             root.SetParent(boardRoot, false);
             root.localPosition = map.TopCenter(cell);
-            AddBox(root, "Roof", new Vector3(0f, height, 0f), new Vector3(1f, 0.08f, 1f), LitMaterial(new Color32(72, 34, 92, 255)));
+            if (IsDiorama) AddTentModel(root, height);   // 箱庭: 柱ととがった屋根（試作）
+            else AddBox(root, "Roof", new Vector3(0f, height, 0f), new Vector3(1f, 0.08f, 1f), LitMaterial(new Color32(72, 34, 92, 255)));
             RegisterOccluder(root.gameObject);
         }
 
@@ -973,6 +983,7 @@ namespace Srpg.Battle
                 _ => Vector3.zero,
             };
             var kind = prop.kind ?? "";
+            if (IsDiorama && kind.Contains("旗")) { AddBannerModel(prop, offset); return; }
             Color32 color = kind.Contains("旗") ? new Color32(96, 40, 120, 255) : kind.Contains("花") || kind.Contains("鉢") ? new Color32(70, 104, 64, 255)
                 : new Color32(150, 120, 70, 255);
             var root = new GameObject($"Prop_{prop.id}").transform;
@@ -1164,7 +1175,7 @@ namespace Srpg.Battle
             AddPointLight($"TorchLight_{cell.x}_{cell.y}", root.localPosition + new Vector3(0f, 0.8f, 0f), new Color32(255, 150, 72, 255), 3.4f, 2.8f);
         }
 
-        private void AddPointLight(string objectName, Vector3 localPosition, Color color, float range, float intensity)
+        private Light AddPointLight(string objectName, Vector3 localPosition, Color color, float range, float intensity)
         {
             var light = new GameObject(objectName).AddComponent<Light>();
             light.transform.SetParent(boardRoot, false);
@@ -1174,6 +1185,7 @@ namespace Srpg.Battle
             light.range = range;
             light.intensity = intensity;
             light.shadows = LightShadows.None;
+            return light;
         }
 
         /// <summary>自分で光る材質（光のにじみ＝ブルームで周りに光が広がる）</summary>
@@ -1581,7 +1593,7 @@ namespace Srpg.Battle
         /// <summary>いちばん奥の背景（M1）: カメラに付けた画面いっぱいの絵。霧を受けないようUIの絵として描く</summary>
         private void AddBackdrop()
         {
-            if (backdrop == null || targetCamera == null) return;
+            if (CurrentBackdrop == null || targetCamera == null) return;
             var canvasObject = new GameObject("Backdrop", typeof(Canvas));
             canvasObject.transform.SetParent(transform, false);
             var canvas = canvasObject.GetComponent<Canvas>();
@@ -1591,7 +1603,7 @@ namespace Srpg.Battle
             canvas.sortingOrder = -100;
             var image = new GameObject("Image", typeof(RectTransform), typeof(UnityEngine.UI.RawImage));
             image.transform.SetParent(canvasObject.transform, false);
-            image.GetComponent<UnityEngine.UI.RawImage>().texture = backdrop;
+            image.GetComponent<UnityEngine.UI.RawImage>().texture = CurrentBackdrop;
             image.GetComponent<UnityEngine.UI.RawImage>().raycastTarget = false;
             backdropRect = image.GetComponent<RectTransform>();
             backdropRect.anchorMin = Vector2.zero;
@@ -1602,9 +1614,10 @@ namespace Srpg.Battle
         /// <summary>背景の絵の縦横比を保って画面を覆う</summary>
         private void FitBackdrop()
         {
-            if (backdropRect == null || backdrop == null || targetCamera == null) return;
+            var picture = CurrentBackdrop;
+            if (backdropRect == null || picture == null || targetCamera == null) return;
             float screenAspect = targetCamera.aspect > 0f ? targetCamera.aspect : 844f / 390f;
-            float imageAspect = (float)backdrop.width / backdrop.height;
+            float imageAspect = (float)picture.width / picture.height;
             float sx = Mathf.Max(1f, imageAspect / screenAspect), sy = Mathf.Max(1f, screenAspect / imageAspect);
             backdropRect.anchorMin = new Vector2(0.5f - sx * 0.5f, 0.5f - sy * 0.5f);
             backdropRect.anchorMax = new Vector2(0.5f + sx * 0.5f, 0.5f + sy * 0.5f);
@@ -1618,7 +1631,7 @@ namespace Srpg.Battle
             int columns = map != null ? map.Columns : Board3DLayout.Columns;
             int rows = map != null ? map.Rows : Board3DLayout.Rows;
             float hx = columns * 0.5f, hz = rows * 0.5f;
-            float top = Mathf.Max(map != null ? map.MaxHeight : 0f, unitHeight) + 0.4f, bottom = -TileHeight - BaseHeight;
+            float top = Mathf.Max(map != null ? map.MaxHeight : 0f, unitHeight) + 0.4f, bottom = -TileHeight - BaseHeight - (IsDiorama ? StoneBandHeight + 1.2f : 0f);
             foreach (float x in new[] { -hx, hx })
             foreach (float z in new[] { -hz, hz })
             foreach (float y in new[] { top, bottom })
