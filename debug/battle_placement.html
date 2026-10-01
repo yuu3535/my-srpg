@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>戦闘の配置（デバッグ）</title>
+<!--
+  戦闘のキャラの配置を、地図の上でドラッグして決める道具（原作者 2026-10-02 の依頼）。
+  読むもの: ../battleDefinitions.js（今の配置）、配置表の JSON（地形と戦う範囲）、SDの絵。書き換えはしない。
+  決めた配置は「コピー」で文にして、総合担当に渡す（battleDefinitions.js へ入れて Unity へ書き出す）。
+  静的サーバーで開く（file:// では配置表を読めない）。GitHub Pages でも開ける。
+-->
+<style>
+  :root {
+    --ink: #140d1c; --panel: #1d1428; --band: #2e1a42; --gold: #c9a35a; --gold-soft: rgba(201,163,90,.45);
+    --text: #efe4f6; --dim: #a898b8; --ally: #4d8cff; --enemy: #e0483c; --warn: #f0a050;
+    --mincho: "Yu Mincho", "YuMincho", "Hiragino Mincho ProN", "Noto Serif JP", serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ink); color: var(--text); font-family: var(--mincho); }
+  header { display: flex; align-items: center; gap: 16px; padding: 10px 16px; background: var(--band); border-bottom: 1px solid var(--gold-soft); }
+  header h1 { font-size: 17px; margin: 0; letter-spacing: .12em; }
+  header h1::before { content: ""; display: inline-block; width: 8px; height: 8px; background: var(--gold); transform: rotate(45deg); margin-right: 10px; vertical-align: middle; }
+  header select { font: inherit; background: var(--panel); color: var(--text); border: 1px solid var(--gold-soft); padding: 3px 6px; }
+  main { display: grid; grid-template-columns: auto minmax(300px, 420px); gap: 16px; padding: 14px 16px; align-items: start; }
+  #board { position: relative; display: inline-grid; border: 1px solid var(--gold-soft); user-select: none; touch-action: none; }
+  .cell { width: 34px; height: 34px; border-right: 1px solid rgba(0,0,0,.18); border-bottom: 1px solid rgba(0,0,0,.18); position: relative; }
+  .cell.area { box-shadow: inset 0 0 0 1px rgba(255,236,190,.28); }
+  .cell.drop { outline: 2px solid var(--gold); outline-offset: -2px; z-index: 2; }
+  .cell .prop { position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px; border-radius: 50%; background: rgba(40,24,52,.75); border: 1px solid rgba(255,236,190,.5); }
+  #areaFrame { position: absolute; border: 2px solid var(--gold); pointer-events: none; box-shadow: 0 0 0 9999px rgba(10,6,16,.18); }
+  .unit { position: absolute; width: 34px; height: 34px; display: flex; align-items: flex-end; justify-content: center; cursor: grab; z-index: 3; }
+  .unit img { height: 46px; margin-bottom: 2px; pointer-events: none; filter: drop-shadow(0 1px 1px rgba(0,0,0,.7)); }
+  .unit::after { content: ""; position: absolute; left: 3px; right: 3px; bottom: 1px; height: 4px; border-radius: 2px; background: var(--c); opacity: .9; }
+  .unit.ally { --c: var(--ally); } .unit.enemy { --c: var(--enemy); } .unit.wait { --c: #8a8098; }
+  .unit.wait img { opacity: .75; }
+  .unit.dragging { cursor: grabbing; opacity: .7; z-index: 5; }
+  .unit.picked { outline: 2px solid var(--gold); outline-offset: 1px; }
+  aside { background: var(--panel); border: 1px solid var(--gold-soft); padding: 12px 14px; }
+  aside h2 { font-size: 14px; letter-spacing: .14em; color: var(--gold); margin: 0 0 8px; border-bottom: 1px solid var(--gold-soft); padding-bottom: 4px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  td { padding: 4px 4px; border-bottom: 1px solid rgba(201,163,90,.15); }
+  td.coord { font-family: ui-monospace, Consolas, monospace; text-align: right; white-space: nowrap; }
+  td.note { color: var(--dim); font-size: 11.5px; }
+  .warn { color: var(--warn); }
+  pre { background: var(--ink); border: 1px solid var(--gold-soft); padding: 8px 10px; font-size: 12px; overflow-x: auto; white-space: pre; }
+  .buttons { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+  button { font: inherit; font-size: 13px; color: var(--text); background: var(--band); border: 1px solid var(--gold); padding: 5px 12px; cursor: pointer; }
+  button:active { transform: translateY(1px); }
+  .hint { color: var(--dim); font-size: 12px; line-height: 1.7; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 11.5px; color: var(--dim); margin-top: 8px; }
+  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 4px; vertical-align: -1px; background: var(--sw); border: 1px solid rgba(0,0,0,.4); }
+  #msg { min-height: 1.4em; font-size: 12.5px; color: var(--gold); }
+  @media (max-width: 1100px) { main { grid-template-columns: 1fr; } #boardWrap { overflow-x: auto; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>戦闘の配置</h1>
+  <label>戦闘 <select id="battle"></select></label>
+  <span class="hint">キャラをドラッグ（またはキャラを押してからマスを押す）で動かす</span>
+</header>
+<main>
+  <div id="boardWrap"><div id="board"></div><div class="legend" id="legend"></div></div>
+  <aside>
+    <h2>配置</h2>
+    <table id="list"></table>
+    <div class="buttons">
+      <button id="copy">コピー（総合担当に渡す文）</button>
+      <button id="reset">今の battleDefinitions.js に戻す</button>
+      <button id="save">JSONで保存</button>
+    </div>
+    <div id="msg"></div>
+    <pre id="out"></pre>
+    <p class="hint">
+      座標は戦う範囲（金の枠）の左上を (0, 0) にした値です（battleDefinitions.js と同じ）。<br>
+      ギュンター（見守る）は1段目のあいだ立っている場所で、金の枠の外に置きます。人形を全部倒すと、ギュンター（入る位置）まで縦→横の順に歩いて入ります。<br>
+      動かした配置はこのブラウザに残ります（「今の battleDefinitions.js に戻す」で元に戻ります）。
+    </p>
+  </aside>
+</main>
+<script src="../battleDefinitions.js"></script>
+<script>
+// ── 戦闘ごとの設定（配置表・戦う範囲・絵） ──
+const SD = "../unity-prototype/Assets/Art/SD/";
+const BATTLES = {
+  battle_prologue_training: {
+    layout: "../unity-prototype/Assets/Data/Maps/orcus_training_yard.json",
+    area: "prologue",
+    art: { young_arshe: "young_arshe", young_karima: "young_karima", gunter: "gunter",
+           training_doll_1: "training_doll", training_doll_2: "training_doll", training_doll_counter: "training_doll_counter" },
+    names: { young_arshe: "アルシェ", young_karima: "カリマ", gunter: "ギュンター",
+             training_doll_1: "訓練人形1", training_doll_2: "訓練人形2", training_doll_counter: "反撃人形" },
+    sides: { young_arshe: "ally", young_karima: "ally" },
+  },
+};
+// 地形の色（配置表の記号）
+const TERRAIN = {
+  W: ["#2a2230", "壁"], f: ["#6b6478", "石畳"], g: ["#4f6b4a", "草"], a: ["#c9a46a", "砂の稽古場"],
+  "+": ["#966840", "木の演台"], F: ["#46281a", "木の柵"], u: ["#787080", "一段高い通路"], "/": ["#d6d6de", "階段"],
+  P: ["#3a3048", "柱"], D: ["#5a3a28", "扉"],
+};
+
+const $ = id => document.getElementById(id);
+const CELL = 34;
+let cfg, layout, area, units = [], picked = null;
+
+function storageKey(id) { return "srpg-placement-" + id; }
+function loadDraft(id) { try { return JSON.parse(localStorage.getItem(storageKey(id)) || "null"); } catch { return null; } }
+function saveDraft(id) { try { localStorage.setItem(storageKey(id), JSON.stringify(units.map(u => ({ key: u.key, x: u.x, y: u.y })))); } catch {} }
+
+// 今の battleDefinitions.js から、置くものの一覧を作る（座標は戦う範囲の中の値）
+function unitsFromDefinition(id) {
+  const def = BATTLE_DEFINITIONS[id];
+  const ids = [...def.unitIds, ...Object.keys(def.unitCopies || {})];
+  const list = [];
+  for (const uid of ids) {
+    const pos = def.positions?.[uid] || { x: 0, y: 0 };
+    const reserve = (def.reserve || []).includes(uid);
+    const side = cfg.sides[uid] || "enemy";
+    if (reserve && def.reserveWait?.[uid]) {
+      const w = def.reserveWait[uid];
+      list.push({ key: uid + ":wait", id: uid, kind: "wait", side, x: w.x, y: w.y, label: `${cfg.names[uid] || uid}（見守る）` });
+      list.push({ key: uid, id: uid, kind: "entry", side, x: pos.x, y: pos.y, label: `${cfg.names[uid] || uid}（入る位置）` });
+    } else {
+      list.push({ key: uid, id: uid, kind: "unit", side, x: pos.x, y: pos.y, label: cfg.names[uid] || uid });
+    }
+  }
+  return list;
+}
+
+async function openBattle(id) {
+  cfg = BATTLES[id];
+  layout = await (await fetch(cfg.layout)).json();
+  area = layout.battleAreas.find(a => a.id === cfg.area);
+  units = unitsFromDefinition(id);
+  const draft = loadDraft(id);
+  if (draft) for (const d of draft) { const u = units.find(v => v.key === d.key); if (u) { u.x = d.x; u.y = d.y; } }
+  drawBoard();
+  render();
+}
+
+function drawBoard() {
+  const board = $("board");
+  board.innerHTML = "";
+  board.style.gridTemplateColumns = `repeat(${layout.columns}, ${CELL}px)`;
+  const props = new Map((layout.props || []).map(p => [`${p.x},${p.y}`, p.kind]));
+  for (let y = 0; y < layout.rows; y++) for (let x = 0; x < layout.columns; x++) {
+    const ch = layout.terrain[y]?.[x] || "W";
+    const cell = document.createElement("div");
+    cell.className = "cell";
+    cell.style.background = (TERRAIN[ch] || ["#555"])[0];
+    cell.dataset.x = x; cell.dataset.y = y;
+    cell.title = `(${x - area.x}, ${y - area.y})  ${(TERRAIN[ch] || [, ch])[1]}${props.has(`${x},${y}`) ? "・" + props.get(`${x},${y}`) : ""}`;
+    if (inArea(x - area.x, y - area.y)) cell.classList.add("area");
+    if (props.has(`${x},${y}`)) { const p = document.createElement("i"); p.className = "prop"; cell.appendChild(p); }
+    cell.addEventListener("click", () => { if (picked) { moveTo(picked, x - area.x, y - area.y); picked = null; render(); } });
+    board.appendChild(cell);
+  }
+  const frame = document.createElement("div");
+  frame.id = "areaFrame";
+  Object.assign(frame.style, { left: area.x * CELL + "px", top: area.y * CELL + "px", width: area.w * CELL + "px", height: area.h * CELL + "px" });
+  board.appendChild(frame);
+  $("legend").innerHTML = Object.entries(TERRAIN).map(([k, [c, n]]) => `<span style="--sw:${c}">${n}</span>`).join("")
+    + `<span style="--sw:transparent;border:0">● 小物（旗・人形・灯りなど）</span>`;
+}
+
+function inArea(rx, ry) { return rx >= 0 && ry >= 0 && rx < area.w && ry < area.h; }
+function terrainAt(rx, ry) { return layout.terrain[ry + area.y]?.[rx + area.x] || "W"; }
+
+function moveTo(u, rx, ry) {
+  // ほかのキャラのいるマスには置かない（見守る位置と入る位置は別に数える）
+  if (units.some(v => v !== u && v.x === rx && v.y === ry && (v.kind === "wait") === (u.kind === "wait"))) { $("msg").textContent = "そのマスにはほかのキャラがいます"; return; }
+  u.x = rx; u.y = ry;
+  saveDraft($("battle").value);
+  $("msg").textContent = "";
+}
+
+function problems(u) {
+  const t = terrainAt(u.x, u.y);
+  const list = [];
+  if (u.kind === "wait") { if (inArea(u.x, u.y)) list.push("見守る位置は枠の外に"); }
+  else if (!inArea(u.x, u.y)) list.push("戦う範囲（枠）の外");
+  if ("WF+P".includes(t)) list.push(`${TERRAIN[t]?.[1] || t}の上`);
+  return list;
+}
+
+function render() {
+  const board = $("board");
+  board.querySelectorAll(".unit").forEach(e => e.remove());
+  for (const u of units) {
+    const el = document.createElement("div");
+    el.className = `unit ${u.kind === "wait" ? "wait" : u.side}${picked === u ? " picked" : ""}`;
+    el.style.left = (u.x + area.x) * CELL + "px";
+    el.style.top = (u.y + area.y) * CELL + "px";
+    el.title = u.label;
+    const img = document.createElement("img");
+    img.src = SD + (cfg.art[u.id] || u.id) + ".png";
+    img.alt = u.label;
+    el.appendChild(img);
+    attachDrag(el, u);
+    board.appendChild(el);
+  }
+  $("list").innerHTML = units.map(u => {
+    const p = problems(u);
+    return `<tr><td>${u.label}</td><td class="coord">(${u.x}, ${u.y})</td><td class="note ${p.length ? "warn" : ""}">${p.join("・") || (u.kind === "wait" ? "枠の外" : "")}</td></tr>`;
+  }).join("");
+  $("out").textContent = outputText();
+}
+
+function attachDrag(el, u) {
+  el.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    const rect = $("board").getBoundingClientRect();
+    let moved = false;
+    el.setPointerCapture(e.pointerId);
+    el.classList.add("dragging");
+    const onMove = ev => {
+      moved = true;
+      el.style.left = (ev.clientX - rect.left - CELL / 2) + "px";
+      el.style.top = (ev.clientY - rect.top - CELL / 2) + "px";
+    };
+    const onUp = ev => {
+      el.removeEventListener("pointermove", onMove);
+      el.removeEventListener("pointerup", onUp);
+      el.classList.remove("dragging");
+      if (moved) {
+        const x = Math.floor((ev.clientX - rect.left) / CELL), y = Math.floor((ev.clientY - rect.top) / CELL);
+        if (x >= 0 && y >= 0 && x < layout.columns && y < layout.rows) moveTo(u, x - area.x, y - area.y);
+        picked = null;
+      } else {
+        picked = picked === u ? null : u;   // 押すだけなら選ぶ（次にマスを押すとそこへ）
+      }
+      render();
+    };
+    el.addEventListener("pointermove", onMove);
+    el.addEventListener("pointerup", onUp);
+  });
+}
+
+function outputText() {
+  const pad = s => (s + ":").padEnd(24);
+  const id = $("battle").value;
+  const lines = [`// ${id} の配置（戦う範囲の左上が (0, 0)）`, "positions: {"];
+  for (const u of units.filter(v => v.kind !== "wait")) lines.push(`    ${pad(u.id)}{ x: ${u.x}, y: ${u.y} },`);
+  lines.push("},");
+  const waits = units.filter(v => v.kind === "wait");
+  if (waits.length) lines.push(`reserveWait: { ${waits.map(u => `${u.id}: { x: ${u.x}, y: ${u.y} }`).join(", ")} },`);
+  return lines.join("\n");
+}
+
+$("copy").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(outputText()); $("msg").textContent = "コピーしました。総合担当に貼ってください"; }
+  catch { $("msg").textContent = "コピーできませんでした。下の文を選んでコピーしてください"; }
+});
+$("reset").addEventListener("click", () => {
+  try { localStorage.removeItem(storageKey($("battle").value)); } catch {}
+  units = unitsFromDefinition($("battle").value);
+  picked = null;
+  render();
+  $("msg").textContent = "今の battleDefinitions.js の配置に戻しました";
+});
+$("save").addEventListener("click", () => {
+  const id = $("battle").value;
+  const data = { battleId: id, units: units.map(u => ({ id: u.id, kind: u.kind, x: u.x, y: u.y })) };
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+  a.download = `${id}_placement.json`;
+  a.click();
+});
+
+const select = $("battle");
+for (const id of Object.keys(BATTLES)) select.add(new Option(BATTLE_DEFINITIONS[id]?.title ? `${BATTLE_DEFINITIONS[id].title}（${id}）` : id, id));
+select.addEventListener("change", () => openBattle(select.value).catch(showError));
+function showError(e) { $("msg").textContent = "読み込めませんでした（静的サーバーで開いてください）: " + e.message; }
+openBattle(select.value).catch(showError);
+</script>
+</body>
+</html>
