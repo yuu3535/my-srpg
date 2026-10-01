@@ -2986,6 +2986,33 @@ function renderLandscapeRoster() {
     });
 }
 
+/**
+ * 左の味方一覧の開け閉め（原作者 2026-10-02: 一覧が画面を占めて邪魔なときがある）。
+ * 閉じると「▶ 味方」の細いつまみだけが残る。開け閉めはこのブラウザに覚えておく
+ */
+const ROSTER_COLLAPSED_KEY = "srpg.rosterCollapsed";
+function setLandscapeRosterCollapsed(collapsed) {
+    const roster = document.getElementById("landscapeRoster");
+    const toggle = document.getElementById("landscapeRosterToggle");
+    if (!roster || !toggle) return;
+    roster.classList.toggle("collapsed", collapsed);
+    toggle.innerHTML = collapsed ? "<span>▶</span><span>味</span><span>方</span>" : "◀";
+    toggle.title = collapsed ? "味方一覧を開く" : "味方一覧を閉じる";
+    toggle.setAttribute("aria-expanded", String(!collapsed));
+}
+(function initLandscapeRosterToggle() {
+    const toggle = document.getElementById("landscapeRosterToggle");
+    if (!toggle) return;
+    let collapsed = false;
+    try { collapsed = localStorage.getItem(ROSTER_COLLAPSED_KEY) === "1"; } catch {}
+    setLandscapeRosterCollapsed(collapsed);
+    toggle.addEventListener("click", () => {
+        const next = !document.getElementById("landscapeRoster").classList.contains("collapsed");
+        setLandscapeRosterCollapsed(next);
+        try { localStorage.setItem(ROSTER_COLLAPSED_KEY, next ? "1" : "0"); } catch {}
+    });
+})();
+
 /** 武器で攻撃できるか（[trial] 武器を持っていなければ攻撃できない） */
 function landscapeCanWeaponAttack(unit) {
     return !unit.trialStats || !!trialCarriedWeapon(trialGearOf(unit));

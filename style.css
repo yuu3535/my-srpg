@@ -7659,3 +7659,46 @@ img.lsMenuIcon.wpnIcon {
 }
 @keyframes summonPulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
 .battleUnit .unitLabel { color: #d8ecff; text-shadow: 0 0 6px rgba(120,180,255,0.9); }
+
+/* ── 左の味方一覧の開け閉め（原作者 2026-10-02）: 上端の「◀」で閉じ、閉じたら「▶ 味方」の細いつまみだけ残す ── */
+#landscapeRosterToggle {
+    flex: 0 0 auto;
+    align-self: flex-end;
+    width: 16px;
+    height: 14px;
+    margin: -2px -1px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font: 700 8px/1 "Noto Serif JP", "Yu Mincho", serif;
+    color: #ecd28e;
+    background: rgba(26,15,38,0.92);
+    border: 1px solid rgba(200,146,42,0.7);
+    cursor: pointer;
+}
+#landscapeRosterToggle:hover { background: rgba(58,30,78,0.95); color: #fff1c8; }
+#landscapeRosterToggle:active { transform: translateY(1px); }
+#gameScreen[data-mode="battle"] #landscapeRoster.collapsed {
+    align-self: start;
+    border: 0;
+    border-image: none;
+    background: none;
+    box-shadow: none;
+    padding: 0;
+    pointer-events: none;
+}
+#landscapeRoster.collapsed #landscapeRosterList,
+#landscapeRoster.collapsed #landscapeRosterTurn { display: none; }
+#landscapeRoster.collapsed #landscapeRosterToggle {
+    align-self: flex-start;
+    width: 18px;
+    height: auto;
+    margin: 0;
+    padding: 6px 0;
+    gap: 3px;
+    font-size: 10px;
+    letter-spacing: 0;
+    pointer-events: auto;
+}
