@@ -52,7 +52,7 @@ namespace Srpg.EditorAgent
             Board3DTestBuilder.CreateStage(rendererIndex, out var camera, out var light, out _);
             var view = new GameObject("Board3D").AddComponent<Board3DView>();
             foreach (var id in BattleTokens) PrepareToken(id);
-            Board3DTestBuilder.ConfigureView(view, camera, light, new[] { "arshe", "young_karima" }.Concat(BattleTokens), buildOnStart: false, startOverview: false);
+            Board3DTestBuilder.ConfigureView(view, camera, light, new[] { "arshe", "young_karima", "carrie" }.Concat(BattleTokens), buildOnStart: false, startOverview: false);
             var viewSo = new SerializedObject(view);
             viewSo.FindProperty("backdrop").objectReferenceValue = null;   // 城の場所は森の遠景を出さない（城の遠景が届くまで）
             viewSo.FindProperty("showCellInfo").boolValue = false;

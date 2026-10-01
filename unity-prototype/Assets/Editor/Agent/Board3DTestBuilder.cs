@@ -635,8 +635,11 @@ namespace Srpg.EditorAgent
             }
             so.FindProperty("allyFrameSprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(UiFrames[0].dest);
             so.FindProperty("enemyFrameSprite").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>(UiFrames[1].dest);
+            // SDの絵があるキャラはSDの絵（SdSprites。2026-10-01）、ないキャラは今までの絵
             var withSprite = unitIds
-                .Select(id => (id, sprite: AssetDatabase.LoadAssetAtPath<Sprite>($"{TokenDir}/{id}.png")))
+                .Select(id => SdSprites.For(id) is var sd && sd.HasValue
+                    ? (id, sprite: sd.Value.sprite, path: sd.Value.path, scale: sd.Value.scale)
+                    : (id, sprite: AssetDatabase.LoadAssetAtPath<Sprite>($"{TokenDir}/{id}.png"), path: $"{TokenDir}/{id}.png", scale: 1f))
                 .Where(u => u.sprite != null).ToArray();
             var spritesProp = so.FindProperty("unitSprites");
             spritesProp.arraySize = withSprite.Length;
@@ -645,7 +648,8 @@ namespace Srpg.EditorAgent
                 var element = spritesProp.GetArrayElementAtIndex(i);
                 element.FindPropertyRelative("id").stringValue = withSprite[i].id;
                 element.FindPropertyRelative("sprite").objectReferenceValue = withSprite[i].sprite;
-                element.FindPropertyRelative("footFromPivot").floatValue = FootFromPivot(withSprite[i].sprite, $"{TokenDir}/{withSprite[i].id}.png");
+                element.FindPropertyRelative("footFromPivot").floatValue = FootFromPivot(withSprite[i].sprite, withSprite[i].path);
+                element.FindPropertyRelative("heightScale").floatValue = withSprite[i].scale;
             }
             so.ApplyModifiedPropertiesWithoutUndo();
         }

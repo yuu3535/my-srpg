@@ -37,6 +37,8 @@ namespace Srpg.Battle
             // 絵の基準点（下端から2%）から、一番下の色のある行までの距離（絵の高さに対する割合。上が＋）。
             // 組み立て時に絵ごとに測る。この分だけ絵を下げて、足の裏をマスの面にそろえる（原作者 2026-09-27）
             public float footFromPivot;
+            // 絵の高さの倍率（0 なら 1）。SDの絵は全員が同じ大きさで描かれているので、子どもは小さく・竜に乗る兵は大きく（2026-10-01）
+            public float heightScale;
         }
 
         [Serializable]
@@ -480,13 +482,13 @@ namespace Srpg.Battle
             }
 
             Sprite sprite = null;
-            float footFromPivot = 0f;
+            float footFromPivot = 0f, spriteHeight = unitHeight;
             foreach (var entry in unitSprites)
-                if (entry.id == unit.id) { sprite = entry.sprite; footFromPivot = entry.footFromPivot; }
+                if (entry.id == unit.id) { sprite = entry.sprite; footFromPivot = entry.footFromPivot; spriteHeight = unitHeight * (entry.heightScale > 0f ? entry.heightScale : 1f); }
             if (sprite == null) sprite = OrbSprite();   // 絵がまだないキャラ（召喚獣など）は、仮の青白い火の玉
             if (sprite != null)
             {
-                visual.billboard = AddBillboard($"Unit_{unit.id}", sprite, top + Vector3.up * feet, unitHeight, true, footFromPivot);
+                visual.billboard = AddBillboard($"Unit_{unit.id}", sprite, top + Vector3.up * feet, spriteHeight, true, footFromPivot);
                 // キャラの体にも当たり判定を付ける（体を押したら、後ろのマスではなくそのキャラのマスを選ぶ）
                 var body = visual.billboard.sprite.gameObject.AddComponent<BoxCollider>();
                 body.center = sprite.bounds.center;
