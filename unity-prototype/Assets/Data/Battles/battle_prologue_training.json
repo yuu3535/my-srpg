@@ -24,6 +24,7 @@
         }
       ],
       "reserve": false,
+      "wait": [],
       "passive": false
     },
     {
@@ -45,6 +46,7 @@
         }
       ],
       "reserve": false,
+      "wait": [],
       "passive": false
     },
     {
@@ -52,13 +54,17 @@
       "name": "ギュンター",
       "side": "enemy",
       "x": 3,
-      "y": 1,
+      "y": 7,
       "move": 3,
       "attackRange": 1,
       "token": "Assets/Art/Tokens/gunter.png",
       "flying": false,
       "items": [],
       "reserve": true,
+      "wait": [
+        3,
+        9
+      ],
       "passive": false
     },
     {
@@ -73,6 +79,7 @@
       "flying": false,
       "items": [],
       "reserve": false,
+      "wait": [],
       "passive": true
     },
     {
@@ -87,6 +94,7 @@
       "flying": false,
       "items": [],
       "reserve": false,
+      "wait": [],
       "passive": true
     },
     {
@@ -101,6 +109,7 @@
       "flying": false,
       "items": [],
       "reserve": false,
+      "wait": [],
       "passive": true
     }
   ],
