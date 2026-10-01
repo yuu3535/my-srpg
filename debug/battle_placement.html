@@ -28,7 +28,13 @@
   .cell.area { box-shadow: inset 0 0 0 1px rgba(255,236,190,.28); }
   .cell.drop { outline: 2px solid var(--gold); outline-offset: -2px; z-index: 2; }
   .cell .prop { position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px; border-radius: 50%; background: rgba(40,24,52,.75); border: 1px solid rgba(255,236,190,.5); }
-  #areaFrame { position: absolute; border: 2px solid var(--gold); pointer-events: none; box-shadow: 0 0 0 9999px rgba(10,6,16,.18); }
+  #areaFrame { position: absolute; border: 2px solid var(--gold); pointer-events: none; box-shadow: 0 0 0 9999px rgba(10,6,16,.18); z-index: 4; }
+  #areaFrame .handle { position: absolute; width: 14px; height: 14px; background: var(--gold); border: 2px solid var(--ink); pointer-events: auto; }
+  #areaFrame .handle.nw { left: -8px; top: -8px; cursor: nwse-resize; } #areaFrame .handle.ne { right: -8px; top: -8px; cursor: nesw-resize; }
+  #areaFrame .handle.sw { left: -8px; bottom: -8px; cursor: nesw-resize; } #areaFrame .handle.se { right: -8px; bottom: -8px; cursor: nwse-resize; }
+  #areaFrame .move { position: absolute; left: 10px; top: -24px; padding: 1px 8px; font-size: 11.5px; letter-spacing: .1em; color: var(--ink);
+    background: var(--gold); pointer-events: auto; cursor: move; white-space: nowrap; }
+  #areaInfo { font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; }
   .unit { position: absolute; width: 34px; height: 34px; display: flex; align-items: flex-end; justify-content: center; cursor: grab; z-index: 3; }
   .unit img { height: 46px; margin-bottom: 2px; pointer-events: none; filter: drop-shadow(0 1px 1px rgba(0,0,0,.7)); }
   .unit::after { content: ""; position: absolute; left: 3px; right: 3px; bottom: 1px; height: 4px; border-radius: 2px; background: var(--c); opacity: .9; }
@@ -63,7 +69,10 @@
 <main>
   <div id="boardWrap"><div id="board"></div><div class="legend" id="legend"></div></div>
   <aside>
-    <h2>配置</h2>
+    <h2>戦う範囲</h2>
+    <p class="hint" style="margin:0 0 6px">金の枠の「範囲を動かす」のつまみで移動、四すみのつまみで大きさを変えます。キャラは地図の上の同じ場所に残ります。</p>
+    <div id="areaInfo"></div>
+    <h2 style="margin-top:12px">配置</h2>
     <table id="list"></table>
     <div class="buttons">
       <button id="copy">コピー（総合担当に渡す文）</button>
@@ -75,7 +84,7 @@
     <p class="hint">
       座標は戦う範囲（金の枠）の左上を (0, 0) にした値です（battleDefinitions.js と同じ）。<br>
       ギュンター（見守る）は1段目のあいだ立っている場所で、金の枠の外に置きます。人形を全部倒すと、ギュンター（入る位置）まで縦→横の順に歩いて入ります。<br>
-      動かした配置はこのブラウザに残ります（「今の battleDefinitions.js に戻す」で元に戻ります）。
+      動かした配置と範囲はこのブラウザに残ります（「今の battleDefinitions.js に戻す」で元に戻ります）。
     </p>
   </aside>
 </main>
@@ -107,7 +116,10 @@ let cfg, layout, area, units = [], picked = null;
 
 function storageKey(id) { return "srpg-placement-" + id; }
 function loadDraft(id) { try { return JSON.parse(localStorage.getItem(storageKey(id)) || "null"); } catch { return null; } }
-function saveDraft(id) { try { localStorage.setItem(storageKey(id), JSON.stringify(units.map(u => ({ key: u.key, x: u.x, y: u.y })))); } catch {} }
+function saveDraft(id) {
+  try { localStorage.setItem(storageKey(id), JSON.stringify({ area: { x: area.x, y: area.y, w: area.w, h: area.h }, units: units.map(u => ({ key: u.key, x: u.x, y: u.y })) })); } catch {}
+}
+let areaOrig = null;   // 配置表のままの範囲（元に戻す用）
 
 // 今の battleDefinitions.js から、置くものの一覧を作る（座標は戦う範囲の中の値）
 function unitsFromDefinition(id) {
@@ -132,10 +144,13 @@ function unitsFromDefinition(id) {
 async function openBattle(id) {
   cfg = BATTLES[id];
   layout = await (await fetch(cfg.layout)).json();
-  area = layout.battleAreas.find(a => a.id === cfg.area);
+  areaOrig = { ...layout.battleAreas.find(a => a.id === cfg.area) };
+  area = { ...areaOrig };
   units = unitsFromDefinition(id);
   const draft = loadDraft(id);
-  if (draft) for (const d of draft) { const u = units.find(v => v.key === d.key); if (u) { u.x = d.x; u.y = d.y; } }
+  const draftUnits = Array.isArray(draft) ? draft : draft?.units;   // 前の形（キャラだけ）も読む
+  if (draft?.area) Object.assign(area, draft.area);
+  if (draftUnits) for (const d of draftUnits) { const u = units.find(v => v.key === d.key); if (u) { u.x = d.x; u.y = d.y; } }
   drawBoard();
   render();
 }
@@ -151,18 +166,72 @@ function drawBoard() {
     cell.className = "cell";
     cell.style.background = (TERRAIN[ch] || ["#555"])[0];
     cell.dataset.x = x; cell.dataset.y = y;
-    cell.title = `(${x - area.x}, ${y - area.y})  ${(TERRAIN[ch] || [, ch])[1]}${props.has(`${x},${y}`) ? "・" + props.get(`${x},${y}`) : ""}`;
-    if (inArea(x - area.x, y - area.y)) cell.classList.add("area");
+    cell.dataset.info = `${(TERRAIN[ch] || [, ch])[1]}${props.has(`${x},${y}`) ? "・" + props.get(`${x},${y}`) : ""}`;
     if (props.has(`${x},${y}`)) { const p = document.createElement("i"); p.className = "prop"; cell.appendChild(p); }
     cell.addEventListener("click", () => { if (picked) { moveTo(picked, x - area.x, y - area.y); picked = null; render(); } });
     board.appendChild(cell);
   }
   const frame = document.createElement("div");
   frame.id = "areaFrame";
-  Object.assign(frame.style, { left: area.x * CELL + "px", top: area.y * CELL + "px", width: area.w * CELL + "px", height: area.h * CELL + "px" });
+  frame.innerHTML = `<span class="move" data-h="move">範囲を動かす</span>` + ["nw", "ne", "sw", "se"].map(h => `<i class="handle ${h}" data-h="${h}"></i>`).join("");
+  frame.querySelectorAll("[data-h]").forEach(handle => attachAreaDrag(handle, handle.dataset.h));
   board.appendChild(frame);
+  paintArea();
   $("legend").innerHTML = Object.entries(TERRAIN).map(([k, [c, n]]) => `<span style="--sw:${c}">${n}</span>`).join("")
     + `<span style="--sw:transparent;border:0">● 小物（旗・人形・灯りなど）</span>`;
+}
+
+/** 範囲の枠・マスの印・座標の表示を今の範囲で塗り直す */
+function paintArea() {
+  const frame = $("areaFrame");
+  Object.assign(frame.style, { left: area.x * CELL + "px", top: area.y * CELL + "px", width: area.w * CELL + "px", height: area.h * CELL + "px" });
+  $("board").querySelectorAll(".cell").forEach(cell => {
+    const rx = cell.dataset.x - area.x, ry = cell.dataset.y - area.y;
+    cell.classList.toggle("area", inArea(rx, ry));
+    cell.title = `(${rx}, ${ry})  ${cell.dataset.info}`;
+  });
+  let blocked = 0;
+  for (let y = 0; y < area.h; y++) for (let x = 0; x < area.w; x++) if ("WF+P".includes(terrainAt(x, y))) blocked++;
+  $("areaInfo").innerHTML = `左上 (${area.x}, ${area.y})・幅 ${area.w}・高さ ${area.h}（配置表の座標）`
+    + (blocked ? `<br><span class="warn">枠の中に通れないマス（壁・柵・演台・柱）が ${blocked} マスあります</span>` : "");
+}
+
+/** 範囲のつまみのドラッグ: move＝移動、nw・ne・sw・se＝そのすみを動かして大きさを変える（最小 3×3） */
+function attachAreaDrag(handle, kind) {
+  handle.addEventListener("pointerdown", e => {
+    e.preventDefault(); e.stopPropagation();
+    try { handle.setPointerCapture(e.pointerId); } catch {}
+    const rect = $("board").getBoundingClientRect();
+    const cellAt = ev => ({ x: Math.floor((ev.clientX - rect.left) / CELL), y: Math.floor((ev.clientY - rect.top) / CELL) });
+    const start = cellAt(e), from = { ...area };
+    const onMove = ev => {
+      const c = cellAt(ev);
+      let { x, y, w, h } = from;
+      const dx = c.x - start.x, dy = c.y - start.y;
+      const corner = kind === "move" ? "" : kind;   // すみの印（"move" の文字は含めない）
+      if (kind === "move") { x += dx; y += dy; }
+      if (corner.includes("w")) { x = Math.min(from.x + dx, from.x + from.w - 3); w = from.x + from.w - x; }
+      if (corner.includes("e")) w = Math.max(3, from.w + dx);
+      if (corner.includes("n")) { y = Math.min(from.y + dy, from.y + from.h - 3); h = from.y + from.h - y; }
+      if (corner.includes("s")) h = Math.max(3, from.h + dy);
+      x = Math.max(0, Math.min(x, layout.columns - w)); y = Math.max(0, Math.min(y, layout.rows - h));
+      w = Math.min(w, layout.columns - x); h = Math.min(h, layout.rows - y);
+      setArea({ x, y, w, h });
+    };
+    const onUp = () => { handle.removeEventListener("pointermove", onMove); handle.removeEventListener("pointerup", onUp); saveDraft($("battle").value); };
+    handle.addEventListener("pointermove", onMove);
+    handle.addEventListener("pointerup", onUp);
+  });
+}
+
+/** 範囲を変える。キャラは地図の上の同じ場所に残す（範囲の左上が動いた分だけ座標を付け直す） */
+function setArea(next) {
+  const dx = next.x - area.x, dy = next.y - area.y;
+  if (!dx && !dy && next.w === area.w && next.h === area.h) return;
+  for (const u of units) { u.x -= dx; u.y -= dy; }
+  Object.assign(area, next);
+  paintArea();
+  render();
 }
 
 function inArea(rx, ry) { return rx >= 0 && ry >= 0 && rx < area.w && ry < area.h; }
@@ -213,7 +282,7 @@ function attachDrag(el, u) {
     e.preventDefault();
     const rect = $("board").getBoundingClientRect();
     let moved = false;
-    el.setPointerCapture(e.pointerId);
+    try { el.setPointerCapture(e.pointerId); } catch {}
     el.classList.add("dragging");
     const onMove = ev => {
       moved = true;
@@ -241,7 +310,14 @@ function attachDrag(el, u) {
 function outputText() {
   const pad = s => (s + ":").padEnd(24);
   const id = $("battle").value;
-  const lines = [`// ${id} の配置（戦う範囲の左上が (0, 0)）`, "positions: {"];
+  const lines = [
+    `// ${id}`,
+    `// 戦う範囲（配置表 ${cfg.layout.split("/").pop()} の battleAreas「${cfg.area}」）: x ${area.x}, y ${area.y}, w ${area.w}, h ${area.h}`,
+    `cols: ${area.w},`,
+    `rows: ${area.h},`,
+    "// キャラの配置（戦う範囲の左上が (0, 0)）",
+    "positions: {",
+  ];
   for (const u of units.filter(v => v.kind !== "wait")) lines.push(`    ${pad(u.id)}{ x: ${u.x}, y: ${u.y} },`);
   lines.push("},");
   const waits = units.filter(v => v.kind === "wait");
@@ -256,13 +332,15 @@ $("copy").addEventListener("click", async () => {
 $("reset").addEventListener("click", () => {
   try { localStorage.removeItem(storageKey($("battle").value)); } catch {}
   units = unitsFromDefinition($("battle").value);
+  area = { ...areaOrig };
   picked = null;
+  paintArea();
   render();
-  $("msg").textContent = "今の battleDefinitions.js の配置に戻しました";
+  $("msg").textContent = "今の battleDefinitions.js と配置表の範囲に戻しました";
 });
 $("save").addEventListener("click", () => {
   const id = $("battle").value;
-  const data = { battleId: id, units: units.map(u => ({ id: u.id, kind: u.kind, x: u.x, y: u.y })) };
+  const data = { battleId: id, area: { id: cfg.area, x: area.x, y: area.y, w: area.w, h: area.h }, units: units.map(u => ({ id: u.id, kind: u.kind, x: u.x, y: u.y })) };
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
   a.download = `${id}_placement.json`;
