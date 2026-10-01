@@ -23,7 +23,7 @@
 | 会話劇の見せ方（立ち絵を左右に寄せる） | [`10-design/ui/DIALOGUE_STAGING_DIRECTION_2026-09-28.md`](10-design/ui/DIALOGUE_STAGING_DIRECTION_2026-09-28.md) |
 | 会話用の立ち絵の発注書（ChatGPT向け） | [`30-planning/TACHIE_DIALOGUE_ORDER_2026-09-28.md`](30-planning/TACHIE_DIALOGUE_ORDER_2026-09-28.md) |
 | 立ち絵担当（別チャット）の引き継ぎ | [`30-planning/TACHIE_CHAT_HANDOFF_2026-09-28.md`](30-planning/TACHIE_CHAT_HANDOFF_2026-09-28.md) |
-| Codexの追いつき用の引き継ぎ（9/26〜9/28） | [`30-planning/CODEX_HANDOFF_2026-09-28.md`](30-planning/CODEX_HANDOFF_2026-09-28.md) |
+| Codexへの引き継ぎ（最新: 10/1 の武器・敵の決定） | [`30-planning/CODEX_HANDOFF_2026-10-01.md`](30-planning/CODEX_HANDOFF_2026-10-01.md)（前回: [`CODEX_HANDOFF_2026-09-28.md`](30-planning/CODEX_HANDOFF_2026-09-28.md)） |
 | Unityアイソメマップの制作仕様 | [`99-archive/10-design/map/UNITY_ISOMETRIC_MAP_PRODUCTION_GUIDE_2026-09-26.md`](99-archive/10-design/map/UNITY_ISOMETRIC_MAP_PRODUCTION_GUIDE_2026-09-26.md) |
 
 ## フォルダの役割
