@@ -12,6 +12,7 @@ namespace Srpg.Battle
         public string block;         // 表の行（rows）を探すブロック（例: prologue_1_1.b11）
         public string note;
         public string finishGuide;   // 手引きが全部済んだあとの帯
+        public string reserveGuide;  // 今の段の手引きが済んだが、まだ控えの敵が出ていないときの帯（訓練の1段目の残りの人形）
         public TutorialLesson[] lessons;
     }
 
@@ -25,6 +26,7 @@ namespace Srpg.Battle
         public TutorialLine[] lines;   // 始めに流す台詞（表にない下書き）
         public int[] after;     // 済んだあとに流す表の行
         public string guide;    // 画面の帯
+        public int phase;       // 段（0 か 1＝1段目、2＝2段目。控えの敵が現れると2段目。原作者 2026-10-02: 人形 → ギュンター）
     }
 
     [Serializable]
@@ -48,6 +50,8 @@ namespace Srpg.Battle
         private readonly HashSet<string> done = new HashSet<string>();
         private readonly HashSet<string> introduced = new HashSet<string>();
         private bool playing, stopped;
+        private int phase = 1;
+        private static int PhaseOf(TutorialLesson lesson) => lesson.phase <= 1 ? 1 : lesson.phase;
 
         public IReadOnlyCollection<string> Done => done;
         public string CurrentId { get; private set; }
@@ -65,6 +69,7 @@ namespace Srpg.Battle
         {
             battle.ActionDone += OnAction;
             battle.Finished += OnFinished;
+            battle.Reinforced += OnReinforced;
             battle.InputBlocked = () => playing;
             Step();
         }
@@ -74,10 +79,24 @@ namespace Srpg.Battle
             stopped = true;
             battle.ActionDone -= OnAction;
             battle.Finished -= OnFinished;
+            battle.Reinforced -= OnReinforced;
             battle.Guide = "";
         }
 
         private void OnFinished(Battle3DController.Phase phase) => Stop();
+
+        /// <summary>控えの敵が現れた: 2段目へ（1段目でやり残した手引きは済んだことにする）</summary>
+        private void OnReinforced()
+        {
+            if (stopped) return;
+            phase = 2;
+            foreach (var lesson in file.lessons ?? Array.Empty<TutorialLesson>())
+                if (PhaseOf(lesson) < phase) done.Add(lesson.id);
+            Step();
+        }
+
+        /// <summary>今の段</summary>
+        public int Phase => phase;
 
         private void OnAction(string kind, Battle3DController.UnitState unit)
         {
@@ -91,7 +110,7 @@ namespace Srpg.Battle
                 done.Add(lesson.id);
                 if (lesson.after != null) after.AddRange(lesson.after);
             }
-            // ギュンターを倒した行動のあとは、手引きを出さない（勝利へ）
+            // 敵を全部倒した行動のあとは、手引きを出さない（勝利へ。控えの敵が出てくるときは、その知らせ OnReinforced で進む）
             if (!battle.Units.Any(u => u.Alive && u.Side == "enemy")) return;
             if (after.Count > 0) Play(LinesOf(after, null), Step);
             else Step();
@@ -100,8 +119,10 @@ namespace Srpg.Battle
         /// <summary>今出す手引き</summary>
         public TutorialLesson Current()
         {
-            var open = (file.lessons ?? Array.Empty<TutorialLesson>()).Where(l => !done.Contains(l.id)).ToList();
-            return open.FirstOrDefault(l => !string.IsNullOrEmpty(l.when) && WhenMet(l.when))
+            var open = (file.lessons ?? Array.Empty<TutorialLesson>()).Where(l => !done.Contains(l.id) && PhaseOf(l) == phase).ToList();
+            // 段の始めの台詞（条件なし・shown）は、条件のある手引きより先に流す（ギュンターの登場 → 行動予告）
+            return open.FirstOrDefault(l => string.IsNullOrEmpty(l.when) && l.done == "shown")
+                ?? open.FirstOrDefault(l => !string.IsNullOrEmpty(l.when) && WhenMet(l.when))
                 ?? open.FirstOrDefault(l => string.IsNullOrEmpty(l.when));
         }
 
@@ -122,7 +143,7 @@ namespace Srpg.Battle
             if (stopped || playing) return;
             var lesson = Current();
             CurrentId = lesson?.id;
-            if (lesson == null) { battle.Guide = file.finishGuide ?? ""; return; }
+            if (lesson == null) { battle.Guide = (battle.HasReserves ? file.reserveGuide : null) ?? file.finishGuide ?? ""; return; }
             if (!introduced.Contains(lesson.id))
             {
                 introduced.Add(lesson.id);

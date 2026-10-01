@@ -74,5 +74,7 @@ namespace Srpg.Battle
         public string token;
         public bool flying;   // 飛行（水堀・遮蔽物・石の基礎・茂みを通り抜けられる。止まれるマスは TerrainRules）
         public ItemData[] items;   // 最初から持っている消耗品（なければ空。原作者 2026-09-28: 落ちている物を拾うより、味方どうしの交換で渡す）
+        public bool reserve;       // 控え: 最初は盤面にいない。ほかの敵を全部倒すと出てくる（プロローグの訓練のギュンター。原作者 2026-10-02）
+        public bool passive;       // 自分からは動かない・攻撃しない（反撃はする。訓練人形）
     }
 }

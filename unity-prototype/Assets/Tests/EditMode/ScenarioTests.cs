@@ -29,7 +29,7 @@ namespace Srpg.Tests
             Assert.AreEqual("sidetrack", s.Block("prologue_1_1.b07").part, "井戸端会議は寄り道");
         }
 
-        /// <summary>訓練の戦闘の手引き: 表の行が b11 にある・済む行動の種類が戦闘の知らせにある・最初は交換</summary>
+        /// <summary>訓練の戦闘の手引き: 表の行が b11 にある・済む行動の種類が戦闘の知らせにある・2段（人形 → ギュンター。原作者 2026-10-02）</summary>
         [Test]
         public void TrainingTutorialDataPointsToTheScenario()
         {
@@ -38,15 +38,19 @@ namespace Srpg.Tests
             Assert.AreEqual("battle_prologue_training", t.battleId);
             var block = s.Block(t.block);
             Assert.IsNotNull(block, t.block);
-            var kinds = new[] { "trade", "move", "attack", "art", "magic", "item", "shown", "dismiss" };
+            var kinds = new[] { "trade", "move", "attack", "art", "magic", "item", "countered", "shown", "dismiss" };
             foreach (var lesson in t.lessons)
             {
                 CollectionAssert.Contains(kinds, lesson.done, $"{lesson.id} の済む行動");
                 foreach (int row in (lesson.rows ?? new int[0]).Concat(lesson.after ?? new int[0]))
                     Assert.IsTrue(block.Shown.Any(l => l.row == row), $"{lesson.id}: 表の {row} 行が {t.block} にない");
             }
-            Assert.AreEqual("trade", t.lessons[0].id, "最初は交換（ツノ → ポーション）");
-            CollectionAssert.AreEqual(new[] { 70 }, t.lessons[0].rows, "カリマ「僕のツノ知らない？」から");
+            // 1段目: 人形の説明 → 移動・攻撃・魔法・反撃 → 交換（カリマ「僕のツノ知らない？」から）→ 回復。2段目: ギュンターの登場 → 行動予告・両断
+            CollectionAssert.AreEqual(new[] { "dolls", "move", "attack", "magic", "counter", "trade", "item", "gunter", "intent", "art" }, t.lessons.Select(l => l.id).ToArray());
+            var trade = t.lessons.Single(l => l.id == "trade");
+            CollectionAssert.AreEqual(new[] { 70 }, trade.rows, "カリマ「僕のツノ知らない？」から");
+            Assert.IsTrue(t.lessons.Where(l => l.id == "gunter" || l.id == "intent" || l.id == "art").All(l => l.phase == 2), "ギュンターが出てからの手引きは2段目");
+            Assert.IsTrue(t.lessons.Where(l => l.phase != 2).All(l => l.phase <= 1), "そのほかは1段目");
         }
 
         [Test]

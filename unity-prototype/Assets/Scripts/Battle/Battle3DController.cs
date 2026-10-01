@@ -106,6 +106,11 @@ namespace Srpg.Battle
         /// 行動が済んだ（手引きの進み具合に使う）: "attack"（通常攻撃）/ "art"（戦技）/ "magic"（魔法）/ "item" / "trade" / "move" / "wait" / "allyTurn"（味方の番の始まり）
         /// </summary>
         public event Action<string, UnitState> ActionDone;
+        /// <summary>控えの敵（reserve）が盤面に出てきた（ほかの敵を全部倒したとき。訓練の2段目）</summary>
+        public event Action Reinforced;
+        private readonly List<UnitState> reserves = new List<UnitState>();
+        /// <summary>まだ出ていない控えの敵がいるか</summary>
+        public bool HasReserves => reserves.Count > 0;
 
         /// <summary>盤面を押しても動かさない間（戦闘中の会話など）。敵の番も、この間は待つ</summary>
         public Func<bool> InputBlocked { get; set; }
@@ -772,6 +777,7 @@ namespace Srpg.Battle
             else map = BuildMap(data, blocked);
             mapItems.Clear();
             usedSpecials.Clear();
+            reserves.Clear();
             pickedThisMove = null;
             foreach (var mi in data.mapItems ?? Array.Empty<MapItemData>())
                 if (mi?.item != null) mapItems[new Vector2Int(mi.x, mi.y)] = mi.item;
@@ -792,6 +798,7 @@ namespace Srpg.Battle
                     state.plan.x = state.cell.x;
                     state.plan.y = state.cell.y;
                 }
+                if (source.reserve) { reserves.Add(state); continue; }
                 units.Add(state);
                 map.Units.Add(new Board3DMap.Unit { cell = state.cell, id = source.id, enemy = source.side == "enemy" });
             }
@@ -1005,9 +1012,13 @@ namespace Srpg.Battle
             if (CurrentMode != Mode.Forecast || selected == null || target == null) return;
             var attacker = selected;
             var used = currentOption;
+            PlanResult result = null;
             if (currentOption != null && currentOption.IsArea) ExecuteArea(attacker, target, currentOption);
-            else Execute(attacker, target, currentOption);
+            else result = Execute(attacker, target, currentOption);
             ActionDone?.Invoke(used != null && used.isMagic ? "magic" : used != null && used.isArt ? "art" : "attack", attacker);
+            // 反撃を受けた（訓練の手引き: 反撃人形）
+            if (result != null && result.steps.Any(s => s.type == "strike" && (s.role == "counter" || s.role == "counterFollowUp") && s.hit))
+                ActionDone?.Invoke("countered", attacker);
             FinishAction(attacker);
         }
 
@@ -1320,9 +1331,33 @@ namespace Srpg.Battle
         private bool CheckEnd()
         {
             CleanupSummons();
+            if (!units.Any(u => u.Alive && u.Side == "enemy") && reserves.Count > 0) { BringReserves(); return false; }
             if (!units.Any(u => u.Alive && u.Side == "enemy")) { CurrentPhase = Phase.Victory; AddLog("勝利！ すべての敵を倒した"); RaiseFinished(); return true; }
             if (!units.Any(u => u.Alive && u.Side == "ally" && !u.summoned)) { CurrentPhase = Phase.Defeat; AddLog("敗北…"); RaiseFinished(); return true; }
             return false;
+        }
+
+        /// <summary>控えの敵を盤面に出す（もとの位置。ふさがっていれば近くの空いたマス）</summary>
+        private void BringReserves()
+        {
+            foreach (var unit in reserves)
+            {
+                var cell = unit.cell;
+                if (units.Any(u => u.Alive && u.cell == cell))
+                {
+                    var free = BoardCells().Where(c => !units.Any(u => u.Alive && u.cell == c) && !blocked.Contains(c))
+                        .OrderBy(c => Distance(c, unit.cell)).Cast<Vector2Int?>().FirstOrDefault();
+                    if (free.HasValue) cell = free.Value;
+                }
+                unit.cell = cell;
+                if (unit.plan != null) { unit.plan.x = cell.x; unit.plan.y = cell.y; }
+                units.Add(unit);
+                view.AddUnitToBoard(new Board3DMap.Unit { cell = cell, id = unit.Id, enemy = unit.Side == "enemy" });
+                AddLog($"{unit.Name}が現れた");
+            }
+            reserves.Clear();
+            if (CurrentPhase == Phase.Ally) PlanEnemyActions();
+            Reinforced?.Invoke();
         }
 
         private void RaiseFinished()
@@ -1351,7 +1386,7 @@ namespace Srpg.Battle
         {
             foreach (var enemy in units.Where(u => u.Side == "enemy").ToList())
             {
-                if (!enemy.Alive || CurrentPhase != Phase.Enemy) continue;
+                if (!enemy.Alive || enemy.source.passive || CurrentPhase != Phase.Enemy) continue;
                 while (InputBlocked != null && InputBlocked()) yield return null;   // 会話の間は待つ
                 yield return new WaitForSeconds(enemyStepSeconds);
                 var plan = PrepareEnemyAct(enemy);
@@ -1384,7 +1419,7 @@ namespace Srpg.Battle
         {
             foreach (var enemy in units.Where(u => u.Side == "enemy").ToList())
             {
-                if (!enemy.Alive || CurrentPhase != Phase.Enemy) continue;
+                if (!enemy.Alive || enemy.source.passive || CurrentPhase != Phase.Enemy) continue;
                 if (EnemyStepHook == null) EnemyAct(enemy);
                 else
                 {
@@ -1488,6 +1523,7 @@ namespace Srpg.Battle
             foreach (var enemy in units.Where(u => u.Alive && u.Side == "enemy"))
             {
                 if (allies.Count == 0) break;
+                if (enemy.source.passive) { declarations[enemy.Id] = new Declaration { type = "wait", dest = enemy.cell }; continue; }
                 var (cell, target) = ChooseEnemyAttack(enemy, allies, reserved);
                 if (target != null)
                 {

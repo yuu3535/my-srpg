@@ -1196,8 +1196,9 @@ function refreshTrialLoadout(unit) {
     if (!unit?.trialBaseStats) return;
     const selection = unit.trialLoadoutSelection || null;
     const bonus = trialLoadoutStatBonus(unit.id, unit.trialAbilityLevel, selection);
+    const itemMods = trialItemStatMods(unit.trialEquippedItem);   // 装備している間の補正（指南用の剣など）
     const stats = { ...unit.trialBaseStats };
-    for (const key of TRIAL_STAT_KEYS) stats[key] += bonus[key] || 0;
+    for (const key of TRIAL_STAT_KEYS) stats[key] += (bonus[key] || 0) + (itemMods[key] || 0);
     const wasFull = !unit.maxHp || unit.hp >= unit.maxHp;
     unit.trialStats = stats;
     unit.trialAbilityNames = trialAbilityNamesFor(unit.id, unit.trialAbilityLevel, selection);

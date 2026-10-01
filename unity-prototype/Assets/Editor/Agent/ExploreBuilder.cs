@@ -24,7 +24,7 @@ namespace Srpg.EditorAgent
         private const string BattlePlanPath = "Assets/Data/Battles/" + BattleId + "_plan.json";
         private const string BattleUiPath = "Assets/Data/Battles/" + BattleId + "_ui.json";
         private const string TutorialPath = "Assets/Data/Scenario/prologue_training_tutorial.json";
-        private static readonly string[] BattleTokens = { "young_arshe", "gunter" };
+        private static readonly string[] BattleTokens = { "young_arshe", "gunter", "training_doll_1", "training_doll_2", "training_doll_counter" };   // 訓練の戦闘に出るキャラ（人形は2026-10-02）
 
         [MenuItem("Srpg/探索のシーンを組み立てて、訓練場まで歩いて撮る")]
         public static void BuildAll()
@@ -191,8 +191,9 @@ namespace Srpg.EditorAgent
         }
 
         /// <summary>
-        /// 訓練の戦闘（段5）を手引きどおりに進めて撮る: 交換 → 移動 → カリマの火の杖 → 敵の番 → ポーション → 両断 → 通常攻撃 → 勝利 → 会話 b12。
-        /// 乱数は予測どおり（すべて当たる）
+        /// 訓練の戦闘（段5）を手引きどおりに進めて撮る（2段。原作者 2026-10-02）:
+        /// 1段目＝訓練人形: 移動 → 剣で攻撃 → 火の杖 → 反撃人形に剣で反撃を受ける → カリマとツノ・ポーションの交換 → ポーションで回復
+        /// → 人形を全部倒すとギュンターが現れる → 2段目: 行動予告・両断 → 勝利 → 会話 b12。乱数は予測どおり（すべて当たる）
         /// </summary>
         private static void Battle(ExploreController explore, DialogueView dialogue, Board3DView view, Camera camera, RenderTexture rt, ref int shot)
         {
@@ -217,48 +218,53 @@ namespace Srpg.EditorAgent
                 for (int guard = 0; dialogue.IsPlaying && guard < 400; guard++) dialogue.Advance();
             }
 
-            Battle3DController.UnitState U(string id) => b.Units.First(u => u.Id == id);
+            Battle3DController.UnitState U(string id) => b.Units.FirstOrDefault(u => u.Id == id);
             int Dist(Vector2Int a, Vector2Int c) => Mathf.Abs(a.x - c.x) + Mathf.Abs(a.y - c.y);
-            var gunter = U("gunter");
+            string Lesson() => explore.Tutorial?.CurrentId;
 
-            // 始まり: カリマ「僕のツノ知らない？」（表の70行）
+            // 始まり: ギュンター「まずは人形で」（下書き）
             Shot("battle_start");
             FinishTalk();
-            if (explore.Tutorial?.CurrentId != "trade") throw new InvalidOperationException($"手引きの確認: 最初が交換になっていない（{explore.Tutorial?.CurrentId}）");
-            Shot("battle_guide_trade");
+            if (U("gunter") != null) throw new InvalidOperationException("手引きの確認: ギュンターが最初から盤面にいる（控えのはず）");
+            Shot("battle_guide_first");
 
-            // 交換: アルシェがツノを渡し、ポーションをもらう
             var arshe = U("young_arshe");
             var karima = U("young_karima");
-            b.Select("young_arshe");
-            b.ChooseTrade();
-            if (b.TradePartner != karima) throw new InvalidOperationException("手引きの確認: 隣のカリマと交換にならなかった");
-            b.GiveItem(arshe.items.FindIndex(i => i.name == "ツノ"));
-            b.TakeItem(karima.items.FindIndex(i => i.type == "heal"));
-            Shot("battle_trade");
-            b.EndTrade();
-            if (!karima.items.Any(i => i.name == "ツノ") || !arshe.items.Any(i => i.type == "heal")) throw new InvalidOperationException("手引きの確認: ツノとポーションを交換できなかった");
-            Shot("battle_after_trade");   // 表の71行（お礼にポーション）から
-            FinishTalk();
-            Shot("battle_guide_move");
-            b.ChooseWait();   // 交換のあと、アルシェはまだ行動できる。ここでは動かしてから待つ（移動は取り消せない）
-            FinishTalk();
-
-            // ターンを回して勝つまで（両断・火の杖を一度ずつ使い、あとは通常攻撃。傷ついたらポーション）
-            bool usedArt = false, usedMagic = false, usedItem = false;
-            string lastLesson = explore.Tutorial?.CurrentId;
-            for (int guard = 0; guard < 12 && b.CurrentPhase == Battle3DController.Phase.Ally; guard++)
+            bool usedArt = false, usedMagic = false, usedItem = false, traded = false, countered = false, gunterCame = false;
+            string lastLesson = Lesson();
+            for (int guard = 0; guard < 30 && explore.InBattle; guard++)
             {
-                // 手引きが変わったら撮る（帯の文を確かめる）
-                if (explore.Tutorial?.CurrentId != lastLesson && !dialogue.IsPlaying)
+                if (b.CurrentPhase != Battle3DController.Phase.Ally) { FinishTalk(); continue; }
+                if (!gunterCame && U("gunter") != null) { gunterCame = true; Shot("battle_gunter_enters"); FinishTalk(); }
+                if (Lesson() != lastLesson && !dialogue.IsPlaying)
                 {
-                    lastLesson = explore.Tutorial?.CurrentId;
+                    lastLesson = Lesson();
                     Shot($"battle_guide_{lastLesson ?? "finish"}");
                 }
                 var actor = b.Units.FirstOrDefault(u => u.Alive && u.Side == "ally" && !u.acted);
                 if (actor == null) { b.EndTurn(); FinishTalk(); continue; }
+
+                // 交換の手引き: アルシェがカリマの隣でツノを渡し、ポーションをもらう
+                if (Lesson() == "trade" && !traded && actor == arshe)
+                {
+                    b.Select(arshe.Id);
+                    var spot = b.MoveCells.Append(arshe.cell).Where(c => Dist(c, karima.cell) == 1).OrderBy(c => Dist(c, arshe.cell)).Cast<Vector2Int?>().FirstOrDefault();
+                    if (spot.HasValue && spot.Value != arshe.cell) { b.TapCell(spot.Value); FinishTalk(); }
+                    b.ChooseTrade();
+                    if (b.TradePartner != karima) throw new InvalidOperationException("手引きの確認: 隣のカリマと交換にならなかった");
+                    b.GiveItem(arshe.items.FindIndex(i => i.name == "ツノ"));
+                    b.TakeItem(karima.items.FindIndex(i => i.type == "heal"));
+                    Shot("battle_trade");
+                    b.EndTrade();
+                    traded = true;
+                    if (!arshe.items.Any(i => i.type == "heal")) throw new InvalidOperationException("手引きの確認: ポーションをもらえなかった");
+                    FinishTalk();
+                    Shot("battle_after_trade");
+                    continue;
+                }
                 b.Select(actor.Id);
-                if (!usedItem && actor.plan.hp < actor.plan.maxHp && actor.items.Any(i => i.type == "heal"))
+                // 傷ついていてポーションを持っていれば使う
+                if (!usedItem && actor.plan.hp < actor.plan.maxHp && actor.items.Any(i => i.type == "heal") && (traded || Lesson() == "item"))
                 {
                     b.TapCell(actor.cell);
                     Shot("battle_guide_item");
@@ -267,16 +273,35 @@ namespace Srpg.EditorAgent
                     FinishTalk();
                     continue;
                 }
+                if (Lesson() == "trade" && actor == karima) { b.ChooseWait(); FinishTalk(); continue; }   // アルシェが交換しに来るのを待つ
+                // 反撃はアルシェで受ける（交換でもらったポーションで回復する流れ）。交換と回復が済むまで、ほかの者は待つ
+                if ((Lesson() == "counter" && actor != arshe) || (Lesson() == "item" && actor.plan.hp >= actor.plan.maxHp)) { b.ChooseWait(); FinishTalk(); continue; }
+
+                // 相手と攻撃: 手引きに合わせる
+                var foes = b.Units.Where(u => u.Alive && u.Side == "enemy").ToList();
+                var counterDoll = foes.FirstOrDefault(u => u.Id == "training_doll_counter");
                 var options = b.OptionsOf(actor);
-                var option = (!usedArt ? options.FirstOrDefault(o => o.label == "両断") : null)
-                    ?? (!usedMagic ? options.FirstOrDefault(o => o.isMagic) : null)
-                    ?? b.BasicOption(actor);
+                Srpg.Battle.Plan.BattleOption option;
+                Battle3DController.UnitState foe;
+                string lesson = Lesson();
+                if (lesson == "counter" && counterDoll != null) { foe = counterDoll; option = b.BasicOption(actor); }
+                else if (lesson == "magic" && options.Any(o => o.isMagic)) { option = options.First(o => o.isMagic); foe = foes.Where(u => u != counterDoll).OrderBy(u => Dist(u.cell, actor.cell)).FirstOrDefault() ?? foes.First(); }
+                else if (lesson == "art" || (gunterCame && !usedArt && options.Any(o => o.label == "両断")))
+                {
+                    option = options.FirstOrDefault(o => o.label == "両断") ?? b.BasicOption(actor);
+                    foe = foes.OrderBy(u => Dist(u.cell, actor.cell)).First();
+                }
+                else
+                {
+                    option = b.BasicOption(actor);
+                    // 1段目は反撃人形を最後に残す（反撃の手引きまで）
+                    foe = foes.Where(u => countered || u != counterDoll).OrderBy(u => Dist(u.cell, actor.cell)).FirstOrDefault() ?? foes.First();
+                }
                 var cells = b.MoveCells.Append(actor.cell).ToList();
-                var from = cells.Where(c => option.InRange(Dist(c, gunter.cell))).OrderBy(c => Dist(c, actor.cell)).Cast<Vector2Int?>().FirstOrDefault();
+                var from = cells.Where(c => option.InRange(Dist(c, foe.cell))).OrderBy(c => Dist(c, actor.cell)).Cast<Vector2Int?>().FirstOrDefault();
                 if (from == null)
                 {
-                    // 届かない: いちばん近づけるマスへ動いて待つ
-                    var near = cells.OrderBy(c => Dist(c, gunter.cell)).First();
+                    var near = cells.OrderBy(c => Dist(c, foe.cell)).First();
                     b.TapCell(near);
                     FinishTalk();
                     b.ChooseWait();
@@ -286,21 +311,24 @@ namespace Srpg.EditorAgent
                 b.TapCell(from.Value);
                 FinishTalk();
                 b.ChooseOption(option);
-                b.ShowForecast(gunter);
+                b.ShowForecast(foe);
                 if (b.CurrentForecast == null) throw new InvalidOperationException($"手引きの確認: {actor.Name}の{option.label}の予測が出なかった");
-                view.FocusOnPoint((view.Map.TopCenter(actor.cell) + view.Map.TopCenter(gunter.cell)) * 0.5f, true);
-                Shot($"battle_forecast_{(option.label == "両断" ? "art" : option.isMagic ? "magic" : "attack")}");
+                view.FocusOnPoint((view.Map.TopCenter(actor.cell) + view.Map.TopCenter(foe.cell)) * 0.5f, true);
+                Shot($"battle_forecast_{(option.label == "両断" ? "art" : option.isMagic ? "magic" : foe == counterDoll ? "counter" : "attack")}");
+                int hpBefore = actor.plan.hp;
                 b.ConfirmAttack();
                 if (option.label == "両断") usedArt = true;
                 if (option.isMagic) usedMagic = true;
+                if (foe == counterDoll && actor.plan.hp < hpBefore) countered = true;
                 if (!explore.InBattle) break;   // 勝った（戦闘のあとの会話が始まっている）
                 FinishTalk();
-                if (b.CurrentPhase == Battle3DController.Phase.Ally && b.Turn >= 2 && !log.Contains("turn2")) { log.Add("turn2"); Shot("battle_turn2"); }
             }
             b.RollsOverride = null;
             Debug.Log("[ExploreBuilder] 戦闘の記録: " + string.Join(" / ", b.Log));
-            if (explore.InBattle) throw new InvalidOperationException($"手引きの確認: 戦闘が終わらなかった（ターン{b.Turn}・{b.CurrentPhase}・ギュンター HP {gunter.plan.hp}）");
-            if (!usedArt || !usedMagic) throw new InvalidOperationException("手引きの確認: 両断・火の杖を使わずに終わった");
+            if (explore.InBattle) throw new InvalidOperationException($"手引きの確認: 戦闘が終わらなかった（ターン{b.Turn}・{b.CurrentPhase}・手引き {Lesson()}）");
+            if (!gunterCame) throw new InvalidOperationException("手引きの確認: ギュンターが現れなかった");
+            if (!usedArt || !usedMagic || !countered || !traded || !usedItem)
+                throw new InvalidOperationException($"手引きの確認: 一通り使わずに終わった（両断{usedArt}・魔法{usedMagic}・反撃{countered}・交換{traded}・回復{usedItem}）");
             // 勝ったら訓練場の「戦闘のあと」の場面に入り、会話 b12 が流れる
             if (!dialogue.IsPlaying || explore.State?.id != "prologue_1_1_after_training") throw new InvalidOperationException($"手引きの確認: 戦闘のあとの会話が始まらなかった（{explore.State?.id}）");
             Shot("after_training");

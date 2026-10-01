@@ -2,6 +2,15 @@
 // battleDefinitions.js - Battle content shared by story and test entries
 // =====================================================================
 
+// 訓練人形の仮の絵（盤面・立ち絵とも同じ絵。立ち絵の欄は全身が入るように）
+const TRAINING_DOLL_ART = name => ({
+    tokenImage: `unity-prototype/Assets/Art/SD/${name}.png`,
+    portraitImage: `unity-prototype/Assets/Art/SD/${name}.png`,
+    portraitImageDamaged: `unity-prototype/Assets/Art/SD/${name}.png`,
+    portraitBgSize: "contain", portraitBgPos: "center bottom",
+    portraitDmgBgSize: "contain", portraitDmgBgPos: "center bottom",
+});
+
 const BATTLE_DEFINITIONS = Object.freeze({
     battle_tutorial: {
         uiTheme: "orcus",
@@ -40,7 +49,10 @@ const BATTLE_DEFINITIONS = Object.freeze({
         timeOfDay: "morning",
         // Unity版の戦況の画面の文。ギュンターは手加減する（原作者 2026-09-28: 動くが手加減。子どものHPは1より下がらない＝寸止め。負けはない）
         title: "訓練",
-        victoryText: "ギュンターから一本取る（HPを0にする）",
+        // 2段（原作者 2026-10-02）: 1段目＝訓練人形（ラディン製）で剣・魔法・反撃・交換と回復を覚える → 人形を全部倒すと
+        //   2段目＝ギュンターが入ってくる（行動予告・戦技）。reserve: 最初は盤面にいない（ほかの敵を全部倒すと出る。Unity版）
+        //   passive: 自分からは動かない・攻撃しない（反撃はする）。ブラウザ版はこの2つに対応していない（Unity への書き出し用）
+        victoryText: "訓練人形を倒し、ギュンターから一本取る（HPを0にする）",
         defeatText: "なし（訓練。ギュンターは寸止めする）",
         mercy: true,
         // 最初から持っている消耗品（Unity版の交換で渡す。ブラウザ版には交換がないので、ここは Unity への書き出しだけで使う）
@@ -49,10 +61,21 @@ const BATTLE_DEFINITIONS = Object.freeze({
             young_karima: [{ id: "small_potion", name: "ポーション", type: "heal", value: 5 }],
         },
         unitIds: ["young_arshe", "young_karima", "gunter"],
+        // 訓練人形: ギュンターの複製に、人形の仮の絵（unity-prototype/Assets/Art/SD/training_doll*.png。原作者の絵ができたら差し替え）
+        unitCopies: {
+            training_doll_1:       { from: "gunter", name: "訓練人形", move: 0, ...TRAINING_DOLL_ART("training_doll") },
+            training_doll_2:       { from: "gunter", name: "訓練人形", move: 0, ...TRAINING_DOLL_ART("training_doll") },
+            training_doll_counter: { from: "gunter", name: "反撃人形", move: 0, ...TRAINING_DOLL_ART("training_doll_counter") },
+        },
+        reserve: ["gunter"],
+        passive: ["training_doll_1", "training_doll_2", "training_doll_counter"],
         positions: {
             young_arshe:  { x: 2, y: 6 },
             young_karima: { x: 3, y: 6 },
             gunter:       { x: 3, y: 1 },
+            training_doll_1:       { x: 1, y: 3 },
+            training_doll_2:       { x: 3, y: 3 },
+            training_doll_counter: { x: 5, y: 4 },
         },
     },
     battle_ch1: {

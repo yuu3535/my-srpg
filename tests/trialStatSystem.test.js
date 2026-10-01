@@ -324,10 +324,23 @@ assert.equal(trialAuraModifiers({ id: "a", side: "ally", x: 3, y: 0 }, { id: "e"
     assert.equal(T.trialCarriedGrimoires(T.trialStartingGear("young_karima", B)).length, 1);
     assert.equal(T.trialBattleFixesGear("young_arshe", B), true);
     assert.equal(T.trialBattleFixesGear("young_arshe", "battle_trial_adopted"), false);
-    // ギュンター（チュートリアル仕様）: 子どもは追撃しない・子どもへのダメージは3回耐えられる
+    // ギュンター（原作者 2026-10-02: 因果Lv25・ブレイバー）。手加減は指南用の剣の能力値の補正
     const g = at1("gunter");
-    assert.equal(T.trialCanFollowUp(at1("young_karima"), g), false);
-    assert.ok(T.trialPhysicalDamage(g.atk, 13) * 2 < 12);
+    assert.equal(T.trialCauseLevelFor(T.trialProfileFor("gunter", B)), 25);
+    assert.deepEqual(g, { hp: 33, atk: 39, def: 33, mag: 32, res: 34, tec: 26, spd: 22, cha: 28 });
+    assert.equal(T.trialStartingGear("gunter", B).equipped, "shinan_sword");
+    const mods = T.trialItemStatMods("shinan_sword");
+    const held = { ...g };
+    for (const key of Object.keys(mods)) held[key] += mods[key];
+    // 剣を持つと: 子どもは追撃せず、されもしない。子どもへのダメージは4（3回耐えられる）。子どもの剣は7、火の杖は10通る
+    assert.equal(T.trialCanFollowUp(at1("young_karima"), held), false);
+    assert.equal(T.trialCanFollowUp(held, at1("young_arshe")), false);
+    assert.equal(T.trialPhysicalDamage(held.atk, 13, T.TRIAL_ITEMS.shinan_sword.power), 4);
+    assert.equal(T.trialPhysicalDamage(14, held.def), 7);
+    assert.equal(T.trialDamage(18, held.res, T.trialMagicPower("grimoire", "fire_book").power), 10);
+    // 訓練人形: 攻撃しない人形は武器なし（反撃しない）、反撃人形は人形の腕
+    assert.equal(T.trialStartingGear("training_doll_1", B).equipped, null);
+    assert.equal(T.trialStartingGear("training_doll_counter", B).equipped, "doll_arm");
 }
 
 console.log("trialStatSystem: all tests passed");

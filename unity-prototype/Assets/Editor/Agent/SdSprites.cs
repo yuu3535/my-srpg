@@ -28,6 +28,10 @@ namespace Srpg.EditorAgent
             { "forest_guard", "alstro_spear_1" },
             { "dylan", "alstro_general" },
             { "herel", "alstro_mage_1" },
+            // 訓練人形（ラディン製）。原作者の絵ができるまでの仮の絵（総合担当がコードで描いた）
+            { "training_doll_1", "training_doll" },
+            { "training_doll_2", "training_doll" },
+            { "training_doll_counter", "training_doll_counter" },
         };
 
         // 絵の高さの倍率: 子どもは小さく、竜に乗る兵は大きく（SDは全員が同じ大きさで描かれている）
@@ -36,6 +40,7 @@ namespace Srpg.EditorAgent
             { "young_arshe", 0.86f }, { "young_karima", 0.86f }, { "bell", 0.84f },
             { "ouroboros_sister", 0.8f }, { "ouroboros_brother", 0.8f }, { "poor_girl", 0.82f }, { "poor_boy", 0.82f },
             { "ringholm", 0.96f }, { "anne", 0.94f },
+            { "training_doll", 0.8f }, { "training_doll_counter", 0.8f },
             { "orcus_rider", 1.4f }, { "orcus_general", 1.5f },
         };
 
