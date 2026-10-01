@@ -50,6 +50,8 @@
 
 #### UI・世界観表現
 
+- [`ui/COLOR_HARMONY_DIRECTION_2026-10-02.md`](10-design/ui/COLOR_HARMONY_DIRECTION_2026-10-02.md)：配色の考え方（背景の色相の隣か反対の色。景色の色はテーマ色と分ける。時間帯ごとのオーバーレイの色）
+
 - [`ui/UNITY_SRPG_UI_DESIGN_DIRECTION_DRAFT.md`](10-design/ui/UNITY_SRPG_UI_DESIGN_DIRECTION_DRAFT.md)：Unity向けUI設計方針のたたき台
 - [`ui/WORLD_UI_DIRECTION_MEMO.md`](10-design/ui/WORLD_UI_DIRECTION_MEMO.md)：世界観とUI表現の方向性
 
