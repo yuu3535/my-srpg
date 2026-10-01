@@ -22,7 +22,9 @@
           "type": "key",
           "value": 0
         }
-      ]
+      ],
+      "reserve": false,
+      "passive": false
     },
     {
       "id": "young_karima",
@@ -41,7 +43,9 @@
           "type": "heal",
           "value": 5
         }
-      ]
+      ],
+      "reserve": false,
+      "passive": false
     },
     {
       "id": "gunter",
@@ -53,12 +57,56 @@
       "attackRange": 1,
       "token": "Assets/Art/Tokens/gunter.png",
       "flying": false,
-      "items": []
+      "items": [],
+      "reserve": true,
+      "passive": false
+    },
+    {
+      "id": "training_doll_1",
+      "name": "訓練人形",
+      "side": "enemy",
+      "x": 1,
+      "y": 3,
+      "move": 0,
+      "attackRange": 1,
+      "token": "Assets/Art/Tokens/training_doll_1.png",
+      "flying": false,
+      "items": [],
+      "reserve": false,
+      "passive": true
+    },
+    {
+      "id": "training_doll_2",
+      "name": "訓練人形",
+      "side": "enemy",
+      "x": 3,
+      "y": 3,
+      "move": 0,
+      "attackRange": 1,
+      "token": "Assets/Art/Tokens/training_doll_2.png",
+      "flying": false,
+      "items": [],
+      "reserve": false,
+      "passive": true
+    },
+    {
+      "id": "training_doll_counter",
+      "name": "反撃人形",
+      "side": "enemy",
+      "x": 5,
+      "y": 4,
+      "move": 0,
+      "attackRange": 1,
+      "token": "Assets/Art/Tokens/training_doll_counter.png",
+      "flying": false,
+      "items": [],
+      "reserve": false,
+      "passive": true
     }
   ],
   "timeOfDay": "morning",
   "title": "訓練",
-  "victoryText": "ギュンターから一本取る（HPを0にする）",
+  "victoryText": "訓練人形を倒し、ギュンターから一本取る（HPを0にする）",
   "defeatText": "なし（訓練。ギュンターは寸止めする）",
   "mercy": true,
   "mapItems": []

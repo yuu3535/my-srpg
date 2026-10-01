@@ -1,28 +1,30 @@
 {
   "battleId": "battle_prologue_training",
   "block": "prologue_1_1.b11",
-  "note": "訓練の戦闘の手引き（docs/30-planning/PROLOGUE_TRAINING_BATTLE_TUTORIAL_PROPOSAL_2026-09-28.md）。rows はシナリオの表の行（b11）。draft の台詞は総合担当の下書き（原作者の確認待ち）。{target} は敵が狙っている味方の名前。when: declared＝敵が攻撃を予告している / hurt＝傷ついた味方がいて回復の物がある（条件のある手引きは先に出し、次の味方の番で引っ込める）。done: dismiss＝行動では済まない（次の味方の番で引っ込む）",
+  "note": "訓練の戦闘の手引き（docs/30-planning/PROLOGUE_TRAINING_BATTLE_TUTORIAL_PROPOSAL_2026-09-28.md）。2段（原作者 2026-10-02）: phase 1＝訓練人形（ラディン製）で移動・攻撃・魔法・反撃・交換と回復 → 人形を全部倒すとギュンターが現れて phase 2＝行動予告・戦技。rows はシナリオの表の行（b11）。draft の台詞は総合担当の下書き（原作者の確認待ち）。{target} は敵が狙っている味方の名前。when: declared＝敵が攻撃を予告している / hurt＝傷ついた味方がいて回復の物がある。done: 行動の種類（Battle3DController.ActionDone。countered＝反撃を受けた）、shown＝台詞を流したら済む、dismiss＝次の味方の番で引っ込む",
   "finishGuide": "ギュンターのHPを0にすれば一本！",
+  "reserveGuide": "残りの訓練人形を倒そう（全部倒すと、ギュンターとの演習が始まる）",
   "lessons": [
     {
-      "id": "trade",
+      "id": "dolls",
+      "phase": 1,
       "when": "",
-      "done": "trade",
-      "rows": [70],
-      "lines": [],
-      "after": [71, 72, 73, 74, 75],
-      "guide": "アルシェを押し、右の「交換」→ ツノをカリマに渡し、ポーションをもらおう（交換は行動になりません）"
-    },
-    {
-      "id": "intent",
-      "when": "declared",
-      "done": "dismiss",
+      "done": "shown",
       "rows": [],
       "lines": [
-        { "speaker": "ギュンター", "text": "次は{target}を狙うぞ。……と、わざわざ教えてやる。\n戦場では、相手の目線を読め。", "draft": true }
+        {
+          "speaker": "ギュンター",
+          "text": "いきなり俺と打ち合っても、怪我をするだけだ。\nまずはラディン殿の訓練人形で、体を慣らせ。",
+          "draft": true
+        },
+        {
+          "speaker": "ギュンター",
+          "text": "人形は動かん。ただし奥の反撃人形だけは、叩けば叩き返してくるぞ。",
+          "draft": true
+        }
       ],
       "after": [],
-      "guide": "赤い矢印は、敵が次に狙う相手。狙われた味方は離れるか、先に攻めよう"
+      "guide": ""
     },
     {
       "id": "move",
@@ -30,10 +32,15 @@
       "done": "move",
       "rows": [],
       "lines": [
-        { "speaker": "ギュンター", "text": "足を使え。間合いに入らねば、何も始まらんぞ。", "draft": true }
+        {
+          "speaker": "ギュンター",
+          "text": "足を使え。間合いに入らねば、何も始まらんぞ。",
+          "draft": true
+        }
       ],
       "after": [],
-      "guide": "味方を押すと青いマスが出ます。青いマスを押すと、そこへ動きます"
+      "guide": "味方を押すと青いマスが出ます。青いマスを押すと、そこへ動きます",
+      "phase": 1
     },
     {
       "id": "attack",
@@ -41,21 +48,15 @@
       "done": "attack",
       "rows": [],
       "lines": [
-        { "speaker": "ギュンター", "text": "打ち込む前に、当たるか・どれだけ効くかを見極めろ。", "draft": true }
+        {
+          "speaker": "ギュンター",
+          "text": "打ち込む前に、当たるか・どれだけ効くかを見極めろ。",
+          "draft": true
+        }
       ],
       "after": [],
-      "guide": "ギュンターの隣で「攻撃」→ ギュンターを押すと戦闘予測。命中とダメージを見て「実行」"
-    },
-    {
-      "id": "art",
-      "when": "",
-      "done": "art",
-      "rows": [],
-      "lines": [
-        { "speaker": "アルシェ", "text": "そうだ、この剣……なんだか力が湧いてくる！", "draft": true }
-      ],
-      "after": [],
-      "guide": "アルシェの「戦技」→「両断」（黒陽の双剣の戦技。物理攻撃1.5倍）"
+      "guide": "訓練人形の隣で「攻撃」→ 人形を押すと戦闘予測。命中とダメージを見て「実行」",
+      "phase": 1
     },
     {
       "id": "magic",
@@ -63,21 +64,118 @@
       "done": "magic",
       "rows": [],
       "lines": [
-        { "speaker": "カリマ", "text": "僕は魔法でいくよ。離れていても届くから。", "draft": true }
+        {
+          "speaker": "カリマ",
+          "text": "僕は魔法でいくよ。離れていても届くから。",
+          "draft": true
+        }
       ],
       "after": [],
-      "guide": "「魔法」→「火の杖」。魔法は2マス先まで届きます"
+      "guide": "「魔法」→「火の杖」。魔法は2マス先まで届きます（離れて撃てば反撃されない）",
+      "phase": 1
+    },
+    {
+      "id": "counter",
+      "phase": 1,
+      "when": "",
+      "done": "countered",
+      "rows": [],
+      "lines": [
+        {
+          "speaker": "ギュンター",
+          "text": "次は反撃人形だ。剣で叩いてみろ。\n相手の間合いで打てば、打ち返される。それを体で覚えろ。",
+          "draft": true
+        }
+      ],
+      "after": [],
+      "guide": "反撃人形の隣で剣の「攻撃」→ 反撃を受けてみよう（2マス先から魔法なら反撃されない）"
+    },
+    {
+      "id": "trade",
+      "when": "",
+      "done": "trade",
+      "rows": [
+        70
+      ],
+      "lines": [],
+      "after": [
+        71,
+        72,
+        73,
+        74,
+        75
+      ],
+      "guide": "アルシェを押し、カリマの隣で「交換」→ ツノをカリマに渡し、ポーションをもらおう（交換は行動になりません）",
+      "phase": 1
     },
     {
       "id": "item",
-      "when": "hurt",
+      "when": "",
       "done": "item",
       "rows": [],
       "lines": [
-        { "speaker": "カリマ", "text": "アル、さっきのポーション使って！", "draft": true }
+        {
+          "speaker": "カリマ",
+          "text": "アル、さっきのポーション使って！",
+          "draft": true
+        }
       ],
       "after": [],
-      "guide": "ポーションは持っている人が「持ち物」から使うとHP5回復（使うと行動済み）。傷ついた味方が持っていなければ、隣で「交換」して渡そう"
+      "guide": "ポーションは持っている人が「持ち物」から使うとHP5回復（使うと行動済み）",
+      "phase": 1
+    },
+    {
+      "id": "gunter",
+      "phase": 2,
+      "when": "",
+      "done": "shown",
+      "rows": [],
+      "lines": [
+        {
+          "speaker": "ギュンター",
+          "text": "よし、体は温まったようだな。",
+          "draft": true
+        },
+        {
+          "speaker": "ギュンター",
+          "text": "ここからが本番だ。俺から一本取ってみせろ。\n……もちろん、手加減はしてやる。",
+          "draft": true
+        }
+      ],
+      "after": [],
+      "guide": ""
+    },
+    {
+      "id": "intent",
+      "when": "declared",
+      "done": "dismiss",
+      "rows": [],
+      "lines": [
+        {
+          "speaker": "ギュンター",
+          "text": "次は{target}を狙うぞ。……と、わざわざ教えてやる。\n戦場では、相手の目線を読め。",
+          "draft": true
+        }
+      ],
+      "after": [],
+      "guide": "赤い矢印は、敵が次に狙う相手。狙われた味方は離れるか、先に攻めよう",
+      "phase": 2
+    },
+    {
+      "id": "art",
+      "when": "",
+      "done": "art",
+      "rows": [],
+      "lines": [
+        {
+          "speaker": "アルシェ",
+          "text": "そうだ、この剣……なんだか力が湧いてくる！",
+          "draft": true
+        }
+      ],
+      "after": [],
+      "guide": "アルシェの「戦技」→「両断」（黒陽の双剣の戦技。物理攻撃1.5倍・1戦闘2回）",
+      "phase": 2
     }
   ]
 }

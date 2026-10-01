@@ -300,24 +300,24 @@
       "id": "gunter",
       "name": "ギュンター",
       "side": "enemy",
-      "levelLabel": "因果Lv 1",
-      "className": "師範（仮）",
+      "levelLabel": "因果Lv 25",
+      "className": "ブレイバー",
       "moveLabel": "移動3・通常",
       "maxMp": 27,
       "move": 3,
       "summon": false,
-      "weaponName": "仮の剣",
+      "weaponName": "指南用の剣",
       "weaponType": "剣",
-      "weaponPower": "6",
+      "weaponPower": "3",
       "weaponRange": "1",
-      "weaponHit": "95",
-      "weaponCrit": "26",
+      "weaponHit": "90",
+      "weaponCrit": "40",
       "portrait": "gunter",
       "cardUv": {
         "x": 0.3214285714285714,
-        "y": 0.6241359447004609,
+        "y": 0.6802995391705069,
         "w": 0.35714285714285715,
-        "h": 0.37586405529953915
+        "h": 0.3197004608294931
       },
       "bustUv": {
         "x": 0.3214285714285714,
@@ -331,7 +331,163 @@
         "w": 0.35714285714285715,
         "h": 0.2678571428571429
       },
-      "weaponItemId": "trial_sword",
+      "weaponItemId": "shinan_sword",
+      "options": [
+        {
+          "label": "通常攻撃",
+          "kind": "weapon",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 1,
+          "isArt": false,
+          "isMagic": false,
+          "spell": null,
+          "equipSpell": null,
+          "area": ""
+        }
+      ],
+      "enemyOptions": [
+        {
+          "label": "通常攻撃",
+          "kind": "weapon",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 1,
+          "isArt": false,
+          "isMagic": false,
+          "spell": null,
+          "equipSpell": null
+        }
+      ],
+      "artList": [],
+      "magicList": [],
+      "supports": [],
+      "specials": []
+    },
+    {
+      "id": "training_doll_1",
+      "name": "訓練人形",
+      "side": "enemy",
+      "levelLabel": "因果Lv 1",
+      "className": "訓練人形",
+      "moveLabel": "移動0・通常",
+      "maxMp": 27,
+      "move": 0,
+      "summon": false,
+      "weaponName": "装備なし",
+      "weaponType": "",
+      "weaponPower": "―",
+      "weaponRange": "―",
+      "weaponHit": "―",
+      "weaponCrit": "―",
+      "portrait": "training_doll_1",
+      "cardUv": {
+        "x": -0.0957960415019072,
+        "y": 0,
+        "w": 1.1915920830038145,
+        "h": 1
+      },
+      "bustUv": {
+        "x": 0.3333333333333333,
+        "y": 0.6986607142857143,
+        "w": 0.3333333333333333,
+        "h": 0.17958603896103895
+      },
+      "rosterUv": {
+        "x": -0.2111111111111111,
+        "y": 0,
+        "w": 1.4222222222222223,
+        "h": 1
+      },
+      "weaponItemId": "",
+      "options": [],
+      "enemyOptions": [],
+      "artList": [],
+      "magicList": [],
+      "supports": [],
+      "specials": []
+    },
+    {
+      "id": "training_doll_2",
+      "name": "訓練人形",
+      "side": "enemy",
+      "levelLabel": "因果Lv 1",
+      "className": "訓練人形",
+      "moveLabel": "移動0・通常",
+      "maxMp": 27,
+      "move": 0,
+      "summon": false,
+      "weaponName": "装備なし",
+      "weaponType": "",
+      "weaponPower": "―",
+      "weaponRange": "―",
+      "weaponHit": "―",
+      "weaponCrit": "―",
+      "portrait": "training_doll_2",
+      "cardUv": {
+        "x": -0.0957957957957958,
+        "y": 0,
+        "w": 1.1915915915915916,
+        "h": 1
+      },
+      "bustUv": {
+        "x": 0.3333333333333333,
+        "y": 0.6986607142857143,
+        "w": 0.3333333333333333,
+        "h": 0.17958603896103895
+      },
+      "rosterUv": {
+        "x": -0.2111111111111111,
+        "y": 0,
+        "w": 1.4222222222222223,
+        "h": 1
+      },
+      "weaponItemId": "",
+      "options": [],
+      "enemyOptions": [],
+      "artList": [],
+      "magicList": [],
+      "supports": [],
+      "specials": []
+    },
+    {
+      "id": "training_doll_counter",
+      "name": "反撃人形",
+      "side": "enemy",
+      "levelLabel": "因果Lv 1",
+      "className": "訓練人形",
+      "moveLabel": "移動0・通常",
+      "maxMp": 27,
+      "move": 0,
+      "summon": false,
+      "weaponName": "人形の腕",
+      "weaponType": "剣",
+      "weaponPower": "3",
+      "weaponRange": "1",
+      "weaponHit": "135",
+      "weaponCrit": "44",
+      "portrait": "training_doll_counter",
+      "cardUv": {
+        "x": -0.0957957957957958,
+        "y": 0,
+        "w": 1.1915915915915916,
+        "h": 1
+      },
+      "bustUv": {
+        "x": 0.3333333333333333,
+        "y": 0.6986607142857143,
+        "w": 0.3333333333333333,
+        "h": 0.17958603896103895
+      },
+      "rosterUv": {
+        "x": -0.2111111111111111,
+        "y": 0,
+        "w": 1.4222222222222223,
+        "h": 1
+      },
+      "weaponItemId": "doll_arm",
       "options": [
         {
           "label": "通常攻撃",
