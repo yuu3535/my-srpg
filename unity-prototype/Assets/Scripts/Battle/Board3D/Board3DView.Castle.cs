@@ -78,6 +78,7 @@ namespace Srpg.Battle
                 if (t == 'D') AddDoor(c, wood, gold, stoneDark);
                 if (!IsTallWall(c)) continue;
                 float top = map.TopHeight(c);
+                TintStone(c);
 
                 // 内側（床の側）を向く面
                 var inward = new List<Vector2Int>();
@@ -90,6 +91,7 @@ namespace Srpg.Battle
                     var face = World(d) * 0.5f;
                     var plinth = AddBox(root, "Plinth", face * 0.98f + new Vector3(0f, 0.16f, 0f), Abs(World(d)) * 0.08f + Abs(World(Perp(d))) * 1.0f + new Vector3(0f, 0.32f, 0f), stoneDark);
                     plinth.transform.localPosition += World(d) * 0.04f;
+                    AddGrime(c, d, top);
                 }
 
                 if (building.Contains(c))
@@ -98,6 +100,12 @@ namespace Srpg.Battle
                     var along = IsTallWall(c + Vector2Int.up) || IsTallWall(c + Vector2Int.down) ? Vector2Int.up : Vector2Int.right;
                     var root = DecorRoot(c, "Roof");
                     AddGableRoof(root, top, along, slate);
+                    // 煙突: 建物の並びの中ほどに1本（棟の上）
+                    if (OnEdge(c) && (c.x + c.y) % 7 == 3)
+                    {
+                        AddBox(root, "Chimney", new Vector3(0f, top + 0.62f, 0f), new Vector3(0.24f, 0.7f, 0.24f), stoneDark);
+                        AddBox(root, "ChimneyCap", new Vector3(0f, top + 1.0f, 0f), new Vector3(0.32f, 0.06f, 0.32f), stone);
+                    }
                     foreach (var d in inward)
                         if ((c.x + c.y) % 2 == 0) AddWindow(c, d, top, wood, (windowCount++ % 3) == 0 ? glass : glassDark, stone);
                     continue;
@@ -134,9 +142,12 @@ namespace Srpg.Battle
                     var edge = World(outward) * 0.36f;
                     foreach (float s in new[] { -0.25f, 0.25f })
                         AddBox(root, "Merlon", edge + side * s + new Vector3(0f, top + 0.16f, 0f), Abs(side) * 0.3f + Abs(World(outward)) * 0.24f + new Vector3(0f, 0.32f, 0f), stone);
-                    // 内側を向く壁: 3マスおきに窓
+                    // 内側を向く壁: 3マスおきに窓、4マスおきに燭台（窓と重ならない所）
                     foreach (var d in inward)
+                    {
                         if ((c.x + c.y) % 3 == 1) AddWindow(c, d, top, wood, (windowCount++ % 4) == 0 ? glass : glassDark, stone);
+                        else if ((c.x + c.y) % 4 == 0) AddSconce(c, d, top);
+                    }
                 }
             }
         }
@@ -198,17 +209,89 @@ namespace Srpg.Battle
             }
         }
 
-        /// <summary>切妻の屋根: 棟は along の向き。屋根の板2枚と、両端の三角の壁</summary>
+        /// <summary>切妻の屋根: 棟は along の向き。軒を少し出した屋根の板2枚と、棟の押さえ</summary>
         private void AddGableRoof(Transform root, float top, Vector2Int along, Material slate)
         {
             var a = World(along);
             var across = World(Perp(along));
             foreach (float s in new[] { -1f, 1f })
             {
-                var panel = AddBox(root, "RoofPanel", across * (0.27f * s) + new Vector3(0f, top + 0.28f, 0f), Abs(a) * 1.02f + Abs(across) * 0.66f + new Vector3(0f, 0.06f, 0f), slate);
+                var panel = AddBox(root, "RoofPanel", across * (0.3f * s) + new Vector3(0f, top + 0.28f, 0f), Abs(a) * 1.02f + Abs(across) * 0.78f + new Vector3(0f, 0.06f, 0f), slate);
                 // 棟の線（along）を軸に傾ける
-                panel.transform.localRotation = Quaternion.AngleAxis(-s * 38f, a);
+                panel.transform.localRotation = Quaternion.AngleAxis(-s * 36f, a);
             }
+            AddBox(root, "Ridge", new Vector3(0f, top + 0.52f, 0f), Abs(a) * 1.02f + Abs(across) * 0.1f + new Vector3(0f, 0.08f, 0f), LitMaterial(new Color32(40, 34, 54, 255)));
+        }
+
+        /// <summary>石の色むら: 壁のマスごとに明るさを少し変える（同じ材質のまま、マスごとの色の上書き）</summary>
+        private void TintStone(Vector2Int cell)
+        {
+            if (!tiles.TryGetValue(cell, out var tile) || tile == null) return;
+            var renderer = tile.GetComponent<Renderer>();
+            if (renderer == null) return;
+            float h = Board3DScenery.Hash(cell.x * 13 + 1, cell.y * 7 + 3);
+            float v = 0.86f + 0.2f * h;
+            var block = new MaterialPropertyBlock();
+            renderer.GetPropertyBlock(block);
+            block.SetColor("_BaseColor", new Color(v, v * 0.98f, v * 1.03f, 1f));
+            renderer.SetPropertyBlock(block);
+        }
+
+        private static Sprite grimeSprite;
+
+        /// <summary>汚れの絵（コードで描く）: 下ほど濃い黒ずみと、上から垂れる雨だれの筋</summary>
+        private static Sprite GrimeSprite()
+        {
+            if (grimeSprite != null) return grimeSprite;
+            const int W = 64, H = 128;
+            var tex = new Texture2D(W, H, TextureFormat.RGBA32, false) { name = "WallGrime", wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear };
+            var px = new Color32[W * H];
+            for (int y = 0; y < H; y++)
+            for (int x = 0; x < W; x++)
+            {
+                float v = y / (float)(H - 1);               // 0＝下
+                float bottom = Mathf.Pow(1f - v, 2.2f) * 0.55f;
+                float streak = Mathf.PerlinNoise(x * 0.35f, 3.7f);
+                float streakA = Mathf.Clamp01((streak - 0.55f) * 3f) * Mathf.Clamp01((0.95f - v) * 2f) * 0.35f;
+                float blotch = Mathf.Clamp01((Mathf.PerlinNoise(x * 0.08f + 9f, y * 0.06f) - 0.6f) * 2f) * 0.25f;
+                float a = Mathf.Clamp01(bottom + streakA + blotch);
+                // 左右の端は薄く（となりのマスとつながって見えるように）
+                a *= Mathf.Clamp01(Mathf.Min(x, W - 1 - x) / 6f);
+                px[y * W + x] = new Color32(22, 16, 30, (byte)(a * 255));
+            }
+            tex.SetPixels32(px);
+            tex.Apply();
+            grimeSprite = Sprite.Create(tex, new Rect(0, 0, W, H), new Vector2(0.5f, 0f), H);
+            return grimeSprite;
+        }
+
+        /// <summary>壁の内側の面に汚れを貼る（下ほど黒ずむ・雨だれ）</summary>
+        private void AddGrime(Vector2Int cell, Vector2Int d, float top)
+        {
+            var root = DecorRoot(cell, "Grime");
+            var sr = new GameObject("Grime").AddComponent<SpriteRenderer>();
+            sr.transform.SetParent(root, false);
+            var n = World(d);
+            sr.transform.localPosition = n * 0.505f;
+            // 板の表を床の側へ向ける（スプライトの表は −z を向く）
+            sr.transform.localRotation = Quaternion.LookRotation(-n, Vector3.up);
+            sr.transform.localScale = new Vector3(1f, top + 0.02f, 1f);
+            sr.sprite = GrimeSprite();
+            sr.sharedMaterial = SpriteMaterial();
+            sr.sortingOrder = OrderShadow - 10;
+        }
+
+        /// <summary>壁の燭台: 金具と、ゆらぐ小さな炎（光は出さない。光の数を増やさないため）</summary>
+        private void AddSconce(Vector2Int cell, Vector2Int d, float top)
+        {
+            var root = DecorRoot(cell, "Sconce");
+            var n = World(d);
+            float y = Mathf.Min(top - 0.45f, 1.05f);
+            AddBox(root, "Bracket", n * 0.56f + new Vector3(0f, y, 0f), Abs(n) * 0.14f + Abs(World(Perp(d))) * 0.06f + new Vector3(0f, 0.06f, 0f), LitMaterial(new Color32(40, 34, 44, 255)));
+            AddBox(root, "Cup", n * 0.62f + new Vector3(0f, y + 0.06f, 0f), new Vector3(0.1f, 0.06f, 0.1f), LitMaterial(new Color32(150, 112, 52, 255)));
+            var flame = AddShape(root, PrimitiveType.Sphere, "Flame", n * 0.62f + new Vector3(0f, y + 0.15f, 0f), new Vector3(0.08f, 0.13f, 0.08f), GlowMaterial(new Color(1f, 0.55f, 0.2f), 2.4f));
+            flame.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            flame.AddComponent<FlameFlicker>();
         }
 
         /// <summary>四角すいの屋根（底の中心 basePos、底の一辺 width、高さ height）</summary>

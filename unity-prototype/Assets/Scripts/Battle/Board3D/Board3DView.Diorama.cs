@@ -79,7 +79,9 @@ namespace Srpg.Battle
                 {
                     float y0 = center.y - length * cut[s], y1 = center.y - length * cut[s + 1];
                     float a = Mathf.Lerp(w0, w3, cut[s]), b = Mathf.Lerp(w0, w3, cut[s + 1]);
-                    AddFrustum(bands[s], tris[s], new Vector3(center.x, y0, center.z), a, new Vector3(center.x, y1, center.z), b, h * 360f);
+                    // 先へ行くほど少し横へずらす（まっすぐな円すいにしない）
+                    var lean = new Vector3((Board3DScenery.Hash(c + 5, r) - 0.5f), 0f, (Board3DScenery.Hash(c, r + 5) - 0.5f)) * (length * 0.18f);
+                    AddFrustum(bands[s], tris[s], new Vector3(center.x, y0, center.z) + lean * cut[s], a, new Vector3(center.x, y1, center.z) + lean * cut[s + 1], b, h * 360f);
                 }
             }
             Color32[] colors = { new Color32(104, 78, 62, 255), new Color32(70, 52, 54, 255), new Color32(46, 36, 58, 255) };   // 土 → 暗い土 → 霧に溶ける岩
@@ -97,19 +99,20 @@ namespace Srpg.Battle
             }
         }
 
-        /// <summary>四角い断面の、先の細くなる柱の1段（側面4枚。面ごとに頂点を分けて角を立てる）</summary>
+        /// <summary>6角の断面の、先の細くなる柱の1段（側面6枚。面ごとに頂点を分けて角を立てる。角ごとに太さを少し変えてごつごつさせる）</summary>
         private static void AddFrustum(List<Vector3> v, List<int> t, Vector3 top, float topWidth, Vector3 bottom, float bottomWidth, float yawDegrees)
         {
             var rot = Quaternion.Euler(0f, yawDegrees, 0f);
+            const int sides = 6;
             Vector3 P(Vector3 c, float w, int i)
             {
-                float hw = w * 0.5f;
-                var corner = i switch { 0 => new Vector3(-hw, 0, -hw), 1 => new Vector3(hw, 0, -hw), 2 => new Vector3(hw, 0, hw), _ => new Vector3(-hw, 0, hw) };
-                return c + rot * corner;
+                float ang = i * Mathf.PI * 2f / sides;
+                float r = w * 0.5f * (0.82f + 0.36f * Board3DScenery.Hash(i * 3 + 1, Mathf.RoundToInt(yawDegrees)));
+                return c + rot * new Vector3(Mathf.Cos(ang) * r, 0f, Mathf.Sin(ang) * r);
             }
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < sides; i++)
             {
-                int j = (i + 1) % 4, n = v.Count;
+                int j = (i + 1) % sides, n = v.Count;
                 v.Add(P(top, topWidth, i)); v.Add(P(top, topWidth, j)); v.Add(P(bottom, bottomWidth, j)); v.Add(P(bottom, bottomWidth, i));
                 t.Add(n); t.Add(n + 2); t.Add(n + 1);
                 t.Add(n); t.Add(n + 3); t.Add(n + 2);
@@ -472,6 +475,25 @@ namespace Srpg.Battle
             }
             mesh.vertices = work;
             mesh.RecalculateNormals();
+        }
+    }
+
+    /// <summary>小さな炎をゆらがせる（燭台。大きさを少しずつ変える）</summary>
+    public class FlameFlicker : MonoBehaviour
+    {
+        private Vector3 baseScale;
+        private float seed;
+
+        private void Awake()
+        {
+            baseScale = transform.localScale;
+            seed = transform.position.x * 1.7f + transform.position.z * 0.9f;
+        }
+
+        private void Update()
+        {
+            float n = Mathf.PerlinNoise(Time.time * 4f, seed);
+            transform.localScale = new Vector3(baseScale.x * (0.85f + 0.3f * n), baseScale.y * (0.8f + 0.45f * n), baseScale.z * (0.85f + 0.3f * n));
         }
     }
 
