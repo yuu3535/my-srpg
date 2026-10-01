@@ -1,7 +1,7 @@
 {
   "battleId": "battle_prologue_training",
-  "cols": 7,
-  "rows": 8,
+  "cols": 9,
+  "rows": 7,
   "tiles": [],
   "iso": null,
   "units": [
@@ -9,8 +9,8 @@
       "id": "young_arshe",
       "name": "アルシェ",
       "side": "ally",
-      "x": 2,
-      "y": 6,
+      "x": 5,
+      "y": 3,
       "move": 3,
       "attackRange": 1,
       "token": "Assets/Art/Tokens/young_arshe.png",
@@ -25,6 +25,7 @@
       ],
       "reserve": false,
       "wait": [],
+      "enter": "",
       "passive": false
     },
     {
@@ -32,7 +33,7 @@
       "name": "カリマ",
       "side": "ally",
       "x": 3,
-      "y": 6,
+      "y": 3,
       "move": 3,
       "attackRange": 1,
       "token": "Assets/Art/Tokens/young_karima.png",
@@ -47,14 +48,15 @@
       ],
       "reserve": false,
       "wait": [],
+      "enter": "",
       "passive": false
     },
     {
       "id": "gunter",
       "name": "ギュンター",
       "side": "enemy",
-      "x": 3,
-      "y": 7,
+      "x": 4,
+      "y": 5,
       "move": 3,
       "attackRange": 1,
       "token": "Assets/Art/Tokens/gunter.png",
@@ -62,9 +64,10 @@
       "items": [],
       "reserve": true,
       "wait": [
-        3,
-        9
+        4,
+        -1
       ],
+      "enter": "teleport",
       "passive": false
     },
     {
@@ -72,7 +75,7 @@
       "name": "訓練人形",
       "side": "enemy",
       "x": 1,
-      "y": 3,
+      "y": 0,
       "move": 0,
       "attackRange": 1,
       "token": "Assets/Art/Tokens/training_doll_1.png",
@@ -80,14 +83,15 @@
       "items": [],
       "reserve": false,
       "wait": [],
+      "enter": "",
       "passive": true
     },
     {
       "id": "training_doll_2",
       "name": "訓練人形",
       "side": "enemy",
-      "x": 3,
-      "y": 3,
+      "x": 4,
+      "y": 1,
       "move": 0,
       "attackRange": 1,
       "token": "Assets/Art/Tokens/training_doll_2.png",
@@ -95,14 +99,15 @@
       "items": [],
       "reserve": false,
       "wait": [],
+      "enter": "",
       "passive": true
     },
     {
       "id": "training_doll_counter",
       "name": "反撃人形",
       "side": "enemy",
-      "x": 5,
-      "y": 4,
+      "x": 7,
+      "y": 0,
       "move": 0,
       "attackRange": 1,
       "token": "Assets/Art/Tokens/training_doll_counter.png",
@@ -110,6 +115,7 @@
       "items": [],
       "reserve": false,
       "wait": [],
+      "enter": "",
       "passive": true
     }
   ],
