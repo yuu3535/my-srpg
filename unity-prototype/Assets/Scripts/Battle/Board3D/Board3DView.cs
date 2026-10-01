@@ -105,8 +105,8 @@ namespace Srpg.Battle
         private Material GroundMaterial()
         {
             if (groundTexture == null) return null;
-            if (groundMaterial != null && groundMaterial.mainTexture == groundTexture) return groundMaterial;
-            var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+            var shader = BoardLitShader();
+            if (groundMaterial != null && groundMaterial.mainTexture == groundTexture && groundMaterial.shader == shader) return groundMaterial;
             groundMaterial = new Material(shader) { mainTexture = groundTexture, name = "Ground" };
             if (groundMaterial.HasProperty("_BaseMap")) groundMaterial.SetTexture("_BaseMap", groundTexture);
             if (groundMaterial.HasProperty("_Smoothness")) groundMaterial.SetFloat("_Smoothness", 0.05f);
@@ -1350,11 +1350,11 @@ namespace Srpg.Battle
 
         private Material TextureMaterial(string name)
         {
-            if (texturedMaterials.TryGetValue(name, out var cached)) return cached;
+            var shader = BoardLitShader();
+            if (texturedMaterials.TryGetValue(name, out var cached) && cached.shader == shader) return cached;
             Texture2D texture = null;
             foreach (var entry in boardTextures) if (entry.name == name) texture = entry.texture;
             if (texture == null) return null;
-            var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
             var material = new Material(shader) { mainTexture = texture };
             if (material.HasProperty("_BaseMap")) material.SetTexture("_BaseMap", texture);
             if (material.HasProperty("_Smoothness")) material.SetFloat("_Smoothness", 0.05f);
@@ -1386,12 +1386,26 @@ namespace Srpg.Battle
 
         private Material LitMaterial(Color color)
         {
-            if (litMaterials.TryGetValue(color, out var cached)) return cached;
-            var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+            var shader = BoardLitShader();
+            if (litMaterials.TryGetValue(color, out var cached) && cached.shader == shader) return cached;
             var material = new Material(shader) { color = color };
             if (material.HasProperty("_Smoothness")) material.SetFloat("_Smoothness", 0.1f);
             litMaterials[color] = material;
             return material;
+        }
+
+        /// <summary>
+        /// 盤面の物の塗り。箱庭の場所は SDの絵に合わせた平たい塗り（Srpg/DioramaToon。原作者 2026-10-01）、
+        /// ほかの場所は今までの URP の Lit
+        /// </summary>
+        private Shader BoardLitShader()
+        {
+            if (IsDiorama)
+            {
+                var toon = Shader.Find("Srpg/DioramaToon");
+                if (toon != null) return toon;
+            }
+            return Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
         }
 
         private static Material UnlitMaterial(Color color)

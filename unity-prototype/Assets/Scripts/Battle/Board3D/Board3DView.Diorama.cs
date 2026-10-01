@@ -242,7 +242,18 @@ namespace Srpg.Battle
             };
             Shader.SetGlobalVector("_DioramaShadowTint", shadow);
             Shader.SetGlobalVector("_DioramaLightTint", light);
-            Shader.SetGlobalVector("_DioramaLineColor", new Vector4(0.15f, 0.08f, 0.2f, 0.6f));   // 濃い紫の線（強さ0.6）
+            // SDの絵に合わせて、線は太く濃く（SDの絵の輪郭と同じ濃い紫）
+            Shader.SetGlobalVector("_DioramaLineColor", new Vector4(0.13f, 0.07f, 0.18f, 0.88f));
+            Shader.SetGlobalFloat("_DioramaLineWidth", 1.6f);
+            // 箱庭の塗り（Srpg/DioramaToon）の影の色: 紫に寄せる。夕暮れ・夜は濃く
+            Vector4 shade = mood switch
+            {
+                Board3DMood.Morning => new Vector4(0.8f, 0.76f, 0.96f, 1f),
+                Board3DMood.Day => new Vector4(0.82f, 0.79f, 0.95f, 1f),
+                Board3DMood.Night => new Vector4(0.62f, 0.62f, 0.96f, 1f),
+                _ => new Vector4(0.72f, 0.62f, 0.93f, 1f),
+            };
+            Shader.SetGlobalVector("_ToonShadeTint", shade);
         }
 
         // ── 旗・魔灯 ──

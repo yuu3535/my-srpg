@@ -93,6 +93,15 @@ namespace Srpg.EditorAgent
             });
             Keep("LitEmission", "Universal Render Pipeline/Lit", m => m.EnableKeyword("_EMISSION"));   // 光る材質（たいまつの炎など）
             Keep("Unlit", "Universal Render Pipeline/Unlit");
+            // 箱庭の塗り（Srpg/DioramaToon）: ふつう・半透明の写し（隠している物）
+            Keep("ToonOpaque", "Srpg/DioramaToon");
+            Keep("ToonTransparent", "Srpg/DioramaToon", m =>
+            {
+                m.SetFloat("_Surface", 1f);
+                m.SetFloat("_ZWrite", 0f);
+                m.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+                m.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            });
             Keep("SpriteUnlit", "Universal Render Pipeline/2D/Sprite-Unlit-Default");
             AssetDatabase.SaveAssets();
         }

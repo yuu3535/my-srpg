@@ -26,6 +26,7 @@ Shader "Srpg/DioramaComposite"
             float4 _DioramaLineColor;    // 線の色（濃い紫）
             float4 _DioramaShadowTint;   // 暗い所の色合い
             float4 _DioramaLightTint;    // 明るい所の色合い
+            float _DioramaLineWidth;     // 線の太さの倍率（0 のときは 1）
 
             // 正投影のカメラの深さ（カメラからの距離）
             float EyeDepth(float2 uv)
@@ -75,7 +76,7 @@ Shader "Srpg/DioramaComposite"
                 float2 offs[4] = { float2(1, 0), float2(-1, 0), float2(0, 1), float2(0, -1) };
                 [unroll] for (int i = 0; i < 4; i++)
                 {
-                    float2 o = offs[i] * texel * scale;
+                    float2 o = offs[i] * texel * scale * max(_DioramaLineWidth, 1.0);
                     float d1 = EyeDepth(uv + o);
                     float3 n1 = SampleSceneNormals(uv + o);
                     // 手前の物のふちにだけ線（奥の側には描かない）
