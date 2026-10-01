@@ -75,7 +75,8 @@ namespace Srpg.Battle
         public bool flying;   // 飛行（水堀・遮蔽物・石の基礎・茂みを通り抜けられる。止まれるマスは TerrainRules）
         public ItemData[] items;   // 最初から持っている消耗品（なければ空。原作者 2026-09-28: 落ちている物を拾うより、味方どうしの交換で渡す）
         public bool reserve;       // 控え: 最初は戦いに出ない。ほかの敵を全部倒すと出てくる（プロローグの訓練のギュンター。原作者 2026-10-02）
-        public int[] wait;         // 控えの待つ位置 [x, y]（戦う範囲の外で見守る。なければ空＝盤面にいない）。出るときは positions の位置まで歩く
+        public int[] wait;         // 控えの待つ位置 [x, y]（戦う範囲の外で見守る。なければ空＝盤面にいない）。出るときは positions の位置へ
+        public string enter;       // 控えの入り方: "teleport"＝転移で一瞬で現れる（ギュンター）。空なら歩いて入る
         public bool passive;       // 自分からは動かない・攻撃しない（反撃はする。訓練人形）
     }
 }

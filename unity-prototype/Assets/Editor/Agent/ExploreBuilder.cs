@@ -244,16 +244,25 @@ namespace Srpg.EditorAgent
                 var actor = b.Units.FirstOrDefault(u => u.Alive && u.Side == "ally" && !u.acted);
                 if (actor == null) { b.EndTurn(); FinishTalk(); continue; }
 
-                // 交換の手引き: アルシェがカリマの隣でツノを渡し、ポーションをもらう
-                if (Lesson() == "trade" && !traded && actor == arshe)
+                // 交換の手引き: アルシェとカリマが隣どうしになり、ツノとポーションを取り替える（どちらからでも。届かなければ近づいて待つ）
+                if (Lesson() == "trade" && !traded && (actor == arshe || actor == karima))
                 {
-                    b.Select(arshe.Id);
-                    var spot = b.MoveCells.Append(arshe.cell).Where(c => Dist(c, karima.cell) == 1).OrderBy(c => Dist(c, arshe.cell)).Cast<Vector2Int?>().FirstOrDefault();
-                    if (spot.HasValue && spot.Value != arshe.cell) { b.TapCell(spot.Value); FinishTalk(); }
+                    var other = actor == arshe ? karima : arshe;
+                    b.Select(actor.Id);
+                    var spot = b.MoveCells.Append(actor.cell).Where(c => Dist(c, other.cell) == 1).OrderBy(c => Dist(c, actor.cell)).Cast<Vector2Int?>().FirstOrDefault();
+                    if (!spot.HasValue)
+                    {
+                        var near = b.MoveCells.Append(actor.cell).OrderBy(c => Dist(c, other.cell)).First();
+                        if (near != actor.cell) { b.TapCell(near); FinishTalk(); }
+                        b.ChooseWait();
+                        FinishTalk();
+                        continue;
+                    }
+                    if (spot.Value != actor.cell) { b.TapCell(spot.Value); FinishTalk(); }
                     b.ChooseTrade();
-                    if (b.TradePartner != karima) throw new InvalidOperationException("手引きの確認: 隣のカリマと交換にならなかった");
-                    b.GiveItem(arshe.items.FindIndex(i => i.name == "ツノ"));
-                    b.TakeItem(karima.items.FindIndex(i => i.type == "heal"));
+                    if (b.TradePartner != other) throw new InvalidOperationException($"手引きの確認: 隣の{other.Name}と交換にならなかった");
+                    if (actor == arshe) { b.GiveItem(arshe.items.FindIndex(i => i.name == "ツノ")); b.TakeItem(karima.items.FindIndex(i => i.type == "heal")); }
+                    else { b.GiveItem(karima.items.FindIndex(i => i.type == "heal")); b.TakeItem(arshe.items.FindIndex(i => i.name == "ツノ")); }
                     Shot("battle_trade");
                     b.EndTrade();
                     traded = true;
@@ -273,7 +282,6 @@ namespace Srpg.EditorAgent
                     FinishTalk();
                     continue;
                 }
-                if (Lesson() == "trade" && actor == karima) { b.ChooseWait(); FinishTalk(); continue; }   // アルシェが交換しに来るのを待つ
                 // 反撃はアルシェで受ける（交換でもらったポーションで回復する流れ）。交換と回復が済むまで、ほかの者は待つ
                 if ((Lesson() == "counter" && actor != arshe) || (Lesson() == "item" && actor.plan.hp >= actor.plan.maxHp)) { b.ChooseWait(); FinishTalk(); continue; }
 

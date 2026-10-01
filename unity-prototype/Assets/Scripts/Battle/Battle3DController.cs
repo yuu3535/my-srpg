@@ -1393,18 +1393,34 @@ namespace Srpg.Battle
             if (Application.isPlaying && walkers.Count > 0) StartCoroutine(WalkReservesIn(walkers));
             else
             {
-                foreach (var w in walkers) view.MoveUnit(w.unit.Id, w.to);
+                foreach (var w in walkers) { view.MoveUnit(w.unit.Id, w.to); view.FocusOn(w.to); }
                 FinishReserves();
             }
         }
 
-        /// <summary>待つ位置から1マスずつ歩いて入る（縦に進んでから横）</summary>
+        /// <summary>
+        /// 待つ位置から入る: ふつうは1マスずつ歩く（縦に進んでから横）。enter が teleport なら、転移の輪の光とともに
+        /// 待つ位置から消えて、入る位置に一瞬で現れる（ギュンターの得意の転移魔法。原作者 2026-10-02）
+        /// </summary>
         private IEnumerator WalkReservesIn(List<(UnitState unit, Vector2Int from, Vector2Int to)> walkers)
         {
             foreach (var w in walkers)
             {
-                var at = w.from;
                 view.FocusOn(w.to);
+                if (w.unit.source.enter == "teleport")
+                {
+                    view.AddSummonCircle(w.from);
+                    yield return new WaitForSeconds(0.35f);
+                    view.RemoveUnit(w.unit.Id);
+                    view.RemoveSummonCircle(w.from);
+                    view.AddSummonCircle(w.to);
+                    yield return new WaitForSeconds(0.35f);
+                    view.MoveUnit(w.unit.Id, w.to);
+                    view.RemoveSummonCircle(w.to);
+                    AddPopup(w.unit.Id, "転移", new Color(0.7f, 0.85f, 1f));
+                    continue;
+                }
+                var at = w.from;
                 while (at != w.to)
                 {
                     at += at.y != w.to.y ? new Vector2Int(0, Math.Sign(w.to.y - at.y)) : new Vector2Int(Math.Sign(w.to.x - at.x), 0);

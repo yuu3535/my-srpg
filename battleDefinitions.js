@@ -40,8 +40,8 @@ const BATTLE_DEFINITIONS = Object.freeze({
     battle_prologue_training: {
         uiTheme: "orcus",
         background: "背景/オルクス魔王城鍛錬場.png",
-        cols: 7,
-        rows: 8,
+        cols: 9,
+        rows: 7,
         tiles: [],
         trialRules: "adopted-stats-v1",
         victory: { type: "defeatAll" },
@@ -68,18 +68,20 @@ const BATTLE_DEFINITIONS = Object.freeze({
             training_doll_counter: { from: "gunter", name: "反撃人形", move: 0, ...TRAINING_DOLL_ART("training_doll_counter") },
         },
         reserve: ["gunter"],
-        // 控えの待つ位置（戦う範囲の外。1段目の間は ここから見守り、人形を全部倒すと「では此処からは、俺と戦うぞ！」と言って
-        //   positions の位置まで歩いて入ってくる。原作者 2026-10-02）。座標は戦う範囲の左上 (8,6) から。
-        //   (3,9) は砂の稽古場の下の柵の門（配置表の x11〜12・y14）の外の石畳。門を通って (3,7) へ入る
-        reserveWait: { gunter: { x: 3, y: 9 } },
+        // 控えの待つ位置（戦う範囲の外。1段目の間は ここから見守り、人形を全部倒すと「では此処からは、俺と戦うぞ！」と言って現れる）。
+        //   (4,-1) は砂の稽古場の上の端（範囲のすぐ外）。座標は戦う範囲の左上 (8,6) から（原作者 2026-10-02）
+        reserveWait: { gunter: { x: 4, y: -1 } },
+        // 控えの入り方: teleport＝得意の転移魔法で、二人の後ろへ一瞬で現れる（原作者 2026-10-02）。省くと歩いて入る
+        reserveEnter: { gunter: "teleport" },
         passive: ["training_doll_1", "training_doll_2", "training_doll_counter"],
+        // 原作者の配置（2026-10-02、debug/battle_placement.html で決めた）。戦う範囲は左上 (8,6)・9×7
         positions: {
-            young_arshe:  { x: 2, y: 6 },
-            young_karima: { x: 3, y: 6 },
-            gunter:       { x: 3, y: 7 },   // 控えから入ってくる位置（門のすぐ内側）
-            training_doll_1:       { x: 1, y: 3 },
-            training_doll_2:       { x: 3, y: 3 },
-            training_doll_counter: { x: 5, y: 4 },
+            young_arshe:  { x: 5, y: 3 },
+            young_karima: { x: 3, y: 3 },
+            gunter:       { x: 4, y: 5 },   // 控えから現れる位置（二人の後ろ）
+            training_doll_1:       { x: 1, y: 0 },
+            training_doll_2:       { x: 4, y: 1 },
+            training_doll_counter: { x: 7, y: 0 },
         },
     },
     battle_ch1: {
