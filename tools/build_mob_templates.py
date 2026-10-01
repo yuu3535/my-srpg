@@ -1,12 +1,12 @@
 """
-モブ（名のない敵）の「型」の数値の案を計算する（採用版 DAMAGE_WEAPON_ENEMY_RULES.md §5 の作り方）。
+モブ（名のない敵）の「型」の数値を計算し、採用版の文書を書き出す（採用版 DAMAGE_WEAPON_ENEMY_RULES.md §5 の作り方）。
 
-  配置する因果Lv L の能力値（期待値）= 因果Lv1基礎値 + (L − 1) × 実効成長率
-  実効成長率 = 型の成長率 + 汎用兵種の成長率補正 + floor((幸運 + 最大勇気) / 40)%
+  配置する因果Lv L の能力値（期待値）= 因果Lv1基礎値（＋種族の補正）+ (L − 1) × 実効成長率
+  実効成長率 = 型の成長率 + 汎用兵種の成長率補正 + 種族の成長率補正 + floor((幸運 + 最大勇気) / 40)%
 
 出力:
-  - 標準出力: 文書に貼る Markdown の表（docs/30-planning/MOB_TEMPLATES_DRAFT_2026-10-01.md の数値の元）
-  - output/モブの型_案.csv（Googleドライブに貼る用。Git の外）
+  - 採用版md/MOB_TEMPLATES.md（採用版の文書。数値を変えたらこの道具で作り直す。文書を手で直さない）
+  - output/モブの型.csv（Googleドライブに貼る用。Git の外）
 
 使い方:  py -3.12 tools/build_mob_templates.py
 """
@@ -61,6 +61,17 @@ RACES = {
     "エルフ": [0, -3, -2, 3, 2, 0, 0, 2],
 }
 
+# 種族の成長率補正（モブだけ。原作者 2026-10-01「ヒトのモブを基準に、種族で少し成長率の補正をかける」）
+#   種族の差は「最初の差」として、因果Lv50ごろにヒトのモブとほぼ並ぶようにする（採用版 §4.4 の考え方）。
+#   魔物: 基礎値の補正の合計 +15 → 7能力 −5%（Lv50で約−17）。竜人: 合計 +21 → 魔物と同じ＋HP・防御 −5%（約−22）。
+#   エルフ: 合計 +2 なので変えない（魔法寄りの偏りは基礎値だけ）
+RACE_GROWTH = {
+    "ヒト":   [0, 0, 0, 0, 0, 0, 0, 0],
+    "魔物":   [-5, -5, -5, -5, -5, -5, -5, 0],
+    "竜人":   [-10, -5, -10, -5, -5, -5, -5, 0],
+    "エルフ": [0, 0, 0, 0, 0, 0, 0, 0],
+}
+
 # 比べる相手（採用版 §5・§6・§6.1。個人成長率＋幸運・勇気補正。兵種補正は入れない）
 HEROES = {
     "幼アルシェ": {"base": [13, 14, 13, 18, 15, 9, 10, 15], "growth": [70, 60, 55, 55, 50, 70, 70, 60], "bonus": 4},
@@ -73,17 +84,17 @@ def luck_bonus(t):
     return math.floor((t["luck"] + t["courage"]) / 40)
 
 
-def effective(class_name):
+def effective(class_name, race="ヒト"):
     tname, cls, _ = CLASSES[class_name]
     t = TYPES[tname]
     b = luck_bonus(t)
-    return [max(0, g + c + b) for g, c in zip(t["growth"], cls)]
+    return [max(0, g + c + r + b) for g, c, r in zip(t["growth"], cls, RACE_GROWTH[race])]
 
 
 def mob_at(class_name, level, race="ヒト"):
     tname = CLASSES[class_name][0]
     base = [v + r for v, r in zip(TYPES[tname]["base"], RACES[race])]
-    eff = effective(class_name)
+    eff = effective(class_name, race)
     return [round(v + (level - 1) * e / 100) for v, e in zip(base, eff)]
 
 
@@ -133,8 +144,16 @@ def main():
         md.append(table(["因果Lv"] + KEYS, rows))
         md.append("")
 
-    md.append("### 種族の補正（因果Lv1基礎値に足す）\n")
+    md.append("### 種族の補正\n")
+    md.append("因果Lv1基礎値に足す値（採用版 §4.4 の能力値ダイスの平均の差を §4.1 の換算式に通した値）:\n")
     md.append(table(["種族"] + KEYS, [[r] + v for r, v in RACES.items()]))
+    md.append("\n実効成長率に足す値（モブだけ。種族の差が因果Lv50ごろにほぼ消えるように）:\n")
+    md.append(table(["種族"] + KEYS, [[r] + [f"{x:+d}%" if x else "0" for x in v] for r, v in RACE_GROWTH.items()]))
+    md.append("\n種族ごとの比べ（戦列下級・HP以外7能力の合計）:\n")
+    rows = []
+    for race in RACES:
+        rows.append([race] + [sum(mob_at("戦列下級", L, race)[1:]) for L in [1, 10, 20, 30, 40, 50]])
+    md.append(table(["種族", "Lv1", "Lv10", "Lv20", "Lv30", "Lv40", "Lv50"], rows))
 
     # 手応え: 同じ因果Lvでの殴り合い（中威力6）
     md.append("\n### 手応え: 同じ因果Lvでの殴り合い（武器威力6・何発で倒れるか）\n")
@@ -156,17 +175,23 @@ def main():
     md.append(table(["因果Lv", "アルシェ→戦列", "戦列→アルシェ", "リングホルム→術", "術→リングホルム（魔法）",
                      "アルバス→戦列（魔法）", "戦列→アルバス", "アルシェ→隠密", "隠密→アルシェ"], rows))
     md.append("\n（Lv20以上は上級の兵種: 戦列攻撃上級・術魔法上級・隠密遊撃上級。主人公たちは兵種補正なし）")
-    print("\n".join(md))
 
-    out = ROOT / "output" / "モブの型_案.csv"
+    doc = ROOT / "採用版md" / "MOB_TEMPLATES.md"
+    head = (ROOT / "tools" / "mob_templates_head.md").read_text(encoding="utf-8")
+    tail = (ROOT / "tools" / "mob_templates_tail.md").read_text(encoding="utf-8")
+    doc.write_text(head.rstrip("\n") + "\n\n" + "\n".join(md) + "\n\n" + tail.lstrip("\n"), encoding="utf-8", newline="\n")
+    print(f"[文書] {doc}")
+
+    out = ROOT / "output" / "モブの型.csv"
     out.parent.mkdir(exist_ok=True)
     with open(out, "w", encoding="utf-8-sig", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["兵種", "型", "例", "因果Lv"] + KEYS + [f"成長率_{k}" for k in KEYS])
-        for c in CLASSES:
-            for L in LEVELS:
-                w.writerow([c, CLASSES[c][0], CLASSES[c][2], L] + mob_at(c, L) + [f"{v}%" for v in effective(c)])
-    print(f"\n[CSV] {out}")
+        w.writerow(["兵種", "型", "例", "種族", "因果Lv"] + KEYS + [f"成長率_{k}" for k in KEYS])
+        for race in RACES:
+            for c in CLASSES:
+                for L in LEVELS:
+                    w.writerow([c, CLASSES[c][0], CLASSES[c][2], race, L] + mob_at(c, L, race) + [f"{v}%" for v in effective(c, race)])
+    print(f"[CSV] {out}")
 
 
 if __name__ == "__main__":
