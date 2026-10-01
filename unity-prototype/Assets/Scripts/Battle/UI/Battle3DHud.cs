@@ -85,6 +85,15 @@ namespace Srpg.Battle
 
         // 2段目
         private RectTransform overlayRoot, topStrip, roster, terrainPanel;
+        // 味方一覧を閉じる・開くつまみ（原作者 2026-10-02: 一覧が画面を占めて邪魔なときがある）。開け閉めは覚えておく
+        private RectTransform rosterToggle;
+        private Text rosterToggleText;
+        private const string RosterPref = "srpg.rosterCollapsed";
+        private static bool RosterCollapsed
+        {
+            get => PlayerPrefs.GetInt(RosterPref, 0) == 1;
+            set { PlayerPrefs.SetInt(RosterPref, value ? 1 : 0); PlayerPrefs.Save(); }
+        }
         private Text phaseEn, phaseJa, turnValue, terrainName, terrainNote;
         private RectTransform turnGroup;
 
@@ -186,6 +195,7 @@ namespace Srpg.Battle
 
             BuildTopStrip();
             BuildRoster();
+            BuildRosterToggle();
             BuildTerrainPanel();
             BuildUnitCard();
             BuildWeaponCard();
@@ -265,6 +275,35 @@ namespace Srpg.Battle
                 rosterSlots.Add(slot);
                 i++;
             }
+        }
+
+        /// <summary>味方一覧のつまみ: 開いているときは一覧の右上のふちに「◀」、閉じているときは左の端に「▶ 味方」</summary>
+        private void BuildRosterToggle()
+        {
+            rosterToggle = NewRect("RosterToggle", frame);
+            var bg = rosterToggle.gameObject.AddComponent<Image>();
+            bg.color = Hex("#1a0f26", 0.92f);
+            var outline = rosterToggle.gameObject.AddComponent<Outline>();
+            outline.effectColor = Hex("#c8922a", 0.75f);
+            outline.effectDistance = new Vector2(0.6f, -0.6f);
+            rosterToggleText = Label(rosterToggle, "Label", 0, 0, 16, 16, 7.5f, Hex("#efd081"), FontStyle.Bold, TextAnchor.MiddleCenter);
+            rosterToggleText.raycastTarget = false;
+            var button = rosterToggle.gameObject.AddComponent<Button>();
+            button.transition = Selectable.Transition.None;
+            button.onClick.AddListener(() => { RosterCollapsed = !RosterCollapsed; Refresh(); });
+            PlaceRosterToggle();
+        }
+
+        private void PlaceRosterToggle()
+        {
+            if (rosterToggle == null) return;
+            bool collapsed = RosterCollapsed;
+            // 開いているとき: 一覧（x82・幅46）の右のふちに小さく。閉じているとき: 一覧のあった場所の左の端に、縦長の「▶ 味方」
+            if (collapsed) Place(rosterToggle, 82, 45, 16, 52);
+            else Place(rosterToggle, 122, 45, 14, 16);
+            Place(rosterToggleText.rectTransform, 0, 0, collapsed ? 16 : 14, collapsed ? 52 : 16);
+            rosterToggleText.text = collapsed ? "▶\n味\n方" : "◀";
+            rosterToggleText.lineSpacing = 0.9f;
         }
 
         private void SelectFromRoster(string id)
@@ -773,7 +812,7 @@ namespace Srpg.Battle
             var sel = controller.Selected;
             var tgt = controller.Target;
             string key = $"{statusOpen}|{subList}|{sel?.items.Count}|{controller.Units.Count}|{controller.PendingSummons.Count}|{controller.CurrentOption?.label}|{controller.TransferAlly?.Id}|{controller.TradePartner?.Id}|{controller.TradePartner?.items.Count}|{controller.EnemyPreview?.attacker?.Id}|{controller.CurrentPhase}|{controller.CurrentMode}|{sel?.Id}|{sel?.plan?.hp}|{sel?.plan?.mp}|{sel?.cell}|{tgt?.Id}|{tgt?.plan?.hp}|{controller.Turn}|{controller.Units.Count(u => u.acted)}"
-                + $"|{controller.Declarations.Count}|{string.Join(",", controller.Units.Select(u => u.plan?.hp ?? 0))}|{controller.Guide}";
+                + $"|{controller.Declarations.Count}|{string.Join(",", controller.Units.Select(u => u.plan?.hp ?? 0))}|{controller.Guide}|{RosterCollapsed}";
             if (key == stateKey) return;
             stateKey = key;
 
@@ -825,7 +864,10 @@ namespace Srpg.Battle
                 BuildRoster();
                 roster.SetSiblingIndex(1);
             }
-            roster.gameObject.SetActive(!forecastOpen);
+            roster.gameObject.SetActive(!forecastOpen && !RosterCollapsed);
+            rosterToggle.gameObject.SetActive(!forecastOpen);
+            PlaceRosterToggle();
+            rosterToggle.SetSiblingIndex(roster.GetSiblingIndex() + 1);   // 一覧のすぐ上（戦況の画面などより下）
             foreach (var slot in rosterSlots)
             {
                 var unit = controller.Units.FirstOrDefault(u => u.Id == slot.id);
@@ -1170,7 +1212,7 @@ namespace Srpg.Battle
             if (!Built) return false;
             if (statusOpen) return true;   // 戦況の画面が開いている間は盤面を押せない
             var cam = canvas.worldCamera;
-            foreach (var rt in new[] { commandList, unitCard, weaponCard, roster })
+            foreach (var rt in new[] { commandList, unitCard, weaponCard, roster, rosterToggle })
                 if (rt != null && rt.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(rt, screenPosition, cam)) return true;
             if (forecastRoot != null && forecastRoot.gameObject.activeInHierarchy)
             {

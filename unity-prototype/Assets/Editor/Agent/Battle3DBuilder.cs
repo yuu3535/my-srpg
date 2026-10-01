@@ -199,6 +199,13 @@ namespace Srpg.EditorAgent
             controller.FocusOnAllies(true);
             hud.Build();
             RenderWithHud(hud, camera, rt, "Battle3D_ui_idle");
+            // 左の味方一覧を閉じた形（閉じたかどうかは PlayerPrefs に残るので、撮ったら元に戻す）
+            int rosterWas = PlayerPrefs.GetInt("srpg.rosterCollapsed", 0);
+            PlayerPrefs.SetInt("srpg.rosterCollapsed", 1);
+            hud.Refresh();
+            RenderWithHud(hud, camera, rt, "Battle3D_ui_roster_closed");
+            PlayerPrefs.SetInt("srpg.rosterCollapsed", rosterWas);
+            hud.Refresh();
             hud.OpenStatus();
             RenderWithHud(hud, camera, rt, "Battle3D_ui_status");
             hud.CloseStatus();
