@@ -2,7 +2,7 @@
 
 作成: 2026-10-02 / 総合担当（Claude Code）
 対象: `採用版md/DAMAGE_WEAPON_ENEMY_RULES.md` v1.3、`採用版md/SKILL_LOADOUT_RULES.md` v1.1、Codex の試算 `docs/40-reviews/MAGIC_CORE_WEAPON_TRIAL_CALC_2026-10-02.md`
-状態: **点検の結果と案**（ルールは変えていない。決めるのは原作者）
+状態: **点検の結果と案** → **原作者が案Bに決定（2026-10-02）**。採用版 v1.4 に入れた（物理武器にも命中補正・魔法の射程の有利さを強さの計算に入れる・回復の魔法は検討中）
 
 ## 1. よいと思う所
 
