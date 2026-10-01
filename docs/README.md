@@ -13,7 +13,7 @@
 | このゲームで最優先する方針 | [`../PROJECT_CONSTITUTION.md`](../PROJECT_CONSTITUTION.md) |
 | 複数の担当チャットでどう情報共有するか | [`00-core/MULTI_CHAT_COLLABORATION_GUIDE.md`](00-core/MULTI_CHAT_COLLABORATION_GUIDE.md) |
 | Unity完成までに必要な作業の全体像 | [`00-core/UNITY_GAME_DEVELOPMENT_MASTER_CHECKLIST.md`](00-core/UNITY_GAME_DEVELOPMENT_MASTER_CHECKLIST.md) |
-| 理想の戦闘ルール | [`10-design/battle/BATTLE_RULES_V2.md`](10-design/battle/BATTLE_RULES_V2.md) |
+| 戦闘の数値（採用版） | [`../採用版md/README.md`](../採用版md/README.md)・方針の地図 [`30-planning/BATTLE_NUMBERS_POLICY_MAP_2026-10-01.md`](30-planning/BATTLE_NUMBERS_POLICY_MAP_2026-10-01.md) |
 | UIの方向性と試作方針 | [`10-design/ui/UNITY_SRPG_UI_DESIGN_DIRECTION_DRAFT.md`](10-design/ui/UNITY_SRPG_UI_DESIGN_DIRECTION_DRAFT.md) |
 | 現在のブラウザ版に何が実装されているか | [`20-implementation/CURRENT_GAME_SYSTEM_2026-09-21.md`](20-implementation/CURRENT_GAME_SYSTEM_2026-09-21.md) |
 | 次に何をするか | [`30-planning/NEXT_ACTION_QUEUE.md`](30-planning/NEXT_ACTION_QUEUE.md) |
@@ -37,11 +37,12 @@
 
 #### 戦闘・成長
 
-- [`battle/BATTLE_RULES_V2.md`](10-design/battle/BATTLE_RULES_V2.md)：戦闘ルール案
+- [`battle/BATTLE_RULES_V2.md`](10-design/battle/BATTLE_RULES_V2.md)：ブラウザ版の古い戦闘のルール（今後は採用版の側で作る）
 - [`battle/COMBAT_ARTS_DESIGN.md`](10-design/battle/COMBAT_ARTS_DESIGN.md)：戦技・スキル設計案
 - [`battle/TRPG_SRPG_DESIGN_THINKING.md`](10-design/battle/TRPG_SRPG_DESIGN_THINKING.md)：TRPGらしさをSRPGへ翻訳する考え方
-- [`battle/TRPG_TO_SRPG_STAT_CONVERSION.md`](10-design/battle/TRPG_TO_SRPG_STAT_CONVERSION.md)：能力値変換の検討
-- [`battle/trpg_to_srpg_damage_design.md`](10-design/battle/trpg_to_srpg_damage_design.md)：ダメージ式の検討
+- [`battle/TRPG_TO_SRPG_STAT_CONVERSION.md`](10-design/battle/TRPG_TO_SRPG_STAT_CONVERSION.md)：能力値変換の検討（一部旧案。命中式は試験で使用中）
+- [`battle/trpg_to_srpg_damage_design.md`](10-design/battle/trpg_to_srpg_damage_design.md)：ダメージ式の検討（旧案。採用は `採用版md/DAMAGE_WEAPON_ENEMY_RULES.md`）
+- 戦闘の数値の方針の地図（採用・試験・現行・旧案の区分）: [`30-planning/BATTLE_NUMBERS_POLICY_MAP_2026-10-01.md`](30-planning/BATTLE_NUMBERS_POLICY_MAP_2026-10-01.md)
 
 #### UI・世界観表現
 
