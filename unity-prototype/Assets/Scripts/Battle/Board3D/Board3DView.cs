@@ -358,7 +358,11 @@ namespace Srpg.Battle
                 }
             AddGrassEdges();
             AddBackdrop();
-            if (IsDiorama) BuildIslandUnderside();   // 箱庭（試作。原作者 2026-10-01）
+            if (IsDiorama)
+            {
+                BuildIslandUnderside();   // 箱庭（試作。原作者 2026-10-01）
+                BuildCastleParts();       // 段B: 城の部品
+            }
 
             foreach (var unit in map.Units) AddUnit(unit);
             foreach (var cell in map.ModelTrees) AddTree(cell);

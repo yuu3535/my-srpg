@@ -66,6 +66,7 @@ namespace Srpg.Battle
                 var p = tile.transform.localPosition;
                 tile.transform.localPosition = new Vector3(p.x, cut ? CutHeight : full, p.z);
                 tile.transform.localScale = new Vector3(1f, scale, 1f);
+                ShowCastleDecor(cell, !cut);   // 箱庭の城の部品（胸壁・窓・屋根）も一緒に隠す
             }
         }
     }
