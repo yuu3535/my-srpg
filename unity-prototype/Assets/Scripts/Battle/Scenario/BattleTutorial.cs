@@ -70,6 +70,7 @@ namespace Srpg.Battle
             battle.ActionDone += OnAction;
             battle.Finished += OnFinished;
             battle.Reinforced += OnReinforced;
+            battle.ReserveCalled += OnReserveCalled;
             battle.InputBlocked = () => playing;
             Step();
         }
@@ -80,10 +81,29 @@ namespace Srpg.Battle
             battle.ActionDone -= OnAction;
             battle.Finished -= OnFinished;
             battle.Reinforced -= OnReinforced;
+            battle.ReserveCalled -= OnReserveCalled;
             battle.Guide = "";
         }
 
         private void OnFinished(Battle3DController.Phase phase) => Stop();
+
+        /// <summary>
+        /// 控えの敵が呼ばれた（人形を全部倒した）: 2段目の始めの台詞（ギュンター「では此処からは、俺と戦うぞ！」）を流してから、
+        /// 戦う範囲へ歩いて入ってもらう
+        /// </summary>
+        private void OnReserveCalled()
+        {
+            if (stopped) { battle.BringReservesNow(); return; }
+            var intro = (file.lessons ?? Array.Empty<TutorialLesson>()).FirstOrDefault(l => PhaseOf(l) == 2 && l.done == "shown" && !done.Contains(l.id));
+            battle.Guide = "";
+            if (intro == null) { battle.BringReservesNow(); return; }
+            introduced.Add(intro.id);
+            Play(LinesOf(intro.rows, intro.lines), () =>
+            {
+                done.Add(intro.id);
+                battle.BringReservesNow();
+            });
+        }
 
         /// <summary>控えの敵が現れた: 2段目へ（1段目でやり残した手引きは済んだことにする）</summary>
         private void OnReinforced()

@@ -68,7 +68,9 @@ function main() {
             flying: !!c.flying,   // 飛行（キャラのデータにあれば。移動の規則は Unity の TerrainRules）
             // 最初から持っている消耗品（戦闘定義の unitItems。Unity の交換で渡す）
             items: (def.unitItems?.[c.id] || []).map(item => ({ ...item })),
-            reserve: (def.reserve || []).includes(c.id),   // 最初は盤面にいない（ほかの敵を全部倒すと出る）
+            reserve: (def.reserve || []).includes(c.id),   // 最初は戦いに出ない（ほかの敵を全部倒すと出る）
+            // 控えの待つ位置（戦う範囲の外で見守る。なければ空）。[x, y]
+            wait: def.reserveWait?.[c.id] ? [def.reserveWait[c.id].x, def.reserveWait[c.id].y] : [],
             passive: (def.passive || []).includes(c.id),   // 自分からは動かない・攻撃しない（反撃はする）
         };
     });

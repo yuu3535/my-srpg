@@ -321,6 +321,7 @@ namespace Srpg.EditorAgent
                 if (option.isMagic) usedMagic = true;
                 if (foe == counterDoll && actor.plan.hp < hpBefore) countered = true;
                 if (!explore.InBattle) break;   // 勝った（戦闘のあとの会話が始まっている）
+                if (b.ReservePending && dialogue.IsPlaying) Shot("battle_gunter_calls");   // ギュンター「では此処からは、俺と戦うぞ！」（まだ門の外）
                 FinishTalk();
             }
             b.RollsOverride = null;

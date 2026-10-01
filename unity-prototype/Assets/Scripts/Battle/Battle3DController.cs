@@ -108,6 +108,15 @@ namespace Srpg.Battle
         public event Action<string, UnitState> ActionDone;
         /// <summary>控えの敵（reserve）が盤面に出てきた（ほかの敵を全部倒したとき。訓練の2段目）</summary>
         public event Action Reinforced;
+        /// <summary>
+        /// 控えの敵を呼ぶところ（ほかの敵を全部倒した）。受け取る側（訓練の手引き）は台詞を流してから BringReservesNow を呼ぶ。
+        /// 受け取る側がいなければ、すぐに出てくる
+        /// </summary>
+        public event Action ReserveCalled;
+        private bool reservePending;
+        /// <summary>控えの敵が呼ばれて、まだ入ってきていない（この間はターンを終えない）</summary>
+        public bool ReservePending => reservePending;
+        private readonly Dictionary<string, Vector2Int> reserveEntry = new Dictionary<string, Vector2Int>();
         private readonly List<UnitState> reserves = new List<UnitState>();
         /// <summary>まだ出ていない控えの敵がいるか</summary>
         public bool HasReserves => reserves.Count > 0;
@@ -778,6 +787,8 @@ namespace Srpg.Battle
             mapItems.Clear();
             usedSpecials.Clear();
             reserves.Clear();
+            reserveEntry.Clear();
+            reservePending = false;
             pickedThisMove = null;
             foreach (var mi in data.mapItems ?? Array.Empty<MapItemData>())
                 if (mi?.item != null) mapItems[new Vector2Int(mi.x, mi.y)] = mi.item;
@@ -798,7 +809,18 @@ namespace Srpg.Battle
                     state.plan.x = state.cell.x;
                     state.plan.y = state.cell.y;
                 }
-                if (source.reserve) { reserves.Add(state); continue; }
+                if (source.reserve)
+                {
+                    reserves.Add(state);
+                    reserveEntry[source.id] = start;
+                    if (source.wait != null && source.wait.Length == 2)
+                    {
+                        state.cell = Origin + new Vector2Int(source.wait[0], source.wait[1]);
+                        // 見守っている間は陣営の枠を付けない（戦う相手に見えないように）
+                        map.Units.Add(new Board3DMap.Unit { cell = state.cell, id = source.id, enemy = source.side == "enemy", neutral = true });
+                    }
+                    continue;
+                }
                 units.Add(state);
                 map.Units.Add(new Board3DMap.Unit { cell = state.cell, id = source.id, enemy = source.side == "enemy" });
             }
@@ -1182,6 +1204,7 @@ namespace Srpg.Battle
             view.ClearSelection();
             CurrentMode = Mode.Idle;
             if (CheckEnd()) return;
+            if (reservePending) return;   // 控えの敵が入ってくるのを待つ（入ったら FinishReserves で敵の番へ）
             if (AutoEndTurn && units.Where(u => u.Alive && u.Side == "ally").All(u => u.acted)) EndTurn();
         }
 
@@ -1331,18 +1354,28 @@ namespace Srpg.Battle
         private bool CheckEnd()
         {
             CleanupSummons();
-            if (!units.Any(u => u.Alive && u.Side == "enemy") && reserves.Count > 0) { BringReserves(); return false; }
+            if (!units.Any(u => u.Alive && u.Side == "enemy") && reserves.Count > 0)
+            {
+                if (reservePending) return false;
+                if (ReserveCalled != null) { reservePending = true; ReserveCalled.Invoke(); }
+                else BringReservesNow();
+                return false;
+            }
             if (!units.Any(u => u.Alive && u.Side == "enemy")) { CurrentPhase = Phase.Victory; AddLog("勝利！ すべての敵を倒した"); RaiseFinished(); return true; }
             if (!units.Any(u => u.Alive && u.Side == "ally" && !u.summoned)) { CurrentPhase = Phase.Defeat; AddLog("敗北…"); RaiseFinished(); return true; }
             return false;
         }
 
-        /// <summary>控えの敵を盤面に出す（もとの位置。ふさがっていれば近くの空いたマス）</summary>
-        private void BringReserves()
+        /// <summary>控えの敵を戦いに出す（待つ位置から、もとの位置まで歩いて入る。ふさがっていれば近くの空いたマス）</summary>
+        public void BringReservesNow()
         {
+            if (reserves.Count == 0) { reservePending = false; return; }
+            var walkers = new List<(UnitState unit, Vector2Int from, Vector2Int to)>();
             foreach (var unit in reserves)
             {
-                var cell = unit.cell;
+                var from = unit.cell;
+                bool waiting = view.IsUnitShown(unit.Id, out _);
+                var cell = reserveEntry.TryGetValue(unit.Id, out var entry) ? entry : unit.cell;
                 if (units.Any(u => u.Alive && u.cell == cell))
                 {
                     var free = BoardCells().Where(c => !units.Any(u => u.Alive && u.cell == c) && !blocked.Contains(c))
@@ -1352,12 +1385,50 @@ namespace Srpg.Battle
                 unit.cell = cell;
                 if (unit.plan != null) { unit.plan.x = cell.x; unit.plan.y = cell.y; }
                 units.Add(unit);
-                view.AddUnitToBoard(new Board3DMap.Unit { cell = cell, id = unit.Id, enemy = unit.Side == "enemy" });
-                AddLog($"{unit.Name}が現れた");
+                if (waiting) walkers.Add((unit, from, cell));
+                else view.AddUnitToBoard(new Board3DMap.Unit { cell = cell, id = unit.Id, enemy = unit.Side == "enemy" });
+                AddLog($"{unit.Name}が戦いに加わった");
             }
             reserves.Clear();
+            if (Application.isPlaying && walkers.Count > 0) StartCoroutine(WalkReservesIn(walkers));
+            else
+            {
+                foreach (var w in walkers) view.MoveUnit(w.unit.Id, w.to);
+                FinishReserves();
+            }
+        }
+
+        /// <summary>待つ位置から1マスずつ歩いて入る（縦に進んでから横）</summary>
+        private IEnumerator WalkReservesIn(List<(UnitState unit, Vector2Int from, Vector2Int to)> walkers)
+        {
+            foreach (var w in walkers)
+            {
+                var at = w.from;
+                view.FocusOn(w.to);
+                while (at != w.to)
+                {
+                    at += at.y != w.to.y ? new Vector2Int(0, Math.Sign(w.to.y - at.y)) : new Vector2Int(Math.Sign(w.to.x - at.x), 0);
+                    view.MoveUnit(w.unit.Id, at);
+                    yield return new WaitForSeconds(0.22f);
+                }
+            }
+            FinishReserves();
+        }
+
+        private void FinishReserves()
+        {
+            // 見守っていたキャラ（枠なし）を、戦うキャラ（陣営の枠つき）として置き直す
+            foreach (var unit in units.Where(u => view.Map.Units.Any(m => m.id == u.Id && m.neutral)).ToList())
+            {
+                view.RemoveUnit(unit.Id);
+                view.Map.Units.RemoveAll(m => m.id == unit.Id);
+                view.AddUnitToBoard(new Board3DMap.Unit { cell = unit.cell, id = unit.Id, enemy = unit.Side == "enemy" });
+            }
+            reservePending = false;
             if (CurrentPhase == Phase.Ally) PlanEnemyActions();
             Reinforced?.Invoke();
+            // 呼ばれる前に味方が全員行動していたら、ここで敵の番へ
+            if (CurrentPhase == Phase.Ally && AutoEndTurn && units.Where(u => u.Alive && u.Side == "ally").All(u => u.acted)) EndTurn();
         }
 
         private void RaiseFinished()
@@ -1372,7 +1443,7 @@ namespace Srpg.Battle
         /// <summary>「ターン終了」: 敵の番へ</summary>
         public void EndTurn()
         {
-            if (CurrentPhase != Phase.Ally) return;
+            if (CurrentPhase != Phase.Ally || reservePending) return;
             CancelToIdle();
             CurrentPhase = Phase.Enemy;
             AddLog($"敵フェーズ ターン{Turn}");

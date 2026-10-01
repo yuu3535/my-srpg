@@ -68,11 +68,15 @@ const BATTLE_DEFINITIONS = Object.freeze({
             training_doll_counter: { from: "gunter", name: "反撃人形", move: 0, ...TRAINING_DOLL_ART("training_doll_counter") },
         },
         reserve: ["gunter"],
+        // 控えの待つ位置（戦う範囲の外。1段目の間は ここから見守り、人形を全部倒すと「では此処からは、俺と戦うぞ！」と言って
+        //   positions の位置まで歩いて入ってくる。原作者 2026-10-02）。座標は戦う範囲の左上 (8,6) から。
+        //   (3,9) は砂の稽古場の下の柵の門（配置表の x11〜12・y14）の外の石畳。門を通って (3,7) へ入る
+        reserveWait: { gunter: { x: 3, y: 9 } },
         passive: ["training_doll_1", "training_doll_2", "training_doll_counter"],
         positions: {
             young_arshe:  { x: 2, y: 6 },
             young_karima: { x: 3, y: 6 },
-            gunter:       { x: 3, y: 1 },
+            gunter:       { x: 3, y: 7 },   // 控えから入ってくる位置（門のすぐ内側）
             training_doll_1:       { x: 1, y: 3 },
             training_doll_2:       { x: 3, y: 3 },
             training_doll_counter: { x: 5, y: 4 },
