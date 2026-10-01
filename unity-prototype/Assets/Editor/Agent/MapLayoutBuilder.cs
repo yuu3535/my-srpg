@@ -111,7 +111,9 @@ namespace Srpg.EditorAgent
             Board3DTestBuilder.Render(camera, rt, $"Map_{layout.mapId}_turn180");
             if (view.IsDiorama)
             {
-                // 箱庭（試作 2026-10-01）: 時間帯ごとの全体（光と背景の色）と、斜めの寄り
+                // 箱庭（試作 2026-10-01）: 時間帯ごとの全体（光と背景の色）と、斜めの寄り。探索と同じくマス目のすき間なしで組み直す
+                view.TileGap = 0f;
+                view.Setup();
                 foreach (var mood in new[] { Board3DMood.Morning, Board3DMood.Dusk, Board3DMood.Night })
                 {
                     Board3DTestBuilder.SetMood(mood, layout.indoor);

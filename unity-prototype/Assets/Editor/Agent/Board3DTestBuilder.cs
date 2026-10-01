@@ -68,7 +68,11 @@ namespace Srpg.EditorAgent
             var so = new SerializedObject(pipeline);
             var list = so.FindProperty("m_RendererDataList");
             for (int i = 0; i < list.arraySize; i++)
-                if (list.GetArrayElementAtIndex(i).objectReferenceValue is UniversalRendererData) return i;
+                if (list.GetArrayElementAtIndex(i).objectReferenceValue is UniversalRendererData existing)
+                {
+                    DioramaRenderSetup.Ensure(existing);   // 箱庭の画面の仕上げ（段A）
+                    return i;
+                }
 
             var data = AssetDatabase.LoadAssetAtPath<UniversalRendererData>(RendererPath);
             if (data == null)
@@ -77,6 +81,7 @@ namespace Srpg.EditorAgent
                 var create = typeof(UniversalRenderPipelineAsset).GetMethod("CreateRendererAsset", BindingFlags.NonPublic | BindingFlags.Static);
                 data = (UniversalRendererData)create.Invoke(null, new object[] { RendererPath, RendererType.UniversalRenderer, false, "Renderer" });
             }
+            DioramaRenderSetup.Ensure(data);
             list.arraySize++;
             list.GetArrayElementAtIndex(list.arraySize - 1).objectReferenceValue = data;
             so.ApplyModifiedPropertiesWithoutUndo();

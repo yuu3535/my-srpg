@@ -141,6 +141,10 @@ namespace Srpg.Battle
                 float n = Mathf.PerlinNoise(x * 0.006f + 3.1f, y * 0.015f + 7.7f) * 0.65f + Mathf.PerlinNoise(x * 0.02f, y * 0.045f) * 0.35f;
                 col = Color.Lerp(col, Color.Lerp(col, topColor * 1.25f, 0.6f), Mathf.Clamp01((n - 0.5f) * 1.6f));
                 col = Color.Lerp(col, bottomColor * 0.7f, Mathf.Clamp01((0.42f - n) * 1.4f));
+                // 四隅の暗さ（盤面の仕上げと同じ。背景は仕上げのあとに描くので、絵に入れておく）
+                float vx = (x / (float)(W - 1) - 0.5f) * 1.25f, vy = v - 0.5f;
+                float vig = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.42f, 0.9f, Mathf.Sqrt(vx * vx + vy * vy)));
+                col = Color.Lerp(col, new Color(col.r * 0.62f, col.g * 0.55f, col.b * 0.72f), vig);
                 pixels[y * W + x] = new Color(col.r, col.g, col.b, 1f);
             }
             // 浮かぶ城の影（箱庭の飾り。原作者 2026-10-01: 残す）。遠いほど霧の色に近い
@@ -195,6 +199,7 @@ namespace Srpg.Battle
         /// <summary>時間帯が変わったとき: 背景の絵・カメラの地の色・霧の色を箱庭の色に合わせる</summary>
         private void RefreshDiorama()
         {
+            ApplyFinishing();
             if (!IsDiorama)
             {
                 // 箱庭でない場所に戻ったら、カメラの地の色を元に戻す
@@ -214,6 +219,27 @@ namespace Srpg.Battle
             if (image != null) image.texture = DioramaBackdrop();
             else AddBackdrop();
             FitBackdrop();
+        }
+
+        /// <summary>
+        /// 画面の仕上げ（段A。Srpg/DioramaComposite）の強さと色合い。箱庭の場所だけ効かせる。
+        /// 色合いは時間帯で変える（暗い所・明るい所の色。原作者 2026-10-01: 光は時間で変える）
+        /// </summary>
+        private void ApplyFinishing()
+        {
+            Shader.SetGlobalFloat("_DioramaFX", IsDiorama ? 1f : 0f);
+            if (!IsDiorama) return;
+            string mood = Board3DMood.CurrentMood;
+            var (shadow, light) = mood switch
+            {
+                Board3DMood.Morning => (new Vector4(0.93f, 0.92f, 1.04f, 1f), new Vector4(1.05f, 1.03f, 0.97f, 1f)),
+                Board3DMood.Day => (new Vector4(0.95f, 0.94f, 1.03f, 1f), new Vector4(1.04f, 1.02f, 0.98f, 1f)),
+                Board3DMood.Night => (new Vector4(0.84f, 0.88f, 1.12f, 1f), new Vector4(1.0f, 0.98f, 1.04f, 1f)),
+                _ => (new Vector4(0.9f, 0.82f, 1.06f, 1f), new Vector4(1.08f, 1.0f, 0.9f, 1f)),   // 夕暮れ: 影は紫、灯りは温かく
+            };
+            Shader.SetGlobalVector("_DioramaShadowTint", shadow);
+            Shader.SetGlobalVector("_DioramaLightTint", light);
+            Shader.SetGlobalVector("_DioramaLineColor", new Vector4(0.15f, 0.08f, 0.2f, 0.6f));   // 濃い紫の線（強さ0.6）
         }
 
         // ── 旗・魔灯 ──
