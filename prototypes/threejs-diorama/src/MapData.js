@@ -21,9 +21,9 @@ export const THRONE_ROOM = {
   heights: [
     '....DDDDDDDD....',
     '....DDDDDDDD....',
-    '....33333333....',
-    '..P.22222222.P..',
-    '....11111111....',
+    '....r333333r....',
+    '..P.r222222r.P..',
+    '....r111111r....',
     '................',
     '..P..........P..',
     '................',
@@ -36,9 +36,11 @@ export const THRONE_ROOM = {
     '.': { h: 0 },
     'P': { h: 0, blocked: true, pillar: true },
     'D': { h: 1.2, dais: true },
-    '3': { h: 0.9, step: true },
-    '2': { h: 0.6, step: true },
-    '1': { h: 0.3, step: true },
+    // 階段は描いた絵（staircase）で見せる。箱は描かず、歩くときの高さだけ使う（hideBox）
+    '3': { h: 0.9, step: true, hideBox: true },
+    '2': { h: 0.6, step: true, hideBox: true },
+    '1': { h: 0.3, step: true, hideBox: true },
+    'r': { h: 0, blocked: true },   // 階段の絵の手すり（通れない）
   },
   // 床の表面の層（c ＝ 絨毯）
   surface: [
@@ -81,23 +83,23 @@ export const THRONE_ROOM = {
     // ── 玉座と魔灯 ──
     { id: 'throne', src: 'assets/props/03_throne.png', grid: { x: 7.5, y: 0.45 }, height: 4.4, blocks: [[7, 0], [8, 0]],
       glow: [{ color: '#b070ff', at: [-0.27, 0.62], size: 0.9 }, { color: '#b070ff', at: [0.27, 0.62], size: 0.9 }] },
-    { id: 'lamp_dais_left', src: 'assets/props/05d_magic_lamp_purple_large.png', grid: { x: 4, y: 1 }, height: 1.7, billboard: true, blocks: [[4, 1]],
+    { id: 'lamp_dais_left', src: 'assets/props/05d_magic_lamp_purple_large.png', grid: { x: 4, y: 1 }, height: 1.7, billboard: true, shadow: 0.7, blocks: [[4, 1]],
       glow: [{ color: '#b46cff', at: [0, 0.86], size: 1.5 }] },
-    { id: 'lamp_dais_right', src: 'assets/props/05d_magic_lamp_purple_large.png', grid: { x: 11, y: 1 }, height: 1.7, billboard: true, blocks: [[11, 1]],
+    { id: 'lamp_dais_right', src: 'assets/props/05d_magic_lamp_purple_large.png', grid: { x: 11, y: 1 }, height: 1.7, billboard: true, shadow: 0.7, blocks: [[11, 1]],
       glow: [{ color: '#b46cff', at: [0, 0.86], size: 1.5 }] },
-    { id: 'lamp_stairs_left', src: 'assets/props/05e_magic_lamp_purple_medium.png', grid: { x: 3, y: 4 }, height: 1.45, billboard: true, blocks: [[3, 4]],
+    { id: 'lamp_stairs_left', src: 'assets/props/05e_magic_lamp_purple_medium.png', grid: { x: 3, y: 4 }, height: 1.45, billboard: true, shadow: 0.6, blocks: [[3, 4]],
       glow: [{ color: '#b46cff', at: [0, 0.84], size: 1.3 }] },
-    { id: 'lamp_stairs_right', src: 'assets/props/05e_magic_lamp_purple_medium.png', grid: { x: 12, y: 4 }, height: 1.45, billboard: true, blocks: [[12, 4]],
+    { id: 'lamp_stairs_right', src: 'assets/props/05e_magic_lamp_purple_medium.png', grid: { x: 12, y: 4 }, height: 1.45, billboard: true, shadow: 0.6, blocks: [[12, 4]],
       glow: [{ color: '#b46cff', at: [0, 0.84], size: 1.3 }] },
 
     // ── 絨毯ぞいの松明 ──
-    { id: 'torch_l1', src: 'assets/props/05a_torch_orange_large.png', grid: { x: 5, y: 6 }, height: 2.0, billboard: true, blocks: [[5, 6]],
+    { id: 'torch_l1', src: 'assets/props/05a_torch_orange_large.png', grid: { x: 5, y: 6 }, height: 2.0, billboard: true, shadow: 0.9, blocks: [[5, 6]],
       glow: [{ color: '#ff8a3a', at: [0, 0.82], size: 2.0, floor: true }] },
-    { id: 'torch_r1', src: 'assets/props/05a_torch_orange_large.png', grid: { x: 10, y: 6 }, height: 2.0, billboard: true, blocks: [[10, 6]],
+    { id: 'torch_r1', src: 'assets/props/05a_torch_orange_large.png', grid: { x: 10, y: 6 }, height: 2.0, billboard: true, shadow: 0.9, blocks: [[10, 6]],
       glow: [{ color: '#ff8a3a', at: [0, 0.82], size: 2.0, floor: true }] },
-    { id: 'torch_l2', src: 'assets/props/05a_torch_orange_large.png', grid: { x: 5, y: 9 }, height: 2.0, billboard: true, blocks: [[5, 9]],
+    { id: 'torch_l2', src: 'assets/props/05a_torch_orange_large.png', grid: { x: 5, y: 9 }, height: 2.0, billboard: true, shadow: 0.9, blocks: [[5, 9]],
       glow: [{ color: '#ff8a3a', at: [0, 0.82], size: 2.0, floor: true }] },
-    { id: 'torch_r2', src: 'assets/props/05a_torch_orange_large.png', grid: { x: 10, y: 9 }, height: 2.0, billboard: true, blocks: [[10, 9]],
+    { id: 'torch_r2', src: 'assets/props/05a_torch_orange_large.png', grid: { x: 10, y: 9 }, height: 2.0, billboard: true, shadow: 0.9, blocks: [[10, 9]],
       glow: [{ color: '#ff8a3a', at: [0, 0.82], size: 2.0, floor: true }] },
 
     // ── 柱の旗（柱の手前の面に下げる） ──
@@ -110,8 +112,9 @@ export const THRONE_ROOM = {
     { id: 'torch_pillar_r', src: 'assets/props/05c_torch_orange_small.png', grid: { x: 13, y: 6.43 }, y: 1.6, height: 1.2, layer: 3,
       glow: [{ color: '#ff8a3a', at: [0, 0.8], size: 1.3 }] },
 
-    // ── 比べる用（既定は隠す）: 描いた階段の絵を、3Dの階段の前に立てる ──
-    { id: 'staircase_art', src: 'assets/props/04_staircase.png', grid: { x: 7.5, y: 4.55 }, y: 0, height: 3.0, visible: false, layer: 4 },
+    // ── 階段（描いた絵）: いつもカメラの正面を向け、奥行きの位置だけ階段の奥へ下げる（depthPush）。
+    //    画面の上の位置は変わらず、階段を歩くキャラは絵より手前になる ──
+    { id: 'staircase', src: 'assets/props/04_staircase.png', grid: { x: 7.5, y: 4.62 }, y: 0, height: 4.3, faceCamera: true, depthPush: 1.45, layer: -1 },
   ],
 
   // 光（数は少なく。松明は代表の2か所だけ）。group はデバッグの強さの調整の単位
@@ -137,4 +140,7 @@ export const THRONE_ROOM = {
   },
 
   background: '#140d1c',
+
+  // 画面の仕上げ: 左右（マップの端のほう）を紫のもやで沈め、少しぼかす（空気遠近）。四隅も暗く
+  finish: { haze: 0.5, hazeColor: '#1d1229', blur: 2.2, start: 0.55, vignette: 0.35 },
 };

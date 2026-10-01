@@ -89,6 +89,13 @@ function buildDebug() {
   }
   fl.add(scene.renderer, 'toneMappingExposure', 0.4, 2, 0.01).name('画面の明るさ');
 
+  const ff = gui.addFolder('仕上げ（空気遠近）');
+  const upd = () => scene.updateFinish();
+  ff.add(scene.finish, 'haze', 0, 1, 0.01).name('左右のもや').onChange(upd);
+  ff.add(scene.finish, 'blur', 0, 6, 0.1).name('左右のぼかし').onChange(upd);
+  ff.add(scene.finish, 'start', 0, 1, 0.01).name('もやの始まり').onChange(upd);
+  ff.add(scene.finish, 'vignette', 0, 1, 0.01).name('四隅の暗さ').onChange(upd);
+
   const fp = gui.addFolder('素材の表示');
   for (const p of scene.props) {
     const o = { v: p.holder.visible };

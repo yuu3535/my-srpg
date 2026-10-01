@@ -1,4 +1,8 @@
 import * as THREE from 'three';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { AssetManager } from './AssetManager.js';
 import { GridSystem } from './GridSystem.js';
 import { PX_PER_UNIT } from './MapData.js';
@@ -37,6 +41,16 @@ export class MapScene {
     this.target = new THREE.Vector3(cam.target.x, cam.target.y, cam.target.z);
     this.camera.zoom = cam.zoom;
     this.camera.lookAt(this.target);
+
+    // 画面の仕上げ（空気遠近のもや・ぼかし・四隅の暗さ）
+    this.composer = new EffectComposer(this.renderer);
+    this.composer.addPass(new RenderPass(this.scene, this.camera));
+    this.finishPass = new ShaderPass(FinishShader);
+    const f = map.finish ?? {};
+    this.finish = { haze: 0.5, blur: 2, start: 0.55, vignette: 0.3, ...f };
+    this.finishPass.uniforms.hazeColor.value = new THREE.Color(f.hazeColor ?? '#1d1229');
+    this.composer.addPass(this.finishPass);
+    this.composer.addPass(new OutputPass());
 
     this.grid = new GridSystem(map);
     this.assets = new AssetManager(this.renderer);
@@ -86,6 +100,14 @@ export class MapScene {
     floor.name = 'Floor';
     this.root.add(floor);
 
+    // 床の暗がり: 壁ぎわ（奥・左右）と柱の根元を暗くして、物が床に接して見えるように
+    const ao = new THREE.Mesh(new THREE.PlaneGeometry(cols, rows).rotateX(-Math.PI / 2),
+      new THREE.MeshBasicMaterial({ map: this.floorShadeTexture(), transparent: true, depthWrite: false }));
+    ao.position.y = 0.004;
+    ao.renderOrder = 1;
+    ao.name = 'FloorShade';
+    this.root.add(ao);
+
     // 床の下の台（箱庭の厚み）と、手前のふちの金の線
     const base = new THREE.Mesh(new THREE.BoxGeometry(cols + 1, A.baseDepth, rows + 0.6), stone(6, 1, darkTex));
     base.position.set(0, -A.baseDepth / 2 - 0.002, 0);
@@ -112,7 +134,7 @@ export class MapScene {
     // 段（玉座台・階段）: 高さのあるマスごとに箱。上の面に絨毯の帯がのる
     const stepMat = stone(1, 1);
     for (const c of g.cells) {
-      if (c.h <= 0) continue;
+      if (c.h <= 0 || c.info.hideBox) continue;
       const box = new THREE.Mesh(new THREE.BoxGeometry(1, c.h, 1), stepMat);
       g.gridToWorld(c.gx, c.gy, c.h / 2, box.position);
       box.name = `step_${c.gx}_${c.gy}`;
@@ -120,9 +142,9 @@ export class MapScene {
     }
     // 段の手前のふち（金の細い線）
     for (const c of g.cells) {
-      if (c.h <= 0) continue;
+      if (c.h <= 0 || c.info.hideBox) continue;
       const front = g.cell(c.gx, c.gy + 1);
-      if (front && front.h >= c.h) continue;
+      if (front && front.h >= c.h && !front.info.hideBox) continue;
       const edge = new THREE.Mesh(new THREE.BoxGeometry(1, 0.04, 0.04), gold);
       g.gridToWorld(c.gx, c.gy, c.h - 0.02, edge.position);
       edge.position.z += 0.5;
@@ -152,11 +174,38 @@ export class MapScene {
     }
   }
 
+  /** 床の暗がりの絵（壁ぎわ・柱の根元） */
+  floorShadeTexture() {
+    const { cols, rows } = this.map, ppu = 32;
+    const c = document.createElement('canvas');
+    c.width = cols * ppu; c.height = rows * ppu;
+    const g = c.getContext('2d');
+    const ink = 'rgba(8,4,14,';
+    const band = (x0, y0, x1, y1, a) => {
+      const grad = g.createLinearGradient(x0, y0, x1, y1);
+      grad.addColorStop(0, ink + a + ')'); grad.addColorStop(1, ink + '0)');
+      g.fillStyle = grad; g.fillRect(0, 0, c.width, c.height);
+    };
+    band(0, 0, 0, ppu * 2.2, 0.7);                       // 奥の壁ぎわ
+    band(0, 0, ppu * 3.2, 0, 0.75);                      // 左の壁ぎわ
+    band(c.width, 0, c.width - ppu * 3.2, 0, 0.75);      // 右の壁ぎわ
+    for (const cell of this.grid.cells) {
+      if (!cell.info.pillar) continue;
+      const x = (cell.gx + 0.5) * ppu, y = (cell.gy + 0.5) * ppu;
+      const r = g.createRadialGradient(x, y, ppu * 0.3, x, y, ppu * 1.1);
+      r.addColorStop(0, ink + '0.75)'); r.addColorStop(1, ink + '0)');
+      g.fillStyle = r; g.fillRect(x - ppu * 1.2, y - ppu * 1.2, ppu * 2.4, ppu * 2.4);
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }
+
   /** 絨毯: 床の上は1枚の絵（真上から見た形に引き伸ばしたもの）、段の上は帯と蹴上げ */
   async buildCarpet() {
     const g = this.grid, M = this.map.materials;
     const flat = g.cells.filter((c) => c.carpet && c.h === 0);
-    const raised = g.cells.filter((c) => c.carpet && c.h > 0);
+    const raised = g.cells.filter((c) => c.carpet && c.h > 0 && !c.info.hideBox);
     if (flat.length) {
       const minX = Math.min(...flat.map((c) => c.gx)), maxX = Math.max(...flat.map((c) => c.gx));
       const minY = Math.min(...flat.map((c) => c.gy)), maxY = Math.max(...flat.map((c) => c.gy));
@@ -206,6 +255,9 @@ export class MapScene {
       map: tex, emissiveMap: tex, emissive: 0xffffff, emissiveIntensity: def.selfLight ?? 0.55,
       transparent: true, alphaTest: 0.35, side: THREE.DoubleSide,
     });
+    // カメラの正面を向く板（階段の絵）は奥へ下げてあるので、床と深さを比べると下の方が床に隠れる。
+    // 床とは比べずに描き（ほかの物より先に描く＝layer を小さく）、深さだけは書く（手前のキャラは絵の上に出る）
+    if (def.faceCamera) mat.depthTest = false;
     const mesh = new THREE.Mesh(geo, mat);
     mesh.name = def.id;
     mesh.renderOrder = def.layer ?? 0;
@@ -220,7 +272,16 @@ export class MapScene {
     this.root.add(holder);
     for (const [gx, gy] of def.blocks ?? []) this.grid.block(gx, gy);
 
-    const entry = { def, mesh, holder, glows: [] };
+    const entry = { def, mesh, holder, glows: [], base: holder.position.clone() };
+    if (def.shadow) {
+      // 足元の丸い影（板が床から浮いて見えないように）
+      const s = new THREE.Mesh(new THREE.PlaneGeometry(def.shadow, def.shadow * 0.55).rotateX(-Math.PI / 2),
+        new THREE.MeshBasicMaterial({ map: AssetManager.shadowTexture(), transparent: true, depthWrite: false }));
+      s.position.copy(holder.position).setY(holder.position.y + 0.011);
+      s.renderOrder = 5;
+      this.root.add(s);
+      entry.shadow = s;
+    }
     for (const gdef of def.glow ?? []) {
       const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
         map: AssetManager.glowTexture(), color: gdef.color, blending: THREE.AdditiveBlending,
@@ -253,6 +314,7 @@ export class MapScene {
     if (!p) return;
     p.holder.visible = v;
     if (p.streak) p.streak.visible = v;
+    if (p.shadow) p.shadow.visible = v;
   }
 
   // ── 光 ──
@@ -296,9 +358,31 @@ export class MapScene {
   resize() {
     const w = Math.max(1, this.container.clientWidth), h = Math.max(1, this.container.clientHeight);
     this.renderer.setSize(w, h);
+    this.composer?.setSize(w, h);
     const aspect = w / h, vh = this.viewHeight;
     Object.assign(this.camera, { left: (-vh * aspect) / 2, right: (vh * aspect) / 2, top: vh / 2, bottom: -vh / 2 });
     this.camera.updateProjectionMatrix();
+    this.updateFinish();
+  }
+
+  /** 仕上げの強さと、マップが画面のどこにあるか（もやはマップの左右の端から） */
+  updateFinish() {
+    if (!this.finishPass) return;
+    const u = this.finishPass.uniforms, f = this.finish;
+    const w = this.renderer.domElement.width, h = this.renderer.domElement.height;
+    u.resolution.value.set(w, h);
+    u.haze.value = f.haze; u.blur.value = f.blur * this.renderer.getPixelRatio(); u.start.value = f.start; u.vignette.value = f.vignette;
+    // マップの4すみを画面に写して、マップの横の真ん中と半分の幅（0〜1）
+    this.camera.updateMatrixWorld();
+    const xs = [];
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+      const p = new THREE.Vector3(sx * this.map.cols / 2, 0, sz * this.map.rows / 2);
+      this.root.localToWorld(p).project(this.camera);
+      xs.push((p.x + 1) / 2);
+    }
+    const lo = Math.min(...xs), hi = Math.max(...xs);
+    u.mapCenter.value = (lo + hi) / 2;
+    u.mapHalf.value = Math.max(0.05, (hi - lo) / 2);
   }
 
   /** カメラの位置・ズームを変えたら呼ぶ。立てた板の向きと縦の伸ばしも合わせる */
@@ -310,7 +394,7 @@ export class MapScene {
     // 立てた板は、画面では cos(傾き) 倍に縮んで見える。描いた絵の比率に戻す（上限 1.6 倍）
     this.stretch = Math.min(1.6, 1 / Math.max(0.2, Math.cos(pitch)));
     this.cameraYaw = Math.atan2(dir.x, dir.z);
-    for (const p of this.props) p.mesh.scale.y = p.def.stretch === false ? 1 : this.stretch;
+    for (const p of this.props) p.mesh.scale.y = p.def.stretch === false || p.def.faceCamera ? 1 : this.stretch;
     for (const u of this.units) u.setStretch(this.stretch);
     this.faceCamera();
   }
@@ -320,6 +404,15 @@ export class MapScene {
     const yaw = this.cameraYaw - this.root.rotation.y;
     for (const p of this.props) if (p.def.billboard) p.holder.rotation.y = yaw;
     for (const u of this.units) u.body.rotation.y = yaw;
+    // カメラの正面を向く板: 向きはカメラと同じ。奥行きだけ視線の向きへ depthPush 下げる（画面の上の位置は変わらない）
+    const inv = this.root.quaternion.clone().invert();
+    const forward = this.camera.getWorldDirection(new THREE.Vector3()).applyQuaternion(inv);
+    for (const p of this.props) {
+      if (!p.def.faceCamera) continue;
+      p.holder.quaternion.copy(inv).multiply(this.camera.quaternion);
+      p.holder.position.copy(p.base).addScaledVector(forward, p.def.depthPush ?? 0);
+    }
+    this.updateFinish();
   }
 
   setMapRotation(deg) {
@@ -398,7 +491,7 @@ export class MapScene {
       for (const e of this.lightGroups.torch ?? []) {
         e.light.intensity = e.base * (this.lightScale.torch ?? 1) * (1 + Math.sin(t * 9.1 + e.base) * 0.06);
       }
-      this.renderer.render(this.scene, this.camera);
+      this.composer.render(dt);
       this.frameId = requestAnimationFrame(loop);
     };
     loop();
@@ -422,3 +515,50 @@ function alphaAt(image, uv) {
   const y = Math.min(data.height - 1, Math.floor((1 - uv.y) * data.height));
   return data.data[(y * data.width + x) * 4 + 3] / 255;
 }
+
+// 画面の仕上げ: マップの左右の端のほうを紫のもやで沈めてぼかす（空気遠近）・四隅を暗く
+const FinishShader = {
+  uniforms: {
+    tDiffuse: { value: null },
+    resolution: { value: new THREE.Vector2(1, 1) },
+    hazeColor: { value: new THREE.Color('#1d1229') },
+    haze: { value: 0.5 },
+    blur: { value: 2 },
+    start: { value: 0.55 },
+    vignette: { value: 0.3 },
+    mapCenter: { value: 0.5 },
+    mapHalf: { value: 0.3 },
+  },
+  vertexShader: /* glsl */ `
+    varying vec2 vUv;
+    void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+  fragmentShader: /* glsl */ `
+    uniform sampler2D tDiffuse;
+    uniform vec2 resolution;
+    uniform vec3 hazeColor;
+    uniform float haze, blur, start, vignette, mapCenter, mapHalf;
+    varying vec2 vUv;
+    void main() {
+      vec4 c = texture2D(tDiffuse, vUv);
+      // マップの真ん中からの横の離れ（0＝真ん中、1＝マップの端）
+      float d = abs(vUv.x - mapCenter) / mapHalf;
+      float k = smoothstep(start, 1.15, d);
+      if (k > 0.001 && blur > 0.0) {
+        vec2 t = k * blur / resolution;
+        vec4 s = c * 0.2;
+        s += texture2D(tDiffuse, vUv + vec2( t.x, 0.0)) * 0.1;
+        s += texture2D(tDiffuse, vUv + vec2(-t.x, 0.0)) * 0.1;
+        s += texture2D(tDiffuse, vUv + vec2(0.0,  t.y)) * 0.1;
+        s += texture2D(tDiffuse, vUv + vec2(0.0, -t.y)) * 0.1;
+        s += texture2D(tDiffuse, vUv + t * 2.0) * 0.1;
+        s += texture2D(tDiffuse, vUv - t * 2.0) * 0.1;
+        s += texture2D(tDiffuse, vUv + vec2(t.x, -t.y) * 2.0) * 0.1;
+        s += texture2D(tDiffuse, vUv + vec2(-t.x, t.y) * 2.0) * 0.1;
+        c = s;
+      }
+      c.rgb = mix(c.rgb, hazeColor, k * haze);
+      float v = smoothstep(0.5, 1.0, length((vUv - 0.5) * vec2(1.3, 1.05)) * 1.25);
+      c.rgb *= 1.0 - v * vignette;
+      gl_FragColor = c;
+    }`,
+};
