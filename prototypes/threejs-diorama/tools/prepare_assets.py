@@ -92,6 +92,22 @@ def unwarp(img, size):
     return img.transform(size, Image.PERSPECTIVE, coeffs, Image.BICUBIC)
 
 
+# 炎だけを切り出す（B版: 台は立体で作り、炎はいつもカメラを向く板にする）。元の絵・炎の下の端の行
+FLAMES = {"05a_torch_orange_large.png": ("flame_orange.png", 100), "05d_magic_lamp_purple_large.png": ("flame_purple.png", 86)}
+
+
+def cut_flame(img, bottom):
+    """上から bottom 行までの、明るい所（炎）だけを残す。下の端はぼかして消す"""
+    a = np.array(img.crop((0, 0, img.width, bottom))).astype(float)
+    bright = a[:, :, :3].max(axis=2)
+    keep = np.clip((bright - 70) / 60, 0, 1)
+    fade = np.clip((bottom - np.arange(bottom)) / 18, 0, 1)[:, None]
+    a[:, :, 3] *= keep * fade
+    out = Image.fromarray(a.astype(np.uint8))
+    box = out.getchannel("A").getbbox()
+    return out.crop(box) if box else out
+
+
 def run():
     for d in (PROPS, MAPS, CHARS):
         d.mkdir(parents=True, exist_ok=True)
@@ -107,6 +123,11 @@ def run():
             out = clean(img)
             out.save(PROPS / f.name)
             print("prop  ", f.name, img.size, "->", out.size)
+            if f.name in FLAMES:
+                name, bottom = FLAMES[f.name]
+                flame = cut_flame(out, bottom)
+                flame.save(PROPS / name)
+                print("flame ", name, flame.size)
     for name in CHARACTERS:
         src = SD / f"{name}.png"
         if src.exists():

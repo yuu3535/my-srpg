@@ -7,6 +7,8 @@ import { AssetManager } from './AssetManager.js';
 import { GridSystem } from './GridSystem.js';
 import { PX_PER_UNIT } from './MapData.js';
 import { Unit } from './Unit.js';
+import * as Models from './Models.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
 // 2.5Dの箱庭: 床・壁・段・柱は簡単な3Dの箱、玉座・旗・松明などは透過PNGの板。
 // 前後は Three.js の深さ（depth test）で決まる（板も3Dの位置に立っているので、柱の手前・奥が自然に入れ替わる）。
@@ -66,13 +68,26 @@ export class MapScene {
   emit(name, data) { (this.listeners[name] ?? []).forEach((fn) => fn(data)); }
 
   async build() {
+    // B版（立体）の炎の絵は、壁を作る前に読み込む
+    if (this.map.flames) {
+      this.flameTex = {};
+      for (const [k, url] of Object.entries(this.map.flames)) this.flameTex[k] = await this.assets.texture(url);
+      // 金・青銅に映りこむ、うすい周りの景色（B版の金属が黒く沈まないように）
+      const pmrem = new THREE.PMREMGenerator(this.renderer);
+      this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+      this.scene.environmentIntensity = this.map.environmentIntensity ?? 0.22;
+      this.mats = Models.makeMaterials(this.map.materials);
+    }
     this.buildArchitecture();
     this.root.add(this.grid.group);
     this.grid.buildPickMeshes();
     this.grid.buildGridLines();
     this.grid.buildHighlights();
     await Promise.all([this.buildCarpet(), ...this.map.props.map((d) => this.addProp(d))]);
+    this.buildModels();
     this.buildLights();
+    this.flames = [];
+    this.root.traverse((o) => { if (o.userData.flame) this.flames.push(o.userData.flame); });
     for (const u of this.map.units) await this.addUnit(u);
     this.bindInput();
     this.applyCamera();
@@ -116,7 +131,30 @@ export class MapScene {
     trim.position.set(0, -0.03, rows / 2 + 0.3);
     this.root.add(trim);
 
-    // 奥の壁と左右の壁
+    // 奥の壁と左右の壁（B版はアーチのくぼみ・柱型・燭台のある立体の壁）
+    if (A.style === 'gothic') this.buildGothicWalls();
+    else this.buildPlainWalls(stone, darkTex, gold);
+
+    this.buildStepsAndPillars(stone, darkTex, gold);
+  }
+
+  buildGothicWalls() {
+    const { cols, rows, architecture: A } = this.map;
+    const back = Models.gothicWall(this.mats, this.flameTex.orange, { length: cols + 1, height: A.wallHeight, gap: A.windowGap });
+    back.position.set(0, 0, -rows / 2 - 0.25);
+    back.name = 'BackWall';
+    this.root.add(back);
+    for (const s of [-1, 1]) {
+      const side = Models.gothicWall(this.mats, this.flameTex.orange, { length: rows, height: A.sideWallHeight, bay: 3 });
+      side.position.set(s * (cols / 2 + 0.25), 0, 0);
+      side.rotation.y = -s * Math.PI / 2;
+      side.name = s < 0 ? 'WallLeft' : 'WallRight';
+      this.root.add(side);
+    }
+  }
+
+  buildPlainWalls(stone, darkTex, gold) {
+    const { cols, rows, architecture: A } = this.map;
     const back = new THREE.Mesh(new THREE.BoxGeometry(cols + 1, A.wallHeight, 0.5), stone(6, 5, darkTex));
     back.position.set(0, A.wallHeight / 2, -rows / 2 - 0.25);
     back.name = 'BackWall';
@@ -130,6 +168,11 @@ export class MapScene {
       cap.position.set(side.position.x, A.sideWallHeight, 0);
       this.root.add(cap);
     }
+  }
+
+  buildStepsAndPillars(stone, darkTex, gold) {
+    const { architecture: A } = this.map;
+    const g = this.grid;
 
     // 段（玉座台・階段）: 高さのあるマスごとに箱。上の面に絨毯の帯がのる
     const stepMat = stone(1, 1);
@@ -151,10 +194,17 @@ export class MapScene {
       this.root.add(edge);
     }
 
-    // 柱（黒紫の石・金の帯）
+    // 柱（黒紫の石・金の帯）。B版は束ね柱
     const pillarMat = stone(1, 3, darkTex);
     for (const c of g.cells) {
       if (!c.info.pillar) continue;
+      if (A.style === 'gothic') {
+        const p = Models.clusteredPillar(this.mats, A.pillarHeight);
+        g.gridToWorld(c.gx, c.gy, 0, p.position);
+        p.name = `pillar_${c.gx}_${c.gy}`;
+        this.root.add(p);
+        continue;
+      }
       const p = new THREE.Group();
       g.gridToWorld(c.gx, c.gy, 0, p.position);
       const shaft = new THREE.Mesh(new THREE.BoxGeometry(0.72, A.pillarHeight, 0.72), pillarMat);
@@ -171,6 +221,49 @@ export class MapScene {
       }
       p.name = `pillar_${c.gx}_${c.gy}`;
       this.root.add(p);
+    }
+  }
+
+  /** B版の立体の部品（MapData の models） */
+  buildModels() {
+    for (const m of this.map.models ?? []) {
+      let obj;
+      if (m.type === 'grandStair') {
+        obj = Models.grandStair(this.mats, m);
+        // 手前の端の真ん中に置く
+        this.grid.gridToWorld(m.grid.x, m.grid.y, 0, obj.position);
+      } else if (m.type === 'throne') {
+        obj = Models.throne(this.mats, this.flameTex.purple, m.scale ?? 1);
+        this.grid.gridToWorld(m.grid.x, m.grid.y, m.y, obj.position);
+      } else if (m.type === 'brazier') {
+        obj = Models.brazier(this.mats, this.flameTex[m.flame ?? 'orange'], m.color ?? '#ff8a3a', m.height ?? 1.6);
+        this.grid.gridToWorld(m.grid.x, m.grid.y, m.y, obj.position);
+        if (m.floorGlow) {
+          const streak = new THREE.Mesh(new THREE.PlaneGeometry(0.7, 2.6).rotateX(-Math.PI / 2).translate(0, 0, 1.3),
+            new THREE.MeshBasicMaterial({ map: AssetManager.glowTexture(), color: m.color, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, opacity: 0.3 }));
+          streak.position.copy(obj.position).setY(obj.position.y + 0.01);
+          streak.renderOrder = 6;
+          this.root.add(streak);
+        }
+      } else if (m.type === 'windowFrame') {
+        obj = Models.windowFrame(this.mats, m.width, m.height);
+        this.grid.gridToWorld(m.grid.x, m.grid.y, m.y, obj.position);
+      } else {
+        console.warn('知らない部品:', m.type);
+        continue;
+      }
+      if (m.rotationY) obj.rotation.y = m.rotationY;
+      obj.name = m.id ?? m.type;
+      obj.traverse((o) => { if (o.isMesh) o.userData.model = m; });
+      this.root.add(obj);
+      for (const [gx, gy] of m.blocks ?? []) this.grid.block(gx, gy);
+      if (m.shadow) {
+        const s = new THREE.Mesh(new THREE.PlaneGeometry(m.shadow, m.shadow * 0.7).rotateX(-Math.PI / 2),
+          new THREE.MeshBasicMaterial({ map: AssetManager.shadowTexture(), transparent: true, depthWrite: false }));
+        s.position.copy(obj.position).setY(obj.position.y + 0.011);
+        s.renderOrder = 5;
+        this.root.add(s);
+      }
     }
   }
 
@@ -465,8 +558,16 @@ export class MapScene {
   pickObject(e) {
     this.setPointer(e);
     const targets = [...this.props.filter((p) => p.holder.visible).map((p) => p.mesh), ...this.units.map((u) => u.sprite)];
-    const hits = this.raycaster.intersectObjects(targets, false);
+    const models = [];
+    this.root.traverse((o) => { if (o.isMesh && o.userData.model) models.push(o); });
+    const hits = this.raycaster.intersectObjects([...targets, ...models], false);
     for (const h of hits) {
+      if (h.object.userData.model) {
+        // 部品の一番上（置いた group）を返す
+        let o = h.object;
+        while (o.parent && o.parent !== this.root) o = o.parent;
+        return o;
+      }
       const map = h.object.material.map;
       if (!map?.image || !h.uv) return h.object;
       if (alphaAt(map.image, h.uv) > 0.35) return h.object;
@@ -487,6 +588,11 @@ export class MapScene {
         g.sprite.scale.setScalar(g.base * f);
         g.sprite.material.opacity = 0.5 * f;
         if (g.streak) g.streak.material.opacity = 0.3 * f;
+      }
+      for (const fl of this.flames ?? []) {
+        const f = 1 + Math.sin(t * 8.3 + fl.phase) * 0.06 + Math.sin(t * 14.7 + fl.phase * 2) * 0.04;
+        fl.sprite.scale.set(fl.base.x * (2 - f), fl.base.y * f, 1);
+        fl.glow.scale.setScalar(fl.glowBase * f);
       }
       for (const e of this.lightGroups.torch ?? []) {
         e.light.intensity = e.base * (this.lightScale.torch ?? 1) * (1 + Math.sin(t * 9.1 + e.base) * 0.06);

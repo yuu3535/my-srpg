@@ -144,3 +144,43 @@ export const THRONE_ROOM = {
   // 画面の仕上げ: 左右（マップの端のほう）を紫のもやで沈め、少しぼかす（空気遠近）。四隅も暗く
   finish: { haze: 0.5, hazeColor: '#1d1229', blur: 2.2, start: 0.55, vignette: 0.35 },
 };
+
+// ── B版（立体）: 回しても崩れないよう、形はコードの立体。絵は平たい物（窓・旗・垂れ布・絨毯）と炎だけ ──
+const FLAT_PROPS = ['stained_glass', 'drape_left', 'drape_right', 'banner_l1', 'banner_r1', 'banner_l2', 'banner_r2'];
+const brazier = (id, x, y, flame, height, glow) => ({
+  id, type: 'brazier', grid: { x, y }, flame, height, blocks: [[x, y]], shadow: 0.9,
+  color: flame === 'purple' ? '#b46cff' : '#ff8a3a', floorGlow: glow,
+});
+
+export const THRONE_ROOM_B = {
+  ...THRONE_ROOM,
+  id: 'orcus_throne_room_b',
+  name: 'オルクス魔王城・玉座の間（B 立体）',
+  legend: {
+    ...THRONE_ROOM.legend,
+    // 階段は立体の部品（grandStair）で描く。歩く高さは段の上
+    '3': { h: 1.2, step: true, hideBox: true },
+    '2': { h: 0.8, step: true, hideBox: true },
+    '1': { h: 0.4, step: true, hideBox: true },
+  },
+  architecture: { ...THRONE_ROOM.architecture, style: 'gothic', wallHeight: 10.5, sideWallHeight: 6, windowGap: [-2.6, 2.6] },
+  flames: { orange: 'assets/props/flame_orange.png', purple: 'assets/props/flame_purple.png' },
+  // 立体は絵と違って光と影を描き込んでいないので、全体の光を少し強く
+  lights: THRONE_ROOM.lights.map((l) => (l.group === 'ambient' ? { ...l, intensity: 1.15 } : l)),
+  materials: { ...THRONE_ROOM.materials, carpet: { ...THRONE_ROOM.materials.carpet, stairColor: '#3e0c1e' } },
+  environmentIntensity: 0.22,
+  props: THRONE_ROOM.props.filter((p) => FLAT_PROPS.includes(p.id)).map((p) => (p.id === 'stained_glass' ? { ...p, grid: { x: 7.5, y: -0.44 } } : p)),
+  models: [
+    { id: 'window_frame', type: 'windowFrame', grid: { x: 7.5, y: -0.66 }, y: 2.6, width: 3.95, height: 6.8 },
+    { id: 'stairs', type: 'grandStair', grid: { x: 7.5, y: 4.5 }, width: 6, depth: 3, steps: 6, rise: 1.2, carpetWidth: 3.6 },
+    { id: 'throne', type: 'throne', grid: { x: 7.5, y: 0.3 }, scale: 1.2, blocks: [[7, 0], [8, 0]] },
+    brazier('lamp_dais_left', 4, 1, 'purple', 1.3),
+    brazier('lamp_dais_right', 11, 1, 'purple', 1.3),
+    brazier('lamp_stairs_left', 3, 4, 'purple', 1.2),
+    brazier('lamp_stairs_right', 12, 4, 'purple', 1.2),
+    brazier('torch_l1', 5, 6, 'orange', 1.6, true),
+    brazier('torch_r1', 10, 6, 'orange', 1.6, true),
+    brazier('torch_l2', 5, 9, 'orange', 1.6, true),
+    brazier('torch_r2', 10, 9, 'orange', 1.6, true),
+  ],
+};

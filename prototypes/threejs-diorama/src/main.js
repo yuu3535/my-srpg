@@ -1,6 +1,6 @@
 import GUI from 'lil-gui';
 import { MapScene } from './MapScene.js';
-import { THRONE_ROOM } from './MapData.js';
+import { THRONE_ROOM, THRONE_ROOM_B } from './MapData.js';
 import './styles.css';
 
 // 開発中（npm run dev）か、URL に ?debug を付けたときだけ、調整の窓を出す
@@ -14,8 +14,10 @@ const hud = {
   loading: document.getElementById('loading'),
 };
 
-const scene = new MapScene(app, THRONE_ROOM);
-hud.title.textContent = THRONE_ROOM.name;
+// ?map=b で B版（立体）。A版（絵の板）と見比べる
+const MAP = new URLSearchParams(location.search).get('map') === 'b' ? THRONE_ROOM_B : THRONE_ROOM;
+const scene = new MapScene(app, MAP);
+hud.title.textContent = MAP.name;
 
 scene.build().then(() => {
   hud.loading.classList.add('done');
@@ -68,6 +70,15 @@ function buildDebug() {
     },
   };
   Object.defineProperty(state, 'grid', { get: () => scene.grid.gridVisible, set: (v) => scene.grid.setGridVisible(v) });
+
+  const switcher = {
+    toggle() {
+      const q = new URLSearchParams(location.search);
+      if (MAP === THRONE_ROOM_B) q.delete('map'); else q.set('map', 'b');
+      location.search = q.toString();
+    },
+  };
+  gui.add(switcher, 'toggle').name(MAP === THRONE_ROOM_B ? 'A版（絵の板）に切り替え' : 'B版（立体）に切り替え');
 
   const fc = gui.addFolder('カメラ');
   fc.add(cam.position, 'x', -30, 30, 0.1).name('camera X').onChange(apply);
