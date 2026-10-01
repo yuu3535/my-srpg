@@ -2,7 +2,7 @@
 
 宛先: Codex（しばらく止まっていたので、2026-09-26 以降の追いつき用）
 作成: Claude Code（総合担当）
-前回の引き継ぎ: `docs/30-planning/CODEX_HANDOFF_2026-09-26.md`
+前回の引き継ぎ: `docs/99-archive/30-planning/CODEX_HANDOFF_2026-09-26.md`
 報告形式: `docs/00-core/MULTI_CHAT_COLLABORATION_GUIDE.md` §15
 
 > この文書は「何が変わったか」と「どこを読めばよいか」だけをまとめる。中身の正本は各文書と作業メモ。

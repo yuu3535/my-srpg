@@ -8,7 +8,7 @@
 作成: 2026-09-26 / Claude Code
 状態: **検討中**（原作者の確認後に正式な指示書として使う）
 読む人: 原作者、Codex（レビュー担当）、ChatGPT（画像生成担当）、Claude Code（組み込み担当）
-関連: `docs/30-planning/UI_ASSET_ORDER_2026-09-25.md`（UI素材の発注書）、`docs/30-planning/ISO_MAP_ORDER_2026-09-26.md`（マップ絵の発注）、`docs/30-planning/UNITY_M1_PLAN_2026-09-26.md`（Unity版の計画）
+関連: `docs/99-archive/30-planning/UI_ASSET_ORDER_2026-09-25.md`（UI素材の発注書）、`docs/99-archive/30-planning/ISO_MAP_ORDER_2026-09-26.md`（マップ絵の発注）、`docs/30-planning/UNITY_M1_PLAN_2026-09-26.md`（Unity版の計画）
 
 ---
 

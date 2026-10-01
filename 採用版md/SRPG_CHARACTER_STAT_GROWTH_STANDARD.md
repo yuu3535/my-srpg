@@ -137,7 +137,7 @@ TRPG Lv4やLv5を、そのまま因果Lv4やLv5として扱わない。TRPGで�
 | 案① | `TRPG HP x 2` | §8.1の式（x 2）のまま | 従来の比較基準。Lv1から数値に余裕があり、1発で倒れにくい |
 | 案② | `TRPG HP x 1` | §8.1の式（x 2）のまま据え置く | 成長の実感が強い（幼アルシェはLv50でLv1の約3.8倍）。武器威力・ダメージ式と合わせて調整する |
 
-- 案①を採用した経緯: TRPG Lv5の完成済みステータスでダメージを試算した際、HPを2倍にすると通常攻撃一発でほぼ即死する状況を減らせた（`docs/10-design/battle/trpg_to_srpg_damage_design.md`）。
+- 案①を採用した経緯: TRPG Lv5の完成済みステータスでダメージを試算した際、HPを2倍にすると通常攻撃一発でほぼ即死する状況を減らせた（`docs/99-archive/10-design/battle/trpg_to_srpg_damage_design.md`）。
 - 案②が出た経緯: 基準をTRPG Lv1へ変更した後、Lv1から20以上のHPは高すぎるのではないか、と原作者が指摘した（2026-09-24）。
 - 成長は+1ずつの加算なので、どちらの案でも因果Lv50でHPが膨れ上がることはない。両案の差は、最初のHPの差（12〜18）がそのまま残るだけである。
 - 案②でHP上限まで ×1 にそろえる形は採らない。アルバスが因果Lv51でHP上限（52）に達し、「上限はやりこみの到達点」とする§2.1とずれるためである。
@@ -579,7 +579,7 @@ HPはTRPGの基本HP式と、SRPGのHP2倍換算を同じ順番で上限へ適�
 ## 13. 参照資料
 
 - `docs/10-design/battle/TRPG_TO_SRPG_STAT_CONVERSION.md` v0.3
-- `docs/10-design/battle/trpg_to_srpg_damage_design.md`
+- `docs/99-archive/10-design/battle/trpg_to_srpg_damage_design.md`
 - `output/pdf/自作SRPG_ゲームシステム方針_2026-09-21.md`
 - `output/pdf/メイン3人_初期ステータスと成長率_仮案記録_2026-09-21.md`
 - `CharaStatus/幼アルシェ.txt`

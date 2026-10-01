@@ -4,7 +4,7 @@
 状態: **取りやめ**（2026-09-27。原作者の決定でマップは3Dの盤面で作るため、斜めの地面マップは頼まない。盤面の模様と戦闘の背景は `MAP_UI_ASSET_ORDER_2026-09-26_v3.md` の M5・M1 で頼む。以下は当時の記録）
 当時の状態: **保留**（2026-09-26。3Dの盤面の試作 `docs/10-design/map/MAP_3D_BOARD_TEST_REQUEST_2026-09-26.md` の結果が出るまでChatGPTへ渡さない。2Dの斜めの絵のままにすると決まったら、この発注書を使う）
 マップの中身: `docs/10-design/map/MAP_PROTOTYPE_BORDER_WATCHROAD_2026-09-26.md` の案B改
-制作仕様: `docs/10-design/map/UNITY_ISOMETRIC_MAP_PRODUCTION_GUIDE_2026-09-26.md`
+制作仕様: `docs/99-archive/10-design/map/UNITY_ISOMETRIC_MAP_PRODUCTION_GUIDE_2026-09-26.md`
 
 目的はテスト（ゲームの見た目の方向性を固める）。シナリオ用のマップではない。
 

@@ -49,7 +49,7 @@ Codex との壁打ち（2026-10-01）で「採用候補と現行が競合して�
 | 状態 | 中身 | 場所 |
 |---|---|---|
 | **採用** | 案②: TRPG Lv1 HP × 1（2026-09-29） | 採用版 §4.3 |
-| 旧案 | TRPG HP × 2（TRPG Lv5 の完成済み能力を前提にしていた） | `docs/10-design/battle/trpg_to_srpg_damage_design.md` §2・§9 |
+| 旧案 | TRPG HP × 2（TRPG Lv5 の完成済み能力を前提にしていた） | `docs/99-archive/10-design/battle/trpg_to_srpg_damage_design.md` §2・§9 |
 
 ### 2.3 ダメージ式
 

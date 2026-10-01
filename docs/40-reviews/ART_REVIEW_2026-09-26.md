@@ -1,7 +1,7 @@
 # 素材レビュー（2026-09-26）
 
 レビュー: Claude Code（原作者の依頼で、Codexの代わりに記入）
-対象: UI発注書（`docs/30-planning/UI_ASSET_ORDER_2026-09-25.md`）で作った素材
+対象: UI発注書（`docs/99-archive/30-planning/UI_ASSET_ORDER_2026-09-25.md`）で作った素材
 - ChatGPT: `アイコン素材/発注UI/`（A1〜A5、B1、B2）
 - Codex: `アイコン素材/SRPG_UI_v2/`（B3、C1〜C8、D1〜D4）
 
@@ -76,7 +76,7 @@
 
 ## 4. 第2版の納品（2026-09-26 夜・ChatGPT）
 
-発注書: `docs/30-planning/UI_ASSET_ORDER_2026-09-26_v2.md`。置き場所: `アイコン素材/発注UI/`（同じ名前で上書き）。
+発注書: `docs/99-archive/30-planning/UI_ASSET_ORDER_2026-09-26_v2.md`。置き場所: `アイコン素材/発注UI/`（同じ名前で上書き）。
 盤面の印は、1マス約36pxに縮めた見え方でも確かめた。
 
 | 素材 | 判定 | 理由 |

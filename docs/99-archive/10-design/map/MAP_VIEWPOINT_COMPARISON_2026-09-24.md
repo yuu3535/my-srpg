@@ -28,7 +28,7 @@
 
 ## A：真上視点
 
-![A：真上視点](concepts/map_viewpoint_A_topdown_wide.png)
+![A：真上視点](../../../10-design/map/concepts/map_viewpoint_A_topdown_wide.png)
 
 ### 長所
 
@@ -51,7 +51,7 @@
 
 ## B：斜め見下ろし＋正方格子
 
-![B：斜め見下ろし＋正方格子](concepts/map_viewpoint_B_three_quarter.png)
+![B：斜め見下ろし＋正方格子](../../../10-design/map/concepts/map_viewpoint_B_three_quarter.png)
 
 ### 長所
 
@@ -74,7 +74,7 @@
 
 ## C：2:1アイソメトリック
 
-![C：2:1アイソメトリック](concepts/map_viewpoint_C_isometric.png)
+![C：2:1アイソメトリック](../../../10-design/map/concepts/map_viewpoint_C_isometric.png)
 
 ### 長所
 

@@ -40,7 +40,7 @@
 
 | 文書・素材 | 状態 | 現在の用途 |
 |---|---|---|
-| `docs/30-planning/ISO_MAP_ORDER_2026-09-26.md` | ブラウザ試作の発注文 | 下絵寸法と2:1座標の参考。Unity完成素材の全仕様ではない |
+| `docs/99-archive/30-planning/ISO_MAP_ORDER_2026-09-26.md` | ブラウザ試作の発注文 | 下絵寸法と2:1座標の参考。Unity完成素材の全仕様ではない |
 | `MAP_GRAYBOX_COMPARISON_2026-09-24.md` | 比較用仮案 | ルート分岐、橋、水路、報酬配置の考え方だけ再利用する |
 | `graybox/graybox_B_7x8.svg` | ブラウザ用白地図 | 操作確認の履歴 |
 | `graybox/graybox_B_9x8.svg` | ブラウザ用白地図 | 経路選択の履歴 |
@@ -50,8 +50,8 @@
 | 文書・素材 | 状態 | 現在の用途 |
 |---|---|---|
 | `UNITY_ISOMETRIC_MAP_PRODUCTION_GUIDE_2026-09-26.md` | 旧制作仕様（2Dの斜めの1枚絵） | 論理マップ先行・高い物の分離・見やすさの基準は3Dへ引き継いだ |
-| `docs/30-planning/MAP_ORDER_BORDER_WATCHROAD_2026-09-26.md` | 取りやめ | 斜めの地面マップの依頼文（当時の記録） |
-| `docs/30-planning/ISO_MAP_ORDER_2026-09-26.md` | 旧案 | ブラウザ試作の斜めの絵の依頼文 |
+| `docs/99-archive/30-planning/MAP_ORDER_BORDER_WATCHROAD_2026-09-26.md` | 取りやめ | 斜めの地面マップの依頼文（当時の記録） |
+| `docs/99-archive/30-planning/ISO_MAP_ORDER_2026-09-26.md` | 旧案 | ブラウザ試作の斜めの絵の依頼文 |
 | `assets/maps/iso_trial_12x8*.png` | 旧素材 | 2Dの斜めの仮マップと下絵。ブラウザ版の試し（`isoView`）だけが使う。Unity の `BattleM1` と Unity 側の iso の絵は 2026-09-28 に削除（総合担当） |
 | `MAP_VIEWPOINT_COMPARISON_2026-09-24.md` | 方針変更前の比較記録 | A・B・C視点を比較した判断過程を残す |
 | `MAP_CAMERA_VIEW_POLICY_DRAFT.md` | 旧カメラ案 | B視点を標準とした案。遮蔽対策だけはUnity設計にも活かせる |

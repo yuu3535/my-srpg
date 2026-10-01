@@ -219,26 +219,26 @@ Codexが利用制限で止まっていた間に、原作者の依頼でClaude Co
 
 **UI設計担当**
 ```
-ui/battle-reference-layout を pull して、docs/30-planning/CODEX_HANDOFF_2026-09-25.md の 0章と1章を読んでください。
+ui/battle-reference-layout を pull して、docs/99-archive/30-planning/CODEX_HANDOFF_2026-09-25.md の 0章と1章を読んでください。
 戦闘画面の配置・戦闘予測・ブリーフィング画面・ステータス画面を、Claude Codeが進めました。
 1章の「提案・次にできること」から、私と相談しながら進めてください。意匠基準は変えないこと。
 ```
 
 **戦闘システム担当**
 ```
-ui/battle-reference-layout を pull して、docs/30-planning/CODEX_HANDOFF_2026-09-25.md の 0章と2章を読んでください。
+ui/battle-reference-layout を pull して、docs/99-archive/30-planning/CODEX_HANDOFF_2026-09-25.md の 0章と2章を読んでください。
 スキル・戦技のデータを兵種表CSVから自動生成する形にし、テスト戦闘で多くの効果を実装しました。
 2章の「確認したいこと」を私に確認したうえで、「次にできること」を進めてください。
 ```
 
 **総合相談担当**
 ```
-ui/battle-reference-layout を pull して、docs/30-planning/CODEX_HANDOFF_2026-09-25.md を読んでください（特に0章と3章）。
+ui/battle-reference-layout を pull して、docs/99-archive/30-planning/CODEX_HANDOFF_2026-09-25.md を読んでください（特に0章と3章）。
 3章の「正式決定が必要な項目」を、私と一緒に整理してください。
 ```
 
 **マップ担当**
 ```
-ui/battle-reference-layout を pull して、docs/30-planning/CODEX_HANDOFF_2026-09-25.md の 0章と4章を読んでください。
+ui/battle-reference-layout を pull して、docs/99-archive/30-planning/CODEX_HANDOFF_2026-09-25.md の 0章と4章を読んでください。
 戦闘画面の配置が変わり、戦闘前のブリーフィングに「マップ・配置」ができました。4章の確認事項から進めてください。
 ```

@@ -6,7 +6,7 @@
 宛先: Codex（レビュー担当・画像生成の補助）
 作成: Claude Code
 報告形式: `docs/00-core/MULTI_CHAT_COLLABORATION_GUIDE.md` §15
-前回の引き継ぎ: `docs/30-planning/CODEX_HANDOFF_2026-09-25.md`
+前回の引き継ぎ: `docs/99-archive/30-planning/CODEX_HANDOFF_2026-09-25.md`
 
 ---
 
@@ -56,7 +56,7 @@
 
 ```
 Codex へ。役割が「レビューと画像生成の補助」に変わりました（コードは変更しないでください）。
-まず docs/30-planning/CODEX_HANDOFF_2026-09-26.md を読んで、§2 の依頼を進めてください。
+まず docs/99-archive/30-planning/CODEX_HANDOFF_2026-09-26.md を読んで、§2 の依頼を進めてください。
 レビューは docs/30-planning/ART_PRODUCTION_BRIEF_2026-09-26.md §4 の手順で、
 結果は docs/40-reviews/ART_REVIEW_YYYY-MM-DD.md に書いてください。
 ```

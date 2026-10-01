@@ -46,7 +46,7 @@ ASSETS = {
 }
 
 
-# 発注書（docs/30-planning/UI_ASSET_ORDER_2026-09-25.md）で作った素材。
+# 発注書（docs/99-archive/30-planning/UI_ASSET_ORDER_2026-09-25.md）で作った素材。
 # (元のファイル, 書き出す名前, 切り落としのしきい値, 縮める先 ("width"|"height"|"square", px) または None)
 ORDERED_ASSETS = [
     # ChatGPT（アイコン素材/発注UI/）: 光沢なし・細い金の線の枠
@@ -57,7 +57,7 @@ ORDERED_ASSETS = [
     ("アイコン素材/発注UI/A4.png", "separator_a4", 64, ("width", 1024)), # 区切り線（中央に菱形）
     # Codex（アイコン素材/SRPG_UI_v2/）: 盤面の選択枠（線はマスの縁に合わせて使う）
     ("アイコン素材/SRPG_UI_v2/D4_選択枠_味方.png", "select_ally_v2", None, None),
-    # ChatGPT 第2版（docs/30-planning/UI_ASSET_ORDER_2026-09-26_v2.md）
+    # ChatGPT 第2版（docs/99-archive/30-planning/UI_ASSET_ORDER_2026-09-26_v2.md）
     # ボタン: 縦を保ったまま横に伸ばす（飾りは左右の端だけ）
     ("アイコン素材/発注UI/B1-1.png", "button_b1_normal", 128, ("width", 880)),    # 主ボタン（実行）: 赤銅の帯
     ("アイコン素材/発注UI/B1-2.png", "button_b1_pressed", 128, ("width", 880)),

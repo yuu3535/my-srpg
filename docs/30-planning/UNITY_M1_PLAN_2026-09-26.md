@@ -2,7 +2,7 @@
 
 作成: 2026-09-26 / Claude Code
 状態: **検討中**（原作者の確認待ち）
-関連: `docs/00-core/UNITY_GAME_DEVELOPMENT_MASTER_CHECKLIST.md`（§25 Phase 1、§26、§27）、`docs/30-planning/ISO_MAP_ORDER_2026-09-26.md`
+関連: `docs/00-core/UNITY_GAME_DEVELOPMENT_MASTER_CHECKLIST.md`（§25 Phase 1、§26、§27）、`docs/99-archive/30-planning/ISO_MAP_ORDER_2026-09-26.md`
 
 ---
 

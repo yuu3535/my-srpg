@@ -22,7 +22,7 @@
 3. docs/README.md
 4. docs/10-design/map/README.md
 5. docs/10-design/map/MAP_WORLD_AND_ART_DIRECTION_2026-09-26.md
-6. docs/10-design/map/UNITY_ISOMETRIC_MAP_PRODUCTION_GUIDE_2026-09-26.md
+6. docs/99-archive/10-design/map/UNITY_ISOMETRIC_MAP_PRODUCTION_GUIDE_2026-09-26.md
 7. docs/30-planning/UNITY_M1_PLAN_2026-09-26.md
 8. docs/30-planning/ART_PRODUCTION_BRIEF_2026-09-26.md
 9. docs/90-worklogs/ の最新作業メモ

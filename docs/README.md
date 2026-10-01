@@ -24,9 +24,13 @@
 | 会話用の立ち絵の発注書（ChatGPT向け） | [`30-planning/TACHIE_DIALOGUE_ORDER_2026-09-28.md`](30-planning/TACHIE_DIALOGUE_ORDER_2026-09-28.md) |
 | 立ち絵担当（別チャット）の引き継ぎ | [`30-planning/TACHIE_CHAT_HANDOFF_2026-09-28.md`](30-planning/TACHIE_CHAT_HANDOFF_2026-09-28.md) |
 | Codexの追いつき用の引き継ぎ（9/26〜9/28） | [`30-planning/CODEX_HANDOFF_2026-09-28.md`](30-planning/CODEX_HANDOFF_2026-09-28.md) |
-| Unityアイソメマップの制作仕様 | [`10-design/map/UNITY_ISOMETRIC_MAP_PRODUCTION_GUIDE_2026-09-26.md`](10-design/map/UNITY_ISOMETRIC_MAP_PRODUCTION_GUIDE_2026-09-26.md) |
+| Unityアイソメマップの制作仕様 | [`99-archive/10-design/map/UNITY_ISOMETRIC_MAP_PRODUCTION_GUIDE_2026-09-26.md`](99-archive/10-design/map/UNITY_ISOMETRIC_MAP_PRODUCTION_GUIDE_2026-09-26.md) |
 
 ## フォルダの役割
+
+### `99-archive` — 役目を終えた文書
+
+- 新しい文書に置き換わった引き継ぎ書・発注書・旧案（2026-10-01 に移した）。今の方針を調べるときは読まない。一覧と代わりに読む文書は [`99-archive/README.md`](99-archive/README.md)
 
 ### `00-core` — 全担当で共有する基盤
 
@@ -41,7 +45,7 @@
 - [`battle/COMBAT_ARTS_DESIGN.md`](10-design/battle/COMBAT_ARTS_DESIGN.md)：戦技・スキル設計案
 - [`battle/TRPG_SRPG_DESIGN_THINKING.md`](10-design/battle/TRPG_SRPG_DESIGN_THINKING.md)：TRPGらしさをSRPGへ翻訳する考え方
 - [`battle/TRPG_TO_SRPG_STAT_CONVERSION.md`](10-design/battle/TRPG_TO_SRPG_STAT_CONVERSION.md)：能力値変換の検討（一部旧案。命中式は試験で使用中）
-- [`battle/trpg_to_srpg_damage_design.md`](10-design/battle/trpg_to_srpg_damage_design.md)：ダメージ式の検討（旧案。採用は `採用版md/DAMAGE_WEAPON_ENEMY_RULES.md`）
+- [`battle/trpg_to_srpg_damage_design.md`](99-archive/10-design/battle/trpg_to_srpg_damage_design.md)：ダメージ式の検討（旧案。採用は `採用版md/DAMAGE_WEAPON_ENEMY_RULES.md`）
 - 戦闘の数値の方針の地図（採用・試験・現行・旧案の区分）: [`30-planning/BATTLE_NUMBERS_POLICY_MAP_2026-10-01.md`](30-planning/BATTLE_NUMBERS_POLICY_MAP_2026-10-01.md)
 
 #### UI・世界観表現
@@ -53,7 +57,7 @@
 
 - [`map/README.md`](10-design/map/README.md)：旧案、ブラウザ試作、Unity最新版の区分と読む順番
 - [`map/MAP_WORLD_AND_ART_DIRECTION_2026-09-26.md`](10-design/map/MAP_WORLD_AND_ART_DIRECTION_2026-09-26.md)：原作TRPGと百年戦争編をマップへ翻訳する世界観・美術基準
-- [`map/UNITY_ISOMETRIC_MAP_PRODUCTION_GUIDE_2026-09-26.md`](10-design/map/UNITY_ISOMETRIC_MAP_PRODUCTION_GUIDE_2026-09-26.md)：2:1アイソメトリック盤面の画像・レイヤー・Unity受け渡し仕様
+- [`map/UNITY_ISOMETRIC_MAP_PRODUCTION_GUIDE_2026-09-26.md`](99-archive/10-design/map/UNITY_ISOMETRIC_MAP_PRODUCTION_GUIDE_2026-09-26.md)：2:1アイソメトリック盤面の画像・レイヤー・Unity受け渡し仕様
 
 ### `20-implementation` — 現在の実装事実
 
