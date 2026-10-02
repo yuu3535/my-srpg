@@ -4,6 +4,8 @@
 //  tools/build_ability_data.py が兵種表CSVから作る。手で直さないこと。
 //  正本: Regarding character growth rates, skills, and combat arts/*.csv
 //  kind: skill / physicalArt / magicArt / art（物理・魔法の区別なし）/ exclusiveArt（専用戦技）
+//        coreSlot（魔核+1）/ core（その魔核に目覚める）。この2つはスキル・戦技の枠を使わない
+//  initialCores: キャラ名 → 最初の魔核 [{ name, clan }]（clan＝一族の魔核。外せない）
 //  statBonus: 無条件の能力値上昇だけを読み取ったもの。条件付きの効果は null
 // =====================================================================
 
@@ -1466,7 +1468,7 @@ const ABILITY_DATA = Object.freeze({
       "personal": {
         "name": "双蛇の逆針",
         "kind": "skill",
-        "desc": "味方が倒されたり、攻撃を外したりしたとき、一手単位で行動をやり巻き戻せる。１回の戦闘につき、回数は最初3回までだが章が進むごとに1ずつ増える。"
+        "desc": "味方が倒されたり、攻撃を外したりしたとき、一手単位で行動を巻き戻せる。１回の戦闘につき、回数は最初3回までだが章が進むごとに1ずつ増える"
       },
       "abilities": [
         {
@@ -1491,9 +1493,9 @@ const ABILITY_DATA = Object.freeze({
           "statBonus": null
         },
         {
-          "name": "破壊",
-          "kind": "magicArt",
-          "desc": "魔法攻撃のときに、装甲を破壊できる",
+          "name": "集中力",
+          "kind": "skill",
+          "desc": "物理・魔法の命中率+5",
           "level": 20,
           "statBonus": null
         },
@@ -1520,7 +1522,7 @@ const ABILITY_DATA = Object.freeze({
         },
         {
           "name": "封印",
-          "kind": "magicArt",
+          "kind": "core",
           "desc": "魔防÷2の射程範囲の内の敵１人の移動を封じる",
           "level": 40,
           "statBonus": null
@@ -1605,7 +1607,7 @@ const ABILITY_DATA = Object.freeze({
         {
           "name": "月詠",
           "kind": "exclusiveArt",
-          "desc": "攻撃時、自分を中心とした5マス以内の全ての敵のHPを20%削る",
+          "desc": "攻撃時、与えたダメージ分HPとMP回復、自分を中心とした5マス以内の全ての敵のHPを20%削る",
           "level": 40,
           "statBonus": null
         },
@@ -1638,9 +1640,9 @@ const ABILITY_DATA = Object.freeze({
       },
       "abilities": [
         {
-          "name": "破壊",
-          "kind": "magicArt",
-          "desc": "魔法攻撃のときに、装甲を破壊できる",
+          "name": "魔核+1",
+          "kind": "coreSlot",
+          "desc": "セットできる魔核が1スロット増える",
           "level": 5,
           "statBonus": null
         },
@@ -1666,9 +1668,9 @@ const ABILITY_DATA = Object.freeze({
           "statBonus": null
         },
         {
-          "name": "加速",
-          "kind": "magicArt",
-          "desc": "自分または味方が1度再行動できる。",
+          "name": "魔力強化",
+          "kind": "skill",
+          "desc": "魔法の火力+5",
           "level": 25,
           "statBonus": null
         },
@@ -1681,7 +1683,7 @@ const ABILITY_DATA = Object.freeze({
         },
         {
           "name": "転移",
-          "kind": "magicArt",
+          "kind": "core",
           "desc": "味方を指定した位置に移動できる。範囲は魔力÷2",
           "level": 35,
           "statBonus": null
@@ -1689,7 +1691,7 @@ const ABILITY_DATA = Object.freeze({
         {
           "name": "生命吸収",
           "kind": "exclusiveArt",
-          "desc": "攻撃時、自分を中心とした6マス以内の全ての敵のHPを10%削り、その分自分のHP、MPを回復する。",
+          "desc": "攻撃時、与えたダメージ分HPとMP回復、自分を中心とした6マス以内の全ての敵のHPを10%削り、その分自分のHP、MPを回復する。",
           "level": 40,
           "statBonus": null
         },
@@ -1736,9 +1738,9 @@ const ABILITY_DATA = Object.freeze({
           "statBonus": null
         },
         {
-          "name": "結界",
-          "kind": "magicArt",
-          "desc": "魔防÷2の装甲を2マス以内の自分または味方１人に与える",
+          "name": "採取上手",
+          "kind": "skill",
+          "desc": "魔核結晶が少し集めやすい",
           "level": 15,
           "statBonus": null
         },
@@ -1760,9 +1762,9 @@ const ABILITY_DATA = Object.freeze({
           }
         },
         {
-          "name": "破壊",
-          "kind": "magicArt",
-          "desc": "魔法攻撃のときに、装甲を破壊できる",
+          "name": "採取上手+",
+          "kind": "skill",
+          "desc": "魔核結晶が更に集めやすい",
           "level": 30,
           "statBonus": null
         },
@@ -1781,9 +1783,9 @@ const ABILITY_DATA = Object.freeze({
           "statBonus": null
         },
         {
-          "name": "祈り",
+          "name": "祝福",
           "kind": "skill",
-          "desc": "戦闘中、１度だけ幸運%でHPが0になりそうなとき、1耐える",
+          "desc": "幸運%で発動。自分が攻撃を受けた後、HPが10回復する。",
           "level": 45,
           "statBonus": null
         }
@@ -1804,9 +1806,9 @@ const ABILITY_DATA = Object.freeze({
           "statBonus": null
         },
         {
-          "name": "破壊",
-          "kind": "magicArt",
-          "desc": "魔法攻撃のときに、装甲を破壊できる",
+          "name": "魔力節約",
+          "kind": "skill",
+          "desc": "魔攻÷3の確率で、魔法武器の耐久が下がらないときがある。",
           "level": 10,
           "statBonus": null
         },
@@ -1833,7 +1835,7 @@ const ABILITY_DATA = Object.freeze({
         },
         {
           "name": "封印",
-          "kind": "magicArt",
+          "kind": "core",
           "desc": "魔防÷2の射程範囲の内の敵１人の移動を封じる",
           "level": 30,
           "statBonus": null
@@ -1868,7 +1870,7 @@ const ABILITY_DATA = Object.freeze({
       "personal": {
         "name": "双蛇の逆針",
         "kind": "skill",
-        "desc": "味方が倒されたり、攻撃を外したりしたとき、一手単位で行動をやり巻き戻せる。１回の戦闘につき、回数は最初3回までだが章が進むごとに1ずつ増える。"
+        "desc": "味方が倒されたり、攻撃を外したりしたとき、一手単位で行動を巻き戻せる。１回の戦闘につき、回数は最初3回までだが章が進むごとに1ずつ増える。"
       },
       "abilities": [
         {
@@ -1879,9 +1881,9 @@ const ABILITY_DATA = Object.freeze({
           "statBonus": null
         },
         {
-          "name": "結界",
-          "kind": "magicArt",
-          "desc": "魔防÷2の装甲を2マス以内の自分または味方１人に与える",
+          "name": "魔核+1",
+          "kind": "coreSlot",
+          "desc": "セットできる魔核が1スロット増える",
           "level": 10,
           "statBonus": null
         },
@@ -1893,9 +1895,9 @@ const ABILITY_DATA = Object.freeze({
           "statBonus": null
         },
         {
-          "name": "破壊",
-          "kind": "magicArt",
-          "desc": "魔法攻撃のときに、装甲を破壊できる",
+          "name": "集中力",
+          "kind": "skill",
+          "desc": "物理・魔法の命中率+5",
           "level": 20,
           "statBonus": null
         },
@@ -1914,15 +1916,15 @@ const ABILITY_DATA = Object.freeze({
           "statBonus": null
         },
         {
-          "name": "虚像",
-          "kind": "magicArt",
-          "desc": "相手の命中-20",
+          "name": "魔力強化",
+          "kind": "skill",
+          "desc": "魔法の火力+5",
           "level": 35,
           "statBonus": null
         },
         {
           "name": "封印",
-          "kind": "magicArt",
+          "kind": "core",
           "desc": "魔防÷2の射程範囲の内の敵１人の移動を封じる",
           "level": 40,
           "statBonus": null
@@ -1977,26 +1979,26 @@ const ABILITY_DATA = Object.freeze({
           "statBonus": null
         },
         {
+          "name": "転移",
+          "kind": "core",
+          "desc": "味方を指定した位置に移動できる。範囲は魔力÷2",
+          "level": 20,
+          "statBonus": null
+        },
+        {
           "name": "向上心",
           "kind": "skill",
           "desc": "力・速さ+5",
-          "level": 20,
+          "level": 25,
           "statBonus": {
             "atk": 5,
             "spd": 5
           }
         },
         {
-          "name": "結界",
-          "kind": "magicArt",
-          "desc": "魔防÷2の装甲を2マス以内の自分または味方１人に与える",
-          "level": 25,
-          "statBonus": null
-        },
-        {
-          "name": "大食らい",
+          "name": "集中力",
           "kind": "skill",
-          "desc": "敵将への攻撃時必殺+5",
+          "desc": "物理・魔法の命中率+5",
           "level": 30,
           "statBonus": null
         },
@@ -2015,9 +2017,9 @@ const ABILITY_DATA = Object.freeze({
           "statBonus": null
         },
         {
-          "name": "転移",
-          "kind": "magicArt",
-          "desc": "味方を指定した位置に移動できる。範囲は魔力÷2",
+          "name": "大食らい",
+          "kind": "skill",
+          "desc": "敵将への攻撃時必殺+5",
           "level": 45,
           "statBonus": null
         }
@@ -2052,9 +2054,9 @@ const ABILITY_DATA = Object.freeze({
           "statBonus": null
         },
         {
-          "name": "結界",
-          "kind": "magicArt",
-          "desc": "魔防÷2の装甲を2マス以内の自分または味方１人に与える",
+          "name": "魔力節約",
+          "kind": "skill",
+          "desc": "魔攻÷3の確率で、魔法武器の耐久が下がらないときがある。",
           "level": 20,
           "statBonus": null
         },
@@ -2066,9 +2068,9 @@ const ABILITY_DATA = Object.freeze({
           "statBonus": null
         },
         {
-          "name": "破壊",
-          "kind": "magicArt",
-          "desc": "魔法攻撃のときに、装甲を破壊できる",
+          "name": "魔核+1",
+          "kind": "coreSlot",
+          "desc": "セットできる魔核が1スロット増える",
           "level": 30,
           "statBonus": null
         },
@@ -2091,7 +2093,7 @@ const ABILITY_DATA = Object.freeze({
         },
         {
           "name": "封印",
-          "kind": "magicArt",
+          "kind": "core",
           "desc": "魔防÷2の射程範囲の内の敵１人の移動を封じる",
           "level": 45,
           "statBonus": null
@@ -2106,9 +2108,9 @@ const ABILITY_DATA = Object.freeze({
       },
       "abilities": [
         {
-          "name": "悪夢",
-          "kind": "magicArt",
-          "desc": "魔法攻撃の際に、相手のHPではなく、相手の勇気値を減らす。",
+          "name": "集中力",
+          "kind": "skill",
+          "desc": "物理・魔法の命中率+5",
           "level": 5,
           "statBonus": null
         },
@@ -2127,9 +2129,9 @@ const ABILITY_DATA = Object.freeze({
           "statBonus": null
         },
         {
-          "name": "誘惑",
-          "kind": "magicArt",
-          "desc": "1ターンだけ相手の必殺-50、命中-20",
+          "name": "魔力節約",
+          "kind": "skill",
+          "desc": "魔攻÷3の確率で、魔法武器の耐久が下がらないときがある。",
           "level": 20,
           "statBonus": null
         },
@@ -2141,9 +2143,9 @@ const ABILITY_DATA = Object.freeze({
           "statBonus": null
         },
         {
-          "name": "虚像",
-          "kind": "magicArt",
-          "desc": "相手の命中-20",
+          "name": "魔核+1",
+          "kind": "coreSlot",
+          "desc": "セットできる魔核が1スロット増える",
           "level": 30,
           "statBonus": null
         },
@@ -2188,9 +2190,9 @@ const ABILITY_DATA = Object.freeze({
           "statBonus": null
         },
         {
-          "name": "加速",
-          "kind": "magicArt",
-          "desc": "自分または味方が1度再行動できる。",
+          "name": "魔力節約",
+          "kind": "skill",
+          "desc": "魔攻÷3の確率で、魔法武器の耐久が下がらないときがある。",
           "level": 10,
           "statBonus": null
         },
@@ -2209,9 +2211,9 @@ const ABILITY_DATA = Object.freeze({
           "statBonus": null
         },
         {
-          "name": "破壊",
-          "kind": "magicArt",
-          "desc": "魔法攻撃のときに、装甲を破壊できる",
+          "name": "魔核+1",
+          "kind": "coreSlot",
+          "desc": "セットできる魔核が1スロット増える",
           "level": 25,
           "statBonus": null
         },
@@ -2253,9 +2255,9 @@ const ABILITY_DATA = Object.freeze({
       },
       "abilities": [
         {
-          "name": "破壊",
-          "kind": "magicArt",
-          "desc": "魔法攻撃のときに、装甲を破壊できる",
+          "name": "地形無効",
+          "kind": "skill",
+          "desc": "地形から受ける効果を受けない",
           "level": 5,
           "statBonus": null
         },
@@ -2295,9 +2297,9 @@ const ABILITY_DATA = Object.freeze({
           "statBonus": null
         },
         {
-          "name": "虚像",
-          "kind": "magicArt",
-          "desc": "相手の命中-20",
+          "name": "魔核+1",
+          "kind": "coreSlot",
+          "desc": "セットできる魔核が1スロット増える",
           "level": 35,
           "statBonus": null
         },
@@ -2329,6 +2331,128 @@ const ABILITY_DATA = Object.freeze({
         }
       ]
     }
+  },
+  "initialCores": {
+    "幼アルシェ": [
+      {
+        "name": "火",
+        "clan": false
+      },
+      {
+        "name": "破壊",
+        "clan": false
+      }
+    ],
+    "リングホルム": [
+      {
+        "name": "火",
+        "clan": true
+      },
+      {
+        "name": "破壊",
+        "clan": false
+      }
+    ],
+    "アルバス": [
+      {
+        "name": "治癒",
+        "clan": false
+      },
+      {
+        "name": "破壊",
+        "clan": false
+      },
+      {
+        "name": "結界",
+        "clan": false
+      }
+    ],
+    "アン": [
+      {
+        "name": "治癒",
+        "clan": false
+      },
+      {
+        "name": "風",
+        "clan": false
+      }
+    ],
+    "フィロ": [
+      {
+        "name": "氷",
+        "clan": true
+      },
+      {
+        "name": "治癒",
+        "clan": false
+      }
+    ],
+    "幼カリマ": [
+      {
+        "name": "火",
+        "clan": false
+      },
+      {
+        "name": "結界",
+        "clan": false
+      }
+    ],
+    "幼ギュンター": [
+      {
+        "name": "水",
+        "clan": false
+      },
+      {
+        "name": "破壊",
+        "clan": false
+      },
+      {
+        "name": "結界",
+        "clan": false
+      }
+    ],
+    "ヘンリー": [
+      {
+        "name": "土",
+        "clan": true
+      },
+      {
+        "name": "結界",
+        "clan": false
+      },
+      {
+        "name": "破壊",
+        "clan": false
+      }
+    ],
+    "キャリー": [
+      {
+        "name": "治癒",
+        "clan": false
+      },
+      {
+        "name": "悪夢",
+        "clan": false
+      },
+      {
+        "name": "虚像",
+        "clan": false
+      }
+    ],
+    "ラディン": [
+      {
+        "name": "風",
+        "clan": true
+      },
+      {
+        "name": "加速",
+        "clan": false
+      },
+      {
+        "name": "結界",
+        "clan": false
+      }
+    ]
   }
 });
 

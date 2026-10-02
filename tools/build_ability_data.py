@@ -28,6 +28,8 @@ KIND_BY_LABEL = {
     "魔法戦技": "magicArt",
     "戦技": "art",
     "専用戦技": "exclusiveArt",
+    "スロット": "coreSlot",   # 魔核+1（魔核の枠が1つ増える。スキル・戦技の枠は使わない）
+    "魔法": "core",           # ○○(上位魔核): その因果Lvで、その魔核に目覚める（DAMAGE_WEAPON_ENEMY_RULES §4.2）
 }
 # 兵種スキルのうち、効果文に「戦技」と書かれていないが戦技として扱うもの（SKILL_LOADOUT_RULES §4）
 CLASS_ART_NAMES = {"突撃", "ブレス"}
@@ -130,9 +132,11 @@ def build_cause_table():
             m = re.match(r"(.+?)\n種類[：:](.+?)\n効果[：:](.*)", cell.strip(), re.S)
             if not m:
                 continue
-            name = m.group(1).strip().replace("(戦技)", "").replace("（戦技）", "")
+            name = re.sub(r"[(（](戦技|上位魔核)[)）]", "", m.group(1).strip())
             kind = KIND_BY_LABEL.get(m.group(2).strip(), "skill")
-            desc = re.sub(r"\s+", "", m.group(3)).removeprefix("効果：")
+            desc = re.sub(r"\s+", "", m.group(3))
+            while desc.startswith("効果："):
+                desc = desc.removeprefix("効果：")
             item = {"name": name, "kind": kind, "desc": desc}
             if header[col] == "個人スキル":
                 entry["personal"] = item
@@ -145,11 +149,29 @@ def build_cause_table():
     return table
 
 
+def build_initial_cores():
+    """最初の魔核（キャラ名 → [{name, clan}]）。★＝一族の魔核（外せない）、×＝空き"""
+    rows = read_csv("各キャラ兵種表 - 初期装備魔核.csv")
+    table = {}
+    for row in rows[1:]:
+        if not row or not row[0].strip():
+            continue
+        cores = []
+        for cell in row[1:]:
+            cell = cell.strip()
+            if not cell or cell == "×":
+                continue
+            cores.append({"name": cell.lstrip("★").removesuffix("の魔核"), "clan": cell.startswith("★")})
+        table[row[0].strip()] = cores
+    return table
+
+
 def main():
     data = {
         "classLines": build_class_lines(),
         "characterClasses": build_character_classes(),
         "causeTable": build_cause_table(),
+        "initialCores": build_initial_cores(),
     }
     body = json.dumps(data, ensure_ascii=False, indent=2)
     OUT.write_text(
@@ -159,6 +181,8 @@ def main():
         "//  tools/build_ability_data.py が兵種表CSVから作る。手で直さないこと。\n"
         "//  正本: Regarding character growth rates, skills, and combat arts/*.csv\n"
         "//  kind: skill / physicalArt / magicArt / art（物理・魔法の区別なし）/ exclusiveArt（専用戦技）\n"
+        "//        coreSlot（魔核+1）/ core（その魔核に目覚める）。この2つはスキル・戦技の枠を使わない\n"
+        "//  initialCores: キャラ名 → 最初の魔核 [{ name, clan }]（clan＝一族の魔核。外せない）\n"
         "//  statBonus: 無条件の能力値上昇だけを読み取ったもの。条件付きの効果は null\n"
         "// =====================================================================\n\n"
         f"const ABILITY_DATA = Object.freeze({body});\n\n"
