@@ -28,6 +28,7 @@ namespace Srpg.EditorAgent
             {
                 KeepShaders();
                 KeepFog();
+                CompressTexturesForWeb();
                 PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
                 PlayerSettings.WebGL.decompressionFallback = true;   // GitHub Pages は圧縮の知らせを付けないので、読み込み側でほどく
                 PlayerSettings.WebGL.dataCaching = true;
@@ -57,6 +58,33 @@ namespace Srpg.EditorAgent
                 if (Application.isBatchMode) EditorApplication.Exit(1);
                 throw;
             }
+        }
+
+        /// <summary>
+        /// 絵を WebGL の書き出しだけ圧縮する（2026-10-03: 書き出しの 9 割が圧縮していない絵で、83MB あった）。
+        /// スマホ向けの ASTC 6×6（透明あり）。エディタ・確認の画像の見え方は変えない（WebGL の上書き設定だけ）。
+        /// 大きすぎる絵は 2048 まで（UI の枠・ボタンは 1024 まで）
+        /// </summary>
+        private static void CompressTexturesForWeb()
+        {
+            EditorUserBuildSettings.webGLBuildSubtarget = WebGLTextureSubtarget.ASTC;
+            int changed = 0;
+            foreach (var guid in AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets/Art", "Assets/Resources" }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (!(AssetImporter.GetAtPath(path) is TextureImporter importer)) continue;
+                int max = path.StartsWith("Assets/Art/UI/") ? 1024 : 2048;
+                var settings = importer.GetPlatformTextureSettings("WebGL");
+                if (settings.overridden && settings.format == TextureImporterFormat.ASTC_6x6 && settings.maxTextureSize == max) continue;
+                settings.overridden = true;
+                settings.format = TextureImporterFormat.ASTC_6x6;
+                settings.maxTextureSize = max;
+                settings.textureCompression = TextureImporterCompression.Compressed;
+                importer.SetPlatformTextureSettings(settings);
+                importer.SaveAndReimport();
+                changed++;
+            }
+            Debug.Log($"[WebGLBuilder] 絵の圧縮（WebGL・ASTC 6×6）を設定: {changed} 枚");
         }
 
         /// <summary>使う描画の組み合わせを材質にして Resources に置く（書き出しで必ず含まれる）</summary>
