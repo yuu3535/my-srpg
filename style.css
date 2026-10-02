@@ -8137,3 +8137,25 @@ img.lsMenuIcon.wpnIcon {
 /* 人物欄: 命中・回避・魅力を足したぶん、少し高く */
 #gameScreen[data-mode="battle"] #landscapeBattleShell.active #landscapeUnitPanel { max-height: 330px; }
 .svAbilities dl { margin: 0; line-height: 12px; }
+/* 原作者 2026-10-03: 書体がところどころ違う → ボタン（固有スキル・アイコン・行動する）も同じ明朝体に。太さは 400 と 500（名前・見出しは 600）にそろえる */
+#gameScreen[data-mode="battle"] .svPerson button,
+#lsSkillInfo,
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbBtns button { font-family: inherit; }
+#gameScreen[data-mode="battle"] .svWeapon b,
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbStats dd,
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbBtns button { font-weight: 500; }
+/* 原作者 2026-10-03: 人物欄の HP・MP のあたりが狭い → 顔を少し細くし、名前・HP・MP の列を広げる（顔に HP の字がかからない） */
+.svIdentity { height: 96px; }
+.svFace { width: 62px; left: -8px; }
+.svIdText { left: 60px; }
+.svVitals { left: 60px; right: 0; width: auto; top: 50px; }
+.svVital { height: 14px; }
+.svMeter { height: 5px; }
+/* 原作者 2026-10-03: 予測の肖像も真ん中へ寄せる（数値の欄のすぐ外側に、内側の薄くなる所を少し重ねる） */
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbBust i { left: auto; right: -36px; }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbBust.right i { right: auto; left: -36px; }
+/* 肖像を寄せたので、外側の端も薄くする（まっすぐ切れて見えないように） */
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbBust i {
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 20%, #000 72%, transparent), linear-gradient(180deg, transparent, #000 14%);
+    mask-image: linear-gradient(90deg, transparent, #000 20%, #000 72%, transparent), linear-gradient(180deg, transparent, #000 14%);
+}

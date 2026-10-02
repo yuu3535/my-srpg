@@ -845,24 +845,24 @@ namespace Srpg.Battle
         {
             personPanel = PlaceFromRight(NewRect("Person", frame), PanelRight, PanelTop, PanelW, 300);
             SilverBox(personPanel);
-            var mask = Place(NewRect("FaceMask", personPanel), 4, 4, 76, 98);
+            var mask = Place(NewRect("FaceMask", personPanel), 4, 4, 66, 99);
             mask.gameObject.AddComponent<RectMask2D>();
-            personFace = Place(NewRect("Face", mask), 3, 3, 72, 95).gameObject.AddComponent<RawImage>();
+            personFace = Place(NewRect("Face", mask), 3, 3, 62, 95).gameObject.AddComponent<RawImage>();
             personFace.raycastTarget = false;
-            personName = Label(personPanel, "Name", 81, 10, 96, 17, 14, HudPalette.Text, FontStyle.Bold);
-            personLevel = Label(personPanel, "Level", 81, 27, 96, 12, 9.5f, HudPalette.Silver, anchor: TextAnchor.MiddleRight);
-            Place(NewRect("JobTop", personPanel), 81, 40, 96, 1).gameObject.AddComponent<Image>().color = Hex("#81939e");
-            personWeaponIcon = Place(NewRect("JobIcon", personPanel), 82, 43, 12, 12).gameObject.AddComponent<Image>();
+            personName = Label(personPanel, "Name", 75, 10, 102, 17, 14, HudPalette.Text, FontStyle.Bold);
+            personLevel = Label(personPanel, "Level", 75, 27, 102, 12, 9.5f, HudPalette.Silver, anchor: TextAnchor.MiddleRight);
+            Place(NewRect("JobTop", personPanel), 75, 40, 102, 1).gameObject.AddComponent<Image>().color = Hex("#81939e");
+            personWeaponIcon = Place(NewRect("JobIcon", personPanel), 76, 43, 12, 12).gameObject.AddComponent<Image>();
             personWeaponIcon.preserveAspect = true;
-            personClass = Label(personPanel, "Class", 97, 41, 80, 15, 9.5f, HudPalette.Text);
-            Place(NewRect("JobBottom", personPanel), 81, 56, 96, 1).gameObject.AddComponent<Image>().color = Hex("#81939e");
-            personHp = Label(personPanel, "Hp", 79, 59, 98, 13, 12.5f, HudPalette.Text, anchor: TextAnchor.MiddleRight);
-            Label(personPanel, "HP", 79, 59, 30, 13, 8.7f, HudPalette.Silver);
-            personHpFill = Meter(personPanel, 79, 73, Hex("#64c6c3"));
-            personMp = Label(personPanel, "Mp", 79, 79, 98, 13, 12.5f, HudPalette.Text, anchor: TextAnchor.MiddleRight);
-            Label(personPanel, "MP", 79, 79, 30, 13, 8.7f, HudPalette.Silver);
-            personMpFill = Meter(personPanel, 79, 93, Hex("#8ba4c8"));
-            Place(NewRect("Rule1", personPanel), 15, 101, 154, 1).gameObject.AddComponent<Image>().color = Hex("#697b87");
+            personClass = Label(personPanel, "Class", 91, 41, 86, 15, 9.5f, HudPalette.Text);
+            Place(NewRect("JobBottom", personPanel), 75, 56, 102, 1).gameObject.AddComponent<Image>().color = Hex("#81939e");
+            personHp = Label(personPanel, "Hp", 75, 60, 102, 14, 12.5f, HudPalette.Text, anchor: TextAnchor.MiddleRight);
+            Label(personPanel, "HP", 75, 60, 30, 14, 8.7f, HudPalette.Silver);
+            personHpFill = Meter(personPanel, 75, 75, Hex("#64c6c3"));
+            personMp = Label(personPanel, "Mp", 75, 81, 102, 14, 12.5f, HudPalette.Text, anchor: TextAnchor.MiddleRight);
+            Label(personPanel, "MP", 75, 81, 30, 14, 8.7f, HudPalette.Silver);
+            personMpFill = Meter(personPanel, 75, 96, Hex("#8ba4c8"));
+            Place(NewRect("Rule1", personPanel), 15, 104, 154, 1).gameObject.AddComponent<Image>().color = Hex("#697b87");
             // 移動・射程と能力値
             Label(personPanel, "移動", 15, 106, 40, 12, 10.5f, HudPalette.Silver);
             personMove = Label(personPanel, "Move", 50, 106, 30, 12, 10.5f, HudPalette.Text, anchor: TextAnchor.MiddleRight);
@@ -917,7 +917,7 @@ namespace Srpg.Battle
         /// <summary>細いメーター（HP・MP）</summary>
         private Image Meter(RectTransform parent, float x, float y, Color color)
         {
-            var bar = Place(NewRect("Meter", parent), x, y, 98, 4);
+            var bar = Place(NewRect("Meter", parent), x, y, 102, 5);
             bar.gameObject.AddComponent<Image>().color = Hex("#46515e");
             var fill = NewRect("Fill", bar).gameObject.AddComponent<Image>();
             fill.color = color;
@@ -1190,9 +1190,11 @@ namespace Srpg.Battle
         /// <summary>帯の下にそろえ、上へ少しはみ出す肖像（書き出しで端を薄くした絵 *_bust を使う）。右は向かい合うように左右反転</summary>
         private RawImage Bust(RectTransform panel, string name, bool mirrored)
         {
+            // 真ん中へ寄せる（原作者 2026-10-03）: 数値の欄（真ん中から 42＋156）のすぐ外側に、内側の薄くなる所を 36 重ねる
             var box = NewRect(name, panel);
-            box.anchorMin = box.anchorMax = box.pivot = new Vector2(mirrored ? 1f : 0f, 0f);
-            box.anchoredPosition = new Vector2(mirrored ? 4f : -4f, 0f);
+            box.anchorMin = box.anchorMax = new Vector2(0.5f, 0f);
+            box.pivot = new Vector2(mirrored ? 0f : 1f, 0f);
+            box.anchoredPosition = new Vector2(mirrored ? 198f - 36f : -(198f - 36f), 0f);
             box.sizeDelta = new Vector2(175f, 149f);
             var image = NewRect("Image", box).gameObject.AddComponent<RawImage>();
             Stretch(image.rectTransform);

@@ -146,7 +146,7 @@ const result = await evaluate(`(async () => {
         g.drawImage(im, sx, sy, sw, sh, 0, 0, W, H);
         g.globalCompositeOperation = "destination-in";
         const h = g.createLinearGradient(0, 0, W, 0);
-        h.addColorStop(0, "#000"); h.addColorStop(0.72, "#000"); h.addColorStop(1, "rgba(0,0,0,0)");
+        h.addColorStop(0, "rgba(0,0,0,0)"); h.addColorStop(0.2, "#000"); h.addColorStop(0.72, "#000"); h.addColorStop(1, "rgba(0,0,0,0)");   // 外側も薄く（2026-10-03）
         g.fillStyle = h; g.fillRect(0, 0, W, H);
         const v = g.createLinearGradient(0, 0, 0, H);
         v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(0.14, "#000"); v.addColorStop(1, "#000");
