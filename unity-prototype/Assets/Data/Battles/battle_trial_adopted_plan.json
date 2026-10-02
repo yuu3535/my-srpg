@@ -68,11 +68,10 @@
         "双蛇の逆針",
         "黒陽の加護",
         "祈り",
-        "デュアル+",
+        "集中力",
         "両断",
-        "破壊",
         "落雷",
-        "封印"
+        "万雷"
       ],
       "statusEffects": [],
       "equippedItem": "trial_sword",
@@ -109,11 +108,9 @@
         "野望",
         "詠唱破棄",
         "王威",
-        "魔法射程+1",
-        "破壊",
+        "魔力強化",
         "回復",
-        "加速",
-        "転移"
+        "生命吸収"
       ],
       "statusEffects": [],
       "equippedItem": null,
@@ -150,11 +147,8 @@
         "双蛇の逆針",
         "白陽の加護",
         "祈り",
-        "デュアル+",
-        "結界",
-        "破壊",
-        "虚像",
-        "封印"
+        "集中力",
+        "落雷"
       ],
       "statusEffects": [],
       "equippedItem": "trial_sword",
@@ -301,11 +295,9 @@
         "野望",
         "詠唱破棄",
         "王威",
-        "魔法射程+1",
-        "破壊",
+        "魔力強化",
         "回復",
-        "加速",
-        "転移"
+        "生命吸収"
       ],
       "statusEffects": [],
       "equippedItem": null,
@@ -413,6 +405,24 @@
       "power": 6,
       "range": 1,
       "hit": 5,
+      "durability": 0
+    },
+    {
+      "id": "shinan_sword",
+      "name": "指南用の剣",
+      "kind": "weapon",
+      "power": 3,
+      "range": 1,
+      "hit": -35,
+      "durability": 0
+    },
+    {
+      "id": "doll_arm",
+      "name": "人形の腕",
+      "kind": "weapon",
+      "power": 3,
+      "range": 1,
+      "hit": 0,
       "durability": 0
     }
   ]

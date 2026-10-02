@@ -22,7 +22,11 @@
       "attackRange": 1,
       "token": "Assets/Art/Tokens/ringholm.png",
       "flying": false,
-      "items": []
+      "items": [],
+      "reserve": false,
+      "wait": [],
+      "enter": "",
+      "passive": false
     },
     {
       "id": "arshe",
@@ -34,7 +38,11 @@
       "attackRange": 1,
       "token": "Assets/Art/Tokens/arshe.png",
       "flying": false,
-      "items": []
+      "items": [],
+      "reserve": false,
+      "wait": [],
+      "enter": "",
+      "passive": false
     },
     {
       "id": "albas",
@@ -46,7 +54,11 @@
       "attackRange": 1,
       "token": "Assets/Art/Tokens/albas.png",
       "flying": false,
-      "items": []
+      "items": [],
+      "reserve": false,
+      "wait": [],
+      "enter": "",
+      "passive": false
     },
     {
       "id": "young_karima",
@@ -58,7 +70,11 @@
       "attackRange": 1,
       "token": "Assets/Art/Tokens/young_karima.png",
       "flying": false,
-      "items": []
+      "items": [],
+      "reserve": false,
+      "wait": [],
+      "enter": "",
+      "passive": false
     },
     {
       "id": "forest_guard",
@@ -70,7 +86,11 @@
       "attackRange": 1,
       "token": "Assets/Art/Tokens/forest_guard.png",
       "flying": false,
-      "items": []
+      "items": [],
+      "reserve": false,
+      "wait": [],
+      "enter": "",
+      "passive": false
     },
     {
       "id": "dylan",
@@ -82,7 +102,11 @@
       "attackRange": 1,
       "token": "Assets/Art/Tokens/dylan.png",
       "flying": false,
-      "items": []
+      "items": [],
+      "reserve": false,
+      "wait": [],
+      "enter": "",
+      "passive": false
     },
     {
       "id": "herel",
@@ -94,7 +118,11 @@
       "attackRange": 1,
       "token": "Assets/Art/Tokens/herel.png",
       "flying": false,
-      "items": []
+      "items": [],
+      "reserve": false,
+      "wait": [],
+      "enter": "",
+      "passive": false
     },
     {
       "id": "albas_rival",
@@ -106,7 +134,11 @@
       "attackRange": 1,
       "token": "Assets/Art/Tokens/albas_rival.png",
       "flying": false,
-      "items": []
+      "items": [],
+      "reserve": false,
+      "wait": [],
+      "enter": "",
+      "passive": false
     }
   ],
   "timeOfDay": "day",

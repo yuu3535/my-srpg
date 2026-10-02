@@ -76,6 +76,44 @@
           "spell": null,
           "equipSpell": null,
           "area": ""
+        },
+        {
+          "label": "火",
+          "kind": "core",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 2,
+          "isArt": false,
+          "isMagic": true,
+          "spell": {
+            "id": "火",
+            "name": "火",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          },
+          "equipSpell": null
+        },
+        {
+          "label": "破壊",
+          "kind": "core",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 2,
+          "isArt": false,
+          "isMagic": true,
+          "spell": {
+            "id": "破壊",
+            "name": "破壊",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "break",
+            "statusEffect": ""
+          },
+          "equipSpell": null
         }
       ],
       "enemyOptions": [
@@ -102,6 +140,44 @@
           "isMagic": false,
           "spell": null,
           "equipSpell": null
+        },
+        {
+          "label": "火",
+          "kind": "core",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 2,
+          "isArt": false,
+          "isMagic": true,
+          "spell": {
+            "id": "火",
+            "name": "火",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          },
+          "equipSpell": null
+        },
+        {
+          "label": "破壊",
+          "kind": "core",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 2,
+          "isArt": false,
+          "isMagic": true,
+          "spell": {
+            "id": "破壊",
+            "name": "破壊",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "break",
+            "statusEffect": ""
+          },
+          "equipSpell": null
         }
       ],
       "artList": [
@@ -124,6 +200,24 @@
       ],
       "magicList": [
         {
+          "label": "火",
+          "sub": "魔核",
+          "mpCost": "1d6",
+          "index": 3,
+          "supportIndex": -1,
+          "summonUnitId": "",
+          "summonDelay": 0
+        },
+        {
+          "label": "破壊",
+          "sub": "魔核",
+          "mpCost": "1d6",
+          "index": 4,
+          "supportIndex": -1,
+          "summonUnitId": "",
+          "summonDelay": 0
+        },
+        {
           "label": "召喚「ヒトダマ」",
           "sub": "戦技",
           "mpCost": "1d4",
@@ -137,7 +231,7 @@
       "specials": [
         {
           "name": "月詠",
-          "desc": "攻撃時、自分を中心とした5マス以内の全ての敵のHPを20%削る",
+          "desc": "攻撃時、与えたダメージ分HPとMP回復、自分を中心とした5マス以内の全ての敵のHPを20%削る",
           "radius": 5,
           "percent": 20,
           "drain": false
@@ -163,9 +257,9 @@
       "portrait": "arshe",
       "cardUv": {
         "x": 0.4,
-        "y": 0.7016130262805569,
+        "y": 0.7016129032258065,
         "w": 0.3333333333333333,
-        "h": 0.29838697371944306
+        "h": 0.29838709677419356
       },
       "bustUv": {
         "x": 0.4,
@@ -208,13 +302,32 @@
           "area": ""
         },
         {
-          "label": "破壊",
-          "kind": "magicArt",
-          "artName": "破壊",
+          "label": "火",
+          "kind": "core",
+          "artName": "",
           "itemId": "",
           "rangeMin": 1,
           "rangeMax": 2,
-          "isArt": true,
+          "isArt": false,
+          "isMagic": true,
+          "spell": {
+            "id": "火",
+            "name": "火",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          },
+          "equipSpell": null
+        },
+        {
+          "label": "破壊",
+          "kind": "core",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 2,
+          "isArt": false,
           "isMagic": true,
           "spell": {
             "id": "破壊",
@@ -244,6 +357,26 @@
             "statusEffect": ""
           },
           "equipSpell": null
+        },
+        {
+          "label": "万雷",
+          "kind": "magicArt",
+          "artName": "万雷",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 3,
+          "isArt": true,
+          "isMagic": true,
+          "spell": {
+            "id": "落雷",
+            "name": "万雷",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": ""
+          },
+          "equipSpell": null,
+          "area": "line"
         }
       ],
       "enemyOptions": [
@@ -272,13 +405,32 @@
           "equipSpell": null
         },
         {
-          "label": "破壊",
-          "kind": "magicArt",
-          "artName": "破壊",
+          "label": "火",
+          "kind": "core",
+          "artName": "",
           "itemId": "",
           "rangeMin": 1,
           "rangeMax": 2,
-          "isArt": true,
+          "isArt": false,
+          "isMagic": true,
+          "spell": {
+            "id": "火",
+            "name": "火",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          },
+          "equipSpell": null
+        },
+        {
+          "label": "破壊",
+          "kind": "core",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 2,
+          "isArt": false,
           "isMagic": true,
           "spell": {
             "id": "破壊",
@@ -319,8 +471,8 @@
       ],
       "magicList": [
         {
-          "label": "破壊",
-          "sub": "戦技",
+          "label": "火",
+          "sub": "魔核",
           "mpCost": "1d6",
           "index": 2,
           "supportIndex": -1,
@@ -328,8 +480,8 @@
           "summonDelay": 0
         },
         {
-          "label": "落雷",
-          "sub": "戦技",
+          "label": "破壊",
+          "sub": "魔核",
           "mpCost": "1d6",
           "index": 3,
           "supportIndex": -1,
@@ -338,10 +490,28 @@
         },
         {
           "label": "封印",
-          "sub": "戦技",
+          "sub": "魔核",
           "mpCost": "1d8",
           "index": -1,
           "supportIndex": 0,
+          "summonUnitId": "",
+          "summonDelay": 0
+        },
+        {
+          "label": "落雷",
+          "sub": "戦技",
+          "mpCost": "1d6",
+          "index": 4,
+          "supportIndex": -1,
+          "summonUnitId": "",
+          "summonDelay": 0
+        },
+        {
+          "label": "万雷",
+          "sub": "戦技",
+          "mpCost": "1d6",
+          "index": -1,
+          "supportIndex": -1,
           "summonUnitId": "",
           "summonDelay": 0
         }
@@ -408,12 +578,12 @@
       "options": [
         {
           "label": "破壊",
-          "kind": "magicArt",
-          "artName": "破壊",
+          "kind": "core",
+          "artName": "",
           "itemId": "",
           "rangeMin": 1,
-          "rangeMax": 3,
-          "isArt": true,
+          "rangeMax": 2,
+          "isArt": false,
           "isMagic": true,
           "spell": {
             "id": "破壊",
@@ -429,12 +599,12 @@
       "enemyOptions": [
         {
           "label": "破壊",
-          "kind": "magicArt",
-          "artName": "破壊",
+          "kind": "core",
+          "artName": "",
           "itemId": "",
           "rangeMin": 1,
-          "rangeMax": 3,
-          "isArt": true,
+          "rangeMax": 2,
+          "isArt": false,
           "isMagic": true,
           "spell": {
             "id": "破壊",
@@ -447,20 +617,18 @@
           "equipSpell": null
         }
       ],
-      "artList": [],
+      "artList": [
+        {
+          "label": "生命吸収",
+          "sub": "",
+          "index": -1,
+          "specialIndex": 0
+        }
+      ],
       "magicList": [
         {
-          "label": "破壊",
-          "sub": "戦技",
-          "mpCost": "1d6",
-          "index": 0,
-          "supportIndex": -1,
-          "summonUnitId": "",
-          "summonDelay": 0
-        },
-        {
-          "label": "回復",
-          "sub": "戦技",
+          "label": "治癒",
+          "sub": "魔核",
           "mpCost": "1d6",
           "index": -1,
           "supportIndex": 0,
@@ -468,8 +636,17 @@
           "summonDelay": 0
         },
         {
-          "label": "加速",
-          "sub": "戦技",
+          "label": "破壊",
+          "sub": "魔核",
+          "mpCost": "1d6",
+          "index": 0,
+          "supportIndex": -1,
+          "summonUnitId": "",
+          "summonDelay": 0
+        },
+        {
+          "label": "結界",
+          "sub": "魔核",
           "mpCost": "1d6",
           "index": -1,
           "supportIndex": 1,
@@ -478,27 +655,36 @@
         },
         {
           "label": "転移",
-          "sub": "戦技",
+          "sub": "魔核",
           "mpCost": "1d8",
           "index": -1,
           "supportIndex": 2,
+          "summonUnitId": "",
+          "summonDelay": 0
+        },
+        {
+          "label": "回復",
+          "sub": "戦技",
+          "mpCost": "1d6",
+          "index": -1,
+          "supportIndex": 3,
           "summonUnitId": "",
           "summonDelay": 0
         }
       ],
       "supports": [
         {
-          "label": "回復",
+          "label": "治癒",
           "kind": "support",
-          "artName": "回復",
+          "artName": "",
           "itemId": "",
           "rangeMin": 0,
-          "rangeMax": 3,
-          "isArt": true,
+          "rangeMax": 2,
+          "isArt": false,
           "isMagic": true,
           "spell": {
             "id": "治癒",
-            "name": "回復",
+            "name": "治癒",
             "targetType": "ally",
             "mpCost": "1d6",
             "effectType": "heal",
@@ -507,20 +693,20 @@
           "equipSpell": null
         },
         {
-          "label": "加速",
+          "label": "結界",
           "kind": "support",
-          "artName": "加速",
+          "artName": "結界",
           "itemId": "",
           "rangeMin": 0,
-          "rangeMax": 3,
+          "rangeMax": 2,
           "isArt": true,
           "isMagic": true,
           "spell": {
-            "id": "加速",
-            "name": "加速",
+            "id": "結界",
+            "name": "結界",
             "targetType": "ally",
             "mpCost": "1d6",
-            "effectType": "extraAction",
+            "effectType": "barrier",
             "statusEffect": ""
           },
           "equipSpell": null
@@ -531,7 +717,7 @@
           "artName": "転移",
           "itemId": "",
           "rangeMin": 0,
-          "rangeMax": 25,
+          "rangeMax": 24,
           "isArt": true,
           "isMagic": true,
           "spell": {
@@ -543,9 +729,36 @@
             "statusEffect": ""
           },
           "equipSpell": null
+        },
+        {
+          "label": "回復",
+          "kind": "support",
+          "artName": "回復",
+          "itemId": "",
+          "rangeMin": 0,
+          "rangeMax": 2,
+          "isArt": true,
+          "isMagic": true,
+          "spell": {
+            "id": "治癒",
+            "name": "回復",
+            "targetType": "ally",
+            "mpCost": "1d6",
+            "effectType": "heal",
+            "statusEffect": ""
+          },
+          "equipSpell": null
         }
       ],
-      "specials": []
+      "specials": [
+        {
+          "name": "生命吸収",
+          "desc": "攻撃時、与えたダメージ分HPとMP回復、自分を中心とした6マス以内の全ての敵のHPを10%削り、その分自分のHP、MPを回復する。",
+          "radius": 6,
+          "percent": 10,
+          "drain": true
+        }
+      ]
     },
     {
       "id": "young_karima",
@@ -598,20 +811,39 @@
           "area": ""
         },
         {
-          "label": "破壊",
-          "kind": "magicArt",
-          "artName": "破壊",
+          "label": "火",
+          "kind": "core",
+          "artName": "",
           "itemId": "",
           "rangeMin": 1,
           "rangeMax": 2,
+          "isArt": false,
+          "isMagic": true,
+          "spell": {
+            "id": "火",
+            "name": "火",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          },
+          "equipSpell": null
+        },
+        {
+          "label": "落雷",
+          "kind": "magicArt",
+          "artName": "落雷",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 3,
           "isArt": true,
           "isMagic": true,
           "spell": {
-            "id": "破壊",
-            "name": "破壊",
+            "id": "落雷",
+            "name": "落雷",
             "targetType": "enemy",
             "mpCost": "1d6",
-            "effectType": "break",
+            "effectType": "magicDamage",
             "statusEffect": ""
           },
           "equipSpell": null
@@ -631,20 +863,39 @@
           "equipSpell": null
         },
         {
-          "label": "破壊",
-          "kind": "magicArt",
-          "artName": "破壊",
+          "label": "火",
+          "kind": "core",
+          "artName": "",
           "itemId": "",
           "rangeMin": 1,
           "rangeMax": 2,
+          "isArt": false,
+          "isMagic": true,
+          "spell": {
+            "id": "火",
+            "name": "火",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          },
+          "equipSpell": null
+        },
+        {
+          "label": "落雷",
+          "kind": "magicArt",
+          "artName": "落雷",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 3,
           "isArt": true,
           "isMagic": true,
           "spell": {
-            "id": "破壊",
-            "name": "破壊",
+            "id": "落雷",
+            "name": "落雷",
             "targetType": "enemy",
             "mpCost": "1d6",
-            "effectType": "break",
+            "effectType": "magicDamage",
             "statusEffect": ""
           },
           "equipSpell": null
@@ -653,17 +904,8 @@
       "artList": [],
       "magicList": [
         {
-          "label": "結界",
-          "sub": "戦技",
-          "mpCost": "1d6",
-          "index": -1,
-          "supportIndex": 0,
-          "summonUnitId": "",
-          "summonDelay": 0
-        },
-        {
-          "label": "破壊",
-          "sub": "戦技",
+          "label": "火",
+          "sub": "魔核",
           "mpCost": "1d6",
           "index": 1,
           "supportIndex": -1,
@@ -671,8 +913,17 @@
           "summonDelay": 0
         },
         {
-          "label": "虚像",
-          "sub": "戦技",
+          "label": "結界",
+          "sub": "魔核",
+          "mpCost": "1d6",
+          "index": -1,
+          "supportIndex": 0,
+          "summonUnitId": "",
+          "summonDelay": 0
+        },
+        {
+          "label": "封印",
+          "sub": "魔核",
           "mpCost": "1d8",
           "index": -1,
           "supportIndex": 1,
@@ -680,11 +931,11 @@
           "summonDelay": 0
         },
         {
-          "label": "封印",
+          "label": "落雷",
           "sub": "戦技",
-          "mpCost": "1d8",
-          "index": -1,
-          "supportIndex": 2,
+          "mpCost": "1d6",
+          "index": 2,
+          "supportIndex": -1,
           "summonUnitId": "",
           "summonDelay": 0
         }
@@ -705,25 +956,6 @@
             "targetType": "ally",
             "mpCost": "1d6",
             "effectType": "barrier",
-            "statusEffect": ""
-          },
-          "equipSpell": null
-        },
-        {
-          "label": "虚像",
-          "kind": "support",
-          "artName": "虚像",
-          "itemId": "",
-          "rangeMin": 1,
-          "rangeMax": 2,
-          "isArt": true,
-          "isMagic": true,
-          "spell": {
-            "id": "虚像",
-            "name": "虚像",
-            "targetType": "enemy",
-            "mpCost": "1d8",
-            "effectType": "accuracyDown",
             "statusEffect": ""
           },
           "equipSpell": null
@@ -1036,12 +1268,12 @@
       "options": [
         {
           "label": "破壊",
-          "kind": "magicArt",
-          "artName": "破壊",
+          "kind": "core",
+          "artName": "",
           "itemId": "",
           "rangeMin": 1,
-          "rangeMax": 3,
-          "isArt": true,
+          "rangeMax": 2,
+          "isArt": false,
           "isMagic": true,
           "spell": {
             "id": "破壊",
@@ -1057,12 +1289,12 @@
       "enemyOptions": [
         {
           "label": "破壊",
-          "kind": "magicArt",
-          "artName": "破壊",
+          "kind": "core",
+          "artName": "",
           "itemId": "",
           "rangeMin": 1,
-          "rangeMax": 3,
-          "isArt": true,
+          "rangeMax": 2,
+          "isArt": false,
           "isMagic": true,
           "spell": {
             "id": "破壊",
@@ -1075,20 +1307,18 @@
           "equipSpell": null
         }
       ],
-      "artList": [],
+      "artList": [
+        {
+          "label": "生命吸収",
+          "sub": "",
+          "index": -1,
+          "specialIndex": 0
+        }
+      ],
       "magicList": [
         {
-          "label": "破壊",
-          "sub": "戦技",
-          "mpCost": "1d6",
-          "index": 0,
-          "supportIndex": -1,
-          "summonUnitId": "",
-          "summonDelay": 0
-        },
-        {
-          "label": "回復",
-          "sub": "戦技",
+          "label": "治癒",
+          "sub": "魔核",
           "mpCost": "1d6",
           "index": -1,
           "supportIndex": 0,
@@ -1096,8 +1326,17 @@
           "summonDelay": 0
         },
         {
-          "label": "加速",
-          "sub": "戦技",
+          "label": "破壊",
+          "sub": "魔核",
+          "mpCost": "1d6",
+          "index": 0,
+          "supportIndex": -1,
+          "summonUnitId": "",
+          "summonDelay": 0
+        },
+        {
+          "label": "結界",
+          "sub": "魔核",
           "mpCost": "1d6",
           "index": -1,
           "supportIndex": 1,
@@ -1106,27 +1345,36 @@
         },
         {
           "label": "転移",
-          "sub": "戦技",
+          "sub": "魔核",
           "mpCost": "1d8",
           "index": -1,
           "supportIndex": 2,
+          "summonUnitId": "",
+          "summonDelay": 0
+        },
+        {
+          "label": "回復",
+          "sub": "戦技",
+          "mpCost": "1d6",
+          "index": -1,
+          "supportIndex": 3,
           "summonUnitId": "",
           "summonDelay": 0
         }
       ],
       "supports": [
         {
-          "label": "回復",
+          "label": "治癒",
           "kind": "support",
-          "artName": "回復",
+          "artName": "",
           "itemId": "",
           "rangeMin": 0,
-          "rangeMax": 3,
-          "isArt": true,
+          "rangeMax": 2,
+          "isArt": false,
           "isMagic": true,
           "spell": {
             "id": "治癒",
-            "name": "回復",
+            "name": "治癒",
             "targetType": "ally",
             "mpCost": "1d6",
             "effectType": "heal",
@@ -1135,20 +1383,20 @@
           "equipSpell": null
         },
         {
-          "label": "加速",
+          "label": "結界",
           "kind": "support",
-          "artName": "加速",
+          "artName": "結界",
           "itemId": "",
           "rangeMin": 0,
-          "rangeMax": 3,
+          "rangeMax": 2,
           "isArt": true,
           "isMagic": true,
           "spell": {
-            "id": "加速",
-            "name": "加速",
+            "id": "結界",
+            "name": "結界",
             "targetType": "ally",
             "mpCost": "1d6",
-            "effectType": "extraAction",
+            "effectType": "barrier",
             "statusEffect": ""
           },
           "equipSpell": null
@@ -1159,7 +1407,7 @@
           "artName": "転移",
           "itemId": "",
           "rangeMin": 0,
-          "rangeMax": 25,
+          "rangeMax": 24,
           "isArt": true,
           "isMagic": true,
           "spell": {
@@ -1171,9 +1419,36 @@
             "statusEffect": ""
           },
           "equipSpell": null
+        },
+        {
+          "label": "回復",
+          "kind": "support",
+          "artName": "回復",
+          "itemId": "",
+          "rangeMin": 0,
+          "rangeMax": 2,
+          "isArt": true,
+          "isMagic": true,
+          "spell": {
+            "id": "治癒",
+            "name": "回復",
+            "targetType": "ally",
+            "mpCost": "1d6",
+            "effectType": "heal",
+            "statusEffect": ""
+          },
+          "equipSpell": null
         }
       ],
-      "specials": []
+      "specials": [
+        {
+          "name": "生命吸収",
+          "desc": "攻撃時、与えたダメージ分HPとMP回復、自分を中心とした6マス以内の全ての敵のHPを10%削り、その分自分のHP、MPを回復する。",
+          "radius": 6,
+          "percent": 10,
+          "drain": true
+        }
+      ]
     },
     {
       "id": "hitodama",

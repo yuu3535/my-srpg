@@ -65,6 +65,44 @@
           "area": ""
         },
         {
+          "label": "火",
+          "kind": "core",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 2,
+          "isArt": false,
+          "isMagic": true,
+          "spell": {
+            "id": "火",
+            "name": "火",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          },
+          "equipSpell": null
+        },
+        {
+          "label": "破壊",
+          "kind": "core",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 2,
+          "isArt": false,
+          "isMagic": true,
+          "spell": {
+            "id": "破壊",
+            "name": "破壊",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "break",
+            "statusEffect": ""
+          },
+          "equipSpell": null
+        },
+        {
           "label": "火の杖",
           "kind": "grimoire",
           "artName": "",
@@ -118,6 +156,44 @@
         },
         {
           "label": "火",
+          "kind": "core",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 2,
+          "isArt": false,
+          "isMagic": true,
+          "spell": {
+            "id": "火",
+            "name": "火",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          },
+          "equipSpell": null
+        },
+        {
+          "label": "破壊",
+          "kind": "core",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 2,
+          "isArt": false,
+          "isMagic": true,
+          "spell": {
+            "id": "破壊",
+            "name": "破壊",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "break",
+            "statusEffect": ""
+          },
+          "equipSpell": null
+        },
+        {
+          "label": "火",
           "kind": "grimoire",
           "artName": "",
           "itemId": "fire_book",
@@ -152,10 +228,28 @@
       ],
       "magicList": [
         {
+          "label": "火",
+          "sub": "魔核",
+          "mpCost": "1d6",
+          "index": 2,
+          "supportIndex": -1,
+          "summonUnitId": "",
+          "summonDelay": 0
+        },
+        {
+          "label": "破壊",
+          "sub": "魔核",
+          "mpCost": "1d6",
+          "index": 3,
+          "supportIndex": -1,
+          "summonUnitId": "",
+          "summonDelay": 0
+        },
+        {
           "label": "火の杖",
           "sub": "装備",
           "mpCost": "1d6",
-          "index": 2,
+          "index": 4,
           "supportIndex": -1,
           "summonUnitId": "",
           "summonDelay": 0
@@ -215,6 +309,25 @@
           "area": ""
         },
         {
+          "label": "火",
+          "kind": "core",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 2,
+          "isArt": false,
+          "isMagic": true,
+          "spell": {
+            "id": "火",
+            "name": "火",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          },
+          "equipSpell": null
+        },
+        {
           "label": "火の杖",
           "kind": "grimoire",
           "artName": "",
@@ -256,6 +369,25 @@
         },
         {
           "label": "火",
+          "kind": "core",
+          "artName": "",
+          "itemId": "",
+          "rangeMin": 1,
+          "rangeMax": 2,
+          "isArt": false,
+          "isMagic": true,
+          "spell": {
+            "id": "火",
+            "name": "火",
+            "targetType": "enemy",
+            "mpCost": "1d6",
+            "effectType": "magicDamage",
+            "statusEffect": "burn"
+          },
+          "equipSpell": null
+        },
+        {
+          "label": "火",
           "kind": "grimoire",
           "artName": "",
           "itemId": "fire_book",
@@ -284,16 +416,54 @@
       "artList": [],
       "magicList": [
         {
-          "label": "火の杖",
-          "sub": "装備",
+          "label": "火",
+          "sub": "魔核",
           "mpCost": "1d6",
           "index": 1,
           "supportIndex": -1,
           "summonUnitId": "",
           "summonDelay": 0
+        },
+        {
+          "label": "結界",
+          "sub": "魔核",
+          "mpCost": "1d6",
+          "index": -1,
+          "supportIndex": 0,
+          "summonUnitId": "",
+          "summonDelay": 0
+        },
+        {
+          "label": "火の杖",
+          "sub": "装備",
+          "mpCost": "1d6",
+          "index": 2,
+          "supportIndex": -1,
+          "summonUnitId": "",
+          "summonDelay": 0
         }
       ],
-      "supports": [],
+      "supports": [
+        {
+          "label": "結界",
+          "kind": "support",
+          "artName": "結界",
+          "itemId": "",
+          "rangeMin": 0,
+          "rangeMax": 2,
+          "isArt": true,
+          "isMagic": true,
+          "spell": {
+            "id": "結界",
+            "name": "結界",
+            "targetType": "ally",
+            "mpCost": "1d6",
+            "effectType": "barrier",
+            "statusEffect": ""
+          },
+          "equipSpell": null
+        }
+      ],
       "specials": []
     },
     {
