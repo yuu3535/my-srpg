@@ -88,7 +88,7 @@ namespace Srpg.Battle
             if (place != null && area == null) throw new InvalidOperationException($"戦う範囲がない: {layoutFile.mapId} / {areaId}");
             placeGround = ground;
             Setup();
-            view.SetView(true, 1, true);   // 探索と同じ正面から（原作者 2026-09-28）
+            view.SetView(false, 0, true);   // 戦闘は真上からが最初（原作者 2026-10-03: 斜めはスマホで押し間違いが多い）。ボタンで斜めにもできる
             view.SetOverview(false, true);
             // 戦う範囲のまん中より2マス奥に寄る（寄る点は画面の少し上に来るので、奥の敵が上の帯・手引きの帯に隠れないように。
             // 味方だけに寄ると、奥の敵が画面の端に切れた）
@@ -723,7 +723,7 @@ namespace Srpg.Battle
         {
             if (!setupOnStart) return;
             Setup();
-            view.SetView(true, 0, true);
+            view.SetView(false, 0, true);   // 戦闘は真上からが最初（原作者 2026-10-03）
             FocusOnAllies(true);
         }
 
@@ -835,6 +835,7 @@ namespace Srpg.Battle
             view.CellTapped -= TapCell;
             view.CellTapped += TapCell;
             view.IsOverOtherGui = IsOverPanel;
+            view.HideGuiButtons = HideViewButtons;   // 視点のボタン（回す・真上・全体）は、戦闘予測・会話の間は隠す（予測のボタンに重なった）
             view.Setup();
             Board3DMood.Apply(string.IsNullOrEmpty(data.timeOfDay) ? Board3DMood.Dusk : data.timeOfDay, view.KeyLight, place != null && place.indoor);
             view.ApplyPropTint();
@@ -1033,16 +1034,23 @@ namespace Srpg.Battle
         {
             if (CurrentMode != Mode.Forecast || selected == null || target == null) return;
             var attacker = selected;
+            var defender = target;
             var used = currentOption;
             PlanResult result = null;
             if (currentOption != null && currentOption.IsArea) ExecuteArea(attacker, target, currentOption);
             else result = Execute(attacker, target, currentOption);
             ActionDone?.Invoke(used != null && used.isMagic ? "magic" : used != null && used.isArt ? "art" : "attack", attacker);
-            // 反撃を受けた（訓練の手引き: 反撃人形）
-            if (result != null && result.steps.Any(s => s.type == "strike" && (s.role == "counter" || s.role == "counterFollowUp") && s.hit))
-                ActionDone?.Invoke("countered", attacker);
+            // 反撃を受けた（訓練の手引き: 反撃人形）。反撃が外れても、反撃する相手を倒してしまっても進む
+            // （原作者 2026-10-03: スマホで反撃の手引きから先へ進めなくなった）
+            bool counterStep = result != null && result.steps.Any(s => s.type == "strike" && (s.role == "counter" || s.role == "counterFollowUp"));
+            bool counterFoeDown = !string.IsNullOrEmpty(defender.plan?.equippedItem) && !defender.Alive;
+            if (counterStep || counterFoeDown) ActionDone?.Invoke("countered", attacker);
             FinishAction(attacker);
         }
+
+        /// <summary>視点のボタンを隠すとき: 戦闘予測（敵の攻撃の前の予測も）・会話（手引き）の間</summary>
+        public bool HideViewButtons() =>
+            CurrentMode == Mode.Forecast || EnemyPreview != null || (InputBlocked != null && InputBlocked());
 
         /// <summary>「戻る」（戦闘予測から相手を選ぶところへ）</summary>
         public void CancelForecast()

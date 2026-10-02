@@ -538,6 +538,7 @@ namespace Srpg.Battle
             battle.gameObject.SetActive(true);
             if (battle.Hud != null) battle.Hud.gameObject.SetActive(true);
             battle.StartOnPlace(Place, areaId, grounds.FirstOrDefault(g => g.mapId == Place.mapId).texture);
+            view.HideGuiButtons = () => battle.HideViewButtons() || (dialogue != null && dialogue.IsPlaying);   // 戦闘中は視点のボタンを出す（原作者 2026-10-03）
             battle.Finished -= OnBattleFinished;
             battle.Finished += OnBattleFinished;
             Tutorial?.Stop();
@@ -585,6 +586,7 @@ namespace Srpg.Battle
             view.CellTapped -= Tap;
             view.CellTapped += Tap;
             view.IsOverOtherGui = _ => Busy;
+            view.HideGuiButtons = () => Busy;
             if (battle.Hud != null) battle.Hud.gameObject.SetActive(false);
             battle.gameObject.SetActive(false);
             if (phase == Battle3DController.Phase.Victory && Place?.states != null)
@@ -609,9 +611,42 @@ namespace Srpg.Battle
                 seen.Add(id);
                 if (block == null || dialogue == null) { Log?.Invoke($"ブロックがない: {id}"); Next(); return; }
                 // もう持っている物は、2回目にはもらわない（話しかけ直したとき）
+                FrameSpeakers(block);
                 dialogue.Play(block, Next);
             }
             Next();
+        }
+
+        /// <summary>
+        /// 会話の話し手が画面に入るように寄る（原作者 2026-10-03: 会話の場面でギュンターの SD が映っていなかった）。
+        /// この場所にいる人のうち、ブロックの台詞の話し手（名前が合う人）とアルシェのまん中へ。話し手がアルシェだけなら動かさない
+        /// </summary>
+        private void FrameSpeakers(ScenarioBlock block)
+        {
+            if (view == null || view.Map == null || block?.lines == null) return;
+            var speakers = new HashSet<string>(block.lines.Where(l => !string.IsNullOrEmpty(l.speaker)).Select(l => l.speaker));
+            var cells = (State?.people ?? Array.Empty<MapPerson>())
+                .Where(p => personCells.ContainsKey(p.id) && speakers.Any(sp => SpeakerIs(p, sp)))
+                .Select(p => personCells[p.id]).ToList();
+            if (cells.Count == 0) return;
+            cells.Add(Player);
+            var map = view.Map;
+            var sum = Vector3.zero;
+            foreach (var c in cells) sum += map.TopCenter(c);
+            view.FocusOnPointAt(sum / cells.Count, 0.3f, !Application.isPlaying);   // 台詞の枠（下）にかからない高さ（寄りの画面は見る点がもともと上寄り）
+        }
+
+        // 配置表の人の id と台詞の話し手の名前（配置表の name は空のことが多い）
+        private static readonly Dictionary<string, string> PersonNames = new Dictionary<string, string>
+        {
+            { "gunter", "ギュンター" }, { "karima", "カリマ" }, { "young_karima", "カリマ" }, { "albas", "アルバス" },
+            { "ringholm", "リングホルム" }, { "arshe", "アルシェ" }, { "young_arshe", "アルシェ" },
+        };
+
+        private static bool SpeakerIs(MapPerson person, string speaker)
+        {
+            string name = !string.IsNullOrEmpty(person.name) ? person.name : PersonNames.TryGetValue(person.id, out var n) ? n : null;
+            return !string.IsNullOrEmpty(name) && (speaker.Contains(name) || name.Contains(speaker));
         }
 
         private void PlayLines(ScenarioLine[] lines, Action then)

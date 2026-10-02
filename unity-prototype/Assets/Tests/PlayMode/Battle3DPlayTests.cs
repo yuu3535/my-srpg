@@ -24,7 +24,7 @@ namespace Srpg.Tests
             Assert.IsNotNull(controller, "Battle3DController がない");
             Assert.AreEqual(8, controller.Units.Count);   // 味方4人（カリマを含む）と敵4人
             Assert.IsTrue(controller.Units.All(u => u.plan != null), "全員に戦闘の状態（能力値・装備）がある");
-            Assert.IsTrue(controller.View.Tilted, "斜め見下ろしで始まる");
+            Assert.IsFalse(controller.View.Tilted, "真上から見て始まる（原作者 2026-10-03: スマホで斜めは押し間違いが多い）");
 
             // 敵の行動予告: 敵ごとに行動を決め、狙われた味方にだけ赤い丸を出す（ブラウザ版と同じ）
             Assert.AreEqual(controller.Units.Count(u => u.Side == "enemy"), controller.Declarations.Count, "敵全員の行動予告がある");
