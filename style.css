@@ -8199,3 +8199,25 @@ img.lsMenuIcon.wpnIcon {
     pointer-events: none;
     z-index: 2;
 }
+/* 原作者 2026-10-03（2回目）: 肖像の頭が切れ、枠の線が顔にかかる → 枠の重ねをやめ、肖像は元の高さに戻して
+   下の端だけ帯の内側（10px）で切る（clip-path は下だけ切り、上・左右ははみ出してよい） */
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbPanel::after { display: none; }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbBust { position: relative; z-index: 3; }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbBust i {
+    bottom: -10px;
+    clip-path: inset(-200px -200px 10px -200px);
+}
+/* 原作者 2026-10-03（2回目）: 環境によって HP・MP が顔の欄の下へはみ出す → 名前〜MP をすべて位置の数値で置く（行の高さに頼らない） */
+.svIdentity { position: relative; height: 88px; overflow: hidden; }
+.svIdText { position: absolute; top: 3px; left: 60px; right: 0; height: 42px; }
+.svIdText h3 { position: absolute; top: 0; left: 0; right: 0; margin: 0; }
+.svLv { position: absolute; top: 16px; left: 0; right: 0; margin: 0; }
+.svJob { position: absolute; top: 28px; left: 0; right: 0; margin: 0; padding: 0; }
+.svVitals { position: absolute; top: 46px; left: 60px; right: 0; width: auto; height: 40px; }
+.svVitals > * { position: absolute; left: 0; right: 0; margin: 0; }
+.svVitals > :nth-child(1) { top: 0; }
+.svVitals > :nth-child(2) { top: 14px; }
+.svVitals > :nth-child(3) { top: 20px; }
+.svVitals > :nth-child(4) { top: 34px; }
+.svVital { height: 13px; line-height: 13px; overflow: visible; }
+.svMeter { height: 4px; }
