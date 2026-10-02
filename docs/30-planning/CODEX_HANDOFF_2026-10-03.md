@@ -7,7 +7,7 @@
 
 ## 0. いちばん大事なこと（原作者 2026-10-03）
 
-- **これからは Unity版で確かめる。** 原作者はスマホで Unity版（https://yuu3535.github.io/my-srpg/unity/ ）を遊んで確かめる。ブラウザ版だけで見た目を決めて終わりにしない。
+- **これからは Unity版で確かめる。** 原作者はスマホで Unity版（https://yuu3535.github.io/my-srpg-unity/ ）を遊んで確かめる。ブラウザ版だけで見た目を決めて終わりにしない。
   - ブラウザ版と Unity版に差が開いていた（Unity版の公開が 9/28 のまま止まっていた）。2026-10-03 に公開を更新し、最初に入口の画面（「プロローグから」「試験の戦闘」）を足した。
   - 総合担当は、UIや戦闘を変えたら、そのたびに Unity版の公開まで更新する。
 - **Codex には、UIの見た目と画像の素材をお願いしたい。** 原作者は「Codex は画像生成もできるので、UIがダサい問題をある程度解決してくれるかも」と考えている。戦闘のUI素材（銀の枠・ボタン）を作ったのも Codex。
@@ -72,4 +72,4 @@
 2. `docs/10-design/ui/SILVER_BATTLE_UI_DIRECTION_2026-10-02.md` と `prototypes/silver-battle-ui/`
 3. `docs/30-planning/SILVER_UI_PORT_PLAN_2026-10-02.md`（移植の段と原作者の答え）
 4. `docs/10-design/ui/COLOR_HARMONY_DIRECTION_2026-10-02.md`
-5. Unity版の今の画面: https://yuu3535.github.io/my-srpg/unity/ （「試験の戦闘」から入ると戦闘のUIをすぐ見られる）
+5. Unity版の今の画面: https://yuu3535.github.io/my-srpg-unity/ （「試験の戦闘」から入ると戦闘のUIをすぐ見られる）

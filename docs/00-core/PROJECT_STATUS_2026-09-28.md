@@ -31,7 +31,8 @@
 
 - Unity版の戦闘（`Assets/Scenes/Battle3D.unity`）: 3Dの盤面、ブラウザ版と同じ計算（答え合わせ 520件）、UI、行動予告の矢印、交換。
 - プロローグ1-1（計画 `docs/30-planning/PROLOGUE_1_1_UNITY_PLAN_2026-09-28.md`）: 段1 シナリオの取り込み・段2 会話の画面・段3 配置表から盤面・段4 探索（`Assets/Scenes/Explore3D.unity`。自室 → 廊下 → 訓練場）・段5 訓練の戦闘（同じ盤面で戦い、勝つと会話 b12。2026-09-29）まで。手引きの台詞などは原作者の確認待ち（`docs/30-planning/PROLOGUE_TRAINING_BATTLE_TUTORIAL_PROPOSAL_2026-09-28.md` §7）。
-- **Unity版の公開**（原作者の決定 2026-09-28）: https://yuu3535.github.io/my-srpg/unity/ （リポジトリの `unity/`。探索を WebGL に書き出したもの。約45MB）。スマホで遊ぶ・レビュー担当に渡す用。更新は区切りのときだけ（書き出すたびに履歴が約45MB増えるため）。更新のしかた: Unity を閉じて `WebGLBuilder.Build`（メニュー「Srpg/WebGL に書き出す（探索）」）→ `unity-prototype/Builds/WebGL` の中身で `unity/` を置き換えてコミット。
+- **Unity版の公開**（原作者の決定 2026-09-28）: https://yuu3535.github.io/my-srpg-unity/ （リポジトリの `unity/`。探索を WebGL に書き出したもの。約45MB）。スマホで遊ぶ・レビュー担当に渡す用。更新は区切りのときだけ（書き出すたびに履歴が約45MB増えるため）。更新のしかた: Unity を閉じて `WebGLBuilder.Build`（メニュー「Srpg/WebGL に書き出す（探索）」）→ `unity-prototype/Builds/WebGL` の中身で `unity/` を置き換えてコミット。
+  - 2026-10-03 引っ越し: 公開先は **https://yuu3535.github.io/my-srpg-unity/**（公開専用のリポジトリ yuu3535/my-srpg-unity。毎回1コミットで上書きし履歴を残さない）。本体の `unity/` は案内のページだけ。更新のしかた: Unity を閉じて `WebGLBuilder.Build` → `bash tools/publish_unity_web.sh`。WebGL の書き出しは絵を ASTC 6×6 で圧縮する（83MB → 64MB）。
   - 2026-10-03 更新: 最初に入口の画面（「プロローグから」＝探索 → 訓練の戦闘、「試験の戦闘」＝森の境）を足した（`StartMenu.cs`。WebGL に Battle3D の場面も入れた）。原作者の方針: ブラウザ版で決めたUIは、そのたびに Unity版の公開まで更新して、スマホで確かめられるようにする（ブラウザ版より Unity版で確かめる流れへ寄せる）。
 
 ## 5. 2026-09-28 の整理

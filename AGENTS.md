@@ -7,7 +7,7 @@
 
 原作者のTRPG体験をもとにした、TRPG × SRPG の融合を目指す自作シミュレーションRPG。
 ダークファンタジー世界観。主人公はアルケー（13歳の少年・百年戦争編）。
-GitHub Pagesで公開中: https://yuu3535.github.io/my-srpg/
+GitHub Pagesで公開中: https://yuu3535.github.io/my-srpg/ （ブラウザ版）。Unity版（WebGL）は https://yuu3535.github.io/my-srpg-unity/ （公開専用のリポジトリ。更新は `bash tools/publish_unity_web.sh`。本体のリポジトリに書き出しを入れない）
 
 作品の核・優先する価値・AIの行動原則は `PROJECT_CONSTITUTION.md`（最上位方針）に従う。
 
