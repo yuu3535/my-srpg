@@ -1,0 +1,598 @@
+fileFormatVersion: 2
+guid: ad5ece3b15b7ec445bb1de504c0c6281
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 208872777879668733
+    second: orcus_corridor_distant_town_mountain_a_morning2_loop_0
+  - first:
+      213: 7906793849237625223
+    second: orcus_corridor_distant_town_mountain_a_morning2_loop_1
+  - first:
+      213: -7126477542436978340
+    second: orcus_corridor_distant_town_mountain_a_morning2_loop_2
+  - first:
+      213: 1977250236636431623
+    second: orcus_corridor_distant_town_mountain_a_morning2_loop_3
+  - first:
+      213: -4899088803000289196
+    second: orcus_corridor_distant_town_mountain_a_morning2_loop_4
+  - first:
+      213: 1205584139845371354
+    second: orcus_corridor_distant_town_mountain_a_morning2_loop_5
+  - first:
+      213: -4828922649122932067
+    second: orcus_corridor_distant_town_mountain_a_morning2_loop_6
+  - first:
+      213: 6839090306626396944
+    second: orcus_corridor_distant_town_mountain_a_morning2_loop_7
+  - first:
+      213: -6217037632364521252
+    second: orcus_corridor_distant_town_mountain_a_morning2_loop_8
+  - first:
+      213: 6015643550019419274
+    second: orcus_corridor_distant_town_mountain_a_morning2_loop_9
+  - first:
+      213: 7732860232289413387
+    second: orcus_corridor_distant_town_mountain_a_morning2_loop_10
+  - first:
+      213: -399501605319862442
+    second: orcus_corridor_distant_town_mountain_a_morning2_loop_11
+  - first:
+      213: 2581107670763024371
+    second: orcus_corridor_distant_town_mountain_a_morning2_loop_12
+  - first:
+      213: -8246269445125417772
+    second: orcus_corridor_distant_town_mountain_a_morning2_loop_13
+  - first:
+      213: -4664829672799733190
+    second: orcus_corridor_distant_town_mountain_a_morning2_loop_14
+  - first:
+      213: -6356151691561426910
+    second: orcus_corridor_distant_town_mountain_a_morning2_loop_15
+  - first:
+      213: -7867277892443997028
+    second: orcus_corridor_distant_town_mountain_a_morning2_loop_16
+  - first:
+      213: 373518346773608700
+    second: orcus_corridor_distant_town_mountain_a_morning2_loop_17
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 0
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: orcus_corridor_distant_town_mountain_a_morning2_loop_0
+      rect:
+        serializedVersion: 2
+        x: 129
+        y: 456
+        width: 217
+        height: 67
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: df744c05fa016e200800000000000000
+      internalID: 208872777879668733
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orcus_corridor_distant_town_mountain_a_morning2_loop_1
+      rect:
+        serializedVersion: 2
+        x: 427
+        y: 397
+        width: 177
+        height: 80
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7895d082d139abd60800000000000000
+      internalID: 7906793849237625223
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orcus_corridor_distant_town_mountain_a_morning2_loop_2
+      rect:
+        serializedVersion: 2
+        x: 689
+        y: 398
+        width: 17
+        height: 80
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c51ce3fce6aa91d90800000000000000
+      internalID: -7126477542436978340
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orcus_corridor_distant_town_mountain_a_morning2_loop_3
+      rect:
+        serializedVersion: 2
+        x: 892
+        y: 420
+        width: 36
+        height: 159
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 70585c24d9a907b10800000000000000
+      internalID: 1977250236636431623
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orcus_corridor_distant_town_mountain_a_morning2_loop_4
+      rect:
+        serializedVersion: 2
+        x: 1210
+        y: 391
+        width: 44
+        height: 84
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 458f21ea0b0f20cb0800000000000000
+      internalID: -4899088803000289196
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orcus_corridor_distant_town_mountain_a_morning2_loop_5
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 1365
+        height: 428
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ad5045243681bb010800000000000000
+      internalID: 1205584139845371354
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orcus_corridor_distant_town_mountain_a_morning2_loop_6
+      rect:
+        serializedVersion: 2
+        x: 12
+        y: 353
+        width: 24
+        height: 90
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d9a70337f683cfcb0800000000000000
+      internalID: -4828922649122932067
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orcus_corridor_distant_town_mountain_a_morning2_loop_7
+      rect:
+        serializedVersion: 2
+        x: 898
+        y: 417
+        width: 7
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 013a849166459ee50800000000000000
+      internalID: 6839090306626396944
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orcus_corridor_distant_town_mountain_a_morning2_loop_8
+      rect:
+        serializedVersion: 2
+        x: 916
+        y: 417
+        width: 8
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cd85daf6635a8b9a0800000000000000
+      internalID: -6217037632364521252
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orcus_corridor_distant_town_mountain_a_morning2_loop_9
+      rect:
+        serializedVersion: 2
+        x: 922
+        y: 420
+        width: 6
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a8cf64ebfebdb7350800000000000000
+      internalID: 6015643550019419274
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orcus_corridor_distant_town_mountain_a_morning2_loop_10
+      rect:
+        serializedVersion: 2
+        x: 739
+        y: 367
+        width: 17
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b09ea5b2963a05b60800000000000000
+      internalID: 7732860232289413387
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orcus_corridor_distant_town_mountain_a_morning2_loop_11
+      rect:
+        serializedVersion: 2
+        x: 1230
+        y: 385
+        width: 12
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 65716b7186fa47af0800000000000000
+      internalID: -399501605319862442
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orcus_corridor_distant_town_mountain_a_morning2_loop_12
+      rect:
+        serializedVersion: 2
+        x: 747
+        y: 359
+        width: 12
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3ffadd250cfe1d320800000000000000
+      internalID: 2581107670763024371
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orcus_corridor_distant_town_mountain_a_morning2_loop_13
+      rect:
+        serializedVersion: 2
+        x: 755
+        y: 369
+        width: 6
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4d4542951ad5f8d80800000000000000
+      internalID: -8246269445125417772
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orcus_corridor_distant_town_mountain_a_morning2_loop_14
+      rect:
+        serializedVersion: 2
+        x: 761
+        y: 367
+        width: 8
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a3af11fb022334fb0800000000000000
+      internalID: -4664829672799733190
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orcus_corridor_distant_town_mountain_a_morning2_loop_15
+      rect:
+        serializedVersion: 2
+        x: 924
+        y: 359
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 220abfd76b96ac7a0800000000000000
+      internalID: -6356151691561426910
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orcus_corridor_distant_town_mountain_a_morning2_loop_16
+      rect:
+        serializedVersion: 2
+        x: 292
+        y: 325
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c9c779f7070d1d290800000000000000
+      internalID: -7867277892443997028
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: orcus_corridor_distant_town_mountain_a_morning2_loop_17
+      rect:
+        serializedVersion: 2
+        x: 455
+        y: 319
+        width: 8
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cf8388815f00f2500800000000000000
+      internalID: 373518346773608700
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      orcus_corridor_distant_town_mountain_a_morning2_loop_0: 208872777879668733
+      orcus_corridor_distant_town_mountain_a_morning2_loop_1: 7906793849237625223
+      orcus_corridor_distant_town_mountain_a_morning2_loop_10: 7732860232289413387
+      orcus_corridor_distant_town_mountain_a_morning2_loop_11: -399501605319862442
+      orcus_corridor_distant_town_mountain_a_morning2_loop_12: 2581107670763024371
+      orcus_corridor_distant_town_mountain_a_morning2_loop_13: -8246269445125417772
+      orcus_corridor_distant_town_mountain_a_morning2_loop_14: -4664829672799733190
+      orcus_corridor_distant_town_mountain_a_morning2_loop_15: -6356151691561426910
+      orcus_corridor_distant_town_mountain_a_morning2_loop_16: -7867277892443997028
+      orcus_corridor_distant_town_mountain_a_morning2_loop_17: 373518346773608700
+      orcus_corridor_distant_town_mountain_a_morning2_loop_2: -7126477542436978340
+      orcus_corridor_distant_town_mountain_a_morning2_loop_3: 1977250236636431623
+      orcus_corridor_distant_town_mountain_a_morning2_loop_4: -4899088803000289196
+      orcus_corridor_distant_town_mountain_a_morning2_loop_5: 1205584139845371354
+      orcus_corridor_distant_town_mountain_a_morning2_loop_6: -4828922649122932067
+      orcus_corridor_distant_town_mountain_a_morning2_loop_7: 6839090306626396944
+      orcus_corridor_distant_town_mountain_a_morning2_loop_8: -6217037632364521252
+      orcus_corridor_distant_town_mountain_a_morning2_loop_9: 6015643550019419274
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
