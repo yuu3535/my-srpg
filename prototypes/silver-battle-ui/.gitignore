@@ -1,0 +1,4 @@
+# 取得時のキャッシュ。実際に使うSVGとLICENSEのみを共有する。
+assets/*.tgz
+# 初期の未使用ボタン案。採用中の見本はfilled版を参照する。
+assets/silver-button.png

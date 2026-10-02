@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>白き橋の防衛戦 — 銀細工のUI見本</title>
+  <link rel="stylesheet" href="./style.css?v=20261002-1">
+</head>
+<body>
+  <main class="workshop">
+    <header class="workshop-bar">
+      <div><span class="eyebrow">UI STUDY / 2026.10.02</span><h1>白き橋の防衛戦</h1></div>
+      <nav aria-label="見本の操作">
+        <button id="normal-view" aria-pressed="true">通常画面</button>
+        <button id="forecast-view" aria-pressed="false">予測を試す</button>
+        <button id="reset">最初に戻す</button>
+        <button id="help" aria-label="見本の説明"><img class="icon" src="assets/package/assets/regular/info.svg" alt=""></button>
+      </nav>
+    </header>
+    <div id="viewport" class="game-viewport">
+      <section id="stage" class="game-stage" aria-label="戦闘UIの操作見本" data-state="normal" aria-busy="true">
+        <div id="camera" class="map-layer"><img class="landscape" src="assets/castle-map.png" alt="滝に囲まれた城塞と石造りの橋"><div id="ranges"></div><img id="attack-arc" class="attack-arc" src="assets/attack-arc.png" alt="攻撃の方向" hidden><div id="units"></div></div>
+        <div class="ui-layer">
+          <header id="chapter" class="chapter"><img class="chapter-ornament" src="../../assets/ui/fc_emblem_sword.png" alt=""><div><span class="chapter-number">Chapter 3</span><h2>白き橋の防衛戦</h2><p><span class="condition">勝利条件</span>すべての敵を撃破する</p></div></header>
+          <header id="forecast-title" class="forecast-title" hidden><img src="../../assets/ui/heading_flourish.png" alt=""><h2>戦闘予測</h2></header>
+          <aside id="roster" class="roster" aria-label="ターンと味方一覧">
+            <div class="turn"><small>TURN</small><b>1</b></div>
+            <button id="roster-toggle" class="roster-toggle" aria-controls="roster-list" aria-expanded="true" aria-label="味方一覧を閉じる"><img class="icon" src="assets/package/assets/regular/caret-up.svg" alt=""></button>
+            <div id="roster-list" class="roster-list"></div>
+          </aside>
+          <aside class="terrain silver-panel" aria-label="地形"><div><h3>平地</h3><img class="icon" src="assets/package/assets/regular/crosshair.svg" alt=""></div><p>回避 +0 <span>防御 +0</span></p></aside>
+          <aside id="status" class="status silver-panel" aria-label="選択中のキャラクター"></aside>
+          <div id="command" class="command silver-panel" hidden aria-label="選択ユニットの操作"><button id="open-attack">攻撃</button><button id="close-command">閉じる</button></div>
+          <section id="forecast" class="forecast" role="region" aria-label="戦闘予測" hidden>
+            <div class="forecast-body silver-panel">
+              <img id="attacker-art" class="forecast-art attacker-art" src="assets/arshe-portrait.png" alt="アルシェの肖像">
+              <div id="attacker-stats" class="forecast-stats attacker-stats"></div>
+              <img class="versus-emblem" src="../../assets/ui/fc_emblem_sword.png" alt="交差した剣">
+              <div id="defender-stats" class="forecast-stats defender-stats"></div>
+              <img class="forecast-art defender-art" src="assets/guard-portrait.png" alt="森の番人の肖像">
+            </div>
+            <div class="forecast-actions">
+              <button id="cancel" class="action silver-panel"><img class="icon" src="assets/package/assets/regular/arrow-u-up-left.svg" alt="">キャンセル</button>
+              <button id="confirm" class="action primary silver-panel"><img class="icon" src="assets/package/assets/regular/sword.svg" alt=""><span>攻撃する</span></button>
+              <button id="detail" class="action silver-panel"><img class="icon" src="assets/package/assets/regular/magnifying-glass.svg" alt="">戦闘詳細</button>
+            </div>
+          </section>
+          <div id="notice" class="notice silver-panel" role="status" hidden></div>
+        </div>
+        <div id="loading" class="loading"><div class="loading-sheet"></div><p>戦場を準備しています</p></div>
+      </section>
+    </div>
+    <footer class="workshop-footer"><p id="instruction" role="status">味方を選ぶと人物情報。敵を押すと戦闘予測。</p><small>操作・見た目の試作 / 数値・配置は見本 / 本編・Unity・セーブとは未接続</small></footer>
+  </main>
+  <dialog id="detail-dialog" class="detail-dialog silver-panel" aria-labelledby="detail-heading">
+    <button class="dialog-close" aria-label="閉じる"><img class="icon" src="assets/package/assets/regular/x.svg" alt=""></button><h2 id="detail-heading">交戦の詳細</h2><div id="detail-content"></div><button class="dialog-return">予測に戻る</button>
+  </dialog>
+  <dialog id="help-dialog" class="detail-dialog silver-panel" aria-labelledby="help-heading">
+    <button class="dialog-close" aria-label="閉じる"><img class="icon" src="assets/package/assets/regular/x.svg" alt=""></button><h2 id="help-heading">この見本で試せること</h2>
+    <p>左の山形で味方一覧を開閉。顔または盤面の味方で人物を選択。敵の騎士を押すと予測が開きます。</p><p>青いマスを押すと選択ユニットが移動します。予測をキャンセルすると移動後の位置へ戻ります。「攻撃する」で見本の攻撃を再生し、結果を表示します。</p><p>Escは閉じる、Enter・Spaceはボタン操作。左右キーは味方切り替え、Fは予測、Rはリセット。</p><p>参考画像の人物・数値を使ったUI試作です。正式な能力値・スキル・武器仕様の決定や、本編の戦闘処理への接続は行っていません。新しい素材はこの見本専用です。</p><button class="dialog-return">戦場に戻る</button>
+  </dialog>
+  <script src="model.js?v=20261002-1"></script>
+  <script src="app.js?v=20261002-2"></script>
+</body>
+</html>
