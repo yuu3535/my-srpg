@@ -1,0 +1,15 @@
+{
+ "corridor": "orcus_castle",
+ "folder": "背景/オルクス城回廊横スクロール/採用候補/",
+ "screen": [844, 390],
+ "heroFeetY": 352,
+ "heroHeight": 96,
+ "length": 2532,
+ "layers": [
+  { "name": "空", "kind": "image", "file": "orcus_corridor_sky_clear_a_morning2.png", "speed": 0.03, "x": 0, "height": 390, "bottom": 390, "overlap": 0, "repeat": true, "mirror": false, "opacity": 1 },
+  { "name": "遠景（町と山）", "kind": "image", "file": "orcus_corridor_distant_town_mountain_a_morning2.png", "speed": 0.15, "x": 0, "height": 250, "bottom": 280, "overlap": 0, "repeat": true, "mirror": false, "opacity": 1 },
+  { "name": "庭", "kind": "image", "file": "orcus_corridor_garden_path_a_neutral2.png", "speed": 0.45, "x": 0, "height": 210, "bottom": 350, "overlap": 0, "repeat": true, "mirror": false, "opacity": 1 },
+  { "name": "床（真上からの素材を帯に）", "kind": "floor", "file": "", "speed": 1, "x": 0, "top": 321, "bottom": 390, "tile": 120, "rows": 2, "shade": 0.5 },
+  { "name": "アーチ", "kind": "image", "file": "orcus_corridor_structure_arch_repeat_a_nofloor.png", "speed": 1, "x": 0, "height": 391, "bottom": 390, "overlap": 39, "repeat": true, "mirror": false, "opacity": 1 }
+ ]
+}

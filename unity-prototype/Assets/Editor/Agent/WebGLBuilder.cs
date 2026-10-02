@@ -38,7 +38,7 @@ namespace Srpg.EditorAgent
                 var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
                 {
                     // 最初は探索（入口の画面 StartMenu で「プロローグから」か「試験の戦闘」を選ぶ。原作者 2026-10-03）
-                    scenes = new[] { "Assets/Scenes/Explore3D.unity", "Assets/Scenes/Battle3D.unity" },
+                    scenes = new[] { "Assets/Scenes/Explore3D.unity", "Assets/Scenes/Battle3D.unity", "Assets/Scenes/Corridor2D.unity" },
                     locationPathName = OutDir,
                     target = BuildTarget.WebGL,
                     options = BuildOptions.None,

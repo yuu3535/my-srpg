@@ -15,6 +15,7 @@ namespace Srpg.Battle
     {
         private const string ExploreScene = "Explore3D";
         private const string TrialScene = "Battle3D";
+        private const string CorridorScene = "Corridor2D";   // 探索の2D横スクロールの試し（2026-10-03）
 
         /// <summary>入口の画面を出している間は、探索を始めない（ExploreController.Start が見る）</summary>
         public static bool Holding { get; private set; }
@@ -34,7 +35,7 @@ namespace Srpg.Battle
         {
             if (Application.isBatchMode) { Holding = false; return; }
             if (scene.name == ExploreScene && !shownOnce) { shownOnce = true; Holding = true; Show(); }
-            else if (scene.name == TrialScene) { Holding = false; AddBackButton(); }
+            else if (scene.name == TrialScene || scene.name == CorridorScene) { Holding = false; AddBackButton(); }
             else Holding = false;
         }
 
@@ -109,20 +110,25 @@ namespace Srpg.Battle
             dim.anchorMin = Vector2.zero;
             dim.anchorMax = Vector2.one;
             dim.gameObject.AddComponent<Image>().color = new Color(0.05f, 0.09f, 0.12f, 1f);
-            Label(root, "自作SRPG", new Vector2(0f, 120f), new Vector2(500f, 40f), 30, HudPalette.Text, font);
-            Label(root, "Unity版の試し（スマホ・ブラウザで遊べる形）", new Vector2(0f, 88f), new Vector2(500f, 20f), 12, HudPalette.Silver, font);
-            SilverButton(root, "プロローグから", "探索 → 訓練の戦闘（人形 → ギュンター）", new Vector2(0f, 28f), font, () =>
+            Label(root, "自作SRPG", new Vector2(0f, 140f), new Vector2(500f, 40f), 30, HudPalette.Text, font);
+            Label(root, "Unity版の試し（スマホ・ブラウザで遊べる形）", new Vector2(0f, 110f), new Vector2(500f, 20f), 12, HudPalette.Silver, font);
+            SilverButton(root, "プロローグから", "探索 → 訓練の戦闘（人形 → ギュンター）", new Vector2(0f, 52f), font, () =>
             {
                 Object.Destroy(canvas.gameObject);
                 Holding = false;
                 Object.FindFirstObjectByType<ExploreController>()?.Begin();
             });
-            SilverButton(root, "試験の戦闘", "森の境（ブラウザ版の試験の戦闘と同じ）", new Vector2(0f, -38f), font, () =>
+            SilverButton(root, "試験の戦闘", "森の境（ブラウザ版の試験の戦闘と同じ）", new Vector2(0f, -10f), font, () =>
             {
                 Holding = false;
                 SceneManager.LoadScene(TrialScene);
             });
-            Label(root, "戻るときは、ページを読み込み直してください", new Vector2(0f, -110f), new Vector2(500f, 18f), 11, HudPalette.Muted, font);
+            SilverButton(root, "回廊（2Dの試し）", "横スクロールの探索の試し（◀ ▶ で歩く）", new Vector2(0f, -72f), font, () =>
+            {
+                Holding = false;
+                SceneManager.LoadScene(CorridorScene);
+            });
+            Label(root, "戻るときは、右下の「最初へ」かページの読み込み直し", new Vector2(0f, -130f), new Vector2(500f, 18f), 11, HudPalette.Muted, font);
         }
 
         /// <summary>試験の戦闘の画面の左下に「最初へ」（入口の画面へ戻る）</summary>
