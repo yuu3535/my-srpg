@@ -23,6 +23,7 @@ mainをpullし、AGENTS.md・PROJECT_CONSTITUTION.md、この文書、`prototype
 - ローカル起動: リポジトリ直下で `py -3.12 -m http.server 8931 --bind 127.0.0.1`。
 - URL: http://127.0.0.1:8931/prototypes/silver-ui-extension/dialogue.html
 - 公開元mainへのpush後、Pages更新後のURL: https://yuu3535.github.io/my-srpg/prototypes/silver-ui-extension/dialogue.html （Unity版URLではない）。
+- 2026-10-03、公開URLの読み込み・透過率変更・自動保存・既定値へ戻すを実際に確認済み。起動用サーバーなしで作者が翌日調整できる。
 - PCでは右側の調整欄をスクロールすると色・コピー・保存まで見られる。狭い画面では調整欄が下へ回るがゲームは横長のまま。
 - `?capture=1` は撮影専用。保存値を無視した初期値を表示し、編集欄を隠す。
 

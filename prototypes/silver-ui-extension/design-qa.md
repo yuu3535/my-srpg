@@ -67,4 +67,10 @@
 
 Implementation checklist: 作者が色・寸法を試す → 設定JSONを共有 → 正式採用の確認 → Unity向け部品と配置へ移植。本編・Unityをこの見本から自動変更しない。
 
+## 公開版の確認
+
+- `f15ac88` をmainへpush後、GitHub Pagesの `pages build and deployment`（run `37063722059`）がsuccessで完了したことを読み取り確認。
+- 公開URLをブラウザで開き、全画像の読込失敗0、透過率30%で下地rgba(11,24,34,0.7)へ変更、自動保存の成功表示、既定値へ戻すを確認。warn/errorなし。
+- 撮影: `dialogue-settings-published.png`。ローカルと公開URLの保存キーの内容はホストが異なるため別々。
+
 final result: passed
