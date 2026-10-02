@@ -109,7 +109,7 @@ namespace Srpg.Battle.Plan
         private static bool Sealed(PlanUnit unit) => unit.statusEffects.Any(e => e.type == "sealed");
         private static int StatusSum(PlanUnit unit, string[] types, int scale = 1) =>
             unit.statusEffects.Where(e => types.Contains(e.type)).Sum(e => e.value * scale);
-        public static bool IsMagic(PlanAction action) => action.kind == "grimoire" || action.kind == "magicArt";
+        public static bool IsMagic(PlanAction action) => action.kind == "grimoire" || action.kind == "magicArt" || action.kind == "core";   // core＝魔核の魔法（基本魔法の威力）
         public static bool IsDamaging(PlanAction action) => !IsMagic(action) || (action.spell != null && DamagingEffects.Contains(action.spell.effectType ?? ""));
 
         private static int WeaponPower(PlanUnit unit) =>
@@ -468,7 +468,7 @@ namespace Srpg.Battle.Plan
             }
 
             // 追撃（速いほうが1回）
-            bool attackerCanFollow = first.kind == "weapon" ? first.artName != "奇襲" : first.kind == "grimoire" && attacker.mp > 0;
+            bool attackerCanFollow = first.kind == "weapon" ? first.artName != "奇襲" : (first.kind == "grimoire" || first.kind == "core") && attacker.mp > 0;
             if (attackerCanFollow && !Sealed(attacker) && Alive(attacker) && Alive(defender) && TrialRules.CanFollowUp(attacker.stats, defender.stats))
             {
                 var followUp = first.kind == "weapon"

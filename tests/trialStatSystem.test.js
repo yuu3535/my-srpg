@@ -12,6 +12,7 @@ const {
     TRIAL_LOADOUT_SLOT_COUNTS,
     trialSkillLoadoutFor,
     trialMagicMenuFor,
+    trialMagicCoresFor,
     TRIAL_CAUSE_ABILITIES,
     TRIAL_PERSONAL_SKILLS,
     trialPhysicalArtsFor,
@@ -164,7 +165,8 @@ assert.deepEqual(trialPhysicalArtsFor("ringholm", 30).map(a => [a.name, a.implem
     [["円舞", true], ["復讐", true]]);
 // 専用戦技（月詠・生命吸収）は攻撃コマンドではなく戦技コマンドに出す
 assert.deepEqual(trialSpecialArtsFor("ringholm", 45).map(a => [a.name, a.radius, a.percent]), [["月詠", 5, 20]]);
-assert.deepEqual(trialSpecialArtsFor("albas", 45), []);   // 既定の4枠（習得順）には入っていない
+// 破壊・加速が魔核になり（2026-10-02）、アルバスの戦技は回復・生命吸収だけなので、既定の4枠に入る
+assert.deepEqual(trialSpecialArtsFor("albas", 45).map(a => a.name), ["生命吸収"]);
 assert.deepEqual(trialSpecialArtsFor("albas", 45, { combatArts: ["破壊", "回復", "加速", "生命吸収"] }).map(a => [a.name, a.drain]), [["生命吸収", true]]);
 assert.deepEqual(trialSpecialArtsFor("ringholm", 30), []);
 assert.deepEqual(trialPhysicalArtsFor("arshe", 25).map(a => a.name), ["両断"]);
@@ -198,11 +200,21 @@ assert.equal(guardLoadout.personal, null);
 assert.equal(guardLoadout.causeSkills.length, 3);
 assert.equal(guardLoadout.combatArts.length, 4);
 
-// 魔法コマンド: セット中の魔法戦技 → 魔導書の順。物理戦技は出さない
+// 魔法コマンド: 魔核 → セット中の魔法戦技 → 杖の順。物理戦技は出さない（魔核は 2026-10-02 の兵種表「初期装備魔核」）
 assert.deepEqual(trialMagicMenuFor("albas", 30).map(m => [m.name, m.spell, m.source]),
-    [["破壊", "破壊", "戦技"], ["回復", "治癒", "戦技"], ["加速", "加速", "戦技"]]);
-assert.deepEqual(trialMagicMenuFor("ringholm", 30, null, books("ringholm")).map(m => m.name), ["召喚「ヒトダマ」", "火の杖"]);
-assert.deepEqual(trialMagicMenuFor("young_karima", 25, null, books("young_karima")).map(m => m.name), ["結界", "破壊", "治癒の杖"]);
+    [["治癒", "治癒", "魔核"], ["破壊", "破壊", "魔核"], ["結界", "結界", "魔核"], ["回復", "治癒", "戦技"]]);
+assert.deepEqual(trialMagicMenuFor("ringholm", 30, null, books("ringholm")).map(m => m.name), ["火", "破壊", "召喚「ヒトダマ」", "火の杖"]);
+assert.deepEqual(trialMagicMenuFor("young_karima", 25, null, books("young_karima")).map(m => m.name), ["火", "結界", "治癒の杖"]);
+// 魔核: 最初の魔核（★＝一族の魔核）と、因果Lvで目覚める上位魔核
+assert.deepEqual(trialMagicCoresFor("ringholm", 1).map(c => [c.name, c.clan]), [["火", true], ["破壊", false]]);
+assert.deepEqual(trialMagicCoresFor("albas", 34).map(c => c.name), ["治癒", "破壊", "結界"]);
+assert.deepEqual(trialMagicCoresFor("albas", 35).map(c => [c.name, c.level]), [["治癒", null], ["破壊", null], ["結界", null], ["転移", 35]]);
+assert.deepEqual(trialMagicCoresFor("dylan", 25), []);
+// 魔核+1・魔核に目覚める は、スキル・戦技の枠に入らない
+assert.equal(trialLearnedAbilitiesFor("albas", 45).causeSkills.some(a => a.name === "魔核+1"), false);
+assert.equal(trialLearnedAbilitiesFor("albas", 45).combatArts.some(a => a.name === "転移"), false);
+// 魔核の魔法は基本魔法の威力（3）。杖を装備していれば杖の威力を足す
+{ const T = require("../trialStatSystem.js"); assert.equal(T.trialMagicPower("core", null).power, T.TRIAL_SPELL_BASE_POWER); }
 assert.equal(trialMagicMenuFor("ringholm", 30).some(m => m.source === "魔導書"), false);   // 魔導書を持っていなければ出ない
 assert.equal(trialMagicMenuFor("arshe", 25).some(m => m.name === "両断"), false);
 assert.deepEqual(trialMagicMenuFor("dylan", 25), []);
@@ -229,7 +241,7 @@ assert.equal(trialToggleLoadoutSelection("ringholm", 45, sel, "classUnique", "�
 const noRevenge = trialToggleLoadoutSelection("ringholm", 30, null, "combatArts", "復讐").selection;
 assert.deepEqual(trialPhysicalArtsFor("ringholm", 30, noRevenge).map(a => a.name), ["円舞"]);
 const noHitodama = trialToggleLoadoutSelection("ringholm", 30, null, "combatArts", "召喚「ヒトダマ」").selection;
-assert.deepEqual(trialMagicMenuFor("ringholm", 30, noHitodama, books("ringholm")).map(m => m.name), ["火の杖"]);
+assert.deepEqual(trialMagicMenuFor("ringholm", 30, noHitodama, books("ringholm")).map(m => m.name), ["火", "破壊", "火の杖"]);   // 魔核の魔法は戦技の付け外しと関係なく残る
 
 // 習得に使う因果Lv（味方4人は入れ替えを試せるよう Lv45 相当。能力値の因果Lvは別）
 assert.equal(trialAbilityLevelFor(P.ringholm), 45);

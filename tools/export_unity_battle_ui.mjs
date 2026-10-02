@@ -105,7 +105,7 @@ const result = await evaluate(`(async () => {
         return weapon ? Math.max(1, Number(TRIAL_ITEMS[weapon]?.range || 1)) : 1;
     };
     const magicOption = (unit, spell, label) => ({
-        label, kind: spell.trialItemId ? "grimoire" : "magicArt", artName: spell.trialArtName || "", itemId: spell.trialItemId || "",
+        label, kind: spell.trialItemId ? "grimoire" : spell.trialCore ? "core" : "magicArt", artName: spell.trialArtName || "", itemId: spell.trialItemId || "",
         rangeMin: 1, rangeMax: spell.range, isArt: !!spell.trialArtName, isMagic: true,
         spell: planSpell(spell), equipSpell: spell.trialItemId ? planSpell(trialGrimoireSpell(spell.trialItemId)) : null,
     });
@@ -200,7 +200,7 @@ const result = await evaluate(`(async () => {
         // ブラウザ版の trialCastSupportArt・trialCastHeal と同じ効果を Unity 側で行う
         // 虚像・封印（敵が対象。命中の判定あり）と転移（味方と行き先を選ぶ）も入れる
         const supportable = spell => spell && typeof spell.range === "number"
-            && (["回復", "結界", "加速", "虚像", "封印", "転移"].includes(spell.trialArtName) || ((spell.trialItemId || spell.trialFixed) && spell.effectType === "heal"));
+            && (["回復", "結界", "加速", "虚像", "封印", "転移"].includes(spell.trialArtName) || ((spell.trialItemId || spell.trialFixed || spell.trialCore) && spell.effectType === "heal"));
         getLandscapeMagicEntries(unit).forEach(({ spell, label, sub }) => {
             let supportIndex = -1;
             if (supportable(spell)) {

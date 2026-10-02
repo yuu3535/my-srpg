@@ -1349,7 +1349,7 @@ function trialPhysicalArtUsesLeft(unit, artName) {
 
 /** [trial] 攻撃の指示を計画の行動にする（魔導書の魔法・魔法の戦技・武器と物理の戦技） */
 function trialPlanAction(isMagic, spell, combatArtId) {
-    if (isMagic) return { kind: spell?.trialItemId ? "grimoire" : "magicArt", spell, artName: spell?.trialArtName || null };
+    if (isMagic) return { kind: spell?.trialItemId ? "grimoire" : spell?.trialCore ? "core" : "magicArt", spell, artName: spell?.trialArtName || null };
     const artName = typeof combatArtId === "string" && combatArtId.startsWith("trial:") ? combatArtId.slice(6) : null;
     return { kind: "weapon", artName };
 }
@@ -2037,7 +2037,7 @@ function calculateMagicDamage(caster, target, spell, options = {}) {
     const targetDerivedBonus = getDerivedPassiveStatBonus(target);
     if (isTrialPair(caster, target)) {
         // [trial] max(1, round(魔法の固有の威力 + 魔法武器の威力 + (魔攻 - 魔防) / 2))（採用版 v1.4）
-        const kind = spell?.trialItemId ? "grimoire" : spell?.trialArtName ? "magicArt" : "grimoire";
+        const kind = spell?.trialItemId ? "grimoire" : spell?.trialCore ? "core" : spell?.trialArtName ? "magicArt" : "grimoire";
         const equipped = spell?.trialItemId || caster.trialEquippedItem;
         const trialPower = trialMagicPower(kind, equipped, trialItemKind(equipped) === "grimoire" ? trialStaffDurability(caster, equipped) : undefined).power
             + Number(options.magicPowerBonus || 0);
@@ -3436,7 +3436,8 @@ function getLandscapeMagicEntries(unit, { includeBroken = false } = {}) {
             .filter(item => SPELLS_DATA[item.spell])
             .map(item => {
                 const base = item.itemId ? trialGrimoireSpell(item.itemId) : SPELLS_DATA[item.spell];
-                const artName = item.source === "戦技" ? item.name : null;
+                // 魔核の 結界・虚像・封印・加速・転移 は、今までの補助の戦技と同じ処理を通す（威力の計算だけ魔核＝基本魔法）
+                const artName = item.source === "戦技" || (item.source === "魔核" && TRIAL_CORE_ART_BEHAVIOR.has(item.name)) ? item.name : null;
                 // 戦技の射程: 封印＝魔防÷2（CSVの効果文どおり）、万雷＝直線3マス
                 const artRange = artName === "封印" ? Math.max(1, Math.floor(unit.trialStats.res / 2))
                     : artName === "転移" ? trialTransferRange(unit)
@@ -3446,10 +3447,11 @@ function getLandscapeMagicEntries(unit, { includeBroken = false } = {}) {
                     ...base,
                     ...(artName ? { trialArtName: artName, name: artName } : {}),
                     ...(item.source === "固有" ? { trialFixed: true, name: item.name } : {}),
+                    ...(item.source === "魔核" ? { trialCore: true, name: item.name } : {}),
                     ...(typeof range === "number" ? { range: range + rangeBonus } : {}),
                 };
                 const broken = item.itemId && trialStaffDurability(unit, item.itemId) <= 0;
-                return { id: item.spell, spell, label: item.name, sub: item.source === "魔導書" ? (broken ? "壊れた" : "装備") : "戦技", disabled: !!broken };
+                return { id: item.spell, spell, label: item.name, sub: item.source === "魔導書" ? (broken ? "壊れた" : "装備") : item.source === "魔核" ? "魔核" : "戦技", disabled: !!broken };
             })
             .filter(entry => includeBroken || !entry.disabled);
     }
@@ -4308,7 +4310,7 @@ function executeMagic(caster, spell, target) {
         trialCastSupportArt(caster, spell, target);
         return;
     }
-    if (caster.trialStats && (spell?.trialItemId || spell?.trialFixed) && spell.effectType === "heal") {   // [trial] 治癒の魔核・召喚獣の治癒
+    if (caster.trialStats && (spell?.trialItemId || spell?.trialFixed || spell?.trialCore) && spell.effectType === "heal") {   // [trial] 治癒の魔核・治癒の杖・召喚獣の治癒
         trialCastHeal(caster, spell, target, 1);
         return;
     }

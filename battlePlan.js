@@ -128,7 +128,7 @@ function bpStatusSum(unit, types, scale = 1) {
 }
 
 function bpIsMagic(action) {
-    return action.kind === "grimoire" || action.kind === "magicArt";
+    return action.kind === "grimoire" || action.kind === "magicArt" || action.kind === "core";
 }
 
 function bpIsDamaging(action) {
@@ -153,7 +153,7 @@ function bpMagic(unit, action) {
 
 /**
  * 1撃の命中率・ダメージ・必殺率（乱数は振らない）
- *   action: { kind: "weapon"|"grimoire"|"magicArt", artName, spell, isCounter, isFollowUp }
+ *   action: { kind: "weapon"|"grimoire"|"magicArt"|"core", artName, spell, isCounter, isFollowUp }（core＝魔核の魔法。基本魔法の威力）
  *   env: { units }（周囲の能力の判定に使う全ユニットのスナップショット）
  */
 function bpStrike(attacker, defender, action, env = {}) {
@@ -429,7 +429,7 @@ function bpPlanExchange(attackerSnapshot, defenderSnapshot, action, env = {}, ro
     // 追撃（速いほうが1回）
     const attackerCanFollow = firstAction.kind === "weapon"
         ? firstAction.artName !== "奇襲"
-        : firstAction.kind === "grimoire" && Number(attacker.mp || 0) > 0;
+        : (firstAction.kind === "grimoire" || firstAction.kind === "core") && Number(attacker.mp || 0) > 0;
     if (attackerCanFollow && !bpSealed(attacker) && bpAlive(attacker) && bpAlive(defender) && bpCanFollowUp(attacker.stats, defender.stats)) {
         const followUp = firstAction.kind === "weapon"
             ? { kind: "weapon", isFollowUp: true }

@@ -149,7 +149,7 @@ const result = await evaluate(`(async () => {
                 .forEach(art => options.push({ kind: "weapon", artName: art.name, range: Math.max(1, Number(TRIAL_ITEMS[weaponId]?.range || 1)) }));
         }
         getLandscapeMagicEntries(unit).forEach(({ spell }) => {
-            if (attackable(spell)) options.push({ kind: spell.trialItemId ? "grimoire" : "magicArt", artName: spell.trialArtName || "", spell, range: spell.range });
+            if (attackable(spell)) options.push({ kind: spell.trialItemId ? "grimoire" : spell.trialCore ? "core" : "magicArt", artName: spell.trialArtName || "", spell, range: spell.range });
         });
         const a = units.find(u => u.id === unit.id);
         for (const option of options) {

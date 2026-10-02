@@ -248,13 +248,15 @@ const TRIAL_PERSONAL_SKILLS = Object.freeze(Object.fromEntries(
 /**
  * 因果Lvで習得する能力。type は表示と枠分けに使う。
  *   skill: 因果スキル枠 / art: 戦技枠（artKind に physicalArt・magicArt など）/ exclusive: 兵種固有枠へ入るLv50スキル
+ *   core: 魔核+1（artKind coreSlot）・魔核に目覚める（artKind core）。スキル・戦技の枠には入らない
  */
 const TRIAL_CAUSE_ABILITIES = Object.freeze(Object.fromEntries(
     Object.entries(TRIAL_ABILITY_SOURCE).map(([unitId, name]) => {
         const abilities = TRIAL_ABILITY_DATA?.causeTable?.[name]?.abilities || [];
         return [unitId, Object.freeze(abilities.map(ability => ({
             level: ability.level,
-            type: ability.kind !== "skill" ? "art"
+            type: ability.kind === "coreSlot" || ability.kind === "core" ? "core"   // 魔核+1・魔核に目覚める（枠を使わない）
+                : ability.kind !== "skill" ? "art"
                 : (ability.level === 50 && TRIAL_EXCLUSIVE_CLASS_OWNERS.has(name)) ? "exclusive"
                 : "skill",
             artKind: ability.kind !== "skill" ? ability.kind : null,
@@ -537,7 +539,38 @@ function trialMagicMenuFor(unitId, causeLevel, selection = null, grimoireIds = [
         if (item?.kind === "grimoire") menu.push({ name: item.name, spell: item.spell, source: "魔導書", itemId });
     }
     const fixed = (TRIAL_FIXED_MAGIC[unitId] || []).map(spell => ({ name: spell, spell, source: "固有" }));
-    return fixed.concat(menu);
+    const cores = trialMagicCoresFor(unitId, causeLevel)
+        .map(core => ({ name: core.name, spell: TRIAL_CORE_SPELLS[core.name] || core.name, source: "魔核" }));
+    return fixed.concat(cores, menu);
+}
+
+/**
+ * 魔核（採用版 DAMAGE_WEAPON_ENEMY_RULES §4.2）。最初の魔核（兵種表「初期装備魔核」）と、因果Lvで目覚めた魔核（○○(上位魔核)）。
+ * 魔核の魔法は基本魔法の扱い: 威力＝基本魔法の固有の威力＋装備中の杖の威力（kind "core"）。魔核の枠の付け外しはまだない（持っている魔核は全部使える）
+ */
+const TRIAL_CORE_SOURCE = Object.freeze({
+    ringholm: "リングホルム",
+    arshe: "幼アルシェ",        // 試験のアルシェ（大人）の行はまだないので、幼いころの魔核を使う（仮）
+    young_arshe: "幼アルシェ",
+    albas: "アルバス",
+    albas_rival: "アルバス",
+    young_karima: "幼カリマ",
+});
+// 魔核の名前と魔法データ（spells.js）の名前が違うもの
+const TRIAL_CORE_SPELLS = Object.freeze({ 星: "隕石" });
+// 魔核の魔法のうち、今までの補助の戦技と同じ処理をするもの（結界の装甲・虚像・封印・加速の再行動・転移）
+const TRIAL_CORE_ART_BEHAVIOR = new Set(["結界", "虚像", "封印", "加速", "転移"]);
+
+/** 持っている魔核 [{ name, clan, level }]（level: 目覚めた因果Lv。最初からのものは null） */
+function trialMagicCoresFor(unitId, causeLevel) {
+    const initial = (TRIAL_ABILITY_DATA?.initialCores?.[TRIAL_CORE_SOURCE[unitId]] || [])
+        .map(core => ({ name: core.name, clan: !!core.clan, level: null }));
+    const awakened = (TRIAL_CAUSE_ABILITIES[unitId] || [])
+        .filter(ability => ability.artKind === "core" && ability.level <= Number(causeLevel || 1))
+        .map(ability => ({ name: ability.name, clan: false, level: ability.level }));
+    const cores = [];
+    for (const core of [...initial, ...awakened]) if (!cores.some(c => c.name === core.name)) cores.push(core);
+    return cores;
 }
 
 /** 攻撃コマンドに出す物理の戦技（implemented=false は効果未実装で選べない） */
@@ -867,6 +900,8 @@ if (typeof module !== "undefined") {
         trialGearEquip,
         trialGearTransfer,
         trialMagicMenuFor,
+        trialMagicCoresFor,
+        TRIAL_CORE_ART_BEHAVIOR,
         TRIAL_ABILITY_SOURCE,
         TRIAL_GRIMOIRE_RANGE,
         trialCounterPlan,

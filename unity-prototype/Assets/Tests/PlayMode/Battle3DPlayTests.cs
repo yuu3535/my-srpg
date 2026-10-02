@@ -101,7 +101,7 @@ namespace Srpg.Tests
             }
         }
 
-        /// <summary>補助の魔法（回復・加速）: 届く味方を選んで使う</summary>
+        /// <summary>補助の魔法（回復・結界・転移）: 届く味方を選んで使う</summary>
         [UnityTest]
         public IEnumerator SupportMagic()
         {
@@ -130,15 +130,18 @@ namespace Srpg.Tests
             Assert.Less(albas.plan.mp, mpBefore, "MPを払う");
             Assert.IsTrue(albas.acted, "回復したら行動済み");
 
-            // 加速を自分に: そのまま続けて行動できる
+            // 結界の魔核を自分に: 装甲が付く（2026-10-02 から加速はアルバスの戦技ではなくなった。魔核の結界で確かめる）
             albas.acted = false;
             albas.moved = false;
             controller.Select("albas");
-            var haste = controller.SupportsOf(albas).First(o => o.label == "加速");
-            controller.ChooseSupport(haste);
+            var barrier = controller.SupportsOf(albas).First(o => o.label == "結界");
+            controller.ChooseSupport(barrier);
             controller.TapCell(albas.cell);
-            Assert.IsFalse(albas.acted, "加速を自分に使うと、もう一度行動できる");
-            Assert.AreSame(albas, controller.Selected);
+            Assert.IsTrue(albas.plan.statusEffects.Any(e => e.type == "barrier"), "結界の装甲が付く");
+            Assert.IsTrue(albas.acted, "結界を使ったら行動済み");
+            albas.acted = false;
+            albas.moved = false;
+            controller.Select("albas");
 
             // 転移: 味方を選んで、空いているマスへ移す
             var transfer = controller.SupportsOf(albas).First(o => o.label == "転移");
