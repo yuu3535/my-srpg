@@ -1139,6 +1139,8 @@ namespace Srpg.Battle
             rightBust = Bust(panel, "BustRight", true);
             leftSide = Side(panel, "SideLeft", 168);
             rightSide = Side(panel, "SideRight", 168);
+            // 枠の線を肖像の上に重ねる（肖像が枠の中から立ち上がって見えるように）
+            panel.Find("Frame").SetAsLastSibling();
             var emblem = NewRect("Emblem", panel);
             emblem.anchorMin = emblem.anchorMax = new Vector2(0.5f, 1f);
             emblem.pivot = new Vector2(0.5f, 1f);
@@ -1213,7 +1215,8 @@ namespace Srpg.Battle
             var box = NewRect(name, panel);
             box.anchorMin = box.anchorMax = new Vector2(0.5f, 0f);
             box.pivot = new Vector2(mirrored ? 0f : 1f, 0f);
-            box.anchoredPosition = new Vector2(mirrored ? 198f + 4f : -(198f + 4f), 0f);   // 数値の欄にかからない（原作者 2026-10-03）
+            // 数値の欄にかからない。下は帯の内側（枠の太さ 10）で切る（原作者 2026-10-03: 帯に貼り付けた感をなくす）
+            box.anchoredPosition = new Vector2(mirrored ? 198f + 4f : -(198f + 4f), 10f);
             box.sizeDelta = new Vector2(175f, 149f);
             var image = NewRect("Image", box).gameObject.AddComponent<RawImage>();
             Stretch(image.rectTransform);

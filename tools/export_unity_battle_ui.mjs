@@ -136,7 +136,7 @@ const result = await evaluate(`(async () => {
         : { label: o.label === "攻撃" ? "通常攻撃" : o.label, kind: "weapon", artName: o.action.artName || "", itemId: "", rangeMin: 1, rangeMax: o.range, isArt: !!o.isArt, isMagic: false, spell: null, equipSpell: null });
 
     // カードの顔: 見えている範囲を切り抜き、右・下・左の端を透明へ溶かした絵（ブラウザ版 .lcPortrait の mask と同じ）
-    // 戦闘予測の肖像（銀細工のUI 第4段）: 175×149 の箱の切り抜き。内側の端と上を薄くする（ブラウザ版の mask と同じ）
+    // 戦闘予測の肖像（銀細工のUI 第4段）: 175×149 の箱の切り抜き。左右の端を薄くする（ブラウザ版の mask と同じ）
     const bustFace = (im, uv) => {
         const W = 350, H = 298;
         const c = document.createElement("canvas"); c.width = W; c.height = H;
@@ -148,9 +148,7 @@ const result = await evaluate(`(async () => {
         const h = g.createLinearGradient(0, 0, W, 0);
         h.addColorStop(0, "rgba(0,0,0,0)"); h.addColorStop(0.2, "#000"); h.addColorStop(0.72, "#000"); h.addColorStop(1, "rgba(0,0,0,0)");   // 外側も薄く（2026-10-03）
         g.fillStyle = h; g.fillRect(0, 0, W, H);
-        const v = g.createLinearGradient(0, 0, 0, H);
-        v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(0.14, "#000"); v.addColorStop(1, "#000");
-        g.fillStyle = v; g.fillRect(0, 0, W, H);
+        // 頭の上は薄くしない（原作者 2026-10-03: 見本どおり、そのまま帯の上へ）
         return c.toDataURL("image/png").split(",")[1];
     };
     const cardFace = (im, uv) => {
