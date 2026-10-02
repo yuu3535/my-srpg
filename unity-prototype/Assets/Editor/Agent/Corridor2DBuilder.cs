@@ -43,7 +43,7 @@ namespace Srpg.EditorAgent
                     importer.textureType = TextureImporterType.Default;
                     importer.mipmapEnabled = false;
                     importer.alphaIsTransparency = true;
-                    importer.wrapMode = TextureWrapMode.Clamp;
+                    importer.wrapMode = path.Contains("floor") ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;   // 床はくり返す
                     importer.maxTextureSize = 2048;
                     importer.textureCompression = TextureImporterCompression.Compressed;
                     importer.SaveAndReimport();

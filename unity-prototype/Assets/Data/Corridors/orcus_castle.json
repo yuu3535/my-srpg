@@ -23,28 +23,15 @@
    "opacity": 1
   },
   {
-   "name": "遠景（町と山・つながるように加工）",
+   "name": "遠景（町と山。右の端に3枚目を反転して重ねた・原作者の方法）",
    "kind": "image",
-   "file": "orcus_corridor_distant_town_mountain_a_morning2_loop.png",
+   "file": "orcus_corridor_distant_town_mountain_a_morning2_mirror.png",
    "speed": 0.15,
    "x": 0,
    "height": 250,
    "bottom": 280,
    "overlap": 0,
    "repeat": true,
-   "mirror": false,
-   "opacity": 1
-  },
-  {
-   "name": "遠景のお城（1つだけ）",
-   "kind": "image",
-   "file": "orcus_corridor_distant_town_mountain_a_morning2_castle.png",
-   "speed": 0.15,
-   "x": 420,
-   "height": 250,
-   "bottom": 280,
-   "overlap": 0,
-   "repeat": false,
    "mirror": false,
    "opacity": 1
   },
@@ -64,7 +51,7 @@
   {
    "name": "床（真上からの素材を帯に）",
    "kind": "floor",
-   "file": "",
+   "file": "orcus_corridor_floor_stone_a_top_seamless.png",
    "speed": 1,
    "x": 0,
    "top": 321,

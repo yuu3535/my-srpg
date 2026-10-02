@@ -80,7 +80,7 @@
   <div id="layers"></div>
 </main>
 <script>
-const STORE = "srpg.corridorLayers.v2";   // v2: 遠景をつながる形に分けた（前の値は使わない）
+const STORE = "srpg.corridorLayers.v3";   // v2: 遠景をつながる形に分けた（前の値は使わない）
 const $ = id => document.getElementById(id);
 let files = [];
 let layers = [];
@@ -88,11 +88,10 @@ let layers = [];
 // はじめの値（総合担当が仮に重ねた形。2026-10-03）
 const DEFAULTS = [
   { name: "空", file: "orcus_corridor_sky_clear_a_morning2.png", kind: "image", height: 390, bottom: 390, x: 0, overlap: 0, speed: 0.03, repeat: true, mirror: false, opacity: 1, on: true },
-  // 遠景は左の端でお城が切れていて、くり返すと断崖に見えた → お城を切り離し、残りを tools/make_seamless.py でつながる形に（2026-10-03）
-  { name: "遠景（町と山・つながるように加工）", file: "orcus_corridor_distant_town_mountain_a_morning2_loop.png", kind: "image", height: 250, bottom: 280, x: 0, overlap: 0, speed: 0.15, repeat: true, mirror: false, opacity: 1, on: true },
-  { name: "遠景のお城（1つだけ）", file: "orcus_corridor_distant_town_mountain_a_morning2_castle.png", kind: "image", height: 250, bottom: 280, x: 420, overlap: 0, speed: 0.15, repeat: false, mirror: false, opacity: 1, on: true },
+  // 遠景: 右の端に morning3 を左右反転して重ね、くり返しの継ぎ目でお城がつながるように（原作者の方法 2026-10-03）
+  { name: "遠景（町と山）", file: "orcus_corridor_distant_town_mountain_a_morning2_mirror.png", kind: "image", height: 250, bottom: 280, x: 0, overlap: 0, speed: 0.15, repeat: true, mirror: false, opacity: 1, on: true },
   { name: "庭", file: "orcus_corridor_garden_path_a_neutral2.png", kind: "image", height: 210, bottom: 350, x: 0, overlap: 0, speed: 0.45, repeat: true, mirror: false, opacity: 1, on: true },
-  { name: "床（真上からの素材を帯に）", file: "", kind: "floor", top: 321, bottom: 390, tile: 120, rows: 2, x: 0, speed: 1, shade: 0.5, on: true },
+  { name: "床（真上からの素材を帯に）", file: "orcus_corridor_floor_stone_a_top_seamless.png", kind: "floor", top: 321, bottom: 390, tile: 120, rows: 2, x: 0, speed: 1, shade: 0.5, on: true },
   { name: "アーチ", file: "orcus_corridor_structure_arch_repeat_a_nofloor.png", kind: "image", height: 391, bottom: 390, x: 0, overlap: 39, speed: 1, repeat: true, mirror: false, opacity: 1, on: true },
   { name: "旗", file: "orcus_corridor_prop_banner_royal_a_neutral.png", kind: "image", height: 150, bottom: 300, x: 520, overlap: 0, speed: 1, repeat: false, mirror: false, opacity: 1, on: false },
 ];
