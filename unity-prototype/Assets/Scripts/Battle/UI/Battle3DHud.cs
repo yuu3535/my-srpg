@@ -85,17 +85,24 @@ namespace Srpg.Battle
 
         // 2段目
         private RectTransform overlayRoot, topStrip, roster, terrainPanel;
-        // 味方一覧を閉じる・開くつまみ（原作者 2026-10-02: 一覧が画面を占めて邪魔なときがある）。開け閉めは覚えておく
-        private RectTransform rosterToggle;
-        private Text rosterToggleText;
+        // 味方一覧の開け閉め（原作者 2026-10-02: 一覧が画面を占めて邪魔なときがある）。TURN の下の山形で開け閉めし、覚えておく
+        private RectTransform rosterChevron;
+        private Text rosterDecl;
         private const string RosterPref = "srpg.rosterCollapsed";
         private static bool RosterCollapsed
         {
             get => PlayerPrefs.GetInt(RosterPref, 0) == 1;
             set { PlayerPrefs.SetInt(RosterPref, value ? 1 : 0); PlayerPrefs.Save(); }
         }
-        private Text phaseEn, phaseJa, turnValue, terrainName, terrainNote;
-        private RectTransform turnGroup;
+        private Text turnValue, terrainName, terrainNote;
+        // フェーズ切替の演出（ブラウザ版 showPhaseBanner と同じ見た目・同じ長さ 1.65秒）
+        private RectTransform bannerRoot, bannerVeil, bannerRail, bannerCopy;
+        private Text bannerEyebrow, bannerTitle, bannerSub;
+        private Image bannerVeilImage, bannerRailLeft, bannerRailRight, bannerDiamond, bannerTopLine, bannerBottomLine;
+        private CanvasGroup bannerVeilGroup, bannerRailGroup, bannerCopyGroup;
+        private float bannerStart = -1f;
+        private string bannerShownKey;
+        private const float BannerSeconds = 1.65f;
 
         // 戦況の画面（原作者 2026-09-27: 勝利条件・敗北条件・ターン・軍の数・マップ表をここにまとめる）
         private RectTransform statusRoot, statusMapArea, statusMapPanel;
@@ -104,7 +111,6 @@ namespace Srpg.Battle
         private readonly List<GameObject> statusMarks = new List<GameObject>();
         private bool statusOpen, openedAtStart;
         public bool StatusOpen => statusOpen;
-        private Image phaseEdge;
         private Vector2Int? shownTerrainCell;
         private readonly List<RosterSlot> rosterSlots = new List<RosterSlot>();
         private readonly Dictionary<string, UnitOverlay> overlays = new Dictionary<string, UnitOverlay>();
@@ -113,8 +119,9 @@ namespace Srpg.Battle
         private class RosterSlot
         {
             public string id;
+            public RectTransform root;
             public RawImage face;
-            public Image frame, hpFill;
+            public Image frame, hpFill;   // frame: 顔の枠の線（選んでいる味方は明るい青）
             public Text done;
         }
 
@@ -167,6 +174,7 @@ namespace Srpg.Battle
             }
             ApplySafeArea();
             Refresh();
+            UpdatePhaseBanner(Time.unscaledTime);
             UpdateOverlays();
             UpdateTerrain();
         }
@@ -215,7 +223,6 @@ namespace Srpg.Battle
 
             BuildTopStrip();
             BuildRoster();
-            BuildRosterToggle();
             BuildTerrainPanel();
             BuildUnitCard();
             BuildWeaponCard();
@@ -224,6 +231,8 @@ namespace Srpg.Battle
             BuildGuide();
             BuildForecast();
             BuildStatus();
+            BuildPhaseBanner();
+            bannerShownKey = null;
 
             if (Application.isPlaying && EventSystem.current == null)
             {
@@ -246,48 +255,224 @@ namespace Srpg.Battle
             overlays.Clear();
         }
 
-        /// <summary>上の帯: フェーズ（英字の小見出し＋日本語）・勝利条件・TURN・敵行動予告の数</summary>
+        /// <summary>
+        /// 左上: Chapter・戦場名・勝利条件（銀細工のUI 第2段。原作者 2026-10-02）。常に出ていたフェーズの文字はやめ、
+        /// フェーズの切り替えは演出（BuildPhaseBanner）で見せる。TURN は左の一覧の上へ移した。位置と大きさはブラウザ版と同じ
+        /// </summary>
         private void BuildTopStrip()
         {
-            topStrip = PlaceWide(NewRect("TopStrip", frame), 82, 6, 680, 30);
-            var bg = topStrip.gameObject.AddComponent<Image>();
-            bg.sprite = StopsSprite((0f, Hex("#381547", 0.62f)), (0.46f, Hex("#070811", 0.34f)), (0.72f, Hex("#070811", 0f)), (1f, Hex("#070811", 0f)));
-            bg.raycastTarget = false;
-            Place(NewRect("Rule", topStrip), 0, 29, 680, 1).gameObject.AddComponent<Image>().color = Hex("#c8922a", 0.22f);
-            phaseEdge = Place(NewRect("PhaseEdge", topStrip), 0, 1, 2, 28).gameObject.AddComponent<Image>();
-            phaseEn = Label(topStrip, "ALLY PHASE", 10, 4, 100, 9, 6.5f, Hex("#d6a740", 0.62f));
-            phaseJa = Label(topStrip, "味方フェーズ", 10, 12, 110, 15, 13, Hex("#efd081"), FontStyle.Bold);
-            // ターンは見出しの右に小さく（勝利条件・敵行動予告の数は戦況の画面へ移した。原作者 2026-09-27）
-            turnGroup = Place(NewRect("Turn", topStrip), 116, 0, 80, 30);
-            Place(NewRect("Divider", turnGroup), 0, 6, 1, 18).gameObject.AddComponent<Image>().color = Hex("#c8922a", 0.25f);
-            Label(turnGroup, "TURN", 12, 13, 32, 11, 7.5f, Hex("#e0bd73", 0.5f));
-            turnValue = Label(turnGroup, "TurnValue", 42, 5, 30, 20, 14, Hex("#efd081"), FontStyle.Bold);
+            var data = controller.Data;
+            topStrip = Place(NewRect("Chapter", frame), 17, 13, 300, 60);
+            var ornament = SpriteImage(topStrip, "fc_emblem_sword", 0, 1, 16, 46, true);
+            ornament.color = new Color(0.86f, 0.9f, 0.92f, 0.9f);
+            Shadowed(Label(topStrip, "ChapterNo", 22, 0, 240, 13, 11, HudPalette.Silver)).text = data?.chapter ?? "";
+            Shadowed(Label(topStrip, "Location", 22, 12, 278, 24, 18, HudPalette.Text, FontStyle.Bold)).text =
+                !string.IsNullOrEmpty(data?.location) ? data.location : (!string.IsNullOrEmpty(data?.title) ? data.title : "");
+            var chip = Place(NewRect("VictoryChip", topStrip), 22, 42, 46, 15);
+            chip.gameObject.AddComponent<Image>().color = HudPalette.Condition;
+            Label(chip, "勝利条件", 0, 0, 46, 15, 10, HudPalette.Text, FontStyle.Normal, TextAnchor.MiddleCenter).raycastTarget = false;
+            Shadowed(Label(topStrip, "Victory", 74, 42, 226, 15, 10.5f, HudPalette.Text)).text =
+                string.IsNullOrEmpty(data?.victoryText) ? "すべての敵を撃破する" : data.victoryText;
         }
 
-        /// <summary>左の味方一覧（R1 の枠・A5 の顔枠）。押すとその味方を選ぶ</summary>
+        /// <summary>
+        /// フェーズ切替の演出（ブラウザ版 showPhaseBanner・style.css #phaseBanner と同じ見た目と動き）。
+        /// 画面の真ん中に横長の暗い帯、細い線と菱形、小さな英字＋大きな見出し。1.65秒で出て消える。盤面の操作はさえぎらない
+        /// </summary>
+        private void BuildPhaseBanner()
+        {
+            bannerRoot = NewRect("PhaseBanner", canvas.transform);
+            Stretch(bannerRoot);
+            bannerVeil = NewRect("Veil", bannerRoot);
+            bannerVeil.anchorMin = new Vector2(0f, 0.5f);
+            bannerVeil.anchorMax = new Vector2(1f, 0.5f);
+            bannerVeil.pivot = new Vector2(0.5f, 0.5f);
+            bannerVeil.sizeDelta = new Vector2(0f, 112f);
+            bannerVeilGroup = bannerVeil.gameObject.AddComponent<CanvasGroup>();
+            bannerVeilImage = bannerVeil.gameObject.AddComponent<Image>();
+            bannerTopLine = Place(NewRect("TopLine", bannerVeil), 0, 0, 10, 1).gameObject.AddComponent<Image>();
+            StretchX(bannerTopLine.rectTransform, true);
+            bannerBottomLine = Place(NewRect("BottomLine", bannerVeil), 0, 0, 10, 1).gameObject.AddComponent<Image>();
+            StretchX(bannerBottomLine.rectTransform, false);
+
+            bannerRail = NewRect("Rail", bannerRoot);
+            bannerRail.anchorMin = bannerRail.anchorMax = bannerRail.pivot = new Vector2(0.5f, 0.5f);
+            bannerRail.sizeDelta = new Vector2(620f, 13f);
+            bannerRailGroup = bannerRail.gameObject.AddComponent<CanvasGroup>();
+            bannerRailLeft = Place(NewRect("Left", bannerRail), 0, 6, 291.5f, 1).gameObject.AddComponent<Image>();
+            bannerRailRight = Place(NewRect("Right", bannerRail), 328.5f, 6, 291.5f, 1).gameObject.AddComponent<Image>();
+            var diamond = Place(NewRect("Diamond", bannerRail), 305, 1.5f, 10, 10);
+            diamond.pivot = new Vector2(0.5f, 0.5f);
+            diamond.anchoredPosition = new Vector2(310f, -6.5f);
+            diamond.localEulerAngles = new Vector3(0f, 0f, 45f);
+            diamond.gameObject.AddComponent<Image>().color = Hex("#0b0b14");
+            bannerDiamond = Place(NewRect("Edge", diamond), -1, -1, 12, 12).gameObject.AddComponent<Image>();
+            bannerDiamond.color = new Color(0, 0, 0, 0);
+            bannerDiamond.gameObject.AddComponent<Outline>().effectDistance = new Vector2(1f, -1f);
+
+            bannerCopy = NewRect("Copy", bannerRoot);
+            bannerCopy.anchorMin = bannerCopy.anchorMax = bannerCopy.pivot = new Vector2(0.5f, 0.5f);
+            bannerCopy.sizeDelta = new Vector2(320f, 52f);
+            bannerCopyGroup = bannerCopy.gameObject.AddComponent<CanvasGroup>();
+            bannerEyebrow = Label(bannerCopy, "Eyebrow", 0, 4, 320, 9, 7, Hex("#e0bd73", 0.66f), FontStyle.Normal, TextAnchor.MiddleCenter);
+            bannerTitle = Label(bannerCopy, "Title", 0, 13, 320, 31, 27, Hex("#efd99c"), FontStyle.Bold, TextAnchor.MiddleCenter);
+            var titleShadow = bannerTitle.gameObject.AddComponent<Shadow>();
+            titleShadow.effectColor = new Color(0f, 0f, 0f, 0.92f);
+            titleShadow.effectDistance = new Vector2(0f, -2f);
+            bannerSub = Label(bannerCopy, "Sub", 0, 44, 320, 9, 7, Hex("#e0bd73", 0.66f), FontStyle.Normal, TextAnchor.MiddleCenter);
+            foreach (var g in bannerRoot.GetComponentsInChildren<Graphic>(true)) g.raycastTarget = false;
+            bannerRoot.gameObject.SetActive(false);
+        }
+
+        private static void StretchX(RectTransform rt, bool top)
+        {
+            rt.anchorMin = new Vector2(0f, top ? 1f : 0f);
+            rt.anchorMax = new Vector2(1f, top ? 1f : 0f);
+            rt.pivot = new Vector2(0.5f, top ? 1f : 0f);
+            rt.anchoredPosition = Vector2.zero;
+            rt.sizeDelta = new Vector2(0f, 1f);
+        }
+
+        /// <summary>演出を出す（variant: ally / enemy / victory / defeat）。ブラウザ版の文言と同じ</summary>
+        public void ShowPhaseBanner(string variant)
+        {
+            if (bannerRoot == null) return;
+            int turn = controller != null ? controller.Turn : 1;
+            bool red = variant == "enemy" || variant == "defeat";
+            bannerEyebrow.text = Spaced(variant == "ally" ? $"TURN {turn} / ROYAL COMMAND" : variant == "enemy" ? $"TURN {turn} / HOSTILE FORCE"
+                : variant == "victory" ? "BATTLE COMPLETE" : "BATTLE TERMINATED", " ");
+            bannerTitle.text = Spaced(variant == "ally" ? "味方行動" : variant == "enemy" ? "敵軍行動" : variant == "victory" ? "勝利" : "敗北", "\u2009");
+            bannerSub.text = Spaced(variant == "ally" ? "ALLY PHASE" : variant == "enemy" ? "ENEMY PHASE" : variant == "victory" ? "VICTORY" : "DEFEAT", " ");
+            bannerTitle.color = red ? Hex("#f0b0a2") : Hex("#efd99c");
+            var small = red ? Hex("#e8998b", 0.68f) : Hex("#e0bd73", 0.66f);
+            bannerEyebrow.color = bannerSub.color = small;
+            bannerVeilImage.sprite = red
+                ? StopsSprite((0f, Hex("#120a0e", 0f)), (0.17f, Hex("#12060a", 0.82f)), (0.5f, Hex("#1c070c", 0.96f)), (0.83f, Hex("#12060a", 0.82f)), (1f, Hex("#120a0e", 0f)))
+                : StopsSprite((0f, Hex("#05070e", 0f)), (0.17f, Hex("#05070e", 0.82f)), (0.5f, Hex("#070810", 0.96f)), (0.83f, Hex("#05070e", 0.82f)), (1f, Hex("#05070e", 0f)));
+            bannerTopLine.color = red ? Hex("#d34944", 0.42f) : Hex("#e0b048", 0.30f);
+            bannerBottomLine.color = red ? Hex("#86222a", 0.30f) : Hex("#41c7b3", 0.16f);
+            var rail = red ? Hex("#d34944", 0.68f) : Hex("#e0b048", 0.58f);
+            bannerRailLeft.sprite = StopsSprite((0f, new Color(rail.r, rail.g, rail.b, 0f)), (1f, rail));
+            bannerRailRight.sprite = StopsSprite((0f, rail), (1f, new Color(rail.r, rail.g, rail.b, 0f)));
+            bannerDiamond.GetComponent<Outline>().effectColor = red ? Hex("#e55c52", 0.78f) : Hex("#e0b048", 0.72f);
+            bannerRoot.SetAsLastSibling();
+            bannerRoot.gameObject.SetActive(true);
+            bannerStart = Time.unscaledTime;
+            UpdatePhaseBanner(bannerStart);
+        }
+
+        /// <summary>確認の画像を撮るとき: 演出の途中（t＝0〜1）の形にする</summary>
+        public void PreviewPhaseBanner(string variant, float t)
+        {
+            ShowPhaseBanner(variant);
+            bannerStart = -1000f;
+            ApplyPhaseBanner(t);
+        }
+
+        public void HidePhaseBanner()
+        {
+            if (bannerRoot != null) bannerRoot.gameObject.SetActive(false);
+        }
+
+        private void UpdatePhaseBanner(float now)
+        {
+            if (bannerRoot == null || !bannerRoot.gameObject.activeSelf || bannerStart < -999f) return;
+            float t = (now - bannerStart) / BannerSeconds;
+            if (t >= 1f) { bannerRoot.gameObject.SetActive(false); return; }
+            ApplyPhaseBanner(t);
+        }
+
+        /// <summary>ブラウザ版の phaseVeilIn・phaseRailIn・phaseCopyIn と同じ動き（cubic-bezier(.16,1,.3,1) に近い ease-out）</summary>
+        private void ApplyPhaseBanner(float t)
+        {
+            static float Ease(float x) => 1f - Mathf.Pow(1f - Mathf.Clamp01(x), 3f);
+            // 帯: 0→18% で広がって出る、78% まで止まる、100% で少し縮んで消える
+            float veilScale = t < 0.18f ? Mathf.Lerp(0.18f, 1f, Ease(t / 0.18f)) : t < 0.78f ? 1f : Mathf.Lerp(1f, 0.72f, (t - 0.78f) / 0.22f);
+            float veilAlpha = t < 0.18f ? Ease(t / 0.18f) : t < 0.78f ? 1f : 1f - (t - 0.78f) / 0.22f;
+            bannerVeil.localScale = new Vector3(veilScale, 1f, 1f);
+            bannerVeilGroup.alpha = veilAlpha;
+            float railScale = t < 0.24f ? Mathf.Lerp(0.10f, 1f, Ease(t / 0.24f)) : t < 0.78f ? 1f : Mathf.Lerp(1f, 0.82f, (t - 0.78f) / 0.22f);
+            float railAlpha = t < 0.24f ? Ease(t / 0.24f) : t < 0.78f ? 1f : 1f - (t - 0.78f) / 0.22f;
+            bannerRail.localScale = new Vector3(railScale, 1f, 1f);
+            bannerRailGroup.alpha = railAlpha;
+            // 文字: 14% まで待ち、30% で下から出る、76% まで止まる、100% で少し上へ消える
+            float copyAlpha = t < 0.14f ? 0f : t < 0.30f ? Ease((t - 0.14f) / 0.16f) : t < 0.76f ? 1f : 1f - (t - 0.76f) / 0.24f;
+            float copyY = t < 0.30f ? Mathf.Lerp(-8f, 0f, Ease(Mathf.Max(0f, t - 0.14f) / 0.16f)) : t < 0.76f ? 0f : Mathf.Lerp(0f, 5f, (t - 0.76f) / 0.24f);
+            bannerCopy.anchoredPosition = new Vector2(0f, copyY);
+            bannerCopyGroup.alpha = copyAlpha;
+        }
+
+        /// <summary>字の間をあける（ブラウザ版の letter-spacing の代わり）</summary>
+        private static string Spaced(string text, string gap) => string.Join(gap, text.ToCharArray().Select(c => c.ToString()));
+
+        /// <summary>文字に暗い影（盤面の上でも読めるように。見本の text-shadow）</summary>
+        private static Text Shadowed(Text text)
+        {
+            var shadow = text.gameObject.AddComponent<Shadow>();
+            shadow.effectColor = Hex("#132630", 0.9f);
+            shadow.effectDistance = new Vector2(0.8f, -0.8f);
+            text.raycastTarget = false;
+            return text;
+        }
+
+        // 左の一覧の寸法（ブラウザ版の [silver-left] と同じ。見本 1254×627 を高さで縮めた値）
+        private const float RosterX = 5f, RosterY = 77f, RosterW = 50f, RosterHead = 76f, RosterStep = 38f;
+
+        /// <summary>
+        /// 左: TURN と山形の開け閉め、その下へ顔の一覧（銀細工のUI 第2段）。閉じると TURN と山形だけ。顔を押すとその味方を選ぶ。
+        /// 枠は見本の銀の枠（仮の素材 silver_frame）
+        /// </summary>
         private void BuildRoster()
         {
-            roster = PlaceLeft(NewRect("Roster", frame), 82, 45, 46, 314);
-            Framed(roster, "roster_frame", 4f);
+            roster = Place(NewRect("Roster", frame), RosterX, RosterY, RosterW, RosterHead);
+            var back = NewRect("Back", roster);
+            Stretch(back);
+            back.offsetMin = new Vector2(4f, 4f);
+            back.offsetMax = new Vector2(-4f, -4f);
+            back.gameObject.AddComponent<Image>().color = HudPalette.Panel;
+            var border = NewRect("Frame", roster);
+            Stretch(border);
+            border.offsetMin = new Vector2(-4f, -4f);
+            border.offsetMax = new Vector2(4f, 4f);
+            Framed(border, "silver_frame", 11f).raycastTarget = false;
+            Label(roster, "TURN", 0, 10, RosterW, 10, 9, HudPalette.Silver, FontStyle.Normal, TextAnchor.MiddleCenter).raycastTarget = false;
+            turnValue = Label(roster, "TurnValue", 0, 20, RosterW, 21, 19, HudPalette.Text, FontStyle.Normal, TextAnchor.MiddleCenter);
+            turnValue.raycastTarget = false;
+            rosterDecl = Label(roster, "Decl", 0, 41, RosterW, 9, 7.5f, Hex("#e6a596"), FontStyle.Normal, TextAnchor.MiddleCenter);
+            rosterDecl.raycastTarget = false;
+            // 山形: 開いているとき上向き、閉じているとき下向き。押すところは少し広く
+            var toggle = Place(NewRect("Toggle", roster), 7, 55, 36, 18);
+            toggle.gameObject.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0f);
+            var toggleButton = toggle.gameObject.AddComponent<Button>();
+            toggleButton.transition = Selectable.Transition.None;
+            toggleButton.onClick.AddListener(() => { RosterCollapsed = !RosterCollapsed; Refresh(); });
+            rosterChevron = SpriteImage(toggle, "chevron_up", 10.5f, 1.5f, 15, 15, true).rectTransform;
+            rosterChevron.pivot = new Vector2(0.5f, 0.5f);
+            rosterChevron.anchoredPosition = new Vector2(18f, -9f);
+
             rosterSlots.Clear();
             int i = 0;
             foreach (var unit in controller.Units.Where(u => u.Side == "ally"))
             {
-                var slotRect = Place(NewRect("Roster_" + unit.Id, roster), 5, 12 + i * 40, 36, 36);
+                var slotRect = Place(NewRect("Roster_" + unit.Id, roster), 8, RosterHead + i * RosterStep, 34, 34);
                 var bg = slotRect.gameObject.AddComponent<Image>();
-                bg.color = Hex("#140b1f");
-                var slot = new RosterSlot { id = unit.Id };
-                slot.face = Place(NewRect("Face", slotRect), 2, 2, 32, 32).gameObject.AddComponent<RawImage>();
+                bg.color = Hex("#162331");
+                var slot = new RosterSlot { id = unit.Id, root = slotRect };
+                slot.face = Place(NewRect("Face", slotRect), 1, 1, 32, 32).gameObject.AddComponent<RawImage>();
                 slot.face.raycastTarget = false;
                 uiUnits.TryGetValue(unit.Id, out var ui);
                 SetPortrait(slot.face, ui, ui?.rosterUv);
-                var hpBar = Place(NewRect("Hp", slotRect), 2, 32, 32, 2);
-                hpBar.gameObject.AddComponent<Image>().color = new Color(0, 0, 0, 0.65f);
+                var hpBar = Place(NewRect("Hp", slotRect), 0, 32, 29.6f, 2);
+                hpBar.gameObject.AddComponent<Image>().color = new Color(0, 0, 0, 0.55f);
                 slot.hpFill = NewRect("Fill", hpBar).gameObject.AddComponent<Image>();
-                slot.hpFill.color = Hex("#59e48c");
-                slot.frame = Place(NewRect("Frame", slotRect), 0, 0, 36, 36).gameObject.AddComponent<Image>();
+                slot.hpFill.color = HudPalette.Teal;
+                // 枠の線（1px）。選んでいる味方は明るい青
+                slot.frame = Place(NewRect("Frame", slotRect), 0, 0, 34, 34).gameObject.AddComponent<Image>();
+                slot.frame.color = new Color(0, 0, 0, 0);
                 slot.frame.raycastTarget = false;
-                slot.done = Label(slotRect, "済", 22, 1, 12, 11, 8, Hex("#ecd28e"), FontStyle.Bold);
+                var line = slot.frame.gameObject.AddComponent<Outline>();
+                line.effectDistance = new Vector2(1f, -1f);
+                slot.done = Label(slotRect, "済", 21, 1, 12, 11, 8, HudPalette.Silver, FontStyle.Bold);
                 var button = slotRect.gameObject.AddComponent<Button>();
                 button.transition = Selectable.Transition.None;
                 string id = unit.Id;
@@ -295,35 +480,6 @@ namespace Srpg.Battle
                 rosterSlots.Add(slot);
                 i++;
             }
-        }
-
-        /// <summary>味方一覧のつまみ: 開いているときは一覧の右上のふちに「◀」、閉じているときは左の端に「▶ 味方」</summary>
-        private void BuildRosterToggle()
-        {
-            rosterToggle = NewRect("RosterToggle", frame);
-            var bg = rosterToggle.gameObject.AddComponent<Image>();
-            bg.color = Hex("#1a0f26", 0.92f);
-            var outline = rosterToggle.gameObject.AddComponent<Outline>();
-            outline.effectColor = Hex("#c8922a", 0.75f);
-            outline.effectDistance = new Vector2(0.6f, -0.6f);
-            rosterToggleText = Label(rosterToggle, "Label", 0, 0, 16, 16, 7.5f, Hex("#efd081"), FontStyle.Bold, TextAnchor.MiddleCenter);
-            rosterToggleText.raycastTarget = false;
-            var button = rosterToggle.gameObject.AddComponent<Button>();
-            button.transition = Selectable.Transition.None;
-            button.onClick.AddListener(() => { RosterCollapsed = !RosterCollapsed; Refresh(); });
-            PlaceRosterToggle();
-        }
-
-        private void PlaceRosterToggle()
-        {
-            if (rosterToggle == null) return;
-            bool collapsed = RosterCollapsed;
-            // 開いているとき: 一覧（x82・幅46）の右のふちに小さく。閉じているとき: 一覧のあった場所の左の端に、縦長の「▶ 味方」
-            if (collapsed) PlaceLeft(rosterToggle, 82, 45, 16, 52);
-            else PlaceLeft(rosterToggle, 122, 45, 14, 16);
-            Place(rosterToggleText.rectTransform, 0, 0, collapsed ? 16 : 14, collapsed ? 52 : 16);
-            rosterToggleText.text = collapsed ? "▶\n味\n方" : "◀";
-            rosterToggleText.lineSpacing = 0.9f;
         }
 
         private void SelectFromRoster(string id)
@@ -864,16 +1020,19 @@ namespace Srpg.Battle
             bool ended = phase == Battle3DController.Phase.Victory || phase == Battle3DController.Phase.Defeat;
             bool enemy = phase == Battle3DController.Phase.Enemy;
             // 戦闘予測の間は左上に「戦闘予測」の見出しが出るので、フェーズの見出しを隠す（ブラウザ版と同じ）
-            phaseEn.gameObject.SetActive(!forecastOpen);
-            phaseJa.gameObject.SetActive(!forecastOpen);
-            phaseEdge.gameObject.SetActive(!forecastOpen);
-            turnGroup.gameObject.SetActive(!forecastOpen);
-            phaseEn.text = ended ? "BATTLE END" : enemy ? "ENEMY PHASE" : "ALLY PHASE";
-            phaseJa.text = ended ? "戦闘終了" : enemy ? "敵フェーズ" : "味方フェーズ";
-            phaseEdge.color = enemy ? Hex("#c95a4a") : Hex("#d6a740");
-            phaseJa.color = enemy ? Hex("#f0a27f") : Hex("#efd081");
-            phaseEn.color = enemy ? Hex("#e56e4e", 0.7f) : Hex("#d6a740", 0.62f);
+            // 戦闘予測の間は、左上に予測の見出しが出るので Chapter の欄を隠す（見本・ブラウザ版と同じ）
+            topStrip.gameObject.SetActive(!forecastOpen);
             turnValue.text = controller.Turn.ToString();
+            int declarations = controller.Declarations.Count;
+            rosterDecl.text = declarations > 0 ? $"予告 {declarations}" : "";
+            // フェーズが変わったら演出を出す（ブラウザ版 showPhaseBanner と同じ時: 味方の番・敵の番の始まり、勝ち・負け）
+            string bannerKey = ended ? phase.ToString() : $"{phase}:{controller.Turn}";
+            // 戦況の画面を開いている間は待ち、閉じてから出す。確認の画像を撮るとき（再生していない）は出さない
+            if (bannerKey != bannerShownKey && !statusOpen)
+            {
+                bannerShownKey = bannerKey;
+                if (Application.isPlaying) ShowPhaseBanner(phase == Battle3DController.Phase.Victory ? "victory" : phase == Battle3DController.Phase.Defeat ? "defeat" : enemy ? "enemy" : "ally");
+            }
         }
 
         private void FillRoster(bool forecastOpen)
@@ -884,18 +1043,19 @@ namespace Srpg.Battle
                 BuildRoster();
                 roster.SetSiblingIndex(1);
             }
-            roster.gameObject.SetActive(!forecastOpen && !RosterCollapsed);
-            rosterToggle.gameObject.SetActive(!forecastOpen);
-            PlaceRosterToggle();
-            rosterToggle.SetSiblingIndex(roster.GetSiblingIndex() + 1);   // 一覧のすぐ上（戦況の画面などより下）
+            bool collapsed = RosterCollapsed;
+            roster.gameObject.SetActive(!forecastOpen);
+            roster.sizeDelta = new Vector2(RosterW, collapsed ? RosterHead : RosterHead + rosterSlots.Count * RosterStep + 4f);
+            rosterChevron.localEulerAngles = new Vector3(0f, 0f, collapsed ? 180f : 0f);
             foreach (var slot in rosterSlots)
             {
+                slot.root.gameObject.SetActive(!collapsed);
                 var unit = controller.Units.FirstOrDefault(u => u.Id == slot.id);
                 if (unit == null) continue;
                 bool dead = !unit.Alive;
                 bool done = !dead && unit.acted;
                 bool selectedNow = controller.Selected == unit;
-                slot.frame.sprite = SpriteOf(selectedNow ? "face_frame_selected" : done ? "face_frame_done" : "face_frame");
+                slot.frame.GetComponent<Outline>().effectColor = selectedNow ? Hex("#e0f6fc") : Hex("#62717d");
                 slot.face.color = dead || done ? new Color(0.32f, 0.3f, 0.34f, 1f) : Color.white;
                 slot.done.gameObject.SetActive(done);
                 SetBar(slot.hpFill.rectTransform, unit.plan == null ? 0f : (float)unit.plan.hp / Math.Max(1, unit.plan.maxHp));
@@ -1232,7 +1392,7 @@ namespace Srpg.Battle
             if (!Built) return false;
             if (statusOpen) return true;   // 戦況の画面が開いている間は盤面を押せない
             var cam = canvas.worldCamera;
-            foreach (var rt in new[] { commandList, unitCard, weaponCard, roster, rosterToggle })
+            foreach (var rt in new[] { commandList, unitCard, weaponCard, roster })
                 if (rt != null && rt.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(rt, screenPosition, cam)) return true;
             if (forecastRoot != null && forecastRoot.gameObject.activeInHierarchy)
             {

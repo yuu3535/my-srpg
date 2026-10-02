@@ -18,6 +18,8 @@ namespace Srpg.Battle
         public MapItemData[] mapItems;   // 拾える消耗品
         public string timeOfDay;         // 3Dの盤面の時間帯（Board3DMood: day / dusk）
         public string title;             // 戦況の画面の見出し（なければ「テスト戦闘」）
+        public string chapter;           // 左上の Chapter（例: Prologue）
+        public string location;          // 左上の戦場名（戦う場所・戦闘の名前）
         public string victoryText;       // 勝利条件の文（なければ「すべての敵を撃破する」）
         public string defeatText;        // 敗北条件の文（なければ「味方の全滅」）
         public bool mercy;               // 手加減（訓練）: 味方のHPは1より下がらない（プロローグの訓練。原作者 2026-09-28）

@@ -143,6 +143,8 @@
   ],
   "timeOfDay": "day",
   "title": "",
+  "chapter": "試験",
+  "location": "森の境",
   "victoryText": "",
   "defeatText": "",
   "mercy": false,

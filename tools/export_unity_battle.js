@@ -99,6 +99,8 @@ function main() {
         timeOfDay: def.timeOfDay || "dusk",
         // 戦況の画面の文と、手加減（訓練。味方のHPは1より下がらない）
         title: def.title || "",
+        chapter: def.chapter || "",     // 左上の Chapter と戦場名（銀細工のUI 第2段）
+        location: def.location || "",
         victoryText: def.victoryText || "",
         defeatText: def.defeatText || "",
         mercy: !!def.mercy,

@@ -42,6 +42,8 @@ namespace Srpg.EditorAgent
             ("fc_emblem_sword", Vector4.zero),
             ("heading_flourish", Vector4.zero),
             ("roster_frame", new Vector4(8, 20, 8, 20)),
+            ("silver_frame", new Vector4(224, 224, 224, 224)),   // 銀細工のUIの枠（見本の仮の素材。2026-10-02 原作者了承）
+            ("chevron_up", Vector4.zero),                        // 味方一覧の開け閉めの山形
             ("face_frame", Vector4.zero),
             ("face_frame_selected", Vector4.zero),
             ("face_frame_done", Vector4.zero),
@@ -211,6 +213,12 @@ namespace Srpg.EditorAgent
             camera.targetTexture = wideRt;
             camera.aspect = 1388f / 780f;
             RenderWithHud(hud, camera, wideRt, "Battle3D_ui_idle_16x9");
+            // フェーズ切替の演出（途中の形。ブラウザ版の元の演出を移したもの）
+            hud.PreviewPhaseBanner("ally", 0.5f);
+            RenderWithHud(hud, camera, wideRt, "Battle3D_ui_phase_banner");
+            hud.PreviewPhaseBanner("enemy", 0.5f);
+            RenderWithHud(hud, camera, wideRt, "Battle3D_ui_phase_banner_enemy");
+            hud.HidePhaseBanner();
             camera.targetTexture = rt;
             camera.aspect = (float)Board3DTestBuilder.PreviewWidth / Board3DTestBuilder.PreviewHeight;
             wideRt.Release();

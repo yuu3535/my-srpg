@@ -121,6 +121,8 @@
   ],
   "timeOfDay": "morning",
   "title": "訓練",
+  "chapter": "Prologue",
+  "location": "オルクス魔王城 鍛錬場",
   "victoryText": "訓練人形を倒し、ギュンターから一本取る（HPを0にする）",
   "defeatText": "なし（訓練。ギュンターは寸止めする）",
   "mercy": true,
