@@ -7,7 +7,7 @@
 ## グローバル設定より本プロジェクトを優先
 
 - `~/.claude/CLAUDE.md` のフロントエンド指針（React / Next.js / Tailwind / Framer Motion の前提、紫系配色の禁止、セリフ体の禁止、Inter禁止、カード・余白の既定値など）は本プロジェクトに適用しない。
-- 本プロジェクトはビルドなしのVanilla JS構成で、UIは `PROJECT_CONSTITUTION.md` の「UIの意匠基準」（黒紫・紫の帯・金の細罫線・明朝体、ヴァイオレット×ゴールド×アンバー）に従う。
+- 本プロジェクトはビルドなしのVanilla JS構成で、UIは `PROJECT_CONSTITUTION.md` の「UIの優先順位」（2026-10-02 更新。黒紫・金はオルクスの色で、UI全体の固定色ではない）に従う。戦闘UIの基準は `docs/10-design/ui/SILVER_BATTLE_UI_DIRECTION_2026-10-02.md`。
 
 ## 実行環境の注意
 
