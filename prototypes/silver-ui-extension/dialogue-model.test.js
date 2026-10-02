@@ -1,0 +1,14 @@
+'use strict';
+const assert = require('node:assert/strict');
+const model = require('./dialogue-model.js');
+const initial = model.makeState();
+assert.equal(initial.index, 0);
+const next = model.advance(initial);
+assert.equal(next.index, 1);
+assert.deepEqual(initial.entries, [0]);
+assert.deepEqual(next.entries, [0, 1]);
+assert.equal(model.advance(model.advance(next)).index, 0);
+assert.equal(model.choose(next, 2).index, 2);
+assert.throws(() => model.choose(next, 99), RangeError);
+assert.equal(model.lines[0].text, '（携帯端末の音）');
+console.log('dialogue-model: all tests passed');
