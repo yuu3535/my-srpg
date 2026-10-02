@@ -61,13 +61,20 @@ namespace Srpg.Battle
         private RectTransform frame;
 
         // 部品
-        private RectTransform unitCard, weaponCard, commandList, hintBar, forecastRoot;
-        private RawImage cardPortrait;
-        private Text cardName, cardLevel, cardClass, cardMove, cardHpValue, cardMpValue;
-        private Image cardHpFill, cardMpFill, cardFrame;
-        private Image weaponIcon;
-        private Text weaponName;
-        private Text[] weaponValues;
+        private RectTransform commandList, hintBar, forecastRoot;
+        // 右の人物欄（銀細工のUI 第3段。2026-10-02）。行動を選ぶ間はコマンドと入れ替える（panelMode）
+        private RectTransform personPanel, personIconRow, personAct, personSkillRow;
+        private RawImage personFace;
+        private Text personName, personLevel, personClass, personHp, personMp, personMove, personRange, personState, personWeapon, personDurability;
+        private Text personSkillName, personSkillDesc;
+        private Image personWeaponIcon, personHpFill, personMpFill;
+        private readonly Text[] personStats = new Text[6];
+        private readonly List<GameObject> personIconItems = new List<GameObject>();
+        private RectTransform skillInfo;
+        private Text skillInfoKind, skillInfoName, skillInfoDesc;
+        private RectTransform skillInfoIcon;
+        private string panelMode = "person", panelUnit;
+        private Battle3DController.Mode lastPanelMode;
         private Text hintText;
         private RectTransform guideBar;
         private Text guideText;
@@ -224,13 +231,13 @@ namespace Srpg.Battle
             BuildTopStrip();
             BuildRoster();
             BuildTerrainPanel();
-            BuildUnitCard();
-            BuildWeaponCard();
+            BuildPersonPanel();
             BuildCommandList();
             BuildHint();
             BuildGuide();
             BuildForecast();
             BuildStatus();
+            BuildSkillInfo();
             BuildPhaseBanner();
             bannerShownKey = null;
 
@@ -495,11 +502,12 @@ namespace Srpg.Battle
         /// <summary>右上の地形の欄（原作者の理想の画面）。カーソルのあるマス、なければ選んだキャラのマス</summary>
         private void BuildTerrainPanel()
         {
-            terrainPanel = PlaceRight(NewRect("Terrain", frame), 640, 44, 118, 42);
-            Framed(terrainPanel, "panel_even", 7f);
-            Diamond(terrainPanel, 12, 11, 5, Hex("#c8922a"));
-            terrainName = Label(terrainPanel, "Name", 22, 5, 90, 17, 11, Ivory, FontStyle.Bold);
-            terrainNote = Label(terrainPanel, "Note", 12, 22, 100, 14, 8.5f, Muted);
+            // 銀細工のUI 第3段: 右上に銀の枠。名前と、下に細い線と効果（見本の .terrain を高さで縮めた寸法）
+            terrainPanel = PlaceFromRight(NewRect("Terrain", frame), PanelRight, 8, 128, 44);
+            SilverBox(terrainPanel);
+            terrainName = Label(terrainPanel, "Name", 12, 6, 104, 17, 13, HudPalette.Text);
+            Place(NewRect("Rule", terrainPanel), 12, 24, 104, 1).gameObject.AddComponent<Image>().color = Hex("#7a8c9a");
+            terrainNote = Label(terrainPanel, "Note", 12, 26, 104, 13, 9.5f, HudPalette.Silver);
         }
 
         private Image OverlayMark(string name, string sprite, float w, float h)
@@ -783,63 +791,241 @@ namespace Srpg.Battle
             }
         }
 
-        private void BuildUnitCard()
+        // 右の欄の位置（右端からの距離・上から）。人物欄とコマンドは同じ場所
+        private const float PanelRight = 6f, PanelTop = 58f, PanelW = 184f;
+
+        /// <summary>画面の右端から決める（right＝右端からの距離）</summary>
+        private static RectTransform PlaceFromRight(RectTransform rt, float right, float y, float w, float h)
         {
-            unitCard = PlaceLeft(NewRect("UnitCard", frame), 130, 279, 244, 86);
-            cardFrame = Framed(unitCard, "panel_even", 7f);
-            var face = Place(NewRect("Portrait", unitCard), 7, 7, 62, 72);
-            face.gameObject.AddComponent<RectMask2D>();
-            // 顔の後ろには何も敷かない（透過）。端を透明へ溶かした絵（<id>_card.png。書き出しで作る）を出す（原作者 2026-09-27）
-            cardPortrait = NewRect("Image", face).gameObject.AddComponent<RawImage>();
-            Stretch(cardPortrait.rectTransform);
-            cardName = Label(unitCard, "Name", 77, 9, 110, 19, 13, Ivory, FontStyle.Bold);
-            cardLevel = Label(unitCard, "Level", 180, 13, 49, 12, 8.5f, Muted, anchor: TextAnchor.MiddleRight);
-            Diamond(unitCard, 78, 34, 5, Hex("#c8922a"));
-            cardClass = Label(unitCard, "Class", 88, 28, 80, 14, 9, Gold);
-            cardMove = Label(unitCard, "Move", 160, 29, 69, 12, 8, Hex("#e0bd73", 0.55f), anchor: TextAnchor.MiddleRight);
-            (cardHpFill, cardHpValue) = Gauge(unitCard, "HP", 77, 46, Hex("#3fbf82"), Hex("#59e48c"));
-            (cardMpFill, cardMpValue) = Gauge(unitCard, "MP", 77, 63, Hex("#3d6fd0"), Hex("#5d95f0"));
+            rt.anchorMin = rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot = new Vector2(1f, 1f);
+            rt.anchoredPosition = new Vector2(-right, -y);
+            rt.sizeDelta = new Vector2(w, h);
+            return rt;
         }
 
-        private (Image fill, Text value) Gauge(RectTransform parent, string label, float x, float y, Color from, Color to)
+        /// <summary>銀の枠（仮の素材 silver_frame）とチャコールの下地</summary>
+        private void SilverBox(RectTransform rt)
         {
-            Label(parent, label, x, y, 16, 15, 8, Muted);
-            var bar = Place(NewRect(label + "Bar", parent), x + 20, y + 5, 86, 5);
-            bar.gameObject.AddComponent<Image>().color = new Color(0, 0, 0, 0.6f);
-            Outline(bar, Hex("#e0b048", 0.2f));
-            var fill = NewRect("Fill", bar).gameObject.AddComponent<Image>();
-            fill.rectTransform.anchorMin = Vector2.zero;
-            fill.rectTransform.anchorMax = new Vector2(1f, 1f);
-            fill.rectTransform.offsetMin = fill.rectTransform.offsetMax = Vector2.zero;
-            fill.sprite = GradientSprite(from, to);
-            var value = Label(parent, label + "Value", x + 108, y, 44, 15, 10, Ivory, anchor: TextAnchor.MiddleRight);
-            value.supportRichText = true;
-            return (fill, value);
+            var back = NewRect("Back", rt);
+            Stretch(back);
+            back.offsetMin = new Vector2(4f, 4f);
+            back.offsetMax = new Vector2(-4f, -4f);
+            back.gameObject.AddComponent<Image>().color = HudPalette.Panel;
+            var border = NewRect("Frame", rt);
+            Stretch(border);
+            border.offsetMin = new Vector2(-4f, -4f);
+            border.offsetMax = new Vector2(4f, 4f);
+            Framed(border, "silver_frame", 13f).raycastTarget = false;
         }
 
-        private void BuildWeaponCard()
+        private static bool IsTargetingMode(Battle3DController.Mode mode) =>
+            mode == Battle3DController.Mode.Targeting || mode == Battle3DController.Mode.Support
+            || mode == Battle3DController.Mode.Summon || mode == Battle3DController.Mode.Trade;
+
+        /// <summary>
+        /// 右の人物欄（銀細工のUI 第3段。ブラウザ版 renderSilverPerson と同じ並び・同じ寸法）:
+        /// 顔・名前・Lv・兵種・HP/MP ／ 移動・射程と能力値 ／ 武器 ／ 固有スキル（文）／ 残りのスキル・戦技（アイコン。押すと説明）／ 行動する
+        /// </summary>
+        private void BuildPersonPanel()
         {
-            weaponCard = PlaceLeft(NewRect("WeaponCard", frame), 380, 296, 150, 69);
-            Framed(weaponCard, "panel_even", 7f);
-            var iconBox = Place(NewRect("IconBox", weaponCard), 12, 9, 15, 15);
-            weaponIcon = iconBox.gameObject.AddComponent<Image>();
-            weaponIcon.preserveAspect = true;
-            weaponName = Label(weaponCard, "Name", 32, 7, 106, 19, 11, Gold, FontStyle.Bold);
-            var rule = Place(NewRect("Rule", weaponCard), 12, 27, 126, 1);
-            rule.gameObject.AddComponent<Image>().color = Rule;
-            weaponValues = new Text[4];
-            string[] labels = { "威力", "射程", "命中", "必殺" };
-            for (int i = 0; i < 4; i++)
+            personPanel = PlaceFromRight(NewRect("Person", frame), PanelRight, PanelTop, PanelW, 300);
+            SilverBox(personPanel);
+            var mask = Place(NewRect("FaceMask", personPanel), 4, 4, 76, 98);
+            mask.gameObject.AddComponent<RectMask2D>();
+            personFace = Place(NewRect("Face", mask), 3, 3, 72, 95).gameObject.AddComponent<RawImage>();
+            personFace.raycastTarget = false;
+            personName = Label(personPanel, "Name", 81, 10, 96, 17, 14, HudPalette.Text, FontStyle.Bold);
+            personLevel = Label(personPanel, "Level", 81, 27, 96, 12, 9.5f, HudPalette.Silver, anchor: TextAnchor.MiddleRight);
+            Place(NewRect("JobTop", personPanel), 81, 40, 96, 1).gameObject.AddComponent<Image>().color = Hex("#81939e");
+            personWeaponIcon = Place(NewRect("JobIcon", personPanel), 82, 43, 12, 12).gameObject.AddComponent<Image>();
+            personWeaponIcon.preserveAspect = true;
+            personClass = Label(personPanel, "Class", 97, 41, 80, 15, 9.5f, HudPalette.Text);
+            Place(NewRect("JobBottom", personPanel), 81, 56, 96, 1).gameObject.AddComponent<Image>().color = Hex("#81939e");
+            personHp = Label(personPanel, "Hp", 79, 59, 98, 13, 12.5f, HudPalette.Text, anchor: TextAnchor.MiddleRight);
+            Label(personPanel, "HP", 79, 59, 30, 13, 8.7f, HudPalette.Silver);
+            personHpFill = Meter(personPanel, 79, 73, Hex("#64c6c3"));
+            personMp = Label(personPanel, "Mp", 79, 79, 98, 13, 12.5f, HudPalette.Text, anchor: TextAnchor.MiddleRight);
+            Label(personPanel, "MP", 79, 79, 30, 13, 8.7f, HudPalette.Silver);
+            personMpFill = Meter(personPanel, 79, 93, Hex("#8ba4c8"));
+            Place(NewRect("Rule1", personPanel), 15, 101, 154, 1).gameObject.AddComponent<Image>().color = Hex("#697b87");
+            // 移動・射程と能力値
+            Label(personPanel, "移動", 15, 106, 40, 12, 10.5f, HudPalette.Silver);
+            personMove = Label(personPanel, "Move", 50, 106, 30, 12, 10.5f, HudPalette.Text, anchor: TextAnchor.MiddleRight);
+            Label(personPanel, "射程", 15, 120, 40, 12, 10.5f, HudPalette.Silver);
+            personRange = Label(personPanel, "Range", 40, 120, 40, 12, 10.5f, HudPalette.Text, anchor: TextAnchor.MiddleRight);
+            personState = Label(personPanel, "State", 15, 136, 66, 22, 8.5f, HudPalette.Muted, anchor: TextAnchor.UpperLeft);
+            Place(NewRect("Divider", personPanel), 86, 106, 1, 80).gameObject.AddComponent<Image>().color = Hex("#627a88");
+            string[] names = { "力", "魔攻", "技", "速さ", "防御", "魔防" };
+            for (int i = 0; i < names.Length; i++)
             {
-                float x = 12 + (i % 2) * 66, y = 31 + (i / 2) * 16;
-                Label(weaponCard, labels[i], x, y, 28, 15, 8, Muted);
-                weaponValues[i] = Label(weaponCard, labels[i] + "Value", x + 26, y, 34, 15, 10, Ivory, anchor: TextAnchor.MiddleRight);
+                Label(personPanel, names[i], 94, 106 + i * 13.5f, 40, 12, 10.5f, HudPalette.Silver);
+                personStats[i] = Label(personPanel, "Stat" + i, 129, 106 + i * 13.5f, 40, 12, 10.5f, HudPalette.Text, anchor: TextAnchor.MiddleRight);
             }
+            Place(NewRect("Rule2", personPanel), 15, 189, 154, 1).gameObject.AddComponent<Image>().color = Hex("#81939e");
+            // 武器
+            var weaponIconRect = Place(NewRect("WeaponIcon", personPanel), 15, 195, 13, 13);
+            weaponIconRect.gameObject.AddComponent<Image>().preserveAspect = true;
+            personWeapon = Label(personPanel, "Weapon", 33, 190, 100, 24, 11, HudPalette.Text);
+            personDurability = Label(personPanel, "Durability", 110, 190, 59, 24, 8.5f, HudPalette.Muted, anchor: TextAnchor.MiddleRight);
+            Place(NewRect("Rule3", personPanel), 15, 214, 154, 1).gameObject.AddComponent<Image>().color = Hex("#81939e");
+            // 固有スキル（押すと説明）
+            personSkillRow = Place(NewRect("PersonalSkill", personPanel), 15, 218, 154, 36);
+            personSkillRow.gameObject.AddComponent<Image>().color = new Color(0, 0, 0, 0);
+            personSkillRow.gameObject.AddComponent<Button>().transition = Selectable.Transition.None;
+            personSkillName = Label(personSkillRow, "Name", 30, 0, 124, 13, 11, HudPalette.Text);
+            personSkillDesc = Label(personSkillRow, "Desc", 30, 13, 124, 24, 8.3f, HudPalette.Muted, anchor: TextAnchor.UpperLeft);
+            personSkillName.raycastTarget = personSkillDesc.raycastTarget = false;
+            personSkillDesc.horizontalOverflow = HorizontalWrapMode.Wrap;   // 説明は2行まで折り返す
+            personSkillDesc.verticalOverflow = VerticalWrapMode.Truncate;
+            personSkillDesc.lineSpacing = 0.95f;
+            personIconRow = Place(NewRect("Icons", personPanel), 15, 252, 154, 22);
+            // 行動する（コマンドへ）
+            personAct = Place(NewRect("Act", personPanel), 15, 270, 154, 22);
+            personAct.gameObject.AddComponent<Image>().color = Hex("#183c50", 0.85f);
+            var actLine = personAct.gameObject.AddComponent<Outline>();
+            actLine.effectColor = Hex("#7a989f");
+            actLine.effectDistance = new Vector2(1f, -1f);
+            var actButton = personAct.gameObject.AddComponent<Button>();
+            actButton.transition = Selectable.Transition.None;
+            actButton.onClick.AddListener(() => { panelMode = "commands"; stateKey = null; Refresh(); });
+            var actIcon = Place(NewRect("Icon", personAct), 52, 5, 12, 12).gameObject.AddComponent<Image>();
+            actIcon.sprite = SpriteOf("icon_wait");
+            actIcon.preserveAspect = true;
+            actIcon.raycastTarget = false;
+            Label(personAct, "行動する", 68, 0, 70, 22, 10.5f, HudPalette.Text).raycastTarget = false;
+        }
+
+        /// <summary>細いメーター（HP・MP）</summary>
+        private Image Meter(RectTransform parent, float x, float y, Color color)
+        {
+            var bar = Place(NewRect("Meter", parent), x, y, 98, 4);
+            bar.gameObject.AddComponent<Image>().color = Hex("#46515e");
+            var fill = NewRect("Fill", bar).gameObject.AddComponent<Image>();
+            fill.color = color;
+            return fill;
+        }
+
+        /// <summary>スキル・戦技のアイコン（枠つき。ブラウザ版 abilityIconHtml と同じ: 絵＋枠。絵がなければ枠だけ）</summary>
+        private RectTransform SkillIcon(RectTransform parent, float x, float y, float size, string name, string kind)
+        {
+            var root = Place(NewRect("Skill_" + name, parent), x, y, size, size);
+            var art = Place(NewRect("Art", root), 0, 0, size, size).gameObject.AddComponent<Image>();
+            art.sprite = SpriteOf("skill_" + name);
+            art.preserveAspect = true;
+            art.enabled = art.sprite != null;
+            art.raycastTarget = false;
+            var edge = Place(NewRect("Frame", root), 0, 0, size, size).gameObject.AddComponent<Image>();
+            edge.sprite = SpriteOf("skill_frame_" + (string.IsNullOrEmpty(kind) ? "passive" : kind));
+            edge.preserveAspect = true;
+            edge.enabled = edge.sprite != null;
+            edge.raycastTarget = false;
+            return root;
+        }
+
+        private void FillPerson(Battle3DController.UnitState unit, bool canAct)
+        {
+            uiUnits.TryGetValue(unit.Id, out var ui);
+            var face = ui != null ? portraits.FirstOrDefault(p => p.name == ui.portrait + "_card").texture : null;
+            if (face != null) { personFace.texture = face; personFace.enabled = true; personFace.uvRect = new Rect(0, 0, 1, 1); }
+            else SetPortrait(personFace, ui, ui?.cardUv);
+            personName.text = unit.Name;
+            personLevel.text = ui?.levelLabel ?? "";
+            personClass.text = string.IsNullOrEmpty(ui?.className) ? "―" : ui.className;
+            personWeaponIcon.sprite = WeaponSprite(ui?.weaponType);
+            personWeaponIcon.enabled = personWeaponIcon.sprite != null;
+            int hp = unit.plan?.hp ?? 0, maxHp = Math.Max(1, unit.plan?.maxHp ?? 1);
+            int mp = unit.plan?.mp ?? 0, maxMp = Math.Max(1, ui?.maxMp ?? Math.Max(mp, 1));
+            personHp.text = $"{hp}<size=8><color=#a6b7bd>/{maxHp}</color></size>";
+            personMp.text = $"{mp}<size=8><color=#a6b7bd>/{ui?.maxMp ?? mp}</color></size>";
+            SetBar(personHpFill.rectTransform, (float)hp / maxHp);
+            SetBar(personMpFill.rectTransform, (float)mp / maxMp);
+            personMove.text = unit.source.move.ToString();
+            personRange.text = ui?.weaponRange ?? "―";
+            personState.text = ui?.statusText ?? "";
+            var st = unit.plan?.stats;
+            int[] values = st == null ? null : new[] { st.atk, st.mag, st.tec, st.spd, st.def, st.res };
+            for (int i = 0; i < personStats.Length; i++) personStats[i].text = values == null ? "―" : values[i].ToString();
+            var weaponIconImage = personPanel.Find("WeaponIcon").GetComponent<Image>();
+            weaponIconImage.sprite = WeaponSprite(ui?.weaponType) ?? SpriteOf("icon_attack");
+            personWeapon.text = ui?.weaponName ?? "装備なし";
+            personDurability.text = string.IsNullOrEmpty(ui?.weaponType) ? "反撃できません" : "";
+            string equipped = unit.plan?.equippedItem;
+            if (!string.IsNullOrEmpty(equipped) && BattlePlan.Items.TryGetValue(equipped, out var equippedItem) && equippedItem.kind == "grimoire")
+                personDurability.text = $"耐久 {Battle3DController.StaffDurability(unit, equipped)}/{equippedItem.durability}";
+            // 固有スキル
+            var personal = ui?.personal;
+            bool hasPersonal = personal != null && !string.IsNullOrEmpty(personal.name);
+            personSkillRow.gameObject.SetActive(hasPersonal);
+            foreach (var child in personSkillRow.Cast<Transform>().Where(c => c.name.StartsWith("Skill_")).ToList()) Object.DestroyImmediate(child.gameObject);
+            if (hasPersonal)
+            {
+                SkillIcon(personSkillRow, 0, 3, 24, personal.name, "personal").name = "Skill_icon";
+                personSkillName.text = personal.name;
+                personSkillDesc.text = personal.desc;
+                var button = personSkillRow.GetComponent<Button>();
+                button.onClick.RemoveAllListeners();
+                button.onClick.AddListener(() => OpenSkillInfo(personal));
+            }
+            // 残りのスキル・戦技（アイコン。7つで折り返す）
+            foreach (var item in personIconItems) Object.DestroyImmediate(item);
+            personIconItems.Clear();
+            var skills = ui?.skills ?? Array.Empty<UiSkill>();
+            float rowY = hasPersonal ? 257 : 220;
+            for (int i = 0; i < skills.Length; i++)
+            {
+                var skill = skills[i];
+                var icon = SkillIcon(personPanel, 15 + (i % 7) * 22.5f, rowY + (i / 7) * 23, 21, skill.name, skill.kind);
+                var hit = icon.gameObject.AddComponent<Image>();
+                hit.color = new Color(0, 0, 0, 0);
+                var button = icon.gameObject.AddComponent<Button>();
+                button.transition = Selectable.Transition.None;
+                button.onClick.AddListener(() => OpenSkillInfo(skill));
+                personIconItems.Add(icon.gameObject);
+            }
+            float bottom = rowY + (skills.Length == 0 ? 0 : ((skills.Length - 1) / 7 + 1) * 23);
+            personAct.gameObject.SetActive(canAct);
+            personAct.anchoredPosition = new Vector2(15f, -(bottom + 2f));
+            personPanel.sizeDelta = new Vector2(PanelW, bottom + (canAct ? 30f : 6f) + 4f);
+        }
+
+        /// <summary>スキルの説明の窓（人物欄のアイコンを押したとき）。どこを押しても閉じる</summary>
+        private void BuildSkillInfo()
+        {
+            skillInfo = NewRect("SkillInfo", canvas.transform);
+            Stretch(skillInfo);
+            skillInfo.gameObject.AddComponent<Image>().color = new Color(0.02f, 0.04f, 0.06f, 0.45f);
+            var close = skillInfo.gameObject.AddComponent<Button>();
+            close.transition = Selectable.Transition.None;
+            close.onClick.AddListener(() => skillInfo.gameObject.SetActive(false));
+            var card = NewRect("Card", skillInfo);
+            card.anchorMin = card.anchorMax = card.pivot = new Vector2(0.5f, 0.5f);
+            card.sizeDelta = new Vector2(270f, 70f);
+            SilverBox(card);
+            skillInfoIcon = Place(NewRect("IconSlot", card), 12, 14, 34, 34);
+            skillInfoKind = Label(card, "Kind", 56, 8, 200, 11, 8.5f, HudPalette.Teal);
+            skillInfoName = Label(card, "Name", 56, 18, 200, 16, 13, HudPalette.Text, FontStyle.Bold);
+            skillInfoDesc = Label(card, "Desc", 56, 35, 204, 30, 10, HudPalette.Silver, anchor: TextAnchor.UpperLeft);
+            skillInfoDesc.horizontalOverflow = HorizontalWrapMode.Wrap;
+            foreach (var g in card.GetComponentsInChildren<Graphic>(true)) g.raycastTarget = false;
+            skillInfo.gameObject.SetActive(false);
+        }
+
+        public void OpenSkillInfo(UiSkill skill)
+        {
+            if (skillInfo == null || skill == null) return;
+            foreach (var child in skillInfoIcon.Cast<Transform>().ToList()) Object.DestroyImmediate(child.gameObject);
+            SkillIcon(skillInfoIcon, 0, 0, 34, skill.name, skill.kind);
+            skillInfoKind.text = skill.kind == "personal" ? "個人スキル" : skill.kind == "active" ? "戦技" : "スキル";
+            skillInfoName.text = skill.name;
+            skillInfoDesc.text = string.IsNullOrEmpty(skill.desc) ? "説明はまだありません" : skill.desc;
+            skillInfo.SetAsLastSibling();
+            skillInfo.gameObject.SetActive(true);
         }
 
         private void BuildCommandList()
         {
-            commandList = PlaceRight(NewRect("Commands", frame), 640, 158, 118, 75);
+            commandList = PlaceFromRight(NewRect("Commands", frame), PanelRight, PanelTop, 118, 75);
             Framed(commandList, "panel_even", 7f);
         }
 
@@ -997,13 +1183,21 @@ namespace Srpg.Battle
                 || (controller.CurrentMode == Battle3DController.Mode.Forecast && controller.CurrentForecast != null && sel != null && tgt != null);
             forecastRoot.gameObject.SetActive(forecastOpen);
             if (!forecastOpen) fcDetailBox.gameObject.SetActive(false);
-            bool showCard = sel != null && !forecastOpen;
-            unitCard.gameObject.SetActive(showCard);
-            weaponCard.gameObject.SetActive(showCard);
-            if (showCard) FillCard(sel);
+            // 右の欄: 人物欄かコマンドか（ブラウザ版 lsShowCommands と同じ決まり）。味方を選んだらまず人物欄（「行動する」でコマンド）、
+            // 移動したら自動でコマンド、相手を選ぶ間・戦技などの一覧もコマンド。コマンドの「人物」で人物欄へ戻る
+            var panelModeNow = controller.CurrentMode;
+            bool canAct = sel != null && sel.Side == "ally" && !sel.acted && controller.CurrentPhase == Battle3DController.Phase.Ally
+                && (panelModeNow == Battle3DController.Mode.Moving || panelModeNow == Battle3DController.Mode.Acting);
+            if (sel?.Id != panelUnit) { panelUnit = sel?.Id; panelMode = "person"; }
+            if (panelModeNow == Battle3DController.Mode.Acting && lastPanelMode != Battle3DController.Mode.Acting) panelMode = "commands";
+            lastPanelMode = panelModeNow;
+            bool showPerson = sel != null && !forecastOpen && (canAct ? panelMode == "person" && subList == null : !IsTargetingMode(panelModeNow));
+            personPanel.gameObject.SetActive(showPerson);
+            if (showPerson) FillPerson(sel, canAct);
             if (preview != null) FillForecast(preview.attacker, preview.target, preview.forecast, preview.option, true);
             else if (forecastOpen) FillForecast(sel, tgt, controller.CurrentForecast, controller.CurrentOption, false);
             FillCommands(forecastOpen);
+            if (showPerson) commandList.gameObject.SetActive(false);
             FillTopStrip(forecastOpen);
             FillRoster(forecastOpen);
             hintBar.gameObject.SetActive(!forecastOpen);   // 戦闘予測のときは下のボタンが出る
@@ -1063,34 +1257,6 @@ namespace Srpg.Battle
                 if (group == null) group = slot.frame.transform.parent.gameObject.AddComponent<CanvasGroup>();
                 group.alpha = dead ? 0.28f : 1f;
             }
-        }
-
-        private void FillCard(Battle3DController.UnitState unit)
-        {
-            uiUnits.TryGetValue(unit.Id, out var ui);
-            cardName.text = unit.Name;
-            cardLevel.text = ui?.levelLabel ?? "";
-            cardClass.text = ui?.className ?? "";
-            cardMove.text = ui?.moveLabel ?? $"移動{unit.source.move}";
-            var cardFace = ui != null ? portraits.FirstOrDefault(p => p.name == ui.portrait + "_card").texture : null;
-            if (cardFace != null) { cardPortrait.texture = cardFace; cardPortrait.enabled = true; cardPortrait.uvRect = new Rect(0, 0, 1, 1); }
-            else SetPortrait(cardPortrait, ui, ui?.cardUv);
-            int hp = unit.plan?.hp ?? 0, maxHp = Math.Max(1, unit.plan?.maxHp ?? 1);
-            int mp = unit.plan?.mp ?? 0, maxMp = Math.Max(1, ui?.maxMp ?? Math.Max(mp, 1));
-            cardHpFill.rectTransform.anchorMax = new Vector2(Mathf.Clamp01((float)hp / maxHp), 1f);
-            cardMpFill.rectTransform.anchorMax = new Vector2(Mathf.Clamp01((float)mp / maxMp), 1f);
-            cardHpValue.text = $"{hp}<size=8><color=#e0bd738c>/{maxHp}</color></size>";
-            cardMpValue.text = $"{mp}<size=8><color=#e0bd738c>/{maxMp}</color></size>";
-            bool enemy = unit.Side == "enemy";
-            cardFrame.sprite = SpriteOf(enemy ? "panel_even_enemy" : "panel_even") ?? cardFrame.sprite;
-
-            cardHpFill.sprite = enemy ? GradientSprite(Hex("#b8423c"), Hex("#e0645a")) : GradientSprite(Hex("#3fbf82"), Hex("#59e48c"));
-
-            weaponName.text = ui?.weaponName ?? "装備なし";
-            weaponIcon.sprite = WeaponSprite(ui?.weaponType);
-            weaponIcon.enabled = weaponIcon.sprite != null;
-            string[] values = { ui?.weaponPower, ui?.weaponRange, ui?.weaponHit, ui?.weaponCrit };
-            for (int i = 0; i < 4; i++) weaponValues[i].text = values[i] ?? "―";
         }
 
         private void FillForecast(Battle3DController.UnitState attacker, Battle3DController.UnitState defender, BattlePlan.Forecast fc, BattleOption option, bool readOnly)
@@ -1263,6 +1429,7 @@ namespace Srpg.Battle
                 else if (sel != null && (mode == Battle3DController.Mode.Moving || mode == Battle3DController.Mode.Acting))
                 {
                     subList = null;
+                    entries.Add(("detail", "人物", () => { panelMode = "person"; stateKey = null; }, true));   // 人物欄へ戻る（銀細工のUI 第3段）
                     var basic = controller.OptionsOf(sel).FirstOrDefault(o => o.kind == "weapon" && string.IsNullOrEmpty(o.artName));
                     if (basic != null) entries.Add(("attack", "攻撃", () => controller.ChooseOption(basic), controller.CanUseFromHere(basic)));
                     if (ui?.artList != null && ui.artList.Length > 0) entries.Add(("skill", "戦技", () => { subList = "skill"; stateKey = null; }, true));
@@ -1313,7 +1480,7 @@ namespace Srpg.Battle
             if (entries.Count == 0) return;
             // 入れ替えた一覧（戦技・魔法）は、名前とMPが入るように少し広げる
             float width = wide ? 178f : subList != null ? 150f : 118f;   // 交換は品物の名前と「渡す →」「← もらう」が入る幅
-            commandList.anchoredPosition = new Vector2(-(ScreenW - 758f - OldSideMargin), commandList.anchoredPosition.y);   // 右端（844 の画面で x758）にそろえる。幅は左へ伸びる
+            commandList.anchoredPosition = new Vector2(-PanelRight, -PanelTop);   // 右の人物欄と同じ場所（銀細工のUI 第3段）。幅は左へ伸びる
             commandList.sizeDelta = new Vector2(width, entries.Count * 30 + 15);
             for (int i = 0; i < entries.Count; i++)
             {
@@ -1376,7 +1543,7 @@ namespace Srpg.Battle
             if (sel == null) return "動かす味方を選んでください。";
             return controller.CurrentMode switch
             {
-                Battle3DController.Mode.Moving => $"{sel.Name}の移動先を選ぶか、右のコマンドを選んでください。",
+                Battle3DController.Mode.Moving => $"{sel.Name}の移動先を選ぶか、右の「行動する」でその場から行動してください。",
                 Battle3DController.Mode.Targeting => "攻撃する相手を選んでください。",
                 Battle3DController.Mode.Support => SupportHint(),
                 Battle3DController.Mode.Summon => "召喚の陣を置くマスを選んでください（隣の空いているマス。2ターン後に出ます）。",
@@ -1392,7 +1559,7 @@ namespace Srpg.Battle
             if (!Built) return false;
             if (statusOpen) return true;   // 戦況の画面が開いている間は盤面を押せない
             var cam = canvas.worldCamera;
-            foreach (var rt in new[] { commandList, unitCard, weaponCard, roster })
+            foreach (var rt in new[] { commandList, personPanel, roster, terrainPanel })
                 if (rt != null && rt.gameObject.activeInHierarchy && RectTransformUtility.RectangleContainsScreenPoint(rt, screenPosition, cam)) return true;
             if (forecastRoot != null && forecastRoot.gameObject.activeInHierarchy)
             {

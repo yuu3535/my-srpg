@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &175934014
+--- !u!1 &176350070
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,175 +127,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 175934016}
-  - component: {fileID: 175934015}
-  m_Layer: 0
-  m_Name: Battle3DHud
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!114 &175934015
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 175934014}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 46bb4fb1dcb667c4195b998688eeee8d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Srpg.Battle::Srpg.Battle.Battle3DHud
-  controller: {fileID: 626004427}
-  targetCamera: {fileID: 2063811213}
-  uiJson: {fileID: 4900000, guid: 13315d48306232048961e86ff16d00b7, type: 3}
-  sprites:
-  - name: panel_even
-    sprite: {fileID: 21300000, guid: 8f4b326b4982a5a4a9fc1630dad93c8a, type: 3}
-  - name: panel_even_enemy
-    sprite: {fileID: 21300000, guid: 4178527a26cd7244bbb3bd4ccff1bda4, type: 3}
-  - name: button_b2_normal
-    sprite: {fileID: 21300000, guid: 9cac28cbcce3b8c4cacd678f9266f007, type: 3}
-  - name: button_b2_pressed
-    sprite: {fileID: 21300000, guid: 3a42d50310fa8a740903a5c9b9583921, type: 3}
-  - name: button_b2_disabled
-    sprite: {fileID: 21300000, guid: 241def338e94efe4796196bbd299ad29, type: 3}
-  - name: button_f3_normal
-    sprite: {fileID: 21300000, guid: 1fdb5e3fe3129fc4f9bb03178700f1a0, type: 3}
-  - name: button_f3_pressed
-    sprite: {fileID: 21300000, guid: 4897040d9d765124d9a7cb2959c1ddf1, type: 3}
-  - name: fc_band
-    sprite: {fileID: 21300000, guid: 5e0e72e0f00fa434391a6226e95ae0c1, type: 3}
-  - name: fc_emblem_sword
-    sprite: {fileID: 21300000, guid: 8c22d8789ee597a4ba84d6bf547a10b1, type: 3}
-  - name: heading_flourish
-    sprite: {fileID: 21300000, guid: 610cd81de5874004e9b9f2ad450184df, type: 3}
-  - name: roster_frame
-    sprite: {fileID: 21300000, guid: 53da2815521e0fe458fa5a393663297f, type: 3}
-  - name: silver_frame
-    sprite: {fileID: 21300000, guid: 6f08b9924f5e43849938f148ea383425, type: 3}
-  - name: chevron_up
-    sprite: {fileID: 21300000, guid: 3fda711709a15f14aaa86cd4b8a1893f, type: 3}
-  - name: face_frame
-    sprite: {fileID: 21300000, guid: 62f5dddd9bff06541bc95395364adbe3, type: 3}
-  - name: face_frame_selected
-    sprite: {fileID: 21300000, guid: 93dc78e28fd9a7b4ab84b64b0cc97ecd, type: 3}
-  - name: face_frame_done
-    sprite: {fileID: 21300000, guid: f0d153030d9d209419336ff956d0b9b4, type: 3}
-  - name: mark_selected
-    sprite: {fileID: 21300000, guid: 7680c620c5d80af418828f17914060f0, type: 3}
-  - name: mark_target
-    sprite: {fileID: 21300000, guid: 15e860f92ce3b124cb76207c4b2d74c2, type: 3}
-  - name: mark_intent
-    sprite: {fileID: 21300000, guid: 63cbe8264ede23b4a8625bd11d9adf90, type: 3}
-  - name: weapon_sword
-    sprite: {fileID: 21300000, guid: b922d270e56fa4a45b12f10a17e34ee0, type: 3}
-  - name: weapon_lance
-    sprite: {fileID: 21300000, guid: a89044cb2bd211b4198a863f450d8421, type: 3}
-  - name: weapon_axe
-    sprite: {fileID: 21300000, guid: 6b6abc6604eb48c41bf8df6e4fb7d81b, type: 3}
-  - name: weapon_bow
-    sprite: {fileID: 21300000, guid: c5f41e5147b43fd4dbfb98b69be91132, type: 3}
-  - name: weapon_staff
-    sprite: {fileID: 21300000, guid: c3a52afae0effcd4394db45e0b67fa33, type: 3}
-  - name: weapon_magic
-    sprite: {fileID: 21300000, guid: 3d73287c1ab920241a5c98283a5493c8, type: 3}
-  - name: icon_attack
-    sprite: {fileID: 21300000, guid: 525776c27902e9341a894268c68ea92d, type: 3}
-  - name: icon_back
-    sprite: {fileID: 21300000, guid: 2ac2a4ea0cec93842bfd5dfe497106af, type: 3}
-  - name: icon_cross
-    sprite: {fileID: 21300000, guid: f5d019999de0f3d448bcaca51f03eaea, type: 3}
-  - name: icon_detail
-    sprite: {fileID: 21300000, guid: 01eb81055f80cae43a73fe7fa9cba0d9, type: 3}
-  - name: icon_item
-    sprite: {fileID: 21300000, guid: 9bd50210d519e4a45bdf4e94c2088a0a, type: 3}
-  - name: icon_skill
-    sprite: {fileID: 21300000, guid: 3a254c7586d940643bff3cc55d42e20d, type: 3}
-  - name: icon_wait
-    sprite: {fileID: 21300000, guid: 15fa7d56fb1df084c87013b030add23e, type: 3}
-  portraits:
-  - name: albas
-    texture: {fileID: 2800000, guid: d84d8adba6c074c40b486323789459de, type: 3}
-  - name: albas_card
-    texture: {fileID: 2800000, guid: 63112ebd92f25a4428bd181dfc0dae52, type: 3}
-  - name: albas_rival
-    texture: {fileID: 2800000, guid: 2c29af450e79bea47a8afef7e624fa2b, type: 3}
-  - name: albas_rival_card
-    texture: {fileID: 2800000, guid: b95352cb7247a204e808495dbae537a5, type: 3}
-  - name: arshe
-    texture: {fileID: 2800000, guid: 76112600bf5a8d141a6d84a9eed0d781, type: 3}
-  - name: arshe_card
-    texture: {fileID: 2800000, guid: 460a8372aab759344bfe75dae448f7c5, type: 3}
-  - name: dylan
-    texture: {fileID: 2800000, guid: e6d9b34e0726a8e4599c99fa60d6d1ee, type: 3}
-  - name: dylan_card
-    texture: {fileID: 2800000, guid: 4e96fec30a706b04db3d277b5d1dadb4, type: 3}
-  - name: forest_guard
-    texture: {fileID: 2800000, guid: a32c1561d26c1674992a1f6e569093ee, type: 3}
-  - name: forest_guard_card
-    texture: {fileID: 2800000, guid: 1ffad7c552c78e64186e3dfb7939b1b5, type: 3}
-  - name: gunter
-    texture: {fileID: 2800000, guid: 66f5b0d0c0fea734d8424673e3a42fdf, type: 3}
-  - name: gunter_card
-    texture: {fileID: 2800000, guid: ea1d96f11497c1841a0c5c3691a82d57, type: 3}
-  - name: herel
-    texture: {fileID: 2800000, guid: ee8544eadab36ff48ac9dbc2289bad29, type: 3}
-  - name: herel_card
-    texture: {fileID: 2800000, guid: 575d3ea5d3db46c42bd611c98bb4ea78, type: 3}
-  - name: ringholm
-    texture: {fileID: 2800000, guid: db0a9991d77a53345aef82cac26adf15, type: 3}
-  - name: ringholm_card
-    texture: {fileID: 2800000, guid: dbfbb95c1b73da749b3e3b4d263d0134, type: 3}
-  - name: training_doll_1
-    texture: {fileID: 2800000, guid: bd9e83f648a27474788042a677dc5be0, type: 3}
-  - name: training_doll_1_card
-    texture: {fileID: 2800000, guid: 04ecd8b1cec98104e965afab59c7c367, type: 3}
-  - name: training_doll_2
-    texture: {fileID: 2800000, guid: d8bcc3cf79cc9f240895eee38f7b5c1c, type: 3}
-  - name: training_doll_2_card
-    texture: {fileID: 2800000, guid: 22bdbeb0dac8db345b260f53df0f1d28, type: 3}
-  - name: training_doll_counter
-    texture: {fileID: 2800000, guid: cf1f3a666923dd844a0a62a7f0ce1cac, type: 3}
-  - name: training_doll_counter_card
-    texture: {fileID: 2800000, guid: 8ae6ffea38741fb4a807cf8502c5aba6, type: 3}
-  - name: young_arshe
-    texture: {fileID: 2800000, guid: 4edb2e075498e074fb1c8dcf90a58a6d, type: 3}
-  - name: young_arshe_card
-    texture: {fileID: 2800000, guid: 0915a794610f34e4893a87f2a183907b, type: 3}
-  - name: young_karima
-    texture: {fileID: 2800000, guid: d9d84a7714d7a924a823a3357ebc8c5f, type: 3}
-  - name: young_karima_card
-    texture: {fileID: 2800000, guid: 611298357b0dd6746b28b2301f8d6d05, type: 3}
-  regularFont: {fileID: 12800000, guid: 5d44fb766293fa742921f1785442a4eb, type: 3}
-  boldFont: {fileID: 12800000, guid: ee93b216df8aef44da19774478f74b6d, type: 3}
---- !u!4 &175934016
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 175934014}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &313552268
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 313552270}
-  - component: {fileID: 313552269}
+  - component: {fileID: 176350072}
+  - component: {fileID: 176350071}
   m_Layer: 0
   m_Name: Global Volume
   m_TagString: Untagged
@@ -303,13 +136,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &313552269
+--- !u!114 &176350071
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 313552268}
+  m_GameObject: {fileID: 176350070}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
@@ -320,13 +153,13 @@ MonoBehaviour:
   blendDistance: 0
   weight: 1
   sharedProfile: {fileID: 11400000, guid: 2aac9d6775bfb1146934785450419416, type: 2}
---- !u!4 &313552270
+--- !u!4 &176350072
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 313552268}
+  m_GameObject: {fileID: 176350070}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -335,7 +168,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &626004426
+--- !u!1 &250388160
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -343,310 +176,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 626004428}
-  - component: {fileID: 626004427}
-  m_Layer: 0
-  m_Name: Battle3D
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!114 &626004427
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 626004426}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ba8bba860ab02994a8a21e7385b92fcd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Srpg.Battle::Srpg.Battle.Battle3DController
-  battleJson: {fileID: 4900000, guid: 1517d606fa2dbd44baced59588b7f08d, type: 3}
-  planJson: {fileID: 4900000, guid: e3028e3ee70adbb469c6cf72f7764a5a, type: 3}
-  view: {fileID: 1493739660}
-  enemyStepSeconds: 0.6
-  hud: {fileID: 175934015}
-  uiJson: {fileID: 4900000, guid: 13315d48306232048961e86ff16d00b7, type: 3}
-  layout: 
-  setupOnStart: 0
-  enemyPreviewSeconds: 1.2
---- !u!4 &626004428
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 626004426}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &927720686
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 927720688}
-  - component: {fileID: 927720687}
-  m_Layer: 0
-  m_Name: Directional Light
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!108 &927720687
-Light:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 927720686}
-  m_Enabled: 1
-  serializedVersion: 12
-  m_Type: 1
-  m_Color: {r: 1, g: 0.95686275, b: 0.8862745, a: 1}
-  m_Intensity: 1.15
-  m_Range: 10
-  m_SpotAngle: 30
-  m_InnerSpotAngle: 21.80208
-  m_CookieSize2D: {x: 0.5, y: 0.5}
-  m_Shadows:
-    m_Type: 2
-    m_Resolution: -1
-    m_CustomResolution: -1
-    m_Strength: 1
-    m_Bias: 0.05
-    m_NormalBias: 0.4
-    m_NearPlane: 0.2
-    m_CullingMatrixOverride:
-      e00: 1
-      e01: 0
-      e02: 0
-      e03: 0
-      e10: 0
-      e11: 1
-      e12: 0
-      e13: 0
-      e20: 0
-      e21: 0
-      e22: 1
-      e23: 0
-      e30: 0
-      e31: 0
-      e32: 0
-      e33: 1
-    m_UseCullingMatrixOverride: 0
-  m_Cookie: {fileID: 0}
-  m_DrawHalo: 0
-  m_Flare: {fileID: 0}
-  m_RenderMode: 0
-  m_CullingMask:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_RenderingLayerMask: 1
-  m_Lightmapping: 4
-  m_LightShadowCasterMode: 0
-  m_AreaSize: {x: 1, y: 1}
-  m_BounceIntensity: 1
-  m_ColorTemperature: 6570
-  m_UseColorTemperature: 0
-  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
-  m_UseBoundingSphereOverride: 0
-  m_UseViewFrustumForShadowCasterCull: 1
-  m_ForceVisible: 0
-  m_ShadowRadius: 0
-  m_ShadowAngle: 0
-  m_LightUnit: 1
-  m_LuxAtDistance: 1
-  m_EnableSpotReflector: 1
---- !u!4 &927720688
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 927720686}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.44601488, y: -0.22957529, z: 0.11950933, w: 0.85678667}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1302909319
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1302909321}
-  - component: {fileID: 1302909320}
-  m_Layer: 0
-  m_Name: Explore
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1302909320
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1302909319}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ccf1538cfba39464194c1f4b33dd534d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Srpg.Battle::Srpg.Battle.ExploreController
-  view: {fileID: 1493739660}
-  dialogue: {fileID: 1386704818}
-  scenarioJson: {fileID: 4900000, guid: aa6204b3a7b801249bffc81843dc3449, type: 3}
-  placeJsons:
-  - {fileID: 4900000, guid: 115ac7ffdd0cb9a4aaaa57ce7957ea1f, type: 3}
-  - {fileID: 4900000, guid: fbaf22aa2083c2a4e914b3caccc92792, type: 3}
-  - {fileID: 4900000, guid: 0e005a558e2e30341aa1b73a340f1cd3, type: 3}
-  grounds:
-  - mapId: orcus_corridor
-    texture: {fileID: 2800000, guid: d2f001e047590234d9d9f5ddea532ba0, type: 3}
-  - mapId: orcus_room_arshe_karima
-    texture: {fileID: 2800000, guid: d6a3d4564c4ffcb4f9f53c0d46ff022e, type: 3}
-  - mapId: orcus_training_yard
-    texture: {fileID: 2800000, guid: f586e0d91b770bf4ea0cc6ffc1e543d3, type: 3}
-  startMap: orcus_room_arshe_karima
-  stepSeconds: 0.16
-  battle: {fileID: 626004427}
-  tutorialJson: {fileID: 4900000, guid: 5bcae0fdbda43974bb579365097148a0, type: 3}
---- !u!4 &1302909321
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1302909319}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1386704817
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1386704819}
-  - component: {fileID: 1386704818}
-  m_Layer: 0
-  m_Name: DialogueView
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1386704818
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1386704817}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 90a3c36aa5b5bd840be3f0a34d3941c3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Srpg.Battle::Srpg.Battle.DialogueView
-  adjustJson: {fileID: 0}
-  targetCamera: {fileID: 2063811213}
-  regularFont: {fileID: 12800000, guid: 5d44fb766293fa742921f1785442a4eb, type: 3}
-  boldFont: {fileID: 12800000, guid: ee93b216df8aef44da19774478f74b6d, type: 3}
-  panelSprite: {fileID: 21300000, guid: 8f4b326b4982a5a4a9fc1630dad93c8a, type: 3}
-  portraits:
-  - name: "\u30A2\u30EB\u30B7\u30A7"
-    texture: {fileID: 2800000, guid: 470aea951f6ff9040bfcc2f06d1c1a8b, type: 3}
-    uv:
-      serializedVersion: 2
-      x: 0.271593
-      y: 0.41082874
-      width: 0.50469613
-      height: 0.5891713
-  - name: "\u30AB\u30EA\u30DE"
-    texture: {fileID: 2800000, guid: 24eb1a6bc54bb0846893ee43d22fe1a0, type: 3}
-    uv:
-      serializedVersion: 2
-      x: 0.28701478
-      y: 0.40688232
-      width: 0.398244
-      height: 0.59311765
-  - name: "\u30AD\u30E3\u30EA\u30FC"
-    texture: {fileID: 2800000, guid: 7c7f2bd1b6ebbfd40af017dff88de5c0, type: 3}
-    uv:
-      serializedVersion: 2
-      x: 0.14106447
-      y: 0.38807294
-      width: 0.7198242
-      height: 0.6119271
-  - name: "\u30D8\u30F3\u30EA\u30FC"
-    texture: {fileID: 2800000, guid: ef8e624edce12004c8f7f8d9ab38d4b6, type: 3}
-    uv:
-      serializedVersion: 2
-      x: 0.2153315
-      y: 0.39370167
-      width: 0.5472376
-      height: 0.6062983
-  - name: "\u30AE\u30E5\u30F3\u30BF\u30FC"
-    texture: {fileID: 2800000, guid: 56181b9297319bb4da1bae75a4683e49, type: 3}
-    uv:
-      serializedVersion: 2
-      x: 0.26187846
-      y: 0.40140882
-      width: 0.44861877
-      height: 0.59859115
---- !u!4 &1386704819
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1386704817}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1493739659
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1493739661}
-  - component: {fileID: 1493739660}
+  - component: {fileID: 250388162}
+  - component: {fileID: 250388161}
   m_Layer: 0
   m_Name: Board3D
   m_TagString: Untagged
@@ -654,20 +185,20 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1493739660
+--- !u!114 &250388161
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1493739659}
+  m_GameObject: {fileID: 250388160}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e2ea1505433157e4884d77294bdcb75e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Srpg.Battle::Srpg.Battle.Board3DView
   occluderAlpha: 0.35
-  targetCamera: {fileID: 2063811213}
+  targetCamera: {fileID: 2011982695}
   textured: 1
   lanterns: 1
   showGuiButtons: 1
@@ -742,7 +273,7 @@ MonoBehaviour:
   enemyFrameSprite: {fileID: 21300000, guid: 320f718d3c6700c4095f07642b97cb21, type: 3}
   teamFrameAlpha: 1
   topViewUnitSize: 0.86
-  keyLight: {fileID: 927720687}
+  keyLight: {fileID: 499276501}
   lightPitch: 55
   lightYawOffset: 15
   startTilted: 1
@@ -753,13 +284,13 @@ MonoBehaviour:
   focusRaise: 0.35
   backdrop: {fileID: 0}
   groundTexture: {fileID: 0}
---- !u!4 &1493739661
+--- !u!4 &250388162
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1493739659}
+  m_GameObject: {fileID: 250388160}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -768,7 +299,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2063811212
+--- !u!1 &499276500
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -776,9 +307,524 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 2063811215}
-  - component: {fileID: 2063811213}
-  - component: {fileID: 2063811214}
+  - component: {fileID: 499276502}
+  - component: {fileID: 499276501}
+  m_Layer: 0
+  m_Name: Directional Light
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!108 &499276501
+Light:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 499276500}
+  m_Enabled: 1
+  serializedVersion: 12
+  m_Type: 1
+  m_Color: {r: 1, g: 0.95686275, b: 0.8862745, a: 1}
+  m_Intensity: 1.15
+  m_Range: 10
+  m_SpotAngle: 30
+  m_InnerSpotAngle: 21.80208
+  m_CookieSize2D: {x: 0.5, y: 0.5}
+  m_Shadows:
+    m_Type: 2
+    m_Resolution: -1
+    m_CustomResolution: -1
+    m_Strength: 1
+    m_Bias: 0.05
+    m_NormalBias: 0.4
+    m_NearPlane: 0.2
+    m_CullingMatrixOverride:
+      e00: 1
+      e01: 0
+      e02: 0
+      e03: 0
+      e10: 0
+      e11: 1
+      e12: 0
+      e13: 0
+      e20: 0
+      e21: 0
+      e22: 1
+      e23: 0
+      e30: 0
+      e31: 0
+      e32: 0
+      e33: 1
+    m_UseCullingMatrixOverride: 0
+  m_Cookie: {fileID: 0}
+  m_DrawHalo: 0
+  m_Flare: {fileID: 0}
+  m_RenderMode: 0
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_RenderingLayerMask: 1
+  m_Lightmapping: 4
+  m_LightShadowCasterMode: 0
+  m_AreaSize: {x: 1, y: 1}
+  m_BounceIntensity: 1
+  m_ColorTemperature: 6570
+  m_UseColorTemperature: 0
+  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_UseBoundingSphereOverride: 0
+  m_UseViewFrustumForShadowCasterCull: 1
+  m_ForceVisible: 0
+  m_ShadowRadius: 0
+  m_ShadowAngle: 0
+  m_LightUnit: 1
+  m_LuxAtDistance: 1
+  m_EnableSpotReflector: 1
+--- !u!4 &499276502
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 499276500}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.44601488, y: -0.22957529, z: 0.11950933, w: 0.85678667}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1118269036
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1118269038}
+  - component: {fileID: 1118269037}
+  m_Layer: 0
+  m_Name: Explore
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1118269037
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1118269036}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ccf1538cfba39464194c1f4b33dd534d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Srpg.Battle::Srpg.Battle.ExploreController
+  view: {fileID: 250388161}
+  dialogue: {fileID: 2000771659}
+  scenarioJson: {fileID: 4900000, guid: aa6204b3a7b801249bffc81843dc3449, type: 3}
+  placeJsons:
+  - {fileID: 4900000, guid: 115ac7ffdd0cb9a4aaaa57ce7957ea1f, type: 3}
+  - {fileID: 4900000, guid: fbaf22aa2083c2a4e914b3caccc92792, type: 3}
+  - {fileID: 4900000, guid: 0e005a558e2e30341aa1b73a340f1cd3, type: 3}
+  grounds:
+  - mapId: orcus_corridor
+    texture: {fileID: 2800000, guid: d2f001e047590234d9d9f5ddea532ba0, type: 3}
+  - mapId: orcus_room_arshe_karima
+    texture: {fileID: 2800000, guid: d6a3d4564c4ffcb4f9f53c0d46ff022e, type: 3}
+  - mapId: orcus_training_yard
+    texture: {fileID: 2800000, guid: f586e0d91b770bf4ea0cc6ffc1e543d3, type: 3}
+  startMap: orcus_room_arshe_karima
+  stepSeconds: 0.16
+  battle: {fileID: 1904006520}
+  tutorialJson: {fileID: 4900000, guid: 5bcae0fdbda43974bb579365097148a0, type: 3}
+--- !u!4 &1118269038
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1118269036}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1354260641
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1354260643}
+  - component: {fileID: 1354260642}
+  m_Layer: 0
+  m_Name: Battle3DHud
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &1354260642
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1354260641}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 46bb4fb1dcb667c4195b998688eeee8d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Srpg.Battle::Srpg.Battle.Battle3DHud
+  controller: {fileID: 1904006520}
+  targetCamera: {fileID: 2011982695}
+  uiJson: {fileID: 4900000, guid: 13315d48306232048961e86ff16d00b7, type: 3}
+  sprites:
+  - name: panel_even
+    sprite: {fileID: 21300000, guid: 8f4b326b4982a5a4a9fc1630dad93c8a, type: 3}
+  - name: panel_even_enemy
+    sprite: {fileID: 21300000, guid: 4178527a26cd7244bbb3bd4ccff1bda4, type: 3}
+  - name: button_b2_normal
+    sprite: {fileID: 21300000, guid: 9cac28cbcce3b8c4cacd678f9266f007, type: 3}
+  - name: button_b2_pressed
+    sprite: {fileID: 21300000, guid: 3a42d50310fa8a740903a5c9b9583921, type: 3}
+  - name: button_b2_disabled
+    sprite: {fileID: 21300000, guid: 241def338e94efe4796196bbd299ad29, type: 3}
+  - name: button_f3_normal
+    sprite: {fileID: 21300000, guid: 1fdb5e3fe3129fc4f9bb03178700f1a0, type: 3}
+  - name: button_f3_pressed
+    sprite: {fileID: 21300000, guid: 4897040d9d765124d9a7cb2959c1ddf1, type: 3}
+  - name: fc_band
+    sprite: {fileID: 21300000, guid: 5e0e72e0f00fa434391a6226e95ae0c1, type: 3}
+  - name: fc_emblem_sword
+    sprite: {fileID: 21300000, guid: 8c22d8789ee597a4ba84d6bf547a10b1, type: 3}
+  - name: heading_flourish
+    sprite: {fileID: 21300000, guid: 610cd81de5874004e9b9f2ad450184df, type: 3}
+  - name: roster_frame
+    sprite: {fileID: 21300000, guid: 53da2815521e0fe458fa5a393663297f, type: 3}
+  - name: silver_frame
+    sprite: {fileID: 21300000, guid: 6f08b9924f5e43849938f148ea383425, type: 3}
+  - name: chevron_up
+    sprite: {fileID: 21300000, guid: 3fda711709a15f14aaa86cd4b8a1893f, type: 3}
+  - name: face_frame
+    sprite: {fileID: 21300000, guid: 62f5dddd9bff06541bc95395364adbe3, type: 3}
+  - name: face_frame_selected
+    sprite: {fileID: 21300000, guid: 93dc78e28fd9a7b4ab84b64b0cc97ecd, type: 3}
+  - name: face_frame_done
+    sprite: {fileID: 21300000, guid: f0d153030d9d209419336ff956d0b9b4, type: 3}
+  - name: mark_selected
+    sprite: {fileID: 21300000, guid: 7680c620c5d80af418828f17914060f0, type: 3}
+  - name: mark_target
+    sprite: {fileID: 21300000, guid: 15e860f92ce3b124cb76207c4b2d74c2, type: 3}
+  - name: mark_intent
+    sprite: {fileID: 21300000, guid: 63cbe8264ede23b4a8625bd11d9adf90, type: 3}
+  - name: weapon_sword
+    sprite: {fileID: 21300000, guid: b922d270e56fa4a45b12f10a17e34ee0, type: 3}
+  - name: weapon_lance
+    sprite: {fileID: 21300000, guid: a89044cb2bd211b4198a863f450d8421, type: 3}
+  - name: weapon_axe
+    sprite: {fileID: 21300000, guid: 6b6abc6604eb48c41bf8df6e4fb7d81b, type: 3}
+  - name: weapon_bow
+    sprite: {fileID: 21300000, guid: c5f41e5147b43fd4dbfb98b69be91132, type: 3}
+  - name: weapon_staff
+    sprite: {fileID: 21300000, guid: c3a52afae0effcd4394db45e0b67fa33, type: 3}
+  - name: weapon_magic
+    sprite: {fileID: 21300000, guid: 3d73287c1ab920241a5c98283a5493c8, type: 3}
+  - name: skill_frame_active
+    sprite: {fileID: 21300000, guid: 6eefc4993fffa54468d4d40b0f29af83, type: 3}
+  - name: skill_frame_passive
+    sprite: {fileID: 21300000, guid: d85d13ac2ef70174a8a2b622b6018605, type: 3}
+  - name: skill_frame_personal
+    sprite: {fileID: 21300000, guid: c106f5b8f5d71054ea9859e9c4547a7f, type: 3}
+  - name: "skill_\u30A2\u30B7\u30B9\u30C8"
+    sprite: {fileID: 21300000, guid: 51621f6220e8e6f428c34fdb0b80ddf2, type: 3}
+  - name: "skill_\u30AB\u30A6\u30F3\u30BF\u30FC"
+    sprite: {fileID: 21300000, guid: d1f4caef3b8280c458faa68701480d00, type: 3}
+  - name: "skill_\u30C7\u30E5\u30A2\u30EB+"
+    sprite: {fileID: 21300000, guid: ccea0e89da0bf4647b53610a93f244d3, type: 3}
+  - name: "skill_\u5148\u624B\u5FC5\u52DD"
+    sprite: {fileID: 21300000, guid: bdcc206228160c241b1374251f01ebe3, type: 3}
+  - name: "skill_\u51B7\u9759"
+    sprite: {fileID: 21300000, guid: e8b9c5edd60ce2b40b55e88bcee0aa7e, type: 3}
+  - name: "skill_\u52A0\u901F"
+    sprite: {fileID: 21300000, guid: cdd001ebb65d168428d241bcb5d81138, type: 3}
+  - name: "skill_\u5668\u7528"
+    sprite: {fileID: 21300000, guid: 24276750f10bb8543b4653cff3823f7a, type: 3}
+  - name: "skill_\u5C01\u5370"
+    sprite: {fileID: 21300000, guid: f3bd91c246e33fd4bb21435bc697f55a, type: 3}
+  - name: "skill_\u5F8C\u624B\u5FC5\u52DD"
+    sprite: {fileID: 21300000, guid: 2360c628af37a844a9be849f827b393d, type: 3}
+  - name: "skill_\u5FA9\u8B90"
+    sprite: {fileID: 21300000, guid: d9da066d5307f5f46b43082c8b631c33, type: 3}
+  - name: "skill_\u5FDC\u63F4"
+    sprite: {fileID: 21300000, guid: 87285d3bedf49c14c8b29266328e3560, type: 3}
+  - name: "skill_\u6226\u95D8\u6307\u63EE"
+    sprite: {fileID: 21300000, guid: 628fba9031fd9a94ea0baee5dfd80b9b, type: 3}
+  - name: "skill_\u6C17\u4ED8\u3051\u85AC"
+    sprite: {fileID: 21300000, guid: 2b66d442fc3827a4d8ac82dfd1b4a8a6, type: 3}
+  - name: "skill_\u7834\u58CA"
+    sprite: {fileID: 21300000, guid: ad34f171a61a68640a01f39babc40adb, type: 3}
+  - name: "skill_\u7948\u308A"
+    sprite: {fileID: 21300000, guid: 370d123b34464a74eac85051d41c4047, type: 3}
+  - name: "skill_\u7D50\u754C"
+    sprite: {fileID: 21300000, guid: 867ab1a82921eb5458110cf5a66b69a2, type: 3}
+  - name: "skill_\u843D\u96F7"
+    sprite: {fileID: 21300000, guid: ab03b697ba23f034caf89f7e9e0299db, type: 3}
+  - name: "skill_\u865A\u50CF"
+    sprite: {fileID: 21300000, guid: ba295a612c083284b89cbb257576f007, type: 3}
+  - name: "skill_\u8A60\u5531\u7834\u68C4"
+    sprite: {fileID: 21300000, guid: 21966271df86ca6458782de8f35814af, type: 3}
+  - name: "skill_\u8EE2\u79FB"
+    sprite: {fileID: 21300000, guid: e454072ee0d2e464d99de876ffa02149, type: 3}
+  - name: icon_attack
+    sprite: {fileID: 21300000, guid: 525776c27902e9341a894268c68ea92d, type: 3}
+  - name: icon_back
+    sprite: {fileID: 21300000, guid: 2ac2a4ea0cec93842bfd5dfe497106af, type: 3}
+  - name: icon_cross
+    sprite: {fileID: 21300000, guid: f5d019999de0f3d448bcaca51f03eaea, type: 3}
+  - name: icon_detail
+    sprite: {fileID: 21300000, guid: 01eb81055f80cae43a73fe7fa9cba0d9, type: 3}
+  - name: icon_item
+    sprite: {fileID: 21300000, guid: 9bd50210d519e4a45bdf4e94c2088a0a, type: 3}
+  - name: icon_skill
+    sprite: {fileID: 21300000, guid: 3a254c7586d940643bff3cc55d42e20d, type: 3}
+  - name: icon_wait
+    sprite: {fileID: 21300000, guid: 15fa7d56fb1df084c87013b030add23e, type: 3}
+  portraits:
+  - name: albas
+    texture: {fileID: 2800000, guid: d84d8adba6c074c40b486323789459de, type: 3}
+  - name: albas_card
+    texture: {fileID: 2800000, guid: 63112ebd92f25a4428bd181dfc0dae52, type: 3}
+  - name: albas_rival
+    texture: {fileID: 2800000, guid: 2c29af450e79bea47a8afef7e624fa2b, type: 3}
+  - name: albas_rival_card
+    texture: {fileID: 2800000, guid: b95352cb7247a204e808495dbae537a5, type: 3}
+  - name: arshe
+    texture: {fileID: 2800000, guid: 76112600bf5a8d141a6d84a9eed0d781, type: 3}
+  - name: arshe_card
+    texture: {fileID: 2800000, guid: 460a8372aab759344bfe75dae448f7c5, type: 3}
+  - name: dylan
+    texture: {fileID: 2800000, guid: e6d9b34e0726a8e4599c99fa60d6d1ee, type: 3}
+  - name: dylan_card
+    texture: {fileID: 2800000, guid: 4e96fec30a706b04db3d277b5d1dadb4, type: 3}
+  - name: forest_guard
+    texture: {fileID: 2800000, guid: a32c1561d26c1674992a1f6e569093ee, type: 3}
+  - name: forest_guard_card
+    texture: {fileID: 2800000, guid: 1ffad7c552c78e64186e3dfb7939b1b5, type: 3}
+  - name: gunter
+    texture: {fileID: 2800000, guid: 66f5b0d0c0fea734d8424673e3a42fdf, type: 3}
+  - name: gunter_card
+    texture: {fileID: 2800000, guid: ea1d96f11497c1841a0c5c3691a82d57, type: 3}
+  - name: herel
+    texture: {fileID: 2800000, guid: ee8544eadab36ff48ac9dbc2289bad29, type: 3}
+  - name: herel_card
+    texture: {fileID: 2800000, guid: 575d3ea5d3db46c42bd611c98bb4ea78, type: 3}
+  - name: ringholm
+    texture: {fileID: 2800000, guid: db0a9991d77a53345aef82cac26adf15, type: 3}
+  - name: ringholm_card
+    texture: {fileID: 2800000, guid: dbfbb95c1b73da749b3e3b4d263d0134, type: 3}
+  - name: training_doll_1
+    texture: {fileID: 2800000, guid: bd9e83f648a27474788042a677dc5be0, type: 3}
+  - name: training_doll_1_card
+    texture: {fileID: 2800000, guid: 04ecd8b1cec98104e965afab59c7c367, type: 3}
+  - name: training_doll_2
+    texture: {fileID: 2800000, guid: d8bcc3cf79cc9f240895eee38f7b5c1c, type: 3}
+  - name: training_doll_2_card
+    texture: {fileID: 2800000, guid: 22bdbeb0dac8db345b260f53df0f1d28, type: 3}
+  - name: training_doll_counter
+    texture: {fileID: 2800000, guid: cf1f3a666923dd844a0a62a7f0ce1cac, type: 3}
+  - name: training_doll_counter_card
+    texture: {fileID: 2800000, guid: 8ae6ffea38741fb4a807cf8502c5aba6, type: 3}
+  - name: young_arshe
+    texture: {fileID: 2800000, guid: 4edb2e075498e074fb1c8dcf90a58a6d, type: 3}
+  - name: young_arshe_card
+    texture: {fileID: 2800000, guid: 0915a794610f34e4893a87f2a183907b, type: 3}
+  - name: young_karima
+    texture: {fileID: 2800000, guid: d9d84a7714d7a924a823a3357ebc8c5f, type: 3}
+  - name: young_karima_card
+    texture: {fileID: 2800000, guid: 611298357b0dd6746b28b2301f8d6d05, type: 3}
+  regularFont: {fileID: 12800000, guid: 5d44fb766293fa742921f1785442a4eb, type: 3}
+  boldFont: {fileID: 12800000, guid: ee93b216df8aef44da19774478f74b6d, type: 3}
+--- !u!4 &1354260643
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1354260641}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1904006519
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1904006521}
+  - component: {fileID: 1904006520}
+  m_Layer: 0
+  m_Name: Battle3D
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!114 &1904006520
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1904006519}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba8bba860ab02994a8a21e7385b92fcd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Srpg.Battle::Srpg.Battle.Battle3DController
+  battleJson: {fileID: 4900000, guid: 1517d606fa2dbd44baced59588b7f08d, type: 3}
+  planJson: {fileID: 4900000, guid: e3028e3ee70adbb469c6cf72f7764a5a, type: 3}
+  view: {fileID: 250388161}
+  enemyStepSeconds: 0.6
+  hud: {fileID: 1354260642}
+  uiJson: {fileID: 4900000, guid: 13315d48306232048961e86ff16d00b7, type: 3}
+  layout: 
+  setupOnStart: 0
+  enemyPreviewSeconds: 1.2
+--- !u!4 &1904006521
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1904006519}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2000771658
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2000771660}
+  - component: {fileID: 2000771659}
+  m_Layer: 0
+  m_Name: DialogueView
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2000771659
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2000771658}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 90a3c36aa5b5bd840be3f0a34d3941c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Srpg.Battle::Srpg.Battle.DialogueView
+  adjustJson: {fileID: 0}
+  targetCamera: {fileID: 2011982695}
+  regularFont: {fileID: 12800000, guid: 5d44fb766293fa742921f1785442a4eb, type: 3}
+  boldFont: {fileID: 12800000, guid: ee93b216df8aef44da19774478f74b6d, type: 3}
+  panelSprite: {fileID: 21300000, guid: 8f4b326b4982a5a4a9fc1630dad93c8a, type: 3}
+  portraits:
+  - name: "\u30A2\u30EB\u30B7\u30A7"
+    texture: {fileID: 2800000, guid: 470aea951f6ff9040bfcc2f06d1c1a8b, type: 3}
+    uv:
+      serializedVersion: 2
+      x: 0.271593
+      y: 0.41082874
+      width: 0.50469613
+      height: 0.5891713
+  - name: "\u30AB\u30EA\u30DE"
+    texture: {fileID: 2800000, guid: 24eb1a6bc54bb0846893ee43d22fe1a0, type: 3}
+    uv:
+      serializedVersion: 2
+      x: 0.28701478
+      y: 0.40688232
+      width: 0.398244
+      height: 0.59311765
+  - name: "\u30AD\u30E3\u30EA\u30FC"
+    texture: {fileID: 2800000, guid: 7c7f2bd1b6ebbfd40af017dff88de5c0, type: 3}
+    uv:
+      serializedVersion: 2
+      x: 0.14106447
+      y: 0.38807294
+      width: 0.7198242
+      height: 0.6119271
+  - name: "\u30D8\u30F3\u30EA\u30FC"
+    texture: {fileID: 2800000, guid: ef8e624edce12004c8f7f8d9ab38d4b6, type: 3}
+    uv:
+      serializedVersion: 2
+      x: 0.2153315
+      y: 0.39370167
+      width: 0.5472376
+      height: 0.6062983
+  - name: "\u30AE\u30E5\u30F3\u30BF\u30FC"
+    texture: {fileID: 2800000, guid: 56181b9297319bb4da1bae75a4683e49, type: 3}
+    uv:
+      serializedVersion: 2
+      x: 0.26187846
+      y: 0.40140882
+      width: 0.44861877
+      height: 0.59859115
+--- !u!4 &2000771660
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2000771658}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2011982694
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2011982697}
+  - component: {fileID: 2011982695}
+  - component: {fileID: 2011982696}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -786,13 +832,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!20 &2063811213
+--- !u!20 &2011982695
 Camera:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2063811212}
+  m_GameObject: {fileID: 2011982694}
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
@@ -837,13 +883,13 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!114 &2063811214
+--- !u!114 &2011982696
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2063811212}
+  m_GameObject: {fileID: 2011982694}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
@@ -881,13 +927,13 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
---- !u!4 &2063811215
+--- !u!4 &2011982697
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2063811212}
+  m_GameObject: {fileID: 2011982694}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -900,11 +946,11 @@ Transform:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 2063811215}
-  - {fileID: 313552270}
-  - {fileID: 927720688}
-  - {fileID: 1493739661}
-  - {fileID: 1386704819}
-  - {fileID: 626004428}
-  - {fileID: 175934016}
-  - {fileID: 1302909321}
+  - {fileID: 2011982697}
+  - {fileID: 176350072}
+  - {fileID: 499276502}
+  - {fileID: 250388162}
+  - {fileID: 2000771660}
+  - {fileID: 1904006521}
+  - {fileID: 1354260643}
+  - {fileID: 1118269038}

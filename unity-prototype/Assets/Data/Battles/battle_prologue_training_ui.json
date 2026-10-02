@@ -20,9 +20,9 @@
       "portrait": "young_arshe",
       "cardUv": {
         "x": 0.4,
-        "y": 0.6935483870967742,
+        "y": 0.7016129339894941,
         "w": 0.3333333333333333,
-        "h": 0.3064516129032258
+        "h": 0.2983870660105059
       },
       "bustUv": {
         "x": 0.4,
@@ -256,7 +256,14 @@
         }
       ],
       "supports": [],
-      "specials": []
+      "specials": [],
+      "personal": {
+        "name": "双蛇の逆針",
+        "desc": "味方が倒されたり、攻撃を外したりしたとき、一手単位で行動を巻き戻せる。１回の戦闘につき、回数は最初3回までだが章が進むごとに1ずつ増える",
+        "kind": "personal"
+      },
+      "skills": [],
+      "statusText": "通常"
     },
     {
       "id": "young_karima",
@@ -464,7 +471,14 @@
           "equipSpell": null
         }
       ],
-      "specials": []
+      "specials": [],
+      "personal": {
+        "name": "双蛇の逆針",
+        "desc": "味方が倒されたり、攻撃を外したりしたとき、一手単位で行動を巻き戻せる。１回の戦闘につき、回数は最初3回までだが章が進むごとに1ずつ増える。",
+        "kind": "personal"
+      },
+      "skills": [],
+      "statusText": "通常"
     },
     {
       "id": "gunter",
@@ -485,9 +499,9 @@
       "portrait": "gunter",
       "cardUv": {
         "x": 0.3214285714285714,
-        "y": 0.6802995391705069,
+        "y": 0.680299506209413,
         "w": 0.35714285714285715,
-        "h": 0.3197004608294931
+        "h": 0.31970049379058696
       },
       "bustUv": {
         "x": 0.3214285714285714,
@@ -534,7 +548,10 @@
       "artList": [],
       "magicList": [],
       "supports": [],
-      "specials": []
+      "specials": [],
+      "personal": null,
+      "skills": [],
+      "statusText": "通常"
     },
     {
       "id": "training_doll_1",
@@ -554,9 +571,9 @@
       "weaponCrit": "―",
       "portrait": "training_doll_1",
       "cardUv": {
-        "x": -0.0957957957957958,
+        "x": -0.09579573436929961,
         "y": 0,
-        "w": 1.1915915915915916,
+        "w": 1.1915914687385993,
         "h": 1
       },
       "bustUv": {
@@ -577,7 +594,10 @@
       "artList": [],
       "magicList": [],
       "supports": [],
-      "specials": []
+      "specials": [],
+      "personal": null,
+      "skills": [],
+      "statusText": "通常"
     },
     {
       "id": "training_doll_2",
@@ -620,7 +640,10 @@
       "artList": [],
       "magicList": [],
       "supports": [],
-      "specials": []
+      "specials": [],
+      "personal": null,
+      "skills": [],
+      "statusText": "通常"
     },
     {
       "id": "training_doll_counter",
@@ -640,9 +663,9 @@
       "weaponCrit": "44",
       "portrait": "training_doll_counter",
       "cardUv": {
-        "x": -0.0957957957957958,
+        "x": -0.09579573436929961,
         "y": 0,
-        "w": 1.1915915915915916,
+        "w": 1.1915914687385993,
         "h": 1
       },
       "bustUv": {
@@ -690,7 +713,10 @@
       "artList": [],
       "magicList": [],
       "supports": [],
-      "specials": []
+      "specials": [],
+      "personal": null,
+      "skills": [],
+      "statusText": "通常"
     }
   ]
 }

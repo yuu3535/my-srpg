@@ -162,6 +162,9 @@ const result = await evaluate(`(async () => {
     const portraits = {};
     for (const unit of battleUnits.filter(u => u.trialStats)) {
         renderLandscapeUnitPanel(unit);
+        // 数値と顔の切り抜きは、旧ユニットのカード（左下のカード）の形から読む（2026-10-02 から画面は右の人物欄だが、読み取り方は変えない）
+        landscapeUnitContent.innerHTML = renderLandscapeUnitCard(unit, getPortraitSrc(unit) || unit.tokenImage || "", 0, 0,
+            unit.side === "enemy" ? getDeclarationLabel(enemyDeclarations.get(unit.id)) : null);
         await wait(50);
         const q = sel => document.querySelector("#landscapeUnitContent " + sel);
         const text = sel => (q(sel)?.textContent || "").trim();
@@ -190,7 +193,20 @@ const result = await evaluate(`(async () => {
             // 専用戦技（月詠・生命吸収。ブラウザ版 trialSpecialArtsFor）: radius マス以内の敵のHPを percent% 削る。1戦闘に1回
             specials: (TRIAL_ABILITY_SOURCE[unit.id] ? trialSpecialArtsFor(unit.id, unit.trialAbilityLevel, unit.trialLoadoutSelection || null) : [])
                 .map(a => ({ name: a.name, desc: a.desc || "", radius: a.radius, percent: a.percent, drain: !!a.drain })),
+            // 右の人物欄（銀細工のUI 第3段）: 固有スキルは文で、残りのスキル・戦技はアイコンで出す（ブラウザ版 renderSilverPerson と同じ並び）
+            personal: null, skills: [],
+            statusText: unitStatusText(unit),
         };
+        {
+            const loadout = TRIAL_ABILITY_SOURCE[unit.id]
+                ? trialSkillLoadoutFor(unit.id, unit.trialAbilityLevel, TRIAL_CLASS_LEVEL, unit.trialLoadoutSelection || null) : null;
+            if (loadout?.personal) entry.personal = { name: loadout.personal.name, desc: loadout.personal.desc || "", kind: "personal" };
+            if (loadout) entry.skills = [
+                ...loadout.causeSkills.filter(Boolean).map(a => ({ name: a.name, desc: a.desc || "", kind: "passive" })),
+                ...loadout.classSkills.filter(Boolean).map(a => ({ name: a.name, desc: a.desc || "", kind: "passive" })),
+                ...loadout.combatArts.filter(Boolean).map(a => ({ name: a.name, desc: a.desc || "", kind: "active" })),
+            ];
+        }
         const findOption = (label, isMagic) => entry.options.findIndex(o => o.label === label && o.isMagic === isMagic);
         trialUnitPhysicalArts(unit).forEach(art => {
             entry.artList.push({ label: art.name, sub: art.desc || "", index: art.implemented ? findOption(art.name, false) : -1 });

@@ -43,6 +43,16 @@ namespace Srpg.Battle
         public UiListEntry[] artList, magicList; // コマンド「戦技」「魔法」の一覧（使えないものも出す）
         public BattleOption[] supports;          // 補助の魔法（回復・結界・加速・治癒の杖。kind = "support"）
         public SpecialArt[] specials;            // 専用戦技（月詠・生命吸収）
+        public UiSkill personal;                 // 右の人物欄: 固有スキル（文で出す。なければ name が空）
+        public UiSkill[] skills;                 // 右の人物欄: 残りのスキル・戦技（アイコンで出す。押すと説明）
+        public string statusText;                // 状態（通常・火傷など）
+    }
+
+    /// <summary>右の人物欄のスキル（kind: personal 個人スキル / passive スキル / active 戦技。アイコンの枠を決める）</summary>
+    [Serializable]
+    public class UiSkill
+    {
+        public string name, desc, kind;
     }
 
     /// <summary>専用戦技: radius マス以内の敵のHPを percent% 削る（drain なら削った分だけ自分のHP・MPを回復）。1戦闘に1回</summary>

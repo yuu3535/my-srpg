@@ -381,6 +381,15 @@ namespace Srpg.EditorAgent
                     File.Copy(source, dest, true);
                 sprites.Add((name, ImportSprite(dest, border)));
             }
+            // スキル・戦技のアイコンと枠（ブラウザ版の assets/icons/skills。tools/build_skill_icons.py が作る）。名前は skill_能力名・skill_frame_種類
+            Directory.CreateDirectory($"{UiDir}/Skills");
+            foreach (var source in Directory.GetFiles("../assets/icons/skills", "*.png"))
+            {
+                string dest = $"{UiDir}/Skills/{Path.GetFileName(source)}";
+                if (!File.Exists(dest) || !File.ReadAllBytes(source).AsSpan().SequenceEqual(File.ReadAllBytes(dest)))
+                    File.Copy(source, dest, true);
+                sprites.Add(("skill_" + Path.GetFileNameWithoutExtension(source), ImportSprite(dest, Vector4.zero)));
+            }
             foreach (var path in Directory.GetFiles($"{UiDir}/Icons", "*.png"))
                 sprites.Add(("icon_" + Path.GetFileNameWithoutExtension(path), ImportSprite(path.Replace(Path.DirectorySeparatorChar, '/'), Vector4.zero)));
             var portraitList = new System.Collections.Generic.List<(string name, Texture2D texture)>();
