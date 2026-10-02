@@ -46,6 +46,7 @@ namespace Srpg.Battle
         public UiSkill personal;                 // 右の人物欄: 固有スキル（文で出す。なければ name が空）
         public UiSkill[] skills;                 // 右の人物欄: 残りのスキル・戦技（アイコンで出す。押すと説明）
         public string statusText;                // 状態（通常・火傷など）
+        public int hit, evade;                   // 右の人物欄の命中・回避（ブラウザ版で計算した値）
     }
 
     /// <summary>右の人物欄のスキル（kind: personal 個人スキル / passive スキル / active 戦技。アイコンの枠を決める）</summary>

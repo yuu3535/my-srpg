@@ -213,6 +213,10 @@ const result = await evaluate(`(async () => {
             // 右の人物欄（銀細工のUI 第3段）: 固有スキルは文で、残りのスキル・戦技はアイコンで出す（ブラウザ版 renderSilverPerson と同じ並び）
             personal: null, skills: [],
             statusText: unitStatusText(unit),
+            // 人物欄の命中・回避（ブラウザ版 renderSilverPerson と同じ: 命中＝60＋技×2.5＋武器・杖の命中、回避＝速さ×2.5＋体格の補正）
+            hit: (() => { const d = trialDerivedValues(unit.trialStats, unit.trialSiz, getEffectiveCourage(unit)); const it = TRIAL_ITEMS[unit.trialEquippedItem];
+                const broken = it?.kind === "grimoire" && trialStaffDurability(unit, unit.trialEquippedItem) <= 0; return d.hit + (it && !broken ? Number(it.hit || 0) : 0); })(),
+            evade: trialDerivedValues(unit.trialStats, unit.trialSiz, getEffectiveCourage(unit)).evade,
         };
         {
             const loadout = TRIAL_ABILITY_SOURCE[unit.id]

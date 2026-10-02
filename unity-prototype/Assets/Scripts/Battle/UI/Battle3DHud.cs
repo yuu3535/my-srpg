@@ -68,7 +68,8 @@ namespace Srpg.Battle
         private Text personName, personLevel, personClass, personHp, personMp, personMove, personRange, personState, personWeapon, personDurability;
         private Text personSkillName, personSkillDesc;
         private Image personWeaponIcon, personHpFill, personMpFill;
-        private readonly Text[] personStats = new Text[6];
+        private readonly Text[] personStats = new Text[7];
+        private Text personHit, personEvade;
         private readonly List<GameObject> personIconItems = new List<GameObject>();
         private RectTransform skillInfo;
         private Text skillInfoKind, skillInfoName, skillInfoDesc;
@@ -865,25 +866,29 @@ namespace Srpg.Battle
             // 移動・射程と能力値
             Label(personPanel, "移動", 15, 106, 40, 12, 10.5f, HudPalette.Silver);
             personMove = Label(personPanel, "Move", 50, 106, 30, 12, 10.5f, HudPalette.Text, anchor: TextAnchor.MiddleRight);
-            Label(personPanel, "射程", 15, 120, 40, 12, 10.5f, HudPalette.Silver);
-            personRange = Label(personPanel, "Range", 40, 120, 40, 12, 10.5f, HudPalette.Text, anchor: TextAnchor.MiddleRight);
-            personState = Label(personPanel, "State", 15, 136, 66, 22, 8.5f, HudPalette.Muted, anchor: TextAnchor.UpperLeft);
-            Place(NewRect("Divider", personPanel), 86, 106, 1, 80).gameObject.AddComponent<Image>().color = Hex("#627a88");
-            string[] names = { "力", "魔攻", "技", "速さ", "防御", "魔防" };
+            Label(personPanel, "射程", 15, 118, 40, 12, 10.5f, HudPalette.Silver);
+            personRange = Label(personPanel, "Range", 40, 118, 40, 12, 10.5f, HudPalette.Text, anchor: TextAnchor.MiddleRight);
+            Label(personPanel, "命中", 15, 130, 40, 12, 10.5f, HudPalette.Silver);
+            personHit = Label(personPanel, "Hit", 40, 130, 40, 12, 10.5f, HudPalette.Text, anchor: TextAnchor.MiddleRight);
+            Label(personPanel, "回避", 15, 142, 40, 12, 10.5f, HudPalette.Silver);
+            personEvade = Label(personPanel, "Evade", 40, 142, 40, 12, 10.5f, HudPalette.Text, anchor: TextAnchor.MiddleRight);
+            personState = Label(personPanel, "State", 15, 156, 66, 22, 8.5f, HudPalette.Muted, anchor: TextAnchor.UpperLeft);
+            Place(NewRect("Divider", personPanel), 86, 106, 1, 84).gameObject.AddComponent<Image>().color = Hex("#627a88");
+            string[] names = { "力", "魔攻", "技", "速さ", "防御", "魔防", "魅力" };
             for (int i = 0; i < names.Length; i++)
             {
-                Label(personPanel, names[i], 94, 106 + i * 13.5f, 40, 12, 10.5f, HudPalette.Silver);
-                personStats[i] = Label(personPanel, "Stat" + i, 129, 106 + i * 13.5f, 40, 12, 10.5f, HudPalette.Text, anchor: TextAnchor.MiddleRight);
+                Label(personPanel, names[i], 94, 106 + i * 12f, 40, 12, 10.5f, HudPalette.Silver);
+                personStats[i] = Label(personPanel, "Stat" + i, 129, 106 + i * 12f, 40, 12, 10.5f, HudPalette.Text, anchor: TextAnchor.MiddleRight);
             }
-            Place(NewRect("Rule2", personPanel), 15, 189, 154, 1).gameObject.AddComponent<Image>().color = Hex("#81939e");
+            Place(NewRect("Rule2", personPanel), 15, 192, 154, 1).gameObject.AddComponent<Image>().color = Hex("#81939e");
             // 武器
-            var weaponIconRect = Place(NewRect("WeaponIcon", personPanel), 15, 195, 13, 13);
+            var weaponIconRect = Place(NewRect("WeaponIcon", personPanel), 15, 198, 13, 13);
             weaponIconRect.gameObject.AddComponent<Image>().preserveAspect = true;
-            personWeapon = Label(personPanel, "Weapon", 33, 190, 100, 24, 11, HudPalette.Text);
-            personDurability = Label(personPanel, "Durability", 110, 190, 59, 24, 8.5f, HudPalette.Muted, anchor: TextAnchor.MiddleRight);
-            Place(NewRect("Rule3", personPanel), 15, 214, 154, 1).gameObject.AddComponent<Image>().color = Hex("#81939e");
+            personWeapon = Label(personPanel, "Weapon", 33, 193, 100, 24, 11, HudPalette.Text);
+            personDurability = Label(personPanel, "Durability", 110, 193, 59, 24, 8.5f, HudPalette.Muted, anchor: TextAnchor.MiddleRight);
+            Place(NewRect("Rule3", personPanel), 15, 217, 154, 1).gameObject.AddComponent<Image>().color = Hex("#81939e");
             // 固有スキル（押すと説明）
-            personSkillRow = Place(NewRect("PersonalSkill", personPanel), 15, 218, 154, 36);
+            personSkillRow = Place(NewRect("PersonalSkill", personPanel), 15, 221, 154, 36);
             personSkillRow.gameObject.AddComponent<Image>().color = new Color(0, 0, 0, 0);
             personSkillRow.gameObject.AddComponent<Button>().transition = Selectable.Transition.None;
             personSkillName = Label(personSkillRow, "Name", 30, 0, 124, 13, 11, HudPalette.Text);
@@ -957,7 +962,9 @@ namespace Srpg.Battle
             personRange.text = ui?.weaponRange ?? "―";
             personState.text = ui?.statusText ?? "";
             var st = unit.plan?.stats;
-            int[] values = st == null ? null : new[] { st.atk, st.mag, st.tec, st.spd, st.def, st.res };
+            int[] values = st == null ? null : new[] { st.atk, st.mag, st.tec, st.spd, st.def, st.res, st.cha };
+            personHit.text = ui != null ? ui.hit.ToString() : "―";
+            personEvade.text = ui != null ? ui.evade.ToString() : "―";
             for (int i = 0; i < personStats.Length; i++) personStats[i].text = values == null ? "―" : values[i].ToString();
             var weaponIconImage = personPanel.Find("WeaponIcon").GetComponent<Image>();
             weaponIconImage.sprite = WeaponSprite(ui?.weaponType) ?? SpriteOf("icon_attack");
@@ -984,7 +991,7 @@ namespace Srpg.Battle
             foreach (var item in personIconItems) Object.DestroyImmediate(item);
             personIconItems.Clear();
             var skills = ui?.skills ?? Array.Empty<UiSkill>();
-            float rowY = hasPersonal ? 257 : 220;
+            float rowY = hasPersonal ? 260 : 223;
             for (int i = 0; i < skills.Length; i++)
             {
                 var skill = skills[i];
@@ -1200,8 +1207,10 @@ namespace Srpg.Battle
             var side = new ForecastSide();
             bool right = name == "SideRight";
             var root = NewRect(name, panel);
-            root.anchorMin = root.anchorMax = root.pivot = new Vector2(right ? 1f : 0f, 1f);
-            root.anchoredPosition = new Vector2(right ? -x : x, -11f);
+            // 真ん中の印の両側に寄せる（原作者 2026-10-02: 真ん中の隙間が広い）。x は使わない
+            root.anchorMin = root.anchorMax = new Vector2(0.5f, 1f);
+            root.pivot = new Vector2(right ? 0f : 1f, 1f);
+            root.anchoredPosition = new Vector2(right ? 42f : -42f, -11f);
             root.sizeDelta = new Vector2(156f, 103f);
             side.name = Label(root, "Name", 0, 0, 112, 17, 13, HudPalette.Text);
             side.level = Label(root, "Level", 96, 1, 60, 16, 9.5f, HudPalette.Silver, anchor: TextAnchor.MiddleRight);

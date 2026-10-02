@@ -20,9 +20,9 @@
       "portrait": "ringholm",
       "cardUv": {
         "x": 0.3755555555555556,
-        "y": 0.6841397593098302,
+        "y": 0.6841397849462365,
         "w": 0.2777777777777778,
-        "h": 0.248655939614901
+        "h": 0.24865591397849465
       },
       "bustUv": {
         "x": 0.3755555555555556,
@@ -279,7 +279,9 @@
           "kind": "active"
         }
       ],
-      "statusText": "通常"
+      "statusText": "通常",
+      "hit": 140,
+      "evade": 84
     },
     {
       "id": "arshe",
@@ -300,9 +302,9 @@
       "portrait": "arshe",
       "cardUv": {
         "x": 0.4,
-        "y": 0.7016129339894941,
+        "y": 0.7016129032258065,
         "w": 0.3333333333333333,
-        "h": 0.2983870660105059
+        "h": 0.29838709677419356
       },
       "bustUv": {
         "x": 0.4,
@@ -618,7 +620,9 @@
           "kind": "active"
         }
       ],
-      "statusText": "通常"
+      "statusText": "通常",
+      "hit": 133,
+      "evade": 68
     },
     {
       "id": "albas",
@@ -639,9 +643,9 @@
       "portrait": "albas",
       "cardUv": {
         "x": 0.4125,
-        "y": 0.7308468203390799,
+        "y": 0.7308467511207827,
         "w": 0.25,
-        "h": 0.2237902764351137
+        "h": 0.22379034565341085
       },
       "bustUv": {
         "x": 0.4125,
@@ -872,7 +876,9 @@
           "kind": "active"
         }
       ],
-      "statusText": "通常"
+      "statusText": "通常",
+      "hit": 150,
+      "evade": 61
     },
     {
       "id": "young_karima",
@@ -893,9 +899,9 @@
       "portrait": "young_karima",
       "cardUv": {
         "x": 0.3666666666666667,
-        "y": 0.6798421708431399,
+        "y": 0.6798422038513885,
         "w": 0.3333333333333333,
-        "h": 0.32015782915686003
+        "h": 0.3201577961486115
       },
       "bustUv": {
         "x": 0.3666666666666667,
@@ -1122,7 +1128,9 @@
           "kind": "active"
         }
       ],
-      "statusText": "通常"
+      "statusText": "通常",
+      "hit": 133,
+      "evade": 71
     },
     {
       "id": "forest_guard",
@@ -1195,7 +1203,9 @@
       "specials": [],
       "personal": null,
       "skills": [],
-      "statusText": "通常"
+      "statusText": "通常",
+      "hit": 95,
+      "evade": 30
     },
     {
       "id": "dylan",
@@ -1268,7 +1278,9 @@
       "specials": [],
       "personal": null,
       "skills": [],
-      "statusText": "通常"
+      "statusText": "通常",
+      "hit": 118,
+      "evade": 48
     },
     {
       "id": "herel",
@@ -1289,9 +1301,9 @@
       "portrait": "herel",
       "cardUv": {
         "x": 0.32456140350877194,
-        "y": 0.5246179642215851,
+        "y": 0.5246180289872433,
         "w": 0.3508771929824562,
-        "h": 0.36926998144904305
+        "h": 0.3692699166833849
       },
       "bustUv": {
         "x": 0.32456140350877194,
@@ -1378,7 +1390,9 @@
       "specials": [],
       "personal": null,
       "skills": [],
-      "statusText": "通常"
+      "statusText": "通常",
+      "hit": 118,
+      "evade": 53
     },
     {
       "id": "albas_rival",
@@ -1632,7 +1646,9 @@
           "kind": "active"
         }
       ],
-      "statusText": "通常"
+      "statusText": "通常",
+      "hit": 150,
+      "evade": 61
     },
     {
       "id": "hitodama",
@@ -1742,7 +1758,9 @@
       "specials": [],
       "personal": null,
       "skills": [],
-      "statusText": "通常"
+      "statusText": "通常",
+      "hit": 95,
+      "evade": 55
     }
   ]
 }

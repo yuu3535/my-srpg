@@ -8131,3 +8131,9 @@ img.lsMenuIcon.wpnIcon {
 #gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbHp { height: 20px; }
 #gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbStats > div { line-height: 12.5px; font-size: 12px; }
 #gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbName span { font-size: 9.5px; }
+
+/* 原作者 2026-10-02: 予測の真ん中の隙間が広い → 左右の数値の欄を真ん中に寄せる（印の両側 84px）。肖像の列は余りを分け合う */
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbPanel { grid-template-columns: minmax(0, 1fr) 156px 84px 156px minmax(0, 1fr); }
+/* 人物欄: 命中・回避・魅力を足したぶん、少し高く */
+#gameScreen[data-mode="battle"] #landscapeBattleShell.active #landscapeUnitPanel { max-height: 330px; }
+.svAbilities dl { margin: 0; line-height: 12px; }

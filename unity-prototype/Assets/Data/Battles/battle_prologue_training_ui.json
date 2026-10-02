@@ -20,9 +20,9 @@
       "portrait": "young_arshe",
       "cardUv": {
         "x": 0.4,
-        "y": 0.7016128724621189,
+        "y": 0.7016129032258065,
         "w": 0.3333333333333333,
-        "h": 0.29838712753788116
+        "h": 0.29838709677419356
       },
       "bustUv": {
         "x": 0.4,
@@ -263,7 +263,9 @@
         "kind": "personal"
       },
       "skills": [],
-      "statusText": "通常"
+      "statusText": "通常",
+      "hit": 88,
+      "evade": 23
     },
     {
       "id": "young_karima",
@@ -478,7 +480,9 @@
         "kind": "personal"
       },
       "skills": [],
-      "statusText": "通常"
+      "statusText": "通常",
+      "hit": 88,
+      "evade": 26
     },
     {
       "id": "gunter",
@@ -499,9 +503,9 @@
       "portrait": "gunter",
       "cardUv": {
         "x": 0.3214285714285714,
-        "y": 0.680299506209413,
+        "y": 0.6802995721316007,
         "w": 0.35714285714285715,
-        "h": 0.31970049379058696
+        "h": 0.3197004278683992
       },
       "bustUv": {
         "x": 0.3214285714285714,
@@ -551,7 +555,9 @@
       "specials": [],
       "personal": null,
       "skills": [],
-      "statusText": "通常"
+      "statusText": "通常",
+      "hit": 90,
+      "evade": 21
     },
     {
       "id": "training_doll_1",
@@ -597,7 +603,9 @@
       "specials": [],
       "personal": null,
       "skills": [],
-      "statusText": "通常"
+      "statusText": "通常",
+      "hit": 60,
+      "evade": 20
     },
     {
       "id": "training_doll_2",
@@ -617,9 +625,9 @@
       "weaponCrit": "―",
       "portrait": "training_doll_2",
       "cardUv": {
-        "x": -0.09579585722230465,
+        "x": -0.09579573436929961,
         "y": 0,
-        "w": 1.1915917144446093,
+        "w": 1.1915914687385993,
         "h": 1
       },
       "bustUv": {
@@ -643,7 +651,9 @@
       "specials": [],
       "personal": null,
       "skills": [],
-      "statusText": "通常"
+      "statusText": "通常",
+      "hit": 60,
+      "evade": 20
     },
     {
       "id": "training_doll_counter",
@@ -716,7 +726,9 @@
       "specials": [],
       "personal": null,
       "skills": [],
-      "statusText": "通常"
+      "statusText": "通常",
+      "hit": 135,
+      "evade": 20
     }
   ]
 }

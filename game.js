@@ -2885,6 +2885,10 @@ function renderSilverPerson(unit, src, hpPct, mpPct, declLabel) {
     const range = !item ? (unit.attackRange ?? "―")
         : isStaff ? `${TRIAL_GRIMOIRE_RANGE.min}〜${TRIAL_GRIMOIRE_RANGE.max + (trialHasAbility(unit, "魔法射程+1") ? 1 : 0)}` : item.range;
     const durability = isStaff ? `${trialStaffDurability(unit, unit.trialEquippedItem)}/${item.durability}` : "";
+    // 命中・回避（原作者 2026-10-02: 人物欄にも出す）。命中＝60＋技×2.5＋武器・杖の命中（壊れた杖は足さない）、回避＝速さ×2.5＋体格の補正
+    const derived = trial ? trialDerivedValues(s, unit.trialSiz, getEffectiveCourage(unit)) : null;
+    const staffBroken = isStaff && trialStaffDurability(unit, unit.trialEquippedItem) <= 0;
+    const hitValue = derived ? derived.hit + (item && !staffBroken ? Number(item.hit || 0) : 0) : null;
     const loadout = trial && TRIAL_ABILITY_SOURCE[unit.id]
         ? trialSkillLoadoutFor(unit.id, unit.trialAbilityLevel, TRIAL_CLASS_LEVEL, unit.trialLoadoutSelection || null) : null;
     const personal = loadout?.personal || null;
@@ -2913,8 +2917,8 @@ function renderSilverPerson(unit, src, hpPct, mpPct, declLabel) {
                 </div>
             </div>
             <div class="svAbilities">
-                <div class="svMobility">${stat("移動", unit.move)}${stat("射程", range)}<p class="svState">${unitStatusText(unit)}</p></div>
-                <div class="svStats">${stat("力", s.atk)}${stat("魔攻", s.mag)}${stat("技", s.tec)}${stat("速さ", s.spd)}${stat("防御", s.def)}${stat("魔防", s.res)}</div>
+                <div class="svMobility">${stat("移動", unit.move)}${stat("射程", range)}${stat("命中", hitValue)}${stat("回避", derived?.evade)}<p class="svState">${unitStatusText(unit)}</p></div>
+                <div class="svStats">${stat("力", s.atk)}${stat("魔攻", s.mag)}${stat("技", s.tec)}${stat("速さ", s.spd)}${stat("防御", s.def)}${stat("魔防", s.res)}${stat("魅力", trial ? s.cha : unit.cha)}</div>
             </div>
             <div class="svWeapon">${item ? weaponTypeIcon(weaponTypeOf(item)) : lsCommandIcon("攻撃")}<b>${item ? item.name : "装備なし"}</b>${durability ? `<span>${durability}</span>` : item ? "" : "<span>反撃できません</span>"}</div>
             ${personal ? `<button type="button" class="svSkill" data-skill="${esc(personal.name)}" data-desc="${esc(personal.desc)}" data-kind="personal">${abilityIconHtml(personal.name, "personal")}<span><b>${personal.name}</b><small>${personal.desc || ""}</small></span></button>` : ""}
