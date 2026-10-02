@@ -7855,3 +7855,105 @@ img.lsMenuIcon.wpnIcon {
 #gameScreen[data-mode="battle"] .lsRosterMark { color: var(--sv-silver); }
 /* 戦闘予測の間は、左上に予測の見出し（.fcbTitle）が出るので Chapter の欄を隠す（見本と同じ） */
 #gameScreen[data-mode="battle"] #landscapeBattleShell.forecast-open #landscapeTopStrip { visibility: hidden; }
+
+/* ============================================================
+   [silver-right] 銀細工の戦闘UI 第3段: 右側（2026-10-02）
+   右の人物欄（顔・名前・Lv・兵種・HP/MP・移動・射程・能力・武器・固有スキル・スキルのアイコン）。
+   行動を選ぶ間はコマンドを同じ場所に出し、人物欄は隠す（game.js lsShowCommands）。寸法は見本×0.622
+============================================================ */
+#gameScreen[data-mode="battle"] #landscapeBattleShell.active #landscapeUnitPanel {
+    position: absolute;
+    top: 58px;
+    right: 6px;
+    left: auto;
+    bottom: auto;
+    width: 184px;
+    height: auto;
+    max-height: 316px;
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: 0;
+    box-shadow: none;
+    transform: none;
+    z-index: 6;
+    overflow: visible;
+}
+#gameScreen[data-mode="battle"] #landscapeBattleShell.active #landscapeUnitPanel.isEmpty,
+#gameScreen[data-mode="battle"] #landscapeBattleShell.active #landscapeUnitPanel.svHidden,
+#gameScreen[data-mode="battle"] #landscapeBattleShell.forecast-open #landscapeUnitPanel { display: none; }
+#gameScreen[data-mode="battle"] #landscapeUnitEmpty { display: none !important; }
+.svPerson {
+    position: relative;
+    padding: 3px 8px 6px;
+    border: 7px solid transparent;
+    border-image: url("assets/ui/silver_frame.png") 224 / 13px stretch;
+    background: var(--sv-panel);
+    background-clip: padding-box;
+    color: var(--sv-text);
+    font-size: 10px;
+    overflow: hidden;
+}
+.svIdentity { position: relative; height: 92px; border-bottom: 1px solid #697b87; }
+.svFace { position: absolute; left: -8px; top: -3px; width: 72px; height: 95px; background-repeat: no-repeat;
+    -webkit-mask-image: linear-gradient(180deg, #000 78%, transparent); mask-image: linear-gradient(180deg, #000 78%, transparent); }
+.svIdText { position: absolute; left: 66px; right: 0; top: 3px; }
+.svIdText h3 { margin: 0 0 2px; font-size: 14px; line-height: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; }
+.svIdText h3.long { font-size: 11px; }
+.svLv { margin: 0 0 3px; font-size: 9.5px; line-height: 11px; text-align: right; color: var(--sv-silver); }
+.svJob { display: flex; align-items: center; gap: 4px; padding: 2px 0; border-top: 1px solid #81939e; border-bottom: 1px solid #81939e; font-size: 9.5px; white-space: nowrap; }
+.svJob svg, .svJob img, .svWeapon svg, .svWeapon img { width: 13px; height: 13px; flex: none; }
+.svVitals { position: absolute; right: 0; top: 49px; width: 98px; }
+.svVital { display: flex; align-items: baseline; justify-content: space-between; height: 13px; font-size: 8.7px; color: var(--sv-silver); }
+.svVital b { font-size: 12.5px; font-weight: 500; color: var(--sv-text); font-variant-numeric: tabular-nums; }
+.svVital small { font-size: 8px; color: var(--sv-muted); }
+.svMeter { height: 4px; margin: 1px 0 3px; background: #46515e; }
+.svMeter i { display: block; height: 100%; background: #64c6c3; }
+.svMeter.mp i { background: #8ba4c8; }
+.svAbilities { display: grid; grid-template-columns: 1fr 1.15fr; padding: 5px 0 4px; border-bottom: 1px solid #81939e; }
+.svMobility { padding-right: 7px; border-right: 1px solid #627a88; }
+.svAbilities dl { display: grid; grid-template-columns: 1fr auto; margin: 0 0 2px; font-size: 10.5px; line-height: 12px; }
+.svAbilities dt { color: var(--sv-silver); }
+.svAbilities dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.svStats { padding-left: 8px; }
+.svState { margin: 4px 0 0; font-size: 8.5px; color: var(--sv-muted); line-height: 11px; }
+.svWeapon { display: flex; align-items: center; gap: 6px; height: 24px; border-bottom: 1px solid #81939e; font-size: 11px; white-space: nowrap; }
+.svWeapon span { margin-left: auto; font-size: 8.5px; color: var(--sv-muted); }
+.svSkill { display: grid; grid-template-columns: 24px 1fr; gap: 6px; align-items: center; width: 100%; margin-top: 4px; padding: 0;
+    background: none; border: 0; color: inherit; text-align: left; cursor: pointer; }
+.svSkill b { display: block; font-size: 11px; line-height: 13px; font-weight: 500; }
+.svSkill small { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 8.3px; line-height: 10.5px; color: var(--sv-muted); }
+.svPerson .abIcon { position: relative; display: block; width: 24px; height: 24px; }
+.svPerson .abIcon img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.svIcons { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 5px; }
+.svIcons button { padding: 0; background: none; border: 0; cursor: pointer; }
+.svIcons button:active, .svSkill:active { transform: scale(0.96); }
+.svIcons .abIcon { width: 22px; height: 22px; }
+.svDecl { margin-top: 4px; font-size: 9px; color: #e6a596; }
+.svAct { display: flex; align-items: center; justify-content: center; gap: 5px; width: 100%; height: 22px; margin-top: 6px;
+    background: rgba(24, 60, 80, 0.85); border: 1px solid #7a989f; color: var(--sv-text); font-size: 10.5px; letter-spacing: 0.1em; cursor: pointer; }
+.svAct svg, .svAct img { width: 12px; height: 12px; }
+.svAct:active { transform: translateY(1px); }
+/* コマンド: 人物欄と同じ場所（右上の地形の下）に出す */
+#gameScreen[data-mode="battle"] #landscapeBattleShell.active #landscapeCommandList {
+    top: 58px;
+    right: 6px;
+    left: auto;
+    transform: none;
+}
+.svToPerson { opacity: 0.8; }
+/* スキルの説明の窓 */
+#lsSkillInfo { position: absolute; inset: 0; z-index: 40; display: grid; place-items: center; background: rgba(5, 10, 15, 0.45); }
+#lsSkillInfo.hidden { display: none; }
+.svSkillCard { display: grid; grid-template-columns: 34px 1fr; gap: 10px; width: 260px; padding: 9px 12px; color: var(--sv-text);
+    border: 7px solid transparent; border-image: url("assets/ui/silver_frame.png") 224 / 13px stretch; background: var(--sv-panel); background-clip: padding-box; }
+.svSkillCard .abIcon { position: relative; width: 34px; height: 34px; }
+.svSkillCard .abIcon img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.svSkillCard small { font-size: 8.5px; color: var(--sv-teal); letter-spacing: 0.1em; }
+.svSkillCard b { display: block; font-size: 13px; margin: 1px 0 3px; }
+.svSkillCard p { margin: 0; font-size: 10px; line-height: 14px; color: var(--sv-silver); }
+#gameScreen[data-mode="battle"] #landscapeBattleShell.active #landscapeCommandList.menu { animation-name: svMenuIn; }
+@keyframes svMenuIn {
+    from { opacity: 0; transform: translateX(10px); }
+    to   { opacity: 1; transform: none; }
+}

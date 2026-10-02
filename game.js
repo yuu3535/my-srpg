@@ -531,6 +531,8 @@ function onUnitClick(unit) {
         }
         selectUnit(unit);
     } else if (unit.side === "enemy" && unit.hp > 0) {
+        // 横長の画面: 右の人物欄にその敵を出す（銀細工のUI 第3段）。味方を選ぶまで出したまま
+        if (isLandscapeBattleUi() && !selectedUnit) { lsInspectUnit = unit; renderLandscapeUnitPanel(unit); return; }
         renderEnemyInfoPanel(unit);
     }
 }
@@ -2797,12 +2799,15 @@ function activateLandscapeDefaultMove(unit) {
     selectedAttackSkill = null;
     hideForecastLayer();
     highlightMoveRange(unit);
-    setLandscapeHint(`${unit.name}の移動先を選ぶか、右のコマンドを選んでください。`);
+    setLandscapeHint(`${unit.name}の移動先を選ぶか、右の「行動する」でその場から行動してください。`);
     return true;
 }
 
+let lsInspectUnit = null;   // 味方を選んでいないときに右の人物欄で見ている敵（銀細工のUI 第3段）
 function renderLandscapeUnitPanel(unit = selectedUnit) {
     if (!landscapeUnitContent || !landscapeUnitEmpty) return;
+    if (unit) lsInspectUnit = unit.side === "enemy" && !selectedUnit ? unit : null;
+    else if (lsInspectUnit && lsInspectUnit.hp > 0 && isLandscapeBattleUi()) unit = lsInspectUnit;
     const unitPanel = document.getElementById("landscapeUnitPanel");
     if (unitPanel) {
         unitPanel.dataset.unitId = unit && unit.side === "ally" ? String(unit.id) : "";
@@ -2819,7 +2824,104 @@ function renderLandscapeUnitPanel(unit = selectedUnit) {
     const src = getPortraitSrc(unit) || unit.tokenImage || "";
     const declLabel = unit.side === "enemy" ? getDeclarationLabel(enemyDeclarations.get(unit.id)) : null;
     landscapeUnitEmpty.style.display = "none";
-    landscapeUnitContent.innerHTML = renderLandscapeUnitCard(unit, src, hpPct, mpPct, declLabel);
+    // 銀細工のUI 第3段: 右の人物欄。行動を選ぶ間はコマンドと入れ替える（lsShowCommands）
+    const showCommands = lsShowCommands(unit);
+    if (unitPanel) unitPanel.classList.toggle("svHidden", showCommands);
+    landscapeUnitContent.innerHTML = renderSilverPerson(unit, src, hpPct, mpPct, declLabel);
+    landscapeUnitContent.querySelectorAll("[data-skill]").forEach(el => el.addEventListener("click", event => {
+        event.stopPropagation();
+        openLsSkillInfo(el.dataset.skill, el.dataset.desc, el.dataset.kind);
+    }));
+    landscapeUnitContent.querySelector(".svAct")?.addEventListener("click", event => {
+        event.stopPropagation();
+        lsPanelMode = "commands";
+        syncLandscapeBattleUi(unit);
+    });
+}
+
+/**
+ * 右の欄を人物欄にするか、コマンドにするか（銀細工のUI 第3段。原作者 2026-10-02「右の人物欄と切り替える」）。
+ *   味方を選んだとき: まず人物欄（下の「行動する」でコマンドへ）。移動したら自動でコマンド。相手を選んでいる間・戦技などの一覧もコマンド。
+ *   コマンドの上の「人物」で人物欄へ戻る。敵や行動済みの味方は人物欄だけ
+ */
+let lsPanelMode = "person";
+let lsPanelUnitKey = "";
+let lsPanelWasMoved = false;
+function lsCanAct(unit) {
+    return !!unit && unit === selectedUnit && !battleOver && turnPhase === "ally" && unit.side === "ally" && !(unit.moved && unit.acted);
+}
+function lsShowCommands(unit) {
+    if (!lsCanAct(unit) || isLandscapeForecastOpen()) return false;
+    if (String(unit.id) !== lsPanelUnitKey) { lsPanelUnitKey = String(unit.id); lsPanelMode = "person"; lsPanelWasMoved = !!unit.moved; }
+    if (unit.moved && !lsPanelWasMoved) lsPanelMode = "commands";
+    lsPanelWasMoved = !!unit.moved;
+    return lsPanelMode === "commands" || !!LS_TARGETING_STATES[actionState] || !!(lsOpenBranch && lsOpenBranch.unit === unit);
+}
+
+/** スキルの説明の窓（人物欄のアイコンを押したとき）。どこを押しても閉じる */
+function openLsSkillInfo(name, desc, kind) {
+    let box = document.getElementById("lsSkillInfo");
+    if (!box) {
+        box = document.createElement("div");
+        box.id = "lsSkillInfo";
+        box.addEventListener("click", () => box.classList.add("hidden"));
+        landscapeBattleShell.appendChild(box);
+    }
+    const label = kind === "personal" ? "個人スキル" : kind === "active" ? "戦技" : "スキル";
+    box.innerHTML = `<div class="svSkillCard">${abilityIconHtml(name, kind)}<div><small>${label}</small><b>${name}</b><p>${desc || "説明はまだありません"}</p></div></div>`;
+    box.classList.remove("hidden");
+}
+
+/**
+ * 右の人物欄（銀細工のUI 第3段。見本 prototypes/silver-battle-ui の .status）:
+ *   顔・名前・Lv・兵種・HP/MP ／ 移動・射程と能力値 ／ 武器 ／ 固有スキル（文）／ 残りのスキル・戦技（アイコン。押すと説明）
+ */
+function renderSilverPerson(unit, src, hpPct, mpPct, declLabel) {
+    const trial = !!unit.trialStats;
+    const s = trial ? unit.trialStats : { atk: unit.atk, mag: unit.mag, tec: unit.tec, spd: unit.spd, def: unit.def, res: unit.res };
+    const className = trial ? (TRIAL_UNIT_CLASS[unit.id]?.name || "") : (unit.className || "");
+    const item = trial ? TRIAL_ITEMS[unit.trialEquippedItem] : null;
+    const isStaff = item?.kind === "grimoire";
+    const range = !item ? (unit.attackRange ?? "―")
+        : isStaff ? `${TRIAL_GRIMOIRE_RANGE.min}〜${TRIAL_GRIMOIRE_RANGE.max + (trialHasAbility(unit, "魔法射程+1") ? 1 : 0)}` : item.range;
+    const durability = isStaff ? `${trialStaffDurability(unit, unit.trialEquippedItem)}/${item.durability}` : "";
+    const loadout = trial && TRIAL_ABILITY_SOURCE[unit.id]
+        ? trialSkillLoadoutFor(unit.id, unit.trialAbilityLevel, TRIAL_CLASS_LEVEL, unit.trialLoadoutSelection || null) : null;
+    const personal = loadout?.personal || null;
+    const others = loadout ? [
+        ...loadout.causeSkills.filter(Boolean).map(a => ({ ...a, kind: "passive" })),
+        ...loadout.classSkills.filter(Boolean).map(a => ({ ...a, kind: "passive" })),
+        ...loadout.combatArts.filter(Boolean).map(a => ({ ...a, kind: "active" })),
+    ] : [];
+    const esc = text => String(text ?? "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+    const stat = (label, value) => `<dl><dt>${label}</dt><dd>${value ?? "―"}</dd></dl>`;
+    const faceStyle = src ? `background-image:url('${src}');background-size:${unit.portraitBgSize || "cover"};background-position:${unit.portraitBgPos || "center top"}` : "";
+    return `
+        <div class="svPerson ${unit.side}">
+            <div class="svIdentity">
+                <div class="svFace" style="${faceStyle}"></div>
+                <div class="svIdText">
+                    <h3 class="${unit.name.length > 6 ? "long" : ""}">${unit.name}</h3>
+                    <p class="svLv">${formatUnitLevelLabel(unit)}</p>
+                    <div class="svJob">${item ? weaponTypeIcon(weaponTypeOf(item)) : ""}<span>${className || "―"}</span></div>
+                </div>
+                <div class="svVitals">
+                    <div class="svVital"><span>HP</span><b>${unit.hp}<small>/${unit.maxHp}</small></b></div>
+                    <div class="svMeter"><i style="width:${hpPct}%"></i></div>
+                    <div class="svVital"><span>MP</span><b>${unit.mp}<small>/${unit.maxMp}</small></b></div>
+                    <div class="svMeter mp"><i style="width:${mpPct}%"></i></div>
+                </div>
+            </div>
+            <div class="svAbilities">
+                <div class="svMobility">${stat("移動", unit.move)}${stat("射程", range)}<p class="svState">${unitStatusText(unit)}</p></div>
+                <div class="svStats">${stat("力", s.atk)}${stat("魔攻", s.mag)}${stat("技", s.tec)}${stat("速さ", s.spd)}${stat("防御", s.def)}${stat("魔防", s.res)}</div>
+            </div>
+            <div class="svWeapon">${item ? weaponTypeIcon(weaponTypeOf(item)) : lsCommandIcon("攻撃")}<b>${item ? item.name : "装備なし"}</b>${durability ? `<span>${durability}</span>` : item ? "" : "<span>反撃できません</span>"}</div>
+            ${personal ? `<button type="button" class="svSkill" data-skill="${esc(personal.name)}" data-desc="${esc(personal.desc)}" data-kind="personal">${abilityIconHtml(personal.name, "personal")}<span><b>${personal.name}</b><small>${personal.desc || ""}</small></span></button>` : ""}
+            ${others.length ? `<div class="svIcons">${others.map(a => `<button type="button" title="${esc(a.name)}" data-skill="${esc(a.name)}" data-desc="${esc(a.desc)}" data-kind="${a.kind}">${abilityIconHtml(a.name, a.kind)}</button>`).join("")}</div>` : ""}
+            ${declLabel ? `<div class="svDecl">行動予告: ${declLabel}</div>` : ""}
+            ${lsCanAct(unit) ? `<button type="button" class="svAct">${lsCommandIcon("待機")}<span>行動する</span></button>` : ""}
+        </div>`;
 }
 
 /**
@@ -3128,6 +3230,13 @@ function buildLandscapeCommandMenu(unit) {
     clearLandscapeCommandBranch();
     landscapeCommandList.className = "menu";
     landscapeCommandList.innerHTML = "";
+    // 人物欄へ戻る（銀細工のUI 第3段）
+    const toPerson = document.createElement("button");
+    toPerson.type = "button";
+    toPerson.className = "lsMenuItem svToPerson";
+    toPerson.innerHTML = `${lsCommandIcon("詳細")}<span>人物</span>`;
+    toPerson.addEventListener("click", () => { lsPanelMode = "person"; syncLandscapeBattleUi(unit); });
+    landscapeCommandList.appendChild(toPerson);
     getLandscapeCommands(unit).forEach((cmd, i) => {
         const btn = document.createElement("button");
         btn.className = `lsMenuItem${cmd.active ? " active" : ""}`;
@@ -3416,6 +3525,13 @@ function renderLandscapeCommandRail(unit = selectedUnit) {
         || turnPhase !== "ally"
         || unit.side !== "ally"
         || (unit.moved && unit.acted)) {
+        clearLandscapeCommandBranch();
+        landscapeCommandList.innerHTML = "";
+        setLandscapeRailVisible(false);
+        return;
+    }
+    // 右の欄が人物欄のときはコマンドを出さない（銀細工のUI 第3段）
+    if (!lsShowCommands(unit)) {
         clearLandscapeCommandBranch();
         landscapeCommandList.innerHTML = "";
         setLandscapeRailVisible(false);
