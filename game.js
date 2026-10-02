@@ -3863,9 +3863,8 @@ function renderLandscapeBattlePreview(attacker, target, pred, actionLabel, optio
     lsForecast.style.left = "";
     lsForecast.style.top = "";
     markLandscapeTarget(target);
-    // 下の帯に隠れないよう、狙う相手が見える位置へ盤面を動かす
-    lsPanKey = null;
-    keepLandscapeUnitVisible(target);
+    // 下の帯に隠れないよう、交戦する2人が帯より上に並んで見える位置へ盤面を動かす（銀細工のUI 第4段）
+    lsFocusForecastPair(attacker, target);
 
     if (readOnly) {
         setLandscapeHint(!actionLabel || actionLabel === "攻撃"
@@ -3983,6 +3982,42 @@ function keepLandscapeUnitVisible(unit) {
         applyMapTransform();
         setTimeout(() => battleCanvas.classList.remove("autoPanning"), 320);
     }, 260);
+}
+
+/**
+ * 戦闘予測: 交戦する2人を、下の予測の帯より上・左上の見出しより下に入れ、左右は2人の真ん中を画面の真ん中へ寄せる
+ * （銀細工のUI 第4段。見本「予測に入ると盤面のカメラを寄せ、交戦する人物と位置関係を予測UIで隠さない」）
+ */
+function lsFocusForecastPair(attacker, target) {
+    if (!isLandscapeBattleUi() || gameMode !== "battle" || typeof mapPanX === "undefined") return;
+    clearTimeout(lsPanFrame);
+    lsPanFrame = setTimeout(() => {
+        const a = document.getElementById(`unit_${attacker.id}`);
+        const t = document.getElementById(`unit_${target.id}`);
+        const band = document.querySelector("#lsForecast:not(.hidden) .fcbPanel");
+        const shell = landscapeBattleShell;
+        if (!a || !t || !band || !shell) return;
+        const shellRect = shell.getBoundingClientRect();
+        const scale = shellRect.width / (shell.offsetWidth || shellRect.width) || 1;
+        const ra = a.getBoundingClientRect();
+        const rt = t.getBoundingClientRect();
+        const top = Math.min(ra.top, rt.top);
+        const bottom = Math.max(ra.bottom, rt.bottom);
+        const centerX = (Math.min(ra.left, rt.left) + Math.max(ra.right, rt.right)) / 2;
+        const limitTop = shellRect.top + 50 * scale;                       // 見出しの下
+        const limitBottom = band.getBoundingClientRect().top - 30 * scale;  // 帯からはみ出す肖像の上
+        let dy = 0;
+        if (bottom > limitBottom) dy = limitBottom - bottom;
+        if (top + dy < limitTop) dy = (limitTop + limitBottom) / 2 - (top + bottom) / 2;   // 入りきらなければ間の真ん中
+        const dx = (shellRect.left + shellRect.width / 2) - centerX;
+        if (Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
+        battleCanvas.classList.add("autoPanning");
+        mapPanX += dx / scale;
+        mapPanY += dy / scale;
+        applyMapTransform();
+        lsPanKey = `${target.id}:${target.x},${target.y}`;
+        setTimeout(() => battleCanvas.classList.remove("autoPanning"), 320);
+    }, 120);
 }
 
 // =============================================

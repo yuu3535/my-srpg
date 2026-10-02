@@ -7957,3 +7957,177 @@ img.lsMenuIcon.wpnIcon {
     from { opacity: 0; transform: translateX(10px); }
     to   { opacity: 1; transform: none; }
 }
+
+/* ============================================================
+   [silver-forecast] 銀細工の戦闘UI 第4段: 戦闘予測（2026-10-02）
+   下の大きな帯（左右の端まで）、帯から少しはみ出す肖像、中央の交戦の印、帯のすぐ下のボタン、
+   予測の間は左の一覧を短くして中だけスクロール。寸法は見本（prototypes/silver-battle-ui の .forecast）×0.622。
+   数値は今までどおり交戦の計画（battlePlan）から
+============================================================ */
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast {
+    position: absolute;
+    inset: 0;
+    left: 0;
+    right: 0;
+    top: 0;
+    width: auto;
+    height: auto;
+    transform: none;
+}
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 339px;
+    bottom: 0;
+    background: rgba(10, 20, 29, 0.92);
+    pointer-events: none;
+}
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast:has(.fcbPanel.readOnly)::before { display: none; }
+/* 見出し */
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbTitle {
+    top: 5px;
+    left: 6px;
+    width: 162px;
+    height: 42px;
+    padding: 0 0 6px 39px;
+    align-items: center;
+    color: var(--sv-text);
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    background: rgba(9, 20, 30, 0.7);
+}
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbTitle i { display: none; }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbTitle::after {
+    left: 0;
+    right: auto;
+    bottom: -8px;
+    width: 165px;
+    height: 29px;
+    background: url("assets/ui/heading_flourish.png") left center / 100% 100% no-repeat;
+    filter: grayscale(1) brightness(1.6);
+}
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbTitle.readOnly { color: #e9a99b; }
+/* 帯 */
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbPanel {
+    left: 4px;
+    right: 4px;
+    top: auto;
+    bottom: 49px;
+    height: 123px;
+    grid-template-columns: 158px 156px minmax(0, 1fr) 156px 158px;
+    overflow: visible;
+    border: 10px solid transparent;
+    border-image: url("assets/ui/silver_frame.png") 224 / 30px stretch;
+    background: var(--sv-panel);
+    background-clip: padding-box;
+    box-shadow: none;
+}
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbPanel.readOnly { bottom: 10px; }
+/* 肖像: 帯の下にそろえ、上へ少しはみ出す */
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbBust { margin: 0; overflow: visible; background: none; }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbBust i {
+    inset: auto;
+    left: -14px;
+    bottom: -10px;
+    width: 175px;
+    height: 149px;
+    -webkit-mask-image: linear-gradient(90deg, #000 72%, transparent), linear-gradient(180deg, transparent, #000 14%);
+    -webkit-mask-composite: source-in;
+    mask-image: linear-gradient(90deg, #000 72%, transparent), linear-gradient(180deg, transparent, #000 14%);
+    mask-composite: intersect;
+}
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbBust.right i { left: auto; right: -14px; }
+/* 左右の数値 */
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbSide { align-content: start; gap: 0; padding: 1px 4px 0; color: var(--sv-text); }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbName { height: 18px; border-bottom: 1px solid #617583; }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbName b { font-size: 13px; letter-spacing: 0.04em; font-weight: 500; }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbName span { font-size: 10.5px; color: var(--sv-silver); }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbWeapon { height: 20px; padding: 0; border-bottom: 0; }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbWeapon b { font-size: 11.2px; font-weight: 500; }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbWeapon .lsMenuIcon { width: 16px; height: 16px; stroke: var(--sv-silver); background: none; border: 0; }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbWeapon small { color: var(--sv-muted); }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbWeapon em { color: #dc8a93; }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbWeapon.switch button { color: var(--sv-teal); }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbHp { height: 21px; padding: 0; border-bottom: 1px solid #627582; }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbHp > span:not(.fcbBar) { width: 20px; color: var(--sv-silver); font-size: 11px; font-weight: 400; }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbHp > b { font-size: 15px; font-weight: 500; color: var(--sv-text); }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbHp > b strong { color: #d3e2e1; font-weight: 500; }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbSide.right .fcbHp > b strong { color: #dc8a93; }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbBar { height: 6px; background: #46515e; border: 0; }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbBar .after { background: #64c6c3; }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbBar.enemy .after { background: #db7b85; }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbStats > div {
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    padding: 0 3px 0 14px;
+    font-size: 12.5px;
+    line-height: 14px;
+    border: 0;
+}
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbStats dt { color: var(--sv-silver); letter-spacing: 0.04em; }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbStats dd { color: var(--sv-text); text-align: right; font-variant-numeric: tabular-nums; }
+/* 中央の交戦の印（見本: 交差した剣を銀色に） */
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbEmblem {
+    background: url("assets/ui/fc_emblem_sword.png") center 2px / 42px 104px no-repeat;
+    filter: grayscale(1) brightness(1.9);
+}
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbEmblem::before,
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbEmblem::after,
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbEmblem .lsMenuIcon { display: none; }
+/* ボタン: 帯のすぐ下（見本の銀のボタン。仮の素材 assets/ui/silver_button_filled.png） */
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbBtns {
+    position: absolute;
+    top: 339px;
+    bottom: auto;
+    left: 50%;
+    right: auto;
+    width: 506px;
+    transform: translateX(-50%);
+    display: grid;
+    grid-template-columns: 1fr 1.3fr 1fr;
+    gap: 10px;
+    padding: 0;
+    background: none;
+    border: 0;
+}
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbBtns button {
+    height: 39px;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 1px 6px;
+    color: var(--sv-text);
+    font-size: 14px;
+    letter-spacing: 0.08em;
+    border: 0;
+    border-image: none;
+    background: url("assets/ui/silver_button_filled.png") center / 100% 210% no-repeat;
+    box-shadow: none;
+    transition: filter 0.18s var(--sv-ease), transform 0.18s var(--sv-ease);
+}
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbBtns button:hover { filter: brightness(1.25); }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbBtns button:active { transform: scale(0.98); }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbBtns button:disabled { opacity: 0.5; }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbBtns #lsFcConfirm { color: #c1eeed; font-size: 18px; }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbBtns button .lsMenuIcon,
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbBtns button img { width: 18px; height: 18px; stroke: currentColor; }
+/* 予測の間の左の一覧: 見出しの下から、短くして中だけスクロール（帯・肖像と重ならない） */
+#gameScreen[data-mode="battle"] #landscapeBattleShell.forecast-open #landscapeRoster {
+    opacity: 1;
+    visibility: visible;
+    margin-top: 6px;
+    max-height: 142px;
+    pointer-events: auto;
+}
+#gameScreen[data-mode="battle"] #landscapeBattleShell.forecast-open #landscapeRosterList { max-height: 56px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #8296a0 #14232c; }
+/* 帯の下の銀の線に「必殺」の行がかからないよう、行を少し詰める */
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbName { height: 17px; }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbWeapon { height: 18px; }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbHp { height: 20px; }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbStats > div { line-height: 12.5px; font-size: 12px; }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbName span { font-size: 9.5px; }
