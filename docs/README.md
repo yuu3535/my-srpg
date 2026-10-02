@@ -15,6 +15,7 @@
 | Unity完成までに必要な作業の全体像 | [`00-core/UNITY_GAME_DEVELOPMENT_MASTER_CHECKLIST.md`](00-core/UNITY_GAME_DEVELOPMENT_MASTER_CHECKLIST.md) |
 | 戦闘の数値（採用版） | [`../採用版md/README.md`](../採用版md/README.md)・方針の地図 [`30-planning/BATTLE_NUMBERS_POLICY_MAP_2026-10-01.md`](30-planning/BATTLE_NUMBERS_POLICY_MAP_2026-10-01.md) |
 | UIの方向性と試作方針 | [`10-design/ui/UNITY_SRPG_UI_DESIGN_DIRECTION_DRAFT.md`](10-design/ui/UNITY_SRPG_UI_DESIGN_DIRECTION_DRAFT.md) |
+| 原作者が確認した最新の戦闘UI方向性・HTML見本・Claude Codeへの共有 | [`10-design/ui/SILVER_BATTLE_UI_DIRECTION_2026-10-02.md`](10-design/ui/SILVER_BATTLE_UI_DIRECTION_2026-10-02.md)（方向性確認済み、本編・Unity未反映） |
 | 現在のブラウザ版に何が実装されているか | [`20-implementation/CURRENT_GAME_SYSTEM_2026-09-21.md`](20-implementation/CURRENT_GAME_SYSTEM_2026-09-21.md) |
 | 次に何をするか | [`30-planning/NEXT_ACTION_QUEUE.md`](30-planning/NEXT_ACTION_QUEUE.md) |
 | 直近の作業内容 | [`90-worklogs/WORK_MEMO_2026-09-27.md`](90-worklogs/WORK_MEMO_2026-09-27.md)（9/27〜9/28） |
