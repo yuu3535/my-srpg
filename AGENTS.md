@@ -48,6 +48,7 @@ GitHub Pagesで公開中: https://yuu3535.github.io/my-srpg/
 - 設定資料: `CharaStatus/`、`シナリオ集/`、原作TRPG資料 `rurubu4/`
 - `map_editor.html` と `prototypes/` はゲーム本編の実行経路ではない。
 - `debug/battle_placement.html` は戦闘のキャラの配置を地図の上でドラッグして決めるデバッグ用ページ（原作者用。静的サーバーで開く。決めた配置は「コピー」の文を総合担当に渡し、`battleDefinitions.js` へ入れて Unity へ書き出す）。
+- `debug/corridor_layers.html` は探索の2D横スクロール（オルクス城の回廊）の層の重ね方を決めるデバッグ用ページ（原作者用。静的サーバーで開く。素材のフォルダの画像を、層ごとに高さ・下の端・横に流れる速さ・くり返しをつまみで合わせ、「コピー」の文を総合担当に渡して Unity の回廊に使う）。
 - `debug/status_viewer.html` はデバッグ用のステータス確認ページ（採用版の文書と `trialStatSystem.js` を直接読む。因果Lvごとの能力値・命中など・文書とゲームの食い違い）。表計算の一覧は `py -3.12 tools/build_stat_sheet.py`（`output/SRPG_ステータス一覧.xlsx`。Googleドライブ用）。
 - `unity-prototype/` は Unity 6.3 LTS（6000.3.24f1・URP 2D）の試作。`.meta` を削除・分離しない。
 
