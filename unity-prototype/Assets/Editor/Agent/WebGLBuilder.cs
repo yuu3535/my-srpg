@@ -11,7 +11,7 @@ namespace Srpg.EditorAgent
 {
     /// <summary>
     /// Unity版を WebGL に書き出す（ブラウザ・スマホで遊べる形。GitHub Pages に置く試し。原作者 2026-09-28）。
-    /// 最初の画面は探索（Explore3D。プロローグ1-1）。書き出し先は unity-prototype/Builds/WebGL（Git には入れない）。
+    /// 最初の画面は探索（Explore3D）の入口（プロローグ1-1 か 試験の戦闘 Battle3D を選ぶ）。書き出し先は unity-prototype/Builds/WebGL（Git には入れない）。
     ///
     /// 盤面は動かしながら材質を作る（Shader.Find）ので、書き出しで描画の部品が外されないよう、
     /// 使う組み合わせの材質を Assets/Resources/ShaderKeep に置いて必ず含める。霧も、実行中に切り替えるので残す
@@ -37,7 +37,8 @@ namespace Srpg.EditorAgent
                 var watch = Stopwatch.StartNew();
                 var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
                 {
-                    scenes = new[] { "Assets/Scenes/Explore3D.unity" },
+                    // 最初は探索（入口の画面 StartMenu で「プロローグから」か「試験の戦闘」を選ぶ。原作者 2026-10-03）
+                    scenes = new[] { "Assets/Scenes/Explore3D.unity", "Assets/Scenes/Battle3D.unity" },
                     locationPathName = OutDir,
                     target = BuildTarget.WebGL,
                     options = BuildOptions.None,

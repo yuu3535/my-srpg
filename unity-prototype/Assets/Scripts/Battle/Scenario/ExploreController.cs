@@ -67,6 +67,7 @@ namespace Srpg.Battle
 
         private void Start()
         {
+            if (StartMenu.Holding) return;   // 入口の画面で「プロローグから」を押したら Begin する
             if (Place == null) Begin();
         }
 
