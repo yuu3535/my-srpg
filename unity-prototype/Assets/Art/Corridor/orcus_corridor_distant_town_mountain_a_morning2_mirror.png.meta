@@ -1,13 +1,10 @@
 fileFormatVersion: 2
-guid: e6b524d26de104f4bb4ab5cb213e690f
+guid: 78840c97ec432da43966b720a4f78a5c
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -3445975336622006100
-    second: orcus_corridor_structure_arch_repeat_a_nofloor_0
-  - first:
-      213: 286698146771112239
-    second: orcus_corridor_structure_arch_repeat_a_nofloor_1
+      213: -6134743875205337409
+    second: orcus_corridor_distant_town_mountain_a_morning2_mirror_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -43,9 +40,9 @@ TextureImporter:
     filterMode: 1
     aniso: 1
     mipBias: 0
-    wrapU: 0
-    wrapV: 0
-    wrapW: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
@@ -103,12 +100,12 @@ TextureImporter:
     buildTarget: WebGL
     maxTextureSize: 2048
     resizeAlgorithm: 0
-    textureFormat: 50
+    textureFormat: -1
     textureCompression: 1
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
-    overridden: 1
+    overridden: 0
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
@@ -116,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: orcus_corridor_structure_arch_repeat_a_nofloor_0
+      name: orcus_corridor_distant_town_mountain_a_morning2_mirror_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 1305
-        height: 1205
+        width: 2045
+        height: 635
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -131,30 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: ca063eb50bf6d20d0800000000000000
-      internalID: -3445975336622006100
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: orcus_corridor_structure_arch_repeat_a_nofloor_1
-      rect:
-        serializedVersion: 2
-        x: 209
-        y: 128
-        width: 28
-        height: 19
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: f211e0c027e8af300800000000000000
-      internalID: 286698146771112239
+      spriteID: fbee162e2f20ddaa0800000000000000
+      internalID: -6134743875205337409
       vertices: []
       indices: 
       edges: []
@@ -173,8 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      orcus_corridor_structure_arch_repeat_a_nofloor_0: -3445975336622006100
-      orcus_corridor_structure_arch_repeat_a_nofloor_1: 286698146771112239
+      orcus_corridor_distant_town_mountain_a_morning2_mirror_0: -6134743875205337409
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
