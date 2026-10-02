@@ -206,6 +206,14 @@ namespace Srpg.EditorAgent
             RenderWithHud(hud, camera, rt, "Battle3D_ui_roster_closed");
             PlayerPrefs.SetInt("srpg.rosterCollapsed", rosterWas);
             hud.Refresh();
+            // 16:9 の画面（PC のウィンドウなど）: 左右の部品が画面の端から決まっているか
+            var wideRt = new RenderTexture(1388, 780, 24, RenderTextureFormat.ARGB32) { antiAliasing = 4 };
+            camera.targetTexture = wideRt;
+            camera.aspect = 1388f / 780f;
+            RenderWithHud(hud, camera, wideRt, "Battle3D_ui_idle_16x9");
+            camera.targetTexture = rt;
+            camera.aspect = (float)Board3DTestBuilder.PreviewWidth / Board3DTestBuilder.PreviewHeight;
+            wideRt.Release();
             hud.OpenStatus();
             RenderWithHud(hud, camera, rt, "Battle3D_ui_status");
             hud.CloseStatus();
@@ -233,7 +241,12 @@ namespace Srpg.EditorAgent
             controller.UndoMove();
             controller.Select("albas");
             // 敵の攻撃の前の予測（見るだけ）
-            controller.PreviewEnemyAttack("albas_rival");
+            // 今の位置から届く敵で撮る（2026-10-02: 兵種表の変更で敵アルバスの「魔法射程+1」が既定の枠から外れ、最初の位置からは届かなくなった）
+            foreach (var foeId in new[] { "albas_rival" }.Concat(controller.Units.Where(u => u.Side == "enemy" && u.Alive).Select(u => u.Id)))
+            {
+                controller.PreviewEnemyAttack(foeId);
+                if (controller.EnemyPreview != null) break;
+            }
             if (controller.EnemyPreview == null) throw new InvalidOperationException("UIの確認: 敵の攻撃の予測が出なかった");
             RenderWithHud(hud, camera, rt, "Battle3D_ui_enemy_preview");
             controller.ClearEnemyPreview();

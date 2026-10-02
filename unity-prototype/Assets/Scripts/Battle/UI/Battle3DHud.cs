@@ -139,6 +139,24 @@ namespace Srpg.Battle
 
         public bool Built => canvas != null;
 
+        private Rect safeAreaApplied;
+
+        /// <summary>
+        /// 端末の安全な表示範囲（切り欠き・丸い角を除いた範囲）の内側に、左右の部品を置く。
+        /// 盤面と背景は画面いっぱいのまま。エディタ・PCでは範囲が画面全体なので何もしない
+        /// </summary>
+        private void ApplySafeArea()
+        {
+            if (frame == null) return;
+            var safe = Screen.safeArea;
+            if (safe == safeAreaApplied) return;
+            safeAreaApplied = safe;
+            float w = Mathf.Max(1, Screen.width), h = Mathf.Max(1, Screen.height);
+            var canvasRect = ((RectTransform)canvas.transform).rect;
+            frame.offsetMin = new Vector2(safe.xMin / w * canvasRect.width, safe.yMin / h * canvasRect.height);
+            frame.offsetMax = new Vector2(-(w - safe.xMax) / w * canvasRect.width, -(h - safe.yMax) / h * canvasRect.height);
+        }
+
         private void LateUpdate()
         {
             // 戦闘の組み立て（Battle3DController.Setup）が済んでから作る（Start の順番に頼らない）
@@ -147,6 +165,7 @@ namespace Srpg.Battle
                 if (controller == null || controller.Data == null) return;
                 Build();
             }
+            ApplySafeArea();
             Refresh();
             UpdateOverlays();
             UpdateTerrain();
@@ -187,11 +206,12 @@ namespace Srpg.Battle
             markSelected = OverlayMark("MarkSelected", "mark_selected", 13, 11.4f);
             markTarget = OverlayMark("MarkTarget", "mark_target", 16, 16);
 
-            // ブラウザ版の 844×390 の画面を真ん中に置き、その上の位置で並べる
+            // 画面いっぱいの枠（銀細工のUIの土台。2026-10-02）。高さ390を基準に拡大縮小し、横に長い画面では左右へ広がる。
+            // 部品は PlaceLeft・PlaceRight・PlaceCenter・PlaceWide で、画面の左端・右端・真ん中から位置を決める。
+            // スマホの切り欠き・丸い角は ApplySafeArea で避ける
             frame = NewRect("Frame", canvasObject.transform);
-            frame.anchorMin = frame.anchorMax = new Vector2(0.5f, 0.5f);
-            frame.pivot = new Vector2(0.5f, 0.5f);
-            frame.sizeDelta = new Vector2(ScreenW, ScreenH);
+            Stretch(frame);
+            safeAreaApplied = new Rect(-1f, -1f, -1f, -1f);
 
             BuildTopStrip();
             BuildRoster();
@@ -229,7 +249,7 @@ namespace Srpg.Battle
         /// <summary>上の帯: フェーズ（英字の小見出し＋日本語）・勝利条件・TURN・敵行動予告の数</summary>
         private void BuildTopStrip()
         {
-            topStrip = Place(NewRect("TopStrip", frame), 82, 6, 680, 30);
+            topStrip = PlaceWide(NewRect("TopStrip", frame), 82, 6, 680, 30);
             var bg = topStrip.gameObject.AddComponent<Image>();
             bg.sprite = StopsSprite((0f, Hex("#381547", 0.62f)), (0.46f, Hex("#070811", 0.34f)), (0.72f, Hex("#070811", 0f)), (1f, Hex("#070811", 0f)));
             bg.raycastTarget = false;
@@ -247,7 +267,7 @@ namespace Srpg.Battle
         /// <summary>左の味方一覧（R1 の枠・A5 の顔枠）。押すとその味方を選ぶ</summary>
         private void BuildRoster()
         {
-            roster = Place(NewRect("Roster", frame), 82, 45, 46, 314);
+            roster = PlaceLeft(NewRect("Roster", frame), 82, 45, 46, 314);
             Framed(roster, "roster_frame", 4f);
             rosterSlots.Clear();
             int i = 0;
@@ -299,8 +319,8 @@ namespace Srpg.Battle
             if (rosterToggle == null) return;
             bool collapsed = RosterCollapsed;
             // 開いているとき: 一覧（x82・幅46）の右のふちに小さく。閉じているとき: 一覧のあった場所の左の端に、縦長の「▶ 味方」
-            if (collapsed) Place(rosterToggle, 82, 45, 16, 52);
-            else Place(rosterToggle, 122, 45, 14, 16);
+            if (collapsed) PlaceLeft(rosterToggle, 82, 45, 16, 52);
+            else PlaceLeft(rosterToggle, 122, 45, 14, 16);
             Place(rosterToggleText.rectTransform, 0, 0, collapsed ? 16 : 14, collapsed ? 52 : 16);
             rosterToggleText.text = collapsed ? "▶\n味\n方" : "◀";
             rosterToggleText.lineSpacing = 0.9f;
@@ -319,7 +339,7 @@ namespace Srpg.Battle
         /// <summary>右上の地形の欄（原作者の理想の画面）。カーソルのあるマス、なければ選んだキャラのマス</summary>
         private void BuildTerrainPanel()
         {
-            terrainPanel = Place(NewRect("Terrain", frame), 640, 44, 118, 42);
+            terrainPanel = PlaceRight(NewRect("Terrain", frame), 640, 44, 118, 42);
             Framed(terrainPanel, "panel_even", 7f);
             Diamond(terrainPanel, 12, 11, 5, Hex("#c8922a"));
             terrainName = Label(terrainPanel, "Name", 22, 5, 90, 17, 11, Ivory, FontStyle.Bold);
@@ -609,7 +629,7 @@ namespace Srpg.Battle
 
         private void BuildUnitCard()
         {
-            unitCard = Place(NewRect("UnitCard", frame), 130, 279, 244, 86);
+            unitCard = PlaceLeft(NewRect("UnitCard", frame), 130, 279, 244, 86);
             cardFrame = Framed(unitCard, "panel_even", 7f);
             var face = Place(NewRect("Portrait", unitCard), 7, 7, 62, 72);
             face.gameObject.AddComponent<RectMask2D>();
@@ -643,7 +663,7 @@ namespace Srpg.Battle
 
         private void BuildWeaponCard()
         {
-            weaponCard = Place(NewRect("WeaponCard", frame), 380, 296, 150, 69);
+            weaponCard = PlaceLeft(NewRect("WeaponCard", frame), 380, 296, 150, 69);
             Framed(weaponCard, "panel_even", 7f);
             var iconBox = Place(NewRect("IconBox", weaponCard), 12, 9, 15, 15);
             weaponIcon = iconBox.gameObject.AddComponent<Image>();
@@ -663,14 +683,14 @@ namespace Srpg.Battle
 
         private void BuildCommandList()
         {
-            commandList = Place(NewRect("Commands", frame), 640, 158, 118, 75);
+            commandList = PlaceRight(NewRect("Commands", frame), 640, 158, 118, 75);
             Framed(commandList, "panel_even", 7f);
         }
 
         /// <summary>手引きの帯（訓練の戦闘。原作者 2026-09-28: 台詞＋画面の帯）。上の帯の下、真ん中に金の縁で出す</summary>
         private void BuildGuide()
         {
-            guideBar = Place(NewRect("Guide", frame), 140, 42, 490, 30);
+            guideBar = PlaceCenter(NewRect("Guide", frame), 140, 42, 490, 30);
             var bg = guideBar.gameObject.AddComponent<Image>();
             bg.sprite = StopsSprite((0f, Hex("#381547", 0.96f)), (0.7f, Hex("#140b1f", 0.93f)), (1f, Hex("#140b1f", 0.72f)));
             bg.raycastTarget = false;
@@ -687,7 +707,7 @@ namespace Srpg.Battle
 
         private void BuildHint()
         {
-            hintBar = Place(NewRect("Hint", frame), 82, 369, 680, 14);
+            hintBar = PlaceWide(NewRect("Hint", frame), 82, 369, 680, 14);
             var bg = hintBar.gameObject.AddComponent<Image>();
             bg.sprite = GradientSprite(new Color(7 / 255f, 8 / 255f, 17 / 255f, 0.78f), new Color(7 / 255f, 8 / 255f, 17 / 255f, 0f));
             var edge = Place(NewRect("Edge", hintBar), 0, 0, 2, 14);
@@ -697,7 +717,7 @@ namespace Srpg.Battle
 
         private void BuildForecast()
         {
-            forecastRoot = Place(NewRect("Forecast", frame), 0, 0, ScreenW, ScreenH);
+            forecastRoot = PlaceCenter(NewRect("Forecast", frame), 0, 0, ScreenW, ScreenH);   // 戦闘予測は第4段で作り直すまで、844 の幅で真ん中に
 
             // 左上の見出し「戦闘予測」と、その下の飾り（F5）
             var title = Place(NewRect("Title", forecastRoot), 86, 8, 125, 25);
@@ -1133,7 +1153,7 @@ namespace Srpg.Battle
             if (entries.Count == 0) return;
             // 入れ替えた一覧（戦技・魔法）は、名前とMPが入るように少し広げる
             float width = wide ? 178f : subList != null ? 150f : 118f;   // 交換は品物の名前と「渡す →」「← もらう」が入る幅
-            commandList.anchoredPosition = new Vector2(758f - width, commandList.anchoredPosition.y);
+            commandList.anchoredPosition = new Vector2(-(ScreenW - 758f - OldSideMargin), commandList.anchoredPosition.y);   // 右端（844 の画面で x758）にそろえる。幅は左へ伸びる
             commandList.sizeDelta = new Vector2(width, entries.Count * 30 + 15);
             for (int i = 0; i < entries.Count; i++)
             {
@@ -1253,6 +1273,44 @@ namespace Srpg.Battle
         }
 
         /// <summary>親の左上からの位置と大きさ（ブラウザ版の画面の px）で置く</summary>
+        // ── 画面の端から決める置き方（座標は 844×390 の画面で測った値のまま） ──
+        // ブラウザ版の左右の余白（75。旧方針の「UIは中央16:9」）をやめ、その分だけ部品を左右の端へ寄せる（2026-10-02）
+        private const float OldSideMargin = 75f;
+
+        /// <summary>画面の左端から（x は 844 の画面の左からの位置）</summary>
+        private static RectTransform PlaceLeft(RectTransform rt, float x, float y, float w, float h) => Place(rt, x - OldSideMargin, y, w, h);
+
+        /// <summary>画面の右端から（x は 844 の画面の左からの位置。右端までの距離を保つ）</summary>
+        private static RectTransform PlaceRight(RectTransform rt, float x, float y, float w, float h)
+        {
+            rt.anchorMin = rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot = new Vector2(1f, 1f);
+            rt.anchoredPosition = new Vector2(-(ScreenW - (x + w) - OldSideMargin), -y);
+            rt.sizeDelta = new Vector2(w, h);
+            return rt;
+        }
+
+        /// <summary>画面の真ん中から（844 の画面の真ん中からのずれを保つ）</summary>
+        private static RectTransform PlaceCenter(RectTransform rt, float x, float y, float w, float h)
+        {
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 1f);
+            rt.pivot = new Vector2(0.5f, 1f);
+            rt.anchoredPosition = new Vector2(x + w / 2f - ScreenW / 2f, -y);
+            rt.sizeDelta = new Vector2(w, h);
+            return rt;
+        }
+
+        /// <summary>左右いっぱい（左端・右端からの距離を保って伸びる）</summary>
+        private static RectTransform PlaceWide(RectTransform rt, float x, float y, float w, float h)
+        {
+            rt.anchorMin = new Vector2(0f, 1f);
+            rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot = new Vector2(0f, 1f);
+            rt.offsetMin = new Vector2(x - OldSideMargin, -(y + h));
+            rt.offsetMax = new Vector2(-(ScreenW - (x + w) - OldSideMargin), -y);
+            return rt;
+        }
+
         private static RectTransform Place(RectTransform rt, float x, float y, float w, float h)
         {
             rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);

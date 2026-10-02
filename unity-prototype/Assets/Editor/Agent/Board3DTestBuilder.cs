@@ -678,8 +678,8 @@ namespace Srpg.EditorAgent
             {
                 camera.Render();
                 RenderTexture.active = rt;
-                tex = new Texture2D(PreviewWidth, PreviewHeight, TextureFormat.RGB24, false);
-                tex.ReadPixels(new Rect(0, 0, PreviewWidth, PreviewHeight), 0, 0);
+                tex = new Texture2D(rt.width, rt.height, TextureFormat.RGB24, false);
+                tex.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
                 tex.Apply();
             }
             else
