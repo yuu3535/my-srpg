@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>回廊の重ね方（デバッグ）</title>
+<!--
+  探索の2D横スクロール（オルクス城の回廊）の層の重ね方を、原作者がつまみで決めるデバッグ用ページ（総合担当 2026-10-03）。
+  静的サーバー（リポジトリのルート）で開く: http://localhost:8931/debug/corridor_layers.html
+  素材のフォルダの一覧はサーバーのフォルダ一覧から読む。決めた値は「コピー」で総合担当へ渡し、Unity の回廊に使う。
+  座標はゲームの基準画面 844×390（左上が 0,0）。速さは 1 でカメラと同じ（手前）、0 で動かない（空）。
+-->
+<style>
+  :root { color-scheme: dark; --ink: #0d1923; --panel: #142430; --line: #3a4b56; --text: #e8ece9; --muted: #9fb0b6; --teal: #67bfc1; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ink); color: var(--text); font: 13px/1.5 "Yu Gothic UI", "Meiryo", sans-serif; }
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 8px 14px; border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 15px; margin: 0 8px 0 0; font-family: "Yu Mincho", serif; }
+  header input[type=text] { width: 360px; }
+  input, select, button { font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 3px; padding: 2px 6px; }
+  button { cursor: pointer; } button:hover { border-color: var(--teal); }
+  main { display: grid; grid-template-columns: max-content 430px; gap: 12px; padding: 12px 14px; }
+  #wrap { overflow: hidden; }
+  #wrap { position: relative; }
+  #stage { position: relative; width: 844px; height: 390px; overflow: hidden; background: #000; transform-origin: top left; }
+  #stage .layer { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+  #stage img { position: absolute; display: block; user-select: none; }
+  #stage .floorRow { position: absolute; background-repeat: repeat-x; }
+  #stage .shade { position: absolute; left: 0; right: 0; }
+  #hero { position: absolute; pointer-events: none; }
+  #feet { position: absolute; left: 0; right: 0; height: 0; border-top: 1px dashed rgba(103,191,193,.8); pointer-events: none; }
+  .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; }
+  .bar label { display: flex; align-items: center; gap: 6px; }
+  #layers { display: grid; gap: 8px; max-height: calc(100vh - 120px); overflow-y: auto; padding-right: 4px; }
+  .card { border: 1px solid var(--line); border-radius: 4px; padding: 6px 8px; background: #11202a; }
+  .card.off { opacity: .55; }
+  .card .head { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .card .head b { flex: 1; font-weight: 600; }
+  .card .head button { padding: 0 6px; }
+  .row { display: grid; grid-template-columns: 70px 1fr 54px; align-items: center; gap: 6px; }
+  .row input[type=range] { width: 100%; }
+  .row input[type=number] { width: 54px; padding: 1px 3px; }
+  .card select { width: 100%; margin-bottom: 4px; }
+  .checks { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 2px; color: var(--muted); }
+  #out { width: 100%; height: 120px; margin-top: 8px; font: 12px/1.4 Consolas, monospace; background: #0a141b; color: var(--text); border: 1px solid var(--line); }
+  .hint { color: var(--muted); font-size: 12px; }
+  #msg { color: var(--teal); }
+</style>
+</head>
+<body>
+<header>
+  <h1>回廊の重ね方</h1>
+  <label>素材のフォルダ <input id="folder" type="text" value="背景/オルクス城回廊横スクロール/採用候補/"></label>
+  <button id="reload">読み込み直す</button>
+  <button id="add">層を足す</button>
+  <button id="copy">コピー</button>
+  <button id="reset">はじめの値に戻す</button>
+  <span id="msg"></span>
+</header>
+<main>
+  <div>
+    <div id="wrap"><div id="stage"><div id="feet"></div><img id="hero" alt=""></div></div>
+    <div class="bar">
+      <label>カメラ <input id="cam" type="range" min="0" max="4000" value="0" style="width:340px"> <span id="camV">0</span></label>
+      <button id="play">▶ 流す</button>
+      <label>表示の大きさ <select id="zoom"><option value="1" selected>1倍</option><option value="1.5">1.5倍</option><option value="2">2倍</option></select></label>
+    </div>
+    <div class="bar">
+      <label>アルシェ（大きさの目安） 足元の高さ <input id="heroY" type="number" value="352" style="width:60px"></label>
+      <label>背の高さ <input id="heroH" type="number" value="96" style="width:60px"></label>
+      <label><input id="heroOn" type="checkbox" checked> 出す</label>
+    </div>
+    <p class="hint">
+      層は下の欄の上から奥→手前の順に重なります。数値はゲームの画面（844×390）での大きさです。<br>
+      「くり返す」は横に並べます。「重ね幅」を増やすと継ぎ目が重なります（庭など）。「床」は真上から見た素材を縦につぶして帯にします。<br>
+      決まったら「コピー」を押して、総合担当に貼ってください。動かした値はこのブラウザに残ります。
+    </p>
+    <textarea id="out" readonly></textarea>
+  </div>
+  <div id="layers"></div>
+</main>
+<script>
+const STORE = "srpg.corridorLayers.v1";
+const $ = id => document.getElementById(id);
+let files = [];
+let layers = [];
+
+// はじめの値（総合担当が仮に重ねた形。2026-10-03）
+const DEFAULTS = [
+  { name: "空", file: "orcus_corridor_sky_clear_a_morning2.png", kind: "image", height: 390, bottom: 390, x: 0, overlap: 0, speed: 0, repeat: true, mirror: false, opacity: 1, on: true },
+  { name: "遠景（町と山）", file: "orcus_corridor_distant_town_mountain_a_morning2.png", kind: "image", height: 250, bottom: 280, x: 0, overlap: 0, speed: 0.15, repeat: true, mirror: false, opacity: 1, on: true },
+  { name: "庭", file: "orcus_corridor_garden_path_a_neutral2.png", kind: "image", height: 210, bottom: 350, x: 0, overlap: 0, speed: 0.45, repeat: true, mirror: false, opacity: 1, on: true },
+  { name: "床（真上からの素材を帯に）", file: "", kind: "floor", top: 336, bottom: 390, tile: 120, rows: 2, x: 0, speed: 1, shade: 0.45, on: true },
+  { name: "アーチ", file: "orcus_corridor_structure_arch_repeat_a_nofloor.png", kind: "image", height: 390, bottom: 390, x: 0, overlap: 0, speed: 1, repeat: true, mirror: false, opacity: 1, on: true },
+  { name: "旗", file: "orcus_corridor_prop_banner_royal_a_neutral.png", kind: "image", height: 150, bottom: 300, x: 520, overlap: 0, speed: 1, repeat: false, mirror: false, opacity: 1, on: false },
+];
+
+const clone = v => JSON.parse(JSON.stringify(v));
+function load() {
+  try { const s = JSON.parse(localStorage.getItem(STORE) || "null"); if (s?.layers) { layers = s.layers; if (s.folder) $("folder").value = s.folder; if (s.hero) Object.assign(hero, s.hero); return; } } catch {}
+  layers = clone(DEFAULTS);
+}
+function save() { try { localStorage.setItem(STORE, JSON.stringify({ folder: $("folder").value, layers, hero })); } catch {} }
+const hero = { y: 352, h: 96, on: true };
+
+const sizes = {};   // 画像の元の大きさ（file → {w,h}）
+// フォルダはリポジトリのルートから（このページは debug/ にあるので、先頭に / を付ける）
+const folderUrl = () => "/" + $("folder").value.replace(/^\/+/, "").replace(/\/?$/, "/");
+function url(file) { return encodeURI(folderUrl() + file); }
+function size(file) {
+  if (!file) return Promise.resolve(null);
+  if (sizes[file]) return Promise.resolve(sizes[file]);
+  return new Promise(ok => { const im = new Image(); im.onload = () => { sizes[file] = { w: im.naturalWidth, h: im.naturalHeight }; ok(sizes[file]); }; im.onerror = () => ok(null); im.src = url(file); });
+}
+
+async function listFiles() {
+  try {
+    const html = await (await fetch(encodeURI(folderUrl()))).text();
+    files = [...html.matchAll(/href="([^"]+\.(?:png|webp|jpg|jpeg))"/gi)].map(m => decodeURIComponent(m[1])).sort();
+    $("msg").textContent = `素材 ${files.length} 枚`;
+  } catch { files = []; $("msg").textContent = "フォルダが読めません（静的サーバーで開いていますか）"; }
+}
+
+// ── 描く ──
+async function render() {
+  const stage = $("stage");
+  stage.querySelectorAll(".layer").forEach(e => e.remove());
+  const cam = Number($("cam").value);
+  const feet = $("feet"), heroImg = $("hero");
+  for (const L of layers) {
+    if (!L.on) continue;
+    const box = document.createElement("div");
+    box.className = "layer";
+    stage.insertBefore(box, feet);
+    const shift = L.x - cam * L.speed;
+    if (L.kind === "floor") {
+      const h = Math.max(1, L.bottom - L.top), rows = Math.max(1, L.rows);
+      for (let r = 0; r < rows; r++) {
+        const row = document.createElement("div");
+        row.className = "floorRow";
+        const rh = h / rows;
+        Object.assign(row.style, { left: 0, right: 0, top: `${L.top + r * rh}px`, height: `${rh + 0.5}px`,
+          backgroundImage: L.file ? `url("${url(L.file)}")` : "repeating-linear-gradient(90deg,#5c5866 0 58px,#3d3a46 58px 60px)",
+          backgroundSize: `${L.tile}px ${rh + 0.5}px`, backgroundPosition: `${shift}px 0` });
+        box.appendChild(row);
+      }
+      const shade = document.createElement("div");
+      shade.className = "shade";
+      Object.assign(shade.style, { top: `${L.top}px`, height: `${h}px`, background: `linear-gradient(180deg, rgba(10,14,22,${L.shade}), rgba(10,14,22,0))` });
+      box.appendChild(shade);
+      continue;
+    }
+    const s = await size(L.file);
+    if (!s) continue;
+    const w = s.w * (L.height / s.h);
+    const step = Math.max(8, w - (L.overlap || 0));
+    let start = shift;
+    if (L.repeat) { start = shift % step; if (start > 0) start -= step; }
+    for (let i = 0, x = start; x < 844 && (L.repeat || i === 0); i++, x += step) {
+      const img = document.createElement("img");
+      img.src = url(L.file);
+      Object.assign(img.style, { left: `${x}px`, top: `${L.bottom - L.height}px`, width: `${w}px`, height: `${L.height}px`, opacity: L.opacity,
+        transform: L.mirror && i % 2 ? "scaleX(-1)" : "none" });
+      box.appendChild(img);
+    }
+  }
+  feet.style.top = `${hero.y}px`;
+  feet.style.display = hero.on ? "" : "none";
+  heroImg.style.display = hero.on ? "" : "none";
+  Object.assign(heroImg.style, { height: `${hero.h}px`, top: `${hero.y - hero.h}px`, left: `${422 - hero.h * 0.28}px` });
+  $("camV").textContent = cam;
+  $("out").value = exportText();
+  save();
+}
+
+function exportText() {
+  const used = layers.filter(L => L.on).map(L => {
+    const o = { name: L.name, kind: L.kind, file: L.file, speed: L.speed, x: L.x };
+    if (L.kind === "floor") Object.assign(o, { top: L.top, bottom: L.bottom, tile: L.tile, rows: L.rows, shade: L.shade });
+    else Object.assign(o, { height: L.height, bottom: L.bottom, overlap: L.overlap, repeat: L.repeat, mirror: L.mirror, opacity: L.opacity });
+    return o;
+  });
+  return JSON.stringify({ corridor: "orcus_castle", folder: $("folder").value, screen: [844, 390], heroFeetY: hero.y, heroHeight: hero.h, layers: used }, null, 1);
+}
+
+// ── 欄 ──
+function slider(L, key, label, min, max, step) {
+  const row = document.createElement("div");
+  row.className = "row";
+  row.innerHTML = `<span>${label}</span><input type="range" min="${min}" max="${max}" step="${step}" value="${L[key]}"><input type="number" step="${step}" value="${L[key]}">`;
+  const [range, num] = row.querySelectorAll("input");
+  const set = v => { L[key] = Number(v); range.value = v; num.value = v; render(); };
+  range.addEventListener("input", () => set(range.value));
+  num.addEventListener("change", () => set(num.value));
+  return row;
+}
+function check(L, key, label) {
+  const lab = document.createElement("label");
+  lab.innerHTML = `<input type="checkbox" ${L[key] ? "checked" : ""}> ${label}`;
+  lab.querySelector("input").addEventListener("change", e => { L[key] = e.target.checked; render(); });
+  return lab;
+}
+function cards() {
+  const host = $("layers");
+  host.innerHTML = "";
+  layers.forEach((L, i) => {
+    const card = document.createElement("div");
+    card.className = "card" + (L.on ? "" : " off");
+    const head = document.createElement("div");
+    head.className = "head";
+    head.innerHTML = `<input type="checkbox" ${L.on ? "checked" : ""} title="出す"><b contenteditable="true">${L.name}</b><button title="奥へ">↑</button><button title="手前へ">↓</button><button title="消す">×</button>`;
+    const [on, , up, down, del] = head.children;
+    on.addEventListener("change", () => { L.on = on.checked; cards(); render(); });
+    head.querySelector("b").addEventListener("input", e => { L.name = e.target.textContent; $("out").value = exportText(); save(); });
+    up.addEventListener("click", () => { if (i > 0) { [layers[i - 1], layers[i]] = [layers[i], layers[i - 1]]; cards(); render(); } });
+    down.addEventListener("click", () => { if (i < layers.length - 1) { [layers[i + 1], layers[i]] = [layers[i], layers[i + 1]]; cards(); render(); } });
+    del.addEventListener("click", () => { layers.splice(i, 1); cards(); render(); });
+    card.appendChild(head);
+    const sel = document.createElement("select");
+    sel.innerHTML = `<option value="">（素材なし${L.kind === "floor" ? "・仮の縞" : ""}）</option>` + files.map(f => `<option ${f === L.file ? "selected" : ""}>${f}</option>`).join("");
+    sel.addEventListener("change", () => { L.file = sel.value; render(); });
+    card.appendChild(sel);
+    if (L.kind === "floor") {
+      card.appendChild(slider(L, "top", "上の端", 200, 390, 1));
+      card.appendChild(slider(L, "bottom", "下の端", 250, 420, 1));
+      card.appendChild(slider(L, "tile", "素材の幅", 20, 400, 1));
+      card.appendChild(slider(L, "rows", "段の数", 1, 6, 1));
+      card.appendChild(slider(L, "shade", "奥の暗さ", 0, 1, 0.05));
+    } else {
+      card.appendChild(slider(L, "height", "高さ", 20, 800, 1));
+      card.appendChild(slider(L, "bottom", "下の端", 0, 500, 1));
+      card.appendChild(slider(L, "overlap", "重ね幅", 0, 400, 1));
+      card.appendChild(slider(L, "opacity", "濃さ", 0, 1, 0.05));
+    }
+    card.appendChild(slider(L, "x", "横の位置", -1000, 2000, 1));
+    card.appendChild(slider(L, "speed", "流れる速さ", 0, 1.5, 0.01));
+    if (L.kind !== "floor") {
+      const checks = document.createElement("div");
+      checks.className = "checks";
+      checks.appendChild(check(L, "repeat", "くり返す"));
+      checks.appendChild(check(L, "mirror", "1つおきに左右反転"));
+      card.appendChild(checks);
+    }
+    host.appendChild(card);
+  });
+}
+
+// ── 操作 ──
+$("cam").addEventListener("input", render);
+let timer = null;
+$("play").addEventListener("click", () => {
+  if (timer) { clearInterval(timer); timer = null; $("play").textContent = "▶ 流す"; return; }
+  $("play").textContent = "■ 止める";
+  timer = setInterval(() => { const c = $("cam"); c.value = (Number(c.value) + 4) % Number(c.max); render(); }, 33);
+});
+$("zoom").addEventListener("change", fit);
+function fit() { const z = Number($("zoom").value); $("stage").style.transform = `scale(${z})`; $("wrap").style.height = `${390 * z}px`; $("wrap").style.width = `${844 * z}px`; }
+$("heroY").addEventListener("change", e => { hero.y = Number(e.target.value); render(); });
+$("heroH").addEventListener("change", e => { hero.h = Number(e.target.value); render(); });
+$("heroOn").addEventListener("change", e => { hero.on = e.target.checked; render(); });
+$("add").addEventListener("click", () => {
+  layers.push({ name: "新しい層", file: files[0] || "", kind: "image", height: 200, bottom: 390, x: 0, overlap: 0, speed: 1, repeat: false, mirror: false, opacity: 1, on: true });
+  cards(); render();
+});
+$("reset").addEventListener("click", () => { layers = clone(DEFAULTS); cards(); render(); $("msg").textContent = "はじめの値に戻しました"; });
+$("copy").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(exportText()); $("msg").textContent = "コピーしました。総合担当に貼ってください"; }
+  catch { $("out").select(); document.execCommand("copy"); $("msg").textContent = "コピーしました（下の欄）"; }
+});
+$("reload").addEventListener("click", async () => { await listFiles(); cards(); render(); });
+
+(async () => {
+  load();
+  $("heroY").value = hero.y; $("heroH").value = hero.h; $("heroOn").checked = hero.on;
+  $("hero").src = "../unity-prototype/Assets/Art/SD/young_arshe.png";
+  fit();
+  await listFiles();
+  cards();
+  render();
+})();
+</script>
+</body>
+</html>
