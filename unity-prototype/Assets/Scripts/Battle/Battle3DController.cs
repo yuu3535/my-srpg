@@ -597,7 +597,7 @@ namespace Srpg.Battle
         /// （レビュー 2026-09-28 D3: 敵の番の予測で、受ける味方が下の帯に隠れていた）
         /// </summary>
         private void FocusOnPair(UnitState attacker, UnitState defender) =>
-            view.FocusOnPoint((map.TopCenter(attacker.cell) + map.TopCenter(defender.cell)) * 0.5f);
+            view.FocusOnPointAt((map.TopCenter(attacker.cell) + map.TopCenter(defender.cell)) * 0.5f, 0.64f);   // 下の予測の帯より上（銀細工のUI 第4段）
 
         public void ClearEnemyPreview() => EnemyPreview = null;
         private BattleOption currentOption;

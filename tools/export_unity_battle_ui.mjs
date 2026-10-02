@@ -136,6 +136,23 @@ const result = await evaluate(`(async () => {
         : { label: o.label === "攻撃" ? "通常攻撃" : o.label, kind: "weapon", artName: o.action.artName || "", itemId: "", rangeMin: 1, rangeMax: o.range, isArt: !!o.isArt, isMagic: false, spell: null, equipSpell: null });
 
     // カードの顔: 見えている範囲を切り抜き、右・下・左の端を透明へ溶かした絵（ブラウザ版 .lcPortrait の mask と同じ）
+    // 戦闘予測の肖像（銀細工のUI 第4段）: 175×149 の箱の切り抜き。内側の端と上を薄くする（ブラウザ版の mask と同じ）
+    const bustFace = (im, uv) => {
+        const W = 350, H = 298;
+        const c = document.createElement("canvas"); c.width = W; c.height = H;
+        const g = c.getContext("2d");
+        const iw = im.naturalWidth, ih = im.naturalHeight;
+        const sx = uv.x * iw, sy = (1 - uv.y - uv.h) * ih, sw = uv.w * iw, sh = uv.h * ih;
+        g.drawImage(im, sx, sy, sw, sh, 0, 0, W, H);
+        g.globalCompositeOperation = "destination-in";
+        const h = g.createLinearGradient(0, 0, W, 0);
+        h.addColorStop(0, "#000"); h.addColorStop(0.72, "#000"); h.addColorStop(1, "rgba(0,0,0,0)");
+        g.fillStyle = h; g.fillRect(0, 0, W, H);
+        const v = g.createLinearGradient(0, 0, 0, H);
+        v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(0.14, "#000"); v.addColorStop(1, "#000");
+        g.fillStyle = v; g.fillRect(0, 0, W, H);
+        return c.toDataURL("image/png").split(",")[1];
+    };
     const cardFace = (im, uv) => {
         const W = 248, H = 288;   // 箱 62×72 の4倍
         const c = document.createElement("canvas"); c.width = W; c.height = H;
@@ -246,6 +263,7 @@ const result = await evaluate(`(async () => {
             entry.bustUv = uvOf(154, 118, im.naturalWidth, im.naturalHeight, size + "% auto", pos);
             portraits[unit.id] = shrink(im);
             portraits[unit.id + "_card"] = cardFace(im, entry.cardUv);
+            portraits[unit.id + "_bust"] = bustFace(im, uvOf(175, 149, im.naturalWidth, im.naturalHeight, size + "% auto", pos));
         }
         units.push(entry);
     }

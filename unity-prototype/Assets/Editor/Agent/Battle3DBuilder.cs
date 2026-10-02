@@ -44,6 +44,7 @@ namespace Srpg.EditorAgent
             ("roster_frame", new Vector4(8, 20, 8, 20)),
             ("silver_frame", new Vector4(224, 224, 224, 224)),   // 銀細工のUIの枠（見本の仮の素材。2026-10-02 原作者了承）
             ("chevron_up", Vector4.zero),                        // 味方一覧の開け閉めの山形
+            ("silver_button_filled", Vector4.zero),              // 戦闘予測のボタン（見本の仮の素材）
             ("face_frame", Vector4.zero),
             ("face_frame_selected", Vector4.zero),
             ("face_frame_done", Vector4.zero),

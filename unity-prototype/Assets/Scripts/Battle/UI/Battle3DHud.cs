@@ -61,7 +61,7 @@ namespace Srpg.Battle
         private RectTransform frame;
 
         // 部品
-        private RectTransform commandList, hintBar, forecastRoot;
+        private RectTransform commandList, hintBar, forecastRoot, fcStrip, fcPanel;
         // 右の人物欄（銀細工のUI 第3段。2026-10-02）。行動を選ぶ間はコマンドと入れ替える（panelMode）
         private RectTransform personPanel, personIconRow, personAct, personSkillRow;
         private RawImage personFace;
@@ -93,7 +93,7 @@ namespace Srpg.Battle
         // 2段目
         private RectTransform overlayRoot, topStrip, roster, terrainPanel;
         // 味方一覧の開け閉め（原作者 2026-10-02: 一覧が画面を占めて邪魔なときがある）。TURN の下の山形で開け閉めし、覚えておく
-        private RectTransform rosterChevron;
+        private RectTransform rosterChevron, rosterView, rosterFaces;
         private Text rosterDecl;
         private const string RosterPref = "srpg.rosterCollapsed";
         private static bool RosterCollapsed
@@ -457,11 +457,22 @@ namespace Srpg.Battle
             rosterChevron.pivot = new Vector2(0.5f, 0.5f);
             rosterChevron.anchoredPosition = new Vector2(18f, -9f);
 
+            // 顔の一覧は、見える範囲（予測の間は短くして中だけスクロール。見本と同じ）の中に並べる
+            rosterView = Place(NewRect("FacesView", roster), 0, RosterHead, RosterW, 10);
+            rosterView.gameObject.AddComponent<RectMask2D>();
+            rosterView.gameObject.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0f);
+            rosterFaces = Place(NewRect("Faces", rosterView), 0, 0, RosterW, 10);
+            var scroll = rosterView.gameObject.AddComponent<ScrollRect>();
+            scroll.content = rosterFaces;
+            scroll.horizontal = false;
+            scroll.vertical = true;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
+            scroll.scrollSensitivity = 12f;
             rosterSlots.Clear();
             int i = 0;
             foreach (var unit in controller.Units.Where(u => u.Side == "ally"))
             {
-                var slotRect = Place(NewRect("Roster_" + unit.Id, roster), 8, RosterHead + i * RosterStep, 34, 34);
+                var slotRect = Place(NewRect("Roster_" + unit.Id, rosterFaces), 8, i * RosterStep, 34, 34);
                 var bg = slotRect.gameObject.AddComponent<Image>();
                 bg.color = Hex("#162331");
                 var slot = new RosterSlot { id = unit.Id, root = slotRect };
@@ -805,18 +816,20 @@ namespace Srpg.Battle
         }
 
         /// <summary>銀の枠（仮の素材 silver_frame）とチャコールの下地</summary>
-        private void SilverBox(RectTransform rt)
+        private void SilverBox(RectTransform rt, float inset = 4f, float outset = 4f, float width = 13f, bool opaque = false)
         {
             var back = NewRect("Back", rt);
             Stretch(back);
-            back.offsetMin = new Vector2(4f, 4f);
-            back.offsetMax = new Vector2(-4f, -4f);
-            back.gameObject.AddComponent<Image>().color = HudPalette.Panel;
+            back.offsetMin = new Vector2(inset, inset);
+            back.offsetMax = new Vector2(-inset, -inset);
+            var panelColor = HudPalette.Panel;
+            if (opaque) panelColor.a = 1f;   // 戦闘予測の帯: 不透明（少し透ける色は撮影の画像でほとんど透明に写るため）
+            back.gameObject.AddComponent<Image>().color = panelColor;
             var border = NewRect("Frame", rt);
             Stretch(border);
-            border.offsetMin = new Vector2(-4f, -4f);
-            border.offsetMax = new Vector2(4f, 4f);
-            Framed(border, "silver_frame", 13f).raycastTarget = false;
+            border.offsetMin = new Vector2(-outset, -outset);
+            border.offsetMax = new Vector2(outset, outset);
+            Framed(border, "silver_frame", width).raycastTarget = false;
         }
 
         private static bool IsTargetingMode(Battle3DController.Mode mode) =>
@@ -1057,111 +1070,172 @@ namespace Srpg.Battle
             hintText = Label(hintBar, "Text", 10, 0, 660, 14, 9, Hex("#e8d5a4", 0.78f));
         }
 
+        /// <summary>
+        /// 戦闘予測（銀細工のUI 第4段。ブラウザ版の [silver-forecast] と同じ寸法）: 左上の見出し、下の大きな帯（左右の端まで）、
+        /// 帯から少しはみ出す肖像、左右の数値、中央の交戦の印、帯のすぐ下のボタン。数値は今までどおり BattlePlan から
+        /// </summary>
         private void BuildForecast()
         {
-            forecastRoot = PlaceCenter(NewRect("Forecast", frame), 0, 0, ScreenW, ScreenH);   // 戦闘予測は第4段で作り直すまで、844 の幅で真ん中に
+            forecastRoot = NewRect("Forecast", frame);
+            Stretch(forecastRoot);
 
-            // 左上の見出し「戦闘予測」と、その下の飾り（F5）
-            var title = Place(NewRect("Title", forecastRoot), 86, 8, 125, 25);
+            // 帯の下（ボタンの後ろ）の暗い地
+            var strip = NewRect("Strip", forecastRoot);
+            strip.anchorMin = new Vector2(0f, 0f);
+            strip.anchorMax = new Vector2(1f, 0f);
+            strip.pivot = new Vector2(0.5f, 0f);
+            strip.sizeDelta = new Vector2(0f, ScreenH - 339f);
+            var stripImage = strip.gameObject.AddComponent<Image>();
+            // 不透明にする（少し透ける色は、撮影の画像でほとんど透明に写るため。見本の 0.92 とほぼ同じ見え方）
+            stripImage.color = new Color(10 / 255f, 20 / 255f, 29 / 255f, 1f);
+            stripImage.raycastTarget = false;
+            fcStrip = strip;
+
+            // 左上の見出し「戦闘予測」と、その下の飾り
+            var title = Place(NewRect("Title", forecastRoot), 6, 5, 162, 42);
             var titleBg = title.gameObject.AddComponent<Image>();
-            titleBg.sprite = GradientSprite(new Color(8 / 255f, 6 / 255f, 16 / 255f, 0.82f), new Color(8 / 255f, 6 / 255f, 16 / 255f, 0f));
+            titleBg.color = new Color(9 / 255f, 20 / 255f, 30 / 255f, 0.7f);
             titleBg.raycastTarget = false;
-            Diamond(title, 9, 9, 7, GoldDeep, hollow: true);
-            fcTitle = Label(title, "Text", 25, 0, 100, 25, 15, Hex("#efd081"), FontStyle.Bold);
-            SpriteImage(title, "heading_flourish", 0, 23, 125, 13, preserve: true);
+            fcTitle = Label(title, "Text", 39, 2, 123, 30, 20, HudPalette.Text);
+            var flourish = SpriteImage(title, "heading_flourish", 0, 27, 165, 29, preserve: false);
+            flourish.color = new Color(0.86f, 0.9f, 0.93f, 1f);
 
-            // 下の帯（F1）
-            var panel = Place(NewRect("Panel", forecastRoot), 82, 223, 680, 132);
-            var band = panel.gameObject.AddComponent<Image>();
-            band.sprite = SpriteOf("fc_band");
-            leftBust = Bust(panel, "BustLeft", 10, false);
-            rightBust = Bust(panel, "BustRight", 516, true);
-            leftSide = Side(panel, "SideLeft", 167);
-            rightSide = Side(panel, "SideRight", 371);
-            SpriteImage(panel, "fc_emblem_sword", 312, 7, 57, 118, preserve: true);
+            // 下の帯
+            var panel = NewRect("Panel", forecastRoot);
+            panel.anchorMin = new Vector2(0f, 0f);
+            panel.anchorMax = new Vector2(1f, 0f);
+            panel.pivot = new Vector2(0.5f, 0f);
+            panel.offsetMin = new Vector2(4f, 49f);
+            panel.offsetMax = new Vector2(-4f, 49f + 123f);
+            fcPanel = panel;
+            SilverBox(panel, 10f, 0f, 30f, opaque: true);
+            leftBust = Bust(panel, "BustLeft", false);
+            rightBust = Bust(panel, "BustRight", true);
+            leftSide = Side(panel, "SideLeft", 168);
+            rightSide = Side(panel, "SideRight", 168);
+            var emblem = NewRect("Emblem", panel);
+            emblem.anchorMin = emblem.anchorMax = new Vector2(0.5f, 1f);
+            emblem.pivot = new Vector2(0.5f, 1f);
+            emblem.anchoredPosition = new Vector2(0f, -12.5f);
+            emblem.sizeDelta = new Vector2(42f, 104f);
+            var emblemImage = emblem.gameObject.AddComponent<Image>();
+            emblemImage.sprite = SpriteOf("fc_emblem_sword");
+            emblemImage.color = new Color(0.9f, 0.95f, 1f, 1f);
+            emblemImage.raycastTarget = false;
 
-            // 攻める側の技の付け足し（MPの消費・封じ・状態）。帯の左の上に1行（レビュー 2026-09-28 D1）
-            fcExtraBox = Place(NewRect("Extra", forecastRoot), 244, 206, 300, 16);
+            // 攻める側の技の付け足し（MPの消費・封じ・状態）。帯の左の上に1行
+            fcExtraBox = Place(NewRect("Extra", forecastRoot), 176, 199, 300, 16);
             var extraBg = fcExtraBox.gameObject.AddComponent<Image>();
-            // 色は線形で混ぜるので、見た目より強めの値にする（右の端だけ薄く消す）
-            var extraColor = new Color(8 / 255f, 6 / 255f, 16 / 255f, 1f);
-            extraBg.sprite = GradientSprite(extraColor, extraColor, 0.72f, 1f, 0.97f, 0f);
+            var extraColor = new Color(9 / 255f, 20 / 255f, 30 / 255f, 1f);
+            extraBg.sprite = GradientSprite(extraColor, extraColor, 0.85f, 1f, 0.97f, 0f);
             extraBg.raycastTarget = false;
-            fcExtra = Label(fcExtraBox, "Text", 8, 0, 290, 16, 9.5f, Hex("#f3dc9a"), FontStyle.Bold);
+            fcExtra = Label(fcExtraBox, "Text", 8, 0, 290, 16, 9.5f, HudPalette.Silver);
 
             // 戦闘詳細（反撃・スキルの効果）
-            fcDetailBox = Place(NewRect("Detail", forecastRoot), 310, 180, 300, 36);
-            Framed(fcDetailBox, "panel_even", 5f);
-            fcDetailText = Label(fcDetailBox, "Text", 10, 5, 280, 26, 8, Hex("#e2d4b4", 0.85f));
+            fcDetailBox = PlaceCenter(NewRect("Detail", forecastRoot), 272, 168, 300, 40);
+            SilverBox(fcDetailBox);
+            fcDetailText = Label(fcDetailBox, "Text", 10, 6, 280, 28, 8.5f, HudPalette.Silver);
             fcDetailText.alignment = TextAnchor.UpperLeft;
+            fcDetailText.horizontalOverflow = HorizontalWrapMode.Wrap;
             fcDetailBox.gameObject.SetActive(false);
 
-            // 下のボタン: キャンセル（B2）・攻撃する（F3）・戦闘詳細（B2）
-            fcCancel = FrameButton(forecastRoot, "Cancel", 237, 359, 94, 25, "button_b2_normal", "button_b2_pressed", 12f, "back", "キャンセル", 9.5f, Hex("#ecd28e", 0.92f), out _, out _);
-            fcConfirm = FrameButton(forecastRoot, "Confirm", 349, 359, 146, 25, "button_f3_normal", "button_f3_pressed", 12f, "cross", "攻撃する", 11f, Hex("#fff2d0"), out fcConfirmLabel, out fcConfirmIcon);
-            fcDetail = FrameButton(forecastRoot, "DetailButton", 513, 359, 94, 25, "button_b2_normal", "button_b2_pressed", 12f, "detail", "戦闘詳細", 9.5f, Hex("#ecd28e", 0.92f), out _, out _);
+            // 下のボタン（見本の銀のボタン。仮の素材 silver_button_filled）: キャンセル・攻撃する・戦闘詳細。幅は 1 : 1.3 : 1、間は 10
+            fcCancel = SilverButton(forecastRoot, "Cancel", 169f, 147.3f, "back", "キャンセル", 14f, HudPalette.Text, out _, out _);
+            fcConfirm = SilverButton(forecastRoot, "Confirm", 326.3f, 191.5f, "cross", "攻撃する", 18f, Hex("#c1eeed"), out fcConfirmLabel, out fcConfirmIcon);
+            fcDetail = SilverButton(forecastRoot, "DetailButton", 527.8f, 147.3f, "detail", "戦闘詳細", 14f, HudPalette.Text, out _, out _);
             fcCancel.onClick.AddListener(() => controller.CancelForecast());
             fcConfirm.onClick.AddListener(() => controller.ConfirmAttack());
             fcDetail.onClick.AddListener(() => fcDetailBox.gameObject.SetActive(!fcDetailBox.gameObject.activeSelf));
         }
 
-        private RawImage Bust(RectTransform panel, string name, float x, bool mirrored)
+        /// <summary>銀のボタン（見本の .action）。x・幅は 844 の画面の左からの位置（画面の真ん中から決める）。上は 339、高さ 39</summary>
+        private Button SilverButton(RectTransform parent, string name, float x, float w, string icon, string label, float size, Color color, out Text text, out Image iconImage)
         {
-            var box = Place(NewRect(name, panel), x, 7, 154, 118);
-            var mask = box.gameObject.AddComponent<RectMask2D>();
-            mask.padding = Vector4.zero;
+            var rt = PlaceCenter(NewRect(name, parent), x, 339f, w, 39f);
+            rt.gameObject.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0f);
+            var art = NewRect("Art", rt);
+            art.anchorMin = art.anchorMax = art.pivot = new Vector2(0.5f, 0.5f);
+            art.sizeDelta = new Vector2(w, 39f * 2.1f);
+            var artImage = art.gameObject.AddComponent<Image>();
+            artImage.sprite = SpriteOf("silver_button_filled");
+            artImage.raycastTarget = false;
+            var button = rt.gameObject.AddComponent<Button>();
+            button.transition = Selectable.Transition.ColorTint;
+            button.targetGraphic = artImage;
+            var colors = button.colors;
+            colors.highlightedColor = new Color(1.25f, 1.25f, 1.25f, 1f);
+            colors.pressedColor = new Color(0.85f, 0.85f, 0.85f, 1f);
+            colors.colorMultiplier = 1f;
+            button.colors = colors;
+            float textW = label.Length * size + 4f;
+            float iconSize = size + 4f;
+            float startX = (w - (iconSize + 9f + textW)) / 2f;
+            iconImage = Place(NewRect("Icon", rt), startX, (39f - iconSize) / 2f, iconSize, iconSize).gameObject.AddComponent<Image>();
+            iconImage.sprite = SpriteOf("icon_" + icon);
+            iconImage.preserveAspect = true;
+            iconImage.color = color;
+            iconImage.raycastTarget = false;
+            text = Label(rt, label, startX + iconSize + 9f, 0, textW + 20f, 39, size, color);
+            text.raycastTarget = false;
+            return button;
+        }
+
+        /// <summary>帯の下にそろえ、上へ少しはみ出す肖像（書き出しで端を薄くした絵 *_bust を使う）。右は向かい合うように左右反転</summary>
+        private RawImage Bust(RectTransform panel, string name, bool mirrored)
+        {
+            var box = NewRect(name, panel);
+            box.anchorMin = box.anchorMax = box.pivot = new Vector2(mirrored ? 1f : 0f, 0f);
+            box.anchoredPosition = new Vector2(mirrored ? 4f : -4f, 0f);
+            box.sizeDelta = new Vector2(175f, 149f);
             var image = NewRect("Image", box).gameObject.AddComponent<RawImage>();
             Stretch(image.rectTransform);
             if (mirrored) image.rectTransform.localScale = new Vector3(-1f, 1f, 1f);
-            // 帯の内側へ薄くなる（ブラウザ版の mask の代わりに、帯の地の色を重ねる）
-            var fade = NewRect("Fade", box).gameObject.AddComponent<Image>();
-            Stretch(fade.rectTransform);
-            var bandColor = new Color(21 / 255f, 16 / 255f, 29 / 255f, 1f);
-            fade.sprite = mirrored ? GradientSprite(bandColor, bandColor, 0f, 0.3f, 1f, 0f) : GradientSprite(bandColor, bandColor, 0.7f, 1f, 0f, 1f);
-            fade.raycastTarget = false;
+            image.raycastTarget = false;
             return image;
         }
 
+        /// <summary>帯の左右の数値（名前・Lv／武器／HP／ダメージ・命中・必殺）。x は帯の端からの距離（右は右の端から）</summary>
         private ForecastSide Side(RectTransform panel, string name, float x)
         {
             var side = new ForecastSide();
-            var root = Place(NewRect(name, panel), x, 7, 147, 118);
-            side.name = Label(root, "Name", 3, 4, 96, 16, 11, Parchment, FontStyle.Bold);
-            side.level = Label(root, "Level", 96, 6, 47, 12, 8.5f, Faint, anchor: TextAnchor.MiddleRight);
-            var iconBox = Place(NewRect("WeaponIcon", root), 3, 22, 17, 17);
-            iconBox.gameObject.AddComponent<Image>().color = Hex("#4c286e", 0.55f);
-            Outline(iconBox, Hex("#d6a740", 0.45f));
-            side.weaponIcon = Place(NewRect("Icon", iconBox), 1, 1, 15, 15).gameObject.AddComponent<Image>();
+            bool right = name == "SideRight";
+            var root = NewRect(name, panel);
+            root.anchorMin = root.anchorMax = root.pivot = new Vector2(right ? 1f : 0f, 1f);
+            root.anchoredPosition = new Vector2(right ? -x : x, -11f);
+            root.sizeDelta = new Vector2(156f, 103f);
+            side.name = Label(root, "Name", 0, 0, 112, 17, 13, HudPalette.Text);
+            side.level = Label(root, "Level", 96, 1, 60, 16, 9.5f, HudPalette.Silver, anchor: TextAnchor.MiddleRight);
+            Place(NewRect("Rule", root), 0, 17, 156, 1).gameObject.AddComponent<Image>().color = Hex("#617583");
+            side.weaponIcon = Place(NewRect("Icon", root), 0, 19, 16, 16).gameObject.AddComponent<Image>();
             side.weaponIcon.preserveAspect = true;
-            side.weapon = Label(root, "Weapon", 25, 21, 90, 19, 9.5f, Parchment, FontStyle.Bold);
-            if (name == "SideLeft")
+            side.weaponIcon.color = HudPalette.Silver;
+            side.weapon = Label(root, "Weapon", 20, 18, 100, 18, 11.2f, HudPalette.Text);
+            if (!right)
             {
                 // 攻撃の切り替え（届く攻撃が2つ以上あるとき。ブラウザ版の ‹ 破壊 1/2 ›）
-                fcPrev = TextButton(root, "Prev", 22, 21, 12, 19, "‹");
-                fcNext = TextButton(root, "Next", 131, 21, 12, 19, "›");
-                fcCount = Label(root, "Count", 104, 22, 26, 17, 7.5f, Hex("#e2d4b4", 0.55f), anchor: TextAnchor.MiddleRight);
+                fcPrev = TextButton(root, "Prev", 16, 18, 12, 18, "‹");
+                fcNext = TextButton(root, "Next", 144, 18, 12, 18, "›");
+                fcCount = Label(root, "Count", 110, 18, 32, 18, 8f, HudPalette.Muted, anchor: TextAnchor.MiddleRight);
                 fcPrev.onClick.AddListener(() => { controller.CycleForecastOption(-1); stateKey = null; });
                 fcNext.onClick.AddListener(() => { controller.CycleForecastOption(1); stateKey = null; });
             }
-            side.note = Label(root, "Note", 100, 22, 43, 17, 7.5f, Hex("#e9927e", 0.85f), anchor: TextAnchor.MiddleRight);
-            Place(NewRect("Rule", root), 3, 41, 139, 1).gameObject.AddComponent<Image>().color = Hex("#c8922a", 0.16f);
-            Label(root, "HP", 3, 42, 16, 22, 8, GoldDeep, FontStyle.Bold);
-            var bar = Place(NewRect("Bar", root), 25, 51, 61, 4);
-            bar.gameObject.AddComponent<Image>().color = new Color(0, 0, 0, 0.6f);
-            Outline(bar, Hex("#c8922a", 0.16f));
+            side.note = Label(root, "Note", 96, 18, 60, 18, 8f, Hex("#dc8a93"), anchor: TextAnchor.MiddleRight);
+            Label(root, "HP", 0, 36, 20, 20, 11, HudPalette.Silver);
+            var bar = Place(NewRect("Bar", root), 24, 43, 57, 6);
+            bar.gameObject.AddComponent<Image>().color = Hex("#46515e");
             side.hpLost = NewRect("Lost", bar).gameObject.AddComponent<Image>();
-            side.hpLost.color = Hex("#ecd28e", 0.28f);
+            side.hpLost.color = Hex("#d9e1e5", 0.28f);
             side.hpAfter = NewRect("After", bar).gameObject.AddComponent<Image>();
-            side.hpValue = Label(root, "HpValue", 88, 43, 55, 20, 13, Parchment, FontStyle.Bold, TextAnchor.MiddleRight);
+            side.hpValue = Label(root, "HpValue", 84, 36, 72, 20, 15, HudPalette.Text, FontStyle.Normal, TextAnchor.MiddleRight);
             side.hpValue.supportRichText = true;
+            Place(NewRect("Rule2", root), 0, 56, 156, 1).gameObject.AddComponent<Image>().color = Hex("#627582");
             side.values = new Text[3];
             string[] labels = { "ダメージ", "命中", "必殺" };
             for (int i = 0; i < 3; i++)
             {
-                float y = 64 + i * 16.5f;
-                Label(root, labels[i], 17, y, 80, 16, 8.5f, Faint);
-                side.values[i] = Label(root, labels[i] + "Value", 90, y - 1, 51, 17, 11, Parchment, FontStyle.Bold, TextAnchor.MiddleRight);
-                Place(NewRect("Rule" + i, root), 3, y + 16, 139, 1).gameObject.AddComponent<Image>().color = Hex("#c8922a", 0.12f);
+                float y = 58 + i * 13f;
+                Label(root, labels[i], 14, y, 60, 13, 12, HudPalette.Silver);
+                side.values[i] = Label(root, labels[i] + "Value", 62, y, 90, 13, 12, HudPalette.Text, FontStyle.Normal, TextAnchor.MiddleRight);
             }
             return side;
         }
@@ -1238,8 +1312,13 @@ namespace Srpg.Battle
                 roster.SetSiblingIndex(1);
             }
             bool collapsed = RosterCollapsed;
-            roster.gameObject.SetActive(!forecastOpen);
-            roster.sizeDelta = new Vector2(RosterW, collapsed ? RosterHead : RosterHead + rosterSlots.Count * RosterStep + 4f);
+            // 戦闘予測の間も出す（見本）。見出しの下から、顔の一覧は2人分弱の高さにして中だけスクロール（帯・肖像と重ならない）
+            float listH = rosterSlots.Count * RosterStep;
+            float viewH = collapsed ? 0f : forecastOpen ? Math.Min(56f, listH) : listH;
+            roster.gameObject.SetActive(true);
+            Place(roster, RosterX, forecastOpen ? 50f : RosterY, RosterW, RosterHead + viewH + (viewH > 0f ? 4f : 0f));
+            rosterView.sizeDelta = new Vector2(RosterW, viewH);
+            rosterFaces.sizeDelta = new Vector2(RosterW, listH);
             rosterChevron.localEulerAngles = new Vector3(0f, 0f, collapsed ? 180f : 0f);
             foreach (var slot in rosterSlots)
             {
@@ -1265,14 +1344,15 @@ namespace Srpg.Battle
             bool special = option != null && (option.isArt || option.isMagic);
             // 敵の攻撃の前の予測は見るだけ（ボタンなし・見出しは赤。ブラウザ版の「敵の攻撃」）
             fcTitle.text = readOnly ? "敵の攻撃" : "戦闘予測";
-            fcTitle.color = readOnly ? Hex("#e9927e") : Hex("#efd081");
+            fcTitle.color = readOnly ? Hex("#e9a99b") : HudPalette.Text;
             fcCancel.gameObject.SetActive(!readOnly);
             fcConfirm.gameObject.SetActive(!readOnly);
             fcDetail.gameObject.SetActive(!readOnly);
             uiUnits.TryGetValue(attacker.Id, out var a);
             uiUnits.TryGetValue(defender.Id, out var d);
-            SetPortrait(leftBust, a, a?.bustUv);
-            SetPortrait(rightBust, d, d?.bustUv);
+            SetBust(leftBust, a);
+            SetBust(rightBust, d);
+            fcStrip.gameObject.SetActive(!readOnly);   // 敵の攻撃の予測（見るだけ）はボタンがないので、帯の下の暗い地も出さない
 
             var check = fc.counterCheck;
             bool canCounter = fc.counter != null;
@@ -1334,13 +1414,23 @@ namespace Srpg.Battle
             int hp = unit.plan.hp, maxHp = Math.Max(1, unit.plan.maxHp);
             SetBar(side.hpLost.rectTransform, (float)hp / maxHp);
             SetBar(side.hpAfter.rectTransform, (float)hpAfter / maxHp);
-            side.hpAfter.sprite = unit.Side == "enemy" ? GradientSprite(Hex("#b8423c"), Hex("#e0645a")) : GradientSprite(Hex("#2aa7a0"), Hex("#58e0c8"));
+            side.hpAfter.sprite = null;
+            side.hpAfter.color = unit.Side == "enemy" ? Hex("#db7b85") : Hex("#64c6c3");
+            string after = unit.Side == "enemy" ? "#dc8a93" : "#d3e2e1";
             side.hpValue.text = hpAfter == hp
-                ? $"{hp}<size=7><color=#d6a740b3> ▶ </color></size>{hp}"
-                : $"{hp}<size=7><color=#d6a740b3> ▶ </color></size><color=#ffe2a0>{hpAfter}</color>";
+                ? $"{hp}<size=9><color=#a6b7bd> » </color></size>{hp}"
+                : $"{hp}<size=9><color=#a6b7bd> » </color></size><color={after}>{hpAfter}</color>";
             side.values[0].text = strike == null ? "─" : follow != null ? $"{strike.damage}×2" : $"{strike.damage}";
             side.values[1].text = strike == null ? "─" : $"{strike.hitRate}%";
             side.values[2].text = strike == null ? "─" : $"{strike.critRate}%";
+        }
+
+        /// <summary>予測の肖像: 書き出しで端を薄くした *_bust の絵（なければ今までの切り抜き）</summary>
+        private void SetBust(RawImage image, UiUnit ui)
+        {
+            var bust = ui != null ? portraits.FirstOrDefault(p => p.name == ui.portrait + "_bust").texture : null;
+            if (bust != null) { image.texture = bust; image.enabled = true; image.uvRect = new Rect(0, 0, 1, 1); }
+            else SetPortrait(image, ui, ui?.bustUv);
         }
 
         private static void SetBar(RectTransform rt, float t)

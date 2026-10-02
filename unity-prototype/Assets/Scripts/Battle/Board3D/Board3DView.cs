@@ -1542,6 +1542,22 @@ namespace Srpg.Battle
             FocusOn(cell);
         }
 
+        /// <summary>
+        /// その点が画面の高さ viewportY（0＝下・1＝上）に来るように寄る（銀細工のUI 第4段: 戦闘予測で、交戦する2人を下の帯より上に出す）。
+        /// 正射影なので、寄る先を画面の奥の向きの逆へずらす
+        /// </summary>
+        public void FocusOnPointAt(Vector3 point, float viewportY, bool immediate = false)
+        {
+            if (targetCamera == null) { FocusOnPoint(point, immediate); return; }
+            var forward = transform.InverseTransformDirection(targetCamera.transform.forward);
+            float down = Mathf.Max(0.2f, -forward.y);
+            forward.y = 0f;
+            if (forward.sqrMagnitude < 1e-6f) { FocusOnPoint(point, immediate); return; }
+            forward.Normalize();
+            float shift = (viewportY - 0.5f) * 2f * size / down;
+            FocusOnPoint(point - forward * shift, immediate);
+        }
+
         public void FocusOnPoint(Vector3 point, bool immediate = false)
         {
             closeFocus = ClampFocus(point);
