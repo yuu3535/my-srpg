@@ -7719,3 +7719,139 @@ img.lsMenuIcon.wpnIcon {
     --sv-condition: #183c50;    /* 勝利条件の札 */
     --sv-ease: cubic-bezier(.16, 1, .3, 1);
 }
+
+/* ============================================================
+   [silver-left] 銀細工の戦闘UI 第2段: 左側（2026-10-02）
+   左上: Chapter・戦場名・勝利条件（常に出ていた「味方フェーズ」の文字はやめる。フェーズ切替の演出 #phaseBanner は今のまま）。
+   左: TURN と山形の開閉、その下へ顔の一覧。閉じると TURN と山形だけ。
+   寸法は見本（1254×627）を高さで縮めた値（×0.622）。枠は見本の銀の枠（仮の素材 assets/ui/silver_frame.png）
+============================================================ */
+#gameScreen[data-mode="battle"] #landscapeTopStrip {
+    position: absolute;
+    left: 10px;
+    top: 6px;
+    right: auto;
+    width: auto;
+    height: auto;
+    display: grid;
+    grid-template-columns: auto;
+    justify-items: start;
+    gap: 3px;
+    padding: 0;
+    background: none;
+    border: 0;
+    box-shadow: none;
+    z-index: 6;
+    pointer-events: none;
+}
+#gameScreen[data-mode="battle"] #landscapeTopStrip::before,
+#gameScreen[data-mode="battle"] #landscapeTopStrip::after { display: none; }
+#gameScreen[data-mode="battle"] #landscapePhaseTitle,
+#gameScreen[data-mode="battle"] #landscapeTurnChip { display: none; }
+#landscapeChapter {
+    display: none;
+    position: relative;
+    padding-left: 22px;
+    color: var(--sv-text);
+    text-shadow: 0 1px 3px #132630, 0 0 2px rgba(0,0,0,0.8);
+}
+#gameScreen[data-mode="battle"] #landscapeChapter { display: grid; }
+#landscapeChapter img {
+    position: absolute;
+    left: 0;
+    top: 1px;
+    width: 16px;
+    height: 46px;
+    object-fit: contain;
+    filter: grayscale(1) brightness(1.65);
+    opacity: 0.9;
+}
+.lsChapterNo { font-size: 11px; letter-spacing: 0.06em; color: var(--sv-silver); }
+.lsChapterPlace { font-size: 18px; font-weight: 600; letter-spacing: 0.04em; line-height: 1.25; }
+#gameScreen[data-mode="battle"] #landscapeVictory {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0 0 0 22px;
+    padding: 0;
+    background: none;
+    border: 0;
+    box-shadow: none;
+    color: var(--sv-text);
+    font-size: 10.5px;
+    text-shadow: 0 1px 3px #132630, 0 0 2px rgba(0,0,0,0.8);
+}
+#gameScreen[data-mode="battle"] #landscapeVictory em {
+    padding: 1px 6px;
+    background: var(--sv-condition);
+    color: var(--sv-text);
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    border: 0;
+}
+
+/* 左: TURN＋山形＋顔の一覧 */
+#gameScreen[data-mode="battle"] #landscapeRoster {
+    margin-top: 32px;           /* 左上の Chapter の下から */
+    align-self: start;
+    max-height: calc(100% - 32px);
+    width: 50px;
+    margin-left: -2px;
+    padding: 3px 0 5px;
+    gap: 3px;
+    border: 7px solid transparent;
+    border-image: url("assets/ui/silver_frame.png") 224 / 11px stretch;
+    background: var(--sv-panel);
+    background-clip: padding-box;
+    box-shadow: none;
+}
+#gameScreen[data-mode="battle"] #landscapeRosterTurn {
+    display: grid;
+    justify-items: center;
+    line-height: 1;
+    color: var(--sv-text);
+}
+#landscapeRosterTurn small { font-size: 9px; letter-spacing: 0.08em; color: var(--sv-silver); }
+#landscapeRosterTurn b { font-size: 19px; font-weight: 500; margin-top: 1px; }
+#landscapeRosterTurn .decl { margin-top: 2px; font-size: 7.5px; color: #e6a596; white-space: nowrap; }
+#gameScreen[data-mode="battle"] #landscapeRosterToggle,
+#gameScreen[data-mode="battle"] #landscapeRoster.collapsed #landscapeRosterToggle {
+    align-self: center;
+    width: 36px;
+    height: 16px;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    background: transparent;
+    border: 0;
+    pointer-events: auto;
+}
+#landscapeRosterToggle img { width: 15px; height: 15px; opacity: 0.92; transition: transform 0.3s var(--sv-ease); pointer-events: none; }
+#landscapeRosterToggle.collapsed img { transform: rotate(180deg); }
+#landscapeRosterToggle:hover img { opacity: 1; }
+#gameScreen[data-mode="battle"] #landscapeRoster.collapsed {
+    align-self: start;
+    border: 7px solid transparent;
+    border-image: url("assets/ui/silver_frame.png") 224 / 11px stretch;
+    background: var(--sv-panel);
+    background-clip: padding-box;
+    padding: 3px 0 2px;
+    pointer-events: auto;
+}
+#gameScreen[data-mode="battle"] #landscapeRosterList { align-items: center; gap: 4px; }
+#gameScreen[data-mode="battle"] .lsRosterUnit {
+    width: 34px;
+    height: 34px;
+    border: 1px solid #62717d;
+    background: #162331;
+}
+#gameScreen[data-mode="battle"] .lsRosterUnit::after { display: none; }
+#gameScreen[data-mode="battle"] .lsRosterFace { inset: 0; }
+#gameScreen[data-mode="battle"] .lsRosterUnit.selected { border-color: #e0f6fc; box-shadow: inset 0 0 0 1px #72c4d4; }
+#gameScreen[data-mode="battle"] .lsRosterHp { left: 0; right: auto; bottom: 0; width: 87%; height: 2px; background: rgba(0,0,0,0.55); }
+#gameScreen[data-mode="battle"] .lsRosterHp em { background: var(--sv-teal); }
+#gameScreen[data-mode="battle"] .lsRosterMark { color: var(--sv-silver); }
+/* 戦闘予測の間は、左上に予測の見出し（.fcbTitle）が出るので Chapter の欄を隠す（見本と同じ） */
+#gameScreen[data-mode="battle"] #landscapeBattleShell.forecast-open #landscapeTopStrip { visibility: hidden; }

@@ -2940,7 +2940,13 @@ function renderLandscapeHeader() {
     if (landscapeVictory) {
         landscapeVictory.innerHTML = `<em>勝利条件</em><span>${getVictoryConditionText(BATTLE_DEFINITIONS[currentBattleId])}</span>`;
     }
-    if (landscapeRosterTurn) landscapeRosterTurn.innerHTML = `<small>TURN</small><b>${turnCount}</b>`;
+    if (landscapeRosterTurn) landscapeRosterTurn.innerHTML = `<small>TURN</small><b>${turnCount}</b>${declCount ? `<span class="decl" title="敵の行動予告">予告 ${declCount}</span>` : ""}`;
+    // 左上: Chapter・戦場名（銀細工のUI 第2段。勝利条件は landscapeVictory）
+    const chapterBox = document.getElementById("landscapeChapter");
+    if (chapterBox) {
+        const def = BATTLE_DEFINITIONS[currentBattleId] || {};
+        chapterBox.innerHTML = `<img src="assets/ui/fc_emblem_sword.png" alt=""><span class="lsChapterNo">${def.chapter || ""}</span><b class="lsChapterPlace">${def.location || def.name || ""}</b>`;
+    }
 }
 
 /** 勝利条件の表示文。battleDefinitions の victory.type から作る */
@@ -2996,7 +3002,7 @@ function setLandscapeRosterCollapsed(collapsed) {
     const toggle = document.getElementById("landscapeRosterToggle");
     if (!roster || !toggle) return;
     roster.classList.toggle("collapsed", collapsed);
-    toggle.innerHTML = collapsed ? "<span>▶</span><span>味</span><span>方</span>" : "◀";
+    toggle.classList.toggle("collapsed", collapsed);   // 山形の向き（開いている＝上向き、閉じている＝下向き）
     toggle.title = collapsed ? "味方一覧を開く" : "味方一覧を閉じる";
     toggle.setAttribute("aria-expanded", String(!collapsed));
 }

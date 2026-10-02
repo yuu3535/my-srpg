@@ -38,6 +38,9 @@ const BATTLE_DEFINITIONS = Object.freeze({
     //   ポーションは落ちていない。アルシェのツノをカリマに渡し、ポーションをもらう（交換の手引き）
     // ブラウザ版では DEBUG から試すだけ（ブラウザ版のプロローグは battle_tutorial のまま）
     battle_prologue_training: {
+        // 左上に出す Chapter と戦場名（戦う場所・戦闘の名前）。総合担当の仮の名前（原作者 2026-10-02 了承。あとで差し替える）
+        chapter: "Prologue",
+        location: "オルクス魔王城 鍛錬場",
         uiTheme: "orcus",
         background: "背景/オルクス魔王城鍛錬場.png",
         cols: 9,
@@ -105,6 +108,8 @@ const BATTLE_DEFINITIONS = Object.freeze({
     // 採用版ステータスの試験専用（trial/adopted-stats）。DEBUGの「テスト戦闘」だけから起動する。
     // battle_ch1 と同じ構成に幼カリマを加えた。シナリオ本編からは参照しない。
     battle_trial_adopted: {
+        chapter: "試験",            // 仮の名前（原作者 2026-10-02 了承）
+        location: "森の境",
         uiTheme: "mixed",
         background: "assets/background_forest.png",
         cols: 12,
