@@ -8159,3 +8159,20 @@ img.lsMenuIcon.wpnIcon {
     -webkit-mask-image: linear-gradient(90deg, transparent, #000 20%, #000 72%, transparent), linear-gradient(180deg, transparent, #000 14%);
     mask-image: linear-gradient(90deg, transparent, #000 20%, #000 72%, transparent), linear-gradient(180deg, transparent, #000 14%);
 }
+/* 原作者 2026-10-03: スキルの多いキャラ（リングホルム）で人物欄の下が切れる →
+   アイコンは1段にして横へスクロール（右端を薄くして続きがあると分かるように）、余白を詰める */
+.svIdentity { height: 88px; }
+.svFace { height: 88px; }
+.svVitals { top: 46px; }
+.svAbilities { padding: 3px 0 2px; }
+.svIcons { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; margin-top: 4px; padding-right: 14px;
+    -webkit-mask-image: linear-gradient(90deg, #000 84%, transparent); mask-image: linear-gradient(90deg, #000 84%, transparent); }
+.svIcons::-webkit-scrollbar { display: none; }
+.svIcons button { flex: none; }
+.svIcons .abIcon { width: 21px; height: 21px; }
+.svAct { height: 21px; margin-top: 5px; }
+#gameScreen[data-mode="battle"] #landscapeBattleShell.active #landscapeUnitPanel { max-height: 312px; }
+/* 原作者 2026-10-03: 予測の肖像が数値の欄にかかる → 数値の欄の手前（すき間 4px）までに戻す */
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbBust i { right: 4px; }
+#gameScreen[data-mode="battle"] #landscapeBattleShell #lsForecast .fcbBust.right i { right: auto; left: 4px; }
+#gameScreen[data-mode="battle"] #landscapeBattleShell.active #landscapeUnitPanel { max-height: none; }

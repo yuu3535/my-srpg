@@ -63,7 +63,7 @@ namespace Srpg.Battle
         // 部品
         private RectTransform commandList, hintBar, forecastRoot, fcStrip, fcPanel;
         // 右の人物欄（銀細工のUI 第3段。2026-10-02）。行動を選ぶ間はコマンドと入れ替える（panelMode）
-        private RectTransform personPanel, personIconRow, personAct, personSkillRow;
+        private RectTransform personPanel, personIconRow, personIconContent, personIconFade, personAct, personSkillRow;
         private RawImage personFace;
         private Text personName, personLevel, personClass, personHp, personMp, personMove, personRange, personState, personWeapon, personDurability;
         private Text personSkillName, personSkillDesc;
@@ -897,7 +897,21 @@ namespace Srpg.Battle
             personSkillDesc.horizontalOverflow = HorizontalWrapMode.Wrap;   // 説明は2行まで折り返す
             personSkillDesc.verticalOverflow = VerticalWrapMode.Truncate;
             personSkillDesc.lineSpacing = 0.95f;
+            // 残りのスキル・戦技のアイコン: 1段にして横へスクロール（原作者 2026-10-03: スキルの多いキャラで欄の下が切れた）。右端は薄く
             personIconRow = Place(NewRect("Icons", personPanel), 15, 252, 154, 22);
+            personIconRow.gameObject.AddComponent<RectMask2D>();
+            personIconRow.gameObject.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0f);
+            personIconContent = Place(NewRect("Content", personIconRow), 0, 0, 154, 22);
+            var iconScroll = personIconRow.gameObject.AddComponent<ScrollRect>();
+            iconScroll.content = personIconContent;
+            iconScroll.horizontal = true;
+            iconScroll.vertical = false;
+            iconScroll.movementType = ScrollRect.MovementType.Clamped;
+            var iconFade = Place(NewRect("Fade", personPanel), 147, 252, 22, 22).gameObject.AddComponent<Image>();
+            var fadeColor = HudPalette.Panel; fadeColor.a = 1f;
+            iconFade.sprite = GradientSprite(fadeColor, fadeColor, 0f, 1f, 0f, 1f);
+            iconFade.raycastTarget = false;
+            personIconFade = iconFade.rectTransform;
             // 行動する（コマンドへ）
             personAct = Place(NewRect("Act", personPanel), 15, 270, 154, 22);
             personAct.gameObject.AddComponent<Image>().color = Hex("#183c50", 0.85f);
@@ -991,11 +1005,16 @@ namespace Srpg.Battle
             foreach (var item in personIconItems) Object.DestroyImmediate(item);
             personIconItems.Clear();
             var skills = ui?.skills ?? Array.Empty<UiSkill>();
-            float rowY = hasPersonal ? 260 : 223;
+            float rowY = hasPersonal ? 256 : 220;
+            personIconRow.anchoredPosition = new Vector2(15f, -rowY);
+            personIconFade.anchoredPosition = new Vector2(147f, -rowY);
+            personIconFade.gameObject.SetActive(skills.Length > 7);
+            personIconContent.sizeDelta = new Vector2(Math.Max(154f, skills.Length * 22.5f), 22f);
+            personIconContent.anchoredPosition = Vector2.zero;
             for (int i = 0; i < skills.Length; i++)
             {
                 var skill = skills[i];
-                var icon = SkillIcon(personPanel, 15 + (i % 7) * 22.5f, rowY + (i / 7) * 23, 21, skill.name, skill.kind);
+                var icon = SkillIcon(personIconContent, i * 22.5f, 0, 21, skill.name, skill.kind);
                 var hit = icon.gameObject.AddComponent<Image>();
                 hit.color = new Color(0, 0, 0, 0);
                 var button = icon.gameObject.AddComponent<Button>();
@@ -1003,7 +1022,7 @@ namespace Srpg.Battle
                 button.onClick.AddListener(() => OpenSkillInfo(skill));
                 personIconItems.Add(icon.gameObject);
             }
-            float bottom = rowY + (skills.Length == 0 ? 0 : ((skills.Length - 1) / 7 + 1) * 23);
+            float bottom = rowY + (skills.Length == 0 ? 0 : 23);
             personAct.gameObject.SetActive(canAct);
             personAct.anchoredPosition = new Vector2(15f, -(bottom + 2f));
             personPanel.sizeDelta = new Vector2(PanelW, bottom + (canAct ? 30f : 6f) + 4f);
@@ -1190,11 +1209,11 @@ namespace Srpg.Battle
         /// <summary>帯の下にそろえ、上へ少しはみ出す肖像（書き出しで端を薄くした絵 *_bust を使う）。右は向かい合うように左右反転</summary>
         private RawImage Bust(RectTransform panel, string name, bool mirrored)
         {
-            // 真ん中へ寄せる（原作者 2026-10-03）: 数値の欄（真ん中から 42＋156）のすぐ外側に、内側の薄くなる所を 36 重ねる
+            // 真ん中へ寄せる（原作者 2026-10-03）: 数値の欄（真ん中から 42＋156）のすぐ外側（すき間 4）
             var box = NewRect(name, panel);
             box.anchorMin = box.anchorMax = new Vector2(0.5f, 0f);
             box.pivot = new Vector2(mirrored ? 0f : 1f, 0f);
-            box.anchoredPosition = new Vector2(mirrored ? 198f - 36f : -(198f - 36f), 0f);
+            box.anchoredPosition = new Vector2(mirrored ? 198f + 4f : -(198f + 4f), 0f);   // 数値の欄にかからない（原作者 2026-10-03）
             box.sizeDelta = new Vector2(175f, 149f);
             var image = NewRect("Image", box).gameObject.AddComponent<RawImage>();
             Stretch(image.rectTransform);

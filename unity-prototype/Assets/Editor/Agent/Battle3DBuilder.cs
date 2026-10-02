@@ -226,6 +226,8 @@ namespace Srpg.EditorAgent
             hud.OpenStatus();
             RenderWithHud(hud, camera, rt, "Battle3D_ui_status");
             hud.CloseStatus();
+            controller.Select("ringholm");
+            RenderWithHud(hud, camera, rt, "Battle3D_ui_select_many_skills");   // スキルの多いキャラ: アイコンは1段で横へ（原作者 2026-10-03）
             controller.Select("albas");
             RenderWithHud(hud, camera, rt, "Battle3D_ui_select");
             // コマンド「魔法」の一覧（入れ替えた一覧）
