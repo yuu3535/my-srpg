@@ -380,7 +380,7 @@ function fxCard() {
   perHead.textContent = "層ごとの霞・ぼかし（動かすとその層だけ自動でなくなる。「自動」で戻す）";
   card.appendChild(perHead);
   const firstOnLayer = layers.find(L => L.on);
-  layers.filter(L => L.on && L.kind !== "modules").forEach(L => {
+  layers.filter(L => L.on).forEach(L => {   // モジュール（アーチ）にも（原作者 2026-10-04）
     const box = document.createElement("div");
     box.className = "perLayer";
     const title = document.createElement("div");
