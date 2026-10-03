@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>太陽盤 — コマンド周回の操作試作</title>
+<style>
+* { box-sizing: border-box; }
+:root { --accent: #c7a36b; --label-ink: #292c30; --label-shadow: none; --line-ink: #766144; }
+body { margin: 0; background: #25272b; color: #ececee; font-family: "Yu Gothic", sans-serif; }
+main { max-width: 1400px; margin: auto; padding: 20px; min-height: 100dvh; }
+header { display: flex; flex-wrap: wrap; gap: 16px; align-items: baseline; margin-bottom: 14px; }
+h1 { margin: 0; font-size: 18px; }
+p { margin: 6px 0; font-size: 13px; color: #c5c7cb; line-height: 1.65; }
+.toolbar, .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.toolbar { margin-bottom: 14px; }
+label { display: grid; gap: 5px; font-size: 12px; }
+select, button, input { font: inherit; }
+select, .actions button, .toolbar button { background: #35383e; color: #ececee; border: 1px solid #656970; padding: 9px 12px; min-height: 44px; }
+button { cursor: pointer; }
+button:active { scale: .98; }
+button:disabled { cursor: default; opacity: .55; }
+button:focus-visible, select:focus-visible, input:focus-visible, .viewport:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.viewport { position: relative; width: 100%; aspect-ratio: 844 / 390; overflow: hidden; border: 1px solid #66696e; background: #85878b; touch-action: none; }
+.home { width: 844px; height: 390px; position: absolute; transform: scale(var(--scale, 1)); transform-origin: top left; background: #85878b; background-position: center; background-size: cover; isolation: isolate; }
+.home.dragging { cursor: grabbing; }
+.disk, .rays { position: absolute; left: 0; top: 0; aspect-ratio: 1; pointer-events: none; }
+.disk { width: 406px; height: 406px; transform: translate(-243px, -8px); z-index: 1; }
+.rays { width: 439px; height: 439px; transform: translate(-219.5px, -24.5px); z-index: 3; }
+.rotor { position: relative; width: 100%; height: 100%; transform-origin: center; }
+.asset { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.connector-layer, .label-layer { position: absolute; inset: 0; pointer-events: none; }
+.connector-layer { z-index: 2; }
+.label-layer { z-index: 4; }
+.command-connector { position: absolute; left: 0; top: 0; width: 1px; height: 1px; transform-origin: 0 0; background: var(--line-ink); }
+.command-connector.selected { height: 2px; }
+.label-anchor { position: absolute; left: 0; top: 0; width: 0; height: 0; }
+.command { position: absolute; width: 114px; height: var(--hit-height, 44px); left: -57px; top: calc(var(--hit-height, 44px) / -2); padding: 0 7px; border: 0; background: transparent; color: var(--label-ink); text-shadow: var(--label-shadow); font-size: 18px; font-weight: 600; letter-spacing: .04em; pointer-events: auto; text-align: left; }
+.command[aria-pressed=true] { font-weight: 700; text-decoration: underline; text-underline-offset: 8px; text-decoration-thickness: 1px; }
+.command:hover { text-decoration: underline; text-underline-offset: 8px; }
+.command:focus-visible { outline-offset: -4px; }
+.information { position: absolute; z-index: 0; width: 390px; transform: translate(398px, 89px); background: #303236ed; padding: 22px 24px; border-left: 2px solid var(--accent); }
+.eyebrow { font-size: 12px; color: #c8c9cb; letter-spacing: .12em; }
+.information h2 { margin: 8px 0 12px; font-size: 27px; font-weight: 600; }
+.information p { min-height: 44px; }
+.information button { margin-top: 12px; padding: 9px 18px; min-height: 44px; background: #e5dfd2; border: 1px solid var(--accent); color: #303238; font-size: 14px; }
+.fixed-buttons { position: absolute; transform: translate(650px, 335px); display: flex; gap: 8px; }
+.fixed-buttons button { border: 1px solid #8a8b8e; padding: 6px 10px; color: #ececee; background: #35383e; font-size: 12px; height: 36px; }
+.drag-hint { position: absolute; transform: translate(398px, 25px); font-size: 12px; color: #ececee; padding: 4px 8px; background: #303236dc; }
+.loading { position: absolute; z-index: 5; inset: 0; background: #777a7e; pointer-events: none; animation: breathe 1s ease-in-out infinite alternate; }
+@keyframes breathe { from { opacity: .98; } to { opacity: .65; } }
+.actions { margin-top: 16px; }
+.actions label { min-width: 160px; }
+input[type=range] { width: 180px; height: 30px; accent-color: var(--accent); }
+.error { color: #f0b0a0; }
+.status { min-height: 22px; }
+details { margin-top: 16px; border-top: 1px solid #55585e; padding-top: 10px; }
+summary { font-size: 13px; cursor: pointer; }
+.filter-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+dialog { max-width: 460px; border: 1px solid #88847b; padding: 24px; background: #303236; color: #ececee; }
+dialog::backdrop { background: #202226bb; }
+dialog h2 { font-size: 20px; margin-top: 0; }
+dialog button { min-height: 44px; padding: 8px 18px; background: #e5dfd2; border: 0; color: #303238; }
+@media (max-width: 700px) { main { padding: 12px; } .toolbar { gap: 8px; } }
+@media (prefers-reduced-motion: reduce) { .loading { animation: none; } }
+</style>
+</head>
+<body>
+<svg class="filter-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs id="material-defs"></defs></svg>
+<main>
+<header><h1>太陽盤 — 針先に合わせたコマンド試作</h1><p>尖った針先に対応。文字は外側、水平のまま。</p></header>
+<div class="toolbar">
+<label>操作キャラ<select id="character"><option value="alche">アルシェ：黒・金・橙</option><option value="karima">カリマ：白・銀・青</option></select></label>
+<label>確認用背景<select id="background"><option value="gray">灰色</option><option value="corridor">参考の2Dマップ</option><option value="dark">暗い灰色</option></select></label>
+<p>左の太陽盤をドラッグ／項目クリックで選択。右中央の項目が選ばれます。</p>
+</div>
+<div id="viewport" class="viewport" tabindex="0" role="group" aria-label="回転するコマンド。左右キーで切替、Enterで選択した項目の説明を開く">
+<div id="home" class="home">
+<div class="disk"><div class="rotor"><img id="disk-panes" class="asset" alt="ガラス盤の面"><img id="disk-frame" class="asset" alt="ガラス盤の枠"></div></div>
+<div id="connectors" class="connector-layer" aria-hidden="true"></div>
+<div class="rays"><div id="rays-rotor" class="rotor"><img id="rays-panes" class="asset" alt="太陽の針の面"><img id="rays-frame" class="asset" alt="太陽の針の枠"></div></div>
+<div id="labels" class="label-layer"></div>
+<div class="drag-hint">左の盤をつかんで回す</div>
+<section class="information" aria-labelledby="selected-title"><span class="eyebrow">選択中のコマンド</span><h2 id="selected-title">マップ</h2><p id="selected-detail"></p><button id="decide" type="button">開く（動作見本）</button></section>
+<div class="fixed-buttons" aria-label="今回は配置のみの固定コマンド"><button type="button" disabled title="本編には未接続。配置のみの見本">セーブ</button><button type="button" disabled title="本編には未接続。配置のみの見本">設定</button></div>
+</div>
+<div class="loading" id="loading" aria-label="素材読込中"></div>
+</div>
+<p id="asset-error" class="error" role="alert" hidden></p>
+<div class="actions">
+<button id="previous" type="button">前の項目</button><button id="next" type="button">次の項目</button>
+<label>回転角 <output id="angle-value">0度</output><input id="angle" type="range" min="0" max="359" value="0"></label>
+<label>針先と文字の余白 <output id="gap-value">18 px</output><input id="gap" type="range" min="12" max="48" value="18"></label>
+<button id="reset-angle" type="button">マップを中央へ</button>
+</div>
+<p id="status" class="status" role="status" aria-live="polite">配置・回転の見本です。本編への移動やセーブは行いません。</p>
+<details><summary>試作のねらい・操作</summary><p>尖った直線の針の実際の先端を測り、そのうち4本に4コマンドを割り当てています。曲線の炎にはコマンドを置きません。回転に合わせて針先との短い接続線が移動し、文字は針全体の外側で水平を保ちます。上下端では文字を画面内へ寄せ、接続線で針との対応を示します。</p><p>左の太陽盤をドラッグ、左領域でマウスホイール、または前後ボタン・左右キー。項目クリックで対応する尖った針が右中央へ移動し、同じ項目をもう一度クリック、Enter、または「開く」で移動先の説明を表示します。</p><p>色違いで位置・角度は変わりません。ガラス盤は回さず針だけ回転します。四角い札・コマンドの重複配置・45度間隔は廃止。右側は選択状態を確認する説明欄で、最終HOMEのタスク・運命予報の配置ではありません。</p></details>
+</main>
+<dialog id="destination"><h2 id="destination-title"></h2><p id="destination-detail"></p><p>今回は入口の動作見本のみです。専用画面やゲーム本編には未接続です。</p><form method="dialog"><button>戻る</button></form></dialog>
+<script src="../太陽盤_試作03/material-engine.js?v=20261004a"></script>
+<script src="../太陽盤_試作03/character-colors.js?v=20261004a"></script>
+<script src="orbit.js?v=20261004b"></script>
+<script src="interaction.js?v=20261004b"></script>
+</body>
+</html>

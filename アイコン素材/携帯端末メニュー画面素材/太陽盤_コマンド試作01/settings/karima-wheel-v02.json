@@ -1,0 +1,14 @@
+{
+  "schema": "solar-command-wheel-settings-v02",
+  "referenceResolution": { "width": 844, "height": 390 },
+  "character": "karima",
+  "wheel": {
+    "gap": -12,
+    "size": 609,
+    "hue": 224,
+    "saturation": 24,
+    "lightness": 80,
+    "opacity": 40,
+    "bandHeight": 29
+  }
+}

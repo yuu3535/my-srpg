@@ -1,0 +1,14 @@
+{
+  "schema": "solar-command-wheel-settings-v02",
+  "referenceResolution": { "width": 844, "height": 390 },
+  "character": "alche",
+  "wheel": {
+    "gap": -27,
+    "size": 609,
+    "hue": 224,
+    "saturation": 24,
+    "lightness": 0,
+    "opacity": 40,
+    "bandHeight": 31
+  }
+}

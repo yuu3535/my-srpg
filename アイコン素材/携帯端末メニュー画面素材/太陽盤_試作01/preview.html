@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>太陽盤 調整ワークベンチ</title>
+<style>
+* { box-sizing: border-box; }
+body { margin: 0; background: #25272b; color: #ececee; font-family: "Yu Gothic", sans-serif; }
+main { width: 100%; max-width: 1920px; margin: auto; min-height: 100dvh; padding: 14px 18px; display: grid; grid-template-rows: auto 1fr auto; gap: 12px; }
+.app-header { display: flex; align-items: baseline; gap: 20px; }
+h1 { font-size: 18px; margin: 0; flex-shrink: 0; }
+h2 { font-size: 14px; margin: 0; }
+p { font-size: 12px; line-height: 1.6; color: #babdc2; margin: 6px 0; }
+.workbench { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: 20px; align-items: start; }
+.preview-panel { position: sticky; top: 14px; min-width: 0; }
+.editor-panel { min-width: 0; display: grid; gap: 16px; }
+.section-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.stage { overflow: hidden; position: relative; background: #85878b; aspect-ratio: 844 / 390; border: 1px solid #55585e; background-size: cover; background-position: center; }
+.slot { position: absolute; aspect-ratio: 1; transform: translate(-50%, -50%); }
+.rotor { position: relative; width: 100%; height: 100%; transform-origin: center; }
+.layer { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.frame { opacity: 1; }
+.material-controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.material-controls[inert] { opacity: .5; }
+.material-top { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; min-height: 68px; }
+.hue-wheel { --hue: 0deg; --sample: #ddd; width: 68px; height: 68px; flex: 0 0 68px; border-radius: 50%; position: relative; cursor: crosshair; touch-action: none; background: conic-gradient(#e65b5b, #e3cc60, #78bf65, #60bcc1, #727bd2, #c269b3, #e65b5b); }
+.hue-wheel:focus-visible { outline: 2px solid #ececee; outline-offset: 4px; }
+.wheel-sample { position: absolute; inset: 15px; border-radius: 50%; background: var(--sample); border: 3px solid #25272b; }
+.wheel-marker { position: absolute; inset: 0; transform: rotate(var(--hue)); pointer-events: none; }
+.wheel-marker::after { content: ''; position: absolute; width: 10px; height: 10px; top: 2px; left: calc(50% - 5px); border: 2px solid #f1f1f1; border-radius: 50%; background: #303238; }
+.filter-defs { position: absolute; width: 0; height: 0; overflow: hidden; pointer-events: none; }
+.loading { position: absolute; inset: 0; background: #85878b; pointer-events: none; animation: breathe 1.5s ease-in-out infinite alternate; }
+@keyframes breathe { from { opacity: .9; } to { opacity: .6; } }
+.controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+fieldset { margin: 0; padding: 8px 0 0; border: 0; border-top: 1px solid #55585e; min-width: 0; }
+legend { font-size: 12px; padding: 0 8px 0 0; }
+.fields { display: grid; gap: 4px; }
+label { display: grid; gap: 4px; font-size: 12px; }
+label span { display: flex; justify-content: space-between; gap: 6px; }
+.check { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+.material-top .check span { line-height: 1.5; }
+.material-section .fields > label { display: grid; grid-template-columns: 72px minmax(0, 1fr); align-items: center; gap: 8px; min-height: 36px; }
+.material-section .fields > label > span { display: grid; gap: 0; font-size: 11px; }
+.material-section output { font-size: 10px; }
+.position-field { display: grid; grid-template-columns: 65px minmax(0, 1fr) 64px; align-items: center; gap: 8px; min-height: 36px; }
+input[type=range] { width: 100%; min-width: 0; height: 30px; margin: 0; accent-color: #c1a475; cursor: pointer; }
+input[type=number] { width: 100%; min-width: 0; background: #35383e; color: #ececee; border: 1px solid #686b73; padding: 5px 4px; min-height: 30px; font: inherit; font-variant-numeric: tabular-nums; }
+select, button, textarea { background: #35383e; color: #ececee; border: 1px solid #686b73; padding: 7px 10px; min-height: 34px; font: inherit; font-size: 12px; }
+select { width: 100%; min-width: 0; }
+button { cursor: pointer; }
+button:active { transform: scale(.98); }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid #cfb488; outline-offset: 3px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.global { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 12px 0; }
+.preview-checks { display: flex; flex-wrap: wrap; gap: 12px; margin: 12px 0; }
+.app-footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; border-top: 1px solid #55585e; padding-top: 10px; }
+.error { color: #f0b0a0; }
+small, output { color: #babdc2; }
+output { font-variant-numeric: tabular-nums; }
+.status { min-height: 20px; }
+.references { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 12px 0; }
+.references figure { margin: 0; }
+.references img { width: 100%; height: 72px; object-fit: contain; }
+.references figcaption { font-size: 10px; color: #babdc2; margin-top: 4px; }
+textarea { width: 100%; min-height: 120px; resize: vertical; margin-top: 8px; }
+details { margin-top: 16px; border-top: 1px solid #55585e; padding-top: 8px; font-size: 12px; color: #babdc2; }
+summary { cursor: pointer; padding: 5px 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 1200px) { main { padding: 10px; } .workbench { grid-template-columns: minmax(0, .7fr) minmax(0, 1.3fr); gap: 14px; } .material-controls { gap: 10px; } .material-section .fields > label { grid-template-columns: 62px minmax(0, 1fr); gap: 6px; } }
+@media (max-width: 950px) { .workbench { min-width: 930px; } .app-header p { display: none; } }
+@media (max-height: 700px) { main { gap: 8px; } .editor-panel { gap: 10px; } .material-section .fields > label, .position-field { min-height: 32px; } .material-top { min-height: 58px; } .hue-wheel { width: 58px; height: 58px; flex-basis: 58px; } .wheel-sample { inset: 13px; } }
+@media (prefers-reduced-motion: reduce) { .loading { animation: none; } }
+</style>
+</head>
+<body>
+<svg class="filter-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs id="material-filter-defs"></defs></svg>
+<main>
+<header class="app-header"><h1>太陽盤 調整ワークベンチ</h1><p>左で見ながら、右で色と配置を調整。元画像は変更しません。</p></header>
+<div class="workbench">
+<section class="preview-panel" aria-label="常に見える素材プレビュー">
+<div class="section-heading"><h2>プレビュー</h2><small>横画面 844 × 390</small></div>
+<div class="stage" id="stage" aria-label="盤と針を別々に調整する素材見本">
+  <div class="slot" id="disk-slot"><div class="rotor" id="disk-rotor"><img class="layer" id="disk-panes" alt="盤のガラス面"><img class="layer frame" id="disk-frame" alt="ガラス面を抜いた盤の金色枠"></div></div>
+  <div class="slot" id="rays-slot"><div class="rotor" id="rays-rotor"><img class="layer" id="rays-panes" alt="針のガラス面と中心面"><img class="layer frame" id="rays-frame" alt="白い面を抜いた針の金色枠"></div></div>
+  <div class="loading" id="loading" aria-label="素材読み込み中"></div>
+</div>
+<p id="error" class="error" role="alert" hidden></p>
+<div class="global">
+<label>素材の版<select id="version"><option value="v03">試作03：枠・面を分離</option><option value="v02">試作02：一体の旧素材</option><option value="v01">試作01：虹色の旧素材</option></select></label>
+<label>背景<select id="background"><option value="#85878b">中間の灰色</option><option value="#e4e5e7">明るい灰色</option><option value="#292c32">暗い灰色</option><option value="#718086">青灰色</option><option value="corridor">参考の2Dマップ</option></select></label>
+</div>
+<div class="preview-checks"><label class="check"><input id="frames-only" type="checkbox">枠だけ表示</label><label class="check"><input id="materials-off" type="checkbox">色・質感の調整を一時OFF</label></div>
+<div class="actions"><button id="framing" type="button">全円を中央へ</button><button id="edge" type="button">左端へ</button><button id="step" type="button">30度回す</button></div>
+<div class="preview-checks" aria-label="共通の太陽盤の色違い"><span>色だけ切替</span><button id="alche-warm" type="button">アルシェ：黒・金・橙</button><button id="karima-silver" type="button">カリマ：白・銀・青</button></div>
+<p class="status" id="status" role="status" aria-live="polite"></p>
+<textarea id="settings-text" aria-label="コピー用の調整値" readonly hidden></textarea>
+<details><summary>参考素材・操作の補足</summary>
+<div class="references" aria-label="調和を確認する参考素材">
+<figure><img src="../../skill_icons_split_latest/01_祈り.png" alt="祈りのスキルアイコン"><figcaption>スキル</figcaption></figure>
+<figure><img src="../../発注UI_v3/F4-剣.png" alt="剣の武器アイコン"><figcaption>武器</figcaption></figure>
+<figure><img src="../../../立ち絵透過下処理/AI_SD/アルシェ.png" alt="アルシェのSD素材"><figcaption>アルシェ SD</figcaption></figure>
+<figure><img src="../太陽盤_試作02/corridor-reference.png" alt="2D回廊の参考画面"><figcaption>2Dマップ</figcaption></figure>
+</div>
+<p>色相環はクリック・ドラッグ、または矢印キーで調整。陰影を下げると平らな塗り、光沢を上げると明るい反射になります。色・質感は盤と針に共通適用します。</p>
+<p>配置は844×390基準。大きさは画像全体の直径、X/Yは中心、角度は度、面の濃さは％。数値入力はEnterまたは欄を離れると反映します。枠の濃さは変わりません。</p>
+<p>試作03の細い縁や面の一致は仕上げ対象。白／黄土の区分は元の色の自動マスクなので境界に混ざりが残る場合があります。質感は既存の陰影を使う2D表現です。</p>
+</details>
+</section>
+<section class="editor-panel" aria-label="色と配置の調整">
+<section class="color-panel" aria-labelledby="color-title">
+<div class="section-heading"><h2 id="color-title">色・質感</h2><button id="materials-reset" type="button">色だけ元に戻す</button></div>
+<p id="material-warning" hidden>色調整は試作03専用です。素材の版を試作03へ戻してください。</p>
+<div id="material-controls" class="material-controls"></div>
+</section>
+<section class="placement-panel" aria-labelledby="placement-title">
+<div class="section-heading"><h2 id="placement-title">大きさ・位置・回転・透け方</h2><small>スライダー／数値入力</small></div>
+<div class="controls">
+<fieldset><legend>ガラス盤</legend><div class="fields">
+<label class="position-field"><span>面の濃さ<output id="disk-opacity-value" class="sr-only"></output></span><input id="disk-opacity" aria-label="盤の面の濃さスライダー" type="range" min="0" max="100" value="25"><input id="disk-opacity-number" aria-label="盤の面の濃さ数値" type="number" min="0" max="100" value="25"></label>
+<label class="position-field"><span>大きさ<output id="disk-size-value" class="sr-only"></output></span><input id="disk-size" aria-label="盤の大きさスライダー" type="range" min="80" max="1000" value="560"><input id="disk-size-number" aria-label="盤の大きさ数値" type="number" min="80" max="1000" value="560"></label>
+<label class="position-field"><span>中心X<output id="disk-x-value" class="sr-only"></output></span><input id="disk-x" aria-label="盤の中心Xスライダー" type="range" min="-422" max="1266" value="0"><input id="disk-x-number" aria-label="盤の中心X数値" type="number" min="-422" max="1266" value="0"></label>
+<label class="position-field"><span>中心Y<output id="disk-y-value" class="sr-only"></output></span><input id="disk-y" aria-label="盤の中心Yスライダー" type="range" min="-390" max="780" value="195"><input id="disk-y-number" aria-label="盤の中心Y数値" type="number" min="-390" max="780" value="195"></label>
+<label class="position-field"><span>角度<output id="disk-angle-value" class="sr-only"></output></span><input id="disk-angle" aria-label="盤の角度スライダー" type="range" min="0" max="360" value="0"><input id="disk-angle-number" aria-label="盤の角度数値" type="number" min="0" max="360" value="0"></label>
+</div></fieldset>
+<fieldset><legend>針・中心軸</legend><div class="fields">
+<label class="position-field"><span>面の濃さ<output id="rays-opacity-value" class="sr-only"></output></span><input id="rays-opacity" aria-label="針の面の濃さスライダー" type="range" min="0" max="100" value="25"><input id="rays-opacity-number" aria-label="針の面の濃さ数値" type="number" min="0" max="100" value="25"></label>
+<label class="position-field"><span>大きさ<output id="rays-size-value" class="sr-only"></output></span><input id="rays-size" aria-label="針の大きさスライダー" type="range" min="80" max="1000" value="560"><input id="rays-size-number" aria-label="針の大きさ数値" type="number" min="80" max="1000" value="560"></label>
+<label class="position-field"><span>中心X<output id="rays-x-value" class="sr-only"></output></span><input id="rays-x" aria-label="針の中心Xスライダー" type="range" min="-422" max="1266" value="0"><input id="rays-x-number" aria-label="針の中心X数値" type="number" min="-422" max="1266" value="0"></label>
+<label class="position-field"><span>中心Y<output id="rays-y-value" class="sr-only"></output></span><input id="rays-y" aria-label="針の中心Yスライダー" type="range" min="-390" max="780" value="195"><input id="rays-y-number" aria-label="針の中心Y数値" type="number" min="-390" max="780" value="195"></label>
+<label class="position-field"><span>角度<output id="rays-angle-value" class="sr-only"></output></span><input id="rays-angle" aria-label="針の角度スライダー" type="range" min="0" max="360" value="0"><input id="rays-angle-number" aria-label="針の角度数値" type="number" min="0" max="360" value="0"></label>
+</div></fieldset>
+</div>
+</section>
+</section>
+</div>
+<footer class="app-footer"><button id="save" type="button">調整値を保存</button><button id="copy" type="button">調整値をコピー</button><button id="reset" type="button">すべて初期値へ</button></footer>
+</main>
+<script src="../太陽盤_試作03/material-engine.js?v=20261004a"></script>
+<script src="../太陽盤_試作03/material-controls.js?v=20261004b"></script>
+<script src="../太陽盤_試作03/character-colors.js?v=20261004a"></script>
+<script>
+'use strict';
+const byId = id => document.getElementById(id);
+const groups = ['disk', 'rays'];
+const fields = ['opacity', 'size', 'x', 'y', 'angle'];
+const units = { opacity: '％', size: ' px', x: ' px', y: ' px', angle: '度' };
+const stage = byId('stage');
+const version = byId('version');
+const background = byId('background');
+const framesOnly = byId('frames-only');
+const storageKey = 'srpg-solar-dial-separated-v03';
+let animations = [];
+let loadTicket = 0;
+let materialProfiles = window.SolarMaterials.normalize();
+let filterMarkup = '';
+const materialControls = window.SolarMaterialControls.mount(byId('material-controls'), value => {
+  materialProfiles = value;
+  applyMaterials();
+});
+function applyMaterials() {
+  const active = version.value === 'v03' && !byId('materials-off').checked;
+  const markup = window.SolarMaterials.filters(materialProfiles);
+  if (markup !== filterMarkup) { byId('material-filter-defs').innerHTML = markup; filterMarkup = markup; }
+  groups.forEach(group => {
+    byId(group + '-panes').style.filter = active && (!materialProfiles.white.original || !materialProfiles.ochre.original) ? 'url(#solar-panes-material)' : 'none';
+    byId(group + '-frame').style.filter = active && !materialProfiles.gold.original ? 'url(#solar-frame-material)' : 'none';
+  });
+  byId('material-controls').inert = version.value !== 'v03';
+  byId('material-warning').hidden = version.value === 'v03';
+}
+function stopAnimation() { animations.forEach(a => a.cancel()); animations = []; }
+function render() {
+  groups.forEach(group => {
+    const val = field => Number(byId(group + '-' + field).value);
+    const slot = byId(group + '-slot');
+    slot.style.width = (val('size') / 844 * 100) + '%';
+    slot.style.left = (val('x') / 844 * 100) + '%';
+    slot.style.top = (val('y') / 390 * 100) + '%';
+    byId(group + '-rotor').style.transform = 'rotate(' + val('angle') + 'deg)';
+    const panes = byId(group + '-panes');
+    panes.style.opacity = val('opacity') / 100;
+    panes.hidden = framesOnly.checked;
+    const frame = byId(group + '-frame');
+    frame.style.opacity = 1;
+    frame.hidden = version.value !== 'v03';
+    fields.forEach(field => {
+      byId(group + '-' + field + '-value').textContent = val(field) + units[field];
+      byId(group + '-' + field + '-number').value = val(field);
+    });
+  });
+  stage.style.backgroundColor = background.value === 'corridor' ? '#292c32' : background.value;
+  stage.style.backgroundImage = background.value === 'corridor'
+    ? 'url("../太陽盤_試作02/corridor-reference.png")' : 'none';
+  applyMaterials();
+}
+function loadAssets() {
+  const ticket = ++loadTicket;
+  byId('loading').hidden = false;
+  byId('error').hidden = true;
+  let remaining = 4;
+  let failed = false;
+  groups.forEach(group => {
+    ['panes', 'frame'].forEach(part => {
+      const img = byId(group + '-' + part);
+      let completed = false;
+      const settled = success => {
+        if (ticket !== loadTicket || completed) return;
+        completed = true;
+        if (!success) failed = true;
+        if (--remaining === 0) {
+          byId('loading').hidden = true;
+          byId('error').hidden = !failed;
+          byId('error').textContent = failed ? '素材を読み込めません。試作01〜03のフォルダを同じ親フォルダに置いてください。' : '';
+        }
+      };
+      img.onload = () => settled(true);
+      img.onerror = () => settled(false);
+      img.src = version.value === 'v03'
+        ? '../太陽盤_試作03/' + group + '-' + part + '.png'
+        : (version.value === 'v02' ? '../太陽盤_試作02/' : '') +
+          'solar-' + (group === 'disk' ? 'glass' : 'rays') + '-' + version.value + '.png';
+    });
+  });
+}
+function settings() {
+  const result = {
+    schema: 'solar-dial-author-settings-v04',
+    referenceResolution: { width: 844, height: 390 },
+    version: version.value, background: background.value, framesOnly: framesOnly.checked,
+    materials: materialControls.get(), materialsOff: byId('materials-off').checked
+  };
+  groups.forEach(group => {
+    result[group] = Object.fromEntries(fields.map(field => [field, Number(byId(group + '-' + field).value)]));
+  });
+  return result;
+}
+function restore(data) {
+  if (!data || !['solar-dial-author-settings-v03', 'solar-dial-author-settings-v04'].includes(data.schema)) return false;
+  if (['v01', 'v02', 'v03'].includes(data.version)) version.value = data.version;
+  if (['#85878b', '#e4e5e7', '#292c32', '#718086', 'corridor'].includes(data.background)) background.value = data.background;
+  framesOnly.checked = data.framesOnly === true;
+  byId('materials-off').checked = data.materialsOff === true;
+  materialControls.set(data.materials);
+  groups.forEach(group => fields.forEach(field => {
+    const input = byId(group + '-' + field);
+    const value = data[group] && data[group][field];
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      input.value = Math.max(Number(input.min), Math.min(Number(input.max), value));
+    }
+  }));
+  return true;
+}
+// 切替時は配色のみ変更。回して遊んだ角度、配置、面の濃さ、背景は保持する。
+function applyCharacterColors(name) {
+  const palette = window.SolarCharacterColors.palette(name);
+  if (!palette) return;
+  const changedVersion = version.value !== 'v03';
+  version.value = 'v03'; byId('materials-off').checked = false;
+  materialControls.set(palette);
+  if (changedVersion) loadAssets();
+  render();
+  byId('status').textContent = (name === 'alche' ? 'アルシェ色' : 'カリマ色') + 'へ切替。配置・回転角・面の濃さはそのままです。保存済みの値は上書きしていません。';
+}
+function openCharacterPreset(name) {
+  restore({
+    schema: 'solar-dial-author-settings-v04', version: 'v03', background: 'corridor', framesOnly: false, materialsOff: false,
+    materials: window.SolarCharacterColors.palette(name), ...window.SolarCharacterColors.placement()
+  });
+  loadAssets(); render();
+  byId('status').textContent = (name === 'alche' ? 'アルシェ色' : 'カリマ色') + 'の見本。共通配置・角度0度から確認できます。保存済みの値は上書きしていません。';
+}
+byId('karima-silver').addEventListener('click', () => applyCharacterColors('karima'));
+byId('alche-warm').addEventListener('click', () => applyCharacterColors('alche'));
+groups.forEach(group => fields.forEach(field => {
+  byId(group + '-' + field).addEventListener('input', () => { stopAnimation(); render(); });
+  const numeric = byId(group + '-' + field + '-number');
+  const commit = () => {
+    const range = byId(group + '-' + field);
+    const value = Number(numeric.value);
+    if (numeric.value !== '' && Number.isFinite(value)) {
+      range.value = Math.max(Number(range.min), Math.min(Number(range.max), Math.round(value)));
+    }
+    stopAnimation(); render();
+  };
+  numeric.addEventListener('change', commit);
+  numeric.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); commit(); } });
+}));
+[background, framesOnly].forEach(input => input.addEventListener('change', render));
+version.addEventListener('change', () => { stopAnimation(); loadAssets(); render(); });
+byId('materials-off').addEventListener('change', applyMaterials);
+byId('materials-reset').addEventListener('click', () => {
+  materialControls.set(); byId('materials-off').checked = false; applyMaterials();
+  byId('status').textContent = '色と質感を元に戻しました。配置の調整値は残しています。';
+});
+function place(centered) {
+  stopAnimation();
+  groups.forEach(group => {
+    byId(group + '-size').value = centered ? 350 : 560;
+    byId(group + '-x').value = centered ? 422 : 0;
+    byId(group + '-y').value = 195;
+  });
+  render();
+}
+byId('framing').addEventListener('click', () => place(true));
+byId('edge').addEventListener('click', () => place(false));
+byId('step').addEventListener('click', () => {
+  stopAnimation();
+  const previous = groups.map(group => Number(byId(group + '-angle').value));
+  groups.forEach((group, index) => { byId(group + '-angle').value = (previous[index] + 30) % 360; });
+  render();
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  groups.forEach((group, index) => {
+    animations.push(byId(group + '-rotor').animate([
+      { transform: 'rotate(' + previous[index] + 'deg)' },
+      { transform: 'rotate(' + (previous[index] + 30) + 'deg)' }
+    ], { duration: 420, easing: 'cubic-bezier(.16,1,.3,1)' }));
+  });
+});
+byId('save').addEventListener('click', () => {
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(settings()));
+    byId('status').textContent = 'このブラウザに調整値を保存しました。再読み込み時に復元します。';
+  } catch {
+    byId('status').textContent = 'この環境では保存できません。「調整値をコピー」で値を残してください。';
+  }
+});
+byId('copy').addEventListener('click', async () => {
+  const text = JSON.stringify(settings(), null, 2);
+  try {
+    await navigator.clipboard.writeText(text);
+    byId('status').textContent = '調整値をコピーしました。このチャットへ貼り付けられます。';
+    byId('settings-text').hidden = true;
+  } catch {
+    const area = byId('settings-text');
+    area.hidden = false; area.value = text; area.focus(); area.select();
+    byId('status').textContent = '表示した調整値を選択してコピーしてください。';
+  }
+});
+byId('reset').addEventListener('click', () => {
+  stopAnimation();
+  groups.forEach(group => fields.forEach(field => {
+    byId(group + '-' + field).value = { opacity: 25, size: 560, x: 0, y: 195, angle: 0 }[field];
+  }));
+  version.value = 'v03'; background.value = '#85878b'; framesOnly.checked = false;
+  materialControls.set(); byId('materials-off').checked = false;
+  byId('settings-text').hidden = true;
+  try { localStorage.removeItem(storageKey); } catch {}
+  byId('status').textContent = '初期値へ戻しました。';
+  loadAssets(); render();
+});
+window.addEventListener('pagehide', stopAnimation, { once: true });
+window.addEventListener('pagehide', () => materialControls.dispose(), { once: true });
+try {
+  if (restore(JSON.parse(localStorage.getItem(storageKey)))) {
+    byId('status').textContent = '保存した調整値を復元しました。';
+  }
+} catch {}
+const requestedPreset = new URLSearchParams(window.location.search).get('preset');
+if (requestedPreset === 'karima-silver') openCharacterPreset('karima');
+else if (requestedPreset === 'alche-warm') openCharacterPreset('alche');
+else { loadAssets(); render(); }
+</script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>太陽盤 — 外周コマンドの配置見本</title>
+<style>
+:root { color-scheme: dark; font-family: 'Yu Gothic UI', 'Meiryo', sans-serif; color: #eeeff0; background: #25282b; --accent: #bba077; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+main { max-width: 1248px; margin: 0 auto; padding: 20px 24px; }
+header { margin-bottom: 16px; }
+h1 { margin: 0 0 6px; font-size: 18px; font-weight: 600; }
+p { font-size: 13px; line-height: 1.7; margin: 0; color: #c4c7ca; }
+.controls { display: grid; grid-template-columns: 200px 180px minmax(180px, 280px); gap: 16px; margin-bottom: 16px; }
+label { display: grid; gap: 6px; font-size: 12px; }
+select, input, button { font: inherit; }
+select { width: 100%; min-height: 38px; padding: 6px 10px; border: 1px solid #63686d; background: #353a40; color: #f0f1f2; }
+input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; height: 38px; }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.viewport { position: relative; width: 100%; aspect-ratio: 844 / 390; overflow: hidden; border: 1px solid #60666c; }
+.screen { position: absolute; width: 844px; height: 390px; transform: scale(var(--scale, 1)); transform-origin: top left; overflow: hidden; isolation: isolate; background: #ececeb; background-position: center; background-size: cover; --ink: #333739; --row: #c8cbcc99; --rule: #70767a66; --active: #c4b292aa; }
+/* 下層のコマンド、上層の盤と針。押せる部分は素材の外なので隠れない。 */
+.command-layer { position: absolute; inset: 0; z-index: 1; }
+.command { position: absolute; border: 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); border-radius: 0; padding: 0 16px; text-align: left; background: var(--row); color: var(--ink); font-size: 18px; letter-spacing: .04em; cursor: pointer; }
+.command:hover { background: var(--active); }
+.command[aria-pressed=true] { background: var(--active); font-weight: 700; }
+.command:active { transform: scale(.98); }
+.disk, .rays { position: absolute; left: 0; top: 0; pointer-events: none; }
+.disk { z-index: 2; width: 406px; height: 406px; transform: translate(-243px, -8px); }
+.rays { z-index: 3; width: 439px; height: 439px; transform: translate(-219.5px, -24.5px); }
+.rotor { position: relative; width: 100%; height: 100%; transform-origin: center; }
+.asset { position: absolute; inset: 0; width: 100%; height: 100%; }
+.loading { position: absolute; inset: 0; background: #85898c; pointer-events: none; }
+.loading::before { content: ''; display: block; height: 100%; width: 44%; background: #72777c; }
+.defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+.status { margin-top: 12px; min-height: 24px; }
+.error { color: #edb7aa; }
+.note { border-top: 1px solid #4a5056; margin-top: 16px; padding-top: 12px; }
+a { color: #c9ced2; }
+@media (max-width: 700px) { main { padding: 12px; } .controls { grid-template-columns: 1fr 1fr; gap: 12px; } .controls label:last-child { grid-column: 1 / -1; } }
+</style>
+</head>
+<body>
+<svg class="defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs id="material-defs"></defs></svg>
+<main>
+<header><h1>太陽盤 — 外周コマンドの配置見本</h1><p>コマンドは奥の別レイヤー。まずは静止配置と、針先との余白を確認。</p></header>
+<div class="controls">
+<label>操作キャラ<select id="character"><option value="alche">アルシェ：黒・金・橙</option><option value="karima">カリマ：白・銀・青</option></select></label>
+<label>確認用背景<select id="background"><option value="light">明るい無地</option><option value="gray">灰色</option><option value="corridor">参考の2Dマップ</option></select></label>
+<label>針先側の余白 <output id="gap-value">18 px</output><input id="gap" type="range" min="12" max="44" value="18"></label>
+</div>
+<div id="viewport" class="viewport">
+<div id="screen" class="screen">
+<nav id="command-layer" class="command-layer" aria-label="外周コマンド"></nav>
+<div class="disk"><div class="rotor"><img id="disk-panes" class="asset" alt=""><img id="disk-frame" class="asset" alt=""></div></div>
+<div class="rays"><div id="rays-rotor" class="rotor"><img id="rays-panes" class="asset" alt=""><img id="rays-frame" class="asset" alt=""></div></div>
+</div>
+<div id="loading" class="loading" aria-label="太陽盤を読み込み中"></div>
+</div>
+<p id="error" class="error" role="alert" hidden></p>
+<p id="status" class="status" role="status" aria-live="polite">素材を読み込んでいます。</p>
+<div class="note"><p>4項目とも直接クリックできます。選択すると、右上の菱形の針がその項目へ向きます。今回は回転アニメーション・専用画面への移動なし。帯の意匠と文字も仮です。</p><p>右側の説明パネルは外し、配置を見るための空白にしています。<a href="index.html">前の試作を比較する</a></p></div>
+</main>
+<script src="../太陽盤_試作03/material-engine.js?v=20261004a"></script>
+<script src="../太陽盤_試作03/character-colors.js?v=20261004a"></script>
+<script src="layout-math.js?v=20261004a"></script>
+<script src="layout.js?v=20261004a"></script>
+</body>
+</html>
