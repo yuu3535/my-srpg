@@ -283,7 +283,7 @@ async function render() {
         const sb = document.createElement("div");
         sb.className = "layer fxShafts";
         stage.insertBefore(sb, feet);
-        const tan = Math.tan(fx.shaftAngle * Math.PI / 180);
+        const tan = Math.tan(fx.shaftAngle * Math.PI / 180);   // 筋は skewX(−角度) で下の端が左へ h×tan ずれる。床の光はその下の端に落とす
         for (const sh of shafts) {
           const h = sh.bottom - sh.top;
           const ray = document.createElement("div");
@@ -292,7 +292,7 @@ async function render() {
             background: `linear-gradient(180deg, transparent, ${fx.shaftColor} 35%, transparent)`, opacity: fx.shafts });
           sb.appendChild(ray);
           const pool = document.createElement("div");
-          Object.assign(pool.style, { position: "absolute", left: `${sh.x + h * tan - sh.w * 0.8}px`, top: `${sh.bottom - 22}px`, width: `${sh.w * 1.6}px`, height: "34px",
+          Object.assign(pool.style, { position: "absolute", left: `${sh.x - h * tan - sh.w * 0.8}px`, top: `${sh.bottom - 22}px`, width: `${sh.w * 1.6}px`, height: "34px",
             borderRadius: "50%", mixBlendMode: "screen", filter: "blur(8px)", background: fx.shaftColor, opacity: fx.shafts * 0.7 });
           sb.appendChild(pool);
         }
