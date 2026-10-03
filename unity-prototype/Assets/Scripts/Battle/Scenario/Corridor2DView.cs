@@ -121,6 +121,7 @@ namespace Srpg.Battle
                     // 左から順に並べる（くり返さない）。幅は高さに合わせ、重ね幅だけ詰める。回廊の長さはここで決まる
                     float cursor = 0f, end = 0f;
                     var fronts = new List<RawImage>();
+                    var backs = new List<RawImage>();   // 天井の色は「手前」でもいちばん奥（となりの絵の上に出さない）
                     for (int m = 0; m < (layer.modules?.Length ?? 0); m++)
                     {
                         var mod = layer.modules[m];
@@ -138,7 +139,7 @@ namespace Srpg.Battle
                             shade.color = CeilingShade;
                             shade.raycastTarget = false;
                             tiles.Add(shade);
-                            if (mod.front) fronts.Add(shade);
+                            backs.Add(shade);
                         }
                         var img = Place(NewRect(mod.file, box), left, top, w2, h2).gameObject.AddComponent<RawImage>();
                         img.texture = mt;
@@ -151,6 +152,7 @@ namespace Srpg.Battle
                     data.length = Mathf.Max(ScreenW, end);
                     // 手前に出す絵を、ほかの絵の後に描く
                     foreach (var f in fronts) f.transform.SetAsLastSibling();
+                    foreach (var b in backs) b.transform.SetAsFirstSibling();
                     built.Add((layer, box, tiles, 0f));
                     continue;
                 }

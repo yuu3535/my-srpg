@@ -179,7 +179,7 @@ async function render() {
         if (Number(mod.shadeTop) > 0) {
           // 絵の上の透けた三角から空が見えないよう、後ろに暗い天井の色を敷く（Unity と同じ色）
           const shade = document.createElement("div");
-          Object.assign(shade.style, { position: "absolute", left: `${left}px`, top: `${top}px`, width: `${w2}px`, height: `${Number(mod.shadeTop)}px`, background: "rgb(28,24,34)", opacity: L.opacity, zIndex: mod.front ? 2 : 1 });
+          Object.assign(shade.style, { position: "absolute", left: `${left}px`, top: `${top}px`, width: `${w2}px`, height: `${Number(mod.shadeTop)}px`, background: "rgb(28,24,34)", opacity: L.opacity, zIndex: 0 });   // 「手前」でも天井はいちばん奥（となりの絵の上に出さない）
           box.appendChild(shade);
         }
         const img = document.createElement("img");
