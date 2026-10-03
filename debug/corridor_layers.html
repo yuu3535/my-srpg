@@ -54,6 +54,9 @@
   .card.fxCard { border-color: #3c6d70; }
   .card.fxCard .row { grid-template-columns: 104px 1fr 54px; }
   .card.fxCard .colorRow { grid-template-columns: 104px 1fr; }
+  .perLayer { border-top: 1px dashed #2a3a44; margin-top: 4px; padding-top: 3px; }
+  .perTitle { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 12px; }
+  .perTitle button { padding: 0 6px; font-size: 12px; }
   .colorRow { display: grid; grid-template-columns: 70px 1fr; align-items: center; gap: 6px; margin: 2px 0; }
   .colorRow input { width: 64px; height: 22px; padding: 0 2px; }
 </style>
@@ -148,7 +151,12 @@ async function defaultsFor(id) {
 
 // 効果（画面全体）: 空気遠近・被写界深度・ヴィネット・色調・光の筋（原作者 2026-10-04。まず調整ページで見比べ、Unity はあとで）
 const FX_DEFAULT = { on: true, haze: 0.25, hazeColor: "#a9b8e8", dof: 1.5, vignette: 0.35, vignetteColor: "#0b0d18", vignetteSize: 0.55,
-  bright: 1, contrast: 1, saturate: 1, temp: 0, shafts: 0, shaftColor: "#ffe0a8", shaftAngle: 20 };
+  bright: 1, contrast: 1, saturate: 1, temp: 0, shafts: 0, shaftColor: "#ffe0a8", shaftAngle: 20, shaftY: 0, shaftX: 0, shaftWidth: 1 };
+// 層ごとの霞・ぼかし: 層に fxHaze・fxBlur があればそれを使う。なければ全体のつまみ×奥行き（自動）
+const autoHaze = (L, first) => first ? 0 : fx.haze * Math.max(0, Math.min(1, 1 - L.speed));
+const autoBlur = L => fx.dof * Math.max(0, Math.min(1, 1 - L.speed));
+const layerHaze = (L, first) => L.fxHaze ?? autoHaze(L, first);
+const layerBlur = L => L.fxBlur ?? autoBlur(L);
 let fx = clone(FX_DEFAULT);
 function apply(state) {
   layers = state.layers;
@@ -194,7 +202,9 @@ async function listFiles() {
 }
 
 // ── 描く ──
+let renderToken = 0;   // つまみを速く動かすと描く処理が重なるので、新しい方だけ続ける
 async function render() {
+  const token = ++renderToken;
   const stage = $("stage");
   stage.querySelectorAll(".layer, .fx").forEach(e => e.remove());
   const defs = $("fxDefs");
@@ -213,16 +223,15 @@ async function render() {
     stage.insertBefore(box, feet);
     const shift = L.x - cam * L.speed;
     // 奥ほど（流れる速さが遅いほど）霞とぼかしを強く。いちばん奥の層（空）には霞をかけない
-    const depth = Math.max(0, Math.min(1, 1 - L.speed));
-    if (fx.on && depth > 0) {
+    if (fx.on) {
       const filters = [];
-      const haze = firstOn ? 0 : fx.haze * depth;
+      const haze = layerHaze(L, firstOn), blur = layerBlur(L);
       if (haze > 0) {
         const id = `haze${layers.indexOf(L)}`;
         defs.insertAdjacentHTML("beforeend", `<filter id="${id}" color-interpolation-filters="sRGB"><feFlood flood-color="${fx.hazeColor}" flood-opacity="${haze.toFixed(3)}" result="f"/><feComposite in="f" in2="SourceGraphic" operator="in" result="t"/><feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="t"/></feMerge></filter>`);
         filters.push(`url(#${id})`);
       }
-      if (fx.dof * depth > 0.05) filters.push(`blur(${(fx.dof * depth).toFixed(2)}px)`);
+      if (blur > 0.05) filters.push(`blur(${blur.toFixed(2)}px)`);
       box.style.filter = filters.join(" ");
     }
     firstOn = false;
@@ -248,6 +257,7 @@ async function render() {
       for (let m = 0; m < (L.modules || []).length; m++) {
         const mod = L.modules[m];
         const ms = await size(mod.file);
+        if (token !== renderToken) return;
         if (!ms) continue;
         const mw = ms.w * (L.height / ms.h);
         if (m > 0) cursor -= Number(mod.overlap || 0);
@@ -264,7 +274,7 @@ async function render() {
         Object.assign(img.style, { left: `${left}px`, top: `${top}px`, width: `${w2}px`, height: `${h2}px`, opacity: L.opacity,
           zIndex: mod.front ? 2 : 1 });
         box.appendChild(img);
-        if (m > 0 && m < L.modules.length - 1) shafts.push({ x: left + w2 / 2, top: top + h2 * 0.28, bottom: L.bottom - 8, w: mw * 0.34 });
+        if (m > 0 && m < L.modules.length - 1) shafts.push({ x: left + w2 / 2 + Number(fx.shaftX || 0), top: top + h2 * 0.28 + Number(fx.shaftY || 0), bottom: L.bottom - 8, w: mw * 0.34 * Number(fx.shaftWidth || 1) });
         cursor += mw;
       }
       L._length = cursor;
@@ -290,6 +300,7 @@ async function render() {
       continue;
     }
     const s = await size(L.file);
+    if (token !== renderToken) return;
     if (!s) continue;
     const w = s.w * (L.height / s.h);
     const step = Math.max(8, w - (L.overlap || 0));
@@ -329,6 +340,8 @@ async function render() {
 function exportText() {
   const used = layers.filter(L => L.on).map(L => {
     const o = { name: L.name, kind: L.kind, file: L.file, speed: L.speed, x: L.x };
+    if (L.fxHaze !== undefined) o.fxHaze = L.fxHaze;
+    if (L.fxBlur !== undefined) o.fxBlur = L.fxBlur;
     if (L.kind === "floor") Object.assign(o, { top: L.top, bottom: L.bottom, tile: L.tile, rows: L.rows, shade: L.shade });
     else if (L.kind === "modules") { delete o.file; Object.assign(o, { height: L.height, bottom: L.bottom, opacity: L.opacity, modules: L.modules.map(m => ({ file: m.file, overlap: Number(m.overlap || 0), dy: Number(m.dy || 0), dx: Number(m.dx || 0), scale: Number(m.scale || 1), front: !!m.front, shadeTop: Number(m.shadeTop || 0) })) }); }
     else Object.assign(o, { height: L.height, bottom: L.bottom, overlap: L.overlap, repeat: L.repeat, mirror: L.mirror, opacity: L.opacity });
@@ -361,6 +374,31 @@ function fxCard() {
   card.appendChild(slider(fx, "haze", "空気遠近", 0, 1, 0.01));
   card.appendChild(colorRow(fx, "hazeColor", "霞の色"));
   card.appendChild(slider(fx, "dof", "奥のぼかし", 0, 6, 0.1));
+  // 層ごと: 空がはっきり見えるとき・遠景がはっきり見えるときなどで分ける（動かすとその層だけ自動でなくなる）
+  const perHead = document.createElement("div");
+  perHead.className = "hint";
+  perHead.textContent = "層ごとの霞・ぼかし（動かすとその層だけ自動でなくなる。「自動」で戻す）";
+  card.appendChild(perHead);
+  const firstOnLayer = layers.find(L => L.on);
+  layers.filter(L => L.on && L.kind !== "modules").forEach(L => {
+    const box = document.createElement("div");
+    box.className = "perLayer";
+    const title = document.createElement("div");
+    title.className = "perTitle";
+    title.innerHTML = `<span>${L.name}</span><button title="全体のつまみに合わせる">自動</button>`;
+    title.querySelector("button").addEventListener("click", () => { delete L.fxHaze; delete L.fxBlur; cards(); render(); });
+    box.appendChild(title);
+    const view = { haze: layerHaze(L, L === firstOnLayer), blur: layerBlur(L) };
+    const h = slider(view, "haze", L.fxHaze === undefined ? "霞（自動）" : "霞", 0, 1, 0.01);
+    h.querySelectorAll("input").forEach(i => i.addEventListener("input", () => { L.fxHaze = Number(i.value); render(); }));
+    h.querySelectorAll("input").forEach(i => i.addEventListener("change", () => { L.fxHaze = Number(i.value); render(); }));
+    const b = slider(view, "blur", L.fxBlur === undefined ? "ぼかし（自動）" : "ぼかし", 0, 8, 0.1);
+    b.querySelectorAll("input").forEach(i => i.addEventListener("input", () => { L.fxBlur = Number(i.value); render(); }));
+    b.querySelectorAll("input").forEach(i => i.addEventListener("change", () => { L.fxBlur = Number(i.value); render(); }));
+    box.appendChild(h);
+    box.appendChild(b);
+    card.appendChild(box);
+  });
   card.appendChild(slider(fx, "vignette", "ヴィネット", 0, 1, 0.01));
   card.appendChild(slider(fx, "vignetteSize", "暗くしない広さ", 0.2, 0.95, 0.01));
   card.appendChild(colorRow(fx, "vignetteColor", "四隅の色"));
@@ -370,6 +408,9 @@ function fxCard() {
   card.appendChild(slider(fx, "temp", "色温度（−寒 ＋暖）", -1, 1, 0.01));
   card.appendChild(slider(fx, "shafts", "光の筋", 0, 1, 0.01));
   card.appendChild(slider(fx, "shaftAngle", "光の角度", -45, 45, 1));
+  card.appendChild(slider(fx, "shaftY", "光の高さ（＋下）", -150, 150, 1));
+  card.appendChild(slider(fx, "shaftX", "光の左右", -300, 300, 1));
+  card.appendChild(slider(fx, "shaftWidth", "光の太さ", 0.3, 2.5, 0.05));
   card.appendChild(colorRow(fx, "shaftColor", "光の色"));
   return card;
 }
