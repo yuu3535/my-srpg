@@ -1,6 +1,46 @@
 # Claude Codeへの引き継ぎ — 銀細工の台詞枠と調整見本
 
-日付: 2026-10-03 / 状態: **試作対象**（本編・Unityへの反映は未承認）
+日付: 2026-10-03 / 状態: **会話UIの意匠・見せ方は正式採用**（本編・Unityへの移植開始は別途指示待ち）
+
+## 今回のmain共有内容（2026-10-04）
+
+原作者が最新回廊のHTML見本・採用文書・移植チェックリストのコミット＆プッシュを依頼した。以下の未コミット・未プッシュ・ローカル専用という記載は各作業時点の履歴。今回の保存範囲は会話HTMLの正本回廊対応、比較資料、会話UIの採用方針と関連文書。Unityコード・設定・素材・シナリオには変更を加えない。保存結果はGitの履歴で確認する。
+
+原作者は制限リセット後にClaude Codeへ移植を頼む意向。また2D探索マップについて、素材を組み立てた印象から、光・奥行き・環境の動きなどで没入感を高める改善を相談したい。これは追加エフェクトの一括実装許可ではない。現行画面を確認し、軽さ・会話UIの可読性・配色方針を保った案を優先順に提案する。
+
+### Claude Codeへ渡す今回の文面
+
+```text
+mainをpullして、AGENTS.mdとこの文書冒頭の「今回のmain共有内容（2026-10-04）」、採用版md/SILVER_DIALOGUE_UI_DIRECTION.md、SILVER_DIALOGUE_UNITY_PORT_CHECKLIST_2026-10-03.mdを確認してください。
+会話UIの意匠は採用済み。最新HTMLはprototypes/silver-ui-extension/dialogue.html?background=corridor2d&layout=portraitsで、正本の端付き2D回廊に合わせました。
+最新作者設定はdialogue-portrait-author-settings-20261003.jsonです。408×100や上置きを全場面固定にせず、文章量・視点に合わせて調整できる前提です。既存の複数人会話・表情・ログ・イベント・終了処理を維持してください。
+Unityへの移植は原作者からの依頼を受けて開始してください。2D探索マップの光・奥行き・環境の動きによる見映え改善も相談したいので、そちらはすぐ実装せず、現状確認と優先順付きの提案からお願いします。
+```
+
+## 最新：原作者が会話UIの意匠を採用
+
+正本は `採用版md/SILVER_DIALOGUE_UI_DIRECTION.md`。本文の銀細工、装飾なしの尖った名前札と内縁、話者側の尾、左右立ち絵、聞き手を透かさず輪郭内だけ暗くする見せ方を採用した。408×100等の値や上置きを全場面へ固定する決定ではない。作者調整JSONを基準に、文章量と視点に応じて寸法・位置を変えられるようにする。
+
+今回の文書と最新回廊HTMLはローカル更新・未コミット／未プッシュ。下の共有済み・未承認の記載はそれぞれ当時の履歴。Unityは未変更で、移植チェックリストのUnity欄は未実行。
+
+### Claude Codeへそのまま渡す文面（現在は同じローカル作業フォルダで読む）
+
+```text
+会話UIの意匠・見せ方を原作者が採用しました。
+AGENTS.md、採用版md/SILVER_DIALOGUE_UI_DIRECTION.md、docs/30-planning/CLAUDE_CODE_SILVER_DIALOGUE_HANDOFF_2026-10-03.mdの冒頭、docs/30-planning/SILVER_DIALOGUE_UNITY_PORT_CHECKLIST_2026-10-03.mdを読んでください。
+最新のHTMLはprototypes/silver-ui-extension/dialogue.html?background=corridor2d&layout=portraits。正本orcus_castle.jsonの端付き回廊に合わせました。
+最新作者設定はdialogue-portrait-author-settings-20261003.json。意匠を採用し、408×100や上置きは全場面固定にしません。文章量・視点に応じて配置や寸法を変えられる前提です。
+今回分はまだ未コミット／未プッシュなので、同じローカル作業フォルダで確認してください。Unityへの移植開始・公開は別途指示待ち。現行の背景、シナリオ、複数人会話、表情、ログ、イベント、終了処理は維持してください。
+```
+
+## 最新：回廊の正本へ背景を合わせた（ローカル・未コミット）
+
+- 原作者が「最新回廊に合わせたHTML見本」と「移植チェックリスト」から進める方針を選択。独立HTMLの通常表示を、Unityの正本 `unity-prototype/Assets/Data/Corridors/orcus_castle.json` のmodules配置へ更新した。Unity側は読み取りのみ、ファイルを変更していない。
+- 見本は `prototypes/silver-ui-extension/dialogue.html?background=corridor2d&layout=portraits`。旧5層の比較は `corridor=legacy` を追加した場合だけ。下に残る「背景は旧5層」は以前の共有履歴であり、通常表示の最新状態ではない。
+- 配置から算出する長さ・歩行範囲・カメラ余白、端の重なり・個別位置・倍率・手前指定・天井の下地を再現。出口への場面遷移は未接続。右端の仮素材を正式化する作業ではない。
+- 会話UIの形・色・設定保存・最新作者JSONは変更していない。408×100をUnityの全場面へ固定しない。
+- 移植の範囲・既存処理の維持・受入条件は `docs/30-planning/SILVER_DIALOGUE_UNITY_PORT_CHECKLIST_2026-10-03.md`。原作者がHTML確認後、Unity接続を別途指示する。チェックリストは提案で、Unityの通過済み項目ではない。
+- 今回の更新はまだコミット／プッシュしていない。Claude Codeへの直接送信はしていない。
 
 ## 最新：今回追加共有する会話UI（2026-10-03）
 

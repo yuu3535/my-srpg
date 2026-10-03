@@ -1,6 +1,16 @@
 # 銀細工UIの拡張 — 比較案
 
-状態: 試作対象。2026-10-03、原作者は1案目の方向を選択。台詞枠の操作見本を追加。正式採用・本編反映は未実施。
+状態: 2026-10-03、会話UIの意匠・見せ方を原作者が正式採用。寸法と配置は場面ごとに調整する。Unity移植・本編反映は未実施。採用方針の正本は `採用版md/SILVER_DIALOGUE_UI_DIRECTION.md`。他の拡張画面まで一括採用したものではない。
+
+## 最新：端付き回廊での比較（2026-10-04 main共有対象）
+
+原作者の依頼で、2D背景の既定をUnityの正本 `unity-prototype/Assets/Data/Corridors/orcus_castle.json` へ更新。読み取りだけでUnityファイルを変更しない。modulesの6枚（左端・アーチ4つ・右端）、重ね幅・上下左右・倍率・手前・天井を再現し、並びの基準幅から回廊の長さを計算。walkMin／walkMax／cameraMarginも合わせる。
+
+入口は従来の `dialogue.html?background=corridor2d&layout=portraits`。旧5層の比較は `&corridor=legacy` を追加。古いスナップショットは削除せず、以下の旧5層に関する記載は試作履歴として残す。最新JSONを再取得するのはページの再読込時で、開いている途中の変更を自動で取り込むものではない。
+
+会話UI・初期値・既存保存値・作者JSONは変更なし。最新の作者調整値は `dialogue-portrait-author-settings-20261003.json` の読込で再現する。出口の場面遷移とUnityへのUI接続は見本の範囲外。
+
+移植前のチェック項目は `docs/30-planning/SILVER_DIALOGUE_UNITY_PORT_CHECKLIST_2026-10-03.md`。Unity組み込みのチェック欄は未実行、移植開始は原作者の指示待ち。2026-10-04に原作者が今回分のコミット＆プッシュを依頼。以下の未共有表記は過去の履歴で、保存結果はGit履歴で確認する。
 
 ## 最新の追加共有（2026-10-03）
 

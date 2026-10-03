@@ -22,6 +22,7 @@
 | マップ資料の最新版と旧案の区分 | [`10-design/map/README.md`](10-design/map/README.md) |
 | マップの絵の作り方（ChatGPTへの頼み方の標準） | [`10-design/map/MAP_ART_PIPELINE_v1_2026-09-28.md`](10-design/map/MAP_ART_PIPELINE_v1_2026-09-28.md) |
 | 会話劇の見せ方（立ち絵を左右に寄せる） | [`10-design/ui/DIALOGUE_STAGING_DIRECTION_2026-09-28.md`](10-design/ui/DIALOGUE_STAGING_DIRECTION_2026-09-28.md) |
+| 採用済みの会話UI意匠と可変寸法の方針 | [`../採用版md/SILVER_DIALOGUE_UI_DIRECTION.md`](../採用版md/SILVER_DIALOGUE_UI_DIRECTION.md)（2026-10-03。Unity移植・公開は未実施） |
 | 会話用の立ち絵の発注書（ChatGPT向け） | [`30-planning/TACHIE_DIALOGUE_ORDER_2026-09-28.md`](30-planning/TACHIE_DIALOGUE_ORDER_2026-09-28.md) |
 | 立ち絵担当（別チャット）の引き継ぎ | [`30-planning/TACHIE_CHAT_HANDOFF_2026-09-28.md`](30-planning/TACHIE_CHAT_HANDOFF_2026-09-28.md) |
 | Codexへの引き継ぎ（最新: 10/1 の武器・敵の決定） | [`30-planning/CODEX_HANDOFF_2026-10-01.md`](30-planning/CODEX_HANDOFF_2026-10-01.md)（前回: [`CODEX_HANDOFF_2026-09-28.md`](30-planning/CODEX_HANDOFF_2026-09-28.md)） |
