@@ -49,6 +49,13 @@
   #out { width: 100%; height: 120px; margin-top: 8px; font: 12px/1.4 Consolas, monospace; background: #0a141b; color: var(--text); border: 1px solid var(--line); }
   .hint { color: var(--muted); font-size: 12px; }
   #msg { color: var(--teal); }
+  #stage .fx { position: absolute; inset: 0; pointer-events: none; }
+  #stage .layer.fxShafts { isolation: auto; }   /* 光の筋は下の絵と「スクリーン」で混ぜる */
+  .card.fxCard { border-color: #3c6d70; }
+  .card.fxCard .row { grid-template-columns: 104px 1fr 54px; }
+  .card.fxCard .colorRow { grid-template-columns: 104px 1fr; }
+  .colorRow { display: grid; grid-template-columns: 70px 1fr; align-items: center; gap: 6px; margin: 2px 0; }
+  .colorRow input { width: 64px; height: 22px; padding: 0 2px; }
 </style>
 </head>
 <body>
@@ -65,6 +72,7 @@
 </header>
 <main>
   <div>
+    <svg width="0" height="0" style="position:absolute"><defs id="fxDefs"></defs></svg>
     <div id="wrap"><div id="stage"><div id="feet"></div><img id="hero" alt=""></div></div>
     <div class="bar">
       <label>カメラ <input id="cam" type="range" min="0" max="4000" value="0" style="width:340px"> <span id="camV">0</span></label>
@@ -131,15 +139,20 @@ async function defaultsFor(id) {
     const r = await fetch(`${UNITY_DIR}${encodeURIComponent(id)}.json`, { cache: "no-store" });
     if (r.ok) {
       const d = await r.json();
-      return { folder: d.folder, hero: { y: d.heroFeetY ?? 352, h: d.heroHeight ?? 96, margin: d.cameraMargin ?? 60 }, layers: d.layers.map(L => ({ ...L, on: true })) };
+      return { folder: d.folder, hero: { y: d.heroFeetY ?? 352, h: d.heroHeight ?? 96, margin: d.cameraMargin ?? 60 }, layers: d.layers.map(L => ({ ...L, on: true })), effects: d.effects };
     }
   } catch {}
   const mine = readJson(PLACES_KEY, []).find(m => m.id === id);
   return { folder: mine?.folder || `背景/${id}/採用候補/`, hero: { y: 352, h: 96, margin: 60 }, layers: clone(TEMPLATE) };
 }
 
+// 効果（画面全体）: 空気遠近・被写界深度・ヴィネット・色調・光の筋（原作者 2026-10-04。まず調整ページで見比べ、Unity はあとで）
+const FX_DEFAULT = { on: true, haze: 0.25, hazeColor: "#a9b8e8", dof: 1.5, vignette: 0.35, vignetteColor: "#0b0d18", vignetteSize: 0.55,
+  bright: 1, contrast: 1, saturate: 1, temp: 0, shafts: 0, shaftColor: "#ffe0a8", shaftAngle: 20 };
+let fx = clone(FX_DEFAULT);
 function apply(state) {
   layers = state.layers;
+  fx = { ...clone(FX_DEFAULT), ...(state.effects || {}) };
   if (state.folder) $("folder").value = state.folder;
   if (state.hero) Object.assign(hero, state.hero);
   $("heroY").value = hero.y; $("heroH").value = hero.h; $("heroOn").checked = hero.on;
@@ -149,7 +162,7 @@ async function load() {
   const s = readJson(storeKey(place), null);
   apply(s?.layers ? s : await defaultsFor(place));
 }
-function save() { writeJson(storeKey(place), { folder: $("folder").value, layers, hero }); }
+function save() { writeJson(storeKey(place), { folder: $("folder").value, layers, hero, effects: fx }); }
 const hero = { y: 352, h: 96, on: true, margin: 60 };
 
 const sizes = {};   // 画像の元の大きさ（file → {w,h}）
@@ -183,7 +196,11 @@ async function listFiles() {
 // ── 描く ──
 async function render() {
   const stage = $("stage");
-  stage.querySelectorAll(".layer").forEach(e => e.remove());
+  stage.querySelectorAll(".layer, .fx").forEach(e => e.remove());
+  const defs = $("fxDefs");
+  defs.innerHTML = "";
+  const shafts = [];   // 光の筋の位置（アーチの真ん中。左右の端の絵は除く）
+  let firstOn = true;
   // カメラは「回廊（端つきの並び）」の両端から余白だけ内側で止める（Unity と同じ）
   const corridorLen = layers.find(L => L.kind === "modules" && L.on)?._length;
   let cam = Number($("cam").value);
@@ -195,6 +212,20 @@ async function render() {
     box.className = "layer";
     stage.insertBefore(box, feet);
     const shift = L.x - cam * L.speed;
+    // 奥ほど（流れる速さが遅いほど）霞とぼかしを強く。いちばん奥の層（空）には霞をかけない
+    const depth = Math.max(0, Math.min(1, 1 - L.speed));
+    if (fx.on && depth > 0) {
+      const filters = [];
+      const haze = firstOn ? 0 : fx.haze * depth;
+      if (haze > 0) {
+        const id = `haze${layers.indexOf(L)}`;
+        defs.insertAdjacentHTML("beforeend", `<filter id="${id}" color-interpolation-filters="sRGB"><feFlood flood-color="${fx.hazeColor}" flood-opacity="${haze.toFixed(3)}" result="f"/><feComposite in="f" in2="SourceGraphic" operator="in" result="t"/><feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="t"/></feMerge></filter>`);
+        filters.push(`url(#${id})`);
+      }
+      if (fx.dof * depth > 0.05) filters.push(`blur(${(fx.dof * depth).toFixed(2)}px)`);
+      box.style.filter = filters.join(" ");
+    }
+    firstOn = false;
     if (L.kind === "floor") {
       const h = Math.max(1, L.bottom - L.top), rows = Math.max(1, L.rows);
       for (let r = 0; r < rows; r++) {
@@ -233,9 +264,29 @@ async function render() {
         Object.assign(img.style, { left: `${left}px`, top: `${top}px`, width: `${w2}px`, height: `${h2}px`, opacity: L.opacity,
           zIndex: mod.front ? 2 : 1 });
         box.appendChild(img);
+        if (m > 0 && m < L.modules.length - 1) shafts.push({ x: left + w2 / 2, top: top + h2 * 0.28, bottom: L.bottom - 8, w: mw * 0.34 });
         cursor += mw;
       }
       L._length = cursor;
+      if (fx.on && fx.shafts > 0 && shafts.length) {
+        // 光の筋: アーチの間から斜めに差して、床に明るいところを落とす
+        const sb = document.createElement("div");
+        sb.className = "layer fxShafts";
+        stage.insertBefore(sb, feet);
+        const tan = Math.tan(fx.shaftAngle * Math.PI / 180);
+        for (const sh of shafts) {
+          const h = sh.bottom - sh.top;
+          const ray = document.createElement("div");
+          Object.assign(ray.style, { position: "absolute", left: `${sh.x - sh.w / 2}px`, top: `${sh.top}px`, width: `${sh.w}px`, height: `${h}px`,
+            transformOrigin: "top center", transform: `skewX(${-fx.shaftAngle}deg)`, mixBlendMode: "screen", filter: "blur(6px)",
+            background: `linear-gradient(180deg, transparent, ${fx.shaftColor} 35%, transparent)`, opacity: fx.shafts });
+          sb.appendChild(ray);
+          const pool = document.createElement("div");
+          Object.assign(pool.style, { position: "absolute", left: `${sh.x + h * tan - sh.w * 0.8}px`, top: `${sh.bottom - 22}px`, width: `${sh.w * 1.6}px`, height: "34px",
+            borderRadius: "50%", mixBlendMode: "screen", filter: "blur(8px)", background: fx.shaftColor, opacity: fx.shafts * 0.7 });
+          sb.appendChild(pool);
+        }
+      }
       continue;
     }
     const s = await size(L.file);
@@ -251,6 +302,20 @@ async function render() {
         transform: L.mirror && i % 2 ? "scaleX(-1)" : "none" });
       box.appendChild(img);
     }
+  }
+  // 色調（明るさ・コントラスト・彩度）は画面全体、色温度は暖色／寒色を「ソフトライト」で重ねる、ヴィネットは四隅を暗く
+  stage.style.filter = fx.on ? `brightness(${fx.bright}) contrast(${fx.contrast}) saturate(${fx.saturate})` : "";
+  if (fx.on && fx.temp) {
+    const t = document.createElement("div");
+    t.className = "fx";
+    Object.assign(t.style, { background: fx.temp > 0 ? "#ff9a3c" : "#3c7cff", mixBlendMode: "soft-light", opacity: Math.abs(fx.temp) * 0.6 });
+    stage.appendChild(t);
+  }
+  if (fx.on && fx.vignette > 0) {
+    const v = document.createElement("div");
+    v.className = "fx";
+    Object.assign(v.style, { background: `radial-gradient(ellipse 72% 78% at 50% 50%, transparent ${Math.round(fx.vignetteSize * 100)}%, ${fx.vignetteColor} 100%)`, opacity: fx.vignette });
+    stage.appendChild(v);
   }
   feet.style.top = `${hero.y}px`;
   feet.style.display = hero.on ? "" : "none";
@@ -269,10 +334,45 @@ function exportText() {
     else Object.assign(o, { height: L.height, bottom: L.bottom, overlap: L.overlap, repeat: L.repeat, mirror: L.mirror, opacity: L.opacity });
     return o;
   });
-  return JSON.stringify({ corridor: place, folder: $("folder").value, screen: [844, 390], heroFeetY: hero.y, heroHeight: hero.h, cameraMargin: hero.margin, layers: used }, null, 1);
+  return JSON.stringify({ corridor: place, folder: $("folder").value, screen: [844, 390], heroFeetY: hero.y, heroHeight: hero.h, cameraMargin: hero.margin, effects: fx, layers: used }, null, 1);
 }
 
 // ── 欄 ──
+function colorRow(o, key, label) {
+  const row = document.createElement("label");
+  row.className = "colorRow";
+  row.innerHTML = `<span>${label}</span><input type="color" value="${o[key]}">`;
+  row.querySelector("input").addEventListener("input", e => { o[key] = e.target.value; render(); });
+  return row;
+}
+function fxCard() {
+  const card = document.createElement("div");
+  card.className = "card fxCard" + (fx.on ? "" : " off");
+  const head = document.createElement("div");
+  head.className = "head";
+  head.innerHTML = `<input type="checkbox" ${fx.on ? "checked" : ""} title="出す"><b>効果（画面全体）</b><button title="効果だけはじめの値に">戻す</button>`;
+  head.querySelector("input").addEventListener("change", e => { fx.on = e.target.checked; card.classList.toggle("off", !fx.on); render(); });
+  head.querySelector("button").addEventListener("click", () => { fx = clone(FX_DEFAULT); cards(); render(); });
+  card.appendChild(head);
+  const note = document.createElement("div");
+  note.className = "hint";
+  note.textContent = "霞とぼかしは、流れる速さが遅い（奥の）層ほど強くかかる。いちばん上の層（空）には霞をかけない。";
+  card.appendChild(note);
+  card.appendChild(slider(fx, "haze", "空気遠近", 0, 1, 0.01));
+  card.appendChild(colorRow(fx, "hazeColor", "霞の色"));
+  card.appendChild(slider(fx, "dof", "奥のぼかし", 0, 6, 0.1));
+  card.appendChild(slider(fx, "vignette", "ヴィネット", 0, 1, 0.01));
+  card.appendChild(slider(fx, "vignetteSize", "暗くしない広さ", 0.2, 0.95, 0.01));
+  card.appendChild(colorRow(fx, "vignetteColor", "四隅の色"));
+  card.appendChild(slider(fx, "bright", "明るさ", 0.5, 1.5, 0.01));
+  card.appendChild(slider(fx, "contrast", "コントラスト", 0.5, 1.5, 0.01));
+  card.appendChild(slider(fx, "saturate", "彩度", 0, 2, 0.01));
+  card.appendChild(slider(fx, "temp", "色温度（−寒 ＋暖）", -1, 1, 0.01));
+  card.appendChild(slider(fx, "shafts", "光の筋", 0, 1, 0.01));
+  card.appendChild(slider(fx, "shaftAngle", "光の角度", -45, 45, 1));
+  card.appendChild(colorRow(fx, "shaftColor", "光の色"));
+  return card;
+}
 function slider(L, key, label, min, max, step) {
   const row = document.createElement("div");
   row.className = "row";
@@ -292,6 +392,7 @@ function check(L, key, label) {
 function cards() {
   const host = $("layers");
   host.innerHTML = "";
+  host.appendChild(fxCard());
   layers.forEach((L, i) => {
     const card = document.createElement("div");
     card.className = "card" + (L.on ? "" : " off");
