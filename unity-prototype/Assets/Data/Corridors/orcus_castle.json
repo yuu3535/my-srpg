@@ -72,8 +72,8 @@
     {
      "file": "「orcus_corridor_structure_end_left_a_neutral4.png",
      "overlap": 0,
-     "dy": -7,
-     "dx": 20,
+     "dy": -10,
+     "dx": 23,
      "scale": 1,
      "front": true,
      "shadeTop": 60
