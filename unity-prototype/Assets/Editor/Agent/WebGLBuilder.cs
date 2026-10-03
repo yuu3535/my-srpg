@@ -123,7 +123,12 @@ namespace Srpg.EditorAgent
             if (metas == null) return;
             foreach (var kv in metas)
             {
-                System.IO.File.WriteAllText(kv.Key + ".meta", kv.Value);
+                // 取り込み直後はファイルが一時的に開けないことがある（Win32 1224）。少し待って何度か試す
+                for (int tries = 0; ; tries++)
+                {
+                    try { System.IO.File.WriteAllText(kv.Key + ".meta", kv.Value); break; }
+                    catch (System.IO.IOException) when (tries < 10) { System.Threading.Thread.Sleep(300); }
+                }
                 AssetDatabase.ImportAsset(kv.Key, ImportAssetOptions.ForceUpdate);
             }
             int left = metas.Keys.Count(p => AssetImporter.GetAtPath(p) is TextureImporter i && !i.mipmapEnabled);
