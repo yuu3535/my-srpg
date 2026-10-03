@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const model = require('./corridor-model.js');
-const data = JSON.parse(fs.readFileSync(path.join(__dirname, '../../unity-prototype/Assets/Data/Corridors/orcus_castle.json'), 'utf8'));
+const data = JSON.parse(fs.readFileSync(path.join(__dirname, 'corridor-reference-20261003.json'), 'utf8'));
 assert.deepEqual(model.position(data, 422), { player: 422, camera: 0, heroX: 422 });
 assert.deepEqual(model.position(data, 1266), { player: 1266, camera: 844, heroX: 422 });
 assert.equal(model.position(data, -999).player, 40);

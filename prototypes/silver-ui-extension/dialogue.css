@@ -72,17 +72,30 @@ legend { font: 11px/1.5 'Yu Gothic', sans-serif; color: var(--muted); margin-bot
 [data-presentation=portraits] .portrait-stage { display: block; position: absolute; inset: 0; pointer-events: none; }
 .portrait-slot { position: absolute; top: 0; bottom: 0; width: 224px; overflow: hidden; }
 .portrait-left { left: 8px; } .portrait-right { right: 8px; }
-.portrait-slot img { position: absolute; width: 520px; max-width: none; height: auto; top: 66px; transition: filter 240ms cubic-bezier(.16,1,.3,1), opacity 240ms cubic-bezier(.16,1,.3,1); }
-.portrait-left img { left: -142px; }
-.portrait-right img { width: 560px; left: -154px; }
-.portrait-slot img[data-speaking=false] { filter: brightness(.72) saturate(.82); opacity: .9; }
+.portrait-figure { position: absolute; width: 520px; top: 66px; isolation: isolate; }
+.portrait-left .portrait-figure { left: -142px; }
+.portrait-right .portrait-figure { width: 560px; left: -154px; }
+.portrait-figure img { display: block; width: 100%; max-width: none; height: auto; opacity: 1; }
+/* 元PNGのアルファをそのままマスクに使用。立ち絵を透かさず、輪郭内へ暗色を重ねる。 */
+.portrait-shade { position: absolute; inset: 0; pointer-events: none; background: #080a0e; opacity: 0; mask-image: var(--portrait-mask); mask-mode: alpha; mask-size: 100% 100%; mask-repeat: no-repeat; transition: opacity 240ms cubic-bezier(.16,1,.3,1); }
+.portrait-figure[data-speaking=false] .portrait-shade { opacity: .24; }
+.nameplate-shape, .dialogue-outline { display: none; }
 [data-presentation=portraits] .dialogue-shell { top: 48px; bottom: auto; --corner: 64px; --offset-x: -16px; --offset-y: -17px; }
+[data-presentation=portraits] .dialogue-surface { display: none; }
+[data-presentation=portraits] .dialogue-outline { display: block; position: absolute; top: 0; left: 0; width: 100%; height: calc(100% + 20px); overflow: visible; pointer-events: none; }
+.dialogue-outline path { fill: var(--panel-fill); stroke: var(--frame-color); stroke-width: 1; stroke-linejoin: round; }
 [data-presentation=portraits][data-background=corridor2d] .corridor-mode { left: 25px; right: auto; }
 [data-presentation=portraits] .scene-name { top: auto; bottom: 12px; left: 50%; transform: translateX(-50%); font-size: 13px; white-space: nowrap; }
 [data-presentation=portraits][data-size=small] .dialogue-shell { --corner: 48px; --offset-x: -12px; --offset-y: -13px; }
 [data-presentation=portraits][data-size=large] .dialogue-shell { --corner: 76px; --offset-x: -19px; --offset-y: -20px; }
 [data-presentation=portraits] .dialogue-copy { top: 26px; left: 26px; right: max(66px, calc(44px / var(--scale) + 14px)); bottom: 20px; line-height: 1.4; letter-spacing: .01em; white-space: pre-wrap; overflow: hidden; }
-[data-presentation=portraits] .nameplate { top: -20px; left: 24px; min-width: 114px; height: 32px; font-size: 17px; letter-spacing: .08em; }
+[data-presentation=portraits] .nameplate { top: -20px; left: 24px; min-width: 144px; height: 32px; padding: 0 32px; font-size: 17px; letter-spacing: .08em; background: transparent; border: 0; isolation: isolate; }
+[data-presentation=portraits] .nameplate-shape { display: block; position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.nameplate-shape polygon { fill: var(--name-fill); stroke: var(--name-border); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.nameplate-shape .nameplate-inner { fill: none; stroke-width: .6; opacity: .5; }
+[data-presentation=portraits] .nameplate #speaker { position: relative; }
+[data-presentation=portraits][data-speaker-side=right] .nameplate { left: auto; right: 24px; }
+[data-presentation=portraits][data-speaker-side=none] .nameplate { left: 50%; transform: translateX(-50%); }
 [data-presentation=portraits] .advance { right: 7px; bottom: 8px; }
 [data-presentation=portraits] .page-count:not([hidden]) { display: block; position: absolute; right: 22px; bottom: max(55px, calc(44px / var(--scale) + 14px)); color: var(--copy-color); font: 11px/1.5 'Yu Gothic', sans-serif; }
 [data-presentation=portraits] .log-panel { top: calc(48px + var(--box-height) + 16px); bottom: 16px; right: calc((844px - var(--box-width)) / 2); width: var(--box-width); }
@@ -98,6 +111,8 @@ legend { font: 11px/1.5 'Yu Gothic', sans-serif; color: var(--muted); margin-bot
 .tuning p, .tuning small { font-size: 12px; line-height: 1.6; color: var(--muted); margin: 0; }
 .tuning button { min-height: 44px; padding: 8px 14px; background: transparent; border: 1px solid #607b87; font-size: 13px; }
 .tuning-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 26px; }
+.tail-tuning { grid-column: 1 / -1; display: grid; gap: 12px; padding: 16px 0; border-top: 1px solid #425861; border-bottom: 1px solid #425861; }
+.tail-tuning h3 { margin: 0; font-size: 15px; font-weight: 500; }
 .setting { display: grid; align-content: start; gap: 7px; }
 .setting label { display: flex; align-items: center; justify-content: space-between; gap: 14px; font-size: 13px; }
 .setting output { color: #e4edef; font: 12px/1.5 Consolas, monospace; }

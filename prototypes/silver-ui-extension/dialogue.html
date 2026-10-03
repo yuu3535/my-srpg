@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>銀細工の台詞枠 — 色と大きさの調整</title>
-  <link rel="stylesheet" href="dialogue.css?v=20261003-5">
+  <link rel="stylesheet" href="dialogue.css?v=20261003-9">
   <script src="dialogue-model.js?v=20261003-1" defer></script>
-  <script src="portrait-dialogue-model.js?v=20261003-1" defer></script>
-  <script src="dialogue-settings.js?v=20261003-4" defer></script>
+  <script src="portrait-dialogue-model.js?v=20261003-4" defer></script>
+  <script src="dialogue-settings.js?v=20261003-5" defer></script>
   <script src="corridor-model.js?v=20261003-1" defer></script>
-  <script src="corridor.js?v=20261003-3" defer></script>
-  <script src="dialogue.js?v=20261003-5" defer></script>
+  <script src="corridor.js?v=20261003-4" defer></script>
+  <script src="dialogue.js?v=20261003-8" defer></script>
 </head>
 <body>
   <main class="workbench">
@@ -30,11 +30,11 @@
       <section class="game-stage" id="stage" data-size="medium" data-background="scene" aria-label="横画面の会話見本">
         <img class="scenery" src="../../背景/オルクス城回廊.png" alt="夕方のオルクス城回廊" draggable="false">
         <div id="corridor-scene" class="corridor-scene" hidden>
-          <canvas id="corridor-canvas" width="844" height="390" role="img" aria-label="Unityと同じ素材と層の設定で重ねた2D回廊とアルシェ"></canvas>
+          <canvas id="corridor-canvas" width="844" height="390" role="img" aria-label="2026年10月3日の比較用設定で重ねた2D回廊とアルシェ"></canvas>
         </div>
         <div class="portrait-stage" aria-label="会話の立ち絵">
-          <div class="portrait-slot portrait-left"><img id="portrait-left" data-portrait="left" alt="アルシェの立ち絵" draggable="false"></div>
-          <div class="portrait-slot portrait-right"><img id="portrait-right" data-portrait="right" alt="カリマの立ち絵" draggable="false"></div>
+          <div class="portrait-slot portrait-left"><div class="portrait-figure" data-portrait-side="left"><img id="portrait-left" data-portrait="left" alt="アルシェの立ち絵" draggable="false"><span class="portrait-shade" aria-hidden="true"></span></div></div>
+          <div class="portrait-slot portrait-right"><div class="portrait-figure" data-portrait-side="right"><img id="portrait-right" data-portrait="right" alt="カリマの立ち絵" draggable="false"><span class="portrait-shade" aria-hidden="true"></span></div></div>
         </div>
         <p class="scene-name">オルクス城 — 回廊</p>
         <button id="corridor-mode" class="corridor-mode" type="button" aria-pressed="true">探索へ戻る</button>
@@ -43,11 +43,12 @@
         <button class="log-trigger" id="open-log" aria-expanded="false" aria-controls="log-panel"><img src="../silver-battle-ui/assets/package/assets/regular/info.svg" alt="">ログ</button>
         <div class="dialogue-shell">
           <div class="dialogue-surface" aria-hidden="true"></div>
+          <svg class="dialogue-outline" aria-hidden="true" focusable="false"><path id="dialogue-outline-path"></path></svg>
           <img class="ornament corner-tl" src="assets/silver-corner-sculpted-source.png" alt="" draggable="false">
           <img class="ornament corner-tr" src="assets/silver-corner-sculpted-source.png" alt="" draggable="false">
           <img class="ornament corner-bl" src="assets/silver-corner-sculpted-source.png" alt="" draggable="false">
           <img class="ornament corner-br" src="assets/silver-corner-sculpted-source.png" alt="" draggable="false">
-          <div class="nameplate" id="speaker">携帯端末</div>
+          <div class="nameplate"><svg class="nameplate-shape" viewBox="0 0 140 34" preserveAspectRatio="none" aria-hidden="true" focusable="false"><polygon points="1,17 13,1 127,1 139,17 127,33 13,33"></polygon><polygon class="nameplate-inner" points="6,17 15,5 125,5 134,17 125,29 15,29"></polygon></svg><span id="speaker">携帯端末</span></div>
           <p class="dialogue-copy" id="line" aria-live="polite">（携帯端末の音）</p>
           <span class="page-count" id="page-count" aria-label="台詞のページ" hidden></span>
           <button class="advance" id="advance" aria-label="次の台詞"><img src="../silver-battle-ui/assets/package/assets/regular/caret-down.svg" alt=""></button>
@@ -61,10 +62,10 @@
     </div>
     <section class="tuning" aria-labelledby="tuning-title">
       <div class="tuning-heading"><div><h2 id="tuning-title">色と大きさを調整</h2><p>動かすと上の見本に反映します。色の最終決定は、ゆっくり試してから。</p></div><button id="reset-settings" type="button">元の見本に戻す</button></div>
-      <p id="presentation-help" class="presentation-help" hidden>左右立ち絵の試作。幅・高さは上置き専用に保存します。銀細工は控えめな大きさで、長文は数行ずつページ送りします。</p>
+      <p id="presentation-help" class="presentation-help" hidden>左右立ち絵の試作。尖った名前札と小さな尾を話者側に合わせます。聞き手は透過させず、輪郭内だけ暗くします。長文は数行ずつページ送りします。</p>
       <section class="corridor-controls" id="corridor-controls" aria-labelledby="corridor-title" hidden>
         <h3 id="corridor-title">実際の回廊で見比べる</h3>
-        <p>Unityの素材と層の値を読み込みます。送ってくれた台詞枠の設定は仮案です。</p>
+        <p>Unityの素材と、10月3日の比較用の層の値を読み込みます。編集中の最新背景とは別の仮見本です。</p>
         <div class="setting"><label for="corridor-position">場面の位置 <output id="corridor-position-value" for="corridor-position">422 / 2532</output></label><input id="corridor-position" type="range" min="40" max="2492" value="422" step="1"></div>
         <div class="button-group"><button data-corridor-place="left" type="button">左側</button><button data-corridor-place="middle" type="button">中央</button><button data-corridor-place="right" type="button">右側</button></div>
         <label class="camera-choice" for="corridor-lift"><input id="corridor-lift" type="checkbox" checked>会話中は人物を見せる（仮）</label>
@@ -76,6 +77,13 @@
         <div class="setting"><label for="box-height">高さ <output id="box-height-value" for="box-height">120 px</output></label><input id="box-height" type="range" min="100" max="180" step="1" value="120" data-setting="height"><small>長文が収まらないときは、枠内をスクロールできます。</small></div>
         <div class="setting"><label for="box-transparency">下地の透過率 <output id="box-transparency-value" for="box-transparency">4 %</output></label><input id="box-transparency" type="range" min="0" max="100" step="1" value="4" data-setting="transparency"><small>0%＝透けない／100%＝下地が透明。文字と銀細工は薄くなりません。</small></div>
         <div class="setting"><label for="box-radius">角の丸み <output id="box-radius-value" for="box-radius">0 px</output></label><input id="box-radius" type="range" min="0" max="24" step="1" value="0" data-setting="radius"><small>丸くなるのは直線の枠。銀細工の原稿の形は保ちます。</small></div>
+        <section class="tail-tuning" id="tail-tuning" aria-labelledby="tail-title" hidden>
+          <h3 id="tail-title">吹き出し尾の位置</h3>
+          <div class="button-group"><button data-tail-preview="left" aria-pressed="false" type="button">左の話者で確認</button><button data-tail-preview="right" aria-pressed="false" type="button">右の話者で確認</button></div>
+          <div class="setting"><label for="tail-left">左の話者：尾の横位置 <output id="tail-left-value" for="tail-left">0 px</output></label><input id="tail-left" type="range" min="0" max="220" step="1" value="0" data-setting="tailLeftOffset" aria-describedby="tail-left-help"><small id="tail-left-help">0は今の位置。増やすと左端から枠の内側へ動きます。</small></div>
+          <div class="setting"><label for="tail-right">右の話者：尾の横位置 <output id="tail-right-value" for="tail-right">0 px</output></label><input id="tail-right" type="range" min="0" max="220" step="1" value="0" data-setting="tailRightOffset" aria-describedby="tail-right-help"><small id="tail-right-help">0は今の位置。増やすと右端から枠の内側へ動きます。</small></div>
+          <button id="reset-tail" type="button">尾の位置だけ戻す</button>
+        </section>
         <div class="setting color-setting"><label for="panel-color">下地の色 <output id="panel-color-value" for="panel-color">#0b1822</output></label><input id="panel-color" type="color" value="#0b1822" data-setting="panelColor"></div>
         <div class="setting color-setting"><label for="border-color">直線の縁の色 <output id="border-color-value" for="border-color">#c4d1d8</output></label><input id="border-color" type="color" value="#c4d1d8" data-setting="borderColor"><small>銀細工の画像そのものは銀色のままです。</small></div>
         <div class="setting color-setting"><label for="text-color">文字の色 <output id="text-color-value" for="text-color">#f2f2ed</output></label><input id="text-color" type="color" value="#f2f2ed" data-setting="textColor"></div>
@@ -85,7 +93,7 @@
       <details class="settings-details"><summary>共有用の設定／前の設定を読み込む</summary><label for="settings-json">設定JSON</label><textarea id="settings-json" rows="8" spellcheck="false" aria-describedby="json-help"></textarea><p id="json-help">コピーしたJSON全文をClaude Codeへ渡せます。保存した設定をここへ貼り、「この設定を読み込む」で再現できます。</p><button id="import-settings" type="button">この設定を読み込む</button><p id="transfer-status" role="status"></p></details>
     </section>
     </div>
-    <footer class="notes"><p>銀細工の画像は原稿のまま。角の反転・大きさだけを変えています。直線の縁と下地は別部品です。</p><p>2D回廊はUnityと同じ素材・配置値をHTMLで再現した比較用。会話・カメラの仮案はUnityに未反映。台詞はすべて表示テスト用です。</p><p>左右の立ち絵は既存のアルシェ・カリマの素材。会話の相手・台詞・キャラ解釈を正式に決めるものではありません。</p><p>旧・仮の一枚絵は2D回廊とは別の背景。色・透過率・寸法は、どちらも正式採用ではありません。</p><p>上置き・下置き・旧見本は別々に自動保存します。共有JSONは台詞枠の設定と上置きの識別子のみ。場面位置・立ち絵の位置・カメラの仮案は含まず、本編のセーブにも影響しません。</p><p id="measurements" aria-live="polite"></p></footer>
+    <footer class="notes"><p>銀細工の画像は原稿のまま。角の反転・大きさだけを変えています。直線の縁と下地は別部品です。</p><p>2D回廊はUnityの既存素材と10月3日の5層の設定をHTMLで再現した比較用。編集中の最新背景は自動反映しません。会話・カメラの仮案はUnityに未反映。台詞はすべて表示テスト用です。</p><p>左右の立ち絵は既存のアルシェ・カリマの素材。会話の相手・台詞・キャラ解釈を正式に決めるものではありません。</p><p>旧・仮の一枚絵は2D回廊とは別の背景。色・透過率・寸法は、どちらも正式採用ではありません。</p><p>上置き・下置き・旧見本は別々に自動保存します。共有JSONは台詞枠の設定と上置きの識別子のみ。場面位置・立ち絵の位置・カメラの仮案は含まず、本編のセーブにも影響しません。</p><p id="measurements" aria-live="polite"></p></footer>
   </main>
 </body>
 </html>

@@ -24,7 +24,8 @@
     }
     async function load() {
       if (!ctx) throw new Error('背景を表示できません。このブラウザではCanvasが使えません。');
-      const response = await fetch('../../unity-prototype/Assets/Data/Corridors/orcus_castle.json');
+      // 別担当が編集中のUnityデータをUI比較へ即時反映しない。直前の見本の5層を固定する。
+      const response = await fetch('corridor-reference-20261003.json');
       if (!response.ok) throw new Error('回廊の層の設定を読み込めませんでした。');
       data = await response.json();
       if (!Array.isArray(data.layers) || !data.layers.length || !(data.length >= 844)) throw new Error('回廊の層の設定が不正です。');

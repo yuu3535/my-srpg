@@ -28,8 +28,20 @@ assert.deepEqual(settings.parse(settings.serialize(settings.portraitTrial, 'port
 assert.equal(JSON.parse(settings.serialize(settings.portraitTrial, 'portraits')).presentation, 'portraits-top');
 assert.notEqual(settings.portraitStorageKey, settings.corridorStorageKey);
 const provisional = require('./dialogue-portrait-provisional-settings.json');
+const authorSettings = require('./dialogue-portrait-author-settings-20261003.json');
+assert.deepEqual(settings.parse(JSON.stringify(authorSettings), 'portraits'), authorSettings.settings);
+assert.deepEqual(JSON.parse(settings.serialize(authorSettings.settings, 'portraits')), authorSettings);
 assert.deepEqual(settings.parse(JSON.stringify(provisional), 'portraits'), settings.portraitTrial);
 assert.equal(settings.portraitTrial.height, 100);
 assert.equal(settings.portraitTrial.panelColor, '#131d34');
 assert.equal(settings.normalize(settings.corridorTrial).width, 796);
+const tails = { ...settings.portraitTrial, tailLeftOffset: 52, tailRightOffset: 87 };
+assert.deepEqual(settings.parse(settings.serialize(tails, 'portraits'), 'portraits'), tails);
+assert.equal(settings.normalize({tailLeftOffset: -10, tailRightOffset: 1000}, 'portraits').tailLeftOffset, 0);
+assert.equal(settings.normalize({tailLeftOffset: -10, tailRightOffset: 1000}, 'portraits').tailRightOffset, 220);
+assert.equal(settings.parse(JSON.stringify(provisional), 'portraits').tailLeftOffset, 0);
+for (const invalid of ['52', null]) {
+  assert.throws(() => settings.parse(JSON.stringify({version: 1, settings: {...settings.portraitTrial, tailLeftOffset: invalid}}), 'portraits'));
+}
+assert.equal('tailLeftOffset' in settings.normalize(tails), false);
 console.log('dialogue-settings: all tests passed');

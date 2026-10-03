@@ -45,13 +45,18 @@
   if (isPortrait) {
     document.getElementById('portrait-left').src = '../../unity-prototype/Assets/Art/Portraits/Dialogue/アルシェ.png';
     document.getElementById('portrait-right').src = '../../unity-prototype/Assets/Art/Portraits/Dialogue/カリマ.png';
+    document.querySelectorAll('[data-portrait]').forEach(image => {
+      image.parentElement.style.setProperty('--portrait-mask', `url("${image.getAttribute('src')}")`);
+    });
     document.getElementById('presentation-help').hidden = false;
+    document.getElementById('tail-tuning').hidden = false;
     document.getElementById('reset-settings').textContent = '上置きの仮設定に戻す';
     for (const key of ['width', 'height']) {
       const input = document.querySelector(`[data-setting="${key}"]`);
       [input.min, input.max] = config.portraitLimits[key];
     }
     document.getElementById('box-height').nextElementSibling.textContent = '枠の高さに合わせて数行ずつページ送りします。';
+    document.getElementById('box-transparency').nextElementSibling.textContent = '本文の下地の透過率。名前札は背後の線が透けない不透明な下地で、同じ色に連動します。';
     document.getElementById('corridor-lift').closest('label').hidden = true;
     document.getElementById('corridor-lift').closest('label').nextElementSibling.textContent = '上置き案では背景とSDキャラを持ち上げません。Unityと同じ足元位置で比較します。';
   }
@@ -77,10 +82,20 @@
     stage.style.setProperty('--copy-color', settings.textColor);
     stage.style.setProperty('--name-fill', settings.panelColor === config.defaults.panelColor && settings.transparency === 4 ? '#122530' : config.rgba(settings.panelColor, settings.transparency));
     stage.style.setProperty('--name-border', settings.borderColor === config.defaults.borderColor ? '#b4c6cf' : settings.borderColor);
+    if (isPortrait) {
+      // 名前札だけは不透明な下地にし、背後の枠・銀細工を透かさない。
+      stage.style.setProperty('--name-fill', settings.panelColor);
+      stage.style.setProperty('--name-border', settings.borderColor);
+      const outline = document.querySelector('.dialogue-outline');
+      outline.setAttribute('viewBox', `0 0 ${settings.width} ${settings.height + 20}`);
+      const tailOffset = stage.dataset.speakerSide === 'right' ? settings.tailRightOffset : settings.tailLeftOffset;
+      document.getElementById('dialogue-outline-path').setAttribute('d', model.framePath(settings.width, settings.height, settings.radius, stage.dataset.speakerSide, tailOffset));
+    }
     stage.style.setProperty('--inner-fill', settings.panelColor === config.defaults.panelColor && settings.transparency === 4 ? '#142531' : config.rgba(settings.panelColor, settings.transparency));
     stage.style.setProperty('--inner-border', settings.borderColor === config.defaults.borderColor ? '#586c78' : config.rgba(settings.borderColor, 55));
     corridor.setHeight(settings.height);
     document.querySelectorAll('[data-setting]').forEach(input => {
+      if (!(input.dataset.setting in settings)) return;
       const value = settings[input.dataset.setting]; input.value = value;
       document.getElementById(`${input.id}-value`).value = typeof value === 'number' ? `${value} ${input.dataset.setting === 'transparency' ? '%' : 'px'}` : value;
     });
@@ -114,7 +129,11 @@
     document.getElementById('speaker').textContent = line.speaker;
     document.getElementById('line').textContent = line.text;
     stage.dataset.speakerSide = line.side || 'none';
-    document.querySelectorAll('[data-portrait]').forEach(image => image.dataset.speaking = String(image.dataset.portrait === line.side));
+    document.querySelectorAll('[data-portrait]').forEach(image => {
+      const speaking = isPortrait ? model.isHighlighted(line.side, image.dataset.portrait) : false;
+      image.dataset.speaking = String(speaking);
+      image.parentElement.dataset.speaking = String(speaking);
+    });
     document.getElementById('short-copy').setAttribute('aria-pressed', String(state.index === 0));
     document.getElementById('long-copy').setAttribute('aria-pressed', String(state.index > 0));
     const entries = document.getElementById('log-entries');
@@ -128,6 +147,7 @@
     renderSettings();
     syncButtons('data-background', stage.dataset.background);
     syncButtons('data-presentation', presentation);
+    syncButtons('data-tail-preview', line.side || 'none');
   }
   function resize() {
     const scale = viewport.clientWidth / 844;
@@ -176,6 +196,15 @@
   document.querySelectorAll('[data-width]').forEach(button => button.addEventListener('click', () => { viewport.classList.toggle('wide', button.dataset.width === 'wide'); syncButtons('data-width', button.dataset.width); resize(); }));
   document.getElementById('short-copy').addEventListener('click', () => { pageIndex = 0; state = model.choose(state, 0); render(); });
   document.getElementById('long-copy').addEventListener('click', () => { pageIndex = 0; state = model.choose(state, 2); render(); });
+  document.querySelectorAll('[data-tail-preview]').forEach(button => button.addEventListener('click', () => {
+    if (!isPortrait) return;
+    pageIndex = 0; state = model.choose(state, button.dataset.tailPreview === 'right' ? 1 : 0); render();
+  }));
+  document.getElementById('reset-tail').addEventListener('click', () => {
+    if (!isPortrait) return;
+    settings = { ...settings, tailLeftOffset: 0, tailRightOffset: 0 }; render(); saveSettings();
+    transferStatus.setAttribute('role', 'status'); transferStatus.textContent = '尾の位置だけ戻しました。色・寸法・ほかの調整値はそのままです。';
+  });
   document.getElementById('advance').addEventListener('click', () => {
     if (isPortrait && pageIndex < pages.length - 1) pageIndex++;
     else { pageIndex = 0; state = model.advance(state); }

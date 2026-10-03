@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "prototype": "silver-ui-extension/dialogue",
+  "presentation": "portraits-top",
+  "settings": {
+    "width": 408,
+    "height": 100,
+    "transparency": 20,
+    "radius": 24,
+    "panelColor": "#131d34",
+    "borderColor": "#d7d7e0",
+    "textColor": "#e6e7ef",
+    "ornament": "large",
+    "tailLeftOffset": 17,
+    "tailRightOffset": 17
+  }
+}
