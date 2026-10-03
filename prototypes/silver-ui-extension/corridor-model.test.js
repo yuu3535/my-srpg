@@ -1,0 +1,31 @@
+'use strict';
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const model = require('./corridor-model.js');
+const data = JSON.parse(fs.readFileSync(path.join(__dirname, '../../unity-prototype/Assets/Data/Corridors/orcus_castle.json'), 'utf8'));
+assert.deepEqual(model.position(data, 422), { player: 422, camera: 0, heroX: 422 });
+assert.deepEqual(model.position(data, 1266), { player: 1266, camera: 844, heroX: 422 });
+assert.equal(model.position(data, -999).player, 40);
+assert.equal(model.position(data, 99999).player, data.length - 40);
+assert.equal(model.position(data, 99999).camera, data.length - 844);
+assert.equal(model.walk(data, 422, 1, 0.1).player, 444);
+assert.equal(model.walk(data, 422, 1, 999).player, 444);
+assert.equal(model.walk(data, 422, -1, 0.1).player, 400);
+assert.equal(model.walk(data, 422, 0, 0.1).player, 422);
+assert.equal(model.dialogueLift(data, 117), 122);
+const arch = data.layers.find(layer => layer.name === 'アーチ');
+for (const camera of [0, 844, 1688]) {
+  const copies = model.tiles(arch, camera, 230);
+  assert.ok(copies.some(tile => tile.x <= 0 && tile.x + 230 >= 0));
+  assert.ok(copies.some(tile => tile.x <= 844 && tile.x + 230 >= 844));
+  assert.equal(copies[1].x - copies[0].x, 191);
+}
+assert.deepEqual(model.tiles({ x: 20, speed: 0.5, repeat: false }, 40, 100), [{ x: 0, mirrored: false }]);
+assert.equal(model.tiles({ ...arch, mirror: true }, 0, 230)[1].mirrored, true);
+assert.deepEqual(data.layers.map(layer => layer.speed), [0.03, 0.15, 0.45, 1, 1]);
+const settings = require('./dialogue-settings.js');
+assert.deepEqual(settings.parse(settings.serialize(settings.corridorTrial)), settings.corridorTrial);
+assert.notEqual(settings.corridorStorageKey, settings.storageKey);
+assert.equal(settings.defaults.transparency, 4);
+console.log('corridor-model: all tests passed');

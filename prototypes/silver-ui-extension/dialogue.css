@@ -21,6 +21,23 @@ legend { font: 11px/1.5 'Yu Gothic', sans-serif; color: var(--muted); margin-bot
 .game-stage { width: 844px; height: 390px; position: absolute; transform: scale(var(--scale)); transform-origin: top left; isolation: isolate; overflow: hidden; }
 .scenery { position: absolute; width: 100%; height: 100%; object-fit: cover; object-position: center 48%; }
 [data-background=plain] .scenery { visibility: hidden; }
+[data-background=corridor2d] .scenery { visibility: hidden; }
+.corridor-scene, #corridor-canvas { position: absolute; inset: 0; width: 844px; height: 390px; pointer-events: none; }
+.corridor-mode, .walk-button { display: none; }
+[data-background=corridor2d] .corridor-mode { display: block; position: absolute; right: 128px; top: 16px; height: max(44px, calc(44px / var(--scale))); border: 1px solid #a0b6c0; background: rgba(12,26,35,.94); padding: 0 14px; font-size: 14px; }
+[data-background=corridor2d][data-corridor-mode=explore] .walk-button { display: grid; place-items: center; position: absolute; top: 50%; margin-top: -48px; width: max(56px, calc(44px / var(--scale))); height: 96px; border: 0; background: rgba(12,20,31,.35); touch-action: none; }
+.walk-left { left: 10px; } .walk-right { right: 10px; }
+.walk-button img { width: 34px; height: 34px; filter: invert(90%); pointer-events: none; }
+.walk-left img { transform: rotate(90deg); } .walk-right img { transform: rotate(-90deg); }
+[data-background=corridor2d][data-corridor-mode=explore] .dialogue-shell,
+[data-background=corridor2d][data-corridor-mode=explore] .log-trigger,
+[data-background=corridor2d][data-corridor-mode=explore] .log-panel { display: none; }
+.corridor-controls { padding-bottom: 18px; margin-bottom: 20px; border-bottom: 1px solid #425861; }
+.corridor-controls h3 { font-size: 15px; font-weight: 500; margin: 0 0 8px; }
+.corridor-controls .setting { margin-top: 15px; }
+.corridor-controls .camera-choice { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 13px; margin-top: 12px; }
+.camera-choice input { width: 20px; height: 20px; accent-color: #93c4c0; }
+.corridor-controls #corridor-help { margin-top: 10px; }
 .scene-name { position: absolute; top: 16px; left: 25px; margin: 0; font-size: 16px; text-shadow: 0 1px 4px #12232b; }
 .log-trigger { position: absolute; right: 25px; top: 16px; height: max(44px, calc(44px / var(--scale))); min-width: calc(82px / var(--scale)); display: flex; align-items: center; justify-content: center; gap: 9px; border: 1px solid #a0b6c0; background: rgba(12,26,35,.94); padding: 0 12px; font-size: 16px; }
 .log-trigger img, .advance img, #close-log img { width: 20px; height: 20px; filter: invert(94%); pointer-events: none; }
@@ -47,8 +64,30 @@ legend { font: 11px/1.5 'Yu Gothic', sans-serif; color: var(--muted); margin-bot
 .log-entry b { color: #c8d9e1; font-size: 12px; font-weight: 500; }
 .log-entry p { margin: 3px 0 0; }
 .asset-state { position: absolute; top: 44%; left: 15%; right: 15%; padding: 18px; background: #142630; text-align: center; border: 1px solid #90aab6; font: 15px/1.6 'Yu Gothic', sans-serif; }
+.asset-state p { margin: 0; }
+.asset-state button { min-height: 44px; margin-top: 12px; padding: 8px 16px; background: #192c36; border: 1px solid #90aab6; }
 .notes { max-width: 844px; margin: 14px auto 0; }
 .notes p { margin: 4px 0; }
+.portrait-stage, .page-count { display: none; }
+[data-presentation=portraits] .portrait-stage { display: block; position: absolute; inset: 0; pointer-events: none; }
+.portrait-slot { position: absolute; top: 0; bottom: 0; width: 224px; overflow: hidden; }
+.portrait-left { left: 8px; } .portrait-right { right: 8px; }
+.portrait-slot img { position: absolute; width: 520px; max-width: none; height: auto; top: 66px; transition: filter 240ms cubic-bezier(.16,1,.3,1), opacity 240ms cubic-bezier(.16,1,.3,1); }
+.portrait-left img { left: -142px; }
+.portrait-right img { width: 560px; left: -154px; }
+.portrait-slot img[data-speaking=false] { filter: brightness(.72) saturate(.82); opacity: .9; }
+[data-presentation=portraits] .dialogue-shell { top: 48px; bottom: auto; --corner: 64px; --offset-x: -16px; --offset-y: -17px; }
+[data-presentation=portraits][data-background=corridor2d] .corridor-mode { left: 25px; right: auto; }
+[data-presentation=portraits] .scene-name { top: auto; bottom: 12px; left: 50%; transform: translateX(-50%); font-size: 13px; white-space: nowrap; }
+[data-presentation=portraits][data-size=small] .dialogue-shell { --corner: 48px; --offset-x: -12px; --offset-y: -13px; }
+[data-presentation=portraits][data-size=large] .dialogue-shell { --corner: 76px; --offset-x: -19px; --offset-y: -20px; }
+[data-presentation=portraits] .dialogue-copy { top: 26px; left: 26px; right: max(66px, calc(44px / var(--scale) + 14px)); bottom: 20px; line-height: 1.4; letter-spacing: .01em; white-space: pre-wrap; overflow: hidden; }
+[data-presentation=portraits] .nameplate { top: -20px; left: 24px; min-width: 114px; height: 32px; font-size: 17px; letter-spacing: .08em; }
+[data-presentation=portraits] .advance { right: 7px; bottom: 8px; }
+[data-presentation=portraits] .page-count:not([hidden]) { display: block; position: absolute; right: 22px; bottom: max(55px, calc(44px / var(--scale) + 14px)); color: var(--copy-color); font: 11px/1.5 'Yu Gothic', sans-serif; }
+[data-presentation=portraits] .log-panel { top: calc(48px + var(--box-height) + 16px); bottom: 16px; right: calc((844px - var(--box-width)) / 2); width: var(--box-width); }
+[data-background=corridor2d][data-corridor-mode=explore] .portrait-stage { display: none; }
+.tuning .presentation-help { margin: 0 0 18px; }
 .tuning { max-width: 844px; margin: 26px auto 0; padding-top: 20px; border-top: 1px solid #425861; font-family: 'Yu Gothic', sans-serif; }
 .study-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; }
 .study-layout .tuning { margin: 0; padding: 0 8px 0 16px; border-top: 0; border-left: 1px solid #425861; max-height: calc(100dvh - 174px); overflow-y: auto; scrollbar-width: thin; }

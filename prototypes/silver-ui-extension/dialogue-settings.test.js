@@ -21,4 +21,15 @@ assert.throws(() => settings.parse(JSON.stringify({ version: 1, settings: { ...s
 assert.throws(() => settings.parse(JSON.stringify({ version: 1, settings: { ...settings.defaults, ornament: 'giant' } })));
 assert.equal(settings.parse(JSON.stringify({ version: 1, settings: { ...settings.defaults, width: 9999 } })).width, 796);
 assert.deepEqual(Object.keys(settings.normalize({ ...settings.defaults, unknown: true })).sort(), Object.keys(settings.defaults).sort());
+const portrait = settings.normalize({ ...settings.portraitTrial, width: 900, height: 999 }, 'portraits');
+assert.equal(portrait.width, 440);
+assert.equal(portrait.height, 156);
+assert.deepEqual(settings.parse(settings.serialize(settings.portraitTrial, 'portraits'), 'portraits'), settings.portraitTrial);
+assert.equal(JSON.parse(settings.serialize(settings.portraitTrial, 'portraits')).presentation, 'portraits-top');
+assert.notEqual(settings.portraitStorageKey, settings.corridorStorageKey);
+const provisional = require('./dialogue-portrait-provisional-settings.json');
+assert.deepEqual(settings.parse(JSON.stringify(provisional), 'portraits'), settings.portraitTrial);
+assert.equal(settings.portraitTrial.height, 100);
+assert.equal(settings.portraitTrial.panelColor, '#131d34');
+assert.equal(settings.normalize(settings.corridorTrial).width, 796);
 console.log('dialogue-settings: all tests passed');

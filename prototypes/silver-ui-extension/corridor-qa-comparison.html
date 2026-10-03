@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="ja">
+<head><meta charset="utf-8"><title>2D回廊と台詞枠の比較確認</title>
+<style>
+*{box-sizing:border-box}body{margin:0;padding:18px;width:1724px;background:#10202a;color:#edf0ed;font:14px/1.6 'Yu Mincho',serif}h1{font-size:22px;font-weight:500;margin:0 0 12px}.pair{display:grid;grid-template-columns:844px 844px;margin-bottom:18px}.label{height:30px}.view{width:844px;height:390px;overflow:hidden;position:relative}.view img{display:block;width:844px;height:390px}.focus{height:145px}.focus img{position:absolute;top:-223px;left:0}p{font:13px/1.7 'Yu Gothic',sans-serif;color:#bacbd0;margin:12px 0}
+</style></head>
+<body>
+<h1>Unityの回廊を土台に、台詞枠を仮に重ねる</h1>
+<div class="pair"><div class="label">参照：公開Unity版・入口から回廊を開いた位置</div><div class="label">HTML：同じ素材・同じ設定・同じ初期位置（歩行前）</div><div class="view"><img src="references/unity-corridor-source.jpg" alt="公開Unity版の回廊"></div><div class="view"><img src="corridor-explore.jpg" alt="HTMLで再現した回廊"></div></div>
+<p>公開版の1266×586撮影を844×390に正規化。HTMLは844×390・密度1。操作ボタン・場所名は見本用、圧縮・描画方式はUnityと異なる。</p>
+<div class="pair"><div class="label">A：台詞枠を元の足元位置に重ねる（人物が隠れる）</div><div class="label">B：会話中だけ背景と人物を上へ寄せる仮案</div><div class="view"><img src="corridor-dialogue-original-position.jpg" alt="元の位置に台詞枠を重ねた比較"></div><div class="view"><img src="corridor-dialogue.jpg" alt="人物を見せる仮の会話構図"></div></div>
+<p>送られた設定JSONを両方に使用。Bは足元を122px上へ移す見本だけの構図変更。背景素材・配置の正本は変更しない。どちらも本編未反映。</p>
+<div class="pair"><div class="label">参照：原作者確認済みの銀細工と台詞枠（旧・仮背景）</div><div class="label">今回：銀細工を維持し、送られた仮設定を適用</div><div class="view focus"><img src="dialogue-phone.png" alt="原作者が確認した台詞枠の詳細"></div><div class="view focus"><img src="corridor-dialogue.jpg" alt="新しい回廊での台詞枠の詳細"></div></div>
+<p>銀細工・書体・名前札・本文・次への配置を維持。高さ117、透過20、丸み20、下地#051029、文字#e6e7efは原作者の仮設定による意図的な差。</p>
+</body></html>
