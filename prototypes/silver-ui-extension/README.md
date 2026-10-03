@@ -2,7 +2,46 @@
 
 状態: 試作対象。2026-10-03、原作者は1案目の方向を選択。台詞枠の操作見本を追加。正式採用・本編反映は未実施。
 
+## 最新の共有状態（2026-10-03）
+
+原作者から今回の試作をコミット＆プッシュする依頼を受け、2D回廊・左右立ち絵の操作見本もmainへ保存する。以下の「ローカルのみ・未コミット」は各試作時点の履歴で、今回の保存対象には含まれる。本編・Unityには未反映。
+
+- 公開入口: https://yuu3535.github.io/my-srpg/prototypes/silver-ui-extension/dialogue.html?background=corridor2d&layout=portraits
+- 今回選ばれた**暫定**設定は `dialogue-portrait-provisional-settings.json`。上中央408×100、透過20%、丸み20、下地#131d34、縁#c4d1d8、文字#e6e7ef、飾りmedium。上置きの初期値もこれに合わせた。以前の408×124／#051029の画像は試作経緯として残す。
+- 既に保存してある調整値は上書きしない。暫定値を再現するときはJSONを読み込むか「送った仮設定に戻す」を使う。`capture=1` は保存値を読み書きせず初期値を表示する。
+- 原作者は、シナリオの文章量や視点によって枠の位置を変えられる仕様を希望。場面ごとに上・下・任意配置を指定し、会話中は位置を安定させ、長文は高さ／ページ送りで扱う案を総合担当に提案する。
+- **実装済みなのは上置き／下置きの見本切替、寸法・色の調整、上置きの長文ページ送りまで。場面データによる配置、自動的な顔・視点回避、Unity接続は未実装。** JSONには配置の自動ルールや立ち絵位置を追加していない。
+- 最新確認: `portrait-dialogue-provisional.jpg`、`portrait-phone-provisional.jpg`、`portrait-provisional-qa-comparison.html`。共有は `docs/30-planning/CLAUDE_CODE_SILVER_DIALOGUE_HANDOFF_2026-10-03.md` の最新節を優先する。
+
 会話、戦闘準備、敵の行動予告、訓練の手引きの4画面の画像比較から、まず台詞枠のHTML見本を作成。ほかの3画面はまだHTML化していない。
+
+## 左右立ち絵＋上中央の台詞（後続の試作）
+
+入口: http://127.0.0.1:8931/prototypes/silver-ui-extension/dialogue.html?background=corridor2d&layout=portraits 。**ローカルのみ・未コミット・未プッシュ・正式採用前。**
+
+- 原作者の添付 `references/upper-portrait-layout-source.png` の構図を参考に、既存のアルシェ・カリマの透過立ち絵を左右へ置き、上中央に台詞枠。人物・背景は参照作品を複製せず自作SRPGの既存素材を使う。台詞は表示テスト文で、キャラクター解釈やシナリオを決めない。
+- 上置きでは背景とSDを上へ持ち上げない。中央下のSDと回廊を元の位置で残す。下置き案は「前の下置き案」で引き続き比較できる。
+- 台詞送りで左右の話者と立ち絵の明るさを切り替え。長文は実際の書体で幅を計測し、枠の高さに応じてページ送り。ログには分割前の全文が1件ずつ入り、途中のページで話者は変わらない。
+- 仮初期値408×124、下地#051029・透過20・丸み20、縁#c4d1d8・文字#e6e7ef。銀細工は原稿を縮小して控えめに配置。幅320〜440／高さ100〜156で試せる。最終色・寸法ではない。
+- 保存キー `srpg.silver-dialogue.portraits.settings.v1` は下置き・旧背景と別。JSONには `presentation: "portraits-top"` が付き、上置きの設定だと識別できる。立ち絵の位置・表情・背景位置・カメラはJSON対象外。
+- 上置きの撮影・検証は `portrait-dialogue.jpg`、`portrait-dialogue-right-speaker.jpg`、`portrait-phone-long.jpg`、`portrait-phone-log.jpg`、`portrait-qa-comparison.html`／`.jpg`。テストは `portrait-dialogue-model.test.js` と既存3件。
+- 本編・Unity・公開版を変更しない。コピーした設定は構図の承認とあわせて総合担当へ渡す。今回の依頼は試作のみ。
+
+## 2D横スクロール回廊での試し（2026-10-03 追記）
+
+入口: http://127.0.0.1:8931/prototypes/silver-ui-extension/dialogue.html?background=corridor2d 。**まだローカルのみ。今回の変更はコミット・プッシュしていない。**
+
+- Unityの `Assets/Data/Corridors/orcus_castle.json` と `Assets/Art/Corridor/` の同じ5層、同じSD画像を読み取り、HTMLで描画。空0.03／遠景0.15／庭0.45／床・アーチ1の速度、足元352・背の高さ96・全長2532を使う。素材・配置の正本は編集しない。
+- 旧見本の `背景/オルクス城回廊.png` は別の一枚絵。旧背景と台詞枠の調整結果は原作者の指示で仮扱い。
+- 2D用の仮初期値は原作者の共有JSON: 幅796・高さ117・透過20・丸み20・下地 `#051029`・縁 `#c4d1d8`・文字 `#e6e7ef`・飾りmedium。正式採用ではない。
+- 「探索へ戻る」→ 左右ボタンを押している間／左右矢印・A・Dで歩く → 「会話を試す」。会話中は移動を止める。画面外の場面の位置・左側／中央／右側で任意の景色を比較する。
+- 「会話中は人物を見せる（仮）」は、背景と人物を一緒に上へ寄せる比較用の構図。チェックを外すとUnityと同じ足元位置だが、台詞枠で人物が隠れる。初期高さ117では122px上へ寄せる。アーチの上部が切れる・枠の背後が暗い余白になるという代償がある。会話カメラの正式決定ではない。
+- 2D用の保存キー `srpg.silver-dialogue.corridor.settings.v1` は旧見本と別。チャコールへの切り替えはその場で同じ調整値を比較する。一枚絵と2Dの切り替えは別URLへ移り、それぞれの保存値を保つ。
+- コピー・保存のJSONは従来形式の**台詞枠の設定だけ**。場面の位置・会話カメラのチェックは含めない。`corridorTrial` と元の `defaults` は別物。「送った仮設定に戻す」で今回のJSONへ戻る。
+- `?background=corridor2d&capture=1` は撮影用。`mode=explore`、`lift=off`、`position=1266` を追加して比較できる。保存値を読み書きしない。
+- 公開Unity版との素材・構図比較は `corridor-qa-comparison.html`／`.jpg`。HTMLの描画・圧縮はUnityと異なり、ピクセル単位の同一性を保証しない。
+- 追加テスト: `node prototypes/silver-ui-extension/corridor-model.test.js`。既存の台詞・設定テストも継続。
+- 本編・Unity・背景素材・正史・ゲームのセーブは未変更。正式採用・移植は原作者と総合担当が確認してから。
 
 ## 台詞枠の操作見本
 
