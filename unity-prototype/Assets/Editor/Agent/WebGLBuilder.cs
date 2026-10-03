@@ -29,6 +29,7 @@ namespace Srpg.EditorAgent
                 KeepShaders();
                 KeepFog();
                 CompressTexturesForWeb();
+                var mipped = DropNpotMipmapsForWeb();
                 PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
                 PlayerSettings.WebGL.decompressionFallback = true;   // GitHub Pages は圧縮の知らせを付けないので、読み込み側でほどく
                 PlayerSettings.WebGL.dataCaching = true;
@@ -45,6 +46,7 @@ namespace Srpg.EditorAgent
                     options = BuildOptions.None,
                 });
                 watch.Stop();
+                RestoreMipmaps(mipped);
                 var s = report.summary;
                 long bytes = Directory.Exists(OutDir) ? Directory.GetFiles(OutDir, "*", SearchOption.AllDirectories).Sum(f => new FileInfo(f).Length) : 0;
                 Debug.Log($"[WebGLBuilder] {s.result}・{watch.Elapsed.TotalMinutes:0.0}分・書き出しの合計 {bytes / 1024f / 1024f:0.0}MB・エラー {s.totalErrors}");
@@ -85,6 +87,66 @@ namespace Srpg.EditorAgent
                 changed++;
             }
             Debug.Log($"[WebGLBuilder] 絵の圧縮（WebGL・ASTC 6×6）を設定: {changed} 枚");
+        }
+
+        /// <summary>
+        /// WebGL では、縦横が2の累乗でない絵にミップマップがあると圧縮されず RGBA32 のまま入る（2026-10-03 に確かめた:
+        /// 地面の絵 1枚で 18MB あった）。書き出しの間だけミップマップを外し、終わったら RestoreMipmaps で戻す
+        /// （エディタ・確認の画像の見え方は変えない）。木の絵は小さく出すので、WebGL では 512 まで縮めてちらつきを抑える
+        /// </summary>
+        private static System.Collections.Generic.List<string> DropNpotMipmapsForWeb()
+        {
+            var changed = new System.Collections.Generic.List<string>();
+            foreach (var guid in AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets/Art" }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (!(AssetImporter.GetAtPath(path) is TextureImporter importer) || !importer.mipmapEnabled) continue;
+                var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+                if (tex == null || (Mathf.IsPowerOfTwo(tex.width) && Mathf.IsPowerOfTwo(tex.height))) continue;
+                importer.mipmapEnabled = false;
+                if (path.Contains("/Trees/"))
+                {
+                    var web = importer.GetPlatformTextureSettings("WebGL");
+                    web.maxTextureSize = 512;
+                    importer.SetPlatformTextureSettings(web);
+                }
+                importer.SaveAndReimport();
+                changed.Add(path);
+            }
+            Debug.Log($"[WebGLBuilder] 書き出しの間だけミップマップを外した絵: {changed.Count} 枚");
+            return changed;
+        }
+
+        private static void RestoreMipmaps(System.Collections.Generic.List<string> paths)
+        {
+            if (paths == null) return;
+            foreach (var path in paths)
+            {
+                if (!(AssetImporter.GetAtPath(path) is TextureImporter importer)) continue;
+                importer.mipmapEnabled = true;
+                EditorUtility.SetDirty(importer);
+                importer.SaveAndReimport();
+            }
+            AssetDatabase.SaveAssets();
+            // 戻ったか確かめる（2026-10-03: 3枚だけ戻らなかったことがあった）
+            int left = paths.Count(p => AssetImporter.GetAtPath(p) is TextureImporter i && !i.mipmapEnabled);
+            if (left > 0) Debug.LogWarning($"[WebGLBuilder] ミップマップが戻っていない絵が {left} 枚ある（.meta を git で戻す）");
+        }
+
+        /// <summary>確認用: WebGL での絵の形式と大きさを、大きい順に記録へ出す（どの絵が圧縮されていないかを見る）</summary>
+        public static void ReportTextures()
+        {
+            var rows = AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets/Art" })
+                .Select(g => AssetDatabase.GUIDToAssetPath(g))
+                .Select(p => (p, t: AssetDatabase.LoadAssetAtPath<Texture2D>(p)))
+                .Where(x => x.t != null)
+                .Select(x => (x.p, x.t, size: UnityEngine.Profiling.Profiler.GetRuntimeMemorySizeLong(x.t)))
+                .OrderByDescending(x => x.size).Take(25);
+            foreach (var (p, t, size) in rows)
+            {
+                var imp = (TextureImporter)AssetImporter.GetAtPath(p);
+                Debug.Log($"[WebGLBuilder] 絵 {p} {t.width}x{t.height} {t.format} mip{t.mipmapCount} {size / 1024f / 1024f:0.0}MB 種類{imp.textureType}/{imp.spriteImportMode}");
+            }
         }
 
         /// <summary>使う描画の組み合わせを材質にして Resources に置く（書き出しで必ず含まれる）</summary>
