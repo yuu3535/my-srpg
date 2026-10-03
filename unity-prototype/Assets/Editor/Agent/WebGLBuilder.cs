@@ -94,15 +94,17 @@ namespace Srpg.EditorAgent
         /// 地面の絵 1枚で 18MB あった）。書き出しの間だけミップマップを外し、終わったら RestoreMipmaps で戻す
         /// （エディタ・確認の画像の見え方は変えない）。木の絵は小さく出すので、WebGL では 512 まで縮めてちらつきを抑える
         /// </summary>
-        private static System.Collections.Generic.List<string> DropNpotMipmapsForWeb()
+        private static System.Collections.Generic.Dictionary<string, string> DropNpotMipmapsForWeb()
         {
-            var changed = new System.Collections.Generic.List<string>();
+            // 戻すときは .meta を丸ごと書き戻す（importer で戻すと、戻らない絵があった。2026-10-03）
+            var changed = new System.Collections.Generic.Dictionary<string, string>();
             foreach (var guid in AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets/Art" }))
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
                 if (!(AssetImporter.GetAtPath(path) is TextureImporter importer) || !importer.mipmapEnabled) continue;
                 var tex = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
                 if (tex == null || (Mathf.IsPowerOfTwo(tex.width) && Mathf.IsPowerOfTwo(tex.height))) continue;
+                changed[path] = System.IO.File.ReadAllText(path + ".meta");
                 importer.mipmapEnabled = false;
                 if (path.Contains("/Trees/"))
                 {
@@ -111,25 +113,20 @@ namespace Srpg.EditorAgent
                     importer.SetPlatformTextureSettings(web);
                 }
                 importer.SaveAndReimport();
-                changed.Add(path);
             }
             Debug.Log($"[WebGLBuilder] 書き出しの間だけミップマップを外した絵: {changed.Count} 枚");
             return changed;
         }
 
-        private static void RestoreMipmaps(System.Collections.Generic.List<string> paths)
+        private static void RestoreMipmaps(System.Collections.Generic.Dictionary<string, string> metas)
         {
-            if (paths == null) return;
-            foreach (var path in paths)
+            if (metas == null) return;
+            foreach (var kv in metas)
             {
-                if (!(AssetImporter.GetAtPath(path) is TextureImporter importer)) continue;
-                importer.mipmapEnabled = true;
-                EditorUtility.SetDirty(importer);
-                importer.SaveAndReimport();
+                System.IO.File.WriteAllText(kv.Key + ".meta", kv.Value);
+                AssetDatabase.ImportAsset(kv.Key, ImportAssetOptions.ForceUpdate);
             }
-            AssetDatabase.SaveAssets();
-            // 戻ったか確かめる（2026-10-03: 3枚だけ戻らなかったことがあった）
-            int left = paths.Count(p => AssetImporter.GetAtPath(p) is TextureImporter i && !i.mipmapEnabled);
+            int left = metas.Keys.Count(p => AssetImporter.GetAtPath(p) is TextureImporter i && !i.mipmapEnabled);
             if (left > 0) Debug.LogWarning($"[WebGLBuilder] ミップマップが戻っていない絵が {left} 枚ある（.meta を git で戻す）");
         }
 
