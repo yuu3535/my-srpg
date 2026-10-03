@@ -72,15 +72,15 @@
     {
      "file": "「orcus_corridor_structure_end_left_a_neutral4.png",
      "overlap": 0,
-     "dy": -10,
-     "dx": 23,
-     "scale": 1,
+     "dy": -7,
+     "dx": 20,
+     "scale": 1.03,
      "front": true,
      "shadeTop": 60
     },
     {
      "file": "orcus_corridor_structure_arch_repeat_a_nofloor.png",
-     "overlap": 39,
+     "overlap": 41,
      "dy": 0,
      "dx": 0,
      "scale": 1,
@@ -118,7 +118,7 @@
      "file": "「orcus_corridor_structure_end_right_a_neutral4_from_left.png",
      "overlap": 39,
      "dy": -10,
-     "dx": -23,
+     "dx": -24,
      "scale": 1,
      "front": true,
      "shadeTop": 60
