@@ -23,7 +23,7 @@
   #wrap { overflow: hidden; }
   #wrap { position: relative; }
   #stage { position: relative; width: 844px; height: 390px; overflow: hidden; background: #000; transform-origin: top left; }
-  #stage .layer { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+  #stage .layer { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; isolation: isolate; }   /* 「手前」の重なりを層の中だけにする（アルシェより前に出さない） */
   #stage img { position: absolute; display: block; user-select: none; }
   #stage .floorRow { position: absolute; background-repeat: repeat-x; }
   #stage .shade { position: absolute; left: 0; right: 0; }
