@@ -155,7 +155,17 @@ const hero = { y: 352, h: 96, on: true, margin: 60 };
 const sizes = {};   // 画像の元の大きさ（file → {w,h}）
 // フォルダはリポジトリのルートから（このページは debug/ にあるので、先頭に / を付ける）
 const folderUrl = () => "/" + $("folder").value.replace(/^\/+/, "").replace(/\/?$/, "/");
-function url(file) { return encodeURI(folderUrl() + file); }
+// 「/」で始まる名前はリポジトリのルートから（空の素材 背景/空/ など、場所のフォルダの外の絵）
+function url(file) { return encodeURI(file.startsWith("/") ? file : folderUrl() + file); }
+const SKY_DIR = "/背景/空/";   // 時間帯・天気の空（原作者 2026-10-04。オルクス○○＝百年戦争中の治安が最悪な頃の空）
+let skyFiles = [];
+async function listSkies() {
+  try {
+    const html = await (await fetch(encodeURI(SKY_DIR))).text();
+    skyFiles = [...html.matchAll(/href="([^"]+\.(?:png|webp|jpg|jpeg))"/gi)].map(m => SKY_DIR + decodeURIComponent(m[1]).split("/").pop()).sort();
+  } catch { skyFiles = []; }
+}
+const skyLabel = f => f.startsWith(SKY_DIR) ? `空／${f.slice(SKY_DIR.length)}` : f;
 function size(file) {
   if (!file) return Promise.resolve(null);
   if (sizes[file]) return Promise.resolve(sizes[file]);
@@ -327,7 +337,8 @@ function cards() {
       return;
     }
     const sel = document.createElement("select");
-    sel.innerHTML = `<option value="">（素材なし${L.kind === "floor" ? "・仮の縞" : ""}）</option>` + files.map(f => `<option ${f === L.file ? "selected" : ""}>${f}</option>`).join("");
+    sel.innerHTML = `<option value="">（素材なし${L.kind === "floor" ? "・仮の縞" : ""}）</option>` + files.map(f => `<option ${f === L.file ? "selected" : ""}>${f}</option>`).join("")
+      + (L.kind === "image" && skyFiles.length ? `<optgroup label="背景/空/（時間帯・天気）">${skyFiles.map(f => `<option value="${f}" ${f === L.file ? "selected" : ""}>${skyLabel(f)}</option>`).join("")}</optgroup>` : "");
     sel.addEventListener("change", () => { L.file = sel.value; render(); });
     card.appendChild(sel);
     if (L.kind === "floor") {
@@ -410,6 +421,7 @@ $("reload").addEventListener("click", async () => { await listFiles(); cards(); 
   $("hero").src = "../unity-prototype/Assets/Art/SD/young_arshe.png";
   fit();
   await listFiles();
+  await listSkies();
   cards();
   render();
 })();
