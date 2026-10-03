@@ -59,6 +59,7 @@
   .perTitle button { padding: 0 6px; font-size: 12px; }
   .colorRow { display: grid; grid-template-columns: 70px 1fr; align-items: center; gap: 6px; margin: 2px 0; }
   .colorRow input { width: 64px; height: 22px; padding: 0 2px; }
+  .colorRow select { width: auto; margin: 0; }
 </style>
 </head>
 <body>
@@ -152,6 +153,9 @@ async function defaultsFor(id) {
 // 効果（画面全体）: 空気遠近・被写界深度・ヴィネット・色調・光の筋（原作者 2026-10-04。まず調整ページで見比べ、Unity はあとで）
 const FX_DEFAULT = { on: true, haze: 0.25, hazeColor: "#a9b8e8", dof: 1.5, vignette: 0.35, vignetteColor: "#0b0d18", vignetteSize: 0.55,
   bright: 1, contrast: 1, saturate: 1, temp: 0, shafts: 0, shaftColor: "#ffe0a8", shaftAngle: 20, shaftY: 0, shaftX: 0, shaftWidth: 1,
+  // 光の発光（やわらかさ・にじみ・重ね方）とオーバーレイ（上下の2色を画面全体に重ねる）（原作者 2026-10-04）
+  shaftSoft: 6, shaftGlow: 0, shaftBlend: "screen",
+  ovl: 0, ovlTop: "#ffd9a0", ovlBottom: "#3a4a7a", ovlMode: "overlay",
   // キャラ（アルシェ）: 霞・ぼかし・明るさ・場の色へのなじませ（原作者 2026-10-04）
   chara: { haze: 0, blur: 0, bright: 1, tint: 0, tintColor: "#3a4a7a" } };
 // 層ごとの霞・ぼかし: 層に fxHaze・fxBlur があればそれを使う。なければ全体のつまみ×奥行き（自動）
@@ -291,12 +295,18 @@ async function render() {
           const h = sh.bottom - sh.top;
           const ray = document.createElement("div");
           Object.assign(ray.style, { position: "absolute", left: `${sh.x - sh.w / 2}px`, top: `${sh.top}px`, width: `${sh.w}px`, height: `${h}px`,
-            transformOrigin: "top center", transform: `skewX(${-fx.shaftAngle}deg)`, mixBlendMode: "screen", filter: "blur(6px)",
+            transformOrigin: "top center", transform: `skewX(${-fx.shaftAngle}deg)`, mixBlendMode: fx.shaftBlend, filter: `blur(${fx.shaftSoft}px)`,
             background: `linear-gradient(180deg, transparent, ${fx.shaftColor} 35%, transparent)`, opacity: fx.shafts });
           sb.appendChild(ray);
+          if (fx.shaftGlow > 0) {
+            // にじみ: 太く大きくぼかした筋をもう1本重ねる
+            const glow = ray.cloneNode();
+            Object.assign(glow.style, { left: `${sh.x - sh.w}px`, width: `${sh.w * 2}px`, filter: `blur(${fx.shaftSoft * 3 + 6}px)`, opacity: fx.shafts * fx.shaftGlow });
+            sb.appendChild(glow);
+          }
           const pool = document.createElement("div");
           Object.assign(pool.style, { position: "absolute", left: `${sh.x - h * tan - sh.w * 0.8}px`, top: `${sh.bottom - 22}px`, width: `${sh.w * 1.6}px`, height: "34px",
-            borderRadius: "50%", mixBlendMode: "screen", filter: "blur(8px)", background: fx.shaftColor, opacity: fx.shafts * 0.7 });
+            borderRadius: "50%", mixBlendMode: fx.shaftBlend, filter: `blur(${fx.shaftSoft + 2}px)`, background: fx.shaftColor, opacity: fx.shafts * (0.7 + fx.shaftGlow * 0.3) });
           sb.appendChild(pool);
         }
       }
@@ -324,6 +334,12 @@ async function render() {
     t.className = "fx";
     Object.assign(t.style, { background: fx.temp > 0 ? "#ff9a3c" : "#3c7cff", mixBlendMode: "soft-light", opacity: Math.abs(fx.temp) * 0.6 });
     stage.appendChild(t);
+  }
+  if (fx.on && fx.ovl > 0) {
+    const o = document.createElement("div");
+    o.className = "fx";
+    Object.assign(o.style, { background: `linear-gradient(180deg, ${fx.ovlTop}, ${fx.ovlBottom})`, mixBlendMode: fx.ovlMode, opacity: fx.ovl });
+    stage.appendChild(o);
   }
   if (fx.on && fx.vignette > 0) {
     const v = document.createElement("div");
@@ -372,6 +388,15 @@ function colorRow(o, key, label) {
   row.className = "colorRow";
   row.innerHTML = `<span>${label}</span><input type="color" value="${o[key]}">`;
   row.querySelector("input").addEventListener("input", e => { o[key] = e.target.value; render(); });
+  return row;
+}
+// 重ね方（CSS の mix-blend-mode。Unity では同じ名前の合成で再現する）
+const BLENDS = [["overlay", "オーバーレイ"], ["soft-light", "ソフトライト"], ["screen", "スクリーン"], ["plus-lighter", "加算（発光）"], ["multiply", "乗算"], ["color", "カラー"], ["hard-light", "ハードライト"], ["color-dodge", "覆い焼き"]];
+function selectRow(o, key, label, options) {
+  const row = document.createElement("label");
+  row.className = "colorRow";
+  row.innerHTML = `<span>${label}</span><select>${options.map(([v, t]) => `<option value="${v}" ${o[key] === v ? "selected" : ""}>${t}</option>`).join("")}</select>`;
+  row.querySelector("select").addEventListener("change", e => { o[key] = e.target.value; render(); });
   return row;
 }
 function fxCard() {
@@ -437,6 +462,13 @@ function fxCard() {
   card.appendChild(slider(fx, "shaftX", "光の左右", -300, 300, 1));
   card.appendChild(slider(fx, "shaftWidth", "光の太さ", 0.3, 2.5, 0.05));
   card.appendChild(colorRow(fx, "shaftColor", "光の色"));
+  card.appendChild(slider(fx, "shaftSoft", "光のやわらかさ", 0, 20, 0.5));
+  card.appendChild(slider(fx, "shaftGlow", "光のにじみ（発光）", 0, 1.5, 0.01));
+  card.appendChild(selectRow(fx, "shaftBlend", "光の重ね方", BLENDS));
+  card.appendChild(slider(fx, "ovl", "オーバーレイ", 0, 1, 0.01));
+  card.appendChild(colorRow(fx, "ovlTop", "上の色"));
+  card.appendChild(colorRow(fx, "ovlBottom", "下の色"));
+  card.appendChild(selectRow(fx, "ovlMode", "重ね方", BLENDS));
   return card;
 }
 function slider(L, key, label, min, max, step) {
