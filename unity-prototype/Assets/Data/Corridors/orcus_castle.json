@@ -72,32 +72,56 @@
     {
      "file": "「orcus_corridor_structure_end_left_a_neutral4.png",
      "overlap": 0,
-     "dy": 0
+     "dy": 0,
+     "dx": 0,
+     "scale": 1,
+     "front": false,
+     "shadeTop": 60
     },
     {
      "file": "orcus_corridor_structure_arch_repeat_a_nofloor.png",
      "overlap": 39,
-     "dy": 0
+     "dy": 0,
+     "dx": 0,
+     "scale": 1,
+     "front": false,
+     "shadeTop": 0
     },
     {
      "file": "orcus_corridor_structure_arch_repeat_a_nofloor.png",
      "overlap": 39,
-     "dy": 0
+     "dy": 0,
+     "dx": 0,
+     "scale": 1,
+     "front": false,
+     "shadeTop": 0
     },
     {
      "file": "orcus_corridor_structure_arch_repeat_a_nofloor.png",
      "overlap": 39,
-     "dy": 0
+     "dy": 0,
+     "dx": 0,
+     "scale": 1,
+     "front": false,
+     "shadeTop": 0
     },
     {
      "file": "orcus_corridor_structure_arch_repeat_a_nofloor.png",
      "overlap": 39,
-     "dy": 0
+     "dy": 0,
+     "dx": 0,
+     "scale": 1,
+     "front": false,
+     "shadeTop": 0
     },
     {
      "file": "「orcus_corridor_structure_end_right_a_neutral4.png",
      "overlap": 39,
-     "dy": 0
+     "dy": 0,
+     "dx": 0,
+     "scale": 1,
+     "front": false,
+     "shadeTop": 60
     }
    ]
   }
@@ -115,5 +139,6 @@
    "label": "訓練場へ ▶",
    "scene": ""
   }
- ]
+ ],
+ "cameraMargin": 60
 }

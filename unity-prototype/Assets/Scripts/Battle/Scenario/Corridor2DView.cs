@@ -33,6 +33,10 @@ namespace Srpg.Battle
         {
             public string file;
             public float overlap, dy;
+            public float dx;             // 左右のずれ（右へ正）。並び（次の絵の位置）は変えない
+            public float scale = 1f;     // 大きさ（1＝層の高さ）。下の端をそろえて大きくする
+            public bool front;           // ほかの絵より手前に出す（継ぎ目を隠す）
+            public float shadeTop;       // 絵の上からこの高さまで、後ろに暗い天井の色を敷く（端の絵の上の透けた三角から空が見えないように）
         }
 
         /// <summary>出口（回廊の端の通路など）。近づくと下に「label」が出て、押すと scene へ（空ならまだつながっていない）</summary>
@@ -49,6 +53,7 @@ namespace Srpg.Battle
             public string corridor;
             public float heroFeetY = 352f, heroHeight = 96f, length = 2532f;
             public float walkMin = 40f, walkMax = -40f;   // 歩ける範囲（walkMax が負なら右の端からの距離）
+            public float cameraMargin;                      // カメラが回廊の両端からこれだけ内側で止まる（端の外の空を見せない）
             public CorridorLayer[] layers;
             public CorridorExit[] exits;
         }
@@ -60,6 +65,7 @@ namespace Srpg.Battle
         [SerializeField] private Camera targetCamera;
 
         private const float ScreenW = 844f, ScreenH = 390f;
+        private static readonly Color CeilingShade = new Color(0.11f, 0.094f, 0.133f, 1f);   // 端の絵の壁の暗いところの色
         private CorridorFile data;
         private RectTransform root, heroRect;
         private readonly List<(CorridorLayer layer, RectTransform box, List<RawImage> tiles, float width)> built = new List<(CorridorLayer, RectTransform, List<RawImage>, float)>();
@@ -114,6 +120,7 @@ namespace Srpg.Battle
                 {
                     // 左から順に並べる（くり返さない）。幅は高さに合わせ、重ね幅だけ詰める。回廊の長さはここで決まる
                     float cursor = 0f, end = 0f;
+                    var fronts = new List<RawImage>();
                     for (int m = 0; m < (layer.modules?.Length ?? 0); m++)
                     {
                         var mod = layer.modules[m];
@@ -121,14 +128,29 @@ namespace Srpg.Battle
                         if (mt == null) continue;
                         float mw = mt.width * (layer.height / mt.height);
                         if (m > 0) cursor -= mod.overlap;
-                        var img = Place(NewRect(mod.file, box), cursor, layer.bottom - layer.height + mod.dy, mw, layer.height).gameObject.AddComponent<RawImage>();
+                        float sc = mod.scale > 0f ? mod.scale : 1f;
+                        // 大きさは下の端と横の真ん中をそろえて変える
+                        float w2 = mw * sc, h2 = layer.height * sc;
+                        float left = cursor + mod.dx - (w2 - mw) / 2f, top = layer.bottom - h2 + mod.dy;
+                        if (mod.shadeTop > 0f)
+                        {
+                            var shade = Place(NewRect(mod.file + " 天井", box), left, top, w2, mod.shadeTop).gameObject.AddComponent<RawImage>();
+                            shade.color = CeilingShade;
+                            shade.raycastTarget = false;
+                            tiles.Add(shade);
+                            if (mod.front) fronts.Add(shade);
+                        }
+                        var img = Place(NewRect(mod.file, box), left, top, w2, h2).gameObject.AddComponent<RawImage>();
                         img.texture = mt;
                         img.raycastTarget = false;
                         tiles.Add(img);
+                        if (mod.front) fronts.Add(img);
                         cursor += mw;
                         end = cursor;
                     }
                     data.length = Mathf.Max(ScreenW, end);
+                    // 手前に出す絵を、ほかの絵の後に描く
+                    foreach (var f in fronts) f.transform.SetAsLastSibling();
                     built.Add((layer, box, tiles, 0f));
                     continue;
                 }
@@ -289,7 +311,7 @@ namespace Srpg.Battle
         private void Apply()
         {
             if (data == null || root == null) return;
-            cameraX = Mathf.Clamp(playerX - ScreenW / 2f, 0f, Mathf.Max(0f, data.length - ScreenW));
+            cameraX = Mathf.Clamp(playerX - ScreenW / 2f, data.cameraMargin, Mathf.Max(data.cameraMargin, data.length - ScreenW - data.cameraMargin));
             foreach (var (layer, box, tiles, width) in built)
             {
                 float shift = layer.x - cameraX * layer.speed;
