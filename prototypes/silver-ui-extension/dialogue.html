@@ -8,8 +8,8 @@
   <script src="dialogue-model.js?v=20261003-1" defer></script>
   <script src="portrait-dialogue-model.js?v=20261003-4" defer></script>
   <script src="dialogue-settings.js?v=20261003-5" defer></script>
-  <script src="corridor-model.js?v=20261003-1" defer></script>
-  <script src="corridor.js?v=20261003-4" defer></script>
+  <script src="corridor-model.js?v=20261003-2" defer></script>
+  <script src="corridor.js?v=20261003-5" defer></script>
   <script src="dialogue.js?v=20261003-8" defer></script>
 </head>
 <body>
@@ -30,7 +30,7 @@
       <section class="game-stage" id="stage" data-size="medium" data-background="scene" aria-label="横画面の会話見本">
         <img class="scenery" src="../../背景/オルクス城回廊.png" alt="夕方のオルクス城回廊" draggable="false">
         <div id="corridor-scene" class="corridor-scene" hidden>
-          <canvas id="corridor-canvas" width="844" height="390" role="img" aria-label="2026年10月3日の比較用設定で重ねた2D回廊とアルシェ"></canvas>
+          <canvas id="corridor-canvas" width="844" height="390" role="img" aria-label="最新の端付き2D回廊とアルシェ"></canvas>
         </div>
         <div class="portrait-stage" aria-label="会話の立ち絵">
           <div class="portrait-slot portrait-left"><div class="portrait-figure" data-portrait-side="left"><img id="portrait-left" data-portrait="left" alt="アルシェの立ち絵" draggable="false"><span class="portrait-shade" aria-hidden="true"></span></div></div>
@@ -65,7 +65,7 @@
       <p id="presentation-help" class="presentation-help" hidden>左右立ち絵の試作。尖った名前札と小さな尾を話者側に合わせます。聞き手は透過させず、輪郭内だけ暗くします。長文は数行ずつページ送りします。</p>
       <section class="corridor-controls" id="corridor-controls" aria-labelledby="corridor-title" hidden>
         <h3 id="corridor-title">実際の回廊で見比べる</h3>
-        <p>Unityの素材と、10月3日の比較用の層の値を読み込みます。編集中の最新背景とは別の仮見本です。</p>
+        <p id="corridor-source">Unityの正本JSONを読み取り、最新の端付き回廊で見比べます。</p>
         <div class="setting"><label for="corridor-position">場面の位置 <output id="corridor-position-value" for="corridor-position">422 / 2532</output></label><input id="corridor-position" type="range" min="40" max="2492" value="422" step="1"></div>
         <div class="button-group"><button data-corridor-place="left" type="button">左側</button><button data-corridor-place="middle" type="button">中央</button><button data-corridor-place="right" type="button">右側</button></div>
         <label class="camera-choice" for="corridor-lift"><input id="corridor-lift" type="checkbox" checked>会話中は人物を見せる（仮）</label>
@@ -93,7 +93,7 @@
       <details class="settings-details"><summary>共有用の設定／前の設定を読み込む</summary><label for="settings-json">設定JSON</label><textarea id="settings-json" rows="8" spellcheck="false" aria-describedby="json-help"></textarea><p id="json-help">コピーしたJSON全文をClaude Codeへ渡せます。保存した設定をここへ貼り、「この設定を読み込む」で再現できます。</p><button id="import-settings" type="button">この設定を読み込む</button><p id="transfer-status" role="status"></p></details>
     </section>
     </div>
-    <footer class="notes"><p>銀細工の画像は原稿のまま。角の反転・大きさだけを変えています。直線の縁と下地は別部品です。</p><p>2D回廊はUnityの既存素材と10月3日の5層の設定をHTMLで再現した比較用。編集中の最新背景は自動反映しません。会話・カメラの仮案はUnityに未反映。台詞はすべて表示テスト用です。</p><p>左右の立ち絵は既存のアルシェ・カリマの素材。会話の相手・台詞・キャラ解釈を正式に決めるものではありません。</p><p>旧・仮の一枚絵は2D回廊とは別の背景。色・透過率・寸法は、どちらも正式採用ではありません。</p><p>上置き・下置き・旧見本は別々に自動保存します。共有JSONは台詞枠の設定と上置きの識別子のみ。場面位置・立ち絵の位置・カメラの仮案は含まず、本編のセーブにも影響しません。</p><p id="measurements" aria-live="polite"></p></footer>
+    <footer class="notes"><p>銀細工の画像は原稿のまま。角の反転・大きさだけを変えています。直線の縁と下地は別部品です。</p><p>2D回廊はUnityの正本 orcus_castle.json と既存素材を読み取り専用で再現。旧5層の比較はURLへ corridor=legacy を追加します。出口の場面遷移はこの見本にはありません。会話UIはUnityに未反映。台詞はすべて表示テスト用です。</p><p>左右の立ち絵は既存のアルシェ・カリマの素材。会話の相手・台詞・キャラ解釈を正式に決めるものではありません。</p><p>旧・仮の一枚絵は2D回廊とは別の背景。色・透過率・寸法は、どちらも正式採用ではありません。</p><p>上置き・下置き・旧見本は別々に自動保存します。共有JSONは台詞枠の設定と上置きの識別子のみ。場面位置・立ち絵の位置・カメラの仮案は含まず、本編のセーブにも影響しません。</p><p id="measurements" aria-live="polite"></p></footer>
   </main>
 </body>
 </html>

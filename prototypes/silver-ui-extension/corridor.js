@@ -11,7 +11,9 @@
     const output = document.getElementById('corridor-position-value');
     const params = new URLSearchParams(location.search);
     const artBase = '../../unity-prototype/Assets/Art/Corridor/';
+    const legacy = params.get('corridor') === 'legacy';
     let data, images, hero, enabled = false, loadPromise;
+    const layouts = new Map();
     let playerX = 422, direction = 0, keyboardDirection = 0, frame = 0, lastTime = 0, walkTime = 0;
     let conversation = params.get('mode') !== 'explore';
     let height = 117;
@@ -24,22 +26,32 @@
     }
     async function load() {
       if (!ctx) throw new Error('背景を表示できません。このブラウザではCanvasが使えません。');
-      // 別担当が編集中のUnityデータをUI比較へ即時反映しない。直前の見本の5層を固定する。
-      const response = await fetch('corridor-reference-20261003.json');
+      // 正本は読み取りだけ。旧5層の控えは明示的な比較URLで残す。
+      const response = await fetch(legacy ? 'corridor-reference-20261003.json' : '../../unity-prototype/Assets/Data/Corridors/orcus_castle.json', { cache: 'no-store' });
       if (!response.ok) throw new Error('回廊の層の設定を読み込めませんでした。');
       data = await response.json();
       if (!Array.isArray(data.layers) || !data.layers.length || !(data.length >= 844)) throw new Error('回廊の層の設定が不正です。');
-      const entries = await Promise.all(data.layers.map(async layer => [layer.file, await image(artBase + encodeURIComponent(layer.file))]));
+      const entries = await Promise.all(model.files(data).map(async file => [file, await image(artBase + encodeURIComponent(file))]));
       images = new Map(entries);
+      layouts.clear();
+      for (const layer of data.layers.filter(layer => layer.kind === 'modules')) {
+        const layout = model.modules(layer, file => ({ width: images.get(file).naturalWidth, height: images.get(file).naturalHeight }));
+        layouts.set(layer, layout);
+        data = { ...data, length: layout.length };
+      }
       hero = await image('../../unity-prototype/Assets/Art/SD/young_arshe.png');
-      slider.max = data.length - 40;
+      slider.min = Math.ceil(model.position(data, -Infinity).player);
+      slider.max = Math.floor(model.position(data, Infinity).player);
+      playerX = model.position(data, playerX).player;
       const chosen = Number(params.get('position'));
       if (params.has('position') && Number.isFinite(chosen)) playerX = model.position(data, chosen).player;
+      document.getElementById('corridor-source').textContent = legacy ? '旧5層の比較用控え。最新の回廊ではありません。' : 'Unityの正本JSONから、端・アーチ・継ぎ目・床・カメラの範囲を読み取り専用で再現します。';
+      canvas.setAttribute('aria-label', legacy ? '旧5層の比較用2D回廊とアルシェ' : '最新の端付き2D回廊とアルシェ');
       syncPosition();
     }
     function syncPosition() {
       slider.value = Math.round(playerX);
-      output.value = `${Math.round(playerX)} / ${data.length}`;
+      output.value = `${Math.round(playerX)} / ${Math.round(data.length)}`;
     }
     function mode(next) {
       conversation = next;
@@ -58,6 +70,8 @@
     function render() {
       if (!data || !hero || !enabled) return;
       const pos = model.position(data, playerX);
+      canvas.dataset.camera = String(pos.camera);
+      canvas.dataset.length = String(data.length);
       const lift = conversation && stage.dataset.presentation !== 'portraits' && cameraChoice.checked ? model.dialogueLift(data, height) : 0;
       ctx.clearRect(0, 0, 844, 390);
       ctx.fillStyle = '#080a0f';
@@ -65,6 +79,20 @@
       ctx.save();
       ctx.translate(0, -lift);
       for (const layer of data.layers) {
+        if (layer.kind === 'modules') {
+          const { items } = layouts.get(layer);
+          const shift = layer.x - pos.camera * layer.speed;
+          ctx.globalAlpha = layer.opacity ?? 1;
+          // 天井は全モジュールの絵の後ろ。frontの絵だけ最後に重ね、人物よりは奥。
+          ctx.fillStyle = 'rgb(28,24,34)';
+          for (const item of items) if (item.shadeTop > 0) ctx.fillRect(item.left + shift, item.top, item.width, item.shadeTop);
+          for (const item of [...items.filter(item => !item.front), ...items.filter(item => item.front)]) {
+            if (item.left + shift + item.width < 0 || item.left + shift > 844) continue;
+            ctx.drawImage(images.get(item.file), item.left + shift, item.top, item.width, item.height);
+          }
+          ctx.globalAlpha = 1;
+          continue;
+        }
         const img = images.get(layer.file);
         if (layer.kind === 'floor') {
           const h = Math.max(1, layer.bottom - layer.top);
@@ -156,7 +184,7 @@
     document.querySelectorAll('[data-corridor-place]').forEach(button => button.addEventListener('click', () => {
       if (!data) return;
       stop();
-      playerX = model.position(data, ({ left: 422, middle: data.length / 2, right: data.length - 422 })[button.dataset.corridorPlace]).player;
+      playerX = model.position(data, ({ left: -Infinity, middle: data.length / 2, right: Infinity })[button.dataset.corridorPlace]).player;
       syncPosition(); render();
     }));
     cameraChoice.addEventListener('change', render);
