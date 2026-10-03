@@ -71,7 +71,8 @@ namespace Srpg.EditorAgent
                 camera.targetTexture = rt;
                 camera.aspect = (float)Board3DTestBuilder.PreviewWidth / Board3DTestBuilder.PreviewHeight;
                 view.Build();
-                foreach (var (x, name) in new[] { (300f, "left"), (1266f, "middle"), (2300f, "right") })
+                float len = view.Length;
+                foreach (var (x, name) in new[] { (160f, "left_end"), (len / 2f, "middle"), (len - 160f, "right_end") })
                 {
                     view.PlayerX = x;
                     Canvas.ForceUpdateCanvases();

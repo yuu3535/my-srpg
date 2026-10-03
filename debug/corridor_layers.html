@@ -41,6 +41,9 @@
   .row input[type=range] { width: 100%; }
   .row input[type=number] { width: 54px; padding: 1px 3px; }
   .card select { width: 100%; margin-bottom: 4px; }
+  .modRow { display: grid; grid-template-columns: 1fr 76px 76px 24px; gap: 4px; align-items: center; margin-bottom: 4px; }
+  .modRow select { margin: 0; }
+  .modRow input { width: 44px; }
   .checks { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 2px; color: var(--muted); }
   #out { width: 100%; height: 120px; margin-top: 8px; font: 12px/1.4 Consolas, monospace; background: #0a141b; color: var(--text); border: 1px solid var(--line); }
   .hint { color: var(--muted); font-size: 12px; }
@@ -80,7 +83,7 @@
   <div id="layers"></div>
 </main>
 <script>
-const STORE = "srpg.corridorLayers.v3";   // v2: 遠景をつながる形に分けた（前の値は使わない）
+const STORE = "srpg.corridorLayers.v4";   // v4: 回廊を端つきの並びに   // v2: 遠景をつながる形に分けた（前の値は使わない）
 const $ = id => document.getElementById(id);
 let files = [];
 let layers = [];
@@ -92,7 +95,14 @@ const DEFAULTS = [
   { name: "遠景（町と山）", file: "orcus_corridor_distant_town_mountain_a_morning2_mirror.png", kind: "image", height: 250, bottom: 280, x: 0, overlap: 0, speed: 0.15, repeat: true, mirror: false, opacity: 1, on: true },
   { name: "庭", file: "orcus_corridor_garden_path_a_neutral2.png", kind: "image", height: 210, bottom: 350, x: 0, overlap: 0, speed: 0.45, repeat: true, mirror: false, opacity: 1, on: true },
   { name: "床（真上からの素材を帯に）", file: "orcus_corridor_floor_stone_a_top_seamless.png", kind: "floor", top: 321, bottom: 390, tile: 120, rows: 2, x: 0, speed: 1, shade: 0.5, on: true },
-  { name: "アーチ", file: "orcus_corridor_structure_arch_repeat_a_nofloor.png", kind: "image", height: 391, bottom: 390, x: 0, overlap: 39, speed: 1, repeat: true, mirror: false, opacity: 1, on: true },
+  // 回廊: 左の端・アーチ×4・右の端を順に並べる（つなぎ目ごとに重ね幅と上下のずれ。2026-10-03）
+  { name: "回廊（左の端・アーチ・右の端）", kind: "modules", height: 391, bottom: 390, x: 0, speed: 1, opacity: 1, on: true, modules: [
+    { file: "「orcus_corridor_structure_end_left_a_neutral4.png", overlap: 0, dy: 0 },
+    { file: "orcus_corridor_structure_arch_repeat_a_nofloor.png", overlap: 39, dy: 0 },
+    { file: "orcus_corridor_structure_arch_repeat_a_nofloor.png", overlap: 39, dy: 0 },
+    { file: "orcus_corridor_structure_arch_repeat_a_nofloor.png", overlap: 39, dy: 0 },
+    { file: "orcus_corridor_structure_arch_repeat_a_nofloor.png", overlap: 39, dy: 0 },
+    { file: "「orcus_corridor_structure_end_right_a_neutral4.png", overlap: 39, dy: 0 } ] },
   { name: "旗", file: "orcus_corridor_prop_banner_royal_a_neutral.png", kind: "image", height: 150, bottom: 300, x: 520, overlap: 0, speed: 1, repeat: false, mirror: false, opacity: 1, on: false },
 ];
 
@@ -151,6 +161,23 @@ async function render() {
       box.appendChild(shade);
       continue;
     }
+    if (L.kind === "modules") {
+      let cursor = 0;
+      for (let m = 0; m < (L.modules || []).length; m++) {
+        const mod = L.modules[m];
+        const ms = await size(mod.file);
+        if (!ms) continue;
+        const mw = ms.w * (L.height / ms.h);
+        if (m > 0) cursor -= Number(mod.overlap || 0);
+        const img = document.createElement("img");
+        img.src = url(mod.file);
+        Object.assign(img.style, { left: `${shift + cursor}px`, top: `${L.bottom - L.height + Number(mod.dy || 0)}px`, width: `${mw}px`, height: `${L.height}px`, opacity: L.opacity });
+        box.appendChild(img);
+        cursor += mw;
+      }
+      L._length = cursor;
+      continue;
+    }
     const s = await size(L.file);
     if (!s) continue;
     const w = s.w * (L.height / s.h);
@@ -178,6 +205,7 @@ function exportText() {
   const used = layers.filter(L => L.on).map(L => {
     const o = { name: L.name, kind: L.kind, file: L.file, speed: L.speed, x: L.x };
     if (L.kind === "floor") Object.assign(o, { top: L.top, bottom: L.bottom, tile: L.tile, rows: L.rows, shade: L.shade });
+    else if (L.kind === "modules") { delete o.file; Object.assign(o, { height: L.height, bottom: L.bottom, opacity: L.opacity, modules: L.modules.map(m => ({ file: m.file, overlap: Number(m.overlap || 0), dy: Number(m.dy || 0) })) }); }
     else Object.assign(o, { height: L.height, bottom: L.bottom, overlap: L.overlap, repeat: L.repeat, mirror: L.mirror, opacity: L.opacity });
     return o;
   });
@@ -217,6 +245,32 @@ function cards() {
     down.addEventListener("click", () => { if (i < layers.length - 1) { [layers[i + 1], layers[i]] = [layers[i], layers[i + 1]]; cards(); render(); } });
     del.addEventListener("click", () => { layers.splice(i, 1); cards(); render(); });
     card.appendChild(head);
+    if (L.kind === "modules") {
+      // 並べる絵: 1つずつ「絵・左と重ねる幅・上下のずれ」。＋で足す、×で消す
+      L.modules.forEach((mod, m) => {
+        const row = document.createElement("div");
+        row.className = "modRow";
+        row.innerHTML = `<select>${files.map(f => `<option ${f === mod.file ? "selected" : ""}>${f}</option>`).join("")}</select>`
+          + `<label>重ね <input type="number" value="${mod.overlap}" ${m === 0 ? "disabled" : ""}></label><label>上下 <input type="number" value="${mod.dy}"></label><button title="消す">×</button>`;
+        const [msel] = row.getElementsByTagName("select");
+        const [ov, dy] = row.querySelectorAll("input");
+        msel.addEventListener("change", () => { mod.file = msel.value; render(); });
+        ov.addEventListener("input", () => { mod.overlap = Number(ov.value); render(); });
+        dy.addEventListener("input", () => { mod.dy = Number(dy.value); render(); });
+        row.querySelector("button").addEventListener("click", () => { L.modules.splice(m, 1); cards(); render(); });
+        card.appendChild(row);
+      });
+      const add = document.createElement("button");
+      add.textContent = "＋ 絵を足す";
+      add.addEventListener("click", () => { const last = L.modules[L.modules.length - 1]; L.modules.push({ file: last?.file || files[0], overlap: 39, dy: 0 }); cards(); render(); });
+      card.appendChild(add);
+      card.appendChild(slider(L, "height", "高さ", 20, 800, 1));
+      card.appendChild(slider(L, "bottom", "下の端", 0, 500, 1));
+      card.appendChild(slider(L, "x", "横の位置", -1000, 2000, 1));
+      card.appendChild(slider(L, "speed", "流れる速さ", 0, 1.5, 0.01));
+      host.appendChild(card);
+      return;
+    }
     const sel = document.createElement("select");
     sel.innerHTML = `<option value="">（素材なし${L.kind === "floor" ? "・仮の縞" : ""}）</option>` + files.map(f => `<option ${f === L.file ? "selected" : ""}>${f}</option>`).join("");
     sel.addEventListener("change", () => { L.file = sel.value; render(); });

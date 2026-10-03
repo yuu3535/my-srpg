@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &345861232
+--- !u!1 &519124080
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,8 +127,65 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 345861234}
-  - component: {fileID: 345861233}
+  - component: {fileID: 519124082}
+  - component: {fileID: 519124081}
+  m_Layer: 0
+  m_Name: Corridor2D
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &519124081
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 519124080}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d70a9383a3410d6439ca819f2ec6c33e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Srpg.Battle::Srpg.Battle.Corridor2DView
+  corridorJson: {fileID: 4900000, guid: 329d7df5ba870824bb63b74ae0afd6c1, type: 3}
+  textures:
+  - {fileID: 2800000, guid: 88bdf2842b5e03e46bfedc2c34a15f71, type: 3}
+  - {fileID: 2800000, guid: 78840c97ec432da43966b720a4f78a5c, type: 3}
+  - {fileID: 2800000, guid: 3a0c7c04aee21384d81c3d64db6471a1, type: 3}
+  - {fileID: 2800000, guid: 844315c9901def34fb3f64ab0a077fef, type: 3}
+  - {fileID: 2800000, guid: 9886a2b457cae6f439e2705f2b47a7e0, type: 3}
+  - {fileID: 2800000, guid: e6b524d26de104f4bb4ab5cb213e690f, type: 3}
+  - {fileID: 2800000, guid: 2604762bb271c9f458b67884cf142c1f, type: 3}
+  - {fileID: 2800000, guid: 6efbc16b5a0d5a845b8fd4d5d6ce9fc1, type: 3}
+  hero: {fileID: 2800000, guid: fded15662838c2744a613c9d9023cbf3, type: 3}
+  walkSpeed: 220
+  targetCamera: {fileID: 1567440747}
+--- !u!4 &519124082
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 519124080}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1567440746
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1567440748}
+  - component: {fileID: 1567440747}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -136,13 +193,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!20 &345861233
+--- !u!20 &1567440747
 Camera:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 345861232}
+  m_GameObject: {fileID: 1567440746}
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
@@ -187,71 +244,16 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!4 &345861234
+--- !u!4 &1567440748
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 345861232}
+  m_GameObject: {fileID: 1567440746}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: -10}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1146800107
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1146800109}
-  - component: {fileID: 1146800108}
-  m_Layer: 0
-  m_Name: Corridor2D
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1146800108
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1146800107}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d70a9383a3410d6439ca819f2ec6c33e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Srpg.Battle::Srpg.Battle.Corridor2DView
-  corridorJson: {fileID: 4900000, guid: 329d7df5ba870824bb63b74ae0afd6c1, type: 3}
-  textures:
-  - {fileID: 2800000, guid: 88bdf2842b5e03e46bfedc2c34a15f71, type: 3}
-  - {fileID: 2800000, guid: 78840c97ec432da43966b720a4f78a5c, type: 3}
-  - {fileID: 2800000, guid: 3a0c7c04aee21384d81c3d64db6471a1, type: 3}
-  - {fileID: 2800000, guid: 844315c9901def34fb3f64ab0a077fef, type: 3}
-  - {fileID: 2800000, guid: 9886a2b457cae6f439e2705f2b47a7e0, type: 3}
-  - {fileID: 2800000, guid: e6b524d26de104f4bb4ab5cb213e690f, type: 3}
-  hero: {fileID: 2800000, guid: fded15662838c2744a613c9d9023cbf3, type: 3}
-  walkSpeed: 220
-  targetCamera: {fileID: 345861233}
---- !u!4 &1146800109
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1146800107}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -261,5 +263,5 @@ Transform:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 345861234}
-  - {fileID: 1146800109}
+  - {fileID: 1567440748}
+  - {fileID: 519124082}

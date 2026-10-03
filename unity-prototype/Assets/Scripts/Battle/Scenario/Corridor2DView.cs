@@ -22,8 +22,25 @@ namespace Srpg.Battle
         public class CorridorLayer
         {
             public string name, kind, file;
+            public CorridorModule[] modules;   // kind "modules": 左から順に並べる絵（左の端・アーチ…・右の端）
             public float speed, x, height, bottom, overlap, opacity = 1f, top, tile, rows, shade;
             public bool repeat, mirror;
+        }
+
+        /// <summary>並べる絵の1つ。overlap＝左の絵と重ねる幅、dy＝上下のずれ（下へ正）。継ぎ目を合わせる（debug/corridor_layers.html で決める）</summary>
+        [Serializable]
+        public class CorridorModule
+        {
+            public string file;
+            public float overlap, dy;
+        }
+
+        /// <summary>出口（回廊の端の通路など）。近づくと下に「label」が出て、押すと scene へ（空ならまだつながっていない）</summary>
+        [Serializable]
+        public class CorridorExit
+        {
+            public float x;              // 負の値は右の端からの距離
+            public string label, scene;
         }
 
         [Serializable]
@@ -31,7 +48,9 @@ namespace Srpg.Battle
         {
             public string corridor;
             public float heroFeetY = 352f, heroHeight = 96f, length = 2532f;
+            public float walkMin = 40f, walkMax = -40f;   // 歩ける範囲（walkMax が負なら右の端からの距離）
             public CorridorLayer[] layers;
+            public CorridorExit[] exits;
         }
 
         [SerializeField] private TextAsset corridorJson;
@@ -46,10 +65,16 @@ namespace Srpg.Battle
         private readonly List<(CorridorLayer layer, RectTransform box, List<RawImage> tiles, float width)> built = new List<(CorridorLayer, RectTransform, List<RawImage>, float)>();
         private float playerX = 422f, cameraX;
         private int holding;            // −1 左 / 0 / 1 右（画面の ◀ ▶）
+        private RectTransform exitButton;
+        private Text exitLabel, toast;
+        private CorridorExit nearExit;
+        private readonly Dictionary<RawImage, Vector2> moduleHome = new Dictionary<RawImage, Vector2>();
+        private float toastUntil;
         private bool facingLeft;
         private float walkTime;
 
         public float PlayerX { get => playerX; set { playerX = value; Apply(); } }
+        public float Length => data?.length ?? 0f;
 
         private void Start() => Build();
 
@@ -58,6 +83,7 @@ namespace Srpg.Battle
             data = JsonUtility.FromJson<CorridorFile>(corridorJson.text);
             foreach (Transform child in transform) DestroyImmediate(child.gameObject);
             built.Clear();
+            moduleHome.Clear();
             var canvasObject = new GameObject("Corridor", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             canvasObject.transform.SetParent(transform, false);
             var canvas = canvasObject.GetComponent<Canvas>();
@@ -84,6 +110,28 @@ namespace Srpg.Battle
                 var box = NewRect(layer.name, root);
                 box.anchorMin = Vector2.zero; box.anchorMax = Vector2.one; box.sizeDelta = Vector2.zero;
                 var tiles = new List<RawImage>();
+                if (layer.kind == "modules")
+                {
+                    // 左から順に並べる（くり返さない）。幅は高さに合わせ、重ね幅だけ詰める。回廊の長さはここで決まる
+                    float cursor = 0f, end = 0f;
+                    for (int m = 0; m < (layer.modules?.Length ?? 0); m++)
+                    {
+                        var mod = layer.modules[m];
+                        var mt = Texture(mod.file);
+                        if (mt == null) continue;
+                        float mw = mt.width * (layer.height / mt.height);
+                        if (m > 0) cursor -= mod.overlap;
+                        var img = Place(NewRect(mod.file, box), cursor, layer.bottom - layer.height + mod.dy, mw, layer.height).gameObject.AddComponent<RawImage>();
+                        img.texture = mt;
+                        img.raycastTarget = false;
+                        tiles.Add(img);
+                        cursor += mw;
+                        end = cursor;
+                    }
+                    data.length = Mathf.Max(ScreenW, end);
+                    built.Add((layer, box, tiles, 0f));
+                    continue;
+                }
                 if (layer.kind == "floor")
                 {
                     float h = Mathf.Max(1f, layer.bottom - layer.top);
@@ -133,6 +181,7 @@ namespace Srpg.Battle
             // 画面の端の ◀ ▶（押している間歩く。探索の見本 2026-10-02 の形）
             WalkButton(canvasObject.transform, true);
             WalkButton(canvasObject.transform, false);
+            BuildExitButton(canvasObject.transform);
             if (Application.isPlaying && EventSystem.current == null)
                 new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
             Apply();
@@ -178,13 +227,63 @@ namespace Srpg.Battle
             }
             if (dir != 0)
             {
-                playerX = Mathf.Clamp(playerX + dir * walkSpeed * Time.deltaTime, 40f, data.length - 40f);
+                playerX = Mathf.Clamp(playerX + dir * walkSpeed * Time.deltaTime, data.walkMin, data.walkMax > 0f ? data.walkMax : data.length + Mathf.Min(data.walkMax, -40f));   // 負の値は右の端からの距離
                 facingLeft = dir < 0;
                 walkTime += Time.deltaTime;
             }
             else walkTime = 0f;
+            if (kb != null && (kb.enterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame) && nearExit != null) UseExit();
             Apply();
         }
+
+        /// <summary>出口の札（画面の下の真ん中。近くにいるときだけ）と、短い知らせ</summary>
+        private void BuildExitButton(Transform parent)
+        {
+            var font = JapaneseFont.Get(new[] { "Noto Serif JP", "Yu Mincho", "MS PMincho" }, 16);
+            exitButton = NewRect("Exit", parent);
+            exitButton.anchorMin = exitButton.anchorMax = exitButton.pivot = new Vector2(0.5f, 0f);
+            exitButton.anchoredPosition = new Vector2(0f, 14f);
+            exitButton.sizeDelta = new Vector2(220f, 34f);
+            exitButton.gameObject.AddComponent<Image>().color = new Color(0.035f, 0.08f, 0.12f, 0.9f);
+            var line = exitButton.gameObject.AddComponent<Outline>();
+            line.effectColor = new Color(0.85f, 0.88f, 0.9f, 0.8f);
+            line.effectDistance = new Vector2(1f, -1f);
+            var exitBtn = exitButton.gameObject.AddComponent<Button>();
+            exitBtn.transition = Selectable.Transition.None;
+            exitBtn.onClick.AddListener(UseExit);
+            exitLabel = NewRect("Label", exitButton).gameObject.AddComponent<Text>();
+            exitLabel.rectTransform.anchorMin = Vector2.zero; exitLabel.rectTransform.anchorMax = Vector2.one; exitLabel.rectTransform.sizeDelta = Vector2.zero;
+            exitLabel.font = font; exitLabel.fontSize = 16; exitLabel.alignment = TextAnchor.MiddleCenter;
+            exitLabel.color = new Color(0.94f, 0.95f, 0.93f); exitLabel.raycastTarget = false;
+            exitButton.gameObject.SetActive(false);
+            toast = NewRect("Toast", parent).gameObject.AddComponent<Text>();
+            toast.rectTransform.anchorMin = toast.rectTransform.anchorMax = toast.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            toast.rectTransform.anchoredPosition = new Vector2(0f, 60f);
+            toast.rectTransform.sizeDelta = new Vector2(500f, 30f);
+            toast.font = font; toast.fontSize = 15; toast.alignment = TextAnchor.MiddleCenter;
+            toast.color = new Color(0.94f, 0.95f, 0.93f); toast.raycastTarget = false;
+            var shadow = toast.gameObject.AddComponent<Shadow>();
+            shadow.effectColor = new Color(0f, 0f, 0f, 0.85f);
+            toast.gameObject.SetActive(false);
+        }
+
+        private void UseExit()
+        {
+            if (nearExit == null) return;
+            if (!string.IsNullOrEmpty(nearExit.scene) && Application.isPlaying)
+            {
+                UnityEngine.SceneManagement.SceneManager.LoadScene(nearExit.scene);
+                return;
+            }
+            toast.text = $"{nearExit.label}（まだつながっていません）";
+            toast.gameObject.SetActive(true);
+            toastUntil = Time.unscaledTime + 2f;
+        }
+
+        private float ExitX(CorridorExit e) => e.x < 0f ? data.length + e.x : e.x;
+
+        /// <summary>確認の画像用: 出口の近くにいる形を見る</summary>
+        public CorridorExit NearExit => nearExit;
 
         /// <summary>カメラと層の位置を今のアルシェの位置に合わせる</summary>
         private void Apply()
@@ -194,6 +293,16 @@ namespace Srpg.Battle
             foreach (var (layer, box, tiles, width) in built)
             {
                 float shift = layer.x - cameraX * layer.speed;
+                if (layer.kind == "modules")
+                {
+                    // 組み立てたときの位置（Build で決めた）を、流れる分だけずらす
+                    foreach (var t in tiles)
+                    {
+                        if (!moduleHome.TryGetValue(t, out var home)) moduleHome[t] = home = t.rectTransform.anchoredPosition;
+                        t.rectTransform.anchoredPosition = home + new Vector2(shift, 0f);
+                    }
+                    continue;
+                }
                 if (layer.kind == "floor")
                 {
                     // 床は素材の幅ごとにくり返す（RawImage の uv をずらす）
@@ -210,6 +319,13 @@ namespace Srpg.Battle
                 for (int i = 0; i < tiles.Count; i++)
                     Place(tiles[i].rectTransform, start + i * step, layer.bottom - layer.height, width, layer.height);
             }
+            nearExit = (data.exits ?? Array.Empty<CorridorExit>()).Where(e => Mathf.Abs(ExitX(e) - playerX) < 70f).OrderBy(e => Mathf.Abs(ExitX(e) - playerX)).FirstOrDefault();
+            if (exitButton != null)
+            {
+                exitButton.gameObject.SetActive(nearExit != null);
+                if (nearExit != null) exitLabel.text = nearExit.label;
+            }
+            if (toast != null && toast.gameObject.activeSelf && Application.isPlaying && Time.unscaledTime > toastUntil) toast.gameObject.SetActive(false);
             if (heroRect != null)
             {
                 float bob = walkTime > 0f ? Mathf.Abs(Mathf.Sin(walkTime * 9f)) * 3f : 0f;   // 歩くときの小さな上下

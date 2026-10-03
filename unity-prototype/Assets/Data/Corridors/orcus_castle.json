@@ -61,17 +61,59 @@
    "shade": 0.5
   },
   {
-   "name": "アーチ",
-   "kind": "image",
-   "file": "orcus_corridor_structure_arch_repeat_a_nofloor.png",
+   "name": "回廊（左の端・アーチ・右の端）",
+   "kind": "modules",
    "speed": 1,
    "x": 0,
    "height": 391,
    "bottom": 390,
-   "overlap": 39,
-   "repeat": true,
-   "mirror": false,
-   "opacity": 1
+   "opacity": 1,
+   "modules": [
+    {
+     "file": "「orcus_corridor_structure_end_left_a_neutral4.png",
+     "overlap": 0,
+     "dy": 0
+    },
+    {
+     "file": "orcus_corridor_structure_arch_repeat_a_nofloor.png",
+     "overlap": 39,
+     "dy": 0
+    },
+    {
+     "file": "orcus_corridor_structure_arch_repeat_a_nofloor.png",
+     "overlap": 39,
+     "dy": 0
+    },
+    {
+     "file": "orcus_corridor_structure_arch_repeat_a_nofloor.png",
+     "overlap": 39,
+     "dy": 0
+    },
+    {
+     "file": "orcus_corridor_structure_arch_repeat_a_nofloor.png",
+     "overlap": 39,
+     "dy": 0
+    },
+    {
+     "file": "「orcus_corridor_structure_end_right_a_neutral4.png",
+     "overlap": 39,
+     "dy": 0
+    }
+   ]
+  }
+ ],
+ "walkMin": 150,
+ "walkMax": -150,
+ "exits": [
+  {
+   "x": 160,
+   "label": "◀ 自室のほうへ",
+   "scene": ""
+  },
+  {
+   "x": -160,
+   "label": "訓練場へ ▶",
+   "scene": ""
   }
  ]
 }
