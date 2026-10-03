@@ -5,6 +5,31 @@
 前の引き継ぎ: `docs/30-planning/CODEX_HANDOFF_2026-10-01.md`（武器・敵の数値）、`docs/10-design/ui/SILVER_BATTLE_UI_DIRECTION_2026-10-02.md`（銀細工の戦闘UIの方向。Codex 作）
 報告形式: `docs/00-core/MULTI_CHAT_COLLABORATION_GUIDE.md` §15
 
+## 最新：Claude Code 側でやったこと（2026-10-03 夕方の共有）
+
+Codex の `docs/30-planning/CLAUDE_CODE_SILVER_DIALOGUE_HANDOFF_2026-10-03.md` 冒頭「最新：今回追加共有する会話UI」は読んだ（`a74bd91` まで pull 済み）。受け取った内容: 最新は `dialogue-portrait-author-settings-20261003.json`（408×100・丸み24・本文飾りlarge・左右の尾17）を優先、名前札は飾りなしの尖った形＋細い内縁、尾は話者側で本文と同じ輪郭、聞き手は輪郭の中だけ暗く、上置き408×100は全場面に固定しない、背景は比較用の旧5層で正本ではない、Unity は未接続。**会話UIの Unity への移植は、原作者の指示があるまで始めない**（その時は上の JSON を正にする）。
+
+その間に Claude Code（総合担当）がしたこと:
+
+1. **Unity版を軽くした・公開先を分けた**（2026-10-03 朝〜昼）
+   - 公開先は別のリポジトリ `yuu3535/my-srpg-unity`（https://yuu3535.github.io/my-srpg-unity/ ）。更新は `bash tools/publish_unity_web.sh`。本体の `unity/` は案内のページだけ。
+   - 読み込み 83MB → 約31〜33MB: 絵の圧縮（WebGL だけ ASTC 6x6）、書き出しの間だけ 2の累乗でない絵のミップマップを外す（`WebGLBuilder`）、字体をゲームで使う字に絞った（`tools/subset_fonts.py`。元の字体は `unity-prototype/FontsSource/`）。
+   - **新しい絵を Unity に入れるとき**は、既存の絵の `.meta` にならって WebGL の圧縮設定を付ける（総合担当がする）。字が増えたら `py -3.12 tools/subset_fonts.py` をやり直す（会話UIで新しい記号を使うときは知らせてほしい）。
+2. **2Dの横スクロールの回廊**（下の §3.1）
+   - 作り方の流れを正式に決めた: `docs/10-design/map/SIDE_SCROLL_2D_MAP_PIPELINE_2026-10-03.md`（空・遠景・中景・床・モジュール。ChatGPT への指示書は場所ごと）。
+   - 調整ページ `debug/corridor_layers.html` は場所を選べる。Unity の回廊は端・出口つきで公開済み（入口の画面の「回廊（2Dの試し）」）。
+   - 回廊の正本は `unity-prototype/Assets/Data/Corridors/orcus_castle.json`。**modules の形はもう固まった**（左の端・アーチ×4・右の端、つなぎ目は原作者が合わせた値）。会話UIの見本の背景を新しくしたいときは、この JSON を読めば今の回廊と同じに並ぶ（`kind: "modules"` の各絵の `overlap`・`dy`・`dx`・`scale`・`front`・`shadeTop` の意味は手順書 §5）。旧5層の控え（`corridor-reference-20261003.json`）のままでも問題ない。
+3. **スマホで遊んで出た直し**（§4。戦闘は真上からの視点が最初、視点のボタン、反撃の手引き、会話で話し手が映るカメラ）は Unity版に反映・公開済み。
+
+Codex への短文（原作者が貼る用）:
+
+```text
+mainをpullして、docs/30-planning/CODEX_HANDOFF_2026-10-03.md の冒頭「最新：Claude Code 側でやったこと」を読んでください。
+会話UIの最新（dialogue-portrait-author-settings-20261003.json 優先、408×100は固定しない、Unity未接続）は Claude Code が受け取りました。Unity への移植は原作者の指示待ちです。
+Claude Code 側では、Unity版を軽くして公開先を yuu3535/my-srpg-unity に分け、2Dの横スクロールの回廊（端・出口・調整ページ・作り方の手順書 docs/10-design/map/SIDE_SCROLL_2D_MAP_PIPELINE_2026-10-03.md）を進めました。
+回廊の正本は unity-prototype/Assets/Data/Corridors/orcus_castle.json です（modules 形式で固まりました）。見本の背景を新しくする場合はこれを読んでください。unity-prototype/ の中は触らないでください。
+```
+
 ## 0. いちばん大事なこと（原作者 2026-10-03）
 
 - **これからは Unity版で確かめる。** 原作者はスマホで Unity版（https://yuu3535.github.io/my-srpg-unity/ ）を遊んで確かめる。ブラウザ版だけで見た目を決めて終わりにしない。
