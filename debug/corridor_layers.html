@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>回廊の重ね方（デバッグ）</title>
+<title>横スクロールの重ね方（デバッグ）</title>
 <!--
   探索の2D横スクロール（オルクス城の回廊）の層の重ね方を、原作者がつまみで決めるデバッグ用ページ（総合担当 2026-10-03）。
   静的サーバー（リポジトリのルート）で開く: http://localhost:8931/debug/corridor_layers.html
@@ -53,7 +53,9 @@
 </head>
 <body>
 <header>
-  <h1>回廊の重ね方</h1>
+  <h1>横スクロールの重ね方</h1>
+  <label>場所 <select id="place"></select></label>
+  <button id="newPlace" title="新しい場所を足す（空・遠景・中景・床・モジュールのひな形から始める）">場所を足す</button>
   <label>素材のフォルダ <input id="folder" type="text" value="背景/オルクス城回廊横スクロール/採用候補/"></label>
   <button id="reload">読み込み直す</button>
   <button id="add">層を足す</button>
@@ -90,30 +92,64 @@ const $ = id => document.getElementById(id);
 let files = [];
 let layers = [];
 
-// はじめの値（総合担当が仮に重ねた形。2026-10-03）
-const DEFAULTS = [
-  { name: "空", file: "orcus_corridor_sky_clear_a_morning2.png", kind: "image", height: 390, bottom: 390, x: 0, overlap: 0, speed: 0.03, repeat: true, mirror: false, opacity: 1, on: true },
-  // 遠景: 右の端に morning3 を左右反転して重ね、くり返しの継ぎ目でお城がつながるように（原作者の方法 2026-10-03）
-  { name: "遠景（町と山）", file: "orcus_corridor_distant_town_mountain_a_morning2_mirror.png", kind: "image", height: 250, bottom: 280, x: 0, overlap: 0, speed: 0.15, repeat: true, mirror: false, opacity: 1, on: true },
-  { name: "庭", file: "orcus_corridor_garden_path_a_neutral2.png", kind: "image", height: 210, bottom: 350, x: 0, overlap: 0, speed: 0.45, repeat: true, mirror: false, opacity: 1, on: true },
-  { name: "床（真上からの素材を帯に）", file: "orcus_corridor_floor_stone_a_top_seamless.png", kind: "floor", top: 321, bottom: 390, tile: 120, rows: 2, x: 0, speed: 1, shade: 0.5, on: true },
-  // 回廊: 左の端・アーチ×4・右の端を順に並べる（つなぎ目ごとに重ね幅と上下のずれ。2026-10-03）
-  { name: "回廊（左の端・アーチ・右の端）", kind: "modules", height: 391, bottom: 390, x: 0, speed: 1, opacity: 1, on: true, modules: [
-    { file: "「orcus_corridor_structure_end_left_a_neutral4.png", overlap: 0, dy: -10, dx: 23, scale: 1, front: true, shadeTop: 60 },
-    { file: "orcus_corridor_structure_arch_repeat_a_nofloor.png", overlap: 39, dy: 0 },
-    { file: "orcus_corridor_structure_arch_repeat_a_nofloor.png", overlap: 39, dy: 0 },
-    { file: "orcus_corridor_structure_arch_repeat_a_nofloor.png", overlap: 39, dy: 0 },
-    { file: "orcus_corridor_structure_arch_repeat_a_nofloor.png", overlap: 39, dy: 0 },
-    { file: "「orcus_corridor_structure_end_right_a_neutral4_rail.png", overlap: 39, dy: 0, dx: 0, scale: 1, front: false, shadeTop: 60 } ] },
-  { name: "旗", file: "orcus_corridor_prop_banner_royal_a_neutral.png", kind: "image", height: 150, bottom: 300, x: 520, overlap: 0, speed: 1, repeat: false, mirror: false, opacity: 1, on: false },
+// 場所: Unity の場所データ（unity-prototype/Assets/Data/Corridors/<場所>.json）と、このページで足した場所（2026-10-03）
+// 「はじめの値」は Unity に入っている値。Unity にまだない場所は、空・遠景・中景・床・モジュールのひな形から始める
+const UNITY_DIR = "/unity-prototype/Assets/Data/Corridors/";
+const PLACES_KEY = "srpg.corridorPlaces";     // このページで足した場所 [{ id, folder }]
+const LAST_KEY = "srpg.corridorPlace";        // 最後に開いた場所
+let place = "orcus_castle";
+let places = [];                               // [{ id, folder, unity }]
+// オルクス城の回廊は前からの保存の名前をそのまま使う（合わせた値を消さない）
+const storeKey = id => id === "orcus_castle" ? STORE : `srpg.corridorLayers.${id}`;
+const TEMPLATE = [
+  { name: "空", file: "", kind: "image", height: 390, bottom: 390, x: 0, overlap: 0, speed: 0.03, repeat: true, mirror: false, opacity: 1, on: true },
+  { name: "遠景", file: "", kind: "image", height: 250, bottom: 280, x: 0, overlap: 0, speed: 0.15, repeat: true, mirror: false, opacity: 1, on: true },
+  { name: "中景", file: "", kind: "image", height: 210, bottom: 350, x: 0, overlap: 0, speed: 0.45, repeat: true, mirror: false, opacity: 1, on: true },
+  { name: "床（真上からの素材を帯に）", file: "", kind: "floor", top: 321, bottom: 390, tile: 120, rows: 2, x: 0, speed: 1, shade: 0.5, on: true },
+  { name: "モジュール（左の端・くり返し・右の端）", kind: "modules", height: 391, bottom: 390, x: 0, speed: 1, opacity: 1, on: true, modules: [] },
 ];
 
 const clone = v => JSON.parse(JSON.stringify(v));
-function load() {
-  try { const s = JSON.parse(localStorage.getItem(STORE) || "null"); if (s?.layers) { layers = s.layers; if (s.folder) $("folder").value = s.folder; if (s.hero) Object.assign(hero, s.hero); return; } } catch {}
-  layers = clone(DEFAULTS);
+const readJson = (k, v) => { try { return JSON.parse(localStorage.getItem(k) || "null") ?? v; } catch { return v; } };
+const writeJson = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+
+async function listPlaces() {
+  let unity = [];
+  try {
+    const html = await (await fetch(UNITY_DIR)).text();
+    unity = [...html.matchAll(/href="([^"]+)\.json"/gi)].map(m => decodeURIComponent(m[1]));
+  } catch {}
+  const mine = readJson(PLACES_KEY, []);
+  places = [...unity.map(id => ({ id, unity: true })), ...mine.filter(m => !unity.includes(m.id))];
+  if (!places.some(p => p.id === place)) places.unshift({ id: place, unity: false });
+  $("place").innerHTML = places.map(p => `<option value="${p.id}" ${p.id === place ? "selected" : ""}>${p.id}${p.unity ? "" : "（Unity にまだない）"}</option>`).join("");
 }
-function save() { try { localStorage.setItem(STORE, JSON.stringify({ folder: $("folder").value, layers, hero })); } catch {} }
+
+// はじめの値: Unity の場所データ。なければひな形
+async function defaultsFor(id) {
+  try {
+    const r = await fetch(`${UNITY_DIR}${encodeURIComponent(id)}.json`, { cache: "no-store" });
+    if (r.ok) {
+      const d = await r.json();
+      return { folder: d.folder, hero: { y: d.heroFeetY ?? 352, h: d.heroHeight ?? 96, margin: d.cameraMargin ?? 60 }, layers: d.layers.map(L => ({ ...L, on: true })) };
+    }
+  } catch {}
+  const mine = readJson(PLACES_KEY, []).find(m => m.id === id);
+  return { folder: mine?.folder || `背景/${id}/採用候補/`, hero: { y: 352, h: 96, margin: 60 }, layers: clone(TEMPLATE) };
+}
+
+function apply(state) {
+  layers = state.layers;
+  if (state.folder) $("folder").value = state.folder;
+  if (state.hero) Object.assign(hero, state.hero);
+  $("heroY").value = hero.y; $("heroH").value = hero.h; $("heroOn").checked = hero.on;
+  $("camMargin").value = hero.margin;
+}
+async function load() {
+  const s = readJson(storeKey(place), null);
+  apply(s?.layers ? s : await defaultsFor(place));
+}
+function save() { writeJson(storeKey(place), { folder: $("folder").value, layers, hero }); }
 const hero = { y: 352, h: 96, on: true, margin: 60 };
 
 const sizes = {};   // 画像の元の大きさ（file → {w,h}）
@@ -223,7 +259,7 @@ function exportText() {
     else Object.assign(o, { height: L.height, bottom: L.bottom, overlap: L.overlap, repeat: L.repeat, mirror: L.mirror, opacity: L.opacity });
     return o;
   });
-  return JSON.stringify({ corridor: "orcus_castle", folder: $("folder").value, screen: [844, 390], heroFeetY: hero.y, heroHeight: hero.h, cameraMargin: hero.margin, layers: used }, null, 1);
+  return JSON.stringify({ corridor: place, folder: $("folder").value, screen: [844, 390], heroFeetY: hero.y, heroHeight: hero.h, cameraMargin: hero.margin, layers: used }, null, 1);
 }
 
 // ── 欄 ──
@@ -337,7 +373,29 @@ $("add").addEventListener("click", () => {
   layers.push({ name: "新しい層", file: files[0] || "", kind: "image", height: 200, bottom: 390, x: 0, overlap: 0, speed: 1, repeat: false, mirror: false, opacity: 1, on: true });
   cards(); render();
 });
-$("reset").addEventListener("click", () => { layers = clone(DEFAULTS); cards(); render(); $("msg").textContent = "はじめの値に戻しました"; });
+$("reset").addEventListener("click", async () => {
+  if (!confirm(`「${place}」を、はじめの値（Unity に入っている値。なければひな形）に戻しますか？ 合わせた値は消えます`)) return;
+  apply(await defaultsFor(place)); await listFiles(); cards(); render(); $("msg").textContent = "はじめの値に戻しました";
+});
+$("place").addEventListener("change", async e => {
+  save();
+  place = e.target.value; writeJson(LAST_KEY, place);
+  await load(); await listFiles(); cards(); render();
+});
+$("newPlace").addEventListener("click", async () => {
+  const id = (prompt("場所の名前（英数字と _。Unity のデータの名前になる。例: orcus_town）") || "").trim();
+  if (!id) return;
+  if (!/^[a-z0-9_]+$/.test(id)) { alert("英小文字・数字・_ だけにしてください"); return; }
+  if (places.some(p => p.id === id)) { alert("もうある名前です"); return; }
+  const folder = (prompt("素材のフォルダ（リポジトリの中の場所）", `背景/${id}/採用候補/`) || "").trim();
+  if (!folder) return;
+  const mine = readJson(PLACES_KEY, []); mine.push({ id, folder }); writeJson(PLACES_KEY, mine);
+  save();
+  place = id; writeJson(LAST_KEY, place);
+  await listPlaces(); await load(); await listFiles(); cards(); render();
+  $("msg").textContent = `「${id}」を足しました。素材をフォルダに入れて「読み込み直す」を押してください`;
+});
+$("folder").addEventListener("change", async () => { await listFiles(); cards(); render(); });
 $("copy").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText(exportText()); $("msg").textContent = "コピーしました。総合担当に貼ってください"; }
   catch { $("out").select(); document.execCommand("copy"); $("msg").textContent = "コピーしました（下の欄）"; }
@@ -345,10 +403,10 @@ $("copy").addEventListener("click", async () => {
 $("reload").addEventListener("click", async () => { await listFiles(); cards(); render(); });
 
 (async () => {
-  load();
-  $("heroY").value = hero.y; $("heroH").value = hero.h; $("heroOn").checked = hero.on;
-  if (hero.margin === undefined) hero.margin = 60;
-  $("camMargin").value = hero.margin;
+  place = readJson(LAST_KEY, "orcus_castle");
+  await listPlaces();
+  await load();
+  if (hero.margin === undefined) { hero.margin = 60; $("camMargin").value = 60; }
   $("hero").src = "../unity-prototype/Assets/Art/SD/young_arshe.png";
   fit();
   await listFiles();
