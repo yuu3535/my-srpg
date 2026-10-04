@@ -28,6 +28,10 @@
   #stage .floorRow { position: absolute; background-repeat: repeat-x; }
   #stage .shade { position: absolute; left: 0; right: 0; }
   #hero { position: absolute; pointer-events: none; }
+  #world { position: absolute; inset: 0; transform-origin: 422px 195px; }   /* この場面のカメラ（引き・寄り・ずらし） */
+  #stage .band { position: absolute; left: 0; right: 0; height: 30px; background: rgb(9,10,13); pointer-events: none; }
+  #camBar { border-top: 1px dashed #2a3a44; padding-top: 8px; }
+  #camBar b { font-weight: 600; }
   #feet { position: absolute; left: 0; right: 0; height: 0; border-top: 1px dashed rgba(103,191,193,.8); pointer-events: none; }
   .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; }
   .bar label { display: flex; align-items: center; gap: 6px; }
@@ -96,12 +100,22 @@
 <main>
   <div>
     <svg width="0" height="0" style="position:absolute"><defs id="fxDefs"></defs></svg>
-    <div id="wrap"><div id="stage"><div id="feet"></div><img id="hero" alt=""></div></div>
+    <div id="wrap"><div id="stage"><div id="world"><div id="feet"></div><img id="hero" alt=""></div></div></div>
     <div class="bar">
       <label>カメラ <input id="cam" type="range" min="0" max="4000" value="0" style="width:340px"> <span id="camV">0</span></label>
       <button id="play">▶ 流す</button>
       <label>表示の大きさ <select id="zoom"><option value="1" selected>1倍</option><option value="1.5">1.5倍</option><option value="2">2倍</option></select></label>
     </div>
+    <div class="bar" id="camBar">
+      <b>このシーンのカメラ</b>
+      <label title="1 がふだん。小さいほど引き（広く見える）、大きいほど寄り">大きさ <input id="camZoom" type="range" min="0.5" max="2" step="0.01" value="1" style="width:150px"> <input id="camZoomN" type="number" step="0.01" value="1" style="width:56px"></label>
+      <label title="見る所を右へずらす（負なら左）">横 <input id="camX" type="number" value="0" style="width:60px"></label>
+      <label title="見る所を上へずらす（負なら下）。空を見上げるときなど">縦 <input id="camY" type="number" value="0" style="width:60px"></label>
+      <button id="camReset">ふつうに戻す</button>
+      <label title="このシーンの会話で、上下の黒い帯を出す"><input id="bandsOn" type="checkbox" checked> 会話の帯を出す</label>
+      <label title="会話のときの見え方（上下の帯）を、この画面に重ねて見る"><input id="talkPreview" type="checkbox"> 会話の見本</label>
+    </div>
+    <p class="hint" style="margin:4px 0 0">引くと、層の絵の外（黒）が見えることがあります。そのときは空や床の層の「高さ」「下の端」を広げてください。</p>
     <div class="bar">
       <label>アルシェ（大きさの目安） 足元の高さ <input id="heroY" type="number" value="352" style="width:60px"></label>
       <label>背の高さ <input id="heroH" type="number" value="96" style="width:60px"></label>
@@ -190,6 +204,7 @@ async function defaultsFor(id, stateId = "") {
       const look = await fetchLook(lookName);
       return { folder: d.folder, hero: { y: d.heroFeetY ?? 352, h: d.heroHeight ?? 96, margin: d.cameraMargin ?? 60 },
         layers: lookOnto(d.layers.map(L => ({ ...L, on: true })), look), effects: look?.effects ?? d.effects, lookName, mapped: !!mapped,
+        camera: look?.camera?.zoom > 0 ? look.camera : d.camera, bands: !(look?.hideTalkBands || d.hideTalkBands),
         explore: d.explore ? { ...d.explore, spots: d.explore.spots || [] } : null, walk: { min: d.walkMin ?? 40, max: d.walkMax ?? -40 } };
     }
   } catch {}
@@ -205,6 +220,13 @@ async function defaultsFor(id, stateId = "") {
 let scene = "";             // "" = 場所のふだん
 let lookName = "";
 let baseLayersCache = [];   // 場所のふだんの組み立て（シーンの組み立てと比べる）
+let sceneCam = { zoom: 1, x: 0, y: 0 }, bands = true;   // この場面のカメラと会話の帯（原作者 2026-10-05）
+const camOf = c => ({ zoom: Number(c?.zoom) > 0 ? Number(c.zoom) : 1, x: Number(c?.x) || 0, y: Number(c?.y) || 0 });
+const camIsPlain = c => c.zoom === 1 && !c.x && !c.y;
+function showCam() {
+  $("camZoom").value = sceneCam.zoom; $("camZoomN").value = sceneCam.zoom; $("camX").value = sceneCam.x; $("camY").value = sceneCam.y;
+  $("bandsOn").checked = bands;
+}
 const SCENE_LAST = "srpg.corridorScene";            // { 場所: 最後に開いたシーン }
 const customKey = () => `srpg.corridorScenes.${place}`;   // ここで足した試しのシーン [{ id, title }]
 const sceneKey = id => `${storeKey(place)}@${id}`;
@@ -245,7 +267,7 @@ async function enterScene(id, noSave = false) {
       if (d.mapped) applyLook(d);
       else {
         const b = readJson(storeKey(place), null);
-        applyLook({ layers: clone(baseLayersCache), effects: clone(b?.effects || fx), lookName: suggestLookName(id) });
+        applyLook({ layers: clone(baseLayersCache), effects: clone(b?.effects || fx), lookName: suggestLookName(id), camera: b?.camera, bands: b?.bands });
       }
     }
   }
@@ -262,6 +284,9 @@ function applyLook(state) {
   fx.chara = { ...clone(FX_DEFAULT.chara), ...(fx.chara || {}) };
   lookName = state.lookName ?? "";
   $("lookName").value = lookName;
+  sceneCam = camOf(state.camera);
+  bands = state.bands ?? !state.hideTalkBands;
+  showCam();
 }
 
 // 効果（画面全体）: 空気遠近・被写界深度・ヴィネット・色調・光の筋（原作者 2026-10-04。まず調整ページで見比べ、Unity はあとで）
@@ -315,11 +340,11 @@ async function load() {
 }
 function save() {
   const placeState = { folder: $("folder").value, hero, explore: ex, walk };
-  if (!scene) { writeJson(storeKey(place), { ...placeState, layers, effects: fx, lookName }); baseLayersCache = clone(layers); return; }
+  if (!scene) { writeJson(storeKey(place), { ...placeState, layers, effects: fx, lookName, camera: sceneCam, bands }); baseLayersCache = clone(layers); return; }
   // シーン: 場所全体のことは場所のふだんへ、見え方と組み立てはシーンへ
   const b = readJson(storeKey(place), null) || {};
   writeJson(storeKey(place), { ...b, ...placeState });
-  writeJson(sceneKey(scene), { layers, effects: fx, lookName });
+  writeJson(sceneKey(scene), { layers, effects: fx, lookName, camera: sceneCam, bands });
 }
 const hero = { y: 352, h: 96, on: true, margin: 60 };
 
@@ -394,13 +419,18 @@ async function render() {
   // カメラは「回廊（端つきの並び）」の両端から余白だけ内側で止める（Unity と同じ）
   const corridorLen = layers.find(L => L.kind === "modules" && L.on)?._length;
   let cam = Number($("cam").value);
-  if (corridorLen) { cam = Math.max(hero.margin, Math.min(cam, corridorLen - 844 - hero.margin)); $("cam").max = Math.ceil(corridorLen); }
-  const feet = $("feet"), heroImg = $("hero");
+  const wide = 422 * (1 / sceneCam.zoom - 1);   // 引いた分だけ、カメラは内側で止める（Unity と同じ）
+  if (corridorLen) { cam = Math.max(hero.margin + wide, Math.min(cam, corridorLen - 844 - hero.margin - wide)); $("cam").max = Math.ceil(corridorLen); }
+  const feet = $("feet"), heroImg = $("hero"), camEl = $("world");
+  // この場面のカメラ: 画面の真ん中を中心に大きさを変え、見る所をずらす（Unity の Corridor2DView.ApplyZoom と同じ）
+  const z = sceneCam.zoom;
+  camEl.style.transform = `translate(${-sceneCam.x * z}px, ${sceneCam.y * z}px) scale(${z})`;
+  const extra = Math.ceil(Math.max(0, 422 * (1 / z - 1)) + Math.abs(sceneCam.x) + 8);   // 引いたとき・ずらしたときに見える、画面の外の幅
   for (const L of layers) {
     if (!L.on) continue;
     const box = document.createElement("div");
     box.className = "layer";
-    stage.insertBefore(box, feet);
+    camEl.insertBefore(box, feet);
     const shift = L.x - cam * L.speed;
     // 奥ほど（流れる速さが遅いほど）霞とぼかしを強く。いちばん奥の層（空）には霞をかけない
     if (fx.on) {
@@ -422,14 +452,14 @@ async function render() {
         const row = document.createElement("div");
         row.className = "floorRow";
         const rh = h / rows;
-        Object.assign(row.style, { left: 0, right: 0, top: `${L.top + r * rh}px`, height: `${rh + 0.5}px`,
+        Object.assign(row.style, { left: `${-extra}px`, right: `${-extra}px`, top: `${L.top + r * rh}px`, height: `${rh + 0.5}px`,
           backgroundImage: L.file ? `url("${url(L.file)}")` : "repeating-linear-gradient(90deg,#5c5866 0 58px,#3d3a46 58px 60px)",
-          backgroundSize: `${L.tile}px ${rh + 0.5}px`, backgroundPosition: `${shift}px 0` });
+          backgroundSize: `${L.tile}px ${rh + 0.5}px`, backgroundPosition: `${shift + extra}px 0` });
         box.appendChild(row);
       }
       const shade = document.createElement("div");
       shade.className = "shade";
-      Object.assign(shade.style, { top: `${L.top}px`, height: `${h}px`, background: `linear-gradient(180deg, rgba(10,14,22,${L.shade}), rgba(10,14,22,0))` });
+      Object.assign(shade.style, { left: `${-extra}px`, right: `${-extra}px`, top: `${L.top}px`, height: `${h}px`, background: `linear-gradient(180deg, rgba(10,14,22,${L.shade}), rgba(10,14,22,0))` });
       box.appendChild(shade);
       continue;
     }
@@ -478,7 +508,7 @@ async function render() {
         // 光の筋: アーチの間から斜めに差して、床に明るいところを落とす
         const sb = document.createElement("div");
         sb.className = "layer fxShafts";
-        stage.insertBefore(sb, feet);
+        camEl.insertBefore(sb, feet);
         const tan = Math.tan(fx.shaftAngle * Math.PI / 180);   // 筋は skewX(−角度) で下の端が左へ h×tan ずれる。床の光はその下の端に落とす
         for (const sh of shafts) {
           const h = sh.bottom - sh.top;
@@ -507,8 +537,8 @@ async function render() {
     const w = s.w * (L.height / s.h);
     const step = Math.max(8, w - (L.overlap || 0));
     let start = shift;
-    if (L.repeat) { start = shift % step; if (start > 0) start -= step; }
-    for (let i = 0, x = start; x < 844 && (L.repeat || i === 0); i++, x += step) {
+    if (L.repeat) { start = shift % step; if (start > 0) start -= step; start -= Math.ceil(extra / step) * step; }
+    for (let i = 0, x = start; x < 844 + extra && (L.repeat || i === 0); i++, x += step) {
       const img = document.createElement("img");
       img.src = url(L.file);
       Object.assign(img.style, { left: `${x}px`, top: `${L.bottom - L.height}px`, width: `${w}px`, height: `${L.height}px`, opacity: L.opacity,
@@ -536,7 +566,10 @@ async function render() {
     Object.assign(v.style, { background: `radial-gradient(ellipse 72% 78% at 50% 50%, transparent ${Math.round(fx.vignetteSize * 100)}%, ${fx.vignetteColor} 100%)`, opacity: fx.vignette });
     stage.appendChild(v);
   }
-  drawExplore(stage, cam);
+  drawExplore(camEl, cam);
+  // 会話の見本: 上下の黒い帯（この場面で帯を出すとき）
+  if ($("talkPreview").checked && bands)
+    for (const top of [true, false]) { const b = document.createElement("div"); b.className = "fx band"; b.style[top ? "top" : "bottom"] = "0"; stage.appendChild(b); }
   feet.style.top = `${hero.y}px`;
   feet.style.display = hero.on ? "" : "none";
   heroImg.style.display = hero.on ? "" : "none";
@@ -560,7 +593,7 @@ async function render() {
 }
 
 function exportText() {
-  if (scene) return JSON.stringify(sceneExport({ layers, effects: fx, lookName }, scene), null, 1);
+  if (scene) return JSON.stringify(sceneExport({ layers, effects: fx, lookName, camera: sceneCam, bands }, scene), null, 1);
   return JSON.stringify(placeExport(), null, 1);
 }
 /** シーンの書き出し（Unity の見え方のファイルの形。組み立てが場所のふだんと違うときだけ build を付ける） */
@@ -571,18 +604,22 @@ function sceneExport(st, id) {
   const o = { look: st.lookName || "", place, scene: id, title: sceneTitle(id), sky: skyFile.replace(/^\/+/, ""), effects: st.effects,
     layers: on.filter(L => L.fxHaze !== undefined || L.fxBlur !== undefined).map(L => ({ name: L.name, ...(L.fxHaze !== undefined ? { haze: L.fxHaze } : {}), ...(L.fxBlur !== undefined ? { blur: L.fxBlur } : {}) })) };
   if (buildShape(st.layers) !== buildShape(baseLayersCache)) o.build = on.map(layerExport);
+  const c = camOf(st.camera);
+  if (!camIsPlain(c)) o.camera = c;
+  if (st.bands === false) o.hideTalkBands = true;
   return o;
 }
 function placeExport() {
-  return { corridor: place, folder: $("folder").value, look: lookName || undefined, screen: [844, 390], heroFeetY: hero.y, heroHeight: hero.h, cameraMargin: hero.margin, effects: fx, explore: ex || undefined, layers: layers.filter(L => L.on).map(layerExport) };
+  return { corridor: place, folder: $("folder").value, look: lookName || undefined, screen: [844, 390], heroFeetY: hero.y, heroHeight: hero.h, cameraMargin: hero.margin, effects: fx, explore: ex || undefined,
+    camera: camIsPlain(sceneCam) ? undefined : sceneCam, hideTalkBands: bands ? undefined : true, layers: layers.filter(L => L.on).map(layerExport) };
 }
 /** 場所のふだんと、保存してある全部のシーン（「ファイルに保存」と「全部コピー」） */
 function allExport() {
   const base = readJson(storeKey(place), null);
   const ids = [...mapStates().map(s => s.id), ...readJson(customKey(), []).map(s => s.id)];
-  return { kind: "srpg.corridorLayers.place", place, base: scene ? base : { ...base, layers, effects: fx, lookName },
+  return { kind: "srpg.corridorLayers.place", place, base: scene ? base : { ...base, layers, effects: fx, lookName, camera: sceneCam, bands },
     custom: readJson(customKey(), []),
-    scenes: Object.fromEntries(ids.map(id => [id, id === scene ? { layers, effects: fx, lookName } : readJson(sceneKey(id), null)]).filter(([, v]) => v)) };
+    scenes: Object.fromEntries(ids.map(id => [id, id === scene ? { layers, effects: fx, lookName, camera: sceneCam, bands } : readJson(sceneKey(id), null)]).filter(([, v]) => v)) };
 }
 function layerExport(L) {
   const o = { name: L.name, kind: L.kind, file: L.file, speed: L.speed, x: L.x };
@@ -986,6 +1023,14 @@ function cards() {
 
 // ── 操作 ──
 $("cam").addEventListener("input", render);
+function setCam(patch) { sceneCam = camOf({ ...sceneCam, ...patch }); showCam(); render(); }
+$("camZoom").addEventListener("input", e => setCam({ zoom: Number(e.target.value) }));
+$("camZoomN").addEventListener("change", e => setCam({ zoom: Number(e.target.value) }));
+$("camX").addEventListener("change", e => setCam({ x: Number(e.target.value) }));
+$("camY").addEventListener("change", e => setCam({ y: Number(e.target.value) }));
+$("camReset").addEventListener("click", () => setCam({ zoom: 1, x: 0, y: 0 }));
+$("bandsOn").addEventListener("change", e => { bands = e.target.checked; render(); });
+$("talkPreview").addEventListener("change", render);
 let timer = null;
 $("play").addEventListener("click", () => {
   if (timer) { clearInterval(timer); timer = null; $("play").textContent = "▶ 流す"; return; }
