@@ -74,7 +74,14 @@
   <span class="hint">キャラをドラッグ（またはキャラを押してからマスを押す）で動かす</span>
 </header>
 <main>
-  <div id="boardWrap"><div id="board"></div><div class="legend" id="legend"></div></div>
+  <div id="boardWrap">
+    <div id="previewWrap" style="display:none">
+      <div class="hint" style="margin:0 0 4px">会話のときの画面の見本（Unity の探索のカメラと同じ角度・大きさ。地面の絵と人の位置だけの目安。壁・演台・柵などの立体は描いていません）</div>
+      <canvas id="preview" width="844" height="390" style="width:844px;height:390px;border:1px solid var(--gold-soft);display:block;margin-bottom:10px;background:#0b0a10"></canvas>
+      <div class="hint" style="margin:0 0 4px">下は真上から見た盤面です。人をドラッグすると、上の見本も変わります。</div>
+    </div>
+    <div id="board"></div><div class="legend" id="legend"></div>
+  </div>
   <aside>
     <div id="sceneHelp" class="hint" style="display:none;margin:0 0 8px">
       イベントの場面（探索の3Dの盤面で、会話が始まるときの人の位置）を決めます。キャラをドラッグで動かし、向きは表で選びます。<br>
@@ -127,6 +134,14 @@ const TERRAIN = {
 
 // イベントの場面（探索の3Dの盤面の場面。配置表の exploration.states）。原作者 2026-10-05
 const SCENE_MAPS = { orcus_training_yard: "../unity-prototype/Assets/Data/Maps/orcus_training_yard.json" };
+const GROUNDS = { orcus_training_yard: "../unity-prototype/Assets/Art/Board3D/Ground/orcus_training_yard_ground.png" };   // 盤面の地面の1枚絵（マス全体）
+let groundImg = null;
+const sdImgs = {};
+function sdImage(id) {
+  const key = cfg.art[id] || id;
+  if (!sdImgs[key]) { const im = new Image(); im.onload = () => drawPreview(); im.src = SD + key + ".png"; sdImgs[key] = im; }
+  return sdImgs[key];
+}
 const PEOPLE = { young_arshe: "アルシェ", young_karima: "カリマ", gunter: "ギュンター", carrie: "キャリー", henry: "ヘンリー", arshe: "アルシェ" };
 const FACES = { north: "↑", south: "↓", east: "→", west: "←" };
 let sceneMode = false, sceneInfo = null;   // { map, state, title }
@@ -180,6 +195,7 @@ async function openBattle(id) {
 }
 
 function showMode() {
+  $("previewWrap").style.display = sceneMode ? "" : "none";
   $("battleOnly").style.display = sceneMode ? "none" : "";
   $("sceneHelp").style.display = sceneMode ? "" : "none";
   $("reset").textContent = sceneMode ? "Unity に入っている位置に戻す" : "今の battleDefinitions.js に戻す";
@@ -197,6 +213,8 @@ async function openScene(value) {
   area = { x: 0, y: 0, w: layout.columns, h: layout.rows };
   areaOrig = { ...area };
   units = sceneUnits(st);
+  groundImg = null;
+  if (GROUNDS[mapId]) { const im = new Image(); im.onload = () => { groundImg = im; drawBoard(); render(); }; im.src = GROUNDS[mapId]; }
   const draft = loadDraft(value);
   if (draft?.units) for (const d of draft.units) { const u = units.find(v => v.key === d.key); if (u) { u.x = d.x; u.y = d.y; if (d.facing) u.facing = d.facing; } }
   drawBoard();
@@ -213,15 +231,51 @@ function sceneUnits(st) {
  * 会話のときの画面の目安。Unity の探索のカメラ（斜め30°・正面・寄りの大きさ4・画面 844×390）と同じ決め方
  * （ExploreController.FrameSpeakers・Board3DView.FocusOnPointsBelow）: みんなのまん中を画面の高さ 0.3、いちばん奥の人の足元は 0.38 より下
  */
-function drawScreenGuide() {
-  $("board").querySelector("#screenGuide")?.remove();
-  if (!sceneMode || !$("guideOn").checked || !units.length) return;
-  const rowsTall = 16, colsWide = 8 * 844 / 390;          // 画面に入るマス（縦は 正投影の高さ8 ÷ sin30°）
+const ROWS_TALL = 16, COLS_WIDE = 8 * 844 / 390;   // 画面に入るマス（縦は 正投影の高さ8 ÷ sin30°）
+/** 会話の画面に入る範囲（盤面のマスの座標。左上と幅・高さ） */
+function screenFrame() {
   const cx = units.reduce((a, u) => a + u.x + 0.5, 0) / units.length, cy = units.reduce((a, u) => a + u.y + 0.5, 0) / units.length;
   const ahead = Math.max(...units.map(u => cy - (u.y + 0.5))), behind = Math.min(...units.map(u => cy - (u.y + 0.5)));
-  let vy = Math.min(0.3, 0.38 - ahead / rowsTall);
-  vy = Math.max(vy, 0.04 - behind / rowsTall);
-  const top = cy - (1 - vy) * rowsTall, left = cx - colsWide / 2;
+  let vy = Math.min(0.3, 0.38 - ahead / ROWS_TALL);
+  vy = Math.max(vy, 0.04 - behind / ROWS_TALL);
+  return { left: cx - COLS_WIDE / 2, top: cy - (1 - vy) * ROWS_TALL };
+}
+
+/** 会話の画面の見本: 地面の絵を斜め30°に見た形（縦が半分）で描き、人の SD を立て、台詞の枠と立ち絵の所を重ねる */
+function drawPreview() {
+  const cv = $("preview");
+  if (!sceneMode || !cv || !units.length) return;
+  const ctx = cv.getContext("2d");
+  ctx.fillStyle = "#0b0a10"; ctx.fillRect(0, 0, 844, 390);
+  const { left, top } = screenFrame();
+  const px = 844 / COLS_WIDE, py = 390 / ROWS_TALL;   // 1マスが画面で何点か（横・縦）
+  if (groundImg) {
+    const gx = groundImg.naturalWidth / layout.columns, gy = groundImg.naturalHeight / layout.rows;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(groundImg, 0, 0, groundImg.naturalWidth, groundImg.naturalHeight, -left * px, -top * py, layout.columns * px, layout.rows * py);
+  }
+  // 人（奥から）: 足元はマスの真ん中、高さ 1.25 マス × cos30°
+  const h = 1.25 * 0.866 * px;
+  for (const u of [...units].sort((a, b) => a.y - b.y)) {
+    const im = sdImage(u.id);
+    const fx = (u.x + 0.5 - left) * px, fy = (u.y + 0.5 - top) * py;
+    ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.beginPath(); ctx.ellipse(fx, fy, px * 0.3, py * 0.25, 0, 0, Math.PI * 2); ctx.fill();
+    if (im.complete && im.naturalWidth) { const w = im.naturalWidth * h / im.naturalHeight; ctx.drawImage(im, fx - w / 2, fy - h, w, h); }
+  }
+  // 台詞の枠（3行の大きさ）と立ち絵の所
+  ctx.fillStyle = "rgba(120,60,140,.18)"; ctx.fillRect(0, 66, 844 * 0.27, 324); ctx.fillRect(844 * 0.73, 66, 844 * 0.27, 324);
+  ctx.fillStyle = "#ecd8ff"; ctx.font = "12px sans-serif"; ctx.fillText("立ち絵（左）", 12, 84); ctx.fillText("立ち絵（右）", 844 * 0.73 + 12, 84);
+  ctx.fillStyle = "rgba(19,29,52,.82)"; ctx.strokeStyle = "#d7d7e0"; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.roundRect(218, 60, 408, 110, 22); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = "#e6e7ef"; ctx.font = "15px serif"; ctx.fillText("台詞の枠（3行のとき）", 242, 100);
+}
+
+function drawScreenGuide() {
+  $("board").querySelector("#screenGuide")?.remove();
+  drawPreview();
+  if (!sceneMode || !$("guideOn").checked || !units.length) return;
+  const rowsTall = ROWS_TALL, colsWide = COLS_WIDE;
+  const { left, top } = screenFrame();
   const g = document.createElement("div");
   g.id = "screenGuide";
   Object.assign(g.style, { left: left * CELL + "px", top: top * CELL + "px", width: colsWide * CELL + "px", height: rowsTall * CELL + "px" });
@@ -238,12 +292,14 @@ function drawBoard() {
   const board = $("board");
   board.innerHTML = "";
   board.style.gridTemplateColumns = `repeat(${layout.columns}, ${CELL}px)`;
+  board.style.background = sceneMode && groundImg ? `url("${groundImg.src}") 0 0 / ${layout.columns * CELL}px ${layout.rows * CELL}px no-repeat` : "";
   const props = new Map((layout.props || []).map(p => [`${p.x},${p.y}`, p.kind]));
   for (let y = 0; y < layout.rows; y++) for (let x = 0; x < layout.columns; x++) {
     const ch = layout.terrain[y]?.[x] || "W";
     const cell = document.createElement("div");
     cell.className = "cell";
     cell.style.background = (TERRAIN[ch] || ["#555"])[0];
+    if (sceneMode && groundImg) cell.style.background = (TERRAIN[ch] || ["#555"])[0] + "40";   // 地面の絵が見えるよう薄く
     cell.dataset.x = x; cell.dataset.y = y;
     cell.dataset.info = `${(TERRAIN[ch] || [, ch])[1]}${props.has(`${x},${y}`) ? "・" + props.get(`${x},${y}`) : ""}`;
     if (props.has(`${x},${y}`)) { const p = document.createElement("i"); p.className = "prop"; cell.appendChild(p); }
