@@ -16,7 +16,7 @@ namespace Srpg.Battle
     /// アルシェは画面の端の ◀ ▶（押している間）かキーボードの ← → で歩く。カメラはアルシェに付いていく。
     /// 会話・扉はまだない（次の段）
     /// </summary>
-    public class Corridor2DView : MonoBehaviour
+    public partial class Corridor2DView : MonoBehaviour
     {
         [Serializable]
         public class CorridorLayer
@@ -104,6 +104,7 @@ namespace Srpg.Battle
         public void Build()
         {
             data = JsonUtility.FromJson<CorridorFile>(corridorJson.text);
+            LoadLook();   // 見え方のプリセット（空の差し替え・効果。Corridor2DView.Effects）
             foreach (Transform child in transform) DestroyImmediate(child.gameObject);
             built.Clear();
             moduleHome.Clear();
@@ -150,6 +151,7 @@ namespace Srpg.Battle
                         // 大きさは下の端と横の真ん中をそろえて変える
                         float w2 = mw * sc, h2 = layer.height * sc;
                         float left = cursor + mod.dx - (w2 - mw) / 2f, top = layer.bottom - h2 + mod.dy;
+                        moduleRects.Add((left, top, w2, h2, mw));   // 光の筋の位置（Effects）
                         if (mod.shadeTop > 0f)
                         {
                             var shade = Place(NewRect(mod.file + " 天井", box), left, top, w2, mod.shadeTop).gameObject.AddComponent<RawImage>();
@@ -171,6 +173,8 @@ namespace Srpg.Battle
                     foreach (var f in fronts) f.transform.SetAsLastSibling();
                     foreach (var b in backs) b.transform.SetAsFirstSibling();
                     built.Add((layer, box, tiles, 0f));
+                    modulesLayer = layer;
+                    BuildShafts(root);   // 光の筋は回廊のすぐ手前（アルシェより奥）
                     continue;
                 }
                 if (layer.kind == "floor")
@@ -218,6 +222,10 @@ namespace Srpg.Battle
             heroRect.anchorMin = heroRect.anchorMax = new Vector2(0f, 1f);
             heroRect.pivot = new Vector2(0.5f, 0f);
             heroRect.sizeDelta = new Vector2(heroW, data.heroHeight);
+            // 見え方の効果: 層とアルシェ、四隅のヴィネット（画面いっぱい。◀ ▶ などのボタンより奥）
+            ApplyLayerEffects();
+            ApplyCharaEffects(heroImage);
+            BuildVignette(canvasObject.transform);
 
             // 画面の端の ◀ ▶（押している間歩く。探索の見本 2026-10-02 の形）
             WalkButton(canvasObject.transform, true);
@@ -382,6 +390,7 @@ namespace Srpg.Battle
                 rt.localScale = new Vector3(faceLeft ? -1f : 1f, 1f, 1f);
             }
             if (toast != null && toast.gameObject.activeSelf && Application.isPlaying && Time.unscaledTime > toastUntil) toast.gameObject.SetActive(false);
+            ShiftShafts();
             if (heroRect != null)
             {
                 float bob = walkTime > 0f ? Mathf.Abs(Mathf.Sin(walkTime * 9f)) * 3f : 0f;   // 歩くときの小さな上下
@@ -424,6 +433,7 @@ namespace Srpg.Battle
                     tag.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0f, 0f, 0.9f);
                 }
                 if (heroRect != null) rt.SetSiblingIndex(heroRect.GetSiblingIndex());   // アルシェの1つ奥
+                ApplyCharaEffects(img);
                 people.Add((rt, img, x));
             }
             Apply();

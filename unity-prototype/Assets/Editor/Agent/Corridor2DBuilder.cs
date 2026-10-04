@@ -23,6 +23,41 @@ namespace Srpg.EditorAgent
         private const string MapPath = "Assets/Data/Maps/orcus_corridor.json";
         private const string ScenarioPath = "Assets/Data/Scenario/prologue_1_1.json";
 
+        private const string LookDir = "Assets/Data/Looks";
+        private const string SkyDir = "Assets/Art/Sky";
+
+        [Serializable] private class CorridorLook { public string look; }
+        [Serializable] private class LookSky { public string sky; }
+
+        /// <summary>見え方のプリセットが使う空の絵を、背景/空/ から Assets/Art/Sky へ写す（使う空だけ。読み込みを軽く）</summary>
+        private static string[] ImportLookSkies()
+        {
+            Directory.CreateDirectory(SkyDir);
+            var paths = new System.Collections.Generic.List<string>();
+            foreach (var file in Directory.GetFiles(LookDir, "*.json"))
+            {
+                var sky = JsonUtility.FromJson<LookSky>(File.ReadAllText(file))?.sky;
+                if (string.IsNullOrEmpty(sky)) continue;
+                string source = Path.Combine("..", sky.TrimStart('/'));
+                string dest = $"{SkyDir}/{Path.GetFileName(sky)}";
+                if (!File.Exists(source)) { Debug.LogWarning($"[Corridor2DBuilder] 空の絵がない: {source}"); continue; }
+                if (!File.Exists(dest) || !File.ReadAllBytes(source).AsSpan().SequenceEqual(File.ReadAllBytes(dest)))
+                {
+                    File.Copy(source, dest, true);
+                    AssetDatabase.ImportAsset(dest, ImportAssetOptions.ForceSynchronousImport);
+                    var importer = (TextureImporter)AssetImporter.GetAtPath(dest);
+                    importer.textureType = TextureImporterType.Default;
+                    importer.mipmapEnabled = false;
+                    importer.wrapMode = TextureWrapMode.Clamp;
+                    importer.maxTextureSize = 2048;
+                    importer.textureCompression = TextureImporterCompression.Compressed;
+                    importer.SaveAndReimport();
+                }
+                if (!paths.Contains(dest)) paths.Add(dest);
+            }
+            return paths.ToArray();
+        }
+
         [MenuItem("Srpg/2D回廊（試し）を作る")]
         public static void BuildAll()
         {
@@ -50,7 +85,12 @@ namespace Srpg.EditorAgent
                     importer.textureCompression = TextureImporterCompression.Compressed;
                     importer.SaveAndReimport();
                 }
-                var textures = Directory.GetFiles(ArtDir, "*.png")
+                // 見え方のプリセット（場所のデータの look。空・効果。2026-10-04）と、その空の絵（背景/空/ から写す）
+                var corridorData = JsonUtility.FromJson<CorridorLook>(File.ReadAllText(DataPath));
+                string lookPath = string.IsNullOrEmpty(corridorData?.look) ? null : $"{LookDir}/{corridorData.look}.json";
+                var lookAsset = lookPath != null ? AssetDatabase.LoadAssetAtPath<TextAsset>(lookPath) : null;
+                var skyPaths = ImportLookSkies();
+                var textures = Directory.GetFiles(ArtDir, "*.png").Concat(skyPaths)
                     .Select(p => AssetDatabase.LoadAssetAtPath<Texture2D>(p.Replace(Path.DirectorySeparatorChar, '/'))).Where(t => t != null).ToArray();
 
                 var go = new GameObject("Corridor2D");
@@ -59,6 +99,9 @@ namespace Srpg.EditorAgent
                 so.FindProperty("corridorJson").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(DataPath);
                 so.FindProperty("hero").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Texture2D>(HeroPath);
                 so.FindProperty("targetCamera").objectReferenceValue = camera;
+                so.FindProperty("lookJson").objectReferenceValue = lookAsset;
+                so.FindProperty("layerShader").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Shader>("Assets/Shaders/Corridor2DLayer.shader");
+                so.FindProperty("glowShader").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Shader>("Assets/Shaders/Corridor2DGlow.shader");
                 var texProp = so.FindProperty("textures");
                 texProp.arraySize = textures.Length;
                 for (int i = 0; i < textures.Length; i++) texProp.GetArrayElementAtIndex(i).objectReferenceValue = textures[i];
