@@ -93,6 +93,11 @@ namespace Srpg.Battle
             view.Tapped -= OnTap;
             view.Tapped += OnTap;
             if (dialogue != null) { dialogue.OnItem -= GotItem; dialogue.OnItem += GotItem; }
+            if (dialogue != null)
+            {
+                dialogue.OnDirection -= OnDirection; dialogue.OnDirection += OnDirection;
+                dialogue.Closed -= OnTalkClosed; dialogue.Closed += OnTalkClosed;
+            }
             if (ExploreHandoff.Pending2D && PlaceAsset(ExploreHandoff.Place2D) != null)
             {
                 // 戦闘の場所から戻ってきた: 流した会話・持ち物を引き継ぎ、その場所の指定の場面から
@@ -179,6 +184,30 @@ namespace Srpg.Battle
         {
             for (float t = 0f; t < seconds; t += Time.unscaledDeltaTime) { view.Darkness = 1f - t / seconds; yield return null; }
             view.Darkness = 0f;
+        }
+
+        // ── シナリオの演出（StageDirection。原作者 2026-10-05: 指示があるところは自動で、なければふつうのカメラ） ──
+        private bool directedDark;
+
+        private void OnDirection(string text)
+        {
+            var shot = StageDirection.Parse(text);
+            if (shot.any)
+            {
+                var now = view.Shot;
+                if (shot.reset) view.SetShot(0f, 0f, 1f);
+                else view.SetShot(now.x + shot.dx, now.y + shot.dy, shot.zoom > 0f ? shot.zoom : now.z);
+            }
+            if (shot.dark == true) { view.Darkness = 1f; directedDark = true; }
+            else if (shot.dark == false) { view.Darkness = 0f; directedDark = false; }
+        }
+
+        /// <summary>会話が終わったら、演出のカメラと暗転をもどす（次の会話はふつうのカメラから）</summary>
+        private void OnTalkClosed()
+        {
+            if (view == null) return;
+            if (view.Shot != new Vector3(0f, 0f, 1f)) view.SetShot(0f, 0f, 1f);
+            if (directedDark) { view.Darkness = 0f; directedDark = false; }
         }
 
         private void OnViewRebuilt()

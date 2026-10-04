@@ -51,6 +51,11 @@ namespace Srpg.Battle
         private Action onEnd;
 
         public event Action<string> OnItem;
+        /// <summary>台詞を出すたびに、その行のト書き（備考・ゲーム処理と、前の制作メモ）を渡す。演出の指示を読む（StageDirection。原作者 2026-10-05）</summary>
+        public event Action<string> OnDirection;
+        /// <summary>会話を閉じた（ブロックの終わり）。演出をもどすのに使う</summary>
+        public event Action Closed;
+        private string[] directions = Array.Empty<string>();
         public Font RegularFont => regularFont;
         public Font BoldFont => boldFont;
         private float holdStart = -1f, lastFast;
@@ -66,6 +71,16 @@ namespace Srpg.Battle
             if (canvas == null) Build();
             block = scenarioBlock;
             lines = scenarioBlock?.Shown.ToArray() ?? Array.Empty<ScenarioLine>();
+            // 出す行ごとのト書き: その行の備考・ゲーム処理と、すぐ前の制作メモ（出さない行）
+            var dirs = new List<string>();
+            var memo = new System.Text.StringBuilder();
+            foreach (var l in scenarioBlock?.lines ?? Array.Empty<ScenarioLine>())
+            {
+                if (l.type == "memo") { memo.Append(l.text).Append(' ').Append(l.note).Append(' '); continue; }
+                dirs.Add(memo + " " + l.note + " " + l.process);
+                memo.Clear();
+            }
+            directions = dirs.ToArray();
             onEnd = onFinished;
             index = -1;
             stage = new DialogueCast.Stage();
@@ -88,6 +103,7 @@ namespace Srpg.Battle
             if (index >= lines.Length) { Close(); return; }
             var line = lines[index];
             stage.Speak(line.type == "line" ? line.speaker : null);
+            if (index < directions.Length && !string.IsNullOrWhiteSpace(directions[index])) OnDirection?.Invoke(directions[index]);
             ShowLine(line);
             if (!string.IsNullOrEmpty(line.item)) OnItem?.Invoke(line.item);
         }
@@ -104,6 +120,7 @@ namespace Srpg.Battle
             if (root != null) root.gameObject.SetActive(false);
             var done = onEnd;
             onEnd = null;
+            Closed?.Invoke();
             done?.Invoke();
         }
 

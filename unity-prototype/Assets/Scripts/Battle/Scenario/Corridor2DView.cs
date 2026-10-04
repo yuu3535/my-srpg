@@ -119,6 +119,16 @@ namespace Srpg.Battle
         private Image darkImage;
         private float zoomT;
         private const float ZoomScale = 1.25f;
+        // シナリオの演出のカメラ（StageDirection。見上げる・横を見る・寄る・引く）。目標へなめらかに動く（0.6秒ほど）
+        private Vector3 shotTarget = new Vector3(0f, 0f, 1f), shotNow = new Vector3(0f, 0f, 1f);   // x, y＝ずらし、z＝大きさの倍率
+        /// <summary>演出のカメラの目標（ずらし x・y と大きさの倍率）。immediate なら動かさずに切り替える</summary>
+        public void SetShot(float dx, float dy, float zoom, bool immediate = false)
+        {
+            shotTarget = new Vector3(dx, dy, zoom > 0f ? zoom : 1f);
+            if (immediate || !Application.isPlaying) shotNow = shotTarget;
+            ApplyZoom();
+        }
+        public Vector3 Shot => shotTarget;
         public float Length => data?.length ?? 0f;
 
         // ── 探索（Explore2DController から使う。2026-10-04） ──
@@ -337,6 +347,12 @@ namespace Srpg.Battle
             if (data == null) return;
             float zt = TalkZoom ? 1f : 0f;
             zoomT = zt;   // 動かさずに切り替える（ゆっくりは画面酔い、速くはシュール。原作者 2026-10-04: アニメーションなし）
+            if (shotNow != shotTarget)
+            {
+                // 演出のカメラは、見上げる・目を向ける動きなので、なめらかに（速く入って静かに止まる）
+                shotNow = Vector3.MoveTowards(Vector3.Lerp(shotNow, shotTarget, 1f - Mathf.Exp(-7f * Time.unscaledDeltaTime)), shotTarget, 0.5f * Time.unscaledDeltaTime);
+                ApplyZoom();
+            }
             int dir = Locked || scriptedWalk ? 0 : holding;
             var kb = Keyboard.current;
             if (kb != null && !Locked && !scriptedWalk)
@@ -645,9 +661,10 @@ namespace Srpg.Battle
             if (root == null) return;
             if (!Application.isPlaying) zoomT = TalkZoom ? 1f : 0f;   // 確認の画像では待たずに寄る
             float e = zoomT * zoomT * (3f - 2f * zoomT);   // なめらかに
-            float baseZoom = BaseZoom;
+            float baseZoom = BaseZoom * shotNow.z;
             var cam = Cam;
-            if (!Mathf.Approximately(baseZoom, 1f) || (cam != null && (cam.x != 0f || cam.y != 0f)))
+            float camX = (cam?.x ?? 0f) + shotNow.x, camY = (cam?.y ?? 0f) + shotNow.y;
+            if (!Mathf.Approximately(baseZoom, 1f) || camX != 0f || camY != 0f)
             {
                 // 場面のカメラ（引き・寄り・ずらし。原作者 2026-10-05）: 画面の真ん中を中心に大きさを変え、見る所をずらす。
                 // 会話の寄り（TalkZoom）は、その上からさらに寄る。絵の外（黒）が見えるかどうかは場面の作り方に任せる
@@ -656,7 +673,7 @@ namespace Srpg.Battle
                 // 会話の寄りは、話す所（足元の少し上）が画面の同じ所に残るように寄る
                 var focus = new Vector2(fx - ScreenW / 2f, ScreenH / 2f - fy);
                 root.localScale = new Vector3(sc, sc, 1f);
-                root.anchoredPosition = new Vector2(-(cam?.x ?? 0f), -(cam?.y ?? 0f)) * baseZoom + focus * (baseZoom - sc);
+                root.anchoredPosition = new Vector2(-camX, -camY) * baseZoom + focus * (baseZoom - sc);
                 return;
             }
             float s = Mathf.Lerp(1f, ZoomScale, e);

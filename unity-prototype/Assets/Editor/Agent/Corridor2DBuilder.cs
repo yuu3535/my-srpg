@@ -216,6 +216,12 @@ namespace Srpg.EditorAgent
                 CloseAll();
                 explore.StepForTest(view.PlayerX);
                 Shot("room_noon", "昼の自室（御伽噺）");
+                // シナリオの演出のカメラ（StageDirection）: 見上げる・右を見る
+                view.SetShot(0f, StageDirection.LookUp, 1f, true);
+                Shot("direction_look_up", "演出: カメラ：空を見上げる");
+                view.SetShot(StageDirection.LookSide, 0f, 1f, true);
+                Shot("direction_look_right", "演出: カメラ：右を見る");
+                view.SetShot(0f, 0f, 1f, true);
                 camera.targetTexture = null;
                 foreach (Transform child in go.transform) UnityEngine.Object.DestroyImmediate(child.gameObject);
                 foreach (Transform child in dialogue.transform) UnityEngine.Object.DestroyImmediate(child.gameObject);
