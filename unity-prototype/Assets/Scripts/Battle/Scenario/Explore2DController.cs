@@ -22,6 +22,8 @@ namespace Srpg.Battle
             public float w;   // 範囲（talkArea）の幅。0 なら配置表のマスから
         }
 
+        [Serializable] public class StateLook { public string state, look; }
+
         [Serializable]
         public class Explore2D
         {
@@ -30,6 +32,7 @@ namespace Srpg.Battle
             public float from, to;        // この値が左の端（歩ける範囲の左）・右の端
             public string state;          // 使う場面（空なら最初）
             public Spot[] spots;
+            public StateLook[] looks;     // 場面ごとの見え方（Assets/Data/Looks/<look>.json）。なければ場所のふだんの見え方
         }
 
         [Serializable] private class CorridorExplore { public Explore2D explore; }
@@ -61,6 +64,13 @@ namespace Srpg.Battle
         private readonly List<string> items = new List<string>();
         private readonly Dictionary<string, float> personX = new Dictionary<string, float>();
         private bool starting;
+        private List<(string, string, Texture2D, float)> peopleList = new List<(string, string, Texture2D, float)>();
+
+        /// <summary>見え方を切り替える（シナリオの場面から。人も並べ直す）</summary>
+        public void SetLook(string name)
+        {
+            if (view != null && view.SetLook(name)) view.SetPeople(peopleList);
+        }
 
         public MapState State { get; private set; }
         public IReadOnlyCollection<string> Seen => seen;
@@ -82,6 +92,10 @@ namespace Srpg.Battle
             if (dialogue != null) { dialogue.OnItem -= GotItem; dialogue.OnItem += GotItem; }
 
             // 人を並べる（アルシェ以外）
+            // 場面の見え方（空・効果）。変わるときは組み立て直すので、人を並べる前に
+            var stateLook = ex.looks?.FirstOrDefault(l => l.state == State?.id)?.look;
+            if (!string.IsNullOrEmpty(stateLook)) view.SetLook(stateLook);
+
             personX.Clear();
             var list = new List<(string, string, Texture2D, float)>();
             foreach (var p in State?.people ?? Array.Empty<MapPerson>())
@@ -92,6 +106,7 @@ namespace Srpg.Battle
                 string name = !string.IsNullOrEmpty(p.name) ? p.name : People.TryGetValue(p.id, out var w) ? w.name : p.id;
                 list.Add((p.id, name, sprites.FirstOrDefault(t => t != null && t.name == token), x));
             }
+            peopleList = list;
             view.SetPeople(list);
             view.PlayerX = State?.player != null ? X("player", State.player.Cell) : view.WalkMinX;
 

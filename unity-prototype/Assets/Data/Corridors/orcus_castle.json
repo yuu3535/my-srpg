@@ -198,6 +198,12 @@
     "x": 1537,
     "w": 0
    }
+  ],
+  "looks": [
+   {
+    "state": "prologue_1_1_corridor",
+    "look": "orcus_castle_morning"
+   }
   ]
  },
  "look": "orcus_castle_morning"

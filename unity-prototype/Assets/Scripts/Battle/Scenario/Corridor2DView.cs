@@ -108,6 +108,8 @@ namespace Srpg.Battle
             foreach (Transform child in transform) DestroyImmediate(child.gameObject);
             built.Clear();
             moduleHome.Clear();
+            walkButtons.Clear();
+            people.Clear();   // 人は組み立て直したあとに SetPeople で並べ直す（Explore2DController）
             var canvasObject = new GameObject("Corridor", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             canvasObject.transform.SetParent(transform, false);
             var canvas = canvasObject.GetComponent<Canvas>();

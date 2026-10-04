@@ -1,0 +1,60 @@
+{
+ "look": "orcus_castle_dusk",
+ "place": "orcus_castle",
+ "title": "オルクス城の回廊・夕方（仮。総合担当が決まりで作った案。原作者の確認待ち）",
+ "sky": "背景/空/夕方.png",
+ "effects": {
+  "haze": 0.3,
+  "hazeColor": "#f2c49a",
+  "dof": 1.3,
+  "vignette": 0.34,
+  "vignetteColor": "#1c2340",
+  "vignetteSize": 0.55,
+  "bright": 0.98,
+  "contrast": 1.1,
+  "saturate": 0.95,
+  "temp": 0.3,
+  "shafts": 0.3,
+  "shaftColor": "#ffb27a",
+  "shaftAngle": 30,
+  "shaftY": -60,
+  "shaftX": -82,
+  "shaftWidth": 1.1,
+  "shaftSoft": 8,
+  "shaftGlow": 0.4,
+  "shaftBlend": "screen",
+  "ovl": 0.18,
+  "ovlTop": "#ffb070",
+  "ovlBottom": "#3a3060",
+  "ovlMode": "soft-light",
+  "chara": {
+   "haze": 0,
+   "blur": 0,
+   "bright": 0.97,
+   "tint": 0.1,
+   "tintColor": "#ff9a5a"
+  }
+ },
+ "layers": [
+  {
+   "name": "空",
+   "haze": 0.02,
+   "blur": 0.9
+  },
+  {
+   "name": "遠景（町と山。右の端に3枚目を反転して重ねた・原作者の方法）",
+   "haze": 0.34,
+   "blur": 0.2
+  },
+  {
+   "name": "庭",
+   "haze": 0.12,
+   "blur": 0.9
+  },
+  {
+   "name": "床（真上からの素材を帯に）",
+   "haze": 0,
+   "blur": 0.6
+  }
+ ]
+}

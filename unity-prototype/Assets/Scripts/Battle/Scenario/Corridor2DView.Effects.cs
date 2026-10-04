@@ -42,7 +42,8 @@ namespace Srpg.Battle
             public LookLayer[] layers;
         }
 
-        [SerializeField] private TextAsset lookJson;          // 見え方のプリセット（なければ効果なし）
+        [SerializeField] private TextAsset lookJson;          // 見え方のプリセット（なければ効果なし）。場所のふだんの見え方
+        [SerializeField] private TextAsset[] lookJsons = Array.Empty<TextAsset>();   // 切り替えられる見え方（Assets/Data/Looks の全部）
         [SerializeField] private Shader layerShader;          // Srpg/Corridor2DLayer
         [SerializeField] private Shader glowShader;           // Srpg/Corridor2DGlow
 
@@ -55,6 +56,25 @@ namespace Srpg.Battle
         private static readonly string[] BlendModes = { "overlay", "soft-light", "screen", "plus-lighter", "multiply", "color", "hard-light", "color-dodge" };
 
         public string LookName => look?.look;
+
+        /// <summary>
+        /// 見え方を切り替える（シーンごと。docs/10-design/map/SIDE_SCROLL_2D_LOOK_PRESETS_2026-10-04.md §1）。
+        /// 空の絵と効果が変わるので、組み立て直す（アルシェの位置はそのまま。人は呼んだ側で並べ直す）。見つからなければ何もしない
+        /// </summary>
+        public bool SetLook(string name)
+        {
+            if (string.IsNullOrEmpty(name) || name == LookName) return false;
+            var asset = lookJsons.FirstOrDefault(t => t != null && t.name == name);
+            if (asset == null) { Debug.LogWarning($"[Corridor2DView] 見え方がない: {name}"); return false; }
+            lookJson = asset;
+            float x = playerX;
+            bool left = facingLeft;
+            Build();
+            playerX = x;
+            facingLeft = left;
+            Apply();
+            return true;
+        }
         private bool EffectsOn => look != null && look.effects != null && look.effects.on && layerShader != null;
 
         /// <summary>プリセットを読み、空の絵を差し替える（層を組み立てる前に呼ぶ）</summary>

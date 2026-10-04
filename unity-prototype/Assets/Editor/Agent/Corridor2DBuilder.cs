@@ -100,6 +100,10 @@ namespace Srpg.EditorAgent
                 so.FindProperty("hero").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Texture2D>(HeroPath);
                 so.FindProperty("targetCamera").objectReferenceValue = camera;
                 so.FindProperty("lookJson").objectReferenceValue = lookAsset;
+                var looks = Directory.GetFiles(LookDir, "*.json").Select(p => AssetDatabase.LoadAssetAtPath<TextAsset>(p.Replace(Path.DirectorySeparatorChar, '/'))).Where(t => t != null).ToArray();
+                var looksProp = so.FindProperty("lookJsons");
+                looksProp.arraySize = looks.Length;
+                for (int i = 0; i < looks.Length; i++) looksProp.GetArrayElementAtIndex(i).objectReferenceValue = looks[i];
                 so.FindProperty("layerShader").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Shader>("Assets/Shaders/Corridor2DLayer.shader");
                 so.FindProperty("glowShader").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Shader>("Assets/Shaders/Corridor2DGlow.shader");
                 var texProp = so.FindProperty("textures");
@@ -167,6 +171,13 @@ namespace Srpg.EditorAgent
                 explore.StepForTest(explore.PersonX("henry") - 90f);
                 Shot("explore_henry", "ヘンリーの近く");
                 dialogue.Close();
+                // 見え方の切り替え（ほかのプリセットで、同じ所を撮る）
+                foreach (var other in looks.Where(t => t.name != corridorData.look))
+                {
+                    explore.SetLook(other.name);
+                    Shot("look_" + other.name, $"見え方 {other.name}");
+                }
+                if (!string.IsNullOrEmpty(corridorData.look)) explore.SetLook(corridorData.look);
                 camera.targetTexture = null;
                 foreach (Transform child in go.transform) UnityEngine.Object.DestroyImmediate(child.gameObject);
                 foreach (Transform child in dialogue.transform) UnityEngine.Object.DestroyImmediate(child.gameObject);
