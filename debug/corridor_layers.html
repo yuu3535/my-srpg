@@ -78,7 +78,7 @@
   <label>場所 <select id="place"></select></label>
   <button id="newPlace" title="新しい場所を足す（空・遠景・中景・床・モジュールのひな形から始める）">場所を足す</button>
   <label>素材のフォルダ <input id="folder" type="text" value="背景/オルクス城回廊横スクロール/採用候補/"></label>
-  <button id="reload">読み込み直す</button>
+  <button id="reload" title="素材のフォルダと 背景/ の中の絵を読み直す（新しく置いた絵を出す）">読み込み直す</button>
   <button id="add">層を足す</button>
   <button id="copy">コピー</button>
   <button id="reset">はじめの値に戻す</button>
@@ -223,6 +223,28 @@ async function listSkies() {
   } catch { skyFiles = []; }
 }
 const skyLabel = f => f.startsWith(SKY_DIR) ? `空／${f.slice(SKY_DIR.length)}` : f;
+// 背景/ の中の絵を全部（フォルダごと）。ChatGPT・Work で作った素材を差し替えて、雰囲気に合うか見比べる（原作者 2026-10-04）
+const BG_DIR = "/背景/";
+let bgGroups = [];   // [{ folder: "/背景/空/", files: ["/背景/空/朝焼け.png", …] }]
+async function listBackgrounds() {
+  const groups = [];
+  async function walk(dir, depth) {
+    let html;
+    try { html = await (await fetch(encodeURI(dir), { cache: "no-store" })).text(); } catch { return; }
+    const hrefs = [...html.matchAll(/href="([^"?#]+)"/gi)].map(m => decodeURIComponent(m[1])).filter(h => !h.startsWith("/") && !h.startsWith(".."));
+    const images = hrefs.filter(h => /\.(png|webp|jpe?g)$/i.test(h)).map(h => dir + h).sort();
+    if (images.length) groups.push({ folder: dir, files: images });
+    if (depth < 4) for (const sub of hrefs.filter(h => h.endsWith("/"))) await walk(dir + sub, depth + 1);
+  }
+  await walk(BG_DIR, 0);
+  bgGroups = groups;
+}
+/** 背景/ の絵を、フォルダごとのまとまりにした選択肢（今の場所のフォルダは上に出しているので除く） */
+function bgOptions(selected) {
+  const here = folderUrl();
+  return bgGroups.filter(g => g.folder !== here).map(g => `<optgroup label="${g.folder.slice(1)}">`
+    + g.files.map(f => `<option value="${f}" ${f === selected ? "selected" : ""}>${f.slice(g.folder.length)}</option>`).join("") + "</optgroup>").join("");
+}
 function size(file) {
   if (!file) return Promise.resolve(null);
   if (sizes[file]) return Promise.resolve(sizes[file]);
@@ -658,7 +680,7 @@ function cards() {
       L.modules.forEach((mod, m) => {
         const row = document.createElement("div");
         row.className = "modRow";
-        row.innerHTML = `<select>${files.map(f => `<option ${f === mod.file ? "selected" : ""}>${f}</option>`).join("")}</select>`
+        row.innerHTML = `<select>${files.map(f => `<option ${f === mod.file ? "selected" : ""}>${f}</option>`).join("")}${bgOptions(mod.file)}</select>`
           + `<label>重ね <input type="number" value="${mod.overlap}" ${m === 0 ? "disabled" : ""}></label><label>上下 <input type="number" value="${mod.dy}"></label><button title="消す">×</button>`
           + `<label>左右 <input type="number" value="${mod.dx || 0}"></label><label>大きさ <input type="number" step="0.01" value="${mod.scale || 1}"></label><label title="絵の上からこの高さまで、後ろに暗い天井の色を敷く（端の上の三角から空が見えるとき）">天井 <input type="number" value="${mod.shadeTop || 0}"></label><label class="front"><input type="checkbox" ${mod.front ? "checked" : ""}> 手前</label>`;
         const [msel] = row.getElementsByTagName("select");
@@ -686,7 +708,7 @@ function cards() {
     }
     const sel = document.createElement("select");
     sel.innerHTML = `<option value="">（素材なし${L.kind === "floor" ? "・仮の縞" : ""}）</option>` + files.map(f => `<option ${f === L.file ? "selected" : ""}>${f}</option>`).join("")
-      + (L.kind === "image" && skyFiles.length ? `<optgroup label="背景/空/（時間帯・天気）">${skyFiles.map(f => `<option value="${f}" ${f === L.file ? "selected" : ""}>${skyLabel(f)}</option>`).join("")}</optgroup>` : "");
+      + bgOptions(L.file);
     sel.addEventListener("change", () => { L.file = sel.value; render(); });
     card.appendChild(sel);
     if (L.kind === "floor") {
@@ -759,7 +781,7 @@ $("copy").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText(exportText()); $("msg").textContent = "コピーしました。総合担当に貼ってください"; }
   catch { $("out").select(); document.execCommand("copy"); $("msg").textContent = "コピーしました（下の欄）"; }
 });
-$("reload").addEventListener("click", async () => { await listFiles(); cards(); render(); });
+$("reload").addEventListener("click", async () => { await listFiles(); await listBackgrounds(); cards(); render(); });
 
 (async () => {
   place = readJson(LAST_KEY, "orcus_castle");
@@ -770,6 +792,7 @@ $("reload").addEventListener("click", async () => { await listFiles(); cards(); 
   fit();
   await listFiles();
   await listSkies();
+  await listBackgrounds();
   cards();
   await render();
   if (ex) cards();   // 探索の配置は回廊の長さ（描いたあとに分かる）で決まるので、もう一度並べる
