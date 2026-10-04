@@ -179,7 +179,7 @@ let fx = clone(FX_DEFAULT);
 // Unity の Explore2DController と同じ決め方: 配置表（Assets/Data/Maps/<map>.json）のマスの1つの軸を、歩ける範囲の左から右へ並べる。spots で上書き
 let ex = null, walk = { min: 40, max: -40 }, exMap = null, exOn = true;
 const SD_DIR = "/unity-prototype/Assets/Art/SD/";
-const EX_PEOPLE = { young_arshe: ["young_arshe", "アルシェ"], young_karima: ["young_karima", "カリマ"], gunter: ["gunter", "ギュンター"], carrie: ["carrie", "キャリー"], henry: ["henry", "ヘンリー"] };
+const EX_PEOPLE = { young_arshe: ["young_arshe", "アルシェ"], young_karima: ["young_karima", "カリマ"], gunter: ["gunter", "ギュンター"], carrie: ["carrie_present", "キャリー"], henry: ["henry", "ヘンリー"] };
 async function loadExploreMap() {
   exMap = null;
   if (!ex?.map) return;

@@ -147,6 +147,57 @@
   "from": 20,
   "to": 0,
   "state": "",
-  "spots": []
+  "spots": [
+   {
+    "id": "servant_2",
+    "x": 956,
+    "w": 0
+   },
+   {
+    "id": "servant_1",
+    "x": 867,
+    "w": 0
+   },
+   {
+    "id": "servants_gossip",
+    "x": 910,
+    "w": 300
+   },
+   {
+    "id": "henry",
+    "x": 1350,
+    "w": 0
+   },
+   {
+    "id": "carrie",
+    "x": 477,
+    "w": 0
+   },
+   {
+    "id": "carrie_greet",
+    "x": 479,
+    "w": 300
+   },
+   {
+    "id": "henry_greet",
+    "x": 1350,
+    "w": 204
+   },
+   {
+    "id": "to_throne",
+    "x": 1662,
+    "w": 0
+   },
+   {
+    "id": "throne_door",
+    "x": 1661,
+    "w": 0
+   },
+   {
+    "id": "servant_3",
+    "x": 1537,
+    "w": 0
+   }
+  ]
  }
 }

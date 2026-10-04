@@ -47,8 +47,8 @@ namespace Srpg.Battle
             { "young_arshe", ("young_arshe", "アルシェ") },
             { "young_karima", ("young_karima", "カリマ") },
             { "gunter", ("gunter", "ギュンター") },
-            { "carrie", ("carrie", "キャリー") },
-            { "henry", ("henry", "ヘンリー") },
+            { "carrie", ("carrie_present", "キャリー") },   // キャリー(現代)（原作者 2026-10-04）
+            { "henry", ("henry", "ヘンリー") },             // ヘンリー(現代)
         };
 
         private const float TalkReach = 70f, InspectReach = 60f, ExitReach = 70f, StandOff = 52f;

@@ -22,7 +22,7 @@ NAMES = {
     "アルシェ": "young_arshe", "カリマ": "young_karima", "ギュンター": "gunter", "ベル": "bell",
     "リングホルム": "ringholm", "アルバス": "albas", "アルバス(魔物)": "albas_demon", "アン": "anne",
     "ウロボロスの双子・姉": "ouroboros_sister", "ウロボロスの双子・弟": "ouroboros_brother",
-    "キャリー(過去)": "carrie", "キャリー(現代)": "carrie_present", "フィロ": "philo", "ヴァルツ": "walz",
+    "キャリー(過去)": "carrie", "キャリー(現代)": "carrie_present", "ヘンリー(現代)": "henry", "フィロ": "philo", "ヴァルツ": "walz",
     "アルストロモブ将軍": "alstro_general", "アルストロモブ弓兵士": "alstro_archer",
     "アルストロモブ槍兵士": "alstro_spear_1", "アルストロモブ槍兵士1-2": "alstro_spear_2",
     "アルストロモブ槍兵士1-3": "alstro_spear_3", "アルストロモブ槍兵士1-4": "alstro_spear_4",

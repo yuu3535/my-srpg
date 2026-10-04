@@ -25,6 +25,7 @@ namespace Srpg.EditorAgent
             { "albas", "albas" },
             { "albas_rival", "albas_demon" },  // テスト戦闘の敵のアルバス（見分けやすいよう魔物の姿）
             { "carrie", "carrie_present" },    // 会話の立ち絵（メイド服）に合わせる（原作者 2026-10-01: 廊下は現代で大丈夫）
+            { "henry", "henry" },              // ヘンリー(現代)（原作者 2026-10-04）
             { "forest_guard", "alstro_spear_1" },
             { "dylan", "alstro_general" },
             { "herel", "alstro_mage_1" },
