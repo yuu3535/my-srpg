@@ -76,7 +76,7 @@ namespace Srpg.Battle
             map = mapJson != null ? JsonUtility.FromJson<MapLayoutFile>(mapJson.text) : null;
             scenario = scenarioJson != null ? JsonUtility.FromJson<ScenarioFile>(scenarioJson.text) : new ScenarioFile();
             if (ex == null || map == null || view == null) { enabled = false; return; }
-            if (view.Length <= 0f) view.Build();
+            if (view.Length <= 0f) view.Build();   // まだなら組み立てる（Corridor2DView.Start は組み立て済みなら何もしない）
             view.Controlled = true;
             State = (!string.IsNullOrEmpty(ex.state) ? map.State(ex.state) : null) ?? map.states?.FirstOrDefault();
             if (dialogue != null) { dialogue.OnItem -= GotItem; dialogue.OnItem += GotItem; }

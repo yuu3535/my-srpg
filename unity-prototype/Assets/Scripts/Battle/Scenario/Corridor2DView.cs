@@ -98,7 +98,8 @@ namespace Srpg.Battle
         public float WalkMaxX => data.walkMax > 0f ? data.walkMax : data.length + Mathf.Min(data.walkMax, -40f);   // 負の値は右の端からの距離
         public float HeroHeight => data.heroHeight;
 
-        private void Start() => Build();
+        // 探索の仕組み（Explore2DController）が先に組み立てていたら、組み立て直さない（人が消えて、毎フレームの更新が止まっていた）
+        private void Start() { if (root == null) Build(); }
 
         public void Build()
         {
@@ -375,6 +376,7 @@ namespace Srpg.Battle
             // 人（アルシェのほうを向く）
             foreach (var (rt, img, x) in people)
             {
+                if (rt == null) continue;
                 rt.anchoredPosition = new Vector2(x - cameraX, -data.heroFeetY);
                 bool faceLeft = playerX < x && img != null;   // 名前の札（絵のない人）は裏返さない
                 rt.localScale = new Vector3(faceLeft ? -1f : 1f, 1f, 1f);
