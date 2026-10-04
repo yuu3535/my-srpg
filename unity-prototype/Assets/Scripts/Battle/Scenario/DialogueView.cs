@@ -163,7 +163,7 @@ namespace Srpg.Battle
                 if (portrait.texture != null) image.texture = portrait.texture;
                 bool speaking = who == stage.Speaker || (stage.Speaker == null && line.type != "line");
                 // 見本（採用版の会話UI）と同じ置き方: 左右の端の枠（幅 SlotWidth）の中に、頭が画面の上から PortraitTop の所に来るように
-                // 大きめに置き、下は画面の外へ（胸から上が見える）。2人目は1人目の内側で少し奥（小さく）。
+                // 大きめに置き、下は画面の外へ（胸から上が見える）。2人目は少し奥（小さく）。
                 // 台詞の枠（上の真ん中）の下に頭が入らないように（原作者 2026-10-04）
                 float height = (ScreenH - PortraitTop) * PortraitZoom * (i == 0 ? 1f : 0.92f);
                 float aspect = portrait.texture != null ? portrait.texture.width * portrait.uv.width / Mathf.Max(1f, portrait.texture.height * portrait.uv.height) : 0.6f;
@@ -174,9 +174,10 @@ namespace Srpg.Battle
                 rt.pivot = new Vector2(0.5f, 1f);
                 rt.sizeDelta = new Vector2(showW, height);
                 image.uvRect = SlotUv(AdjustedUv(portrait.uv, AdjustOf(who, expression)), showW / fullW);   // 原作者が調整した位置（portrait_adjust.json）を、枠の幅に切る
-                float edge = i == 0 ? 8f : 8f + SlotWidth * 0.62f;
-                float x = edge + SlotWidth * 0.5f;
-                var target = new Vector2(right ? -x : x, -(PortraitTop + (i == 0 ? 0f : 12f)));
+                // 1人なら端の枠の真ん中。2人並ぶ側は、2人とも外に寄せて重ねる（原作者 2026-10-05 案A）:
+                // 1人目（手前）は内、2人目（奥・少し小さく）は外。手前の人の顔も台詞の枠（真ん中 408）の外に出る
+                float x = cast.Count < 2 ? 8f + SlotWidth * 0.5f : i == 0 ? 168f : 72f;
+                var target = new Vector2(right ? -x : x, -(PortraitTop + (i == 0 ? 0f : 8f)));
                 // 話す人が変わるたびに飛ぶと画面がガタつく（原作者 2026-10-04）ので、位置と明るさはなめらかに寄せる（Update）
                 actorTarget[who] = target;
                 if (fresh || !Application.isPlaying) rt.anchoredPosition = target;
