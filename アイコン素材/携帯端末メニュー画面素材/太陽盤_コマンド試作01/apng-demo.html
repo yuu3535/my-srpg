@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>炎の連番APNG見本 — 太陽盤</title>
+<style>
+:root { color-scheme: dark; font-family: 'Yu Gothic UI', Meiryo, sans-serif; color: #eeeff0; background: #25282b; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+main { max-width: 1180px; margin: auto; padding: 24px; }
+h1 { font-size: 20px; font-weight: 500; margin: 0 0 8px; }
+h2 { font-size: 15px; font-weight: 500; margin: 0 0 12px; }
+p { color: #bfc7ce; line-height: 1.7; font-size: 13px; margin: 6px 0; }
+a { color: #d4b67c; }
+.toolbar { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; margin: 20px 0; }
+label { display: grid; gap: 6px; font-size: 13px; }
+select, button, input { font: inherit; }
+button, select { min-height: 42px; border: 1px solid #5b636c; color: #eeeff0; background: #353a40; padding: 8px 12px; }
+button { cursor: pointer; } button:active { transform: scale(.98); }
+button:disabled { opacity: .5; cursor: wait; }
+select:disabled { opacity: .5; }
+.filter-defs { position: absolute; width: 0; height: 0; overflow: hidden; pointer-events: none; }
+:is(button, input, select):focus-visible { outline: 2px solid #d4b67c; outline-offset: 3px; }
+input[type=range] { accent-color: #bba077; height: 32px; width: 100%; }
+.comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.sample { min-width: 0; border-top: 1px solid #4a5056; padding-top: 14px; }
+.viewport { width: 100%; aspect-ratio: 400 / 190; overflow: hidden; position: relative; background: var(--sample-bg, #85878b); }
+.scene { position: absolute; width: 400px; height: 190px; transform: scale(var(--demo-scale, 1)); transform-origin: top left; }
+.plaque { position: absolute; left: 120px; top: 104.5px; width: 112px; height: 31px; transform: scale(1.18); transform-origin: center; }
+.plaque svg { width: 100%; height: 100%; overflow: visible; display: block; }
+.plaque polygon { fill: var(--face, #292e36); fill-opacity: .84; stroke: var(--accent, #d6b45e); stroke-width: 1; }
+.plaque .inner { fill: none; stroke-width: .6; }
+.plaque .backing { fill: var(--accent, #d6b45e); fill-opacity: 1; stroke: none; }
+.copy { position: absolute; inset: 0; display: grid; place-items: center; color: var(--ink, #eee9df); font: 500 16px/1 'Yu Mincho', 'MS PMincho', serif; letter-spacing: .12em; }
+.flame { position: absolute; pointer-events: none; width: 69px; height: 69px; opacity: .83; filter: var(--flame-filter, none); }
+.zoom { display: grid; place-items: center; position: relative; min-height: 300px; margin-top: 12px; background: var(--sample-bg, #85878b); }
+.zoom img { width: 276px; height: 276px; filter: var(--flame-filter, none); opacity: .83; }
+.spark-field { pointer-events: none; overflow: visible; }
+.spark-field.flame { filter: none; }
+.zoom .spark-field { position: absolute; left: 50%; top: 50%; width: 276px; height: 276px; transform: translate(-50%, -50%); }
+.spark { opacity: 0; animation-duration: 1610ms; animation-iteration-count: infinite; animation-timing-function: cubic-bezier(.2,.5,.3,1); }
+.spark-early { animation-name: spark-early; }
+.spark-middle { animation-name: spark-middle; }
+.spark-late { animation-name: spark-late; }
+.spark-halo { fill: var(--spark-color, #eed784); opacity: .18; }
+.spark-core { fill: var(--spark-core, #fff6dc); }
+.spark-trail { stroke: var(--spark-color, #eed784); stroke-width: 1.5; stroke-linecap: round; opacity: .6; }
+.spark-field[hidden] .spark { animation: none; }
+@keyframes spark-early { 0%,18% { opacity: 0; transform: translate(0,0); } 24% { opacity: .95; } 46% { opacity: 0; transform: translate(var(--drift),var(--rise)); } 100% { opacity: 0; transform: translate(var(--drift),var(--rise)); } }
+@keyframes spark-middle { 0%,35% { opacity: 0; transform: translate(0,0); } 42% { opacity: .95; } 68% { opacity: 0; transform: translate(var(--drift),var(--rise)); } 100% { opacity: 0; transform: translate(var(--drift),var(--rise)); } }
+@keyframes spark-late { 0%,53% { opacity: 0; transform: translate(0,0); } 60% { opacity: .9; } 85% { opacity: 0; transform: translate(var(--drift),var(--rise)); } 100% { opacity: 0; transform: translate(var(--drift),var(--rise)); } }
+[hidden] { display: none !important; }
+.scrubber { margin: 20px 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: end; }
+output { font-variant-numeric: tabular-nums; min-width: 100px; }
+.details { margin-top: 18px; border-top: 1px solid #4a5056; padding-top: 12px; }
+.error { color: #edb7aa; }
+@media (max-width: 720px) { main { padding: 14px; } .comparison { gap: 12px; } .zoom { min-height: 190px; } .zoom img, .zoom .spark-field { width: 180px; height: 180px; } }
+@media (prefers-reduced-motion: reduce) { .spark { animation: none; } }
+</style>
+</head>
+<body>
+<svg class="filter-defs" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<!-- 雷属性のイメージへ、赤橙を避けた金→黄白の階調。 -->
+<filter id="alche-gold-flame" color-interpolation-filters="sRGB">
+<feColorMatrix type="matrix" values="
+0.2126 0.7152 0.0722 0 0
+0.2126 0.7152 0.0722 0 0
+0.2126 0.7152 0.0722 0 0
+0 0 0 1 0" />
+<feComponentTransfer>
+<feFuncR type="table" tableValues="0.357 0.647 0.831 0.949 1" />
+<feFuncG type="table" tableValues="0.278 0.537 0.725 0.863 0.961" />
+<feFuncB type="table" tableValues="0.106 0.231 0.333 0.553 0.847" />
+<feFuncA type="identity" />
+</feComponentTransfer>
+</filter>
+<!-- 白い芯にも青を残す明度ベースの色調。アルファ・輪郭・時刻は変更しない。 -->
+<filter id="karima-blue-flame" color-interpolation-filters="sRGB">
+<feColorMatrix type="matrix" values="
+0.108426 0.364752 0.036822 0 0.05
+0.123308 0.414816 0.041876 0 0.14
+0.138190 0.464880 0.046930 0 0.35
+0 0 0 1 0" />
+</filter>
+<!-- 立ち絵の炎を配色の参考にする。深い青紫→青→淡い青の5段階。 -->
+<filter id="karima-portrait-flame" color-interpolation-filters="sRGB">
+<feColorMatrix type="matrix" values="
+0.2126 0.7152 0.0722 0 0
+0.2126 0.7152 0.0722 0 0
+0.2126 0.7152 0.0722 0 0
+0 0 0 1 0" />
+<feComponentTransfer>
+<feFuncR type="table" tableValues="0.160 0.205 0.265 0.425 0.792" />
+<feFuncG type="table" tableValues="0.140 0.240 0.370 0.580 0.859" />
+<feFuncB type="table" tableValues="0.360 0.635 0.815 0.925 1" />
+<feFuncA type="identity" />
+</feComponentTransfer>
+</filter>
+</defs>
+</svg>
+<main id="apng-demo">
+<h1>炎の連番APNG見本</h1>
+<p>左は今の素材を静止表示。右は新しく描き分けた16コマ＋消火後の透明コマです。画像を曲げたり伸ばしたりする演出は加えていません。</p>
+<div class="toolbar">
+<label>キャラ<select id="demo-character"><option value="alche">アルシェ</option><option value="karima">カリマ</option></select></label>
+<label>背景<select id="demo-background"><option value="gray">灰色</option><option value="dark">暗い無地</option><option value="light">明るい無地</option></select></label>
+<label>アルシェの炎色<select id="demo-alche-color"><option value="gold">金色・黄白の光</option><option value="original">これまでの赤橙</option></select></label>
+<label>カリマの炎色<select id="demo-karima-color" disabled><option value="portrait">立ち絵の青紫</option><option value="blue">前の青強め</option><option value="original">最初の白水色</option></select></label>
+<label>火の粉・光の粒<select id="demo-sparks"><option value="on">ON</option><option value="off">OFF</option></select></label>
+<button id="demo-play" type="button" disabled>静止コマへ</button>
+<button id="demo-replay" type="button" disabled>点火から再生</button>
+</div>
+<div class="comparison">
+<section class="sample"><h2>今の素材：静止</h2><div class="viewport"><div class="scene"><div class="plaque"><svg viewBox="0 0 140 34" preserveAspectRatio="none" aria-hidden="true"><polygon class="backing" points="1,34 139,34 139,41 1,41 10,34"></polygon><polygon points="1,1 139,1 139,33 1,33 21,17"></polygon><polygon class="inner" points="11,5 134,5 134,29 11,29 26,17"></polygon></svg><span class="copy">所持品</span><img id="original-flame" class="flame" src="fx/command-flame-bottom-v02-candidate.png" alt="既存の幅広い火種の炎"></div></div></div><div class="zoom"><img src="fx/command-flame-bottom-v02-candidate.png" alt="既存素材の拡大"></div></section>
+<section class="sample"><h2>新しい素材：点火・成長・消火</h2><div class="viewport"><div class="scene"><div class="plaque"><svg viewBox="0 0 140 34" preserveAspectRatio="none" aria-hidden="true"><polygon class="backing" points="1,34 139,34 139,41 1,41 10,34"></polygon><polygon points="1,1 139,1 139,33 1,33 21,17"></polygon><polygon class="inner" points="11,5 134,5 134,29 11,29 26,17"></polygon></svg><span class="copy">所持品</span><img id="animated-flame" class="flame animated" alt="燃焼の連番アニメーション" hidden><img class="flame still" alt="燃焼の選んだ静止コマ" hidden><svg class="spark-field flame" viewBox="0 0 192 192" aria-hidden="true" hidden></svg></div></div></div><div class="zoom"><img class="animated" alt="連番アニメーションの拡大" hidden><img class="still" alt="選んだ静止コマの拡大" hidden><svg class="spark-field" viewBox="0 0 192 192" aria-hidden="true" hidden></svg></div></section>
+</div>
+<p>実寸は69px・濃さ83%・根元X−18／Y12、選択札は18%拡大。下は形を確認する拡大表示です。</p>
+<p>カリマの「立ち絵の青紫」は、陰影に青紫、炎の本体に澄んだ青、光の芯に淡い青を重ねる配色です。以前の2色案とも切り替えて比較できます。炎の形・燃焼のタイミングは同じです。</p>
+<p>アルシェは赤みを抑えた金色の光へ。右側の見本だけ、少数の火の粉と光の粒を追加しています。ON／OFFで比較できます。粒子は別レイヤーなのでAPNG単体には含まれません。静止コマでは粒子を隠します。</p>
+<div class="scrubber"><label>静止コマを選ぶ（操作するとアニメーションを止めます）<input id="demo-frame" type="range" min="1" max="17" step="1" value="9" disabled></label><output id="frame-value">9 / 17・中</output></div>
+<p id="demo-status" role="status" aria-live="polite">連番を読み込み中です。</p><p id="demo-error" class="error" role="alert" hidden></p>
+<div class="details"><p>これは動きの比較用の第一稿です。元素材・メニュー本体・作者設定は変更していません。動きを減らす設定では静止表示になり、コマ送りで確認できます。「APNGを再生」は点火から再開し、途中の時刻へは復帰しません。</p><p><a href="fx/command-flame-burn-v03.apng">透過APNG単体</a> / <a href="fx/command-flame-burn-v03-sheet.png">生成した16コマのシート</a> / <a href="layout.html">メニュー調整へ戻る</a></p></div>
+</main>
+<script src="flame-model.js?v=20261004e"></script>
+<script src="apng-demo.js?v=20261004e"></script>
+</body>
+</html>

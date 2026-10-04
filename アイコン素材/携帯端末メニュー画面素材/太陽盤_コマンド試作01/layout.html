@@ -59,7 +59,21 @@ button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px s
 /* 根元を右端・上下中央基準で固定。大きさを変えても根元はずれない。 */
 .selection-flame { position: absolute; left: var(--flame-left); top: var(--flame-top); width: var(--flame-size, 69px); height: var(--flame-size, 69px); opacity: 0; pointer-events: none; transform-origin: var(--flame-origin, 17% 83%); transform: scale(1); }
 .selection-flame.is-lit { opacity: var(--flame-opacity, .83); }
+.selection-flame [hidden] { display: none !important; }
 .selection-flame-art { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; transform-origin: var(--flame-origin, 17% 83%); filter: var(--flame-filter, none); }
+.selection-burn-art { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; filter: var(--flame-filter, none); }
+.command-sparks { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.command-spark { opacity: 0; animation-duration: 1610ms; animation-iteration-count: infinite; animation-timing-function: cubic-bezier(.2,.5,.3,1); }
+.command-spark-early { animation-name: command-spark-early; }
+.command-spark-middle { animation-name: command-spark-middle; }
+.command-spark-late { animation-name: command-spark-late; }
+.command-spark-halo { fill: var(--spark-color, #eed784); opacity: .18; }
+.command-spark-core { fill: var(--spark-core, #fff6dc); }
+.command-spark-trail { stroke: var(--spark-color, #eed784); stroke-width: 1.5; stroke-linecap: round; opacity: .6; }
+.command-sparks[hidden] .command-spark { animation: none; }
+@keyframes command-spark-early { 0%,18% { opacity: 0; transform: translate(0,0); } 24% { opacity: .95; } 46%,100% { opacity: 0; transform: translate(var(--drift),var(--rise)); } }
+@keyframes command-spark-middle { 0%,35% { opacity: 0; transform: translate(0,0); } 42% { opacity: .95; } 68%,100% { opacity: 0; transform: translate(var(--drift),var(--rise)); } }
+@keyframes command-spark-late { 0%,53% { opacity: 0; transform: translate(0,0); } 60% { opacity: .9; } 85%,100% { opacity: 0; transform: translate(var(--drift),var(--rise)); } }
 .effect-control { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
 .effect-control input { margin: 0; }
 .flame-color-top { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 12px; align-items: center; margin: 12px 0; }
@@ -121,16 +135,18 @@ a { color: #c9ced2; }
 <label class="effect-control"><input id="selection-effects" type="checkbox" checked>選択中の炎を表示</label>
 <p id="flame-status" role="status">炎の素材を読み込んでいます。</p>
 <div class="note"><p>設定・所持品・仲間・支援・セーブの5項目。選択した札は太陽盤の真ん中へ回り、札・裏帯・内縁・文字を一体で18％拡大します。下に少し覗く裏帯は、選択時だけ少し広がる試作です。アルシェは黄金色、カリマは銀青色。設定はBGM・SE・会話速度・移動速度などの調整用。マップは右側の画像から探索2D・章の戦闘・遭遇戦を選ぶ入口に分ける方針です。今回は選択の動作見本のみで、設定・保存処理・マップ入口には未接続です。</p><p><a href="layout-static.html">静止配置を比較する</a> ／ <a href="index.html">最初の試作</a></p></div>
-<p class="note">文字は細めの16px・字間0.12em、面は不透明度74％（選択中84％）。文字と枠は透かさず、裏帯は面の外だけに残します。中央に収まると右端の炎が一度ふわっと伸び、その後は選択中だけ揺れ続けます。炎の大きさ・濃さ・根元の位置は右側で調整できます。アルシェは金、カリマは淡い青系の色違い。同じ札を押すと点火をもう一度確認できます。動きを減らす端末設定では炎を非表示にします。</p>
+<p class="note">文字は細めの16px・字間0.12em、面は不透明度74％（選択中84％）。文字と枠は透かさず、裏帯は面の外だけに残します。札と針が合う直前に短く点火し、選択中は燃焼の連番を維持します。消火・再点火は繰り返しません。アルシェは金〜黄白、カリマは深い青紫。少数の火の粉はON／OFFで比較できます。同じ札を押すと点火から再生。動きを減らす端末設定では炎を非表示にします。</p>
 </section>
 <aside class="adjustments" aria-label="炎・輪・余白の調整">
 <fieldset><legend>右端の炎を調整</legend>
+<label>再生方法<select id="flame-animation"><option value="apng" selected>燃焼APNG：短い点火→燃焼を維持</option><option value="legacy">比較：以前の拡縮見本</option></select></label>
+<label class="effect-control"><input id="flame-particles" type="checkbox" checked>右端の火の粉・光の粒</label>
 <label>炎の形<select id="flame-variant"><option value="original">現行：細く立ち上がる炎</option><option value="bottom" selected>新案：下縁に沿う火種</option></select></label>
-<p>同じコマンドを選んだまま形を切り替えられます。大きさ・濃さ・左右・上下の数値は共通で、素材ごとの根元を補正します。新案は火種の横揺れを抑え、上側をゆっくり伸縮させます。「点火をもう一度」で選択時の演出も比べられます。</p>
-<label>炎の大きさ：<output id="flame-size-value">69 px</output><div class="input-pair"><input id="flame-size" type="range" min="24" max="120" value="69" aria-label="炎の大きさ"><input id="flame-size-number" type="number" min="24" max="120" value="69" aria-label="炎の大きさの数値"></div></label>
+<p>APNGは180msの点火を一度だけ再生し、燃焼中の7コマ（590ms）を繰り返します。別の札へ切り替えると、旧札の炎は200msの消火連番で根元へ引っ込みます。輪の回転は待たせません。未選択に戻す時も消火し、同じ札の再選択は点火を再生します。画像を曲げる・伸縮させる演出は加えません。「炎の形」は以前の拡縮見本の比較用です。全燃焼の連番は<a href="apng-demo.html">独立見本</a>に残しています。大きさ・濃さ・左右・上下は切替時も数値を保ちます。</p>
+<label>炎の大きさ：<output id="flame-size-value">81 px</output><div class="input-pair"><input id="flame-size" type="range" min="24" max="120" value="81" aria-label="炎の大きさ"><input id="flame-size-number" type="number" min="24" max="120" value="81" aria-label="炎の大きさの数値"></div></label>
 <label>炎の濃さ：<output id="flame-opacity-value">83%</output><div class="input-pair"><input id="flame-opacity" type="range" min="0" max="100" value="83" aria-label="炎の濃さ"><input id="flame-opacity-number" type="number" min="0" max="100" value="83" aria-label="炎の濃さの数値"></div></label>
-<label>根元の左右：<output id="flame-x-value">-18 px</output><div class="input-pair"><input id="flame-x" type="range" min="-40" max="40" value="-18" aria-label="炎の根元の左右"><input id="flame-x-number" type="number" min="-40" max="40" value="-18" aria-label="炎の根元の左右の数値"></div></label>
-<label>根元の上下：<output id="flame-y-value">12 px</output><div class="input-pair"><input id="flame-y" type="range" min="-40" max="40" value="12" aria-label="炎の根元の上下"><input id="flame-y-number" type="number" min="-40" max="40" value="12" aria-label="炎の根元の上下の数値"></div></label>
+<label>根元の左右：<output id="flame-x-value">-12 px</output><div class="input-pair"><input id="flame-x" type="range" min="-40" max="40" value="-12" aria-label="炎の根元の左右"><input id="flame-x-number" type="number" min="-40" max="40" value="-12" aria-label="炎の根元の左右の数値"></div></label>
+<label>根元の上下：<output id="flame-y-value">11 px</output><div class="input-pair"><input id="flame-y" type="range" min="-40" max="40" value="11" aria-label="炎の根元の上下"><input id="flame-y-number" type="number" min="-40" max="40" value="11" aria-label="炎の根元の上下の数値"></div></label>
 <p>コマンドを選ぶと炎が表示されます。左右は＋で右・−で左、上下は＋で下・−で上。0は札の右端・上下中央です。大きさは透明な余白を含む画像の幅（844×390基準）。根元を内側へ寄せすぎると文字に重なるため、画面を見ながら合わせてください。端末の「動きを減らす」が有効な場合は炎を非表示にします。</p>
 <div class="actions"><button id="replay-flame" type="button">点火をもう一度</button><button id="reset-flame" type="button">炎の数値を初期値へ</button></div>
 <p>値は下の「調整値をコピー」に含まれます。自動保存はしないため、再読み込み前にコピーしてください。</p>
@@ -140,7 +156,7 @@ a { color: #c9ced2; }
 <label>炎の色相：<output id="flame-color-hue-value">15度</output><div class="input-pair"><input id="flame-color-hue" type="range" min="0" max="360" value="15" aria-label="炎の色相"><input id="flame-color-hue-number" type="number" min="0" max="360" value="15" aria-label="炎の色相の数値"></div></label>
 <label>炎の鮮やかさ：<output id="flame-color-saturation-value">102%</output><div class="input-pair"><input id="flame-color-saturation" type="range" min="0" max="200" value="102" aria-label="炎の鮮やかさ"><input id="flame-color-saturation-number" type="number" min="0" max="200" value="102" aria-label="炎の鮮やかさの数値"></div></label>
 <label>炎の明るさ：<output id="flame-color-brightness-value">109%</output><div class="input-pair"><input id="flame-color-brightness" type="range" min="20" max="160" value="109" aria-label="炎の明るさ"><input id="flame-color-brightness-number" type="number" min="20" max="160" value="109" aria-label="炎の明るさの数値"></div></label>
-<p>炎だけを色替えします。白い芯と陰影は残し、鮮やかさ・明るさは素材に対する倍率（100%が元の強さ）です。色の調整はキャラ別に保持し、形の切替でも維持。再読み込みで初期値に戻るため、調整後はコピーしてください。</p>
+<p>作者指定の初期値はアルシェ4度・138%・120%、カリマ216度・171%・100%。APNGは元の確認済み配色（アルシェ15度・102%・109%、カリマ217度・104%・100%）からの差分で色替えします。この基準は初期値の更新で変えません。キャラ別に保持し、再読み込みで初期値に戻るため、調整後はコピーしてください。粒子はキャラの基準色で表示します。</p>
 <div class="actions"><button id="reset-flame-color" type="button">このキャラの炎の色を初期値へ</button></div>
 </fieldset>
 <fieldset><legend>札と針先の調整</legend><label>配置の余白：<output id="gap-value">-27 px</output><div class="input-pair"><input id="gap" type="range" min="-40" max="40" value="-27"><input id="gap-number" type="number" min="-40" max="40" value="-27" aria-label="余白の数値"></div></label><label>札の細さ：<output id="bandHeight-value">31 px</output><div class="input-pair"><input id="bandHeight" type="range" min="18" max="38" value="31"><input id="bandHeight-number" type="number" min="18" max="38" value="31" aria-label="札の高さの数値"></div></label><p>左はV字、右は箱型。選択した札は針ごとの長さに合わせ、切れ込みを先端へ寄せます。余白は−40〜40で調整可能。両キャラ共通の初期値は余白−27・高さ31。キャラ切替では手元の配置を維持し、「調整を初期値へ」でそのキャラの値に戻します。小さくするとさらに内側へ重なります。寄せすぎると針が文字にかかるため、画面を見ながら調整してください。</p></fieldset>
@@ -161,6 +177,7 @@ a { color: #c9ced2; }
 <script src="../太陽盤_試作03/character-colors.js?v=20261004a"></script>
 <script src="wheel-math.js?v=20261004l"></script>
 <script src="flame-model.js?v=20261004e"></script>
-<script src="wheel.js?v=20261004r"></script>
+<script src="command-burning.js?v=20261004c"></script>
+<script src="wheel.js?v=20261004u"></script>
 </body>
 </html>

@@ -1,0 +1,12 @@
+{
+  "schema": "solar-command-wheel-settings-v02",
+  "referenceResolution": { "width": 844, "height": 390 },
+  "character": "alche",
+  "wheel": { "gap": -27, "size": 609, "hue": 224, "saturation": 24, "lightness": 0, "opacity": 40, "bandHeight": 31 },
+  "flame": { "size": 81, "opacity": 83, "x": -12, "y": 11 },
+  "flameVariant": "bottom",
+  "flameColor": { "hue": 4, "saturation": 138, "brightness": 120 },
+  "flameAnimation": "apng",
+  "flamePalette": "gold",
+  "flameParticles": true
+}

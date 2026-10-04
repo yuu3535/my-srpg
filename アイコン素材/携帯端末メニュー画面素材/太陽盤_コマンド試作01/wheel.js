@@ -9,8 +9,11 @@
   const flameModel = window.SolarFlame;
   let flameVariant = byId('flame-variant').value || 'bottom';
   const flameStates = { original: { ready: false, failed: false }, bottom: { ready: false, failed: false } };
-  let flameValues = flameModel.normalize();
-  const flameColors = { alche: flameModel.normalizeColor({}, 'alche'), karima: flameModel.normalizeColor({}, 'karima') };
+  const burningModel = window.SolarCommandBurning;
+  const flameDefaults = burningModel ? burningModel.defaults.flame : flameModel.defaults;
+  const colorDefaults = burningModel ? burningModel.defaults.colors : flameModel.colorDefaults;
+  let flameValues = flameModel.normalize(flameDefaults);
+  const flameColors = { alche: flameModel.normalizeColor(colorDefaults.alche, 'alche'), karima: flameModel.normalizeColor(colorDefaults.karima, 'karima') };
   let pendingEffect = -1, effectAnimations = [];
   const nodes = math.commands.map((command, index) => {
     const anchor = document.createElement('div'); anchor.className = 'label-anchor';
@@ -44,19 +47,35 @@
     });
     anchor.append(button); byId('labels').append(anchor); return { anchor, button, band, flame, flameArt };
   });
-  function cancelEffects() {
+  const burning = window.SolarCommandBurning ? window.SolarCommandBurning.create({
+    document, nodes, host: byId('screen'), schedule: setTimeout, cancel: clearTimeout, changed() {
+      if (disposed || !usesApng()) return;
+      if (burning.state.failed) cancelEffects();
+      flameStatus(); playSelectionEffect();
+    }
+  }) : null;
+  function usesApng() { return Boolean(burning && byId('flame-animation').value === 'apng'); }
+  function effectState() { return usesApng() ? burning.state : flameStates[flameVariant]; }
+  function cancelEffects(gentle = false) {
     pendingEffect = -1;
+    let exiting = -1;
+    if (burning) {
+      if (gentle && usesApng() && !reduced.matches && !document.hidden && !disposed) exiting = burning.extinguish();
+      else burning.stop();
+    }
     effectAnimations.forEach(animation => { animation.onfinish = null; animation.cancel(); });
     effectAnimations = [];
-    nodes.forEach(node => node.flame.classList.remove('is-lit'));
+    nodes.forEach((node, index) => { if (index !== exiting) node.flame.classList.remove('is-lit'); });
   }
   function playSelectionEffect(burst = true) {
-    // 回転が収まり、素材も揃った時だけ。連打・切替で前の演出を残さない。
-    if (pendingEffect < 0 || frame !== null || !loaded || !flameStates[flameVariant].ready || disposed || document.hidden) return;
+    // APNGは視覚上の嵌合直前から短い点火。ばねの微小な残差待ちはしない。
+    const approaching = usesApng() && Math.abs(phase - target) <= geometry.pitch * .12 && Math.abs(needle - needleTarget) <= 4;
+    if (pendingEffect < 0 || (frame !== null && !approaching) || !loaded || !effectState().ready || disposed || document.hidden) return;
     const index = pendingEffect; pendingEffect = -1;
-    if (index !== selected || failed || flameStates[flameVariant].failed || reduced.matches || !byId('selection-effects').checked) return;
+    if (index !== selected || failed || effectState().failed || reduced.matches || !byId('selection-effects').checked) return;
     const { flame, flameArt } = nodes[index];
     flame.classList.add('is-lit');
+    if (usesApng()) { burning.play(index); return; }
     // API未対応では調整値どおりの静止炎。文字や選択操作には影響させない。
     if (typeof flame.animate !== 'function' || typeof flameArt.animate !== 'function') return;
     const track = animation => {
@@ -88,9 +107,14 @@
   function relight() { cancelEffects(); pendingEffect = selected; playSelectionEffect(false); }
   function applyFlameColor() {
     const color = flameColors[byId('character').value], wheel = byId('flame-hue-wheel');
-    const filter = flameModel.colorFilter(color);
+    const character = byId('character').value;
+    const filter = usesApng() ? window.SolarCommandBurning.filter(character, color, flameModel.colorDefaults[character]) : flameModel.colorFilter(color);
     screen.style.setProperty('--flame-filter', filter);
     wheel.style.setProperty('--flame-filter', filter);
+    if (burning) {
+      const palette = window.SolarCommandBurning.palettes[character];
+      screen.style.setProperty('--spark-color', palette.spark); screen.style.setProperty('--spark-core', palette.core);
+    }
     wheel.style.setProperty('--flame-hue', color.hue + 'deg');
     wheel.setAttribute('aria-valuenow', String(color.hue));
     wheel.setAttribute('aria-valuetext', color.hue + '度');
@@ -137,10 +161,10 @@
   });
   byId('reset-flame-color').addEventListener('click', () => {
     const character = byId('character').value;
-    flameColors[character] = flameModel.normalizeColor({}, character); applyFlameColor();
+    flameColors[character] = flameModel.normalizeColor(colorDefaults[character], character); applyFlameColor();
   });
   function applyFlame() {
-    const placed = flameModel.placement(flameValues, flameVariant);
+    const placed = flameModel.placement(flameValues, usesApng() ? 'bottom' : flameVariant);
     screen.style.setProperty('--flame-size', placed.size + 'px');
     screen.style.setProperty('--flame-opacity', placed.opacity);
     screen.style.setProperty('--flame-left', placed.left);
@@ -158,30 +182,50 @@
       const raw = byId(id).value;
       if (raw === '' || !Number.isFinite(Number(raw))) return;
       flameValues = flameModel.normalize({ ...flameValues, [key]: Number(raw) });
-      applyFlame(); relight();
+      applyFlame(); if (!usesApng()) relight();
     });
   }));
-  byId('reset-flame').addEventListener('click', () => { flameValues = flameModel.normalize(); applyFlame(); relight(); });
+  byId('reset-flame').addEventListener('click', () => { flameValues = flameModel.normalize(flameDefaults); applyFlame(); if (!usesApng()) relight(); });
   byId('replay-flame').addEventListener('click', () => {
     if (reduced.matches) { status('端末の「動きを減らす」が有効なため、炎は非表示です。'); return; }
-    if (flameStates[flameVariant].failed) { status('炎の素材を読み込めません。形を切り替えるか再読み込みして確認してください。'); return; }
+    if (effectState().failed) { status('炎の素材を読み込めません。再生方法を切り替えるか再読み込みして確認してください。'); return; }
     byId('selection-effects').checked = true;
     select(selected < 0 ? 2 : selected);
   });
   byId('selection-effects').addEventListener('change', () => { if (byId('selection-effects').checked) relight(); else cancelEffects(); });
   function flameStatus() {
-    const state = flameStates[flameVariant], message = byId('flame-status');
+    const state = effectState(), message = byId('flame-status');
     message.hidden = state.ready;
     message.textContent = state.failed
       ? '選んだ炎の素材を読み込めません。メニューの選択操作はそのまま使えます。形を切り替えるか再読み込みしてください。'
       : '選んだ炎の素材を読み込んでいます。';
+    if (usesApng() && state.ready && state.exitFailed) {
+      message.hidden = false;
+      message.textContent = '消火素材を読み込めません。点火・燃焼とメニュー操作は使えますが、切替時は炎を即時停止します。';
+    }
+  }
+  if (burning) {
+    function animationMode() {
+      cancelEffects();
+      byId('flame-variant').disabled = usesApng();
+      byId('flame-particles').disabled = !usesApng();
+      byId('flame-color-help').textContent = usesApng()
+        ? '確認済みの金色／青紫を基準に微調整。色相は基準値からの差分、彩度・明るさは基準値との比率で反映します。色相環の丸は目安です。'
+        : '色相環をクリック・ドラッグ、または矢印キーで1度ずつ調整。Shift＋矢印は10度ずつ。色の丸は目安です。';
+      applyFlame(); applyFlameColor(); flameStatus(); pendingEffect = selected; playSelectionEffect(false);
+    }
+    byId('flame-animation').addEventListener('change', animationMode);
+    byId('flame-particles').addEventListener('change', () => { burning.setSparks(byId('flame-particles').checked); exportSettings(); });
+    byId('flame-variant').disabled = usesApng();
+    byId('flame-particles').disabled = !usesApng();
+    byId('flame-color-help').textContent = '確認済みの金色／青紫を基準に微調整。色相は基準値からの差分、彩度・明るさは基準値との比率で反映します。色相環の丸は目安です。';
   }
   byId('flame-variant').addEventListener('change', () => {
     const next = byId('flame-variant').value;
     if (!Object.hasOwn(flameModel.variants, next)) return;
     cancelEffects(); flameVariant = next;
     nodes.forEach(node => { node.flameArt.src = flameModel.variant(next).src; });
-    applyFlame(); flameStatus(); pendingEffect = selected; playSelectionEffect(false);
+    applyFlame(); applyFlameColor(); flameStatus(); pendingEffect = selected; playSelectionEffect(false);
   });
   // 片方が失敗しても、もう片方やメニューの操作は使える。非選択素材の遅い通知は現在の炎を消さない。
   Object.keys(flameModel.variants).forEach(key => {
@@ -189,12 +233,12 @@
     source.onload = () => {
       if (disposed) return;
       flameStates[key].ready = true; flameStates[key].failed = false;
-      if (key === flameVariant) { flameStatus(); playSelectionEffect(); }
+      if (key === flameVariant && !usesApng()) { flameStatus(); playSelectionEffect(); }
     };
     source.onerror = () => {
       if (disposed) return;
       flameStates[key].failed = true; flameStates[key].ready = false;
-      if (key === flameVariant) { cancelEffects(); flameStatus(); }
+      if (key === flameVariant && !usesApng()) { cancelEffects(); flameStatus(); }
     };
     source.src = flameModel.variant(key).src;
   });
@@ -230,7 +274,7 @@
     // 移動した項目数に応じて次の菱形へ回す。角度を毎回同じ位置へ戻さない。
     const ray = math.spring(needle, needleVelocity, needleTarget, dt, 350, 32); needle = ray.position; needleVelocity = ray.velocity;
     if (wheel.settled && ray.settled) { frame = null; lastTime = null; render(); playSelectionEffect(); return; }
-    render(); frame = requestAnimationFrame(animate);
+    render(); if (usesApng()) playSelectionEffect(); frame = requestAnimationFrame(animate);
   }
   function start() {
     if (disposed) return;
@@ -239,7 +283,7 @@
     render();
   }
   function select(index) {
-    cancelEffects(); pendingEffect = index;
+    cancelEffects(index !== selected); pendingEffect = index;
     const next = math.targetFor(target, index, geometry);
     rayStep += Math.round((next - target) / geometry.pitch);
     selected = index; target = next; needleTarget = math.needleFor(rayStep).angle + geometry.focusAngle; start();
@@ -249,7 +293,7 @@
     const count = math.commands.length;
     select(((selected < 0 ? centered : selected) + direction + count) % count);
   }
-  function clear() { cancelEffects(); selected = -1; needleTarget = math.idleFor(needleTarget - geometry.focusAngle) + geometry.focusAngle; start(); }
+  function clear() { cancelEffects(true); selected = -1; needleTarget = math.idleFor(needleTarget - geometry.focusAngle) + geometry.focusAngle; start(); }
   byId('previous').addEventListener('click', () => navigate(-1));
   byId('next').addEventListener('click', () => navigate(1));
   byId('clear').addEventListener('click', clear);
@@ -281,7 +325,9 @@
   }
   function exportSettings() {
     // v02の輪はそのまま。試作の炎は独立した任意項目としてコピーする。
-    byId('settings').value = JSON.stringify({ ...math.settings(values, byId('character').value), flame: { ...flameValues }, flameVariant, flameColor: { ...flameColors[byId('character').value] } }, null, 2);
+    const character = byId('character').value;
+    const combustion = burning ? { flameAnimation: usesApng() ? 'apng' : 'legacy', flamePalette: usesApng() ? window.SolarCommandBurning.palettes[character].name : 'legacy', flameParticles: byId('flame-particles').checked } : {};
+    byId('settings').value = JSON.stringify({ ...math.settings(values, character), flame: { ...flameValues }, flameVariant, flameColor: { ...flameColors[character] }, ...combustion }, null, 2);
   }
   function applyWheel() {
     const ring = byId('outer-ring');
@@ -334,11 +380,12 @@
     screen.style.setProperty('--backing-active', karima ? '#567f9e' : '#e1b359');
   }
   byId('character').addEventListener('change', () => {
-    cancelEffects();
+    if (!usesApng()) cancelEffects();
     const saved = math.preset(byId('character').value);
     // 色違いだけ切替。手元で動かした配置・帯の高さ・選択・回転角は保持する。
     ['hue', 'saturation', 'lightness', 'opacity'].forEach(key => { values[key] = saved[key]; });
-    applyWheel(); background(); pendingEffect = selected; playSelectionEffect(false);
+    applyWheel(); background();
+    if (!usesApng()) { pendingEffect = selected; playSelectionEffect(false); }
   });
   byId('background').addEventListener('change', background);
   let remaining = 5;
@@ -358,6 +405,6 @@
   reduced.addEventListener('change', motionChange);
   const visibilityChange = () => { if (document.hidden) cancelEffects(); else relight(); };
   document.addEventListener('visibilitychange', visibilityChange);
-  window.addEventListener('pagehide', () => { disposed = true; cancelEffects(); stop(); observer.disconnect(); reduced.removeEventListener('change', motionChange); document.removeEventListener('visibilitychange', visibilityChange); }, { once: true });
+  window.addEventListener('pagehide', () => { disposed = true; cancelEffects(); if (burning) burning.dispose(); stop(); observer.disconnect(); reduced.removeEventListener('change', motionChange); document.removeEventListener('visibilitychange', visibilityChange); }, { once: true });
   applyWheel(); applyFlame(); background(); render();
 })();
