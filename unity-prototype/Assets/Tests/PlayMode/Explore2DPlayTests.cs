@@ -84,6 +84,34 @@ namespace Srpg.Tests
         }
 
         [UnityTest]
+        public IEnumerator StairsLeadToTheTrainingYardBoard()
+        {
+            SceneManager.LoadScene("Corridor2D");
+            yield return null;
+            yield return null;
+            var view = Object.FindFirstObjectByType<Corridor2DView>();
+            var explore = Object.FindFirstObjectByType<Explore2DController>();
+            var dialogue = Object.FindFirstObjectByType<DialogueView>();
+            for (int i = 0; i < 20 && dialogue.IsPlaying; i++) dialogue.Close();
+            explore.EnterPlace("orcus_castle", null);
+            yield return null;
+            // キャリーとヘンリーに会ったことにする（階段の条件）
+            explore.PlayBlocks(new System.Collections.Generic.List<string> { "prologue_1_1.b06", "prologue_1_1.b08" }, null);
+            for (int i = 0; i < 40 && dialogue.IsPlaying; i++) dialogue.Close();
+            yield return null;
+            view.PlayerX = explore.SpotX("to_yard") - 20f;
+            view.OnTap(explore.SpotX("to_yard"), 360f);
+            for (float t = 0f; t < 8f && SceneManager.GetActiveScene().name != "Explore3D"; t += Time.unscaledDeltaTime) yield return null;
+            Assert.AreEqual("Explore3D", SceneManager.GetActiveScene().name, "階段から戦闘の場所（Explore3D）へ移らない");
+            yield return null;
+            yield return null;
+            var board = Object.FindFirstObjectByType<ExploreController>();
+            Assert.IsNotNull(board?.Place, "Explore3D の探索が始まらない");
+            Assert.AreEqual("orcus_training_yard", board.Place.mapId, "訓練場から始まらない");
+            Assert.IsTrue(board.Seen.Contains("prologue_1_1.b08"), "回廊で流した会話が引き継がれない");
+        }
+
+        [UnityTest]
         public IEnumerator LookTunerRebuildsAndKeepsPeople()
         {
             SceneManager.LoadScene("Corridor2D");

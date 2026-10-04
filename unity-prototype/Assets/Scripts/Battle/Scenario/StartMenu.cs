@@ -34,7 +34,8 @@ namespace Srpg.Battle
         private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             if (Application.isBatchMode) { Holding = false; return; }
-            if (scene.name == ExploreScene && !shownOnce) { shownOnce = true; Holding = true; Show(); }
+            if (scene.name == ExploreScene && ExploreHandoff.Pending) { shownOnce = true; Holding = false; AddBackButton(); }   // 2Dの探索から来た
+            else if (scene.name == ExploreScene && !shownOnce) { shownOnce = true; Holding = true; Show(); }
             else if (scene.name == TrialScene || scene.name == CorridorScene) { Holding = false; AddBackButton(); }
             else Holding = false;
         }

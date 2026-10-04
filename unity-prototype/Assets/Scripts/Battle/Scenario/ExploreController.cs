@@ -75,6 +75,18 @@ namespace Srpg.Battle
         public void Begin()
         {
             Load();
+            if (ExploreHandoff.Pending && places.ContainsKey(ExploreHandoff.MapId))
+            {
+                // 2Dの探索から来た（戦闘になる場所へ）。流した会話・持ち物を引き継ぐ
+                seen.UnionWith(ExploreHandoff.Seen);
+                foreach (var it in ExploreHandoff.Items) if (!items.Contains(it)) items.Add(it);
+                string map = ExploreHandoff.MapId;
+                var cell = ExploreHandoff.Cell;
+                string facing = ExploreHandoff.Facing;
+                ExploreHandoff.Clear();
+                EnterPlace(map, cell, facing);
+                return;
+            }
             EnterPlace(startMap, null, null);
         }
 

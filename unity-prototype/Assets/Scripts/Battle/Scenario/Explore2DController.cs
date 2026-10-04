@@ -354,7 +354,14 @@ namespace Srpg.Battle
             }
             // 行き先が2Dの場所なら、暗くして入る。まだ2Dにしていない場所は一言だけ
             string target = PlaceOfMap(exit.toMap);
-            if (target == null) { view.Toast($"{ExitLabel(exit)}へ（2Dの場所はまだつながっていません）", 2.5f); return; }
+            if (target == null)
+            {
+                // 2Dにない場所＝戦闘になる場所（奥行きのある盤面）。会話・持ち物を持って Explore3D へ（原作者 2026-10-04）
+                if (!Application.isPlaying) { Debug.Log($"[Explore2D] 戦闘の場所へ: {exit.toMap}"); return; }
+                ExploreHandoff.Set(exit.toMap, exit.toCell.V, exit.facing, seen, items);
+                StartCoroutine(Move(() => UnityEngine.SceneManagement.SceneManager.LoadScene("Explore3D")));
+                return;
+            }
             string from = map.mapId;
             if (!Application.isPlaying) { EnterPlace(target, from); return; }
             StartCoroutine(Move(() => EnterPlace(target, from)));
