@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>運命予報 — 分離素材の確認</title>
+  <style>
+    :root { color-scheme: dark; font-family: 'Yu Gothic UI', Meiryo, sans-serif; color: #eceff2; background: #252a30; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 24px; }
+    main { max-width: 1100px; margin: auto; }
+    h1 { font-size: 20px; font-weight: 500; margin: 0 0 12px; }
+    .note { font-size: 13px; color: #b8c0c9; line-height: 1.7; }
+    .workbench { display: grid; grid-template-columns: minmax(280px, 440px) minmax(260px, 1fr); gap: 28px; align-items: start; }
+    .stage { --surface-color: #10253b; --surface-opacity: 1; --star-opacity: .13; position: relative; isolation: isolate; width: 100%; aspect-ratio: 2 / 3; background: repeating-conic-gradient(#535a62 0% 25%, #41474e 0% 50%) 0 0 / 24px 24px; }
+    .stage[data-background="light"] { background: #d7d9dc; }
+    .stage[data-background="dark"] { background: #292e35; }
+    .layer, .surface, .copy { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    .layer { object-fit: contain; }
+    .surface { fill: var(--surface-color); opacity: var(--surface-opacity); }
+    .star { opacity: var(--star-opacity); transform: translateY(9.4%) scale(.9); }
+    .copy { color: #f1f2f4; container-type: inline-size; }
+    .title { position: absolute; top: 14%; width: 100%; margin: 0; text-align: center; font-size: 7.8cqw; font-weight: 600; letter-spacing: .07em; }
+    .heading-rule { position: absolute; top: 22%; left: 25%; right: 25%; border-top: 1px solid #c9cdd2; }
+    .fortune-label { position: absolute; top: 23.8%; width: 100%; text-align: center; font-family: Georgia, serif; font-size: 3.2cqw; letter-spacing: .3em; }
+    .dots { position: absolute; top: 27.2%; width: 100%; display: flex; justify-content: center; gap: 3cqw; }
+    .dots span { width: 1cqw; height: 1cqw; border-radius: 50%; background: #c9cdd2; }
+    .fortune-result { position: absolute; top: 29.3%; width: 100%; text-align: center; font-family: 'Yu Mincho', 'Hiragino Mincho ProN', serif; font-size: 10cqw; }
+    .prose { position: absolute; top: 41%; left: 24%; right: 24%; bottom: 16%; display: flex; flex-direction: row-reverse; justify-content: space-between; }
+    .prose p { margin: 0; writing-mode: vertical-rl; text-orientation: mixed; font-family: 'Yu Mincho', 'Hiragino Mincho ProN', serif; font-size: 5.5cqw; line-height: 1.25; letter-spacing: .08em; }
+    .controls { display: grid; gap: 18px; }
+    fieldset { padding: 14px 0; margin: 0; border: 0; border-top: 1px solid #59616a; }
+    legend { padding-right: 12px; color: #ccd2da; }
+    .toggle { display: block; margin: 10px 0; }
+    .field { display: grid; gap: 6px; margin: 14px 0; font-size: 14px; }
+    .field small { color: #b4bdc7; line-height: 1.6; }
+    input[type="range"] { width: 100%; accent-color: #bcc8d7; }
+    input[type="color"] { width: 70px; height: 36px; border: 1px solid #626c78; background: transparent; }
+    select, button { font: inherit; color: inherit; padding: 8px 12px; border: 1px solid #626c78; background: #343c46; border-radius: 3px; }
+    button { cursor: pointer; }
+    button:active { transform: scale(.98); }
+    a { color: #c9d8e9; }
+    .warning { color: #f0bda4; font-size: 13px; line-height: 1.6; }
+    [hidden] { display: none !important; }
+    @media (max-width: 720px) { body { padding: 16px; } .workbench { grid-template-columns: 1fr; } .stage { max-width: 380px; margin: auto; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>運命予報 — 分離素材の確認</h1>
+  <p class="note">本編とは独立した素材確認用ページです。文字は画像に焼き込まず、下地と星の透明度をそれぞれ調整できます。</p>
+  <div class="workbench">
+    <div class="stage" id="stage" data-background="checker" aria-label="分離素材の重ね合わせ">
+      <svg id="surface-layer" class="surface" viewBox="0 0 1024 1536" aria-hidden="true"><path d="M 205 99 H 819 Q 896 99 907 198 V 1318 Q 907 1381 902 1422 Q 512 1324 122 1422 Q 117 1381 117 1318 V 198 Q 128 99 205 99 Z"/></svg>
+      <img id="star-layer" class="layer star" src="fortune-star-watermark-v01.png" alt="" aria-hidden="true">
+      <img id="frame-layer" class="layer" src="fortune-frame-silver-v01.png" alt="" aria-hidden="true">
+      <div id="text-layer" class="copy">
+        <h2 class="title">運命予報</h2>
+        <span class="heading-rule" aria-hidden="true"></span>
+        <span class="fortune-label">Fortune</span>
+        <span class="dots" aria-hidden="true"><span></span><span></span></span>
+        <span class="fortune-result">蛇</span>
+        <div class="prose"><p>失せモノに注意。</p><p>笑う声が聞こえたら、</p><p>振り返らないこと。</p></div>
+      </div>
+      <img id="beta-layer" class="layer" src="fortune-beta-sticker-v01.png" alt="β版">
+    </div>
+    <div class="controls">
+      <fieldset>
+        <legend>表示する素材</legend>
+        <label class="toggle"><input type="checkbox" data-layer="beta-layer" checked> β版シール</label>
+        <label class="toggle"><input type="checkbox" data-layer="frame-layer" checked> 銀線フレーム</label>
+        <label class="toggle"><input type="checkbox" data-layer="surface-layer" checked> 青い文字面</label>
+        <label class="toggle"><input type="checkbox" data-layer="star-layer" checked> 中央の星</label>
+        <label class="toggle"><input type="checkbox" data-layer="text-layer" checked> 文字（HTML表示）</label>
+      </fieldset>
+      <fieldset>
+        <legend>文字面と星</legend>
+        <label class="field" for="surface-color">下地の色<input id="surface-color" type="color" value="#10253b"></label>
+        <label class="field" for="surface-opacity">下地の不透明度 <output id="surface-value">78%</output><input id="surface-opacity" type="range" min="0" max="100" value="78"><small>銀線と文字は薄くならず、青い下地だけが変わります。</small></label>
+        <label class="field" for="star-opacity">星の濃さ <output id="star-value">13%</output><input id="star-opacity" type="range" min="0" max="100" value="13"></label>
+      </fieldset>
+      <label class="field" for="background">確認背景<select id="background"><option value="checker">市松</option><option value="dark">暗い無地</option><option value="light">明るい無地</option></select></label>
+      <button id="reset" type="button">初期状態に戻す</button>
+      <p id="asset-warning" class="warning" role="alert" hidden></p>
+      <p class="note">画像生成で分離したため、輪郭は元見本と完全なピクセル一致ではありません。星の位置・縮尺はこのページで仮調整しています。下地は同じSVG輪郭を直接表示するため、file:でも外部マスクを使わず確認できます。</p>
+      <a href="README.md">素材一覧・生成条件・使い方</a>
+    </div>
+  </div>
+</main>
+<script>
+  const stage = document.getElementById('stage');
+  const surfaceColor = document.getElementById('surface-color');
+  const surfaceOpacity = document.getElementById('surface-opacity');
+  const starOpacity = document.getElementById('star-opacity');
+  function updateMaterial() {
+    stage.style.setProperty('--surface-color', surfaceColor.value);
+    stage.style.setProperty('--surface-opacity', Number(surfaceOpacity.value) / 100);
+    stage.style.setProperty('--star-opacity', Number(starOpacity.value) / 100);
+    document.getElementById('surface-value').textContent = surfaceOpacity.value + '%';
+    document.getElementById('star-value').textContent = starOpacity.value + '%';
+  }
+  document.querySelectorAll('[data-layer]').forEach(input => {
+    input.addEventListener('change', () => { document.getElementById(input.dataset.layer).hidden = !input.checked; });
+  });
+  [surfaceColor, surfaceOpacity, starOpacity].forEach(input => input.addEventListener('input', updateMaterial));
+  document.getElementById('background').addEventListener('change', event => { stage.dataset.background = event.target.value; });
+  document.querySelectorAll('img').forEach(img => img.addEventListener('error', () => {
+    const warning = document.getElementById('asset-warning');
+    warning.textContent = '素材を読み込めません。PNGをこのHTMLと同じフォルダに置いてください。';
+    warning.hidden = false;
+  }));
+  document.getElementById('reset').addEventListener('click', () => {
+    surfaceColor.value = '#10253b'; surfaceOpacity.value = '78'; starOpacity.value = '13';
+    document.getElementById('background').value = 'checker'; stage.dataset.background = 'checker';
+    document.querySelectorAll('[data-layer]').forEach(input => { input.checked = true; document.getElementById(input.dataset.layer).hidden = false; });
+    updateMaterial();
+  });
+  updateMaterial();
+</script>
+</body>
+</html>
