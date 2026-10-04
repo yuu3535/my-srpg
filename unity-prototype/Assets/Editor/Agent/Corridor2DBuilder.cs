@@ -204,12 +204,18 @@ namespace Srpg.EditorAgent
                 Shot("explore_henry", "ヘンリーの近く");
                 dialogue.Close();
                 // 見え方の切り替え（ほかのプリセットで、同じ所を撮る）
-                foreach (var other in looks.Where(t => t.name != corridorData.look))
+                foreach (var other in looks.Where(t => t.name != corridorData.look && !t.name.StartsWith("orcus_room")))
                 {
                     explore.SetLook(other.name);
                     Shot("look_" + other.name, $"見え方 {other.name}");
                 }
                 if (!string.IsNullOrEmpty(corridorData.look)) explore.SetLook(corridorData.look);
+                // 訓練のあと、昼の自室へ戻る（御伽噺を調べる。原作者 2026-10-04: 朝練のあとなので昼）
+                ExploreHandoff.SetTo2D("orcus_room", "prologue_1_2_fairytale", explore.Seen, Array.Empty<string>());
+                explore.Begin();
+                CloseAll();
+                explore.StepForTest(view.PlayerX);
+                Shot("room_noon", "昼の自室（御伽噺）");
                 camera.targetTexture = null;
                 foreach (Transform child in go.transform) UnityEngine.Object.DestroyImmediate(child.gameObject);
                 foreach (Transform child in dialogue.transform) UnityEngine.Object.DestroyImmediate(child.gameObject);

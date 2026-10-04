@@ -40,6 +40,8 @@ namespace Srpg.Battle
             public string look, sky;
             public LookEffects effects = new LookEffects();
             public LookLayer[] layers;
+            // この場面だけの組み立て（層の並び。重ね方のページの「このシーンだけの組み立て」。原作者 2026-10-04）。空なら場所の組み立て
+            public CorridorLayer[] build;
         }
 
         [SerializeField] private TextAsset lookJson;          // 見え方のプリセット（なければ効果なし）。場所のふだんの見え方
@@ -103,6 +105,7 @@ namespace Srpg.Battle
             shaftParts.Clear();
             modulesLayer = null;
             if (look == null || data?.layers == null) return;
+            if (look.build != null && look.build.Length > 0) data.layers = look.build;
             // 空: いちばん奥の層の絵を、プリセットの空に替える（背景/空/朝焼け.png → 朝焼け）
             if (!string.IsNullOrEmpty(look.sky))
             {
