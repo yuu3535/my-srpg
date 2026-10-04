@@ -40,6 +40,9 @@ namespace Srpg.Battle
         private Text nameText, bodyText, logText, nextMark;
         private readonly Dictionary<string, RawImage> actors = new Dictionary<string, RawImage>();
         private readonly List<string> log = new List<string>();
+        private readonly Dictionary<string, Vector2> actorTarget = new Dictionary<string, Vector2>();
+        private readonly Dictionary<string, Color> actorColor = new Dictionary<string, Color>();
+        private const float SlotWidth = 224f, PortraitTop = 66f, PortraitZoom = 1.45f;   // 見本の portrait-slot（幅 224）と figure の top 66
 
         private ScenarioBlock block;
         private ScenarioLine[] lines = Array.Empty<ScenarioLine>();
@@ -155,33 +158,44 @@ namespace Srpg.Battle
                     tap.onClick.AddListener(() => OnPortraitTap(tapped));
                     actors[who] = image;
                 }
-                if (portrait.texture != null)
-                {
-                    image.texture = portrait.texture;
-                    string expression = who == stage.Speaker ? line.expression : null;
-                    image.uvRect = AdjustedUv(portrait.uv, AdjustOf(who, expression));   // 原作者が調整した位置（portrait_adjust.json）
-                }
+                bool fresh = image.texture == null;
+                string expression = who == stage.Speaker ? line.expression : null;
+                if (portrait.texture != null) image.texture = portrait.texture;
                 bool speaking = who == stage.Speaker || (stage.Speaker == null && line.type != "line");
-                // 端から内側へ: 1人目は端寄り、2人目はその内側で少し奥（小さく）。話している人は内側へ少し出る
-                float height = ScreenH * (i == 0 ? 1.02f : 0.94f);
+                // 見本（採用版の会話UI）と同じ置き方: 左右の端の枠（幅 SlotWidth）の中に、頭が画面の上から PortraitTop の所に来るように
+                // 大きめに置き、下は画面の外へ（胸から上が見える）。2人目は1人目の内側で少し奥（小さく）。
+                // 台詞の枠（上の真ん中）の下に頭が入らないように（原作者 2026-10-04）
+                float height = (ScreenH - PortraitTop) * PortraitZoom * (i == 0 ? 1f : 0.92f);
                 float aspect = portrait.texture != null ? portrait.texture.width * portrait.uv.width / Mathf.Max(1f, portrait.texture.height * portrait.uv.height) : 0.6f;
-                float width = height * aspect;
-                float edge = i == 0 ? 20f : 128f;
-                float step = speaking && stage.Speaker != null ? 16f : 0f;
+                float fullW = height * aspect, showW = Mathf.Min(fullW, SlotWidth);
                 var rt = image.rectTransform;
-                rt.anchorMin = rt.anchorMax = new Vector2(right ? 1f : 0f, 0f);
-                rt.pivot = new Vector2(0.5f, 0f);
-                rt.sizeDelta = new Vector2(width, height);
-                float x = edge + width * 0.5f + step;
-                rt.anchoredPosition = new Vector2(right ? -x : x, 0f);
+                rt.anchorMin = rt.anchorMax = new Vector2(right ? 1f : 0f, 1f);
+                rt.pivot = new Vector2(0.5f, 1f);
+                rt.sizeDelta = new Vector2(showW, height);
+                image.uvRect = SlotUv(AdjustedUv(portrait.uv, AdjustOf(who, expression)), showW / fullW);   // 原作者が調整した位置（portrait_adjust.json）を、枠の幅に切る
+                float edge = i == 0 ? 8f : 8f + SlotWidth * 0.62f;
+                float x = edge + showW * 0.5f;
+                var target = new Vector2(right ? -x : x, -(PortraitTop + (i == 0 ? 0f : 12f)));
+                // 話す人が変わるたびに飛ぶと画面がガタつく（原作者 2026-10-04）ので、位置と明るさはなめらかに寄せる（Update）
+                actorTarget[who] = target;
+                if (fresh || !Application.isPlaying) rt.anchoredPosition = target;
                 // 右の人は左右を反転して内側（相手の方）を向ける（立ち絵は全員右向きで描く決まり。発注書 §3）
                 rt.localScale = new Vector3(right ? -1f : 1f, 1f, 1f);
                 // 黙っている人は透かさず、絵の形の中だけ暗くする（色の掛け算は絵の形の中にしか効かない）
                 float keep = 1f - style.listenerShade;
-                image.color = speaking ? Color.white : new Color(keep, keep, keep, 1f);
+                var color = speaking ? Color.white : new Color(keep, keep, keep, 1f);
+                actorColor[who] = color;
+                if (fresh || !Application.isPlaying) image.color = color;
                 // 奥の人を先に描く（話している人が手前）
                 if (speaking) rt.SetAsLastSibling(); else rt.SetAsFirstSibling();
             }
+        }
+
+        /// <summary>見せる範囲（uv）を、枠の幅（全体の幅に対する割合 keep）に合わせて左右の真ん中で切る</summary>
+        private static Rect SlotUv(Rect uv, float keep)
+        {
+            keep = Mathf.Clamp01(keep);
+            return new Rect(uv.x + uv.width * (1f - keep) * 0.5f, uv.y, uv.width * keep, uv.height);
         }
 
         /// <summary>その人の立ち絵（なければ null。探索で、盤面の絵がない人の仮の姿に使う）</summary>
@@ -314,6 +328,17 @@ namespace Srpg.Battle
                 if (!held) holdStart = -1f;
                 else if (holdStart < 0f) holdStart = Time.unscaledTime;
                 else if (Time.unscaledTime - holdStart > 0.45f && Time.unscaledTime - lastFast > 0.07f) { lastFast = Time.unscaledTime; Advance(); }
+            }
+            // 立ち絵の位置と明るさを、目標へなめらかに寄せる（話す人が変わっても飛ばない）
+            if (Application.isPlaying)
+            {
+                float k = 1f - Mathf.Exp(-Time.unscaledDeltaTime * 14f);
+                foreach (var pair in actors)
+                {
+                    if (pair.Value == null) continue;
+                    if (actorTarget.TryGetValue(pair.Key, out var t)) pair.Value.rectTransform.anchoredPosition = Vector2.Lerp(pair.Value.rectTransform.anchoredPosition, t, k);
+                    if (actorColor.TryGetValue(pair.Key, out var c)) pair.Value.color = Color.Lerp(pair.Value.color, c, k);
+                }
             }
             if (logPanel != null && logPanel.gameObject.activeSelf) logText.text = string.Join("\n", log.Skip(Math.Max(0, log.Count - 16)));
             if (letterStart >= 0f)

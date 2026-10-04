@@ -128,7 +128,13 @@ namespace Srpg.Battle
             if (actors.TryGetValue(adjustWho, out var image) && image != null)
             {
                 var portrait = FindPortrait(adjustWho, adjustExpression);
-                if (portrait.texture != null) image.uvRect = AdjustedUv(portrait.uv, a);
+                if (portrait.texture != null)
+                {
+                    // 枠の幅に切るのは LayoutActors と同じ（見えている幅と全体の幅の比）
+                    float aspect = portrait.texture.width * portrait.uv.width / Mathf.Max(1f, portrait.texture.height * portrait.uv.height);
+                    float fullW = image.rectTransform.sizeDelta.y * aspect;
+                    image.uvRect = SlotUv(AdjustedUv(portrait.uv, a), fullW > 0f ? image.rectTransform.sizeDelta.x / fullW : 1f);
+                }
             }
         }
 

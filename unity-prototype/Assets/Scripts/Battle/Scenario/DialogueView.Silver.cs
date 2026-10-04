@@ -16,10 +16,12 @@ namespace Srpg.Battle
         [Serializable]
         public class DialogueStyle
         {
-            public float width = 408f, height = 100f;   // 原作者が見本で合わせた基準の大きさ（今は文の量で伸び縮みする。下の min / max）
+            // 枠は2種類（原作者 2026-10-04）: 短い台詞は「小」（1行）、長めは「中」（maxRows 行。超えたらページ送り）。
+            // 中の幅は原作者が見本で合わせた 408（左右の立ち絵の枠にかからない）
+            public float width = 408f, height = 100f;
+            public float smallWidth = 340f;
             public float top = 60f;                       // 画面の上から枠の上の辺まで（上の黒帯・名前札・銀細工が重ならない所）
-            public float minWidth = 280f, maxWidth = 540f, minHeight = 72f;
-            public int maxRows = 3;                       // 1ページの行数の上限（超えたらページ送り）
+            public int maxRows = 3;                       // 中の枠の行数（超えたらページ送り）
             public float transparency = 20f;        // 本文の下地の透過率（%）。名前札は透かさない
             public float radius = 24f;
             public string panelColor = "#131d34", borderColor = "#d7d7e0", textColor = "#e6e7ef";
@@ -112,7 +114,8 @@ namespace Srpg.Battle
             bodyText.rectTransform.offsetMin = new Vector2(TextLeft, TextBottom);
             bodyText.rectTransform.offsetMax = new Vector2(-TextRight, -TextTop);
             bodyText.lineSpacing = 1f;
-            bodyText.verticalOverflow = VerticalWrapMode.Truncate;
+            bodyText.horizontalOverflow = HorizontalWrapMode.Overflow;   // 改行は LayoutBox で入れる（Text が別の所で折り返して枠からはみ出していた）
+            bodyText.verticalOverflow = VerticalWrapMode.Overflow;
 
             nextMark = NewText("Next", box, font, 11, borderCol, TextAnchor.MiddleCenter);
             nextMark.text = "▼";
@@ -156,17 +159,17 @@ namespace Srpg.Battle
         {
             var font = bodyText.font;
             int size = bodyText.fontSize;
-            float lineH = size * 1.45f * bodyText.lineSpacing;
+            var (first, step) = LineHeights();
             text ??= "";
             font.RequestCharactersInTexture(text, size, bodyText.fontStyle);
             float Advance(char c) => font.GetCharacterInfo(c, out var info, size, bodyText.fontStyle) ? info.advance : size;
-            float longest = 0f;
-            foreach (var paragraph in text.Split('\n')) { float w = 0f; foreach (char c in paragraph) w += Advance(c); longest = Mathf.Max(longest, w); }
-            float boxW = Mathf.Clamp(Mathf.Ceil((longest + TextLeft + TextRight + 4f) / 8f) * 8f, style.minWidth, style.maxWidth);
-            float width = boxW - TextLeft - TextRight - 2f;
-            var wrapped = Wrap(text, width, Advance);
-            int rows = Mathf.Clamp(wrapped.Count, 1, Mathf.Max(1, style.maxRows));
-            float boxH = Mathf.Max(style.minHeight, Mathf.Ceil(TextTop + TextBottom + rows * lineH));
+            // 小の枠に1行で入るなら小、そうでなければ中（中の行数ずつページ送り）
+            var wrapped = Wrap(text, style.smallWidth - TextLeft - TextRight - 6f, Advance);
+            bool small = wrapped.Count <= 1;
+            float boxW = small ? style.smallWidth : style.width;
+            if (!small) wrapped = Wrap(text, boxW - TextLeft - TextRight - 6f, Advance);
+            int rows = small ? 1 : Mathf.Clamp(wrapped.Count, 2, Mathf.Max(2, style.maxRows));   // 中は2行か3行（超えたらページ送り）
+            float boxH = Mathf.Ceil(TextTop + TextBottom + first + step * (rows - 1));
             var list = new List<string>();
             for (int i = 0; i < wrapped.Count; i += rows) list.Add(string.Join("\n", wrapped.GetRange(i, Mathf.Min(rows, wrapped.Count - i))));
             pages = list.Count > 0 ? list.ToArray() : new[] { "" };
@@ -185,6 +188,21 @@ namespace Srpg.Battle
             }
         }
 
+        /// <summary>本文の1行目の高さと、2行目からの1行ぶんの高さ（今の字体と大きさで Text に測らせる）</summary>
+        private (float first, float step) LineHeights()
+        {
+            var gen = new TextGenerator();
+            var settings = bodyText.GetGenerationSettings(new Vector2(4000f, 4000f));
+            settings.scaleFactor = 1f;
+            float one = gen.GetPreferredHeight("あ", settings);
+            float two = gen.GetPreferredHeight("あ\nあ", settings);
+            float step = two - one;
+            if (one <= 0f || step <= 0f) { one = bodyText.fontSize * 1.4f; step = bodyText.fontSize * 1.6f; }
+            return (one, step);
+        }
+
+        private const string NoLineStart = "、。，．！？!?）」』】〕〉》…‥ーぁぃぅぇぉっゃゅょァィゥェォッャュョ～";
+
         private static List<string> Wrap(string text, float width, Func<char, float> advance)
         {
             var wrapped = new List<string>();
@@ -195,7 +213,8 @@ namespace Srpg.Battle
                 foreach (char c in paragraph)
                 {
                     float adv = advance(c);
-                    if (row.Length > 0 && w + adv > width) { wrapped.Add(row.ToString()); row.Clear(); w = 0f; }
+                    // 行の頭に来てはいけない字（！。、など）は、前の行の終わりにぶら下げる（禁則）
+                    if (row.Length > 0 && w + adv > width && NoLineStart.IndexOf(c) < 0) { wrapped.Add(row.ToString()); row.Clear(); w = 0f; }
                     row.Append(c);
                     w += adv;
                 }

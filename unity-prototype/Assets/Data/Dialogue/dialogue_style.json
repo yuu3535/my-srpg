@@ -1,11 +1,8 @@
 {
- "_note": "会話の枠の見た目（原作者の調整値 prototypes/silver-ui-extension/dialogue-portrait-author-settings-20261003.json から）。全場面に固定する値ではない。width・height は見本の基準で、実際の枠は台詞の量で minWidth〜maxWidth・minHeight〜maxRows 行に伸び縮みする（原作者 2026-10-04）",
+ "_note": "会話の枠の見た目（原作者の調整値 prototypes/silver-ui-extension/dialogue-portrait-author-settings-20261003.json から）。全場面に固定する値ではない。枠は2種類（原作者 2026-10-04）: 短い台詞は小（smallWidth・1行）、長めは中（width・2〜maxRows 行。超えたらページ送り）",
  "width": 408,
  "height": 100,
  "top": 60,
- "minWidth": 280,
- "maxWidth": 540,
- "minHeight": 72,
  "maxRows": 3,
  "transparency": 20,
  "radius": 24,
@@ -17,5 +14,6 @@
  "tailRightOffset": 17,
  "fontSize": 15,
  "nameFontSize": 15,
- "listenerShade": 0.24
+ "listenerShade": 0.24,
+ "smallWidth": 340
 }
