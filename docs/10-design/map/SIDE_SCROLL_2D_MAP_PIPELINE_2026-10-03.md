@@ -90,10 +90,12 @@
 - 組み立て：`Srpg.EditorAgent.Corridor2DBuilder.BuildAll`。確認の画像（`Assets/Previews/Corridor2D_left_end/middle/right_end.png`）で、左の端・真ん中・右の端を見る。
 - 公開：`WebGLBuilder.Build` → `bash tools/publish_unity_web.sh`。
 
-### まだできていないこと（2つ目の場所を作るとき）
+### 場所をつなぐ（2026-10-04 できた）
 
-- Unity の `Corridor2DView` は今、場所のデータを1つだけ持つ（`orcus_castle.json`）。2つ目の場所を入れるときに、場所ごとにデータを選べるようにし、出口（`exits` の `scene`）から別の場所へつなぐ。
-- 素材のフォルダを場所ごとに分ける（`Assets/Art/Corridor/<場所>/`）。
+- 場所のデータ: `unity-prototype/Assets/Data/Corridors/<場所>.json`（`look`＝ふだんの見え方、`explore.map`＝配置表）。場所の絵: `Assets/Art/Corridor/`（回廊）・`Assets/Art/Side2D/<場所>/`（ほかの場所）。
+- 扉（配置表の `exits` の `toMap`）の行き先に2Dの場所があれば、暗くして入り、戻る扉の前に立つ。流した会話・持ち物は場所をまたいで残る。2Dの場所がない行き先は一言だけ。
+- 今の場所: 自室 `orcus_room`（**仮**。原作者の壁の素材の基本の壁と窓だけ、家具なし）→ 回廊 `orcus_castle`。プロローグは自室で起きて始まる（入口の画面の「探索（2Dの試し）」）。
+- 新しい場所を足すとき: 場所のデータを1つ足し、絵を `Assets/Art/Side2D/<場所>/` に置いて `Corridor2DBuilder.BuildAll`。調整ページで「場所を足す」と同じ名前にする。
 
 ## 7. 回廊で分かったこと
 
