@@ -1,0 +1,40 @@
+{
+ "look": "orcus_room_noon",
+ "place": "orcus_room",
+ "title": "アルシェとカリマの部屋・昼（朝練のあと。仮の値。原作者が重ね方のページで合わせる）",
+ "sky": "背景/空/昼空.png",
+ "effects": {
+  "on": true,
+  "haze": 0.14,
+  "hazeColor": "#dce8f2",
+  "dof": 1.0,
+  "vignette": 0.22,
+  "vignetteColor": "#1a2230",
+  "vignetteSize": 0.6,
+  "bright": 1.03,
+  "contrast": 1.05,
+  "saturate": 0.96,
+  "temp": 0,
+  "shafts": 0,
+  "shaftColor": "#fff2d8",
+  "shaftAngle": 15,
+  "shaftY": 0,
+  "shaftX": 0,
+  "shaftWidth": 1,
+  "shaftSoft": 6,
+  "shaftGlow": 0,
+  "shaftBlend": "screen",
+  "ovl": 0,
+  "ovlTop": "#ffffff",
+  "ovlBottom": "#3a4a7a",
+  "ovlMode": "soft-light",
+  "chara": {
+   "haze": 0,
+   "blur": 0,
+   "bright": 1,
+   "tint": 0,
+   "tintColor": "#3a4a7a"
+  }
+ },
+ "layers": []
+}

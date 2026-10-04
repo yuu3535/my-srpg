@@ -224,7 +224,12 @@
     "w": 0
    }
   ],
-  "looks": [],
+  "looks": [
+   {
+    "state": "prologue_1_2_fairytale",
+    "look": "orcus_room_noon"
+   }
+  ],
   "introDark": "prologue_1_1.b01"
  },
  "heroFeetFront": 388
