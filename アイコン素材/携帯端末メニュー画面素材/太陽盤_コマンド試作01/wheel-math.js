@@ -13,8 +13,9 @@
   const defaults = Object.freeze({ gap: -12, size: 609, hue: 224, saturation: 24, lightness: 0, opacity: 40, bandHeight: 29 });
   function preset(character) {
     if (character !== 'alche' && character !== 'karima') throw new RangeError('キャラが不正');
-    // 2026-10-04 作者指定。カリマの既存値は維持。本編への移植は別途。
-    return character === 'alche' ? { ...defaults, gap: -27, bandHeight: 31 } : { ...defaults, lightness: 80 };
+    // アルシェの作者指定値を維持。カリマは「銀が主役、青がアクセント」の配色試作。
+    const shared = { ...defaults, gap: -27, bandHeight: 31 };
+    return character === 'alche' ? shared : { ...shared, hue: 214, lightness: 64 };
   }
   const ranges = { gap: [-40, 40], size: [440, 740], hue: [0, 360], saturation: [0, 80], lightness: [0, 100], opacity: [0, 100], bandHeight: [18, 38] };
   // 6本の実際の菱形先端。画像は完全な60度対称ではないため、停止角は測定値で補正。
@@ -46,7 +47,7 @@
     const normalized = normalize({ size, bandHeight });
     const outerRadius = Math.max(radius + 76, normalized.size * .48);
     // 5枚を上2・中央1・下2に配置。選択は太陽盤と同じ中心Yへ戻す。
-    return { gap, inset: Math.min(0, gap - defaults.gap), height, radius, outerRadius, bandHeight: normalized.bandHeight, pitch, period: pitch * commands.length, focusAngle: 0, cardWidth: 112, textPadding: 16, selectedScale: 1.08 };
+    return { gap, inset: Math.min(0, gap - defaults.gap), height, radius, outerRadius, bandHeight: normalized.bandHeight, pitch, period: pitch * commands.length, focusAngle: 0, cardWidth: 112, textPadding: 16, selectedScale: 1.18 };
   }
   // 水平の細い帯だけを、同心円の間で切り抜く。輪郭は設定変更時に一度だけ計算。
   function bandClip(geometry) {

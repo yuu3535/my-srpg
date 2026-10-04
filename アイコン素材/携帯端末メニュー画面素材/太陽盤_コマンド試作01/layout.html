@@ -32,7 +32,7 @@ select { width: 100%; min-height: 38px; padding: 6px 10px; border: 1px solid #63
 input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; height: 38px; }
 button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .viewport { position: relative; width: 100%; aspect-ratio: 844 / 390; overflow: hidden; border: 1px solid #60666c; }
-.screen { position: absolute; width: 844px; height: 390px; transform: scale(var(--scale, 1)); transform-origin: top left; overflow: hidden; isolation: isolate; background: #ececeb; background-position: center; background-size: cover; --ink: #333739; --row: #c8cbcc99; --rule: #70767a66; --active: #c4b292aa; }
+.screen { position: absolute; width: 844px; height: 390px; transform: scale(var(--scale, 1)); transform-origin: top left; overflow: hidden; isolation: isolate; background: #ececeb; background-position: center; background-size: cover; --ink: #eee9df; --row: #252931; --rule: #bba57c; --active: #292e36; }
 /* 下層のコマンド、上層の盤と針。押せる部分は素材の外なので隠れない。 */
 .command-layer { position: absolute; inset: 0; z-index: 1; }
 .outer-ring { position: absolute; left: 0; top: 0; pointer-events: none; }
@@ -40,16 +40,35 @@ button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px s
 .label-anchor { position: absolute; left: 0; top: 0; width: 0; height: 0; }
 .band-row { position: absolute; left: 0; top: 50%; width: 100%; height: var(--band-height, 29px); transform: translateY(-50%); pointer-events: none; }
 /* 会話UIの名前札を基に、作者指定の左V字だけ変更。内縁も切れ込みに沿わせる。 */
-.nameplate-shape { display: block; width: 100%; height: 100%; }
+.nameplate-shape { display: block; width: 100%; height: 100%; overflow: visible; }
 .nameplate-shape polygon { fill: var(--row); stroke: var(--rule); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.nameplate-shape .nameplate-face { fill-opacity: .74; }
 .nameplate-shape .nameplate-inner { fill: none; stroke-width: .6; opacity: .5; }
 .band-row.selected polygon, .band-row.hover polygon { fill: var(--active); stroke: var(--active-rule); }
 .band-row.selected .nameplate-inner, .band-row.hover .nameplate-inner { fill: none; }
+.band-row.selected .nameplate-face { fill: url(#command-selected-surface); fill-opacity: .84; }
+/* 面は染めず、選択札の縁にだけキャラ別の金／青の小さい光を乗せる。 */
+.band-row.selected .nameplate-inner { stroke: var(--shine); stroke-width: .9; opacity: .9; filter: drop-shadow(0 0 1px var(--shine)); }
 .band-row.focus polygon { stroke: var(--active-rule); stroke-width: 1.8; }
 .band-row.focus .nameplate-inner { stroke-width: .6; }
-.command { position: absolute; left: 0; top: calc(var(--hit-height, 44px) / -2); width: var(--card-width, 112px); height: var(--hit-height, 44px); transform-origin: center; border: 0; border-radius: 0; padding: 0 16px; text-align: center; display: grid; place-items: center; background: transparent; color: var(--ink); font-family: 'Yu Mincho', 'Hiragino Mincho ProN', 'MS PMincho', serif; font-size: 17px; font-weight: 500; line-height: 1; letter-spacing: .08em; white-space: nowrap; cursor: pointer; touch-action: manipulation; transition: transform 240ms cubic-bezier(.16,1,.3,1); }
+/* 既存の札の輪郭をそのまま重ねた裏帯。表札は動かさず針の受け口を保つ。 */
+.band-row .nameplate-shape .nameplate-backing { fill: var(--backing, #cba04e); stroke: none; opacity: .9; transform: translate(3px, 5px); transition: transform 240ms cubic-bezier(.16,1,.3,1), opacity 180ms ease-out; }
+.band-row.selected .nameplate-shape .nameplate-backing { fill: var(--backing-active, #e1b359); opacity: 1; transform: translate(4px, 8px); }
+.command { position: absolute; left: 0; top: calc(var(--hit-height, 44px) / -2); width: var(--card-width, 112px); height: var(--hit-height, 44px); transform-origin: center; border: 0; border-radius: 0; padding: 0 16px; text-align: center; display: grid; place-items: center; background: transparent; color: var(--ink); font-family: 'Yu Mincho', 'Hiragino Mincho ProN', 'MS PMincho', serif; font-size: 16px; font-weight: 400; font-synthesis: none; line-height: 1; letter-spacing: .12em; white-space: nowrap; cursor: pointer; touch-action: manipulation; transition: transform 240ms cubic-bezier(.16,1,.3,1); }
 .command-copy { position: relative; pointer-events: none; }
-.command[aria-pressed=true] { font-weight: 600; }
+/* 根元を右端・上下中央基準で固定。大きさを変えても根元はずれない。 */
+.selection-flame { position: absolute; left: var(--flame-left); top: var(--flame-top); width: var(--flame-size, 69px); height: var(--flame-size, 69px); opacity: 0; pointer-events: none; transform-origin: var(--flame-origin, 17% 83%); transform: scale(1); }
+.selection-flame.is-lit { opacity: var(--flame-opacity, .83); }
+.selection-flame-art { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; transform-origin: var(--flame-origin, 17% 83%); filter: var(--flame-filter, none); }
+.effect-control { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+.effect-control input { margin: 0; }
+.flame-color-top { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 12px; align-items: center; margin: 12px 0; }
+.flame-hue-wheel { width: 76px; height: 76px; border-radius: 50%; position: relative; cursor: crosshair; touch-action: none; background: conic-gradient(#df6262, #dcc568, #7cb770, #6cb8b8, #7686ca, #be77b3, #df6262); }
+.flame-hue-wheel:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.flame-color-sample { position: absolute; inset: 16px; border-radius: 50%; background: #dfab58; border: 3px solid #25282b; filter: var(--flame-filter, none); pointer-events: none; }
+.flame-hue-marker { position: absolute; inset: 0; transform: rotate(var(--flame-hue, 15deg)); pointer-events: none; }
+.flame-hue-marker::after { content: ''; position: absolute; width: 10px; height: 10px; top: 3px; left: calc(50% - 5px); border: 2px solid #eeeff0; border-radius: 50%; background: #353a40; }
+.command[aria-pressed=true] { font-weight: 500; }
 .command:focus-visible { outline: none; }
 .command:active { scale: .98; }
 .disk, .rays { position: absolute; left: 0; top: 0; pointer-events: none; }
@@ -66,17 +85,24 @@ button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px s
 a { color: #c9ced2; }
 @media (max-width: 1050px) { .workbench { grid-template-columns: minmax(0, 1fr) 240px; gap: 16px; } }
 @media (max-width: 760px) { main { padding: 12px; } .controls { grid-template-columns: 1fr 1fr; gap: 12px; } .workbench { grid-template-columns: 1fr; } .preview { z-index: 4; background: #25282b; } .adjustments { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; } .adjustments .actions, .adjustments details { grid-column: 1 / -1; } }
-@media (prefers-reduced-motion: reduce) { .command { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .command, .band-row .nameplate-shape .nameplate-backing { transition: none; } .selection-flame { display: none; } }
 </style>
 </head>
 <body>
 <svg class="defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs id="material-defs"></defs></svg>
+<!-- 同じ札の面へ適用する光沢。共有defsはキャラの素材フィルター更新と分離。 -->
+<svg class="defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="command-selected-surface" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--face-gloss)"></stop><stop offset=".3" style="stop-color:var(--active)"></stop><stop offset="1" style="stop-color:var(--active)"></stop></linearGradient></defs></svg>
+<!-- 既存の表札の輪郭で裏帯を抜く。半透明の面から裏帯の色が透けることを防ぐ。 -->
+<svg class="defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs><mask id="command-backing-mask" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" x="-12" y="-12" width="164" height="70" style="mask-type:luminance"><rect x="-12" y="-12" width="164" height="70" fill="white"></rect><polygon points="1,1 139,1 139,33 1,33 21,17" fill="black" stroke="black" stroke-width="1"></polygon></mask></defs></svg>
 <!-- 会話UIの名前札から派生した試作。左端は浅いV字、右端は作者指定の箱型。 -->
-<template id="command-nameplate"><svg class="nameplate-shape" viewBox="0 0 140 34" preserveAspectRatio="none" aria-hidden="true" focusable="false"><polygon points="1,1 139,1 139,33 1,33 21,17"></polygon><polygon class="nameplate-inner" points="11,5 134,5 134,29 11,29 26,17"></polygon></svg></template>
+<template id="command-nameplate"><svg class="nameplate-shape" viewBox="0 0 140 34" preserveAspectRatio="none" aria-hidden="true" focusable="false"><g mask="url(#command-backing-mask)"><polygon class="nameplate-backing" points="1,1 139,1 139,33 1,33 21,17"></polygon></g><polygon class="nameplate-face" points="1,1 139,1 139,33 1,33 21,17"></polygon><polygon class="nameplate-inner" points="11,5 134,5 134,29 11,29 26,17"></polygon>
+</svg></template>
+<img id="flame-source" alt="" hidden>
+<img id="flame-bottom-source" alt="" hidden>
 <main>
 <header><h1>太陽盤 — 回転するコマンド輪</h1><p>上2・中央1・下2の名前札。選択した札は中央へ回り、少し大きくなります。</p></header>
 <div class="controls">
-<label>操作キャラ<select id="character"><option value="alche">アルシェ：黒・金・橙</option><option value="karima">カリマ：白・銀・青</option></select></label>
+<label>操作キャラ<select id="character"><option value="alche">アルシェ：黒・金・橙</option><option value="karima">カリマ：銀白・青アクセント</option></select></label>
 <label>確認用背景<select id="background"><option value="light">明るい無地</option><option value="gray">灰色</option><option value="corridor">参考の2Dマップ</option></select></label>
 </div>
 <div class="workbench">
@@ -92,10 +118,32 @@ a { color: #c9ced2; }
 <p id="error" class="error" role="alert" hidden></p>
 <p id="status" class="status" role="status" aria-live="polite">素材を読み込んでいます。</p>
 <div class="actions"><button id="previous" type="button">前の項目</button><button id="next" type="button">次の項目</button><button id="clear" type="button">未選択に戻す</button></div>
-<div class="note"><p>設定・所持品・仲間・支援・セーブの5項目。選択した札は太陽盤の真ん中へ回り、札・内縁・文字を一体で8％拡大します。設定はBGM・SE・会話速度・移動速度などの調整用。マップは右側の画像から探索2D・章の戦闘・遭遇戦を選ぶ入口に分ける方針です。今回は選択の動作見本のみで、設定・保存処理・マップ入口には未接続です。</p><p><a href="layout-static.html">静止配置を比較する</a> ／ <a href="index.html">最初の試作</a></p></div>
+<label class="effect-control"><input id="selection-effects" type="checkbox" checked>選択中の炎を表示</label>
+<p id="flame-status" role="status">炎の素材を読み込んでいます。</p>
+<div class="note"><p>設定・所持品・仲間・支援・セーブの5項目。選択した札は太陽盤の真ん中へ回り、札・裏帯・内縁・文字を一体で18％拡大します。下に少し覗く裏帯は、選択時だけ少し広がる試作です。アルシェは黄金色、カリマは銀青色。設定はBGM・SE・会話速度・移動速度などの調整用。マップは右側の画像から探索2D・章の戦闘・遭遇戦を選ぶ入口に分ける方針です。今回は選択の動作見本のみで、設定・保存処理・マップ入口には未接続です。</p><p><a href="layout-static.html">静止配置を比較する</a> ／ <a href="index.html">最初の試作</a></p></div>
+<p class="note">文字は細めの16px・字間0.12em、面は不透明度74％（選択中84％）。文字と枠は透かさず、裏帯は面の外だけに残します。中央に収まると右端の炎が一度ふわっと伸び、その後は選択中だけ揺れ続けます。炎の大きさ・濃さ・根元の位置は右側で調整できます。アルシェは金、カリマは淡い青系の色違い。同じ札を押すと点火をもう一度確認できます。動きを減らす端末設定では炎を非表示にします。</p>
 </section>
-<aside class="adjustments" aria-label="輪と余白の調整">
-<fieldset><legend>札と針先の調整</legend><label>配置の余白：<output id="gap-value">-27 px</output><div class="input-pair"><input id="gap" type="range" min="-40" max="40" value="-27"><input id="gap-number" type="number" min="-40" max="40" value="-27" aria-label="余白の数値"></div></label><label>札の細さ：<output id="bandHeight-value">31 px</output><div class="input-pair"><input id="bandHeight" type="range" min="18" max="38" value="31"><input id="bandHeight-number" type="number" min="18" max="38" value="31" aria-label="札の高さの数値"></div></label><p>左はV字、右は箱型。選択した札は針ごとの長さに合わせ、切れ込みを先端へ寄せます。余白は−40〜40で調整可能。アルシェの初期値は余白−27・高さ31、カリマは余白−12・高さ29。キャラ切替では手元の配置を維持し、「調整を初期値へ」でそのキャラの値に戻します。小さくするとさらに内側へ重なります。寄せすぎると針が文字にかかるため、画面を見ながら調整してください。</p></fieldset>
+<aside class="adjustments" aria-label="炎・輪・余白の調整">
+<fieldset><legend>右端の炎を調整</legend>
+<label>炎の形<select id="flame-variant"><option value="original">現行：細く立ち上がる炎</option><option value="bottom" selected>新案：下縁に沿う火種</option></select></label>
+<p>同じコマンドを選んだまま形を切り替えられます。大きさ・濃さ・左右・上下の数値は共通で、素材ごとの根元を補正します。新案は火種の横揺れを抑え、上側をゆっくり伸縮させます。「点火をもう一度」で選択時の演出も比べられます。</p>
+<label>炎の大きさ：<output id="flame-size-value">69 px</output><div class="input-pair"><input id="flame-size" type="range" min="24" max="120" value="69" aria-label="炎の大きさ"><input id="flame-size-number" type="number" min="24" max="120" value="69" aria-label="炎の大きさの数値"></div></label>
+<label>炎の濃さ：<output id="flame-opacity-value">83%</output><div class="input-pair"><input id="flame-opacity" type="range" min="0" max="100" value="83" aria-label="炎の濃さ"><input id="flame-opacity-number" type="number" min="0" max="100" value="83" aria-label="炎の濃さの数値"></div></label>
+<label>根元の左右：<output id="flame-x-value">-18 px</output><div class="input-pair"><input id="flame-x" type="range" min="-40" max="40" value="-18" aria-label="炎の根元の左右"><input id="flame-x-number" type="number" min="-40" max="40" value="-18" aria-label="炎の根元の左右の数値"></div></label>
+<label>根元の上下：<output id="flame-y-value">12 px</output><div class="input-pair"><input id="flame-y" type="range" min="-40" max="40" value="12" aria-label="炎の根元の上下"><input id="flame-y-number" type="number" min="-40" max="40" value="12" aria-label="炎の根元の上下の数値"></div></label>
+<p>コマンドを選ぶと炎が表示されます。左右は＋で右・−で左、上下は＋で下・−で上。0は札の右端・上下中央です。大きさは透明な余白を含む画像の幅（844×390基準）。根元を内側へ寄せすぎると文字に重なるため、画面を見ながら合わせてください。端末の「動きを減らす」が有効な場合は炎を非表示にします。</p>
+<div class="actions"><button id="replay-flame" type="button">点火をもう一度</button><button id="reset-flame" type="button">炎の数値を初期値へ</button></div>
+<p>値は下の「調整値をコピー」に含まれます。自動保存はしないため、再読み込み前にコピーしてください。</p>
+</fieldset>
+<fieldset><legend>炎の色を調整</legend>
+<div class="flame-color-top"><div id="flame-hue-wheel" class="flame-hue-wheel" role="slider" tabindex="0" aria-label="炎の色相環" aria-valuemin="0" aria-valuemax="360" aria-valuenow="15" aria-describedby="flame-color-help"><span class="flame-color-sample" aria-hidden="true"></span><span class="flame-hue-marker" aria-hidden="true"></span></div><p id="flame-color-help">色相環をクリック・ドラッグ、または矢印キーで1度ずつ調整。Shift＋矢印は10度ずつ。色の丸は目安です。</p></div>
+<label>炎の色相：<output id="flame-color-hue-value">15度</output><div class="input-pair"><input id="flame-color-hue" type="range" min="0" max="360" value="15" aria-label="炎の色相"><input id="flame-color-hue-number" type="number" min="0" max="360" value="15" aria-label="炎の色相の数値"></div></label>
+<label>炎の鮮やかさ：<output id="flame-color-saturation-value">102%</output><div class="input-pair"><input id="flame-color-saturation" type="range" min="0" max="200" value="102" aria-label="炎の鮮やかさ"><input id="flame-color-saturation-number" type="number" min="0" max="200" value="102" aria-label="炎の鮮やかさの数値"></div></label>
+<label>炎の明るさ：<output id="flame-color-brightness-value">109%</output><div class="input-pair"><input id="flame-color-brightness" type="range" min="20" max="160" value="109" aria-label="炎の明るさ"><input id="flame-color-brightness-number" type="number" min="20" max="160" value="109" aria-label="炎の明るさの数値"></div></label>
+<p>炎だけを色替えします。白い芯と陰影は残し、鮮やかさ・明るさは素材に対する倍率（100%が元の強さ）です。色の調整はキャラ別に保持し、形の切替でも維持。再読み込みで初期値に戻るため、調整後はコピーしてください。</p>
+<div class="actions"><button id="reset-flame-color" type="button">このキャラの炎の色を初期値へ</button></div>
+</fieldset>
+<fieldset><legend>札と針先の調整</legend><label>配置の余白：<output id="gap-value">-27 px</output><div class="input-pair"><input id="gap" type="range" min="-40" max="40" value="-27"><input id="gap-number" type="number" min="-40" max="40" value="-27" aria-label="余白の数値"></div></label><label>札の細さ：<output id="bandHeight-value">31 px</output><div class="input-pair"><input id="bandHeight" type="range" min="18" max="38" value="31"><input id="bandHeight-number" type="number" min="18" max="38" value="31" aria-label="札の高さの数値"></div></label><p>左はV字、右は箱型。選択した札は針ごとの長さに合わせ、切れ込みを先端へ寄せます。余白は−40〜40で調整可能。両キャラ共通の初期値は余白−27・高さ31。キャラ切替では手元の配置を維持し、「調整を初期値へ」でそのキャラの値に戻します。小さくするとさらに内側へ重なります。寄せすぎると針が文字にかかるため、画面を見ながら調整してください。</p></fieldset>
 <fieldset><legend>外側のガラスの輪</legend>
 <label>大きさ：<output id="size-value">609 px</output><div class="input-pair"><input id="size" type="range" min="440" max="740" value="609"><input id="size-number" type="number" min="440" max="740" value="609" aria-label="輪の大きさの数値"></div></label>
 <label>不透明度：<output id="opacity-value">40%</output><div class="input-pair"><input id="opacity" type="range" min="0" max="100" value="40"><input id="opacity-number" type="number" min="0" max="100" value="40" aria-label="輪の不透明度の数値"></div></label>
@@ -111,7 +159,8 @@ a { color: #c9ced2; }
 </main>
 <script src="../太陽盤_試作03/material-engine.js?v=20261004a"></script>
 <script src="../太陽盤_試作03/character-colors.js?v=20261004a"></script>
-<script src="wheel-math.js?v=20261004i"></script>
-<script src="wheel.js?v=20261004h"></script>
+<script src="wheel-math.js?v=20261004l"></script>
+<script src="flame-model.js?v=20261004e"></script>
+<script src="wheel.js?v=20261004r"></script>
 </body>
 </html>

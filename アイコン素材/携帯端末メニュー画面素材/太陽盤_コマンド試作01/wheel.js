@@ -6,11 +6,23 @@
   let selected = -1, phase = -2 * geometry.pitch, target = phase, velocity = 0;
   let needle = geometry.focusAngle, needleVelocity = 0, rayStep = 0, needleTarget = needle, frame = null, lastTime = null;
   let loaded = false, failed = false, disposed = false;
+  const flameModel = window.SolarFlame;
+  let flameVariant = byId('flame-variant').value || 'bottom';
+  const flameStates = { original: { ready: false, failed: false }, bottom: { ready: false, failed: false } };
+  let flameValues = flameModel.normalize();
+  const flameColors = { alche: flameModel.normalizeColor({}, 'alche'), karima: flameModel.normalizeColor({}, 'karima') };
+  let pendingEffect = -1, effectAnimations = [];
   const nodes = math.commands.map((command, index) => {
     const anchor = document.createElement('div'); anchor.className = 'label-anchor';
     const band = document.createElement('div'); band.className = 'band-row';
     // 会話UIを基にした作者指定の切れ込み札。太陽盤の画像は変更しない。
     band.innerHTML = byId('command-nameplate').innerHTML;
+    // 選んだ見本の炎を透過PNGで配置。両キャラは同じ形の色違いにする。
+    const flame = document.createElement('span'); flame.className = 'selection-flame';
+    flame.setAttribute('aria-hidden', 'true');
+    const flameArt = document.createElement('img'); flameArt.className = 'selection-flame-art';
+    flameArt.alt = ''; flameArt.draggable = false; flameArt.src = flameModel.variant(flameVariant).src;
+    flame.append(flameArt); band.append(flame);
     const button = document.createElement('button'); button.className = 'command'; button.type = 'button';
     const copy = document.createElement('span'); copy.className = 'command-copy'; copy.textContent = command.label;
     // 札・内縁・文字を同じボタン内へ入れ、位置とは別の共通ローカル座標で拡大する。
@@ -30,7 +42,161 @@
       const next = event.key === 'Home' ? 0 : event.key === 'End' ? count - 1 : (index + direction + count) % count;
       select(next); nodes[next].button.focus();
     });
-    anchor.append(button); byId('labels').append(anchor); return { anchor, button, band };
+    anchor.append(button); byId('labels').append(anchor); return { anchor, button, band, flame, flameArt };
+  });
+  function cancelEffects() {
+    pendingEffect = -1;
+    effectAnimations.forEach(animation => { animation.onfinish = null; animation.cancel(); });
+    effectAnimations = [];
+    nodes.forEach(node => node.flame.classList.remove('is-lit'));
+  }
+  function playSelectionEffect(burst = true) {
+    // 回転が収まり、素材も揃った時だけ。連打・切替で前の演出を残さない。
+    if (pendingEffect < 0 || frame !== null || !loaded || !flameStates[flameVariant].ready || disposed || document.hidden) return;
+    const index = pendingEffect; pendingEffect = -1;
+    if (index !== selected || failed || flameStates[flameVariant].failed || reduced.matches || !byId('selection-effects').checked) return;
+    const { flame, flameArt } = nodes[index];
+    flame.classList.add('is-lit');
+    // API未対応では調整値どおりの静止炎。文字や選択操作には影響させない。
+    if (typeof flame.animate !== 'function' || typeof flameArt.animate !== 'function') return;
+    const track = animation => {
+      effectAnimations.push(animation);
+      animation.onfinish = () => { effectAnimations = effectAnimations.filter(item => item !== animation); };
+    };
+    if (burst) track(flame.animate([
+      { opacity: 0, transform: flameVariant === 'bottom' ? 'scale(1,.45)' : 'scale(.45)' },
+      { opacity: flameValues.opacity / 100, transform: flameVariant === 'bottom' ? 'scale(1,1.22)' : 'scale(1.22)', offset: .28 },
+      { opacity: flameValues.opacity / 100, transform: flameVariant === 'bottom' ? 'scale(1,1.06)' : 'scale(1.06)', offset: .62 },
+      { opacity: flameValues.opacity / 100, transform: 'scale(1)' }
+    ], { duration: 720, easing: 'cubic-bezier(.16,1,.3,1)', fill: 'none', iterations: 1 }));
+    // 選択中の1枚だけ、根元を動かさずゆっくり揺らす。rAFの常時処理は増やさない。
+    const idleFrames = flameVariant === 'bottom' ? [
+      { transform: 'scaleY(1)' },
+      { transform: 'scaleY(1.06)', offset: .25 },
+      { transform: 'scaleY(.97)', offset: .55 },
+      { transform: 'scaleY(1.03)', offset: .8 },
+      { transform: 'scaleY(1)' }
+    ] : [
+      { transform: 'skewX(0deg) scale(1,1)' },
+      { transform: 'skewX(-5deg) scale(.96,1.08)', offset: .22 },
+      { transform: 'skewX(3deg) scale(1.04,.95)', offset: .48 },
+      { transform: 'skewX(-2deg) scale(.98,1.04)', offset: .76 },
+      { transform: 'skewX(0deg) scale(1,1)' }
+    ];
+    track(flameArt.animate(idleFrames, { duration: 2600, easing: 'ease-in-out', fill: 'none', iterations: Infinity }));
+  }
+  function relight() { cancelEffects(); pendingEffect = selected; playSelectionEffect(false); }
+  function applyFlameColor() {
+    const color = flameColors[byId('character').value], wheel = byId('flame-hue-wheel');
+    const filter = flameModel.colorFilter(color);
+    screen.style.setProperty('--flame-filter', filter);
+    wheel.style.setProperty('--flame-filter', filter);
+    wheel.style.setProperty('--flame-hue', color.hue + 'deg');
+    wheel.setAttribute('aria-valuenow', String(color.hue));
+    wheel.setAttribute('aria-valuetext', color.hue + '度');
+    Object.keys(flameModel.colorRanges).forEach(key => {
+      byId('flame-color-' + key).value = color[key];
+      byId('flame-color-' + key + '-number').value = color[key];
+      byId('flame-color-' + key + '-value').textContent = color[key] + (key === 'hue' ? '度' : '%');
+    });
+    exportSettings();
+  }
+  function changeFlameColor(key, value) {
+    const character = byId('character').value;
+    flameColors[character] = flameModel.normalizeColor({ ...flameColors[character], [key]: value }, character);
+    // 色だけ即時更新。点火や揺らめきを再起動せず、ドラッグ中も根元・選択を保つ。
+    applyFlameColor();
+  }
+  Object.keys(flameModel.colorRanges).forEach(key => ['flame-color-' + key, 'flame-color-' + key + '-number'].forEach(id => {
+    byId(id).addEventListener('input', () => {
+      const raw = byId(id).value;
+      if (raw === '' || !Number.isFinite(Number(raw))) return;
+      changeFlameColor(key, Number(raw));
+    });
+  }));
+  const hueWheel = byId('flame-hue-wheel');
+  function hueFromPointer(event) {
+    const hue = flameModel.hueAt(event.clientX, event.clientY, hueWheel.getBoundingClientRect());
+    if (hue !== null) changeFlameColor('hue', hue);
+  }
+  hueWheel.addEventListener('pointerdown', event => {
+    if (!event.isPrimary || (event.pointerType === 'mouse' && event.button !== 0)) return;
+    event.preventDefault(); hueWheel.focus(); hueWheel.setPointerCapture(event.pointerId); hueFromPointer(event);
+  });
+  hueWheel.addEventListener('pointermove', event => { if (hueWheel.hasPointerCapture(event.pointerId)) hueFromPointer(event); });
+  ['pointerup', 'pointercancel'].forEach(type => hueWheel.addEventListener(type, event => {
+    if (hueWheel.hasPointerCapture(event.pointerId)) hueWheel.releasePointerCapture(event.pointerId);
+  }));
+  hueWheel.addEventListener('keydown', event => {
+    const directions = { ArrowRight: 1, ArrowUp: 1, ArrowLeft: -1, ArrowDown: -1 };
+    if (!Object.hasOwn(directions, event.key) && !['Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const hue = flameColors[byId('character').value].hue;
+    changeFlameColor('hue', event.key === 'Home' ? 0 : event.key === 'End' ? 360
+      : (hue + directions[event.key] * (event.shiftKey ? 10 : 1) + 360) % 360);
+  });
+  byId('reset-flame-color').addEventListener('click', () => {
+    const character = byId('character').value;
+    flameColors[character] = flameModel.normalizeColor({}, character); applyFlameColor();
+  });
+  function applyFlame() {
+    const placed = flameModel.placement(flameValues, flameVariant);
+    screen.style.setProperty('--flame-size', placed.size + 'px');
+    screen.style.setProperty('--flame-opacity', placed.opacity);
+    screen.style.setProperty('--flame-left', placed.left);
+    screen.style.setProperty('--flame-top', placed.top);
+    screen.style.setProperty('--flame-origin', placed.origin);
+    Object.keys(flameModel.defaults).forEach(key => {
+      byId('flame-' + key).value = flameValues[key];
+      byId('flame-' + key + '-number').value = flameValues[key];
+      byId('flame-' + key + '-value').textContent = flameValues[key] + (key === 'opacity' ? '%' : ' px');
+    });
+    exportSettings();
+  }
+  Object.keys(flameModel.defaults).forEach(key => ['flame-' + key, 'flame-' + key + '-number'].forEach(id => {
+    byId(id).addEventListener('input', () => {
+      const raw = byId(id).value;
+      if (raw === '' || !Number.isFinite(Number(raw))) return;
+      flameValues = flameModel.normalize({ ...flameValues, [key]: Number(raw) });
+      applyFlame(); relight();
+    });
+  }));
+  byId('reset-flame').addEventListener('click', () => { flameValues = flameModel.normalize(); applyFlame(); relight(); });
+  byId('replay-flame').addEventListener('click', () => {
+    if (reduced.matches) { status('端末の「動きを減らす」が有効なため、炎は非表示です。'); return; }
+    if (flameStates[flameVariant].failed) { status('炎の素材を読み込めません。形を切り替えるか再読み込みして確認してください。'); return; }
+    byId('selection-effects').checked = true;
+    select(selected < 0 ? 2 : selected);
+  });
+  byId('selection-effects').addEventListener('change', () => { if (byId('selection-effects').checked) relight(); else cancelEffects(); });
+  function flameStatus() {
+    const state = flameStates[flameVariant], message = byId('flame-status');
+    message.hidden = state.ready;
+    message.textContent = state.failed
+      ? '選んだ炎の素材を読み込めません。メニューの選択操作はそのまま使えます。形を切り替えるか再読み込みしてください。'
+      : '選んだ炎の素材を読み込んでいます。';
+  }
+  byId('flame-variant').addEventListener('change', () => {
+    const next = byId('flame-variant').value;
+    if (!Object.hasOwn(flameModel.variants, next)) return;
+    cancelEffects(); flameVariant = next;
+    nodes.forEach(node => { node.flameArt.src = flameModel.variant(next).src; });
+    applyFlame(); flameStatus(); pendingEffect = selected; playSelectionEffect(false);
+  });
+  // 片方が失敗しても、もう片方やメニューの操作は使える。非選択素材の遅い通知は現在の炎を消さない。
+  Object.keys(flameModel.variants).forEach(key => {
+    const source = byId(key === 'original' ? 'flame-source' : 'flame-bottom-source');
+    source.onload = () => {
+      if (disposed) return;
+      flameStates[key].ready = true; flameStates[key].failed = false;
+      if (key === flameVariant) { flameStatus(); playSelectionEffect(); }
+    };
+    source.onerror = () => {
+      if (disposed) return;
+      flameStates[key].failed = true; flameStates[key].ready = false;
+      if (key === flameVariant) { cancelEffects(); flameStatus(); }
+    };
+    source.src = flameModel.variant(key).src;
   });
   function status(message) { if (byId('status').textContent !== message) byId('status').textContent = message; }
   function render() {
@@ -63,16 +229,17 @@
     const wheel = math.spring(phase, velocity, target, dt); phase = wheel.position; velocity = wheel.velocity;
     // 移動した項目数に応じて次の菱形へ回す。角度を毎回同じ位置へ戻さない。
     const ray = math.spring(needle, needleVelocity, needleTarget, dt, 350, 32); needle = ray.position; needleVelocity = ray.velocity;
-    if (wheel.settled && ray.settled) { frame = null; lastTime = null; render(); return; }
+    if (wheel.settled && ray.settled) { frame = null; lastTime = null; render(); playSelectionEffect(); return; }
     render(); frame = requestAnimationFrame(animate);
   }
   function start() {
     if (disposed) return;
-    if (reduced.matches) { stop(); phase = target; needle = needleTarget; render(); return; }
+    if (reduced.matches) { stop(); phase = target; needle = needleTarget; render(); playSelectionEffect(); return; }
     if (frame === null) { lastTime = null; frame = requestAnimationFrame(animate); }
     render();
   }
   function select(index) {
+    cancelEffects(); pendingEffect = index;
     const next = math.targetFor(target, index, geometry);
     rayStep += Math.round((next - target) / geometry.pitch);
     selected = index; target = next; needleTarget = math.needleFor(rayStep).angle + geometry.focusAngle; start();
@@ -82,7 +249,7 @@
     const count = math.commands.length;
     select(((selected < 0 ? centered : selected) + direction + count) % count);
   }
-  function clear() { selected = -1; needleTarget = math.idleFor(needleTarget - geometry.focusAngle) + geometry.focusAngle; start(); }
+  function clear() { cancelEffects(); selected = -1; needleTarget = math.idleFor(needleTarget - geometry.focusAngle) + geometry.focusAngle; start(); }
   byId('previous').addEventListener('click', () => navigate(-1));
   byId('next').addEventListener('click', () => navigate(1));
   byId('clear').addEventListener('click', clear);
@@ -112,7 +279,10 @@
       byId(group + '-frame').style.filter = palette.gold.original ? 'none' : 'url(#solar-frame-material)';
     });
   }
-  function exportSettings() { byId('settings').value = JSON.stringify(math.settings(values, byId('character').value), null, 2); }
+  function exportSettings() {
+    // v02の輪はそのまま。試作の炎は独立した任意項目としてコピーする。
+    byId('settings').value = JSON.stringify({ ...math.settings(values, byId('character').value), flame: { ...flameValues }, flameVariant, flameColor: { ...flameColors[byId('character').value] } }, null, 2);
+  }
   function applyWheel() {
     const ring = byId('outer-ring');
     ring.style.width = values.size + 'px'; ring.style.height = values.size + 'px';
@@ -146,18 +316,29 @@
     const value = byId('background').value, karima = byId('character').value === 'karima';
     screen.style.backgroundColor = value === 'gray' ? '#85878b' : '#ececeb';
     screen.style.backgroundImage = value === 'corridor' ? 'url("../太陽盤_試作02/corridor-reference.png")' : 'none';
-    // 名前札と同じ不透明な下地と細い内縁。背景変更で札の配色は変えない。
+    // 面だけの半透明はCSSで制御。文字・枠は維持し、背景変更で色は変えない。
     screen.style.setProperty('--ink', karima ? '#333942' : '#eee9df');
     screen.style.setProperty('--row', karima ? '#e4e7ea' : '#252931');
     screen.style.setProperty('--rule', karima ? '#8c9daa' : '#bba57c');
-    screen.style.setProperty('--active', karima ? '#f0f2f3' : '#37312a');
-    screen.style.setProperty('--active-rule', karima ? '#607988' : '#dec797');
+    // 選択面は無彩色のまま。金色は裏帯へ分離し、表面は薄い白系の光沢にする。
+    screen.style.setProperty('--active', karima ? '#e8edf1' : '#292e36');
+    screen.style.setProperty('--active-rule', karima ? '#4f86ae' : '#d6b45e');
+    screen.style.setProperty('--face-gloss', karima ? '#ffffff' : '#4a5059');
+    screen.style.setProperty('--shine', karima ? '#68a7d1' : '#e7c56b');
+    applyFlameColor();
+    // 共有SVGのdefsはscreenの外なので、参照先の変数をdefsにも同期する。
+    const surface = byId('command-selected-surface');
+    surface.style.setProperty('--active', karima ? '#e8edf1' : '#292e36');
+    surface.style.setProperty('--face-gloss', karima ? '#ffffff' : '#4a5059');
+    screen.style.setProperty('--backing', karima ? '#8c9daa' : '#cba04e');
+    screen.style.setProperty('--backing-active', karima ? '#567f9e' : '#e1b359');
   }
   byId('character').addEventListener('change', () => {
+    cancelEffects();
     const saved = math.preset(byId('character').value);
     // 色違いだけ切替。手元で動かした配置・帯の高さ・選択・回転角は保持する。
     ['hue', 'saturation', 'lightness', 'opacity'].forEach(key => { values[key] = saved[key]; });
-    applyWheel(); background();
+    applyWheel(); background(); pendingEffect = selected; playSelectionEffect(false);
   });
   byId('background').addEventListener('change', background);
   let remaining = 5;
@@ -168,13 +349,15 @@
       if (--remaining !== 0) return;
       loaded = true; byId('loading').hidden = true; byId('error').hidden = !failed;
       if (failed) { byId('error').textContent = '太陽盤または輪を読み込めません。隣の試作03フォルダの素材を確認してください。'; status('素材の読込に失敗しました。'); }
-      render();
+      render(); playSelectionEffect();
     };
     img.onload = () => finish(true); img.onerror = () => finish(false);
     img.src = '../太陽盤_試作03/' + (id === 'wheel-panes' ? 'disk-panes' : id) + '.png';
   });
-  const motionChange = () => { if (reduced.matches) start(); };
+  const motionChange = () => { if (reduced.matches) { cancelEffects(); start(); } else relight(); };
   reduced.addEventListener('change', motionChange);
-  window.addEventListener('pagehide', () => { disposed = true; stop(); observer.disconnect(); reduced.removeEventListener('change', motionChange); }, { once: true });
-  applyWheel(); background(); render();
+  const visibilityChange = () => { if (document.hidden) cancelEffects(); else relight(); };
+  document.addEventListener('visibilitychange', visibilityChange);
+  window.addEventListener('pagehide', () => { disposed = true; cancelEffects(); stop(); observer.disconnect(); reduced.removeEventListener('change', motionChange); document.removeEventListener('visibilitychange', visibilityChange); }, { once: true });
+  applyWheel(); applyFlame(); background(); render();
 })();

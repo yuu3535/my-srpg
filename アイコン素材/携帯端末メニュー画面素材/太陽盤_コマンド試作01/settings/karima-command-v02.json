@@ -1,0 +1,9 @@
+{
+  "schema": "solar-command-wheel-settings-v02",
+  "referenceResolution": { "width": 844, "height": 390 },
+  "character": "karima",
+  "wheel": { "gap": -27, "size": 609, "hue": 214, "saturation": 24, "lightness": 64, "opacity": 40, "bandHeight": 31 },
+  "flame": { "size": 69, "opacity": 83, "x": -18, "y": 12 },
+  "flameVariant": "bottom",
+  "flameColor": { "hue": 217, "saturation": 104, "brightness": 100 }
+}

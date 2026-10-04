@@ -3,12 +3,12 @@
   "referenceResolution": { "width": 844, "height": 390 },
   "character": "karima",
   "wheel": {
-    "gap": -12,
+    "gap": -27,
     "size": 609,
-    "hue": 224,
+    "hue": 214,
     "saturation": 24,
-    "lightness": 80,
+    "lightness": 64,
     "opacity": 40,
-    "bandHeight": 29
+    "bandHeight": 31
   }
 }
