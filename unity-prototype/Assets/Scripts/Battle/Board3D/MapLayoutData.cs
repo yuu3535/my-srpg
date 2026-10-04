@@ -77,6 +77,7 @@ namespace Srpg.Battle
         public MapTalkArea[] talkAreas;
         public MapInspect[] inspect;
         public MapGoal[] goals;
+        public string thenPlace2D, thenState2D;   // 入ったときの会話のあと、2Dの場所（Assets/Data/Corridors/<place>.json）のこの場面へ移る
     }
 
     [Serializable] public class MapPerson { public string id, name, facing, talkBlock; public int x, y; public Vector2Int Cell => new Vector2Int(x, y); }

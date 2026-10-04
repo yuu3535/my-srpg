@@ -93,6 +93,18 @@ namespace Srpg.Battle
             view.Tapped -= OnTap;
             view.Tapped += OnTap;
             if (dialogue != null) { dialogue.OnItem -= GotItem; dialogue.OnItem += GotItem; }
+            if (ExploreHandoff.Pending2D && PlaceAsset(ExploreHandoff.Place2D) != null)
+            {
+                // 戦闘の場所から戻ってきた: 流した会話・持ち物を引き継ぎ、その場所の指定の場面から
+                seen.UnionWith(ExploreHandoff.Seen);
+                foreach (var it in ExploreHandoff.Items) if (!items.Contains(it)) items.Add(it);
+                string place = ExploreHandoff.Place2D, state = ExploreHandoff.State2D;
+                ExploreHandoff.Clear();
+                var mapId = JsonUtility.FromJson<CorridorExplore>(PlaceAsset(place).text)?.explore?.map;
+                if (!string.IsNullOrEmpty(state) && !string.IsNullOrEmpty(mapId)) stateOf[mapId] = state;
+                EnterPlace(place, null);
+                return;
+            }
             EnterPlace(placeJsons.Any(t => t != null && t.name == startPlace) ? startPlace : placeJsons[0].name, null);
         }
 

@@ -172,6 +172,13 @@ namespace Srpg.Battle
             // 入ったときの会話 → 着いたマスの目的地
             PlayBlocks((State?.onEnter ?? Array.Empty<string>()).Where(b => !seen.Contains(b)).ToList(), () =>
             {
+                // 会話のあと2Dの場所へ（戦闘の場所から2Dの探索へ戻る。例: 訓練のあと自室へ。原作者 2026-10-04）
+                if (!string.IsNullOrEmpty(State?.thenPlace2D) && Application.isPlaying)
+                {
+                    ExploreHandoff.SetTo2D(State.thenPlace2D, State.thenState2D, seen, items);
+                    UnityEngine.SceneManagement.SceneManager.LoadScene("Corridor2D");
+                    return;
+                }
                 if (!CheckCell(Player, arrived: true) && !walkedOnce) hud?.Toast("行きたい所を押すと歩きます", 4f);
             });
         }

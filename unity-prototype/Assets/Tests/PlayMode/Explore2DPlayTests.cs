@@ -112,6 +112,22 @@ namespace Srpg.Tests
         }
 
         [UnityTest]
+        public IEnumerator AfterTrainingBackToTheRoom()
+        {
+            // 訓練のあと（3Dの盤面）から2Dの自室へ戻る形: 御伽噺を調べる場面、カリマがいる、持ち物を引き継ぐ
+            ExploreHandoff.SetTo2D("orcus_room", "prologue_1_2_fairytale", new[] { "prologue_1_1.b12" }, new[] { "黒陽の双剣" });
+            SceneManager.LoadScene("Corridor2D");
+            yield return null;
+            yield return null;
+            var explore = Object.FindFirstObjectByType<Explore2DController>();
+            Assert.AreEqual("orcus_room", explore.Place);
+            Assert.AreEqual("prologue_1_2_fairytale", explore.State?.id, "御伽噺の場面から始まらない");
+            Assert.IsNotNull(GameObject.Find("Person_young_karima"), "カリマがいない");
+            Assert.IsTrue(explore.Items.Contains("黒陽の双剣"), "持ち物が引き継がれない");
+            Assert.IsFalse(float.IsNaN(explore.SpotX("fairytale_book")), "御伽噺の本（カリマの本棚）を調べられない");
+        }
+
+        [UnityTest]
         public IEnumerator LookTunerRebuildsAndKeepsPeople()
         {
             SceneManager.LoadScene("Corridor2D");

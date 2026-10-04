@@ -27,6 +27,20 @@ namespace Srpg.Battle
             Items.Clear(); Items.AddRange(items);
         }
 
-        public static void Clear() => Pending = false;
+        public static void Clear() { Pending = false; Pending2D = false; }
+
+        // ── 3Dの盤面 → 2Dの探索（戦闘の場所から戻る） ──
+        public static bool Pending2D { get; private set; }
+        public static string Place2D { get; private set; }
+        public static string State2D { get; private set; }
+
+        public static void SetTo2D(string place, string state, IEnumerable<string> seen, IEnumerable<string> items)
+        {
+            Pending2D = true;
+            Place2D = place;
+            State2D = state;
+            Seen.Clear(); Seen.UnionWith(seen);
+            Items.Clear(); Items.AddRange(items);
+        }
     }
 }
