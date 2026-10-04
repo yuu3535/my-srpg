@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &1601998717
+--- !u!1 &337507637
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,101 +127,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1601998719}
-  - component: {fileID: 1601998718}
-  m_Layer: 0
-  m_Name: DialogueView
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1601998718
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1601998717}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 90a3c36aa5b5bd840be3f0a34d3941c3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Srpg.Battle::Srpg.Battle.DialogueView
-  adjustJson: {fileID: 0}
-  styleJson: {fileID: 4900000, guid: 8f848f68924846459bbb15ddaaf078fe, type: 3}
-  cornerTexture: {fileID: 2800000, guid: f084b80ed10b30e4aa3a933d100a960c, type: 3}
-  targetCamera: {fileID: 2042119327}
-  regularFont: {fileID: 12800000, guid: 5d44fb766293fa742921f1785442a4eb, type: 3}
-  boldFont: {fileID: 12800000, guid: ee93b216df8aef44da19774478f74b6d, type: 3}
-  panelSprite: {fileID: 21300000, guid: 8f4b326b4982a5a4a9fc1630dad93c8a, type: 3}
-  portraits:
-  - name: "\u30A2\u30EB\u30B7\u30A7"
-    texture: {fileID: 2800000, guid: 470aea951f6ff9040bfcc2f06d1c1a8b, type: 3}
-    uv:
-      serializedVersion: 2
-      x: 0.271593
-      y: 0.41082874
-      width: 0.50469613
-      height: 0.5891713
-  - name: "\u30AB\u30EA\u30DE"
-    texture: {fileID: 2800000, guid: 24eb1a6bc54bb0846893ee43d22fe1a0, type: 3}
-    uv:
-      serializedVersion: 2
-      x: 0.28701478
-      y: 0.40688232
-      width: 0.398244
-      height: 0.59311765
-  - name: "\u30AD\u30E3\u30EA\u30FC"
-    texture: {fileID: 2800000, guid: 7c7f2bd1b6ebbfd40af017dff88de5c0, type: 3}
-    uv:
-      serializedVersion: 2
-      x: 0.14106447
-      y: 0.38807294
-      width: 0.7198242
-      height: 0.6119271
-  - name: "\u30D8\u30F3\u30EA\u30FC"
-    texture: {fileID: 2800000, guid: ef8e624edce12004c8f7f8d9ab38d4b6, type: 3}
-    uv:
-      serializedVersion: 2
-      x: 0.2153315
-      y: 0.39370167
-      width: 0.5472376
-      height: 0.6062983
-  - name: "\u30AE\u30E5\u30F3\u30BF\u30FC"
-    texture: {fileID: 2800000, guid: 56181b9297319bb4da1bae75a4683e49, type: 3}
-    uv:
-      serializedVersion: 2
-      x: 0.26187846
-      y: 0.40140882
-      width: 0.44861877
-      height: 0.59859115
---- !u!4 &1601998719
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1601998717}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1742566983
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1742566986}
-  - component: {fileID: 1742566985}
-  - component: {fileID: 1742566984}
+  - component: {fileID: 337507640}
+  - component: {fileID: 337507639}
+  - component: {fileID: 337507638}
   m_Layer: 0
   m_Name: Corridor2D
   m_TagString: Untagged
@@ -229,20 +137,20 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1742566984
+--- !u!114 &337507638
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1742566983}
+  m_GameObject: {fileID: 337507637}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 79be39bb2a39f374da19df310ddb7d96, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Srpg.Battle::Srpg.Battle.Explore2DController
-  view: {fileID: 1742566985}
-  dialogue: {fileID: 1601998718}
+  view: {fileID: 337507639}
+  dialogue: {fileID: 1382388173}
   placeJsons:
   - {fileID: 4900000, guid: 329d7df5ba870824bb63b74ae0afd6c1, type: 3}
   - {fileID: 4900000, guid: 8b3704a27c11456daec3d54046b0b38b, type: 3}
@@ -293,13 +201,13 @@ MonoBehaviour:
   - {fileID: 2800000, guid: 8a0b00b9523cff84eb182dde58cb86cc, type: 3}
   - {fileID: 2800000, guid: fded15662838c2744a613c9d9023cbf3, type: 3}
   - {fileID: 2800000, guid: af18c382857226045b971a6a7c3721d4, type: 3}
---- !u!114 &1742566985
+--- !u!114 &337507639
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1742566983}
+  m_GameObject: {fileID: 337507637}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d70a9383a3410d6439ca819f2ec6c33e, type: 3}
@@ -323,20 +231,29 @@ MonoBehaviour:
   - {fileID: 2800000, guid: 6efbc16b5a0d5a845b8fd4d5d6ce9fc1, type: 3}
   - {fileID: 2800000, guid: 2808bc75104b42fe8bc27b246eb91535, type: 3}
   - {fileID: 2800000, guid: 1a31906663eb4ec8b67d650128b95dd9, type: 3}
+  - {fileID: 2800000, guid: 7bc16abd9f7a8044dbfdf2b023533308, type: 3}
+  - {fileID: 2800000, guid: 00f18672d47ab9a44bfabf069de2033c, type: 3}
+  - {fileID: 2800000, guid: 468e80b734dfe4f4382e9d216b7b531d, type: 3}
+  - {fileID: 2800000, guid: d04b61b3db8a1ec4cb740752eccdaaaf, type: 3}
+  - {fileID: 2800000, guid: ab9a352321aa5f6468b91a286506fe2b, type: 3}
+  - {fileID: 2800000, guid: 914a59c2c5e9a1e40b1035b1a6a4a8de, type: 3}
+  - {fileID: 2800000, guid: 7489e0b398dcd1642a71352327ed39da, type: 3}
+  - {fileID: 2800000, guid: daa940febb3bdb2459271f15c82f8311, type: 3}
   - {fileID: 2800000, guid: db13fa737261ad643a2b05c0217498e1, type: 3}
   - {fileID: 2800000, guid: 8c61e3c403457704c98272c654e02368, type: 3}
+  - {fileID: 2800000, guid: f62322450d61074459e8e01e9cbbb2ba, type: 3}
   - {fileID: 2800000, guid: 4a90d604455c43c4faf377625d159859, type: 3}
   - {fileID: 2800000, guid: c39bf5d93b94ddb46897ee01f37df4ab, type: 3}
   hero: {fileID: 2800000, guid: fded15662838c2744a613c9d9023cbf3, type: 3}
   walkSpeed: 220
-  targetCamera: {fileID: 2042119327}
---- !u!4 &1742566986
+  targetCamera: {fileID: 432728138}
+--- !u!4 &337507640
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1742566983}
+  m_GameObject: {fileID: 337507637}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -345,7 +262,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2042119326
+--- !u!1 &432728137
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -353,8 +270,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 2042119328}
-  - component: {fileID: 2042119327}
+  - component: {fileID: 432728139}
+  - component: {fileID: 432728138}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -362,13 +279,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!20 &2042119327
+--- !u!20 &432728138
 Camera:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2042119326}
+  m_GameObject: {fileID: 432728137}
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
@@ -413,16 +330,108 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!4 &2042119328
+--- !u!4 &432728139
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2042119326}
+  m_GameObject: {fileID: 432728137}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: -10}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1382388172
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1382388174}
+  - component: {fileID: 1382388173}
+  m_Layer: 0
+  m_Name: DialogueView
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1382388173
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1382388172}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 90a3c36aa5b5bd840be3f0a34d3941c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Srpg.Battle::Srpg.Battle.DialogueView
+  adjustJson: {fileID: 0}
+  styleJson: {fileID: 4900000, guid: 8f848f68924846459bbb15ddaaf078fe, type: 3}
+  cornerTexture: {fileID: 2800000, guid: f084b80ed10b30e4aa3a933d100a960c, type: 3}
+  targetCamera: {fileID: 432728138}
+  regularFont: {fileID: 12800000, guid: 5d44fb766293fa742921f1785442a4eb, type: 3}
+  boldFont: {fileID: 12800000, guid: ee93b216df8aef44da19774478f74b6d, type: 3}
+  panelSprite: {fileID: 21300000, guid: 8f4b326b4982a5a4a9fc1630dad93c8a, type: 3}
+  portraits:
+  - name: "\u30A2\u30EB\u30B7\u30A7"
+    texture: {fileID: 2800000, guid: 470aea951f6ff9040bfcc2f06d1c1a8b, type: 3}
+    uv:
+      serializedVersion: 2
+      x: 0.271593
+      y: 0.41082874
+      width: 0.50469613
+      height: 0.5891713
+  - name: "\u30AB\u30EA\u30DE"
+    texture: {fileID: 2800000, guid: 24eb1a6bc54bb0846893ee43d22fe1a0, type: 3}
+    uv:
+      serializedVersion: 2
+      x: 0.28701478
+      y: 0.40688232
+      width: 0.398244
+      height: 0.59311765
+  - name: "\u30AD\u30E3\u30EA\u30FC"
+    texture: {fileID: 2800000, guid: 7c7f2bd1b6ebbfd40af017dff88de5c0, type: 3}
+    uv:
+      serializedVersion: 2
+      x: 0.14106447
+      y: 0.38807294
+      width: 0.7198242
+      height: 0.6119271
+  - name: "\u30D8\u30F3\u30EA\u30FC"
+    texture: {fileID: 2800000, guid: ef8e624edce12004c8f7f8d9ab38d4b6, type: 3}
+    uv:
+      serializedVersion: 2
+      x: 0.2153315
+      y: 0.39370167
+      width: 0.5472376
+      height: 0.6062983
+  - name: "\u30AE\u30E5\u30F3\u30BF\u30FC"
+    texture: {fileID: 2800000, guid: 56181b9297319bb4da1bae75a4683e49, type: 3}
+    uv:
+      serializedVersion: 2
+      x: 0.26187846
+      y: 0.40140882
+      width: 0.44861877
+      height: 0.59859115
+--- !u!4 &1382388174
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1382388172}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -432,6 +441,6 @@ Transform:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 2042119328}
-  - {fileID: 1742566986}
-  - {fileID: 1601998719}
+  - {fileID: 432728139}
+  - {fileID: 337507640}
+  - {fileID: 1382388174}

@@ -80,6 +80,7 @@
   <label>素材のフォルダ <input id="folder" type="text" value="背景/オルクス城回廊横スクロール/採用候補/"></label>
   <button id="reload" title="素材のフォルダと 背景/ の中の絵を読み直す（新しく置いた絵を出す）">読み込み直す</button>
   <button id="add">層を足す</button>
+  <button id="addProps" title="家具など1つずつ置く物の層を足す">家具の層を足す</button>
   <button id="copy">コピー</button>
   <button id="reset">はじめの値に戻す</button>
   <span id="msg"></span>
@@ -213,7 +214,10 @@ const sizes = {};   // 画像の元の大きさ（file → {w,h}）
 // フォルダはリポジトリのルートから（このページは debug/ にあるので、先頭に / を付ける）
 const folderUrl = () => "/" + $("folder").value.replace(/^\/+/, "").replace(/\/?$/, "/");
 // 「/」で始まる名前はリポジトリのルートから（空の素材 背景/空/ など、場所のフォルダの外の絵）
-function url(file) { return encodeURI(file.startsWith("/") ? file : folderUrl() + file); }
+// 素材のフォルダに見つからない絵は、Unity に入れた絵の場所も探す（部屋の家具などは Unity の名前で入っている。2026-10-04）
+const resolved = {};
+const UNITY_ART = () => ["/unity-prototype/Assets/Art/Corridor/", `/unity-prototype/Assets/Art/Side2D/${place}/`, "/unity-prototype/Assets/Art/Sky/"];
+function url(file) { return encodeURI(file.startsWith("/") ? file : resolved[file] || folderUrl() + file); }
 const SKY_DIR = "/背景/空/";   // 時間帯・天気の空（原作者 2026-10-04。オルクス○○＝百年戦争中の治安が最悪な頃の空）
 let skyFiles = [];
 async function listSkies() {
@@ -248,7 +252,12 @@ function bgOptions(selected) {
 function size(file) {
   if (!file) return Promise.resolve(null);
   if (sizes[file]) return Promise.resolve(sizes[file]);
-  return new Promise(ok => { const im = new Image(); im.onload = () => { sizes[file] = { w: im.naturalWidth, h: im.naturalHeight }; ok(sizes[file]); }; im.onerror = () => ok(null); im.src = url(file); });
+  const tries = file.startsWith("/") ? [file] : [folderUrl() + file, ...UNITY_ART().map(d => d + file)];
+  const load = src => new Promise(ok => { const im = new Image(); im.onload = () => ok({ w: im.naturalWidth, h: im.naturalHeight }); im.onerror = () => ok(null); im.src = encodeURI(src); });
+  return (async () => {
+    for (const src of tries) { const s = await load(src); if (s) { resolved[file] = src; sizes[file] = s; return s; } }
+    return null;
+  })();
 }
 
 async function listFiles() {
@@ -294,6 +303,7 @@ async function render() {
     }
     firstOn = false;
     if (L.kind === "floor") {
+      if (L.file) { await size(L.file); if (token !== renderToken) return; }   // 絵の場所を探しておく
       const h = Math.max(1, L.bottom - L.top), rows = Math.max(1, L.rows);
       for (let r = 0; r < rows; r++) {
         const row = document.createElement("div");
@@ -308,6 +318,21 @@ async function render() {
       shade.className = "shade";
       Object.assign(shade.style, { top: `${L.top}px`, height: `${h}px`, background: `linear-gradient(180deg, rgba(10,14,22,${L.shade}), rgba(10,14,22,0))` });
       box.appendChild(shade);
+      continue;
+    }
+    if (L.kind === "props") {
+      // 家具など1つずつ置く物（x＝真ん中、bottom＝下の端、height＝高さ）。並べた順に奥から
+      for (const pr of L.props || []) {
+        const ps = await size(pr.file);
+        if (token !== renderToken) return;
+        if (!ps) continue;
+        const ph = Number(pr.height), pw = ps.w * ph / ps.h;
+        const img = document.createElement("img");
+        img.src = url(pr.file);
+        Object.assign(img.style, { left: `${shift + Number(pr.x) - pw / 2}px`, top: `${Number(pr.bottom) - ph}px`, width: `${pw}px`, height: `${ph}px`, opacity: L.opacity ?? 1,
+          transform: pr.flip ? "scaleX(-1)" : "none" });
+        box.appendChild(img);
+      }
       continue;
     }
     if (L.kind === "modules") {
@@ -427,6 +452,7 @@ function exportText() {
     if (L.fxHaze !== undefined) o.fxHaze = L.fxHaze;
     if (L.fxBlur !== undefined) o.fxBlur = L.fxBlur;
     if (L.kind === "floor") Object.assign(o, { top: L.top, bottom: L.bottom, tile: L.tile, rows: L.rows, shade: L.shade });
+    else if (L.kind === "props") { delete o.file; Object.assign(o, { opacity: L.opacity ?? 1, props: (L.props || []).map(p => ({ file: p.file, x: Number(p.x), bottom: Number(p.bottom), height: Number(p.height), flip: !!p.flip })) }); }
     else if (L.kind === "modules") { delete o.file; Object.assign(o, { height: L.height, bottom: L.bottom, opacity: L.opacity, modules: L.modules.map(m => ({ file: m.file, overlap: Number(m.overlap || 0), dy: Number(m.dy || 0), dx: Number(m.dx || 0), scale: Number(m.scale || 1), front: !!m.front, shadeTop: Number(m.shadeTop || 0) })) }); }
     else Object.assign(o, { height: L.height, bottom: L.bottom, overlap: L.overlap, repeat: L.repeat, mirror: L.mirror, opacity: L.opacity });
     return o;
@@ -675,6 +701,33 @@ function cards() {
     down.addEventListener("click", () => { if (i < layers.length - 1) { [layers[i + 1], layers[i]] = [layers[i], layers[i + 1]]; cards(); render(); } });
     del.addEventListener("click", () => { layers.splice(i, 1); cards(); render(); });
     card.appendChild(head);
+    if (L.kind === "props") {
+      // 家具: 1つずつ「絵・横の位置・下の端・高さ・左右反転」。＋で足す、×で消す
+      card.insertAdjacentHTML("beforeend", `<div class="exRow head"><span>絵</span><span>横・下</span><span>高さ</span><span></span></div>`);
+      (L.props || []).forEach((pr, k) => {
+        const row = document.createElement("div");
+        row.className = "modRow";
+        row.innerHTML = `<select>${files.map(f => `<option ${f === pr.file ? "selected" : ""}>${f}</option>`).join("")}${bgOptions(pr.file)}</select>`
+          + `<label>横 <input type="number" value="${pr.x}"></label><label>下 <input type="number" value="${pr.bottom}"></label><button title="消す">×</button>`
+          + `<label>高さ <input type="number" value="${pr.height}"></label><label class="front"><input type="checkbox" ${pr.flip ? "checked" : ""}> 左右反転</label>`;
+        const [psel] = row.getElementsByTagName("select");
+        const [xi, bi, hi, fi] = row.querySelectorAll("input");
+        psel.addEventListener("change", () => { pr.file = psel.value; render(); });
+        xi.addEventListener("input", () => { pr.x = Number(xi.value); render(); });
+        bi.addEventListener("input", () => { pr.bottom = Number(bi.value); render(); });
+        hi.addEventListener("input", () => { pr.height = Number(hi.value); render(); });
+        fi.addEventListener("change", () => { pr.flip = fi.checked; render(); });
+        row.querySelector("button").addEventListener("click", () => { L.props.splice(k, 1); cards(); render(); });
+        card.appendChild(row);
+      });
+      const addP = document.createElement("button");
+      addP.textContent = "＋ 物を足す";
+      addP.addEventListener("click", () => { (L.props ||= []).push({ file: files[0] || "", x: Number($("cam").value) + 422, bottom: 370, height: 150, flip: false }); cards(); render(); });
+      card.appendChild(addP);
+      card.appendChild(slider(L, "speed", "流れる速さ", 0, 1.5, 0.01));
+      host.appendChild(card);
+      return;
+    }
     if (L.kind === "modules") {
       // 並べる絵: 1つずつ「絵・左と重ねる幅・上下のずれ」。＋で足す、×で消す
       L.modules.forEach((mod, m) => {
@@ -750,6 +803,7 @@ $("heroY").addEventListener("change", e => { hero.y = Number(e.target.value); re
 $("heroH").addEventListener("change", e => { hero.h = Number(e.target.value); render(); });
 $("heroOn").addEventListener("change", e => { hero.on = e.target.checked; render(); });
 $("camMargin").addEventListener("change", e => { hero.margin = Number(e.target.value); render(); });
+$("addProps").addEventListener("click", () => { layers.push({ name: "家具", kind: "props", speed: 1, x: 0, opacity: 1, on: true, props: [] }); cards(); render(); });
 $("add").addEventListener("click", () => {
   layers.push({ name: "新しい層", file: files[0] || "", kind: "image", height: 200, bottom: 390, x: 0, overlap: 0, speed: 1, repeat: false, mirror: false, opacity: 1, on: true });
   cards(); render();

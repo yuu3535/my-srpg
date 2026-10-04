@@ -170,6 +170,10 @@ namespace Srpg.EditorAgent
                 explore.Begin();
                 Shot("room_wake", "自室で起きる");
                 CloseAll();
+                explore.StepForTest(view.WalkMinX);
+                Shot("room_left", "部屋の左（会話なし）");
+                explore.StepForTest(view.WalkMaxX);
+                Shot("room_right", "部屋の右（会話なし）");
                 explore.StepForTest(explore.SpotX("to_corridor"));
                 use.Invoke(view, null);
                 Shot("room_door_locked", "剣を持たずに扉へ");

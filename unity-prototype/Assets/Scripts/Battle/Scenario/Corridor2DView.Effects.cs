@@ -170,7 +170,7 @@ namespace Srpg.Battle
                     if (t == null || t.texture == null) continue;   // 天井の色（絵なし）はそのまま
                     var size = t.rectTransform.sizeDelta;
                     if (layer.kind == "floor") size = new Vector2(Mathf.Max(8f, layer.tile), size.y);   // 床は素材の幅ごとにくり返す
-                    else if (layer.kind != "modules") size = new Vector2(width, layer.height);
+                    else if (layer.kind != "modules" && layer.kind != "props") size = new Vector2(width, layer.height);
                     t.material = NewLayerMaterial(haze, blur, size, Vector2.one);
                 }
             }

@@ -22,7 +22,8 @@ namespace Srpg.Battle
         public class CorridorLayer
         {
             public string name, kind, file;
-            public CorridorModule[] modules;   // kind "modules": 左から順に並べる絵（左の端・アーチ…・右の端）
+            public CorridorModule[] modules;
+            public CorridorProp[] props;       // kind "props": 1つずつ置く物（家具など）。並べた順に奥から描く   // kind "modules": 左から順に並べる絵（左の端・アーチ…・右の端）
             public float speed, x, height, bottom, overlap, opacity = 1f, top, tile, rows, shade;
             public bool repeat, mirror;
         }
@@ -37,6 +38,15 @@ namespace Srpg.Battle
             public float scale = 1f;     // 大きさ（1＝層の高さ）。下の端をそろえて大きくする
             public bool front;           // ほかの絵より手前に出す（継ぎ目を隠す）
             public float shadeTop;       // 絵の上からこの高さまで、後ろに暗い天井の色を敷く（端の絵の上の透けた三角から空が見えないように）
+        }
+
+        /// <summary>1つずつ置く物（部屋の家具など。2026-10-04）。x＝真ん中の横の位置、bottom＝下の端、height＝高さ（幅は絵の比率）</summary>
+        [Serializable]
+        public class CorridorProp
+        {
+            public string file;
+            public float x, bottom, height;
+            public bool flip;
         }
 
         /// <summary>出口（回廊の端の通路など）。近づくと下に「label」が出て、押すと scene へ（空ならまだつながっていない）</summary>
@@ -199,6 +209,23 @@ namespace Srpg.Battle
                     built.Add((layer, box, tiles, 0f));
                     modulesLayer = layer;
                     BuildShafts(root);   // 光の筋は回廊のすぐ手前（アルシェより奥）
+                    continue;
+                }
+                if (layer.kind == "props")
+                {
+                    foreach (var prop in layer.props ?? Array.Empty<CorridorProp>())
+                    {
+                        var pt = Texture(prop.file);
+                        if (pt == null) continue;
+                        float ph = prop.height, pw = pt.width * ph / pt.height;
+                        var img = Place(NewRect(prop.file, box), prop.x - pw / 2f, prop.bottom - ph, pw, ph).gameObject.AddComponent<RawImage>();
+                        img.texture = pt;
+                        img.raycastTarget = false;
+                        if (prop.flip) img.uvRect = new Rect(1f, 0f, -1f, 1f);
+                        img.color = new Color(1f, 1f, 1f, layer.opacity);
+                        tiles.Add(img);
+                    }
+                    built.Add((layer, box, tiles, 0f));
                     continue;
                 }
                 if (layer.kind == "floor")
@@ -375,7 +402,7 @@ namespace Srpg.Battle
             foreach (var (layer, box, tiles, width) in built)
             {
                 float shift = layer.x - cameraX * layer.speed;
-                if (layer.kind == "modules")
+                if (layer.kind == "modules" || layer.kind == "props")
                 {
                     // 組み立てたときの位置（Build で決めた）を、流れる分だけずらす
                     foreach (var t in tiles)

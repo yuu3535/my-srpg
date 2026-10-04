@@ -5,13 +5,13 @@
   844,
   390
  ],
- "heroFeetY": 352,
- "heroHeight": 96,
- "walkMin": 330,
- "walkMax": -330,
- "cameraMargin": 200,
+ "heroFeetY": 378,
+ "heroHeight": 160,
+ "walkMin": 540,
+ "walkMax": -540,
+ "cameraMargin": 300,
  "look": "",
- "_note": "アルシェとカリマの部屋（仮。原作者の壁の素材 背景/双子の部屋/ の基本の壁と窓だけ。家具はまだ。窓の外は回廊と同じ空・遠景・庭）。床が見えるよう、壁は下の端 332 まで。光の筋は窓だけに合わないので、見え方（効果）はまだ付けない。扉は右の端（回廊は右へ進むので。原作者 2026-10-04）。左右の外側に壁を1枚ずつ足し、カメラの余白 200 で端の外を見せない",
+ "_note": "アルシェとカリマの部屋（原作者の素材 背景/双子の部屋/ と組み立てのイメージ イメージ.png から。家具の位置と大きさはイメージから読み取った。2026-10-04）。部屋は回廊より狭く、アルシェは大きめ（背 160）。左右の外側に壁を1枚ずつ（カメラの余白 300 で端の外を見せない）。扉は右の端。剣立ての絵はまだない（印だけ）。見え方（効果）はまだ付けない",
  "layers": [
   {
    "name": "空",
@@ -58,7 +58,7 @@
    "file": "orcus_corridor_floor_stone_a_top_seamless.png",
    "speed": 1,
    "x": 0,
-   "top": 321,
+   "top": 348,
    "bottom": 390,
    "tile": 120,
    "rows": 2,
@@ -69,8 +69,8 @@
    "kind": "modules",
    "speed": 1,
    "x": 0,
-   "height": 340,
-   "bottom": 332,
+   "height": 390,
+   "bottom": 352,
    "opacity": 1,
    "modules": [
     {
@@ -84,7 +84,16 @@
     },
     {
      "file": "orcus_room_wall_base.png",
-     "overlap": 2,
+     "overlap": 0,
+     "dy": 0,
+     "dx": 0,
+     "scale": 1,
+     "front": false,
+     "shadeTop": 0
+    },
+    {
+     "file": "orcus_room_wall_window_light.png",
+     "overlap": 0,
      "dy": 0,
      "dx": 0,
      "scale": 1,
@@ -93,16 +102,7 @@
     },
     {
      "file": "orcus_room_wall_base.png",
-     "overlap": 2,
-     "dy": 0,
-     "dx": 0,
-     "scale": 1,
-     "front": false,
-     "shadeTop": 0
-    },
-    {
-     "file": "orcus_room_wall_window.png",
-     "overlap": 2,
+     "overlap": 0,
      "dy": 0,
      "dx": 0,
      "scale": 1,
@@ -111,21 +111,69 @@
     },
     {
      "file": "orcus_room_wall_base.png",
-     "overlap": 2,
+     "overlap": 0,
      "dy": 0,
      "dx": 0,
      "scale": 1,
      "front": false,
      "shadeTop": 0
+    }
+   ]
+  },
+  {
+   "name": "家具",
+   "kind": "props",
+   "speed": 1,
+   "x": 0,
+   "opacity": 1,
+   "props": [
+    {
+     "file": "orcus_room_shelf_arshe.png",
+     "x": 801,
+     "bottom": 368,
+     "height": 311
     },
     {
-     "file": "orcus_room_wall_base.png",
-     "overlap": 2,
-     "dy": 0,
-     "dx": 0,
-     "scale": 1,
-     "front": false,
-     "shadeTop": 0
+     "file": "orcus_room_shelf_karima.png",
+     "x": 1320,
+     "bottom": 370,
+     "height": 315
+    },
+    {
+     "file": "orcus_room_bed_arshe.png",
+     "x": 621,
+     "bottom": 361,
+     "height": 328
+    },
+    {
+     "file": "orcus_room_bed_karima.png",
+     "x": 1500,
+     "bottom": 361,
+     "height": 322
+    },
+    {
+     "file": "orcus_room_sofa.png",
+     "x": 1054,
+     "bottom": 376,
+     "height": 147
+    },
+    {
+     "file": "orcus_room_chest_arshe.png",
+     "x": 613,
+     "bottom": 370,
+     "height": 63
+    },
+    {
+     "file": "orcus_room_chest_karima.png",
+     "x": 1501,
+     "bottom": 376,
+     "height": 69
+    },
+    {
+     "file": "orcus_room_table.png",
+     "x": 1064,
+     "bottom": 372,
+     "height": 63
     }
    ]
   }
@@ -139,10 +187,31 @@
   "spots": [
    {
     "id": "to_corridor",
-    "x": -360,
+    "x": 1600,
+    "w": 0
+   },
+   {
+    "id": "player",
+    "x": 1010,
+    "w": 0
+   },
+   {
+    "id": "arshe_bed",
+    "x": 615,
+    "w": 0
+   },
+   {
+    "id": "find_sword",
+    "x": 800,
+    "w": 0
+   },
+   {
+    "id": "karima_bed",
+    "x": 1500,
     "w": 0
    }
   ],
   "looks": []
- }
+ },
+ "heroFeetFront": 388
 }
