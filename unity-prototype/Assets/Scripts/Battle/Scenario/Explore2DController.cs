@@ -75,7 +75,7 @@ namespace Srpg.Battle
         public MapState State { get; private set; }
         public IReadOnlyCollection<string> Seen => seen;
         public IReadOnlyList<string> Items => items;
-        public bool Busy => (dialogue != null && dialogue.IsPlaying) || (view != null && view.AutoWalking) || starting || moving;
+        public bool Busy => (dialogue != null && dialogue.IsPlaying) || (view != null && view.ScriptedWalking) || starting || moving;
         public string Place => view != null ? view.PlaceName : null;
         public float PersonX(string id) => personX.TryGetValue(id, out var x) ? x : float.NaN;
 
@@ -88,6 +88,8 @@ namespace Srpg.Battle
             view.Controlled = true;
             view.Rebuilt -= OnViewRebuilt;
             view.Rebuilt += OnViewRebuilt;
+            view.Tapped -= OnTap;
+            view.Tapped += OnTap;
             if (dialogue != null) { dialogue.OnItem -= GotItem; dialogue.OnItem += GotItem; }
             EnterPlace(placeJsons.Any(t => t != null && t.name == startPlace) ? startPlace : placeJsons[0].name, null);
         }
@@ -129,7 +131,7 @@ namespace Srpg.Battle
                 list.Add((p.id, name, sprites.FirstOrDefault(t => t != null && t.name == token), x));
             }
             peopleList = list;
-            view.SetPeople(list);
+            OnViewRebuilt();   // 人と、調べる所の印
             // 戻ってきた扉の前（少し内側）。なければ場面の始まりの位置
             var back = fromMap != null ? map.exits?.FirstOrDefault(e => e.toMap == fromMap) : null;
             if (back != null)
@@ -145,7 +147,31 @@ namespace Srpg.Battle
             if (onEnter.Count > 0) { starting = true; PlayBlocks(onEnter, () => starting = false); }
         }
 
-        private void OnViewRebuilt() => view.SetPeople(peopleList);
+        private void OnViewRebuilt()
+        {
+            view.SetPeople(peopleList);
+            view.SetMarkers(InspectSpots().Select(i => CellsX(i.id, i.cells)));
+        }
+
+        private IEnumerable<MapInspect> InspectSpots() => (State?.inspect ?? Array.Empty<MapInspect>()).Concat(map?.inspect ?? Array.Empty<MapInspect>());
+
+        /// <summary>
+        /// 画面を押した（原作者 2026-10-04: ◀ ▶ だけだと不便。押した所へ進む）。
+        /// 人・調べる所・扉の近くを押したら、そこまで歩いてから話す・調べる・扉を使う。ほかは押した所へ歩くだけ
+        /// </summary>
+        private void OnTap(float x, float y)
+        {
+            if (Busy || State == null) return;
+            const float Pick = 48f;
+            var person = (State.people ?? Array.Empty<MapPerson>()).Where(p => !string.IsNullOrEmpty(p.talkBlock) && Mathf.Abs(personX[p.id] - x) < Pick)
+                .OrderBy(p => Mathf.Abs(personX[p.id] - x)).FirstOrDefault();
+            if (person != null) { Talk(person); return; }
+            var inspect = InspectSpots().Where(i => Mathf.Abs(CellsX(i.id, i.cells) - x) < Pick).OrderBy(i => Mathf.Abs(CellsX(i.id, i.cells) - x)).FirstOrDefault();
+            if (inspect != null) { view.WalkToTap(CellsX(inspect.id, inspect.cells), y, () => Inspect(inspect)); return; }
+            var exit = (map.exits ?? Array.Empty<MapExit>()).Where(e => Mathf.Abs(CellsX(e.id, e.cells) - x) < Pick).OrderBy(e => Mathf.Abs(CellsX(e.id, e.cells) - x)).FirstOrDefault();
+            if (exit != null) { view.WalkToTap(CellsX(exit.id, exit.cells), y, () => UseExit(exit)); return; }
+            view.WalkToTap(x, y);
+        }
 
         /// <summary>場所を移る: 暗くする → 入る → 明るくする（0.25 秒ずつ）</summary>
         private System.Collections.IEnumerator Move(Action enter)
@@ -210,7 +236,7 @@ namespace Srpg.Battle
             {
                 float d = Mathf.Abs(CellsX(i.id, i.cells) - px);
                 var inspect = i;
-                if (d < InspectReach && d < best.dist) best = (d, string.IsNullOrEmpty(i.label) ? "調べる" : $"調べる（{i.label}）", () => Inspect(inspect));
+                if (d < InspectReach && d < best.dist) best = (d, $"調べる（{InspectName(i)}）", () => Inspect(inspect));
             }
             foreach (var e in map.exits ?? Array.Empty<MapExit>())
             {
@@ -268,6 +294,17 @@ namespace Srpg.Battle
         {
             if (!string.IsNullOrEmpty(inspect.block)) { PlayBlocks(new List<string> { inspect.block }, null, replay: true); return; }
             if (!string.IsNullOrEmpty(inspect.text)) PlayLines(new[] { new ScenarioLine { type = "narration", text = inspect.text } });
+        }
+
+        /// <summary>調べる所の名前（配置表の label。なければ、そのマスにある物の名前。括弧の中は省く）</summary>
+        private string InspectName(MapInspect i)
+        {
+            string name = i.label;
+            if (string.IsNullOrEmpty(name))
+                name = map?.objects?.FirstOrDefault(o => o.cells != null && i.cells != null && o.cells.Any(c => i.cells.Any(k => k.x == c.x && k.y == c.y)))?.kind ?? "";
+            int cut = name.IndexOfAny(new[] { '（', '(' });
+            if (cut > 0) name = name.Substring(0, cut);
+            return string.IsNullOrEmpty(name) ? "ここ" : name;
         }
 
         private string ExitLabel(MapExit e)

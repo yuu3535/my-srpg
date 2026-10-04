@@ -52,6 +52,38 @@ namespace Srpg.Tests
         }
 
         [UnityTest]
+        public IEnumerator TapToFindTheSwordAndLeaveTheRoom()
+        {
+            SceneManager.LoadScene("Corridor2D");
+            yield return null;
+            yield return null;
+            var view = Object.FindFirstObjectByType<Corridor2DView>();
+            var explore = Object.FindFirstObjectByType<Explore2DController>();
+            var dialogue = Object.FindFirstObjectByType<DialogueView>();
+            Assert.AreEqual("orcus_room", explore.Place);
+            for (int i = 0; i < 20 && dialogue.IsPlaying; i++) dialogue.Close();
+            yield return null;
+
+            // 床の何もない所を押すと、そこへ歩く（手前の高さも）
+            float target = view.PlayerX + 120f;
+            view.OnTap(target, 380f);
+            for (float t = 0f; t < 3f && Mathf.Abs(view.PlayerX - target) > 1f; t += Time.unscaledDeltaTime) yield return null;
+            Assert.AreEqual(target, view.PlayerX, 1f, "押した所へ歩かない");
+
+            // 剣立てを押すと、歩いて調べて双剣を手に入れる
+            view.OnTap(explore.SpotX("find_sword"), 360f);
+            for (float t = 0f; t < 4f && !dialogue.IsPlaying; t += Time.unscaledDeltaTime) yield return null;
+            Assert.IsTrue(dialogue.IsPlaying, "剣立てを調べる会話が始まらない");
+            for (int i = 0; i < 20 && dialogue.IsPlaying; i++) dialogue.Close();
+            Assert.IsTrue(explore.Items.Contains("黒陽の双剣"), "双剣を手に入れていない");
+
+            // 扉を押すと、回廊へ出る
+            view.OnTap(explore.SpotX("to_corridor"), 360f);
+            for (float t = 0f; t < 5f && explore.Place != "orcus_castle"; t += Time.unscaledDeltaTime) yield return null;
+            Assert.AreEqual("orcus_castle", explore.Place, "部屋から回廊へ出られない");
+        }
+
+        [UnityTest]
         public IEnumerator LookTunerRebuildsAndKeepsPeople()
         {
             SceneManager.LoadScene("Corridor2D");

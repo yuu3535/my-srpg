@@ -52,6 +52,7 @@ namespace Srpg.Battle
         {
             public string corridor;
             public float heroFeetY = 352f, heroHeight = 96f, length = 2532f;
+            public float heroFeetFront;   // アルシェが手前へ歩ける足元の高さ（0 なら heroFeetY＋28。原作者 2026-10-04: もう少し手前も歩きたい）
             public float walkMin = 40f, walkMax = -40f;   // 歩ける範囲（walkMax が負なら右の端からの距離）
             public float cameraMargin;
             public string look;                             // ふだんの見え方（Assets/Data/Looks/<look>.json）                      // カメラが回廊の両端からこれだけ内側で止まる（端の外の空を見せない）
@@ -71,6 +72,14 @@ namespace Srpg.Battle
         private RectTransform root, heroRect;
         private readonly List<(CorridorLayer layer, RectTransform box, List<RawImage> tiles, float width)> built = new List<(CorridorLayer, RectTransform, List<RawImage>, float)>();
         private float playerX = 422f, cameraX;
+        private float playerY = -1f;      // アルシェの足元の高さ（奥 heroFeetY 〜 手前 FeetFront）
+        private bool scriptedWalk;        // 会話の前に相手の隣へ歩くなど（押しても動かない）
+        private readonly List<(RectTransform rt, float x)> markers = new List<(RectTransform, float)>();
+
+        /// <summary>画面を押した（横の位置は回廊の中の位置、y は画面の上から）。探索の仕組みが受け取って、歩く・話す・調べるを決める</summary>
+        public event Action<float, float> Tapped;
+        private float FeetBack => data.heroFeetY;
+        private float FeetFront => data.heroFeetFront > 0f ? data.heroFeetFront : data.heroFeetY + 28f;
         private int holding;            // −1 左 / 0 / 1 右（画面の ◀ ▶）
         private RectTransform exitButton;
         private Text exitLabel, toast;
@@ -95,6 +104,7 @@ namespace Srpg.Battle
         /// <summary>カメラを寄せる点（会話の2人のまん中など）。null ならアルシェ</summary>
         public float? FocusX { get; set; }
         public bool AutoWalking => autoWalk != null;
+        public bool ScriptedWalking => autoWalk != null && scriptedWalk;
         public float WalkMinX => data.walkMin;
         public float WalkMaxX => data.walkMax > 0f ? data.walkMax : data.length + Mathf.Min(data.walkMax, -40f);   // 負の値は右の端からの距離
         public float HeroHeight => data.heroHeight;
@@ -110,6 +120,7 @@ namespace Srpg.Battle
             built.Clear();
             moduleHome.Clear();
             walkButtons.Clear();
+            markers.Clear();
             people.Clear();   // 人は組み立て直したあとに SetPeople で並べ直す（Explore2DController）
             var canvasObject = new GameObject("Corridor", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             canvasObject.transform.SetParent(transform, false);
@@ -131,6 +142,7 @@ namespace Srpg.Battle
             back.anchorMin = Vector2.zero; back.anchorMax = Vector2.one; back.sizeDelta = Vector2.zero;
             back.gameObject.AddComponent<Image>().color = new Color(0.03f, 0.04f, 0.06f, 1f);
             back.SetAsFirstSibling();
+            if (playerY < 0f) playerY = data.heroFeetY;
 
             foreach (var layer in data.layers ?? Array.Empty<CorridorLayer>())
             {
@@ -229,6 +241,7 @@ namespace Srpg.Battle
             ApplyLayerEffects();
             ApplyCharaEffects(heroImage);
             BuildVignette(canvasObject.transform);
+            BuildTapArea(canvasObject.transform);         // 押した所へ歩く（いちばん奥。◀ ▶ やボタンが手前）
             BuildTunerHotspot(canvasObject.transform);   // 左上を5回で見え方の調整画面（Corridor2DView.Tuner）
 
             // 画面の端の ◀ ▶（押している間歩く。探索の見本 2026-10-02 の形）
@@ -273,13 +286,14 @@ namespace Srpg.Battle
         {
             UpdateTuner();
             if (data == null) return;
-            int dir = Locked || autoWalk != null ? 0 : holding;
+            int dir = Locked || scriptedWalk ? 0 : holding;
             var kb = Keyboard.current;
-            if (kb != null && !Locked && autoWalk == null)
+            if (kb != null && !Locked && !scriptedWalk)
             {
                 if (kb.leftArrowKey.isPressed || kb.aKey.isPressed) dir = -1;
                 else if (kb.rightArrowKey.isPressed || kb.dKey.isPressed) dir = 1;
             }
+            if (dir != 0 && autoWalk != null) { StopCoroutine(autoWalk); autoWalk = null; }   // ◀ ▶ を押したら、押した所へ歩くのをやめる
             if (dir != 0)
             {
                 playerX = Mathf.Clamp(playerX + dir * walkSpeed * Time.deltaTime, WalkMinX, WalkMaxX);
@@ -394,13 +408,22 @@ namespace Srpg.Battle
                 bool faceLeft = playerX < x && img != null;   // 名前の札（絵のない人）は裏返さない
                 rt.localScale = new Vector3(faceLeft ? -1f : 1f, 1f, 1f);
             }
+            foreach (var (rt, x) in markers)
+            {
+                if (rt == null) continue;
+                float lift = Application.isPlaying ? Mathf.Sin(Time.unscaledTime * 3f + x) * 3f : 0f;
+                rt.anchoredPosition = new Vector2(x - cameraX, -(data.heroFeetY - data.heroHeight * 0.55f) + lift);
+            }
             if (toast != null && toast.gameObject.activeSelf && Application.isPlaying && Time.unscaledTime > toastUntil) toast.gameObject.SetActive(false);
             ShiftShafts();
             if (heroRect != null)
             {
                 float bob = walkTime > 0f ? Mathf.Abs(Mathf.Sin(walkTime * 9f)) * 3f : 0f;   // 歩くときの小さな上下
-                heroRect.anchoredPosition = new Vector2(playerX - cameraX, -data.heroFeetY + bob);
-                heroRect.localScale = new Vector3(facingLeft ? -1f : 1f, 1f, 1f);
+                // 手前ほど少し大きく（奥 1.0 → 手前 1.1）
+                float depth = Mathf.InverseLerp(FeetBack, FeetFront, playerY < 0f ? FeetBack : playerY);
+                float sc = 1f + 0.1f * depth;
+                heroRect.anchoredPosition = new Vector2(playerX - cameraX, -(playerY < 0f ? data.heroFeetY : playerY) + bob);
+                heroRect.localScale = new Vector3(facingLeft ? -sc : sc, sc, 1f);
             }
         }
 
@@ -461,35 +484,101 @@ namespace Srpg.Battle
             toastUntil = Time.unscaledTime + seconds;
         }
 
-        /// <summary>x まで歩いて、着いたら then（エディタでは待たずに着く）</summary>
-        public void WalkTo(float x, Action then)
+        /// <summary>
+        /// x（と足元の高さ y）まで歩いて、着いたら then（エディタでは待たずに着く）。
+        /// scripted＝会話の前に相手の隣へ歩くなど（歩く間は押しても動かない）。押した所へ歩くときは false
+        /// </summary>
+        public void WalkTo(float x, Action then, float? y = null, bool scripted = true)
         {
             x = Mathf.Clamp(x, WalkMinX, WalkMaxX);
+            float ty = Mathf.Clamp(y ?? playerY, FeetBack, FeetFront);
             if (autoWalk != null) StopCoroutine(autoWalk);
             autoWalk = null;
-            if (!Application.isPlaying || Mathf.Abs(x - playerX) < 2f)
+            scriptedWalk = false;
+            if (!Application.isPlaying || (Mathf.Abs(x - playerX) < 2f && Mathf.Abs(ty - playerY) < 2f))
             {
                 if (Mathf.Abs(x - playerX) >= 2f) facingLeft = x < playerX;
                 playerX = x;
+                playerY = ty;
                 Apply();
                 then?.Invoke();
                 return;
             }
-            autoWalk = StartCoroutine(WalkRoutine(x, then));
+            scriptedWalk = scripted;
+            autoWalk = StartCoroutine(WalkRoutine(x, ty, then));
         }
 
-        private System.Collections.IEnumerator WalkRoutine(float x, Action then)
+        private System.Collections.IEnumerator WalkRoutine(float x, float y, Action then)
         {
-            facingLeft = x < playerX;
-            while (Mathf.Abs(x - playerX) > 0.5f)
+            if (Mathf.Abs(x - playerX) > 1f) facingLeft = x < playerX;
+            var target = new Vector2(x, y);
+            var pos = new Vector2(playerX, playerY);
+            while ((target - pos).magnitude > 0.5f)
             {
-                playerX = Mathf.MoveTowards(playerX, x, walkSpeed * Time.deltaTime);
+                pos = Vector2.MoveTowards(pos, target, walkSpeed * Time.deltaTime);
+                playerX = pos.x;
+                playerY = pos.y;
                 walkTime += Time.deltaTime;
                 yield return null;
             }
             walkTime = 0f;
             autoWalk = null;
+            scriptedWalk = false;
             then?.Invoke();
+        }
+
+        /// <summary>画面のどこを押しても受け取る、いちばん奥の押し場所（ボタン・調整の入口より奥）</summary>
+        private void BuildTapArea(Transform parent)
+        {
+            var rt = NewRect("押した所へ歩く", parent);
+            rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one; rt.sizeDelta = Vector2.zero;
+            rt.gameObject.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0f);
+            var trigger = rt.gameObject.AddComponent<EventTrigger>();
+            var entry = new EventTrigger.Entry { eventID = EventTriggerType.PointerClick };
+            entry.callback.AddListener(e =>
+            {
+                if (Locked || scriptedWalk) return;
+                var pe = (PointerEventData)e;
+                if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(root, pe.position, pe.pressEventCamera, out var local)) return;
+                float sx = local.x + ScreenW / 2f, sy = ScreenH / 2f - local.y;   // 844×390 の画面の左上から
+                OnTap(cameraX + sx, sy);
+            });
+            trigger.triggers.Add(entry);
+        }
+
+        /// <summary>押した: 探索の仕組みがあれば任せる（話す・調べる）。なければ、その所へ歩く</summary>
+        public void OnTap(float x, float y)
+        {
+            if (Tapped != null) Tapped(x, y);
+            else WalkTo(x, null, y, scripted: false);
+        }
+
+        /// <summary>押した所へ歩く（足元の高さは、床の帯の中なら押した高さ、それより上なら今の高さ）</summary>
+        public void WalkToTap(float x, float y, Action then = null) =>
+            WalkTo(x, then, y >= FeetBack - 30f ? y : (float?)null, scripted: false);
+
+        /// <summary>調べられる所などの印（小さな菱形がゆっくり上下する）。絵がまだない物の場所を分かるように</summary>
+        public void SetMarkers(IEnumerable<float> xs)
+        {
+            foreach (var m in markers) if (m.rt != null) DestroyImmediate(m.rt.gameObject);
+            markers.Clear();
+            if (root == null) return;
+            foreach (var x in xs)
+            {
+                var t = NewRect("印", root).gameObject.AddComponent<Text>();
+                t.font = JapaneseFont.Get(new[] { "Noto Serif JP", "Yu Mincho", "MS PMincho" }, 18);
+                t.fontSize = 18; t.text = "◆"; t.alignment = TextAnchor.MiddleCenter;
+                t.color = new Color(0.98f, 0.9f, 0.6f, 0.9f);
+                t.raycastTarget = false;
+                t.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0f, 0f, 0.8f);
+                var rt = t.rectTransform;
+                rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
+                rt.pivot = new Vector2(0.5f, 0.5f);
+                rt.sizeDelta = new Vector2(24f, 24f);
+                if (heroRect != null) rt.SetSiblingIndex(heroRect.GetSiblingIndex());
+                markers.Add((rt, x));
+            }
+            Apply();
         }
 
         /// <summary>アルシェの向き（会話の相手のほうを向く）</summary>
