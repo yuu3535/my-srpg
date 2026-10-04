@@ -71,7 +71,7 @@
 
 ## 5. 重ね方を決める（調整ページ）
 
-`debug/corridor_layers.html`（静的サーバーで開く。`file://` で直接開くと素材が読めない）。`debug/open_layers.bat` をダブルクリックすると、サーバーを起動して http://localhost:8931/debug/corridor_layers.html を開く（サーバーの黒い窓を閉じると止まる）。
+`debug/corridor_layers.html`（静的サーバーで開く。`file://` で直接開くと素材が読めない）。リポジトリの一番上の `重ね方のページを開く.bat` をダブルクリックすると、サーバーを起動して http://localhost:8931/debug/corridor_layers.html を開く（サーバーの黒い窓を閉じると止まる）。
 
 - **場所**：上の「場所」で選ぶ。一覧は Unity の場所データ（`unity-prototype/Assets/Data/Corridors/*.json`）と、このページで足した場所。
   - 「場所を足す」：名前（英小文字・数字・`_`。Unity のデータの名前になる）と素材のフォルダを入れる。空・遠景・中景・床・モジュールのひな形から始まる。
