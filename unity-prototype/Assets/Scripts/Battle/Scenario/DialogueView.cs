@@ -115,11 +115,10 @@ namespace Srpg.Battle
             int side = 0;
             if (line.type == "line" && !string.IsNullOrEmpty(line.speaker) && FindPortrait(line.speaker, null).texture != null)
                 side = stage.left.Contains(line.speaker) ? -1 : stage.right.Contains(line.speaker) ? 1 : 0;
-            SetSpeakerSide(side, side != 0, name);
             bodyText.fontStyle = narration ? FontStyle.Italic : FontStyle.Normal;
             bodyText.color = narration ? new Color(textCol.r, textCol.g, textCol.b, 0.86f) : textCol;
-            pages = Paginate(line.text);
-            page = 0;
+            LayoutBox(line.text);   // 台詞の量で枠を伸び縮み・ページに分ける
+            SetSpeakerSide(side, side != 0, name);
             ShowPage();
             log.Add(string.IsNullOrEmpty(name) ? line.text : $"{name}「{line.text}」");
             if (log.Count > 80) log.RemoveAt(0);

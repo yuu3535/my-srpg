@@ -16,13 +16,16 @@ namespace Srpg.Battle
         [Serializable]
         public class DialogueStyle
         {
-            public float width = 408f, height = 100f, top = 48f;
+            public float width = 408f, height = 100f;   // 原作者が見本で合わせた基準の大きさ（今は文の量で伸び縮みする。下の min / max）
+            public float top = 60f;                       // 画面の上から枠の上の辺まで（上の黒帯・名前札・銀細工が重ならない所）
+            public float minWidth = 280f, maxWidth = 540f, minHeight = 72f;
+            public int maxRows = 3;                       // 1ページの行数の上限（超えたらページ送り）
             public float transparency = 20f;        // 本文の下地の透過率（%）。名前札は透かさない
             public float radius = 24f;
             public string panelColor = "#131d34", borderColor = "#d7d7e0", textColor = "#e6e7ef";
             public string ornament = "large";       // 四隅の銀細工の大きさ small / medium / large
             public float tailLeftOffset = 17f, tailRightOffset = 17f;   // 尾の横位置（話す人の側の端から内側へ）
-            public int fontSize = 18, nameFontSize = 17;
+            public int fontSize = 15, nameFontSize = 15;
             public float listenerShade = 0.24f;     // 黙っている人を、絵の形の中だけ暗くする割合
         }
 
@@ -33,13 +36,14 @@ namespace Srpg.Battle
         private Color panelCol, borderCol, textCol;
         private RawImage frameImage, plateImage;
         private Text pageText;
+        private readonly List<RectTransform> corners = new List<RectTransform>();
         private readonly Dictionary<string, Texture2D> frameCache = new Dictionary<string, Texture2D>();
         private readonly Dictionary<int, Texture2D> plateCache = new Dictionary<int, Texture2D>();
         private string[] pages = Array.Empty<string>();
         private int page;
 
         private const float TailDrop = 18f, PlateHeight = 32f, TextureScale = 2f;
-        private const float TextLeft = 26f, TextRight = 66f, TextTop = 26f, TextBottom = 20f;
+        private const float TextLeft = 24f, TextRight = 40f, TextTop = 20f, TextBottom = 16f;
 
         public DialogueStyle Style => style;
         public int PageCount => pages.Length;
@@ -80,8 +84,8 @@ namespace Srpg.Battle
             frt.sizeDelta = new Vector2(style.width, style.height + TailDrop + 2f);
             frt.anchoredPosition = Vector2.zero;
 
-            // 四隅の銀細工（左上の絵を反転して使う）
-            var (corner, ox, oy) = style.ornament == "small" ? (48f, -12f, -13f) : style.ornament == "medium" ? (64f, -16f, -17f) : (76f, -19f, -20f);
+            // 四隅の銀細工（左上の絵を反転して使う。大きさは枠の高さに合わせて LayoutBox で決める）
+            corners.Clear();
             if (cornerTexture != null)
                 for (int i = 0; i < 4; i++)
                 {
@@ -92,8 +96,7 @@ namespace Srpg.Battle
                     img.uvRect = new Rect(right ? 1f : 0f, bottom ? 1f : 0f, right ? -1f : 1f, bottom ? -1f : 1f);
                     var rt = img.rectTransform;
                     rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(right ? 1f : 0f, bottom ? 0f : 1f);
-                    rt.sizeDelta = new Vector2(corner, corner);
-                    rt.anchoredPosition = new Vector2(right ? -ox : ox, bottom ? oy : -oy);
+                    corners.Add(rt);
                 }
 
             // 名前札（両端が尖った形。不透明な下地と細い内縁。飾りは付けない）
@@ -103,7 +106,7 @@ namespace Srpg.Battle
             nameText = NewText("Text", namePlate, boldFont != null ? boldFont : font, style.nameFontSize, textCol, TextAnchor.MiddleCenter);
             Stretch(nameText.rectTransform);
 
-            bodyText = NewText("Body", box, font, style.fontSize, textCol, TextAnchor.UpperLeft);
+            bodyText = NewText("Body", box, font, style.fontSize, textCol, TextAnchor.MiddleLeft);
             bodyText.rectTransform.anchorMin = Vector2.zero;
             bodyText.rectTransform.anchorMax = Vector2.one;
             bodyText.rectTransform.offsetMin = new Vector2(TextLeft, TextBottom);
@@ -115,61 +118,90 @@ namespace Srpg.Battle
             nextMark.text = "▼";
             nextMark.rectTransform.anchorMin = nextMark.rectTransform.anchorMax = new Vector2(1f, 0f);
             nextMark.rectTransform.sizeDelta = new Vector2(20f, 16f);
-            nextMark.rectTransform.anchoredPosition = new Vector2(-24f, 18f);
+            nextMark.rectTransform.anchoredPosition = new Vector2(-18f, 14f);
 
             pageText = NewText("Page", box, font, 10, textCol, TextAnchor.MiddleRight);
             pageText.rectTransform.anchorMin = pageText.rectTransform.anchorMax = new Vector2(1f, 0f);
             pageText.rectTransform.pivot = new Vector2(1f, 0.5f);
             pageText.rectTransform.sizeDelta = new Vector2(44f, 14f);
-            pageText.rectTransform.anchoredPosition = new Vector2(-14f, 38f);
+            pageText.rectTransform.anchoredPosition = new Vector2(-28f, 14f);
 
+            LayoutBox("");
             SetSpeakerSide(0, true, "");
         }
 
         /// <summary>話す人の側（−1 左・0 なし・1 右）に合わせて、尾と名前札を置く</summary>
         private void SetSpeakerSide(int side, bool tail, string name)
         {
-            frameImage.texture = Frame(tail ? side : 0);
+            float boxW = box.sizeDelta.x;
+            frameImage.texture = Frame(tail ? side : 0, boxW, box.sizeDelta.y);
             namePlate.gameObject.SetActive(!string.IsNullOrEmpty(name));
             if (string.IsNullOrEmpty(name)) return;
             nameText.text = name;
             float textW = nameText.preferredWidth;
             float w = Mathf.Max(144f, Mathf.Ceil(textW + 64f));
             namePlate.sizeDelta = new Vector2(w, PlateHeight);
-            float x = side < 0 ? 24f + w / 2f : side > 0 ? style.width - 24f - w / 2f : style.width / 2f;
+            float x = side < 0 ? 24f + w / 2f : side > 0 ? boxW - 24f - w / 2f : boxW / 2f;
             namePlate.anchorMin = namePlate.anchorMax = new Vector2(0f, 1f);
             namePlate.pivot = new Vector2(0.5f, 1f);
             namePlate.anchoredPosition = new Vector2(x, 20f);   // 枠の上の辺から 20 上に出す（見本 top: -20px）
             plateImage.texture = Plate(Mathf.RoundToInt(w));
         }
 
-        /// <summary>本文を、枠に入る行数ずつのページに分ける（文字を小さくして詰めない）</summary>
-        private string[] Paginate(string text)
+        /// <summary>
+        /// 台詞の量に合わせて枠を伸び縮みさせ、行数の上限ずつのページに分ける（文字を小さくして詰めない）。
+        /// 横: いちばん長い行に合わせる（最小〜最大の幅）。縦: 行の数に合わせる（最小の高さ〜上限の行数）
+        /// </summary>
+        private void LayoutBox(string text)
         {
             var font = bodyText.font;
             int size = bodyText.fontSize;
-            float width = style.width - TextLeft - TextRight - 2f;
-            float lineH = font.lineHeight * size / Mathf.Max(1, font.fontSize) * bodyText.lineSpacing;
-            if (font.dynamic) lineH = size * 1.45f * bodyText.lineSpacing;
-            int rows = Mathf.Max(1, Mathf.FloorToInt((style.height - TextTop - TextBottom + 2f) / lineH));
-            font.RequestCharactersInTexture(text ?? "", size, bodyText.fontStyle);
+            float lineH = size * 1.45f * bodyText.lineSpacing;
+            text ??= "";
+            font.RequestCharactersInTexture(text, size, bodyText.fontStyle);
+            float Advance(char c) => font.GetCharacterInfo(c, out var info, size, bodyText.fontStyle) ? info.advance : size;
+            float longest = 0f;
+            foreach (var paragraph in text.Split('\n')) { float w = 0f; foreach (char c in paragraph) w += Advance(c); longest = Mathf.Max(longest, w); }
+            float boxW = Mathf.Clamp(Mathf.Ceil((longest + TextLeft + TextRight + 4f) / 8f) * 8f, style.minWidth, style.maxWidth);
+            float width = boxW - TextLeft - TextRight - 2f;
+            var wrapped = Wrap(text, width, Advance);
+            int rows = Mathf.Clamp(wrapped.Count, 1, Mathf.Max(1, style.maxRows));
+            float boxH = Mathf.Max(style.minHeight, Mathf.Ceil(TextTop + TextBottom + rows * lineH));
+            var list = new List<string>();
+            for (int i = 0; i < wrapped.Count; i += rows) list.Add(string.Join("\n", wrapped.GetRange(i, Mathf.Min(rows, wrapped.Count - i))));
+            pages = list.Count > 0 ? list.ToArray() : new[] { "" };
+            page = 0;
+
+            box.sizeDelta = new Vector2(boxW, boxH);
+            frameImage.rectTransform.sizeDelta = new Vector2(boxW, boxH + TailDrop + 2f);
+            // 四隅の銀細工: 枠が低いときは小さく（上下の飾りが重ならないように）
+            string ornament = boxH >= 100f ? style.ornament : boxH >= 84f && style.ornament != "small" ? "medium" : "small";
+            var (corner, ox, oy) = ornament == "small" ? (48f, -12f, -13f) : ornament == "medium" ? (64f, -16f, -17f) : (76f, -19f, -20f);
+            for (int i = 0; i < corners.Count; i++)
+            {
+                bool right = i % 2 == 1, bottom = i >= 2;
+                corners[i].sizeDelta = new Vector2(corner, corner);
+                corners[i].anchoredPosition = new Vector2(right ? -ox : ox, bottom ? oy : -oy);
+            }
+        }
+
+        private static List<string> Wrap(string text, float width, Func<char, float> advance)
+        {
             var wrapped = new List<string>();
-            foreach (var paragraph in (text ?? "").Split('\n'))
+            foreach (var paragraph in text.Split('\n'))
             {
                 var row = new System.Text.StringBuilder();
                 float w = 0f;
                 foreach (char c in paragraph)
                 {
-                    float adv = font.GetCharacterInfo(c, out var info, size, bodyText.fontStyle) ? info.advance : size;
+                    float adv = advance(c);
                     if (row.Length > 0 && w + adv > width) { wrapped.Add(row.ToString()); row.Clear(); w = 0f; }
                     row.Append(c);
                     w += adv;
                 }
                 wrapped.Add(row.ToString());
             }
-            var result = new List<string>();
-            for (int i = 0; i < wrapped.Count; i += rows) result.Add(string.Join("\n", wrapped.GetRange(i, Mathf.Min(rows, wrapped.Count - i))));
-            return result.Count > 0 ? result.ToArray() : new[] { "" };
+            return wrapped;
         }
 
         private void ShowPage()
@@ -181,11 +213,11 @@ namespace Srpg.Battle
         // ── 絵を作る（初めに使うときに1回。2倍の細かさで作って縮めて見せる） ──
 
         /// <summary>本文の枠と尾を1枚に（丸い角の四角と尾を合わせた形。縁は1本の線で、継ぎ目を出さない）</summary>
-        private Texture2D Frame(int side)
+        private Texture2D Frame(int side, float W, float H)
         {
-            string key = side.ToString();
+            string key = $"{side}_{W}_{H}";
             if (frameCache.TryGetValue(key, out var cached) && cached != null) return cached;
-            float S = TextureScale, W = style.width, H = style.height;
+            float S = TextureScale;
             int tw = Mathf.CeilToInt(W * S), th = Mathf.CeilToInt((H + TailDrop + 2f) * S);
             float r = Mathf.Min(style.radius, (W - 36f) / 2f, (H - 1f) / 2f);
             float offset = side < 0 ? style.tailLeftOffset : style.tailRightOffset;
