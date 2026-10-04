@@ -1,0 +1,12 @@
+Use case: precise-object-edit. Image 1 is the edit target.
+Change ONLY the frame and its ornamental linework. Keep the existing 1024x1536 upright panel size, dark navy text field, subtle star watermark, title, beta sticker, fortune hierarchy, exact vertical Japanese body, and all text positions. This is a targeted edit, not a new layout.
+Frame instruction, authoritative:
+繊細な装飾線画によるフレーム。
+極細の銀線のみで構成し、面塗りは使わない。
+フィリグリーや天体モチーフを、左右対称の細い線とネガティブスペースで表現する。
+古典的な装飾をそのまま描くのではなく、直線・小さな切れ目・幾何学的な接続部を少量加え、携帯端末のUIに馴染む現代的なデザインにする。
+発光・立体金属・厚いフレームにはしない。
+Translate this visually as truly hairline FLAT SILVER strokes, about 1–2 pixels at this canvas resolution. Replace the existing bulky white/gold scroll bundles with MUCH AIRIER, restrained, bilaterally symmetrical filigree contours. Widely separated fine curves, clear negative space, no dense nested leaf bundles. Preserve an elegant arched lower edge and discreet top star detail, both UNFILLED hairline outlines. Add only a few very short precise interruptions in the side rails, short straight line segments, and tiny hollow angular connectors to suggest a modern handheld UI. The frame should be quiet, fine and light, not a thick decorative metal object.
+All perimeter lines ONLY uniform pale neutral silver: no gold, no black outline/shadow around lines, no double-color strokes, no bevel, embossed ridges, metallic reflection, solid leaf fills, painted surfaces, luminous glow, glitter, bloom or cast shadow. Convert decorative divider line strokes to the same silver without changing their positions. The separate beta sticker is NOT the frame and can retain its current appearance.
+Preserve exact text unchanged: centered rounded “運命予報”; external small “β版”; centered “Fortune”, two dots, then “蛇”; three upright vertical Japanese columns right to left “失せモノに注意。” / “笑う声が聞こえたら、” / “振り返らないこと。” Preserve their fonts, sizes, locations and right-to-left order.
+Background outside the panel is genuinely alpha transparent. Remove the smoky exterior presentation backdrop/shadow completely. Keep the dark navy INSIDE the frame, never make an opaque rectangle outside it. No checkerboard pattern printed in image. One complete panel only, no scene, no phone hardware, no cropped frame tips, no added text.
