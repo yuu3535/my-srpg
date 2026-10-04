@@ -240,14 +240,16 @@ namespace Srpg.Battle
             stageRoot = NewRect("Stage", root);
             Stretch(stageRoot);
 
-            // 下の暗いにじみ（立ち絵の足元を溶かし、文字を読みやすくする）
+            // 下の暗いにじみ（背景を少し沈めて立ち絵を浮かせる）。立ち絵より奥に敷く
+            // （原作者 2026-10-04: 立ち絵の下のほうが暗くなっていた。台詞の枠は上に移ったので、文字のためには要らない）
             var shade = NewRect("Shade", root).gameObject.AddComponent<RawImage>();
-            shade.texture = VerticalFade(new Color(0.03f, 0.02f, 0.06f, 1f), 0.95f, 0.5f);
+            shade.texture = VerticalFade(new Color(0.03f, 0.035f, 0.05f, 1f), 0.55f, 0.5f);
             shade.raycastTarget = false;
             var shadeRt = shade.rectTransform;
             shadeRt.anchorMin = new Vector2(0f, 0f);
             shadeRt.anchorMax = new Vector2(1f, 0.52f);
             shadeRt.offsetMin = shadeRt.offsetMax = Vector2.zero;
+            shadeRt.SetSiblingIndex(stageRoot.GetSiblingIndex());   // 立ち絵（Stage）の1つ奥
 
             // 上下の黒帯（イベントの場面だと分かるように。原作者 2026-09-28）。会話が始まると差し込む
             letterTop = NewRect("LetterTop", root);
@@ -261,7 +263,7 @@ namespace Srpg.Battle
             foreach (var bar in new[] { letterTop, letterBottom })
             {
                 var img = bar.gameObject.AddComponent<Image>();
-                img.color = new Color32(8, 5, 12, 255);
+                img.color = new Color32(9, 10, 13, 255);   // 紫を混ぜない黒（原作者 2026-10-04: 帯が紫っぽい。紫はオルクスの色で UI の色ではない）
                 img.raycastTarget = false;
             }
             SetLetterbox(1f);

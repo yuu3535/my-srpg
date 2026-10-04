@@ -129,6 +129,7 @@ namespace Srpg.Battle
             var cam = targetCamera != null ? targetCamera : Camera.main;
             if (cam != null) { canvas.renderMode = RenderMode.ScreenSpaceCamera; canvas.worldCamera = cam; canvas.planeDistance = 1f; }
             else canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = -10;   // 会話の画面（200）より必ず奥（名前の札やヴィネットが立ち絵の上に出ていた。原作者 2026-10-04）
             var scaler = canvasObject.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(ScreenW, ScreenH);
