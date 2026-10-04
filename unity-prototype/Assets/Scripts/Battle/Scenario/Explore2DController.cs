@@ -183,6 +183,7 @@ namespace Srpg.Battle
 
         private void OnViewRebuilt()
         {
+            if (dialogue != null) dialogue.Letterbox = view.TalkBands;   // 場面の見え方で、会話の帯を出すか
             view.SetPeople(peopleList);
             view.SetMarkers(InspectSpots().Select(i => CellsX(i.id, i.cells)));
         }

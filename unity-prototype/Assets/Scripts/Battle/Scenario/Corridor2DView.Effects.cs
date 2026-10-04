@@ -42,7 +42,19 @@ namespace Srpg.Battle
             public LookLayer[] layers;
             // この場面だけの組み立て（層の並び。重ね方のページの「このシーンだけの組み立て」。原作者 2026-10-04）。空なら場所の組み立て
             public CorridorLayer[] build;
+            // この場面のカメラ（引き・寄りとずらし）と、会話の上下の帯を出さないか（重ね方のページ。原作者 2026-10-05）
+            public SceneCamera camera;
+            public bool hideTalkBands;
         }
+
+        /// <summary>場面のカメラ: zoom＝大きさ（1 がふだん。小さいほど引き）、x・y＝見る所を右・上へずらす幅（844×390 の画面の点）</summary>
+        [Serializable] public class SceneCamera { public float zoom = 1f, x, y; }
+
+        /// <summary>今の場面のカメラ（見え方にあればそれ、なければ場所のふだん）</summary>
+        private SceneCamera Cam => look?.camera != null && look.camera.zoom > 0f ? look.camera : data?.camera != null && data.camera.zoom > 0f ? data.camera : null;
+        public float BaseZoom => Cam?.zoom ?? 1f;
+        /// <summary>この場面の会話で、上下の黒い帯を出すか</summary>
+        public bool TalkBands => !(look != null ? look.hideTalkBands || (data?.hideTalkBands ?? false) : data?.hideTalkBands ?? false);
 
         [SerializeField] private TextAsset lookJson;          // 見え方のプリセット（なければ効果なし）。場所のふだんの見え方
         [SerializeField] private TextAsset[] lookJsons = Array.Empty<TextAsset>();   // 切り替えられる見え方（Assets/Data/Looks の全部）

@@ -355,9 +355,13 @@ namespace Srpg.Battle
         }
 
         /// <summary>黒帯の出方（0＝なし、1＝出きった）。高さでなく位置を動かす（画面の外から差し込む）</summary>
+        /// <summary>会話の上下の黒い帯を出すか（場面ごと。重ね方のページの「会話の帯」。原作者 2026-10-05）</summary>
+        public bool Letterbox { get; set; } = true;
+
         private void SetLetterbox(float amount)
         {
             if (letterTop == null) return;
+            if (!Letterbox) amount = 0f;
             letterTop.sizeDelta = letterBottom.sizeDelta = new Vector2(0f, LetterHeight);
             letterTop.anchoredPosition = new Vector2(0f, LetterHeight * (1f - amount));
             letterBottom.anchoredPosition = new Vector2(0f, -LetterHeight * (1f - amount));

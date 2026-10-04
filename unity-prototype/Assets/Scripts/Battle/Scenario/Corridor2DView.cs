@@ -68,6 +68,8 @@ namespace Srpg.Battle
             public string look;                             // ふだんの見え方（Assets/Data/Looks/<look>.json）                      // カメラが回廊の両端からこれだけ内側で止まる（端の外の空を見せない）
             public CorridorLayer[] layers;
             public CorridorExit[] exits;
+            public SceneCamera camera;      // 場所のふだんのカメラ（場面の見え方に camera があればそちら）
+            public bool hideTalkBands;      // 会話の上下の帯を出さない
         }
 
         [SerializeField] private TextAsset corridorJson;
@@ -409,7 +411,10 @@ namespace Srpg.Battle
         private void Apply()
         {
             if (data == null || root == null) return;
-            cameraX = Mathf.Clamp((FocusX ?? playerX) - ScreenW / 2f, data.cameraMargin, Mathf.Max(data.cameraMargin, data.length - ScreenW - data.cameraMargin));
+            // 引いた画面（BaseZoom < 1）は横に広く見えるので、その分だけ内側で止める
+            float wide = ScreenW / 2f * (1f / Mathf.Max(0.1f, BaseZoom) - 1f);
+            float lo = data.cameraMargin + wide, hi = data.length - ScreenW - data.cameraMargin - wide;
+            cameraX = Mathf.Clamp((FocusX ?? playerX) - ScreenW / 2f, lo, Mathf.Max(lo, hi));
             foreach (var (layer, box, tiles, width) in built)
             {
                 float shift = layer.x - cameraX * layer.speed;
@@ -640,6 +645,20 @@ namespace Srpg.Battle
             if (root == null) return;
             if (!Application.isPlaying) zoomT = TalkZoom ? 1f : 0f;   // 確認の画像では待たずに寄る
             float e = zoomT * zoomT * (3f - 2f * zoomT);   // なめらかに
+            float baseZoom = BaseZoom;
+            var cam = Cam;
+            if (!Mathf.Approximately(baseZoom, 1f) || (cam != null && (cam.x != 0f || cam.y != 0f)))
+            {
+                // 場面のカメラ（引き・寄り・ずらし。原作者 2026-10-05）: 画面の真ん中を中心に大きさを変え、見る所をずらす。
+                // 会話の寄り（TalkZoom）は、その上からさらに寄る。絵の外（黒）が見えるかどうかは場面の作り方に任せる
+                float sc = baseZoom * Mathf.Lerp(1f, ZoomScale, e);
+                float fx = (FocusX ?? playerX) - cameraX, fy = (playerY < 0f ? data.heroFeetY : playerY) - data.heroHeight * 0.5f;
+                // 会話の寄りは、話す所（足元の少し上）が画面の同じ所に残るように寄る
+                var focus = new Vector2(fx - ScreenW / 2f, ScreenH / 2f - fy);
+                root.localScale = new Vector3(sc, sc, 1f);
+                root.anchoredPosition = new Vector2(-(cam?.x ?? 0f), -(cam?.y ?? 0f)) * baseZoom + focus * (baseZoom - sc);
+                return;
+            }
             float s = Mathf.Lerp(1f, ZoomScale, e);
             float px = (FocusX ?? playerX) - cameraX, py = (playerY < 0f ? data.heroFeetY : playerY) - data.heroHeight * 0.5f;
             var pc = new Vector2(px - ScreenW / 2f, ScreenH / 2f - py);           // 寄る点（画面の真ん中から。上が正）
