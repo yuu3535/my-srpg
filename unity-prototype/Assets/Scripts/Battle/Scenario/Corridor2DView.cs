@@ -94,6 +94,14 @@ namespace Srpg.Battle
         private Coroutine autoWalk;
 
         public float PlayerX { get => playerX; set { playerX = value; Apply(); } }
+
+        /// <summary>
+        /// 会話の間は寄る（原作者 2026-10-04: 目が背景に行き、SDのキャラが下のほうで目立たない）。
+        /// 話す2人（FocusX）の足元の少し上を画面の真ん中寄りへ持ってきて、少し大きく映す
+        /// </summary>
+        public bool TalkZoom { get; set; }
+        private float zoomT;
+        private const float ZoomScale = 1.32f;
         public float Length => data?.length ?? 0f;
 
         // ── 探索（Explore2DController から使う。2026-10-04） ──
@@ -287,6 +295,9 @@ namespace Srpg.Battle
         {
             UpdateTuner();
             if (data == null) return;
+            float zt = TalkZoom ? 1f : 0f;
+            if (!Mathf.Approximately(zoomT, zt))
+                zoomT = Application.isPlaying ? Mathf.MoveTowards(zoomT, zt, Time.unscaledDeltaTime / 0.35f) : zt;
             int dir = Locked || scriptedWalk ? 0 : holding;
             var kb = Keyboard.current;
             if (kb != null && !Locked && !scriptedWalk)
@@ -417,6 +428,7 @@ namespace Srpg.Battle
             }
             if (toast != null && toast.gameObject.activeSelf && Application.isPlaying && Time.unscaledTime > toastUntil) toast.gameObject.SetActive(false);
             ShiftShafts();
+            ApplyZoom();
             if (heroRect != null)
             {
                 float bob = walkTime > 0f ? Mathf.Abs(Mathf.Sin(walkTime * 9f)) * 3f : 0f;   // 歩くときの小さな上下
@@ -584,6 +596,24 @@ namespace Srpg.Battle
 
         /// <summary>アルシェの向き（会話の相手のほうを向く）</summary>
         public void Face(float x) { facingLeft = x < playerX; Apply(); }
+
+        /// <summary>寄る: 画面（844×390）を大きくして、話す所を真ん中寄りへ。画面の外（黒）が見えないよう、ずらす幅を抑える</summary>
+        private void ApplyZoom()
+        {
+            if (root == null) return;
+            if (!Application.isPlaying) zoomT = TalkZoom ? 1f : 0f;   // 確認の画像では待たずに寄る
+            float e = zoomT * zoomT * (3f - 2f * zoomT);   // なめらかに
+            float s = Mathf.Lerp(1f, ZoomScale, e);
+            float px = (FocusX ?? playerX) - cameraX, py = (playerY < 0f ? data.heroFeetY : playerY) - data.heroHeight * 0.5f;
+            var pc = new Vector2(px - ScreenW / 2f, ScreenH / 2f - py);           // 寄る点（画面の真ん中から。上が正）
+            var tc = new Vector2(0f, ScreenH / 2f - 215f);                         // 寄せる先（横は真ん中、縦は上から 215）
+            var pos = tc - s * pc;
+            float mx = (s - 1f) * ScreenW / 2f, my = (s - 1f) * ScreenH / 2f + 30f * e;   // 下の黒帯（30）の分まではずらしてよい
+            pos.x = Mathf.Clamp(pos.x, -mx, mx);
+            pos.y = Mathf.Clamp(pos.y, -my, my);
+            root.localScale = new Vector3(s, s, 1f);
+            root.anchoredPosition = pos;
+        }
 
         private Texture2D Texture(string file)
         {

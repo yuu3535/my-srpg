@@ -208,6 +208,7 @@ namespace Srpg.Battle
             if (view == null || State == null) return;
             bool busy = Busy;
             view.Locked = busy;
+            view.TalkZoom = dialogue != null && dialogue.IsPlaying;   // 会話の間は寄る
             if (busy) { view.ShowAction(null, null); return; }
             view.FocusX = null;
             float px = view.PlayerX;
@@ -422,6 +423,8 @@ namespace Srpg.Battle
         {
             view.PlayerX = x;
             Update();
+            Update();                     // 会話が始まったら、寄る（TalkZoom）を入れる
+            view.PlayerX = view.PlayerX;  // 置き直して画面に反映
         }
     }
 }
