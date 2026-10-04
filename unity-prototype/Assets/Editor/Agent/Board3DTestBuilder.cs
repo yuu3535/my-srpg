@@ -486,8 +486,13 @@ namespace Srpg.EditorAgent
                 importer.filterMode = painted ? FilterMode.Trilinear : FilterMode.Point;
                 importer.mipmapEnabled = painted;
                 importer.wrapMode = Path.GetFileName(path).StartsWith("edge_") ? TextureWrapMode.Clamp : TextureWrapMode.Repeat;
+                // 横長の帯の絵（strip_。演台・石の通路の側面）: 横はくり返し、縦は上と下の端で止める
+                if (Path.GetFileName(path).StartsWith("strip_")) { importer.wrapModeU = TextureWrapMode.Repeat; importer.wrapModeV = TextureWrapMode.Clamp; }
                 importer.alphaIsTransparency = Path.GetFileName(path).StartsWith("edge_");
-                importer.textureCompression = TextureImporterCompression.Uncompressed;
+                // 大きな描いた模様（訓練場の 1024 の絵）は、盤面では小さく見えるので 512 に縮めて圧縮（WebGL を軽く）
+                bool large = width >= 512;
+                importer.textureCompression = large ? TextureImporterCompression.Compressed : TextureImporterCompression.Uncompressed;
+                if (large) importer.maxTextureSize = 512;
                 importer.SaveAndReimport();
             }
             return paths;

@@ -955,14 +955,29 @@ namespace Srpg.Battle
             root.SetParent(boardRoot, false);
             root.localPosition = map.TopCenter(cell);
             var wood = LitMaterial(new Color32(96, 62, 38, 255));
-            AddBox(root, "Post", new Vector3(0f, 0.3f, 0f), new Vector3(0.1f, 0.6f, 0.1f), wood);
+            // 木目の模様があれば（訓練場の柵。2026-10-05）、柱と横木の大きさに合わせて木目の細かさをそろえる
+            var post = FenceWood(new Vector2(0.1f, 0.6f)) ?? wood;
+            var rail = FenceWood(new Vector2(1f, 0.06f)) ?? wood;
+            AddBox(root, "Post", new Vector3(0f, 0.3f, 0f), new Vector3(0.1f, 0.6f, 0.1f), post);
             bool IsFence(Vector2Int n) => map.InBounds(n) && TerrainTable.Get(map.TerrainAt(n)).fence;
             if (IsFence(cell + Vector2Int.right))
                 foreach (float y in new[] { 0.22f, 0.45f })
-                    AddBox(root, "Rail", new Vector3(0.5f, y, 0f), new Vector3(1f, 0.06f, 0.05f), wood);
+                    AddBox(root, "Rail", new Vector3(0.5f, y, 0f), new Vector3(1f, 0.06f, 0.05f), rail);
             if (IsFence(cell + Vector2Int.up))   // 行+1 は手前（世界の −z）
                 foreach (float y in new[] { 0.22f, 0.45f })
-                    AddBox(root, "Rail", new Vector3(0f, y, -0.5f), new Vector3(0.05f, 0.06f, 1f), wood);
+                    AddBox(root, "Rail", new Vector3(0f, y, -0.5f), new Vector3(0.05f, 0.06f, 1f), rail);
+        }
+
+        /// <summary>柵の木目（wood_fence）を、面の大きさ（横, 縦）ぶんだけ切り取って貼る材質。模様がなければ null</summary>
+        private Material FenceWood(Vector2 faceSize)
+        {
+            var source = TextureMaterial("wood_fence");
+            if (source == null) return null;
+            string key = $"wood_fence@{faceSize.x:0.###}x{faceSize.y:0.###}";
+            if (texturedMaterials.TryGetValue(key, out var cached) && cached.shader == source.shader) return cached;
+            var m = new Material(source) { name = key, mainTextureScale = faceSize };
+            texturedMaterials[key] = m;
+            return m;
         }
 
         /// <summary>下を通れる屋根（天幕など）の仮の模型: その高さに薄い板。キャラを隠すときは半透明にする</summary>
@@ -1257,6 +1272,13 @@ namespace Srpg.Battle
 
         private string SideTextureName(Vector2Int cell)
         {
+            if (map.FromLayoutFile && !map.IsWall(cell))
+            {
+                // 訓練場の模様（ChatGPT Work 2026-10-05）: 木の演台の側面・一段高い石の通路と階段の側面。横長の帯の絵
+                char lt = map.TerrainAt(cell);
+                if (lt == '+' && TextureMaterial("strip_stage_side") != null) return "strip_stage_side";
+                if ((lt == 'u' || lt == '/' || lt == 'b') && TextureMaterial("strip_stone_side") != null) return "strip_stone_side";
+            }
             if (map.IsWall(cell) || map.FromLayoutFile) return "side_stone";   // 城の場所は石（清書はマップごとの側面の模様。MAP_ART_PIPELINE ②）
             char t = map.TerrainAt(cell);
             return t == '~' || t == '=' || t == 'o' || t == '#' || t == 'c' ? "side_stone" : "side_earth";
@@ -1275,11 +1297,20 @@ namespace Srpg.Battle
             int turnUv = topMaterial != null && topMaterial.mainTexture != null && topMaterial.mainTexture.width > 64
                 ? 0 : ((cell.x * 7 + cell.y * 13) % 4 + 4) % 4;
             var ground = GroundMaterial();
-            tile.AddComponent<MeshFilter>().sharedMesh = BlockMesh(1f - GapAt(cell), height, turnUv, ground != null ? GroundUv(cell) : (Rect?)null);
+            // 木の演台の上の面は、地面の1枚絵ではなく板張りの模様（訓練場。2026-10-05）。となりのマスとつながるよう、盤面の位置で貼る
+            var stageTop = map.FromLayoutFile && map.TerrainAt(cell) == '+' ? TextureMaterial("top_stage") : null;
+            var sideName = SideTextureName(cell);
+            var sideMaterial = TextureMaterial(sideName);
+            // 横長の帯の絵（strip_）: 見えている高さ（天面の高さ）に帯1本をあて、横は盤面の位置でつなげる
+            Vector2? strip = sideName.StartsWith("strip_") && sideMaterial != null && sideMaterial.mainTexture != null && top > 0.01f
+                ? new Vector2(top, (float)sideMaterial.mainTexture.width / sideMaterial.mainTexture.height) : (Vector2?)null;
+            var center = map.TopCenter(cell);
+            tile.AddComponent<MeshFilter>().sharedMesh = BlockMesh(1f - GapAt(cell), height, turnUv,
+                stageTop != null ? WorldTopUv(center, 1f - GapAt(cell), StageTopCellsPerTexture) : ground != null ? GroundUv(cell) : (Rect?)null, strip, center);
             tile.AddComponent<MeshRenderer>().sharedMaterials = new[]
             {
-                ground != null ? ground : TextureMaterial(TopTextureName(cell)),
-                TextureMaterial(SideTextureName(cell)),
+                stageTop != null ? stageTop : ground != null ? ground : TextureMaterial(TopTextureName(cell)),
+                sideMaterial,
             };
             var box = tile.AddComponent<BoxCollider>();
             box.size = new Vector3(1f - GapAt(cell), height, 1f - GapAt(cell));
@@ -1287,8 +1318,22 @@ namespace Srpg.Battle
             return tile;
         }
 
-        /// <summary>天面（部分0）と4つの側面（部分1）だけの箱。天面は y=0、底は y=-height。側面の模様は高さ1ごとに繰り返す</summary>
-        private static Mesh BlockMesh(float width, float height, int turnUv, Rect? topUv = null)
+        // 演台の板張り: 絵1枚（板6枚）で2マス（1マスに板3枚）
+        private const float StageTopCellsPerTexture = 2f;
+
+        /// <summary>盤面の位置で決める天面の uv（となりのマスと模様がつながる）。cellsPerTexture マスで絵1枚</summary>
+        private static Rect WorldTopUv(Vector3 center, float width, float cellsPerTexture)
+        {
+            float h = width * 0.5f;
+            return new Rect((center.x - h) / cellsPerTexture, (center.z - h) / cellsPerTexture, width / cellsPerTexture, width / cellsPerTexture);
+        }
+
+        /// <summary>
+        /// 天面（部分0）と4つの側面（部分1）だけの箱。天面は y=0、底は y=-height。側面の模様は高さ1ごとに繰り返す。
+        /// strip（見えている高さ, 絵の横÷縦）があれば、側面は横長の帯の絵: 上の端を天面に、下の端を見えている高さの所にあて、
+        /// 横は盤面の位置（center＋面の上の位置）でつなげる（絵の縦横の比を保つ）
+        /// </summary>
+        private static Mesh BlockMesh(float width, float height, int turnUv, Rect? topUv = null, Vector2? strip = null, Vector3 center = default)
         {
             float h = width * 0.5f;
             var vertices = new List<Vector3>();
@@ -1333,6 +1378,16 @@ namespace Srpg.Battle
             foreach (var (normal, left, right) in sides)
             {
                 var down = Vector3.down * height;
+                if (strip.HasValue)
+                {
+                    float visible = strip.Value.x, span = visible * strip.Value.y;   // 絵1枚の横の長さ（盤面の単位）
+                    var along = (right - left).normalized;
+                    float ul = Vector3.Dot(center + left, along) / span, ur = Vector3.Dot(center + right, along) / span;
+                    float vBottom = 1f - height / visible;   // 見えている高さより下は、絵の下の端の色がのびる（Clamp）
+                    Quad(left + down, left, right, right + down, normal,
+                        new Vector2(ul, vBottom), new Vector2(ul, 1), new Vector2(ur, 1), new Vector2(ur, vBottom), sideTris);
+                    continue;
+                }
                 Quad(left + down, left, right, right + down, normal,
                     new Vector2(0, vb), new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, vb), sideTris);
             }
