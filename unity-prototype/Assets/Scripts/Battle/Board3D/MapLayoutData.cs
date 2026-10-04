@@ -104,5 +104,7 @@ namespace Srpg.Battle
     {
         public string id, exit, block, thenBattleArea, thenBlock;
         public MapCell[] cells;
+        public MapCell talkAt;      // 着いたら、このマスまで歩いてから会話（イベントの場面の位置。原作者 2026-10-05）
+        public bool hasTalkAt;
     }
 }

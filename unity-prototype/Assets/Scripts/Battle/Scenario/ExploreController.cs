@@ -402,14 +402,17 @@ namespace Srpg.Battle
             {
                 var blocks = new List<string>();
                 if (!string.IsNullOrEmpty(goal.block)) blocks.Add(goal.block);
-                ApproachThen(goal.block, () => PlayBlocks(blocks, () =>
+                // イベントの場面の位置（talkAt）があれば、そこまで歩いてから。なければ相手の隣まで
+                Action<Action> approach = goal.hasTalkAt ? (Action<Action>)(play => WalkToCellThen(goal.talkAt.V, play)) : play => ApproachThen(goal.block, play);
+                approach(() => PlayBlocks(blocks, () =>
                 {
                     seen.Add(goal.id);
                     if (!string.IsNullOrEmpty(goal.thenBattleArea))
                     {
                         PendingBattleArea = goal.thenBattleArea;
                         Log?.Invoke($"戦闘へ（{goal.thenBattleArea}）");
-                        StartBattle(goal.thenBattleArea);
+                        string areaId = goal.thenBattleArea;
+                        WalkToBattleStart(areaId, () => StartBattle(areaId));
                     }
                 }));
                 return true;
@@ -458,6 +461,72 @@ namespace Srpg.Battle
                 return;
             }
             StartCoroutine(AutoWalk(path, () => { LookAtTalk(partner); play(); }));
+        }
+
+        /// <summary>決めたマスまで自動で歩いてから play（イベントの場面の位置。道がなければその場で）</summary>
+        private void WalkToCellThen(Vector2Int cell, Action play)
+        {
+            var path = cell == Player ? null : FindPath(Player, cell, adjacent: false);
+            if (path == null || path.Count == 0) { play(); return; }
+            if (!Application.isPlaying)
+            {
+                foreach (var c in path) { Player = c; view.MoveUnit(PlayerId, c); }
+                play();
+                return;
+            }
+            StartCoroutine(AutoWalk(path, play));
+        }
+
+        /// <summary>
+        /// 戦闘の前に、ここにいる人（アルシェと、戦闘に出る人）を戦闘の始まりの位置まで歩かせる（原作者 2026-10-05: 会話のあと、訓練の位置につく）。
+        /// 控えの人（ギュンター）は見守る位置へ。みんな同時に1マスずつ。歩かなくてよければ、すぐ then
+        /// </summary>
+        private void WalkToBattleStart(string areaId, Action then)
+        {
+            var targets = battle != null ? battle.StartCells(Place, areaId) : null;
+            var moves = new List<(string token, string personId, List<Vector2Int> path)>();
+            if (targets != null)
+            {
+                if (State?.player != null && targets.TryGetValue(State.player.id, out var pt))
+                {
+                    var path = FindPath(Player, pt, adjacent: false);
+                    if (path != null && path.Count > 0) moves.Add((PlayerId, null, path));
+                }
+                foreach (var p in State?.people ?? Array.Empty<MapPerson>())
+                {
+                    if (!personCells.TryGetValue(p.id, out var from) || !targets.TryGetValue(p.id, out var to)) continue;
+                    var path = FindPath(from, to, adjacent: false);
+                    if (path != null && path.Count > 0) moves.Add((People.TryGetValue(p.id, out var v) ? v.token : p.id, p.id, path));
+                }
+            }
+            if (moves.Count == 0) { then(); return; }
+            if (!Application.isPlaying)
+            {
+                foreach (var m in moves) MoveActor(m.token, m.personId, m.path[m.path.Count - 1]);
+                then();
+                return;
+            }
+            StartCoroutine(WalkTogether(moves, then));
+        }
+
+        private IEnumerator WalkTogether(List<(string token, string personId, List<Vector2Int> path)> moves, Action then)
+        {
+            autoWalking = true;
+            int steps = moves.Max(m => m.path.Count);
+            for (int i = 0; i < steps; i++)
+            {
+                yield return new WaitForSeconds(stepSeconds);
+                foreach (var m in moves) if (i < m.path.Count) MoveActor(m.token, m.personId, m.path[i]);
+            }
+            yield return new WaitForSeconds(0.3f);   // 位置についたのを少し見せる
+            autoWalking = false;
+            then();
+        }
+
+        private void MoveActor(string token, string personId, Vector2Int cell)
+        {
+            if (personId == null) Player = cell; else personCells[personId] = cell;
+            view.MoveUnit(token, cell);
         }
 
         private IEnumerator AutoWalk(List<Vector2Int> path, Action then)

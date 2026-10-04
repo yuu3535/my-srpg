@@ -98,6 +98,25 @@ namespace Srpg.Battle
             view.FocusOnPoint((topLeft + bottomRight) * 0.5f + oneRowNorth * 2f, true);
         }
 
+        /// <summary>
+        /// 戦闘の始まりの位置（盤面のマス）。戦闘の前に、探索の人をここへ歩かせる（ExploreController.WalkToBattleStart）。
+        /// 控えの人は見守る位置（wait）。なければ入れない
+        /// </summary>
+        public Dictionary<string, Vector2Int> StartCells(MapLayoutFile layoutFile, string areaId)
+        {
+            var result = new Dictionary<string, Vector2Int>();
+            var a = layoutFile?.battleAreas?.FirstOrDefault(x => x.id == areaId);
+            if (battleJson == null || a == null) return result;
+            var file = JsonUtility.FromJson<BattleDataFile>(battleJson.text);
+            var origin = new Vector2Int(a.x, a.y);
+            foreach (var u in file.units ?? Array.Empty<UnitData>())
+            {
+                if (u.reserve) { if (u.wait != null && u.wait.Length == 2) result[u.id] = origin + new Vector2Int(u.wait[0], u.wait[1]); }
+                else result[u.id] = origin + new Vector2Int(u.x, u.y);
+            }
+            return result;
+        }
+
         /// <summary>戦闘が終わった（勝利・敗北）。1回だけ</summary>
         public event Action<Phase> Finished;
         private bool finishedRaised;
