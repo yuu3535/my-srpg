@@ -20,6 +20,8 @@ namespace Srpg.EditorAgent
         private const string DataPath = "Assets/Data/Corridors/orcus_castle.json";
         private const string ArtDir = "Assets/Art/Corridor";
         private const string HeroPath = "Assets/Art/SD/young_arshe.png";
+        private const string MapPath = "Assets/Data/Maps/orcus_corridor.json";
+        private const string ScenarioPath = "Assets/Data/Scenario/prologue_1_1.json";
 
         [MenuItem("Srpg/2D回廊（試し）を作る")]
         public static void BuildAll()
@@ -61,6 +63,22 @@ namespace Srpg.EditorAgent
                 texProp.arraySize = textures.Length;
                 for (int i = 0; i < textures.Length; i++) texProp.GetArrayElementAtIndex(i).objectReferenceValue = textures[i];
                 so.ApplyModifiedPropertiesWithoutUndo();
+
+                // 探索（会話・話す・調べる・扉。2026-10-04）: 3Dの探索と同じ配置表とシナリオを使う
+                var dialogue = DialogueBuilder.CreateView(camera);
+                var explore = go.AddComponent<Explore2DController>();
+                var eso = new SerializedObject(explore);
+                eso.FindProperty("view").objectReferenceValue = view;
+                eso.FindProperty("dialogue").objectReferenceValue = dialogue;
+                eso.FindProperty("corridorJson").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(DataPath);
+                eso.FindProperty("mapJson").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(MapPath);
+                eso.FindProperty("scenarioJson").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(ScenarioPath);
+                var sprites = Directory.GetFiles("Assets/Art/SD", "*.png")
+                    .Select(p => AssetDatabase.LoadAssetAtPath<Texture2D>(p.Replace(Path.DirectorySeparatorChar, '/'))).Where(t => t != null).ToArray();
+                var spProp = eso.FindProperty("sprites");
+                spProp.arraySize = sprites.Length;
+                for (int i = 0; i < sprites.Length; i++) spProp.GetArrayElementAtIndex(i).objectReferenceValue = sprites[i];
+                eso.ApplyModifiedPropertiesWithoutUndo();
                 EditorSceneManager.SaveScene(scene, ScenePath);
                 var scenes = EditorBuildSettings.scenes.Where(s => s.path != ScenePath).ToList();
                 scenes.Add(new EditorBuildSettingsScene(ScenePath, true));
@@ -78,8 +96,37 @@ namespace Srpg.EditorAgent
                     Canvas.ForceUpdateCanvases();
                     Board3DTestBuilder.Render(camera, rt, "Corridor2D_" + name);
                 }
+                // 探索の確認: 入ったところ → キャリー（近づくと会話）→ 謁見の間の扉（調べる）→ 階段（ヘンリーにまだ会っていない）→ ヘンリー
+                void Shot(string name, string note)
+                {
+                    Canvas.ForceUpdateCanvases();
+                    Board3DTestBuilder.Render(camera, rt, "Corridor2D_" + name);
+                    var line = dialogue.CurrentLine;
+                    Debug.Log($"[Corridor2DBuilder] {name}: x={view.PlayerX:0} {note} 会話={(dialogue.IsPlaying ? $"{line?.speaker}「{line?.text?.Replace("\n", " ")}」" : "なし")}");
+                }
+                explore.Begin();
+                explore.StepForTest(view.PlayerX);
+                Shot("explore_start", "入ったところ");
+                explore.StepForTest(explore.PersonX("carrie") - 90f);
+                Shot("explore_carrie", "キャリーの近く");
+                dialogue.Close();
+                explore.StepForTest(view.PlayerX + 1f);
+                Shot("explore_after_carrie", "キャリーと話したあと");
+                explore.StepForTest(view.Length - 150f);
+                Shot("explore_stairs", "階段の前");
+                if (!explore.Seen.Contains("prologue_1_1.b08"))
+                {
+                    var use = typeof(Corridor2DView).GetMethod("UseExit", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    use.Invoke(view, null);
+                    Shot("explore_stairs_locked", "階段を使う（ヘンリーにまだ会っていない）");
+                    dialogue.Close();
+                }
+                explore.StepForTest(explore.PersonX("henry") - 90f);
+                Shot("explore_henry", "ヘンリーの近く");
+                dialogue.Close();
                 camera.targetTexture = null;
                 foreach (Transform child in go.transform) UnityEngine.Object.DestroyImmediate(child.gameObject);
+                foreach (Transform child in dialogue.transform) UnityEngine.Object.DestroyImmediate(child.gameObject);
                 EditorSceneManager.SaveScene(scene, ScenePath);
                 Debug.Log("[Corridor2DBuilder] 作った: " + ScenePath);
             }

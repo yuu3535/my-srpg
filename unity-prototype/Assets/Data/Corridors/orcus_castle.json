@@ -140,5 +140,13 @@
    "scene": ""
   }
  ],
- "cameraMargin": 60
+ "cameraMargin": 60,
+ "explore": {
+  "map": "orcus_corridor",
+  "axis": "y",
+  "from": 20,
+  "to": 0,
+  "state": "",
+  "spots": []
+ }
 }

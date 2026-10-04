@@ -78,9 +78,25 @@ namespace Srpg.Battle
         private float toastUntil;
         private bool facingLeft;
         private float walkTime;
+        private readonly List<RectTransform> walkButtons = new List<RectTransform>();
+        private readonly List<(RectTransform rt, RawImage img, float x)> people = new List<(RectTransform, RawImage, float)>();
+        private Action actionUse;
+        private Coroutine autoWalk;
 
         public float PlayerX { get => playerX; set { playerX = value; Apply(); } }
         public float Length => data?.length ?? 0f;
+
+        // ── 探索（Explore2DController から使う。2026-10-04） ──
+        /// <summary>探索の仕組みが動かす（出口の札は使わず、ShowAction で出す）</summary>
+        public bool Controlled { get; set; }
+        /// <summary>会話中など、歩けない・ボタンを隠す</summary>
+        public bool Locked { get; set; }
+        /// <summary>カメラを寄せる点（会話の2人のまん中など）。null ならアルシェ</summary>
+        public float? FocusX { get; set; }
+        public bool AutoWalking => autoWalk != null;
+        public float WalkMinX => data.walkMin;
+        public float WalkMaxX => data.walkMax > 0f ? data.walkMax : data.length + Mathf.Min(data.walkMax, -40f);   // 負の値は右の端からの距離
+        public float HeroHeight => data.heroHeight;
 
         private void Start() => Build();
 
@@ -214,6 +230,7 @@ namespace Srpg.Battle
         private void WalkButton(Transform parent, bool left)
         {
             var rt = NewRect(left ? "WalkLeft" : "WalkRight", parent);
+            walkButtons.Add(rt);
             rt.anchorMin = rt.anchorMax = new Vector2(left ? 0f : 1f, 0.5f);
             rt.pivot = new Vector2(left ? 0f : 1f, 0.5f);
             rt.anchoredPosition = new Vector2(left ? 10f : -10f, 0f);
@@ -242,21 +259,22 @@ namespace Srpg.Battle
         private void Update()
         {
             if (data == null) return;
-            int dir = holding;
+            int dir = Locked || autoWalk != null ? 0 : holding;
             var kb = Keyboard.current;
-            if (kb != null)
+            if (kb != null && !Locked && autoWalk == null)
             {
                 if (kb.leftArrowKey.isPressed || kb.aKey.isPressed) dir = -1;
                 else if (kb.rightArrowKey.isPressed || kb.dKey.isPressed) dir = 1;
             }
             if (dir != 0)
             {
-                playerX = Mathf.Clamp(playerX + dir * walkSpeed * Time.deltaTime, data.walkMin, data.walkMax > 0f ? data.walkMax : data.length + Mathf.Min(data.walkMax, -40f));   // 負の値は右の端からの距離
+                playerX = Mathf.Clamp(playerX + dir * walkSpeed * Time.deltaTime, WalkMinX, WalkMaxX);
                 facingLeft = dir < 0;
                 walkTime += Time.deltaTime;
             }
             else walkTime = 0f;
-            if (kb != null && (kb.enterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame) && nearExit != null) UseExit();
+            if (kb != null && !Locked && (kb.enterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame) && (nearExit != null || (Controlled && actionUse != null))) UseExit();
+            foreach (var b in walkButtons) if (b != null) b.gameObject.SetActive(!Locked);
             Apply();
         }
 
@@ -293,6 +311,7 @@ namespace Srpg.Battle
 
         private void UseExit()
         {
+            if (Controlled) { if (!Locked) actionUse?.Invoke(); return; }
             if (nearExit == null) return;
             if (!string.IsNullOrEmpty(nearExit.scene) && Application.isPlaying)
             {
@@ -313,7 +332,7 @@ namespace Srpg.Battle
         private void Apply()
         {
             if (data == null || root == null) return;
-            cameraX = Mathf.Clamp(playerX - ScreenW / 2f, data.cameraMargin, Mathf.Max(data.cameraMargin, data.length - ScreenW - data.cameraMargin));
+            cameraX = Mathf.Clamp((FocusX ?? playerX) - ScreenW / 2f, data.cameraMargin, Mathf.Max(data.cameraMargin, data.length - ScreenW - data.cameraMargin));
             foreach (var (layer, box, tiles, width) in built)
             {
                 float shift = layer.x - cameraX * layer.speed;
@@ -343,11 +362,22 @@ namespace Srpg.Battle
                 for (int i = 0; i < tiles.Count; i++)
                     Place(tiles[i].rectTransform, start + i * step, layer.bottom - layer.height, width, layer.height);
             }
-            nearExit = (data.exits ?? Array.Empty<CorridorExit>()).Where(e => Mathf.Abs(ExitX(e) - playerX) < 70f).OrderBy(e => Mathf.Abs(ExitX(e) - playerX)).FirstOrDefault();
-            if (exitButton != null)
+            if (!Controlled)
             {
-                exitButton.gameObject.SetActive(nearExit != null);
-                if (nearExit != null) exitLabel.text = nearExit.label;
+                nearExit = (data.exits ?? Array.Empty<CorridorExit>()).Where(e => Mathf.Abs(ExitX(e) - playerX) < 70f).OrderBy(e => Mathf.Abs(ExitX(e) - playerX)).FirstOrDefault();
+                if (exitButton != null)
+                {
+                    exitButton.gameObject.SetActive(nearExit != null);
+                    if (nearExit != null) exitLabel.text = nearExit.label;
+                }
+            }
+            else if (exitButton != null) exitButton.gameObject.SetActive(actionUse != null && !Locked);
+            // 人（アルシェのほうを向く）
+            foreach (var (rt, img, x) in people)
+            {
+                rt.anchoredPosition = new Vector2(x - cameraX, -data.heroFeetY);
+                bool faceLeft = playerX < x && img != null;   // 名前の札（絵のない人）は裏返さない
+                rt.localScale = new Vector3(faceLeft ? -1f : 1f, 1f, 1f);
             }
             if (toast != null && toast.gameObject.activeSelf && Application.isPlaying && Time.unscaledTime > toastUntil) toast.gameObject.SetActive(false);
             if (heroRect != null)
@@ -357,6 +387,96 @@ namespace Srpg.Battle
                 heroRect.localScale = new Vector3(facingLeft ? -1f : 1f, 1f, 1f);
             }
         }
+
+        /// <summary>この場所にいる人を並べる（絵がない人は名前の札だけ）。アルシェより奥に描く</summary>
+        public void SetPeople(IEnumerable<(string id, string name, Texture2D texture, float x)> list)
+        {
+            foreach (var p in people) if (p.rt != null) DestroyImmediate(p.rt.gameObject);
+            people.Clear();
+            if (root == null) return;
+            foreach (var (id, name, texture, x) in list)
+            {
+                var rt = NewRect("Person_" + id, root);
+                rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
+                rt.pivot = new Vector2(0.5f, 0f);
+                RawImage img = null;
+                if (texture != null)
+                {
+                    img = rt.gameObject.AddComponent<RawImage>();
+                    img.texture = texture;
+                    img.raycastTarget = false;
+                    rt.sizeDelta = new Vector2(data.heroHeight * texture.width / texture.height, data.heroHeight);
+                }
+                else
+                {
+                    // 盤面の絵がまだない人: 名前の札（仮）
+                    rt.sizeDelta = new Vector2(80f, data.heroHeight);
+                    var tag = NewRect("Name", rt).gameObject.AddComponent<Text>();
+                    tag.rectTransform.anchorMin = new Vector2(0f, 0f); tag.rectTransform.anchorMax = new Vector2(1f, 0f);
+                    tag.rectTransform.pivot = new Vector2(0.5f, 0f);
+                    tag.rectTransform.sizeDelta = new Vector2(0f, 22f);
+                    tag.rectTransform.anchoredPosition = new Vector2(0f, data.heroHeight * 0.5f);
+                    tag.font = JapaneseFont.Get(new[] { "Noto Serif JP", "Yu Mincho", "MS PMincho" }, 14);
+                    tag.fontSize = 14; tag.alignment = TextAnchor.MiddleCenter; tag.text = name;
+                    tag.color = new Color(0.94f, 0.95f, 0.93f); tag.raycastTarget = false;
+                    tag.gameObject.AddComponent<Shadow>().effectColor = new Color(0f, 0f, 0f, 0.9f);
+                }
+                if (heroRect != null) rt.SetSiblingIndex(heroRect.GetSiblingIndex());   // アルシェの1つ奥
+                people.Add((rt, img, x));
+            }
+            Apply();
+        }
+
+        /// <summary>画面の下の真ん中の札（話す・調べる・扉など）。label が空なら隠す</summary>
+        public void ShowAction(string label, Action use)
+        {
+            actionUse = string.IsNullOrEmpty(label) ? null : use;
+            if (exitLabel != null && actionUse != null) exitLabel.text = label;
+            if (exitButton != null) exitButton.gameObject.SetActive(actionUse != null && !Locked);
+        }
+
+        /// <summary>短い知らせ</summary>
+        public void Toast(string text, float seconds = 2f)
+        {
+            if (toast == null) return;
+            toast.text = text;
+            toast.gameObject.SetActive(true);
+            toastUntil = Time.unscaledTime + seconds;
+        }
+
+        /// <summary>x まで歩いて、着いたら then（エディタでは待たずに着く）</summary>
+        public void WalkTo(float x, Action then)
+        {
+            x = Mathf.Clamp(x, WalkMinX, WalkMaxX);
+            if (autoWalk != null) StopCoroutine(autoWalk);
+            autoWalk = null;
+            if (!Application.isPlaying || Mathf.Abs(x - playerX) < 2f)
+            {
+                if (Mathf.Abs(x - playerX) >= 2f) facingLeft = x < playerX;
+                playerX = x;
+                Apply();
+                then?.Invoke();
+                return;
+            }
+            autoWalk = StartCoroutine(WalkRoutine(x, then));
+        }
+
+        private System.Collections.IEnumerator WalkRoutine(float x, Action then)
+        {
+            facingLeft = x < playerX;
+            while (Mathf.Abs(x - playerX) > 0.5f)
+            {
+                playerX = Mathf.MoveTowards(playerX, x, walkSpeed * Time.deltaTime);
+                walkTime += Time.deltaTime;
+                yield return null;
+            }
+            walkTime = 0f;
+            autoWalk = null;
+            then?.Invoke();
+        }
+
+        /// <summary>アルシェの向き（会話の相手のほうを向く）</summary>
+        public void Face(float x) { facingLeft = x < playerX; Apply(); }
 
         private Texture2D Texture(string file)
         {

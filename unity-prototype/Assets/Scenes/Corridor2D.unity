@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &519124080
+--- !u!1 &322226121
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,8 +127,101 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 519124082}
-  - component: {fileID: 519124081}
+  - component: {fileID: 322226123}
+  - component: {fileID: 322226122}
+  m_Layer: 0
+  m_Name: DialogueView
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &322226122
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 322226121}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 90a3c36aa5b5bd840be3f0a34d3941c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Srpg.Battle::Srpg.Battle.DialogueView
+  adjustJson: {fileID: 0}
+  styleJson: {fileID: 4900000, guid: 8f848f68924846459bbb15ddaaf078fe, type: 3}
+  cornerTexture: {fileID: 2800000, guid: f084b80ed10b30e4aa3a933d100a960c, type: 3}
+  targetCamera: {fileID: 1548282552}
+  regularFont: {fileID: 12800000, guid: 5d44fb766293fa742921f1785442a4eb, type: 3}
+  boldFont: {fileID: 12800000, guid: ee93b216df8aef44da19774478f74b6d, type: 3}
+  panelSprite: {fileID: 21300000, guid: 8f4b326b4982a5a4a9fc1630dad93c8a, type: 3}
+  portraits:
+  - name: "\u30A2\u30EB\u30B7\u30A7"
+    texture: {fileID: 2800000, guid: 470aea951f6ff9040bfcc2f06d1c1a8b, type: 3}
+    uv:
+      serializedVersion: 2
+      x: 0.271593
+      y: 0.41082874
+      width: 0.50469613
+      height: 0.5891713
+  - name: "\u30AB\u30EA\u30DE"
+    texture: {fileID: 2800000, guid: 24eb1a6bc54bb0846893ee43d22fe1a0, type: 3}
+    uv:
+      serializedVersion: 2
+      x: 0.28701478
+      y: 0.40688232
+      width: 0.398244
+      height: 0.59311765
+  - name: "\u30AD\u30E3\u30EA\u30FC"
+    texture: {fileID: 2800000, guid: 7c7f2bd1b6ebbfd40af017dff88de5c0, type: 3}
+    uv:
+      serializedVersion: 2
+      x: 0.14106447
+      y: 0.38807294
+      width: 0.7198242
+      height: 0.6119271
+  - name: "\u30D8\u30F3\u30EA\u30FC"
+    texture: {fileID: 2800000, guid: ef8e624edce12004c8f7f8d9ab38d4b6, type: 3}
+    uv:
+      serializedVersion: 2
+      x: 0.2153315
+      y: 0.39370167
+      width: 0.5472376
+      height: 0.6062983
+  - name: "\u30AE\u30E5\u30F3\u30BF\u30FC"
+    texture: {fileID: 2800000, guid: 56181b9297319bb4da1bae75a4683e49, type: 3}
+    uv:
+      serializedVersion: 2
+      x: 0.26187846
+      y: 0.40140882
+      width: 0.44861877
+      height: 0.59859115
+--- !u!4 &322226123
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 322226121}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1098749556
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1098749559}
+  - component: {fileID: 1098749558}
+  - component: {fileID: 1098749557}
   m_Layer: 0
   m_Name: Corridor2D
   m_TagString: Untagged
@@ -136,13 +229,70 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &519124081
+--- !u!114 &1098749557
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 519124080}
+  m_GameObject: {fileID: 1098749556}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79be39bb2a39f374da19df310ddb7d96, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Srpg.Battle::Srpg.Battle.Explore2DController
+  view: {fileID: 1098749558}
+  dialogue: {fileID: 322226122}
+  corridorJson: {fileID: 4900000, guid: 329d7df5ba870824bb63b74ae0afd6c1, type: 3}
+  mapJson: {fileID: 4900000, guid: 115ac7ffdd0cb9a4aaaa57ce7957ea1f, type: 3}
+  scenarioJson: {fileID: 4900000, guid: aa6204b3a7b801249bffc81843dc3449, type: 3}
+  sprites:
+  - {fileID: 2800000, guid: 5bcac7f8734a01e489ddb2cf7ab211a1, type: 3}
+  - {fileID: 2800000, guid: 8d6f751dfdd560842a087f04ca051dbf, type: 3}
+  - {fileID: 2800000, guid: 8776f03c0919112428098d34628ec62f, type: 3}
+  - {fileID: 2800000, guid: a9bacdc179c0a1542bc428c30f0d1837, type: 3}
+  - {fileID: 2800000, guid: 21660526a089fbf41b27027007d5033b, type: 3}
+  - {fileID: 2800000, guid: 5e2abdab1b05d4143a60f9aaec8eca18, type: 3}
+  - {fileID: 2800000, guid: 039ebef9baf75a740bb1aaeb19bb3816, type: 3}
+  - {fileID: 2800000, guid: eb106f22817ab7747b2ed82a67fb4ae5, type: 3}
+  - {fileID: 2800000, guid: f7e2f6b049eba0d49a30010b8d94b67e, type: 3}
+  - {fileID: 2800000, guid: 8f8bfae0edae2bb4ca5ec7385240223c, type: 3}
+  - {fileID: 2800000, guid: f123dce452ff4b949b947e051bbe672e, type: 3}
+  - {fileID: 2800000, guid: 03a70f86ceeba5841a6ccc6faa390f09, type: 3}
+  - {fileID: 2800000, guid: a595c911b0402b94e85496970fb8a594, type: 3}
+  - {fileID: 2800000, guid: 87d7121efbd118a46b287daebc7dae62, type: 3}
+  - {fileID: 2800000, guid: 5a485bb42e9de4d4f9049b52f9e5881c, type: 3}
+  - {fileID: 2800000, guid: cbfab46e046be2b4b984c36e55fb9aa4, type: 3}
+  - {fileID: 2800000, guid: f4cec617a08932f40a8777cef1b4b7bf, type: 3}
+  - {fileID: 2800000, guid: 9905d0dbd24383245b233f6f685cf1e3, type: 3}
+  - {fileID: 2800000, guid: c0a9029c3756d1b40a08c4cb6259f471, type: 3}
+  - {fileID: 2800000, guid: 0462cfbdbc431e245a45c084554a499a, type: 3}
+  - {fileID: 2800000, guid: 71f5b92222339d643a38ba3b472b04a9, type: 3}
+  - {fileID: 2800000, guid: ae41ac3540ff6974aa162057c292f328, type: 3}
+  - {fileID: 2800000, guid: 9e0c0bb479291b344821fa2b6339c91d, type: 3}
+  - {fileID: 2800000, guid: 56875b096e1a00a4080f7706c6b82edf, type: 3}
+  - {fileID: 2800000, guid: ec115a151c908dc4f9c0ce12be6eec19, type: 3}
+  - {fileID: 2800000, guid: 9389aa72edd99c24f8ba2879ccc4afa6, type: 3}
+  - {fileID: 2800000, guid: 7b3652460d18a6c41b55bdad46d7e4be, type: 3}
+  - {fileID: 2800000, guid: ae77e1d85355a7241a9a2489196662f7, type: 3}
+  - {fileID: 2800000, guid: 48a34eee79e9f084eb25c4b5f64258ae, type: 3}
+  - {fileID: 2800000, guid: aa109d5ab72346a4fa5af47af9e94848, type: 3}
+  - {fileID: 2800000, guid: 65fc039b27bf58445a4604c61abbcb78, type: 3}
+  - {fileID: 2800000, guid: 139e3c6f8822bda4c816a1476ae36667, type: 3}
+  - {fileID: 2800000, guid: fa0f2e377c39ee84b851d0b854f138a1, type: 3}
+  - {fileID: 2800000, guid: 1fd4f231ad55df74ab408cd89a698ddb, type: 3}
+  - {fileID: 2800000, guid: 49cb581351ee50041bf01b2685344d20, type: 3}
+  - {fileID: 2800000, guid: 261fe288960452f45bf4bf74484d097b, type: 3}
+  - {fileID: 2800000, guid: 8a0b00b9523cff84eb182dde58cb86cc, type: 3}
+  - {fileID: 2800000, guid: fded15662838c2744a613c9d9023cbf3, type: 3}
+  - {fileID: 2800000, guid: af18c382857226045b971a6a7c3721d4, type: 3}
+--- !u!114 &1098749558
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1098749556}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d70a9383a3410d6439ca819f2ec6c33e, type: 3}
@@ -158,16 +308,18 @@ MonoBehaviour:
   - {fileID: 2800000, guid: e6b524d26de104f4bb4ab5cb213e690f, type: 3}
   - {fileID: 2800000, guid: 2604762bb271c9f458b67884cf142c1f, type: 3}
   - {fileID: 2800000, guid: 6efbc16b5a0d5a845b8fd4d5d6ce9fc1, type: 3}
+  - {fileID: 2800000, guid: 2808bc75104b42fe8bc27b246eb91535, type: 3}
+  - {fileID: 2800000, guid: 1a31906663eb4ec8b67d650128b95dd9, type: 3}
   hero: {fileID: 2800000, guid: fded15662838c2744a613c9d9023cbf3, type: 3}
   walkSpeed: 220
-  targetCamera: {fileID: 1567440747}
---- !u!4 &519124082
+  targetCamera: {fileID: 1548282552}
+--- !u!4 &1098749559
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 519124080}
+  m_GameObject: {fileID: 1098749556}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -176,7 +328,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1567440746
+--- !u!1 &1548282551
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -184,8 +336,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1567440748}
-  - component: {fileID: 1567440747}
+  - component: {fileID: 1548282553}
+  - component: {fileID: 1548282552}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -193,13 +345,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!20 &1567440747
+--- !u!20 &1548282552
 Camera:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1567440746}
+  m_GameObject: {fileID: 1548282551}
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
@@ -244,13 +396,13 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!4 &1567440748
+--- !u!4 &1548282553
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1567440746}
+  m_GameObject: {fileID: 1548282551}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: -10}
@@ -263,5 +415,6 @@ Transform:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 1567440748}
-  - {fileID: 519124082}
+  - {fileID: 1548282553}
+  - {fileID: 1098749559}
+  - {fileID: 322226123}
