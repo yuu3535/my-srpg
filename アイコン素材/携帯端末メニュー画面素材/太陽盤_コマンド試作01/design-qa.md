@@ -1,5 +1,17 @@
 # 回転する外周コマンド輪：確認状況
 
+## 最新：時間帯アイコンの絵柄反映（2026-10-05）
+
+final result: blocked（実装後のブラウザー描画確認待ち。下のコマンド輪の保存承認とは別評価）
+
+- Source visual truth: `time-of-day-art/selected-reference-v01.png`（1536×1024）。作者が細いシャンパン色の1案を選び、長い光線を加え、朝を上向き／夕方を横向き＋低い太陽へ差別化した見本を「分かりやすい、これで」と確認。
+- Implementation: `time-of-day-demo.html`、論理viewport844×390、夕方初期状態。焦点領域は右160×64と左400×160。PNG部品＋CSS単発の日の出／日没、継続する光線と2つの星。運命予報と本編は未変更。
+- Assets: `time-of-day-art/time-icons-atlas-v01.png`（1254×1254、透過RGBA）。参照から生成した別素材であり、正本と画素一致とは主張しない。計測した矩形から実素材を表示し、近似SVGへ置換しない。PNG寸法・矩形範囲・静止形の収まりは非描画検査済み。
+- Typography/copy: 操作部の既存Yu Gothic UI／Meiryo、時間帯のラベルと予報文を保持。アイコン内に文字なし。Layout/color/density: 180px列中央の160×64枠を保持、朝の縦／夕方の横光線、右向き三日月、シャンパン色。新素材の実寸での見え方、線の細さ、明るい無地のコントラストは実描画未確認。
+- Implementation screenshot: 未取得。以前のブラウザーアクセス拒否・迂回禁止を維持。full-view／focused regionの同状態比較、密度正規化、描画後のimage fidelity、操作感と負荷は未検証。生成PNGの確認・Nodeテストをページ撮影の代用としない。
+- Checks: `verify-time-of-day.cjs`、関連JS構文検査、既存`verify-command-burning.cjs`成功。切替、単発／ループ、停止、動き低減、素材失敗と復帰、イベント解放を非描画検証。
+- Next evidence: 作者が独立見本を再読み込みし、4時間帯と静止形、回廊／灰色／明るい無地を確認。特に朝夕の太陽の高さと光線を実寸で比較する。
+
 final result: 作者が現在の試作を確認・保存承認／非描画検証済み（独立した実描画QAは未実施）
 
 ## 保存確認（2026-10-04）
