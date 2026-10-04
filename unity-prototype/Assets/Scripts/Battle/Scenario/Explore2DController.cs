@@ -20,6 +20,7 @@ namespace Srpg.Battle
             public string id;
             public float x;
             public float w;   // 範囲（talkArea）の幅。0 なら配置表のマスから
+            public string label;   // 調べる所の名前（2Dでの置き物に合わせる。例: 剣は収納箱の中）
         }
 
         [Serializable] public class StateLook { public string state, look; }
@@ -32,7 +33,8 @@ namespace Srpg.Battle
             public float from, to;        // この値が左の端（歩ける範囲の左）・右の端
             public string state;          // 使う場面（空なら最初）
             public Spot[] spots;
-            public StateLook[] looks;     // 場面ごとの見え方（Assets/Data/Looks/<look>.json）。なければ場所のふだんの見え方
+            public StateLook[] looks;
+            public string introDark;      // 入ったとき、このブロックが終わるまで画面を暗くしておく（寝起きの暗転開け。原作者 2026-10-04）     // 場面ごとの見え方（Assets/Data/Looks/<look>.json）。なければ場所のふだんの見え方
         }
 
         [Serializable] private class CorridorExplore { public Explore2D explore; }
@@ -144,7 +146,27 @@ namespace Srpg.Battle
 
             // 入ったときの会話
             var onEnter = (State?.onEnter ?? Array.Empty<string>()).ToList();
-            if (onEnter.Count > 0) { starting = true; PlayBlocks(onEnter, () => starting = false); }
+            int dark = string.IsNullOrEmpty(ex.introDark) || seen.Contains(ex.introDark) ? -1 : onEnter.IndexOf(ex.introDark);
+            if (dark >= 0)
+            {
+                // 暗いまま最初の会話（携帯端末の音）→ 明けながら続きの会話
+                starting = true;
+                view.Darkness = 1f;
+                var first = onEnter.Take(dark + 1).ToList();
+                var rest = onEnter.Skip(dark + 1).ToList();
+                PlayBlocks(first, () =>
+                {
+                    if (Application.isPlaying) StartCoroutine(FadeIn(1.2f)); else view.Darkness = 0f;
+                    PlayBlocks(rest, () => starting = false);
+                });
+            }
+            else if (onEnter.Count > 0) { starting = true; PlayBlocks(onEnter, () => starting = false); }
+        }
+
+        private System.Collections.IEnumerator FadeIn(float seconds)
+        {
+            for (float t = 0f; t < seconds; t += Time.unscaledDeltaTime) { view.Darkness = 1f - t / seconds; yield return null; }
+            view.Darkness = 0f;
         }
 
         private void OnViewRebuilt()
@@ -301,7 +323,7 @@ namespace Srpg.Battle
         /// <summary>調べる所の名前（配置表の label。なければ、そのマスにある物の名前。括弧の中は省く）</summary>
         private string InspectName(MapInspect i)
         {
-            string name = i.label;
+            string name = !string.IsNullOrEmpty(SpotOf(i.id)?.label) ? SpotOf(i.id).label : i.label;
             if (string.IsNullOrEmpty(name))
                 name = map?.objects?.FirstOrDefault(o => o.cells != null && i.cells != null && o.cells.Any(c => i.cells.Any(k => k.x == c.x && k.y == c.y)))?.kind ?? "";
             int cut = name.IndexOfAny(new[] { '（', '(' });

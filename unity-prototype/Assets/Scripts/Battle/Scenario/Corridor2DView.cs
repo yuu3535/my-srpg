@@ -110,6 +110,11 @@ namespace Srpg.Battle
         /// 話す2人（FocusX）の足元の少し上を画面の真ん中寄りへ持ってきて、少し大きく映す
         /// </summary>
         public bool TalkZoom { get; set; }
+
+        /// <summary>画面の暗さ（0〜1）。寝起きの暗転開けなど。会話の画面より奥（台詞は読める）</summary>
+        public float Darkness { get => darkness; set { darkness = Mathf.Clamp01(value); if (darkImage != null) { darkImage.color = new Color(0.01f, 0.012f, 0.02f, darkness); darkImage.gameObject.SetActive(darkness > 0f); } } }
+        private float darkness;
+        private Image darkImage;
         private float zoomT;
         private const float ZoomScale = 1.25f;
         public float Length => data?.length ?? 0f;
@@ -277,7 +282,13 @@ namespace Srpg.Battle
             ApplyLayerEffects();
             ApplyCharaEffects(heroImage);
             BuildVignette(canvasObject.transform);
-            BuildTapArea(canvasObject.transform);         // 押した所へ歩く（いちばん奥。◀ ▶ やボタンが手前）
+            BuildTapArea(canvasObject.transform);
+            // 暗転（画面いっぱい。押す所より手前、◀ ▶ より奥）
+            var darkRt = NewRect("暗転", canvasObject.transform);
+            darkRt.anchorMin = Vector2.zero; darkRt.anchorMax = Vector2.one; darkRt.sizeDelta = Vector2.zero;
+            darkImage = darkRt.gameObject.AddComponent<Image>();
+            darkImage.raycastTarget = false;
+            Darkness = darkness;         // 押した所へ歩く（いちばん奥。◀ ▶ やボタンが手前）
             BuildTunerHotspot(canvasObject.transform);   // 左上を5回で見え方の調整画面（Corridor2DView.Tuner）
 
             // 画面の端の ◀ ▶（押している間歩く。探索の見本 2026-10-02 の形）
