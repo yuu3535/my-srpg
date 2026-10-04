@@ -52,6 +52,14 @@
   #stage .fx { position: absolute; inset: 0; pointer-events: none; }
   #stage .layer.fxShafts { isolation: auto; }   /* 光の筋は下の絵と「スクリーン」で混ぜる */
   .card.fxCard { border-color: #3c6d70; }
+  .card.exCard { border-color: #8a6d3c; }
+  .exRow { display: grid; grid-template-columns: 1fr 64px 56px 40px; gap: 4px; align-items: center; margin: 2px 0; font-size: 12px; }
+  .exRow input { width: 58px; padding: 1px 3px; }
+  .exRow .auto { color: var(--muted); }
+  #stage .exLayer { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+  #stage .exMark { position: absolute; pointer-events: auto; cursor: ew-resize; user-select: none; }
+  #stage .exMark .tag { position: absolute; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 11px; padding: 0 4px; background: rgba(8,12,18,.78); border-radius: 2px; }
+  #stage .exMark.drag .tag { outline: 1px solid #fff; }
   .card.fxCard .row { grid-template-columns: 104px 1fr 54px; }
   .card.fxCard .colorRow { grid-template-columns: 104px 1fr; }
   .perLayer { border-top: 1px dashed #2a3a44; margin-top: 4px; padding-top: 3px; }
@@ -143,7 +151,8 @@ async function defaultsFor(id) {
     const r = await fetch(`${UNITY_DIR}${encodeURIComponent(id)}.json`, { cache: "no-store" });
     if (r.ok) {
       const d = await r.json();
-      return { folder: d.folder, hero: { y: d.heroFeetY ?? 352, h: d.heroHeight ?? 96, margin: d.cameraMargin ?? 60 }, layers: d.layers.map(L => ({ ...L, on: true })), effects: d.effects };
+      return { folder: d.folder, hero: { y: d.heroFeetY ?? 352, h: d.heroHeight ?? 96, margin: d.cameraMargin ?? 60 }, layers: d.layers.map(L => ({ ...L, on: true })), effects: d.effects,
+        explore: d.explore ? { ...d.explore, spots: d.explore.spots || [] } : null, walk: { min: d.walkMin ?? 40, max: d.walkMax ?? -40 } };
     }
   } catch {}
   const mine = readJson(PLACES_KEY, []).find(m => m.id === id);
@@ -164,8 +173,20 @@ const autoBlur = L => fx.dof * Math.max(0, Math.min(1, 1 - L.speed));
 const layerHaze = (L, first) => L.fxHaze ?? autoHaze(L, first);
 const layerBlur = L => L.fxBlur ?? autoBlur(L);
 let fx = clone(FX_DEFAULT);
+// 探索の配置（2026-10-04: 探索を2Dへ移す段2）。人・近づくと流れる会話の範囲・調べる所・扉・アルシェの始まりの横の位置。
+// Unity の Explore2DController と同じ決め方: 配置表（Assets/Data/Maps/<map>.json）のマスの1つの軸を、歩ける範囲の左から右へ並べる。spots で上書き
+let ex = null, walk = { min: 40, max: -40 }, exMap = null, exOn = true;
+const SD_DIR = "/unity-prototype/Assets/Art/SD/";
+const EX_PEOPLE = { young_arshe: ["young_arshe", "アルシェ"], young_karima: ["young_karima", "カリマ"], gunter: ["gunter", "ギュンター"], carrie: ["carrie", "キャリー"], henry: ["henry", "ヘンリー"] };
+async function loadExploreMap() {
+  exMap = null;
+  if (!ex?.map) return;
+  try { const r = await fetch(`/unity-prototype/Assets/Data/Maps/${encodeURIComponent(ex.map)}.json`, { cache: "no-store" }); if (r.ok) exMap = await r.json(); } catch {}
+}
 function apply(state) {
   layers = state.layers;
+  ex = state.explore ? clone(state.explore) : null;
+  if (state.walk) walk = { ...state.walk };
   fx = { ...clone(FX_DEFAULT), ...(state.effects || {}) };
   fx.chara = { ...clone(FX_DEFAULT.chara), ...(fx.chara || {}) };
   if (state.folder) $("folder").value = state.folder;
@@ -175,9 +196,15 @@ function apply(state) {
 }
 async function load() {
   const s = readJson(storeKey(place), null);
+  if (s?.layers && !s.explore) {
+    // 前に保存した値には探索の配置がない: Unity の値から足す
+    const d = await defaultsFor(place);
+    s.explore = d.explore; s.walk = d.walk;
+  }
   apply(s?.layers ? s : await defaultsFor(place));
+  await loadExploreMap();
 }
-function save() { writeJson(storeKey(place), { folder: $("folder").value, layers, hero, effects: fx }); }
+function save() { writeJson(storeKey(place), { folder: $("folder").value, layers, hero, effects: fx, explore: ex, walk }); }
 const hero = { y: 352, h: 96, on: true, margin: 60 };
 
 const sizes = {};   // 画像の元の大きさ（file → {w,h}）
@@ -347,6 +374,7 @@ async function render() {
     Object.assign(v.style, { background: `radial-gradient(ellipse 72% 78% at 50% 50%, transparent ${Math.round(fx.vignetteSize * 100)}%, ${fx.vignetteColor} 100%)`, opacity: fx.vignette });
     stage.appendChild(v);
   }
+  drawExplore(stage, cam);
   feet.style.top = `${hero.y}px`;
   feet.style.display = hero.on ? "" : "none";
   heroImg.style.display = hero.on ? "" : "none";
@@ -379,7 +407,124 @@ function exportText() {
     else Object.assign(o, { height: L.height, bottom: L.bottom, overlap: L.overlap, repeat: L.repeat, mirror: L.mirror, opacity: L.opacity });
     return o;
   });
-  return JSON.stringify({ corridor: place, folder: $("folder").value, screen: [844, 390], heroFeetY: hero.y, heroHeight: hero.h, cameraMargin: hero.margin, effects: fx, layers: used }, null, 1);
+  return JSON.stringify({ corridor: place, folder: $("folder").value, screen: [844, 390], heroFeetY: hero.y, heroHeight: hero.h, cameraMargin: hero.margin, effects: fx, explore: ex || undefined, layers: used }, null, 1);
+}
+
+// ── 探索の配置 ──
+function corridorLength() { return layers.find(L => L.kind === "modules" && L.on)?._length || 844; }
+function walkRange() {
+  const len = corridorLength();
+  return [walk.min, walk.max > 0 ? walk.max : len + Math.min(walk.max, -40)];
+}
+function axisX(v) {
+  const [a, b] = walkRange();
+  const t = ex.from === ex.to ? 0.5 : (v - ex.from) / (ex.to - ex.from);
+  return a + (b - a) * Math.max(0, Math.min(1, t));
+}
+const axisOf = c => ex.axis === "x" ? c.x : c.y;
+const spotOf = id => (ex.spots || []).find(s => s.id === id);
+const resolveX = x => x < 0 ? corridorLength() + x : x;
+const shortLabel = t => { t = t || ""; const i = t.search(/[（(]/); return i > 0 ? t.slice(0, i) : t; };
+/** この場所の探索の項目（横の位置つき）。auto＝配置表から決めた位置（spots で上書きしていない） */
+function exploreItems() {
+  if (!ex || !exMap) return [];
+  const state = (ex.state && exMap.states?.find(s => s.id === ex.state)) || exMap.states?.[0];
+  if (!state) return [];
+  const items = [];
+  const point = (id, kind, label, autoX, extra = {}) => { const sp = spotOf(id); items.push({ id, kind, label, x: sp ? resolveX(sp.x) : autoX, auto: !sp, ...extra }); };
+  if (state.player) point("player", "player", "アルシェの始まり", axisX(axisOf(state.player)));
+  for (const p of state.people || []) {
+    const [token, name] = EX_PEOPLE[p.id] || [p.id, p.name || p.id];
+    point(p.id, "person", p.name || name, axisX(axisOf(p)), { token, talk: p.talkBlock });
+  }
+  for (const a of state.talkAreas || []) {
+    const a0 = ex.axis === "x" ? a.x : a.y, n = ex.axis === "x" ? a.w : a.h;
+    const half = Math.abs(axisX(a0 + 1) - axisX(a0)) / 2, x0 = axisX(a0), x1 = axisX(a0 + n - 1);
+    const lo = Math.min(x0, x1) - half, hi = Math.max(x0, x1) + half;
+    const sp = spotOf(a.id);
+    const w = sp && sp.w > 0 ? sp.w : hi - lo;
+    items.push({ id: a.id, kind: "area", label: `会話: ${a.block?.split(".").pop() || a.id}`, x: sp ? resolveX(sp.x) : (lo + hi) / 2, w, auto: !sp });
+  }
+  for (const i of [...(state.inspect || []), ...(exMap.inspect || [])]) {
+    const avg = i.cells?.length ? i.cells.reduce((s, c) => s + axisOf(c), 0) / i.cells.length : ex.from;
+    point(i.id, "inspect", `調べる: ${i.label || i.id}`, axisX(avg));
+  }
+  for (const e of exMap.exits || []) {
+    const avg = e.cells?.length ? e.cells.reduce((s, c) => s + axisOf(c), 0) / e.cells.length : ex.from;
+    point(e.id, "exit", `扉: ${shortLabel(e.label)}`, axisX(avg));
+  }
+  return items;
+}
+function setSpot(id, x, w) {
+  ex.spots = (ex.spots || []).filter(s => s.id !== id);
+  const it = exploreItems().find(i => i.id === id);
+  ex.spots.push({ id, x: Math.round(x), w: Math.round(w ?? (it?.kind === "area" ? it.w : 0)) });
+}
+let exDrag = null;
+const EX_COLOR = { player: "#7fe08a", person: "#e8e2c8", area: "#67bfc1", inspect: "#f0d36a", exit: "#f08a5a" };
+function drawExplore(stage, cam) {
+  if (!ex || !exOn) return;
+  const lay = document.createElement("div");
+  lay.className = "exLayer";
+  stage.appendChild(lay);
+  for (const it of exploreItems()) {
+    const m = document.createElement("div");
+    m.className = "exMark" + (exDrag?.id === it.id ? " drag" : "");
+    const color = EX_COLOR[it.kind];
+    if (it.kind === "area") {
+      Object.assign(m.style, { left: `${it.x - it.w / 2 - cam}px`, width: `${it.w}px`, top: `${hero.y - 70}px`, height: "78px", background: "rgba(103,191,193,.16)", border: `1px dashed ${color}` });
+      m.innerHTML = `<span class="tag" style="top:-16px;color:${color}">${it.label}</span>`;
+    } else if (it.kind === "person") {
+      Object.assign(m.style, { left: `${it.x - 30 - cam}px`, width: "60px", top: `${hero.y - hero.h}px`, height: `${hero.h}px` });
+      const img = document.createElement("img");
+      Object.assign(img.style, { position: "absolute", bottom: 0, left: "50%", height: `${hero.h}px`, transform: "translateX(-50%)", pointerEvents: "none" });
+      img.onerror = () => img.remove();
+      img.src = encodeURI(`${SD_DIR}${it.token}.png`);
+      m.appendChild(img);
+      m.insertAdjacentHTML("beforeend", `<span class="tag" style="bottom:-16px;color:${color}">${it.label}${it.talk ? "（話す）" : ""}</span>`);
+    } else {
+      Object.assign(m.style, { left: `${it.x - 6 - cam}px`, width: "12px", top: "40px", height: `${hero.y - 30}px`, borderLeft: `2px ${it.kind === "player" ? "solid" : "dashed"} ${color}`, transform: "translateX(5px)" });
+      m.innerHTML = `<span class="tag" style="top:${it.kind === "exit" ? 0 : it.kind === "inspect" ? 18 : 36}px;color:${color}">${it.label}</span>`;
+    }
+    m.addEventListener("pointerdown", e => { e.preventDefault(); exDrag = { id: it.id, startX: e.clientX, startVal: it.x, w: it.w }; });
+    lay.appendChild(m);
+  }
+}
+window.addEventListener("pointermove", e => {
+  if (!exDrag) return;
+  const z = Number($("zoom").value) || 1;
+  setSpot(exDrag.id, exDrag.startVal + (e.clientX - exDrag.startX) / z, exDrag.w);
+  render();
+});
+window.addEventListener("pointerup", () => { if (exDrag) { exDrag = null; cards(); render(); } });
+function exCard() {
+  const card = document.createElement("div");
+  card.className = "card exCard";
+  const head = document.createElement("div");
+  head.className = "head";
+  head.innerHTML = `<input type="checkbox" ${exOn ? "checked" : ""} title="出す"><b>探索の配置（${ex.map}）</b><button title="全部を配置表からの位置に戻す">全部自動</button>`;
+  head.querySelector("input").addEventListener("change", e => { exOn = e.target.checked; render(); });
+  head.querySelector("button").addEventListener("click", () => { ex.spots = []; cards(); render(); });
+  card.appendChild(head);
+  const note = document.createElement("div");
+  note.className = "hint";
+  note.textContent = "画面の印を左右にドラッグして動かす（数字でも可）。範囲は会話が始まる幅。「自動」は配置表のマスから決めた位置に戻す。";
+  card.appendChild(note);
+  if (!exMap) { card.insertAdjacentHTML("beforeend", `<div class="hint">配置表が読めません: /unity-prototype/Assets/Data/Maps/${ex.map}.json</div>`); return card; }
+  for (const it of exploreItems()) {
+    const row = document.createElement("div");
+    row.className = "exRow";
+    row.innerHTML = `<span style="color:${EX_COLOR[it.kind]}">${it.label}${it.auto ? ' <span class="auto">（自動）</span>' : ""}</span>`
+      + `<label>x <input type="number" value="${Math.round(it.x)}"></label>`
+      + (it.kind === "area" ? `<label>幅 <input type="number" value="${Math.round(it.w)}"></label>` : "<span></span>")
+      + `<button title="配置表からの位置に戻す">自動</button>`;
+    const [xi, wi] = row.querySelectorAll("input");
+    xi.addEventListener("change", () => { setSpot(it.id, Number(xi.value), wi ? Number(wi.value) : it.w); cards(); render(); });
+    if (wi) wi.addEventListener("change", () => { setSpot(it.id, Number(xi.value), Number(wi.value)); cards(); render(); });
+    row.querySelector("button").addEventListener("click", () => { ex.spots = (ex.spots || []).filter(s => s.id !== it.id); cards(); render(); });
+    card.appendChild(row);
+  }
+  return card;
 }
 
 // ── 欄 ──
@@ -490,6 +635,7 @@ function check(L, key, label) {
 function cards() {
   const host = $("layers");
   host.innerHTML = "";
+  if (ex) host.appendChild(exCard());
   host.appendChild(fxCard());
   layers.forEach((L, i) => {
     const card = document.createElement("div");
@@ -585,7 +731,7 @@ $("add").addEventListener("click", () => {
 });
 $("reset").addEventListener("click", async () => {
   if (!confirm(`「${place}」を、はじめの値（Unity に入っている値。なければひな形）に戻しますか？ 合わせた値は消えます`)) return;
-  apply(await defaultsFor(place)); await listFiles(); cards(); render(); $("msg").textContent = "はじめの値に戻しました";
+  apply(await defaultsFor(place)); await loadExploreMap(); await listFiles(); cards(); render(); $("msg").textContent = "はじめの値に戻しました";
 });
 $("place").addEventListener("change", async e => {
   save();
@@ -622,7 +768,8 @@ $("reload").addEventListener("click", async () => { await listFiles(); cards(); 
   await listFiles();
   await listSkies();
   cards();
-  render();
+  await render();
+  if (ex) cards();   // 探索の配置は回廊の長さ（描いたあとに分かる）で決まるので、もう一度並べる
 })();
 </script>
 </body>
