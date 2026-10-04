@@ -649,10 +649,13 @@ namespace Srpg.Battle
                 .Select(p => personCells[p.id]).ToList();
             if (cells.Count == 0) return;
             cells.Add(Player);
+            // 話さないが近くにいる人（6マス以内）も入れる（訓練場でカリマと話す間、見ているギュンターが枠に隠れていた。原作者 2026-10-05）
+            foreach (var p in State?.people ?? Array.Empty<MapPerson>())
+                if (personCells.TryGetValue(p.id, out var pc) && !cells.Contains(pc)
+                    && Mathf.Max(Mathf.Abs(pc.x - Player.x), Mathf.Abs(pc.y - Player.y)) <= 6) cells.Add(pc);
             var map = view.Map;
-            var sum = Vector3.zero;
-            foreach (var c in cells) sum += map.TopCenter(c);
-            view.FocusOnPointAt(sum / cells.Count, 0.3f, !Application.isPlaying);   // 台詞の枠（下）にかからない高さ（寄りの画面は見る点がもともと上寄り）
+            // 台詞の枠（上）にかからない高さへ: まん中は画面の 0.3、いちばん奥の人の足元は 0.38 より下（頭が枠にかからない。原作者 2026-10-05）
+            view.FocusOnPointsBelow(cells.Select(c => map.TopCenter(c)).ToList(), 0.3f, 0.38f, !Application.isPlaying);
         }
 
         // 配置表の人の id と台詞の話し手の名前（配置表の name は空のことが多い）

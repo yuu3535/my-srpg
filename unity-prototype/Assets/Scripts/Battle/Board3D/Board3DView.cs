@@ -1297,8 +1297,8 @@ namespace Srpg.Battle
             int turnUv = topMaterial != null && topMaterial.mainTexture != null && topMaterial.mainTexture.width > 64
                 ? 0 : ((cell.x * 7 + cell.y * 13) % 4 + 4) % 4;
             var ground = GroundMaterial();
-            // 木の演台の上の面は、地面の1枚絵ではなく板張りの模様（訓練場。2026-10-05）。となりのマスとつながるよう、盤面の位置で貼る
-            var stageTop = map.FromLayoutFile && map.TerrainAt(cell) == '+' ? TextureMaterial("top_stage") : null;
+            // 木の演台の上の面: 地面の1枚絵があればそれ（原作者 2026-10-05: 1枚絵の方がきれい）。ないときだけ板張りの模様を、盤面の位置で貼る
+            var stageTop = ground == null && map.FromLayoutFile && map.TerrainAt(cell) == '+' ? TextureMaterial("top_stage") : null;
             var sideName = SideTextureName(cell);
             var sideMaterial = TextureMaterial(sideName);
             // 横長の帯の絵（strip_）: 見えている高さ（天面の高さ）に帯1本をあて、横は盤面の位置でつなげる
@@ -1601,6 +1601,36 @@ namespace Srpg.Battle
         /// その点が画面の高さ viewportY（0＝下・1＝上）に来るように寄る（銀細工のUI 第4段: 戦闘予測で、交戦する2人を下の帯より上に出す）。
         /// 正射影なので、寄る先を画面の奥の向きの逆へずらす
         /// </summary>
+        /// <summary>
+        /// 何人か（会話の話し手）を、画面の上の台詞の枠にかからない高さへ寄る。まん中は preferredY、いちばん奥の人の足元は topY より下
+        /// </summary>
+        public void FocusOnPointsBelow(IList<Vector3> points, float preferredY, float topY, bool immediate = false)
+        {
+            if (points == null || points.Count == 0) return;
+            var center = Vector3.zero;
+            foreach (var p in points) center += p;
+            center /= points.Count;
+            if (targetCamera == null) { FocusOnPoint(center, immediate); return; }
+            var forward = transform.InverseTransformDirection(targetCamera.transform.forward);
+            float down = Mathf.Max(0.2f, -forward.y);
+            forward.y = 0f;
+            if (forward.sqrMagnitude < 1e-6f) { FocusOnPointAt(center, preferredY, immediate); return; }
+            forward.Normalize();
+            // 画面の奥へ1進むと、画面の高さ（0〜1）でどれだけ上がるか（FocusOnPointAt と同じ計算）
+            float perUnit = down / (2f * (overview ? size : closeSize));
+            float ahead = float.MinValue, behind = float.MaxValue;
+            foreach (var p in points)
+            {
+                float a = Vector3.Dot(p - center, forward);
+                ahead = Mathf.Max(ahead, a);
+                behind = Mathf.Min(behind, a);
+            }
+            // いちばん奥の人の足元が topY より下（頭が枠にかからない）。入りきらないときも、いちばん手前の人は画面の下の端に残す
+            float y = Mathf.Min(preferredY, topY - ahead * perUnit);
+            y = Mathf.Max(y, 0.04f - behind * perUnit);
+            FocusOnPointAt(center, y, immediate);
+        }
+
         public void FocusOnPointAt(Vector3 point, float viewportY, bool immediate = false)
         {
             if (targetCamera == null) { FocusOnPoint(point, immediate); return; }
