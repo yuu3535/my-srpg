@@ -53,10 +53,12 @@
   #stage .layer.fxShafts { isolation: auto; }   /* 光の筋は下の絵と「スクリーン」で混ぜる */
   .card.fxCard { border-color: #3c6d70; }
   .card.exCard { border-color: #8a6d3c; }
-  .exRow { display: grid; grid-template-columns: 1fr 64px 56px 40px; gap: 4px; align-items: center; margin: 2px 0; font-size: 12px; }
-  .exRow input { width: 58px; padding: 1px 3px; }
+  .exRow { display: grid; grid-template-columns: 1fr 62px 56px 44px; gap: 4px; align-items: center; margin: 2px 0; font-size: 12px; }
+  .exRow input { width: 100%; box-sizing: border-box; padding: 1px 3px; }
+  .exRow.head { color: var(--muted); }
+  .exRow button { padding: 0 4px; }
   .exRow .auto { color: var(--muted); }
-  #stage .exLayer { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+  #stage .layer.exLayer { pointer-events: none; z-index: 5; isolation: auto; }
   #stage .exMark { position: absolute; pointer-events: auto; cursor: ew-resize; user-select: none; }
   #stage .exMark .tag { position: absolute; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 11px; padding: 0 4px; background: rgba(8,12,18,.78); border-radius: 2px; }
   #stage .exMark.drag .tag { outline: 1px solid #fff; }
@@ -465,7 +467,7 @@ const EX_COLOR = { player: "#7fe08a", person: "#e8e2c8", area: "#67bfc1", inspec
 function drawExplore(stage, cam) {
   if (!ex || !exOn) return;
   const lay = document.createElement("div");
-  lay.className = "exLayer";
+  lay.className = "layer exLayer";   // 「layer」を付けて、描き直すたびに消す（付けていなかったので印が何重にも重なっていた）
   stage.appendChild(lay);
   for (const it of exploreItems()) {
     const m = document.createElement("div");
@@ -511,12 +513,13 @@ function exCard() {
   note.textContent = "画面の印を左右にドラッグして動かす（数字でも可）。範囲は会話が始まる幅。「自動」は配置表のマスから決めた位置に戻す。";
   card.appendChild(note);
   if (!exMap) { card.insertAdjacentHTML("beforeend", `<div class="hint">配置表が読めません: /unity-prototype/Assets/Data/Maps/${ex.map}.json</div>`); return card; }
+  card.insertAdjacentHTML("beforeend", `<div class="exRow head"><span></span><span>横の位置</span><span>幅</span><span></span></div>`);
   for (const it of exploreItems()) {
     const row = document.createElement("div");
     row.className = "exRow";
     row.innerHTML = `<span style="color:${EX_COLOR[it.kind]}">${it.label}${it.auto ? ' <span class="auto">（自動）</span>' : ""}</span>`
-      + `<label>x <input type="number" value="${Math.round(it.x)}"></label>`
-      + (it.kind === "area" ? `<label>幅 <input type="number" value="${Math.round(it.w)}"></label>` : "<span></span>")
+      + `<input type="number" title="横の位置" value="${Math.round(it.x)}">`
+      + (it.kind === "area" ? `<input type="number" title="幅" value="${Math.round(it.w)}">` : "<span></span>")
       + `<button title="配置表からの位置に戻す">自動</button>`;
     const [xi, wi] = row.querySelectorAll("input");
     xi.addEventListener("change", () => { setSpot(it.id, Number(xi.value), wi ? Number(wi.value) : it.w); cards(); render(); });
