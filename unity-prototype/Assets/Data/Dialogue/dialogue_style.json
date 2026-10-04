@@ -1,0 +1,17 @@
+{
+ "_note": "会話の枠の見た目（原作者の調整値 prototypes/silver-ui-extension/dialogue-portrait-author-settings-20261003.json から）。全場面に固定する値ではない",
+ "width": 408,
+ "height": 100,
+ "top": 48,
+ "transparency": 20,
+ "radius": 24,
+ "panelColor": "#131d34",
+ "borderColor": "#d7d7e0",
+ "textColor": "#e6e7ef",
+ "ornament": "large",
+ "tailLeftOffset": 17,
+ "tailRightOffset": 17,
+ "fontSize": 18,
+ "nameFontSize": 17,
+ "listenerShade": 0.24
+}

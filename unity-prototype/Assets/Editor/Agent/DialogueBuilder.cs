@@ -51,9 +51,11 @@ namespace Srpg.EditorAgent
             var list = new List<DialogueView.Portrait>();
             foreach (var (name, source) in Sources)
             {
-                if (!File.Exists(source)) { Debug.LogWarning($"[DialogueBuilder] 立ち絵がない: {source}"); continue; }
                 string dest = $"{PortraitDir}/{name}.png";
-                if (!File.Exists(dest) || !File.ReadAllBytes(source).AsSpan().SequenceEqual(File.ReadAllBytes(dest)))
+                // 元の絵が見つからなければ、前に取り込んだ絵をそのまま使う（元のフォルダの整理で消えても、立ち絵が消えないように）
+                if (!File.Exists(source) && !File.Exists(dest)) { Debug.LogWarning($"[DialogueBuilder] 立ち絵がない: {source}"); continue; }
+                if (!File.Exists(source)) Debug.LogWarning($"[DialogueBuilder] 元の立ち絵がないので、取り込み済みの絵を使う: {source}");
+                else if (!File.Exists(dest) || !File.ReadAllBytes(source).AsSpan().SequenceEqual(File.ReadAllBytes(dest)))
                     File.Copy(source, dest, true);
                 AssetDatabase.ImportAsset(dest, ImportAssetOptions.ForceSynchronousImport);
                 var importer = (TextureImporter)AssetImporter.GetAtPath(dest);
@@ -77,6 +79,27 @@ namespace Srpg.EditorAgent
                 list.Add(new DialogueView.Portrait { name = name, texture = AssetDatabase.LoadAssetAtPath<Texture2D>(dest), uv = uv });
             }
             return list.ToArray();
+        }
+
+        private const string CornerSource = "../prototypes/silver-ui-extension/assets/silver-corner-sculpted-source.png";   // Codex の見本の銀細工（左上の形）
+        private const string CornerPath = "Assets/Art/UI/dialogue_corner_silver.png";
+
+        /// <summary>台詞枠の四隅の銀細工を取り込む（見せるのは 76px なので 256 に縮める）</summary>
+        private static Texture2D ImportCorner()
+        {
+            if (File.Exists(CornerSource) && (!File.Exists(CornerPath) || !File.ReadAllBytes(CornerSource).AsSpan().SequenceEqual(File.ReadAllBytes(CornerPath))))
+            {
+                File.Copy(CornerSource, CornerPath, true);
+                AssetDatabase.ImportAsset(CornerPath, ImportAssetOptions.ForceSynchronousImport);
+                var importer = (TextureImporter)AssetImporter.GetAtPath(CornerPath);
+                importer.textureType = TextureImporterType.Default;
+                importer.alphaIsTransparency = true;
+                importer.mipmapEnabled = false;
+                importer.maxTextureSize = 256;
+                importer.wrapMode = TextureWrapMode.Clamp;
+                importer.SaveAndReimport();
+            }
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(CornerPath);
         }
 
         private static (int x0, int y0, int x1, int y1) OpaqueBounds(Texture2D tex)
@@ -108,6 +131,9 @@ namespace Srpg.EditorAgent
             so.FindProperty("panelSprite").objectReferenceValue = AssetDatabase.LoadAllAssetsAtPath("Assets/Art/UI/panel_even.png").OfType<Sprite>().FirstOrDefault();
             // 原作者が調整した立ち絵の位置（会話中に立ち絵を5回たたく → 保存。あれば）
             so.FindProperty("adjustJson").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Data/portrait_adjust.json");
+            // 銀細工の台詞枠（採用版md/SILVER_DIALOGUE_UI_DIRECTION.md）: 寸法と色、四隅の銀細工
+            so.FindProperty("styleJson").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>("Assets/Data/Dialogue/dialogue_style.json");
+            so.FindProperty("cornerTexture").objectReferenceValue = ImportCorner();
             var portraits = ImportPortraits();
             var prop = so.FindProperty("portraits");
             prop.arraySize = portraits.Length;

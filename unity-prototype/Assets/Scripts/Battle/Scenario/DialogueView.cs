@@ -32,7 +32,6 @@ namespace Srpg.Battle
         private static readonly Color Ivory = new Color32(243, 226, 182, 255);
         private static readonly Color GoldDeep = new Color32(214, 167, 64, 255);
         private static readonly Color NameGold = new Color32(239, 208, 129, 255);
-        private static readonly Color Dim = new Color(0.34f, 0.33f, 0.42f, 1f);   // 黙っている人（色は線形で混ぜるので強めに暗くする）
 
         private Canvas canvas;
         private RectTransform root, stageRoot, box, namePlate, logPanel, letterTop, letterBottom;
@@ -80,6 +79,8 @@ namespace Srpg.Battle
         public void Advance()
         {
             if (block == null || AdjusterOpen) return;   // 立ち絵の調整中は進めない
+            // 長い文は次のページへ（話す人・表情はそのまま。ログ・物を手に入れるのは最初のページだけ）
+            if (page < pages.Length - 1) { page++; ShowPage(); return; }
             index++;
             if (index >= lines.Length) { Close(); return; }
             var line = lines[index];
@@ -95,6 +96,8 @@ namespace Srpg.Battle
             block = null;
             lines = Array.Empty<ScenarioLine>();
             index = -1;
+            pages = Array.Empty<string>();
+            page = 0;
             if (root != null) root.gameObject.SetActive(false);
             var done = onEnd;
             onEnd = null;
@@ -107,13 +110,17 @@ namespace Srpg.Battle
         {
             bool narration = line.type == "narration";
             string name = line.type == "phone" ? "携帯端末" : narration ? "" : line.speaker;
-            namePlate.gameObject.SetActive(!string.IsNullOrEmpty(name));
-            nameText.text = name;
-            // 名前の札はテキストボックスの左上に固定（話す側で左右に動くと落ち着かない。原作者 2026-09-28）
-            namePlate.anchoredPosition = new Vector2(28f, 14f);
-            bodyText.text = line.text;
+            // 名前札と尾は話す人の側へ（上置きの新しい決まり。採用版md/SILVER_DIALOGUE_UI_DIRECTION.md）。
+            // ナレーション・携帯端末・立ち絵のない人は尾を出さず、名前札は真ん中
+            int side = 0;
+            if (line.type == "line" && !string.IsNullOrEmpty(line.speaker) && FindPortrait(line.speaker, null).texture != null)
+                side = stage.left.Contains(line.speaker) ? -1 : stage.right.Contains(line.speaker) ? 1 : 0;
+            SetSpeakerSide(side, side != 0, name);
             bodyText.fontStyle = narration ? FontStyle.Italic : FontStyle.Normal;
-            bodyText.color = narration ? new Color(Ivory.r, Ivory.g, Ivory.b, 0.86f) : Ivory;
+            bodyText.color = narration ? new Color(textCol.r, textCol.g, textCol.b, 0.86f) : textCol;
+            pages = Paginate(line.text);
+            page = 0;
+            ShowPage();
             log.Add(string.IsNullOrEmpty(name) ? line.text : $"{name}「{line.text}」");
             if (log.Count > 80) log.RemoveAt(0);
             LayoutActors(line);
@@ -170,7 +177,9 @@ namespace Srpg.Battle
                 rt.anchoredPosition = new Vector2(right ? -x : x, 0f);
                 // 右の人は左右を反転して内側（相手の方）を向ける（立ち絵は全員右向きで描く決まり。発注書 §3）
                 rt.localScale = new Vector3(right ? -1f : 1f, 1f, 1f);
-                image.color = speaking ? Color.white : Dim;
+                // 黙っている人は透かさず、絵の形の中だけ暗くする（色の掛け算は絵の形の中にしか効かない）
+                float keep = 1f - style.listenerShade;
+                image.color = speaking ? Color.white : new Color(keep, keep, keep, 1f);
                 // 奥の人を先に描く（話している人が手前）
                 if (speaking) rt.SetAsLastSibling(); else rt.SetAsFirstSibling();
             }
@@ -243,45 +252,8 @@ namespace Srpg.Battle
             }
             SetLetterbox(1f);
 
-            // テキストボックス（仮の位置: 下の中央）
-            box = NewRect("Box", root);
-            box.anchorMin = box.anchorMax = new Vector2(0.5f, 0f);
-            box.pivot = new Vector2(0.5f, 0f);
-            box.sizeDelta = new Vector2(560f, 92f);
-            box.anchoredPosition = new Vector2(0f, 10f);
-            var boxImage = box.gameObject.AddComponent<Image>();
-            if (panelSprite != null) { boxImage.sprite = panelSprite; boxImage.type = Image.Type.Sliced; }
-            else boxImage.color = new Color(0.06f, 0.04f, 0.1f, 0.92f);
-            boxImage.raycastTarget = false;
-
-            namePlate = NewRect("Name", box);
-            namePlate.anchorMin = namePlate.anchorMax = new Vector2(0f, 1f);
-            namePlate.pivot = new Vector2(0f, 0f);
-            namePlate.sizeDelta = new Vector2(132f, 20f);
-            var plate = namePlate.gameObject.AddComponent<RawImage>();
-            plate.texture = HorizontalBand(new Color32(56, 21, 71, 255));
-            plate.raycastTarget = false;
-            var plateRule = NewRect("Rule", namePlate).gameObject.AddComponent<Image>();
-            plateRule.color = new Color(GoldDeep.r, GoldDeep.g, GoldDeep.b, 0.7f);
-            plateRule.rectTransform.anchorMin = new Vector2(0f, 0f);
-            plateRule.rectTransform.anchorMax = new Vector2(1f, 0f);
-            plateRule.rectTransform.sizeDelta = new Vector2(0f, 1f);
-            nameText = NewText("Text", namePlate, boldFont != null ? boldFont : font, 12, NameGold, TextAnchor.MiddleCenter);
-            Stretch(nameText.rectTransform);
-
-            bodyText = NewText("Body", box, font, 13, Ivory, TextAnchor.UpperLeft);
-            bodyText.rectTransform.anchorMin = Vector2.zero;
-            bodyText.rectTransform.anchorMax = Vector2.one;
-            // 四隅の菱形の飾りに重ならないよう、内側へ（原作者 2026-09-28）
-            bodyText.rectTransform.offsetMin = new Vector2(40f, 16f);
-            bodyText.rectTransform.offsetMax = new Vector2(-40f, -22f);
-            bodyText.lineSpacing = 1.15f;
-
-            nextMark = NewText("Next", box, font, 10, GoldDeep, TextAnchor.MiddleCenter);
-            nextMark.text = "▼";
-            nextMark.rectTransform.anchorMin = nextMark.rectTransform.anchorMax = new Vector2(1f, 0f);
-            nextMark.rectTransform.sizeDelta = new Vector2(16f, 14f);
-            nextMark.rectTransform.anchoredPosition = new Vector2(-16f, 12f);
+            // 銀細工の上置きの台詞枠（DialogueView.Silver.cs）
+            BuildSilverBox(font);
 
             // ログ（左上のボタンで開く。押すと閉じる）
             var logButtonRt = NewRect("LogButton", root);
@@ -289,11 +261,14 @@ namespace Srpg.Battle
             logButtonRt.pivot = new Vector2(0f, 1f);
             logButtonRt.sizeDelta = new Vector2(64f, 20f);
             logButtonRt.anchoredPosition = new Vector2(14f, -10f);
-            var logButtonBg = logButtonRt.gameObject.AddComponent<RawImage>();
-            logButtonBg.texture = HorizontalBand(new Color32(20, 14, 30, 255));
+            var logButtonBg = logButtonRt.gameObject.AddComponent<Image>();
+            logButtonBg.color = new Color32(12, 26, 35, 240);
+            var logButtonLine = logButtonRt.gameObject.AddComponent<Outline>();
+            logButtonLine.effectColor = new Color(borderCol.r, borderCol.g, borderCol.b, 0.7f);
+            logButtonLine.effectDistance = new Vector2(1f, -1f);
             var logButton = logButtonRt.gameObject.AddComponent<Button>();
             logButton.onClick.AddListener(() => logPanel.gameObject.SetActive(!logPanel.gameObject.activeSelf));
-            var logLabel = NewText("Text", logButtonRt, font, 10, NameGold, TextAnchor.MiddleCenter);
+            var logLabel = NewText("Text", logButtonRt, font, 10, textCol, TextAnchor.MiddleCenter);
             logLabel.text = "ログ";
             Stretch(logLabel.rectTransform);
 
@@ -301,12 +276,16 @@ namespace Srpg.Battle
             logPanel.anchorMin = new Vector2(0.5f, 0.5f);
             logPanel.anchorMax = new Vector2(0.5f, 0.5f);
             logPanel.sizeDelta = new Vector2(560f, 300f);
+            // ログも銀細工の色に（見本の log-panel: 濃い紺の地・細い銀の縁）
             var logBg = logPanel.gameObject.AddComponent<Image>();
-            if (panelSprite != null) { logBg.sprite = panelSprite; logBg.type = Image.Type.Sliced; } else logBg.color = new Color(0.05f, 0.03f, 0.08f, 0.95f);
+            logBg.color = new Color32(12, 25, 34, 247);
+            var logLine = logPanel.gameObject.AddComponent<Outline>();
+            logLine.effectColor = new Color(borderCol.r, borderCol.g, borderCol.b, 0.8f);
+            logLine.effectDistance = new Vector2(1f, -1f);
             var logClose = logPanel.gameObject.AddComponent<Button>();
             logClose.transition = Selectable.Transition.None;
             logClose.onClick.AddListener(() => logPanel.gameObject.SetActive(false));
-            logText = NewText("Text", logPanel, font, 10, Ivory, TextAnchor.LowerLeft);
+            logText = NewText("Text", logPanel, font, 11, textCol, TextAnchor.LowerLeft);
             logText.rectTransform.anchorMin = Vector2.zero;
             logText.rectTransform.anchorMax = Vector2.one;
             logText.rectTransform.offsetMin = new Vector2(18f, 14f);
@@ -344,7 +323,7 @@ namespace Srpg.Battle
                 SetLetterbox(1f - (1f - t) * (1f - t) * (1f - t));   // 速く入って静かに止まる
                 if (t >= 1f) letterStart = -1f;
             }
-            if (nextMark != null && Application.isPlaying) nextMark.color = new Color(GoldDeep.r, GoldDeep.g, GoldDeep.b, 0.55f + 0.45f * Mathf.Sin(Time.time * 4f));
+            if (nextMark != null && Application.isPlaying) nextMark.color = new Color(borderCol.r, borderCol.g, borderCol.b, 0.55f + 0.45f * Mathf.Sin(Time.time * 4f));
         }
 
         /// <summary>黒帯の出方（0＝なし、1＝出きった）。高さでなく位置を動かす（画面の外から差し込む）</summary>
@@ -398,21 +377,6 @@ namespace Srpg.Battle
                 float t = y / (n - 1f);
                 float a = alphaBottom * (1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(solid * 0.2f, 1f, t)));
                 tex.SetPixel(0, y, new Color(color.r, color.g, color.b, a));
-            }
-            tex.Apply();
-            return tex;
-        }
-
-        /// <summary>名前の札の地: 左右の端が透明に消える紫の帯</summary>
-        private static Texture2D HorizontalBand(Color color)
-        {
-            const int n = 64;
-            var tex = new Texture2D(n, 1, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
-            for (int x = 0; x < n; x++)
-            {
-                float t = x / (n - 1f);
-                float a = 0.92f * Mathf.Clamp01(Mathf.Min(t, 1f - t) * 6f);
-                tex.SetPixel(x, 0, new Color(color.r, color.g, color.b, a));
             }
             tex.Apply();
             return tex;
