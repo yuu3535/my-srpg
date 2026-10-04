@@ -57,21 +57,36 @@
   .legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 11.5px; color: var(--dim); margin-top: 8px; }
   .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 4px; vertical-align: -1px; background: var(--sw); border: 1px solid rgba(0,0,0,.4); }
   #msg { min-height: 1.4em; font-size: 12.5px; color: var(--gold); }
+  /* イベントの場面: 会話中の画面の目安（Unity の探索のカメラと同じ決め方） */
+  #screenGuide { position: absolute; border: 2px dashed #9fd3ff; pointer-events: none; z-index: 4; }
+  #screenGuide .box { position: absolute; background: rgba(20,30,60,.45); border: 1px solid #9fd3ff; color: #dff0ff; font-size: 11px; display: flex; align-items: center; justify-content: center; }
+  #screenGuide .side { position: absolute; background: rgba(120,60,140,.22); border: 1px dashed rgba(220,180,255,.6); color: #ecd8ff; font-size: 11px; display: flex; align-items: flex-start; justify-content: center; padding-top: 4px; }
+  #screenGuide .tag { position: absolute; left: 4px; top: -18px; font-size: 11px; color: #9fd3ff; white-space: nowrap; }
+  .unit .face { position: absolute; top: 0; right: 0; font-size: 11px; color: #fff; background: rgba(0,0,0,.55); padding: 0 2px; line-height: 1.2; }
+  td select { font: inherit; font-size: 12px; background: var(--ink); color: var(--text); border: 1px solid var(--gold-soft); }
   @media (max-width: 1100px) { main { grid-template-columns: 1fr; } #boardWrap { overflow-x: auto; } }
 </style>
 </head>
 <body>
 <header>
   <h1>戦闘の配置</h1>
-  <label>戦闘 <select id="battle"></select></label>
+  <label>決めるもの <select id="battle"></select></label>
   <span class="hint">キャラをドラッグ（またはキャラを押してからマスを押す）で動かす</span>
 </header>
 <main>
   <div id="boardWrap"><div id="board"></div><div class="legend" id="legend"></div></div>
   <aside>
+    <div id="sceneHelp" class="hint" style="display:none;margin:0 0 8px">
+      イベントの場面（探索の3Dの盤面で、会話が始まるときの人の位置）を決めます。キャラをドラッグで動かし、向きは表で選びます。<br>
+      水色の点線は、会話のときに画面に入る範囲の目安です（Unity の探索のカメラと同じ決め方。話す人によって少し変わります）。
+      まん中上の「台詞の枠」と左右の「立ち絵」に人が重ならないように置いてください。
+      <label style="display:block;margin-top:4px"><input type="checkbox" id="guideOn" checked> 画面の目安を出す</label>
+    </div>
+    <div id="battleOnly">
     <h2>戦う範囲</h2>
     <p class="hint" style="margin:0 0 6px">金の枠の「範囲を動かす」のつまみで移動、四すみのつまみで大きさを変えます。キャラは地図の上の同じ場所に残ります。</p>
     <div id="areaInfo"></div>
+    </div>
     <h2 style="margin-top:12px">配置</h2>
     <table id="list"></table>
     <div class="buttons">
@@ -110,6 +125,12 @@ const TERRAIN = {
   P: ["#3a3048", "柱"], D: ["#5a3a28", "扉"],
 };
 
+// イベントの場面（探索の3Dの盤面の場面。配置表の exploration.states）。原作者 2026-10-05
+const SCENE_MAPS = { orcus_training_yard: "../unity-prototype/Assets/Data/Maps/orcus_training_yard.json" };
+const PEOPLE = { young_arshe: "アルシェ", young_karima: "カリマ", gunter: "ギュンター", carrie: "キャリー", henry: "ヘンリー", arshe: "アルシェ" };
+const FACES = { north: "↑", south: "↓", east: "→", west: "←" };
+let sceneMode = false, sceneInfo = null;   // { map, state, title }
+
 const $ = id => document.getElementById(id);
 const CELL = 34;
 let cfg, layout, area, units = [], picked = null;
@@ -117,7 +138,7 @@ let cfg, layout, area, units = [], picked = null;
 function storageKey(id) { return "srpg-placement-" + id; }
 function loadDraft(id) { try { return JSON.parse(localStorage.getItem(storageKey(id)) || "null"); } catch { return null; } }
 function saveDraft(id) {
-  try { localStorage.setItem(storageKey(id), JSON.stringify({ area: { x: area.x, y: area.y, w: area.w, h: area.h }, units: units.map(u => ({ key: u.key, x: u.x, y: u.y })) })); } catch {}
+  try { localStorage.setItem(storageKey(id), JSON.stringify({ area: { x: area.x, y: area.y, w: area.w, h: area.h }, units: units.map(u => ({ key: u.key, x: u.x, y: u.y, facing: u.facing })) })); } catch {}
 }
 let areaOrig = null;   // 配置表のままの範囲（元に戻す用）
 
@@ -142,6 +163,9 @@ function unitsFromDefinition(id) {
 }
 
 async function openBattle(id) {
+  if (id.startsWith("scene:")) return openScene(id);
+  sceneMode = false;
+  showMode();
   cfg = BATTLES[id];
   layout = await (await fetch(cfg.layout)).json();
   areaOrig = { ...layout.battleAreas.find(a => a.id === cfg.area) };
@@ -153,6 +177,61 @@ async function openBattle(id) {
   if (draftUnits) for (const d of draftUnits) { const u = units.find(v => v.key === d.key); if (u) { u.x = d.x; u.y = d.y; } }
   drawBoard();
   render();
+}
+
+function showMode() {
+  $("battleOnly").style.display = sceneMode ? "none" : "";
+  $("sceneHelp").style.display = sceneMode ? "" : "none";
+  $("reset").textContent = sceneMode ? "Unity に入っている位置に戻す" : "今の battleDefinitions.js に戻す";
+}
+
+/** イベントの場面を開く: 配置表の場面の人（アルシェと、そこにいる人）を置く。座標は配置表のまま（範囲なし） */
+async function openScene(value) {
+  const [, mapId, stateId] = value.split(":");
+  sceneMode = true;
+  showMode();
+  layout = await (await fetch(SCENE_MAPS[mapId], { cache: "no-store" })).json();
+  const st = layout.states.find(v => v.id === stateId);
+  sceneInfo = { map: mapId, state: stateId, title: st.scene || stateId };
+  cfg = { layout: SCENE_MAPS[mapId], art: { carrie: "carrie_present" }, names: PEOPLE, sides: {} };
+  area = { x: 0, y: 0, w: layout.columns, h: layout.rows };
+  areaOrig = { ...area };
+  units = sceneUnits(st);
+  const draft = loadDraft(value);
+  if (draft?.units) for (const d of draft.units) { const u = units.find(v => v.key === d.key); if (u) { u.x = d.x; u.y = d.y; if (d.facing) u.facing = d.facing; } }
+  drawBoard();
+  render();
+}
+function sceneUnits(st) {
+  const list = [];
+  if (st.player) list.push({ key: "player", id: st.player.id, kind: "player", side: "ally", x: st.player.x, y: st.player.y, facing: st.player.facing || "south", label: `${PEOPLE[st.player.id] || st.player.id}（操作するキャラ）` });
+  for (const p of st.people || []) list.push({ key: p.id, id: p.id, kind: "person", side: "wait", x: p.x, y: p.y, facing: p.facing || "south", label: p.name || PEOPLE[p.id] || p.id });
+  return list;
+}
+
+/**
+ * 会話のときの画面の目安。Unity の探索のカメラ（斜め30°・正面・寄りの大きさ4・画面 844×390）と同じ決め方
+ * （ExploreController.FrameSpeakers・Board3DView.FocusOnPointsBelow）: みんなのまん中を画面の高さ 0.3、いちばん奥の人の足元は 0.38 より下
+ */
+function drawScreenGuide() {
+  $("board").querySelector("#screenGuide")?.remove();
+  if (!sceneMode || !$("guideOn").checked || !units.length) return;
+  const rowsTall = 16, colsWide = 8 * 844 / 390;          // 画面に入るマス（縦は 正投影の高さ8 ÷ sin30°）
+  const cx = units.reduce((a, u) => a + u.x + 0.5, 0) / units.length, cy = units.reduce((a, u) => a + u.y + 0.5, 0) / units.length;
+  const ahead = Math.max(...units.map(u => cy - (u.y + 0.5))), behind = Math.min(...units.map(u => cy - (u.y + 0.5)));
+  let vy = Math.min(0.3, 0.38 - ahead / rowsTall);
+  vy = Math.max(vy, 0.04 - behind / rowsTall);
+  const top = cy - (1 - vy) * rowsTall, left = cx - colsWide / 2;
+  const g = document.createElement("div");
+  g.id = "screenGuide";
+  Object.assign(g.style, { left: left * CELL + "px", top: top * CELL + "px", width: colsWide * CELL + "px", height: rowsTall * CELL + "px" });
+  const W = colsWide * CELL, H = rowsTall * CELL;
+  // 台詞の枠（まん中・上。3行の大きさ）と、立ち絵が出る左右（上から 66/390 より下）
+  g.innerHTML = `<span class="tag">会話のときの画面（目安）</span>`
+    + `<div class="box" style="left:${W * 0.27}px;top:${H * 0.13}px;width:${W * 0.46}px;height:${H * 0.32}px">台詞の枠</div>`
+    + `<div class="side" style="left:0;top:${H * 0.17}px;width:${W * 0.27}px;height:${H * 0.83}px">立ち絵（左）</div>`
+    + `<div class="side" style="right:0;top:${H * 0.17}px;width:${W * 0.27}px;height:${H * 0.83}px">立ち絵（右）</div>`;
+  $("board").appendChild(g);
 }
 
 function drawBoard() {
@@ -184,12 +263,14 @@ function drawBoard() {
 /** 範囲の枠・マスの印・座標の表示を今の範囲で塗り直す */
 function paintArea() {
   const frame = $("areaFrame");
+  frame.style.display = sceneMode ? "none" : "";
   Object.assign(frame.style, { left: area.x * CELL + "px", top: area.y * CELL + "px", width: area.w * CELL + "px", height: area.h * CELL + "px" });
   $("board").querySelectorAll(".cell").forEach(cell => {
     const rx = cell.dataset.x - area.x, ry = cell.dataset.y - area.y;
     cell.classList.toggle("area", inArea(rx, ry));
     cell.title = `(${rx}, ${ry})  ${cell.dataset.info}`;
   });
+  if (sceneMode) { $("areaInfo").innerHTML = ""; return; }
   let blocked = 0;
   for (let y = 0; y < area.h; y++) for (let x = 0; x < area.w; x++) if ("WF+P".includes(terrainAt(x, y))) blocked++;
   $("areaInfo").innerHTML = `左上 (${area.x}, ${area.y})・幅 ${area.w}・高さ ${area.h}（配置表の座標）`
@@ -248,6 +329,7 @@ function moveTo(u, rx, ry) {
 function problems(u) {
   const t = terrainAt(u.x, u.y);
   const list = [];
+  if (sceneMode) { if ("WFP".includes(t)) list.push(`${TERRAIN[t]?.[1] || t}の上`); return list; }
   if (u.kind === "wait") { if (inArea(u.x, u.y)) list.push("見守る位置は枠の外に"); }
   else if (!inArea(u.x, u.y)) list.push("戦う範囲（枠）の外");
   if ("WF+P".includes(t)) list.push(`${TERRAIN[t]?.[1] || t}の上`);
@@ -263,6 +345,7 @@ function render() {
     el.style.left = (u.x + area.x) * CELL + "px";
     el.style.top = (u.y + area.y) * CELL + "px";
     el.title = u.label;
+    if (u.facing) el.insertAdjacentHTML("beforeend", `<span class="face">${FACES[u.facing] || ""}</span>`);
     const img = document.createElement("img");
     img.src = SD + (cfg.art[u.id] || u.id) + ".png";
     img.alt = u.label;
@@ -270,10 +353,13 @@ function render() {
     attachDrag(el, u);
     board.appendChild(el);
   }
-  $("list").innerHTML = units.map(u => {
+  $("list").innerHTML = units.map((u, i) => {
     const p = problems(u);
-    return `<tr><td>${u.label}</td><td class="coord">(${u.x}, ${u.y})</td><td class="note ${p.length ? "warn" : ""}">${p.join("・") || (u.kind === "wait" ? "枠の外" : "")}</td></tr>`;
+    const face = sceneMode ? `<td><select data-i="${i}">${Object.entries({ north: "奥（↑）", south: "手前（↓）", west: "左（←）", east: "右（→）" }).map(([k, t]) => `<option value="${k}" ${u.facing === k ? "selected" : ""}>${t}</option>`).join("")}</select></td>` : "";
+    return `<tr><td>${u.label}</td><td class="coord">(${u.x}, ${u.y})</td>${face}<td class="note ${p.length ? "warn" : ""}">${p.join("・") || (u.kind === "wait" && !sceneMode ? "枠の外" : "")}</td></tr>`;
   }).join("");
+  $("list").querySelectorAll("select").forEach(sel => sel.addEventListener("change", () => { units[sel.dataset.i].facing = sel.value; saveDraft($("battle").value); render(); }));
+  drawScreenGuide();
   $("out").textContent = outputText();
 }
 
@@ -308,6 +394,14 @@ function attachDrag(el, u) {
 }
 
 function outputText() {
+  if (sceneMode) {
+    // 配置表（docs/10-design/map/layouts/<場所>.json）の exploration.states の形
+    const pl = units.find(u => u.kind === "player");
+    const one = u => JSON.stringify({ id: u.id, cell: [u.x, u.y], facing: u.facing });
+    return [`// イベントの場面: ${sceneInfo.title}（配置表 ${sceneInfo.map}・場面 ${sceneInfo.state}）`,
+      ...(pl ? [`"player": ${one(pl)},`] : []),
+      `"people": [`, units.filter(u => u.kind === "person").map(u => "  " + one(u)).join(",\n"), `]`].join("\n");
+  }
   const pad = s => (s + ":").padEnd(24);
   const id = $("battle").value;
   const lines = [
@@ -331,6 +425,7 @@ $("copy").addEventListener("click", async () => {
 });
 $("reset").addEventListener("click", () => {
   try { localStorage.removeItem(storageKey($("battle").value)); } catch {}
+  if (sceneMode) { openScene($("battle").value).then(() => { $("msg").textContent = "Unity に入っている位置に戻しました"; }); return; }
   units = unitsFromDefinition($("battle").value);
   area = { ...areaOrig };
   picked = null;
@@ -340,6 +435,13 @@ $("reset").addEventListener("click", () => {
 });
 $("save").addEventListener("click", () => {
   const id = $("battle").value;
+  if (sceneMode) {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([outputText()], { type: "application/json" }));
+    a.download = `${sceneInfo.map}_${sceneInfo.state}_scene.json`;
+    a.click();
+    return;
+  }
   const data = { battleId: id, area: { id: cfg.area, x: area.x, y: area.y, w: area.w, h: area.h }, units: units.map(u => ({ id: u.id, kind: u.kind, x: u.x, y: u.y })) };
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
@@ -348,10 +450,26 @@ $("save").addEventListener("click", () => {
 });
 
 const select = $("battle");
-for (const id of Object.keys(BATTLES)) select.add(new Option(BATTLE_DEFINITIONS[id]?.title ? `${BATTLE_DEFINITIONS[id].title}（${id}）` : id, id));
-select.addEventListener("change", () => openBattle(select.value).catch(showError));
+for (const id of Object.keys(BATTLES)) select.add(new Option(BATTLE_DEFINITIONS[id]?.title ? `戦闘: ${BATTLE_DEFINITIONS[id].title}（${id}）` : id, id));
+select.addEventListener("change", () => { try { localStorage.setItem("srpg-placement-last", select.value); } catch {} openBattle(select.value).catch(showError); });
+$("guideOn").addEventListener("change", render);
 function showError(e) { $("msg").textContent = "読み込めませんでした（静的サーバーで開いてください）: " + e.message; }
-openBattle(select.value).catch(showError);
+(async () => {
+  // イベントの場面を選べるように、配置表の場面を並べる
+  for (const [mapId, path] of Object.entries(SCENE_MAPS)) {
+    try {
+      const lay = await (await fetch(path, { cache: "no-store" })).json();
+      const group = document.createElement("optgroup");
+      group.label = `イベントの場面（${lay.name || mapId}）`;
+      for (const st of lay.states || []) group.appendChild(new Option(`場面: ${st.scene || st.id}`, `scene:${mapId}:${st.id}`));
+      select.appendChild(group);
+    } catch {}
+  }
+  let last = null;
+  try { last = localStorage.getItem("srpg-placement-last"); } catch {}
+  if (last && [...select.options].some(o => o.value === last)) select.value = last;
+  openBattle(select.value).catch(showError);
+})();
 </script>
 </body>
 </html>
