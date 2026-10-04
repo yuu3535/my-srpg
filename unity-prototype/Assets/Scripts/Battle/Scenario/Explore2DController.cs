@@ -208,7 +208,8 @@ namespace Srpg.Battle
             if (view == null || State == null) return;
             bool busy = Busy;
             view.Locked = busy;
-            view.TalkZoom = dialogue != null && dialogue.IsPlaying;   // 会話の間は寄る
+            // 相手のいる会話の間だけ寄る（相手の隣へ歩いて始めた会話。1人で調べたときは寄らない。原作者 2026-10-04）
+            view.TalkZoom = dialogue != null && dialogue.IsPlaying && view.FocusX != null;
             if (busy) { view.ShowAction(null, null); return; }
             view.FocusX = null;
             float px = view.PlayerX;

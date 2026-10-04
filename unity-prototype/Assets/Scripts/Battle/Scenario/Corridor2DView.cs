@@ -101,7 +101,7 @@ namespace Srpg.Battle
         /// </summary>
         public bool TalkZoom { get; set; }
         private float zoomT;
-        private const float ZoomScale = 1.32f;
+        private const float ZoomScale = 1.25f;
         public float Length => data?.length ?? 0f;
 
         // ── 探索（Explore2DController から使う。2026-10-04） ──
@@ -297,7 +297,7 @@ namespace Srpg.Battle
             if (data == null) return;
             float zt = TalkZoom ? 1f : 0f;
             if (!Mathf.Approximately(zoomT, zt))
-                zoomT = Application.isPlaying ? Mathf.MoveTowards(zoomT, zt, Time.unscaledDeltaTime / 0.35f) : zt;
+                zoomT = Application.isPlaying ? Mathf.MoveTowards(zoomT, zt, Time.unscaledDeltaTime / 0.12f) : zt;   // 短く切り替える（ゆっくりだと画面酔いしそう。原作者 2026-10-04）
             int dir = Locked || scriptedWalk ? 0 : holding;
             var kb = Keyboard.current;
             if (kb != null && !Locked && !scriptedWalk)
