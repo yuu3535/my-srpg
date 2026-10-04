@@ -170,7 +170,7 @@ namespace Srpg.EditorAgent
                 explore.Begin();
                 Shot("room_wake", "自室で起きる");
                 CloseAll();
-                explore.StepForTest(view.WalkMinX + 1f);
+                explore.StepForTest(explore.SpotX("to_corridor"));
                 use.Invoke(view, null);
                 Shot("room_door_locked", "剣を持たずに扉へ");
                 CloseAll();
@@ -178,7 +178,7 @@ namespace Srpg.EditorAgent
                 use.Invoke(view, null);
                 Shot("room_sword", "剣立てを調べる");
                 CloseAll();
-                explore.StepForTest(view.WalkMinX + 1f);
+                explore.StepForTest(explore.SpotX("to_corridor"));
                 use.Invoke(view, null);
                 CloseAll();
                 explore.StepForTest(view.PlayerX);

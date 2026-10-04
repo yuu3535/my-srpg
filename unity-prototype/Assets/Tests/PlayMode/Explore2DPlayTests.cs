@@ -79,7 +79,7 @@ namespace Srpg.Tests
 
             // 扉を押すと、回廊へ出る
             view.OnTap(explore.SpotX("to_corridor"), 360f);
-            for (float t = 0f; t < 5f && explore.Place != "orcus_castle"; t += Time.unscaledDeltaTime) yield return null;
+            for (float t = 0f; t < 15f && explore.Place != "orcus_castle"; t += Time.unscaledDeltaTime) yield return null;   // 扉は右の端なので歩く距離が長い
             Assert.AreEqual("orcus_castle", explore.Place, "部屋から回廊へ出られない");
         }
 

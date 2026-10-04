@@ -167,14 +167,15 @@ namespace Srpg.Battle
                 // 台詞の枠（上の真ん中）の下に頭が入らないように（原作者 2026-10-04）
                 float height = (ScreenH - PortraitTop) * PortraitZoom * (i == 0 ? 1f : 0.92f);
                 float aspect = portrait.texture != null ? portrait.texture.width * portrait.uv.width / Mathf.Max(1f, portrait.texture.height * portrait.uv.height) : 0.6f;
-                float fullW = height * aspect, showW = Mathf.Min(fullW, SlotWidth);
+                // 枠の幅で切らない（原作者 2026-10-04: 手などが見切れていた）。立ち絵の真ん中を枠の真ん中にそろえる
+                float fullW = height * aspect, showW = fullW;
                 var rt = image.rectTransform;
                 rt.anchorMin = rt.anchorMax = new Vector2(right ? 1f : 0f, 1f);
                 rt.pivot = new Vector2(0.5f, 1f);
                 rt.sizeDelta = new Vector2(showW, height);
                 image.uvRect = SlotUv(AdjustedUv(portrait.uv, AdjustOf(who, expression)), showW / fullW);   // 原作者が調整した位置（portrait_adjust.json）を、枠の幅に切る
                 float edge = i == 0 ? 8f : 8f + SlotWidth * 0.62f;
-                float x = edge + showW * 0.5f;
+                float x = edge + SlotWidth * 0.5f;
                 var target = new Vector2(right ? -x : x, -(PortraitTop + (i == 0 ? 0f : 12f)));
                 // 話す人が変わるたびに飛ぶと画面がガタつく（原作者 2026-10-04）ので、位置と明るさはなめらかに寄せる（Update）
                 actorTarget[who] = target;

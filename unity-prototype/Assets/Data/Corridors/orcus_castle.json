@@ -140,7 +140,7 @@
    "scene": ""
   }
  ],
- "cameraMargin": 60,
+ "cameraMargin": 140,
  "explore": {
   "map": "orcus_corridor",
   "axis": "y",

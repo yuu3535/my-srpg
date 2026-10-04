@@ -7,11 +7,11 @@
  ],
  "heroFeetY": 352,
  "heroHeight": 96,
- "walkMin": 120,
- "walkMax": -120,
- "cameraMargin": 0,
+ "walkMin": 330,
+ "walkMax": -330,
+ "cameraMargin": 200,
  "look": "",
- "_note": "アルシェとカリマの部屋（仮。原作者の壁の素材 背景/双子の部屋/ の基本の壁と窓だけ。家具はまだ。窓の外は回廊と同じ空・遠景・庭）。床が見えるよう、壁は下の端 332（床の帯の上）までにした。光の筋は窓だけに合わないので、見え方（効果）はまだ付けない",
+ "_note": "アルシェとカリマの部屋（仮。原作者の壁の素材 背景/双子の部屋/ の基本の壁と窓だけ。家具はまだ。窓の外は回廊と同じ空・遠景・庭）。床が見えるよう、壁は下の端 332 まで。光の筋は窓だけに合わないので、見え方（効果）はまだ付けない。扉は右の端（回廊は右へ進むので。原作者 2026-10-04）。左右の外側に壁を1枚ずつ足し、カメラの余白 200 で端の外を見せない",
  "layers": [
   {
    "name": "空",
@@ -92,7 +92,25 @@
      "shadeTop": 0
     },
     {
+     "file": "orcus_room_wall_base.png",
+     "overlap": 2,
+     "dy": 0,
+     "dx": 0,
+     "scale": 1,
+     "front": false,
+     "shadeTop": 0
+    },
+    {
      "file": "orcus_room_wall_window.png",
+     "overlap": 2,
+     "dy": 0,
+     "dx": 0,
+     "scale": 1,
+     "front": false,
+     "shadeTop": 0
+    },
+    {
+     "file": "orcus_room_wall_base.png",
      "overlap": 2,
      "dy": 0,
      "dx": 0,
@@ -118,7 +136,13 @@
   "from": 0,
   "to": 9,
   "state": "",
-  "spots": [],
+  "spots": [
+   {
+    "id": "to_corridor",
+    "x": -360,
+    "w": 0
+   }
+  ],
   "looks": []
  }
 }

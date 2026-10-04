@@ -47,6 +47,7 @@ namespace Srpg.EditorAgent
                 });
                 watch.Stop();
                 RestoreMipmaps(mipped);
+                AddRotateNotice();
                 var s = report.summary;
                 long bytes = Directory.Exists(OutDir) ? Directory.GetFiles(OutDir, "*", SearchOption.AllDirectories).Sum(f => new FileInfo(f).Length) : 0;
                 Debug.Log($"[WebGLBuilder] {s.result}・{watch.Elapsed.TotalMinutes:0.0}分・書き出しの合計 {bytes / 1024f / 1024f:0.0}MB・エラー {s.totalErrors}");
@@ -60,6 +61,36 @@ namespace Srpg.EditorAgent
                 if (Application.isBatchMode) EditorApplication.Exit(1);
                 throw;
             }
+        }
+
+        /// <summary>
+        /// スマホを縦に持ったら「横にしてください」を出す（原作者 2026-10-04: 横画面専用。縦のまま遊べてしまっていた）。
+        /// iPhone の Safari は画面の向きを固定できないので、縦のときはゲームを隠して知らせる。Android は全画面のときに横へ固定を試す
+        /// </summary>
+        private static void AddRotateNotice()
+        {
+            string path = Path.Combine(OutDir, "index.html");
+            if (!File.Exists(path)) return;
+            string html = File.ReadAllText(path);
+            if (html.Contains("srpg-rotate")) return;
+            const string notice = @"
+    <style>
+      #srpg-rotate { display: none; position: fixed; inset: 0; z-index: 9999; background: #0b0d14; color: #e6e7ef;
+        font-family: 'Hiragino Mincho ProN', 'Yu Mincho', serif; align-items: center; justify-content: center; flex-direction: column; gap: 18px; text-align: center; }
+      #srpg-rotate .phone { width: 46px; height: 78px; border: 3px solid #d7d7e0; border-radius: 9px; animation: srpg-turn 2.4s ease-in-out infinite; }
+      @keyframes srpg-turn { 0%, 30% { transform: rotate(0deg); } 60%, 100% { transform: rotate(-90deg); } }
+      @media (orientation: portrait) and (max-width: 900px) { #srpg-rotate { display: flex; } }
+    </style>
+    <div id=""srpg-rotate""><div class=""phone""></div><div>スマホを横にしてください<br><small>このゲームは横画面で遊びます</small></div></div>
+    <script>
+      document.addEventListener('pointerdown', function () {
+        try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(function () {}); } catch (e) {}
+      }, { once: true });
+    </script>
+  </body>";
+            int at = html.LastIndexOf("</body>", StringComparison.Ordinal);
+            if (at < 0) return;
+            File.WriteAllText(path, html.Substring(0, at) + notice.TrimStart('\r', '\n') + html.Substring(at + "</body>".Length));
         }
 
         /// <summary>
