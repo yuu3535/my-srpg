@@ -504,8 +504,8 @@
      "name": "",
      "facing": "north",
      "talkBlock": "",
-     "x": 12,
-     "y": 12
+     "x": 11,
+     "y": 10
     },
     {
      "id": "gunter",
@@ -513,7 +513,7 @@
      "facing": "south",
      "talkBlock": "",
      "x": 11,
-     "y": 7
+     "y": 8
     }
    ],
    "talkAreas": [],
@@ -534,7 +534,12 @@
        "x": 14,
        "y": 1
       }
-     ]
+     ],
+     "talkAt": {
+      "x": 12,
+      "y": 9
+     },
+     "hasTalkAt": true
     }
    ],
    "thenPlace2D": "",
@@ -548,8 +553,8 @@
     "name": "",
     "facing": "north",
     "talkBlock": "",
-    "x": 10,
-    "y": 12
+    "x": 13,
+    "y": 9
    },
    "onEnter": [
     "prologue_1_1.b12"
@@ -560,16 +565,16 @@
      "name": "",
      "facing": "north",
      "talkBlock": "",
-     "x": 12,
-     "y": 12
+     "x": 11,
+     "y": 9
     },
     {
      "id": "gunter",
      "name": "",
      "facing": "south",
      "talkBlock": "",
-     "x": 11,
-     "y": 7
+     "x": 12,
+     "y": 8
     }
    ],
    "talkAreas": [],
