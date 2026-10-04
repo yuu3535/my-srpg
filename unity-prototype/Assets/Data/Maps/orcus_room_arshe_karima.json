@@ -264,7 +264,55 @@
      "thenBlock": "",
      "cells": []
     }
-   ]
+   ],
+   "thenPlace2D": "",
+   "thenState2D": ""
+  },
+  {
+   "id": "prologue_1_2_fairytale",
+   "scene": "プロローグの終わり 自室（百年戦争の御伽噺を調べる。シナリオはこれから）",
+   "player": {
+    "id": "young_arshe",
+    "name": "",
+    "facing": "south",
+    "talkBlock": "",
+    "x": 5,
+    "y": 4
+   },
+   "onEnter": [],
+   "people": [
+    {
+     "id": "young_karima",
+     "name": "",
+     "facing": "west",
+     "talkBlock": "",
+     "x": 6,
+     "y": 4
+    }
+   ],
+   "talkAreas": [],
+   "inspect": [
+    {
+     "id": "fairytale_book",
+     "block": "",
+     "text": "",
+     "cells": [
+      {
+       "x": 8,
+       "y": 4
+      },
+      {
+       "x": 8,
+       "y": 5
+      }
+     ],
+     "required": false,
+     "label": "カリマの本棚"
+    }
+   ],
+   "goals": [],
+   "thenPlace2D": "",
+   "thenState2D": ""
   }
  ],
  "inspect": []

@@ -228,6 +228,49 @@
             "exit": "to_corridor"
           }
         ]
+      },
+      {
+        "id": "prologue_1_2_fairytale",
+        "scene": "プロローグの終わり 自室（百年戦争の御伽噺を調べる。シナリオはこれから）",
+        "player": {
+          "id": "young_arshe",
+          "cell": [
+            5,
+            4
+          ],
+          "facing": "south"
+        },
+        "onEnter": [],
+        "people": [
+          {
+            "id": "young_karima",
+            "cell": [
+              6,
+              4
+            ],
+            "facing": "west"
+          }
+        ],
+        "talkAreas": [],
+        "inspect": [
+          {
+            "id": "fairytale_book",
+            "cells": [
+              [
+                8,
+                4
+              ],
+              [
+                8,
+                5
+              ]
+            ],
+            "label": "カリマの本棚",
+            "text": "（ここで、カリマと百年戦争の御伽噺を調べる。シナリオはこれから）",
+            "note": "仮。表の97行目「次はアルシェとカリマの部屋で百年戦争についての御伽噺を調べる」。台詞ができたら block に替える"
+          }
+        ],
+        "goals": []
       }
     ],
     "lights": [

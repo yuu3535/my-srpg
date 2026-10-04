@@ -536,7 +536,9 @@
       }
      ]
     }
-   ]
+   ],
+   "thenPlace2D": "",
+   "thenState2D": ""
   },
   {
    "id": "prologue_1_1_after_training",
@@ -572,7 +574,9 @@
    ],
    "talkAreas": [],
    "inspect": [],
-   "goals": []
+   "goals": [],
+   "thenPlace2D": "orcus_room",
+   "thenState2D": "prologue_1_2_fairytale"
   }
  ],
  "inspect": [

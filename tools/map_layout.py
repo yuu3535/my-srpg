@@ -304,7 +304,9 @@ def to_unity(path):
                           "required": bool(t.get("required")), "ambient": bool(t.get("ambient")), "once": bool(t.get("once", True))})
         states.append({"id": st.get("id", ""), "scene": st.get("scene", ""), "player": person_of(st.get("player")),
                        "onEnter": st.get("onEnter") or [], "people": [person_of(p) for p in st.get("people", [])],
-                       "talkAreas": talks, "inspect": [inspect_of(i) for i in st.get("inspect", [])], "goals": goals})
+                       "talkAreas": talks, "inspect": [inspect_of(i) for i in st.get("inspect", [])], "goals": goals,
+                       # 入ったときの会話のあと、2Dの場所へ移る（戦闘の場所から2Dの探索へ戻る。2026-10-04）
+                       "thenPlace2D": (st.get("then2D") or {}).get("place") or "", "thenState2D": (st.get("then2D") or {}).get("state") or ""})
     data = {"mapId": map_id, "name": layout["name"], "indoor": bool(layout.get("indoor")), "timeOfDay": layout.get("timeOfDay") or "day",
             "columns": cols, "rows": rows, "terrain": layout["terrain"], "symbols": symbols,
             "battleAreas": [{"id": b.get("id", ""), "battleId": b.get("battleId") or "", "x": b["x"], "y": b["y"], "w": b["w"], "h": b["h"]}

@@ -211,6 +211,17 @@
     "id": "karima_bed",
     "x": 1500,
     "w": 0
+   },
+   {
+    "id": "fairytale_book",
+    "x": 1320,
+    "w": 0,
+    "label": "カリマの本棚"
+   },
+   {
+    "id": "young_karima",
+    "x": 1180,
+    "w": 0
    }
   ],
   "looks": [],
