@@ -296,8 +296,7 @@ namespace Srpg.Battle
             UpdateTuner();
             if (data == null) return;
             float zt = TalkZoom ? 1f : 0f;
-            if (!Mathf.Approximately(zoomT, zt))
-                zoomT = Application.isPlaying ? Mathf.MoveTowards(zoomT, zt, Time.unscaledDeltaTime / 0.12f) : zt;   // 短く切り替える（ゆっくりだと画面酔いしそう。原作者 2026-10-04）
+            zoomT = zt;   // 動かさずに切り替える（ゆっくりは画面酔い、速くはシュール。原作者 2026-10-04: アニメーションなし）
             int dir = Locked || scriptedWalk ? 0 : holding;
             var kb = Keyboard.current;
             if (kb != null && !Locked && !scriptedWalk)
