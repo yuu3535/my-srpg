@@ -45,5 +45,31 @@ namespace Srpg.Tests
             Assert.IsFalse(view.Locked, "会話が終わったら歩ける");
             Assert.IsTrue(explore.Seen.Contains("prologue_1_1.b06"), "キャリーの会話を流した");
         }
+
+        [UnityTest]
+        public IEnumerator LookTunerRebuildsAndKeepsPeople()
+        {
+            SceneManager.LoadScene("Corridor2D");
+            yield return null;
+            yield return null;
+            var view = Object.FindFirstObjectByType<Corridor2DView>();
+            Assert.AreEqual("orcus_castle_morning", view.LookName, "回廊はふだん朝の見え方");
+            float x = view.PlayerX;
+
+            // 調整画面を開いて、つまみを1つ動かす → 組み立て直しても、人とアルシェの位置が残る
+            view.OpenTuner();
+            Assert.IsTrue(view.TunerOpen, "調整画面が開かない");
+            var slider = Object.FindObjectsByType<UnityEngine.UI.Slider>(FindObjectsSortMode.None).First(s => s.name == "Slider_ヴィネット");
+            slider.value = 0.9f;
+            for (float t = 0f; t < 0.6f; t += Time.unscaledDeltaTime) yield return null;
+            Assert.IsNotNull(GameObject.Find("Person_carrie"), "組み立て直したらキャリーが消えた");
+            Assert.AreEqual(x, view.PlayerX, 0.01f, "アルシェの位置が変わった");
+
+            // 見え方を切り替える（夕方の仮の見え方）
+            Assert.IsTrue(view.SetLook("orcus_castle_dusk"), "夕方の見え方に切り替わらない");
+            yield return null;
+            Assert.AreEqual("orcus_castle_dusk", view.LookName);
+            Assert.IsNotNull(GameObject.Find("Person_carrie"), "切り替えたらキャリーが消えた");
+        }
     }
 }

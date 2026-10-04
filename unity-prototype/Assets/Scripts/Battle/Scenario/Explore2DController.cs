@@ -67,10 +67,7 @@ namespace Srpg.Battle
         private List<(string, string, Texture2D, float)> peopleList = new List<(string, string, Texture2D, float)>();
 
         /// <summary>見え方を切り替える（シナリオの場面から。人も並べ直す）</summary>
-        public void SetLook(string name)
-        {
-            if (view != null && view.SetLook(name)) view.SetPeople(peopleList);
-        }
+        public void SetLook(string name) => view?.SetLook(name);   // 組み立て直したら Rebuilt で人を並べ直す
 
         public MapState State { get; private set; }
         public IReadOnlyCollection<string> Seen => seen;
@@ -88,6 +85,8 @@ namespace Srpg.Battle
             if (ex == null || map == null || view == null) { enabled = false; return; }
             if (view.Length <= 0f) view.Build();   // まだなら組み立てる（Corridor2DView.Start は組み立て済みなら何もしない）
             view.Controlled = true;
+            view.Rebuilt -= OnViewRebuilt;
+            view.Rebuilt += OnViewRebuilt;
             State = (!string.IsNullOrEmpty(ex.state) ? map.State(ex.state) : null) ?? map.states?.FirstOrDefault();
             if (dialogue != null) { dialogue.OnItem -= GotItem; dialogue.OnItem += GotItem; }
 
@@ -114,6 +113,8 @@ namespace Srpg.Battle
             var onEnter = (State?.onEnter ?? Array.Empty<string>()).ToList();
             if (onEnter.Count > 0) { starting = true; PlayBlocks(onEnter, () => starting = false); }
         }
+
+        private void OnViewRebuilt() => view.SetPeople(peopleList);
 
         private void GotItem(string item)
         {

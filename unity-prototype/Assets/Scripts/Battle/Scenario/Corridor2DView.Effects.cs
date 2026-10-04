@@ -67,12 +67,8 @@ namespace Srpg.Battle
             var asset = lookJsons.FirstOrDefault(t => t != null && t.name == name);
             if (asset == null) { Debug.LogWarning($"[Corridor2DView] 見え方がない: {name}"); return false; }
             lookJson = asset;
-            float x = playerX;
-            bool left = facingLeft;
-            Build();
-            playerX = x;
-            facingLeft = left;
-            Apply();
+            lookTextOverride = null;
+            RebuildKeep();
             return true;
         }
         private bool EffectsOn => look != null && look.effects != null && look.effects.on && layerShader != null;
@@ -80,7 +76,8 @@ namespace Srpg.Battle
         /// <summary>プリセットを読み、空の絵を差し替える（層を組み立てる前に呼ぶ）</summary>
         private void LoadLook()
         {
-            look = lookJson != null ? JsonUtility.FromJson<LookFile>(lookJson.text) : null;
+            // 調整画面で動かしている間は、動かした値（look）をそのまま使う（つまみが同じものを指し続けるように）
+            if (lookTextOverride == null || look == null) look = LookText() != null ? JsonUtility.FromJson<LookFile>(LookText()) : null;
             foreach (var m in lookMaterials) if (m != null) DestroyImmediate(m);
             lookMaterials.Clear();
             moduleRects.Clear();
@@ -146,6 +143,7 @@ namespace Srpg.Battle
                 var over = look.layers?.FirstOrDefault(l => l.name == layer.name) ?? (look.layers != null && index < look.layers.Length && string.IsNullOrEmpty(look.layers[index].name) ? look.layers[index] : null);
                 float haze = over != null && over.haze >= 0f ? over.haze : first ? 0f : e.haze * depth;
                 float blur = over != null && over.blur >= 0f ? over.blur : e.dof * depth;
+                RememberLayer(layer.name, haze, blur);
                 first = false;
                 index++;
                 foreach (var t in tiles)

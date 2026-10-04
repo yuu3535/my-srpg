@@ -228,6 +228,7 @@ namespace Srpg.Battle
             ApplyLayerEffects();
             ApplyCharaEffects(heroImage);
             BuildVignette(canvasObject.transform);
+            BuildTunerHotspot(canvasObject.transform);   // 左上を5回で見え方の調整画面（Corridor2DView.Tuner）
 
             // 画面の端の ◀ ▶（押している間歩く。探索の見本 2026-10-02 の形）
             WalkButton(canvasObject.transform, true);
@@ -269,6 +270,7 @@ namespace Srpg.Battle
 
         private void Update()
         {
+            UpdateTuner();
             if (data == null) return;
             int dir = Locked || autoWalk != null ? 0 : holding;
             var kb = Keyboard.current;
