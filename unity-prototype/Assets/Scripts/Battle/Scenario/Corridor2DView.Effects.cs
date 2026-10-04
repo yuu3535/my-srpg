@@ -57,6 +57,25 @@ namespace Srpg.Battle
 
         public string LookName => look?.look;
 
+        /// <summary>今の場所の名前（場所のデータのファイル名。例 orcus_castle）</summary>
+        public string PlaceName => corridorJson != null ? corridorJson.name : null;
+
+        /// <summary>
+        /// 場所を切り替える（2Dの探索で扉を通ったとき。2026-10-04）。場所のデータと、そのふだんの見え方で組み立て直す。
+        /// アルシェの位置は呼んだ側で決める（PlayerX）。人は Rebuilt で並べ直す
+        /// </summary>
+        public void SetPlace(TextAsset placeJson)
+        {
+            if (placeJson == null) return;
+            corridorJson = placeJson;
+            string lookName = JsonUtility.FromJson<CorridorFile>(placeJson.text)?.look;
+            lookJson = string.IsNullOrEmpty(lookName) ? null : lookJsons.FirstOrDefault(t => t != null && t.name == lookName);
+            lookTextOverride = null;
+            look = null;
+            Build();
+            Rebuilt?.Invoke();
+        }
+
         /// <summary>
         /// 見え方を切り替える（シーンごと。docs/10-design/map/SIDE_SCROLL_2D_LOOK_PRESETS_2026-10-04.md §1）。
         /// 空の絵と効果が変わるので、組み立て直す（アルシェの位置はそのまま。人は呼んだ側で並べ直す）。見つからなければ何もしない

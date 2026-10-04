@@ -53,7 +53,8 @@ namespace Srpg.Battle
             public string corridor;
             public float heroFeetY = 352f, heroHeight = 96f, length = 2532f;
             public float walkMin = 40f, walkMax = -40f;   // 歩ける範囲（walkMax が負なら右の端からの距離）
-            public float cameraMargin;                      // カメラが回廊の両端からこれだけ内側で止まる（端の外の空を見せない）
+            public float cameraMargin;
+            public string look;                             // ふだんの見え方（Assets/Data/Looks/<look>.json）                      // カメラが回廊の両端からこれだけ内側で止まる（端の外の空を見せない）
             public CorridorLayer[] layers;
             public CorridorExit[] exits;
         }
@@ -313,7 +314,7 @@ namespace Srpg.Battle
             exitButton.gameObject.SetActive(false);
             toast = NewRect("Toast", parent).gameObject.AddComponent<Text>();
             toast.rectTransform.anchorMin = toast.rectTransform.anchorMax = toast.rectTransform.pivot = new Vector2(0.5f, 0.5f);
-            toast.rectTransform.anchoredPosition = new Vector2(0f, 60f);
+            toast.rectTransform.anchoredPosition = new Vector2(0f, -95f);   // 台詞の枠（上）にかからない、出口の札の少し上
             toast.rectTransform.sizeDelta = new Vector2(500f, 30f);
             toast.font = font; toast.fontSize = 15; toast.alignment = TextAnchor.MiddleCenter;
             toast.color = new Color(0.94f, 0.95f, 0.93f); toast.raycastTarget = false;

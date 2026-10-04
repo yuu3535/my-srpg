@@ -24,6 +24,8 @@ namespace Srpg.EditorAgent
         private const string ScenarioPath = "Assets/Data/Scenario/prologue_1_1.json";
 
         private const string LookDir = "Assets/Data/Looks";
+        private const string Side2DDir = "Assets/Art/Side2D";
+        private const string StartPlace = "orcus_room";   // プロローグは自室で起きる
         private const string SkyDir = "Assets/Art/Sky";
 
         [Serializable] private class CorridorLook { public string look; }
@@ -72,7 +74,9 @@ namespace Srpg.EditorAgent
                 camera.orthographic = true;
                 camera.transform.position = new Vector3(0f, 0f, -10f);
 
-                foreach (var path in Directory.GetFiles(ArtDir, "*.png"))
+                // 場所の絵: 回廊（Assets/Art/Corridor）と、ほかの場所（Assets/Art/Side2D/<場所>/）
+                var artFiles = Directory.GetFiles(ArtDir, "*.png").Concat(Directory.Exists(Side2DDir) ? Directory.GetFiles(Side2DDir, "*.png", SearchOption.AllDirectories) : Array.Empty<string>()).ToArray();
+                foreach (var path in artFiles)
                 {
                     string asset = path.Replace(Path.DirectorySeparatorChar, '/');
                     AssetDatabase.ImportAsset(asset, ImportAssetOptions.ForceSynchronousImport);
@@ -90,7 +94,7 @@ namespace Srpg.EditorAgent
                 string lookPath = string.IsNullOrEmpty(corridorData?.look) ? null : $"{LookDir}/{corridorData.look}.json";
                 var lookAsset = lookPath != null ? AssetDatabase.LoadAssetAtPath<TextAsset>(lookPath) : null;
                 var skyPaths = ImportLookSkies();
-                var textures = Directory.GetFiles(ArtDir, "*.png").Concat(skyPaths)
+                var textures = artFiles.Concat(skyPaths)
                     .Select(p => AssetDatabase.LoadAssetAtPath<Texture2D>(p.Replace(Path.DirectorySeparatorChar, '/'))).Where(t => t != null).ToArray();
 
                 var go = new GameObject("Corridor2D");
@@ -117,8 +121,17 @@ namespace Srpg.EditorAgent
                 var eso = new SerializedObject(explore);
                 eso.FindProperty("view").objectReferenceValue = view;
                 eso.FindProperty("dialogue").objectReferenceValue = dialogue;
-                eso.FindProperty("corridorJson").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(DataPath);
-                eso.FindProperty("mapJson").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(MapPath);
+                // 場所（Assets/Data/Corridors の全部）と配置表（Assets/Data/Maps の全部）。扉で行き来する（2026-10-04）
+                void SetAll(string prop, string dir)
+                {
+                    var assets = Directory.GetFiles(dir, "*.json").Select(p => AssetDatabase.LoadAssetAtPath<TextAsset>(p.Replace(Path.DirectorySeparatorChar, '/'))).Where(t => t != null).ToArray();
+                    var arr = eso.FindProperty(prop);
+                    arr.arraySize = assets.Length;
+                    for (int i = 0; i < assets.Length; i++) arr.GetArrayElementAtIndex(i).objectReferenceValue = assets[i];
+                }
+                SetAll("placeJsons", "Assets/Data/Corridors");
+                SetAll("mapJsons", "Assets/Data/Maps");
+                eso.FindProperty("startPlace").stringValue = StartPlace;
                 eso.FindProperty("scenarioJson").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>(ScenarioPath);
                 var sprites = Directory.GetFiles("Assets/Art/SD", "*.png")
                     .Select(p => AssetDatabase.LoadAssetAtPath<Texture2D>(p.Replace(Path.DirectorySeparatorChar, '/'))).Where(t => t != null).ToArray();
@@ -151,9 +164,25 @@ namespace Srpg.EditorAgent
                     var line = dialogue.CurrentLine;
                     Debug.Log($"[Corridor2DBuilder] {name}: x={view.PlayerX:0} {note} 会話={(dialogue.IsPlaying ? $"{line?.speaker}「{line?.text?.Replace("\n", " ")}」" : "なし")}");
                 }
+                void CloseAll() { for (int i = 0; i < 20 && dialogue.IsPlaying; i++) dialogue.Close(); }
+                var use = typeof(Corridor2DView).GetMethod("UseExit", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                // 自室（仮）: 起きる → 剣を見つける → 剣がないと出られない扉 → 回廊へ
                 explore.Begin();
+                Shot("room_wake", "自室で起きる");
+                CloseAll();
+                explore.StepForTest(view.WalkMinX + 1f);
+                use.Invoke(view, null);
+                Shot("room_door_locked", "剣を持たずに扉へ");
+                CloseAll();
+                explore.StepForTest(explore.SpotX("find_sword"));
+                use.Invoke(view, null);
+                Shot("room_sword", "剣立てを調べる");
+                CloseAll();
+                explore.StepForTest(view.WalkMinX + 1f);
+                use.Invoke(view, null);
+                CloseAll();
                 explore.StepForTest(view.PlayerX);
-                Shot("explore_start", "入ったところ");
+                Shot("explore_start", $"扉から回廊へ（場所 {explore.Place}）");
                 explore.StepForTest(explore.PersonX("carrie") - 90f);
                 Shot("explore_carrie", "キャリーの近く");
                 dialogue.Close();
@@ -163,7 +192,6 @@ namespace Srpg.EditorAgent
                 Shot("explore_stairs", "階段の前");
                 if (!explore.Seen.Contains("prologue_1_1.b08"))
                 {
-                    var use = typeof(Corridor2DView).GetMethod("UseExit", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
                     use.Invoke(view, null);
                     Shot("explore_stairs_locked", "階段を使う（ヘンリーにまだ会っていない）");
                     dialogue.Close();

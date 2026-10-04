@@ -24,6 +24,11 @@ namespace Srpg.Tests
             var view = Object.FindFirstObjectByType<Corridor2DView>();
             var explore = Object.FindFirstObjectByType<Explore2DController>();
             var dialogue = Object.FindFirstObjectByType<DialogueView>();
+            // 自室で起きて始まる → 回廊へ移ってから確かめる
+            Assert.AreEqual("orcus_room", explore.Place, "自室で始まらない");
+            for (int i = 0; i < 20 && dialogue.IsPlaying; i++) dialogue.Close();
+            explore.EnterPlace("orcus_castle", "orcus_room_arshe_karima");
+            yield return null;
             Assert.IsNotNull(view, "Corridor2DView がない");
             Assert.IsNotNull(explore, "Explore2DController がない");
             Assert.IsNotNull(explore.State, "探索の場面が読めていない");
@@ -53,6 +58,11 @@ namespace Srpg.Tests
             yield return null;
             yield return null;
             var view = Object.FindFirstObjectByType<Corridor2DView>();
+            var ex2 = Object.FindFirstObjectByType<Explore2DController>();
+            var dlg = Object.FindFirstObjectByType<DialogueView>();
+            for (int i = 0; i < 20 && dlg.IsPlaying; i++) dlg.Close();
+            ex2.EnterPlace("orcus_castle", null);
+            yield return null;
             Assert.AreEqual("orcus_castle_morning", view.LookName, "回廊はふだん朝の見え方");
             float x = view.PlayerX;
 

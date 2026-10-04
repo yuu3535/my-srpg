@@ -123,7 +123,7 @@ namespace Srpg.Battle
                 Holding = false;
                 SceneManager.LoadScene(TrialScene);
             });
-            SilverButton(root, "回廊（2Dの試し）", "横スクロールの探索の試し（◀ ▶ で歩く）", new Vector2(0f, -72f), font, () =>
+            SilverButton(root, "探索（2Dの試し）", "自室で起きて回廊へ（◀ ▶ で歩く。部屋は仮）", new Vector2(0f, -72f), font, () =>
             {
                 Holding = false;
                 SceneManager.LoadScene(CorridorScene);

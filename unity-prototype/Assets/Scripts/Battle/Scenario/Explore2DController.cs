@@ -39,8 +39,9 @@ namespace Srpg.Battle
 
         [SerializeField] private Corridor2DView view;
         [SerializeField] private DialogueView dialogue;
-        [SerializeField] private TextAsset corridorJson;
-        [SerializeField] private TextAsset mapJson;
+        [SerializeField] private TextAsset[] placeJsons = Array.Empty<TextAsset>();   // 2Dの場所（Assets/Data/Corridors/<場所>.json）
+        [SerializeField] private TextAsset[] mapJsons = Array.Empty<TextAsset>();     // 配置表（Assets/Data/Maps/<mapId>.json）
+        [SerializeField] private string startPlace = "orcus_room";   // 最初の場所（プロローグは自室で起きる）
         [SerializeField] private TextAsset scenarioJson;
         [SerializeField] private Texture2D[] sprites = Array.Empty<Texture2D>();   // 盤面のキャラの絵（Assets/Art/SD）
 
@@ -63,7 +64,9 @@ namespace Srpg.Battle
         private readonly HashSet<string> played = new HashSet<string>();
         private readonly List<string> items = new List<string>();
         private readonly Dictionary<string, float> personX = new Dictionary<string, float>();
-        private bool starting;
+        private bool starting, moving;
+        private readonly Dictionary<string, string> stateOf = new Dictionary<string, string>();   // 配置表 → 使う場面（あとで場面を進めるとき）
+        private CanvasGroup fade;
         private List<(string, string, Texture2D, float)> peopleList = new List<(string, string, Texture2D, float)>();
 
         /// <summary>見え方を切り替える（シナリオの場面から。人も並べ直す）</summary>
@@ -72,23 +75,43 @@ namespace Srpg.Battle
         public MapState State { get; private set; }
         public IReadOnlyCollection<string> Seen => seen;
         public IReadOnlyList<string> Items => items;
-        public bool Busy => (dialogue != null && dialogue.IsPlaying) || (view != null && view.AutoWalking) || starting;
+        public bool Busy => (dialogue != null && dialogue.IsPlaying) || (view != null && view.AutoWalking) || starting || moving;
+        public string Place => view != null ? view.PlaceName : null;
         public float PersonX(string id) => personX.TryGetValue(id, out var x) ? x : float.NaN;
 
         private void Start() => Begin();
 
         public void Begin()
         {
-            ex = corridorJson != null ? JsonUtility.FromJson<CorridorExplore>(corridorJson.text)?.explore : null;
-            map = mapJson != null ? JsonUtility.FromJson<MapLayoutFile>(mapJson.text) : null;
             scenario = scenarioJson != null ? JsonUtility.FromJson<ScenarioFile>(scenarioJson.text) : new ScenarioFile();
-            if (ex == null || map == null || view == null) { enabled = false; return; }
-            if (view.Length <= 0f) view.Build();   // まだなら組み立てる（Corridor2DView.Start は組み立て済みなら何もしない）
+            if (view == null || placeJsons.Length == 0) { enabled = false; return; }
             view.Controlled = true;
             view.Rebuilt -= OnViewRebuilt;
             view.Rebuilt += OnViewRebuilt;
-            State = (!string.IsNullOrEmpty(ex.state) ? map.State(ex.state) : null) ?? map.states?.FirstOrDefault();
             if (dialogue != null) { dialogue.OnItem -= GotItem; dialogue.OnItem += GotItem; }
+            EnterPlace(placeJsons.Any(t => t != null && t.name == startPlace) ? startPlace : placeJsons[0].name, null);
+        }
+
+        private TextAsset PlaceAsset(string name) => placeJsons.FirstOrDefault(t => t != null && t.name == name);
+
+        /// <summary>その配置表の場所が2Dにあれば、その場所の名前（なければ null）</summary>
+        private string PlaceOfMap(string mapId) =>
+            placeJsons.Where(t => t != null).FirstOrDefault(t => JsonUtility.FromJson<CorridorExplore>(t.text)?.explore?.map == mapId)?.name;
+
+        /// <summary>
+        /// 2Dの場所に入る（2026-10-04: 扉から別の場所へ）。fromMap があれば、その場所へ戻る扉の前に立つ。なければ場面の始まりの位置。
+        /// 流した会話・持ち物・一度だけの会話は場所をまたいで残る
+        /// </summary>
+        public void EnterPlace(string placeName, string fromMap)
+        {
+            var asset = PlaceAsset(placeName);
+            ex = asset != null ? JsonUtility.FromJson<CorridorExplore>(asset.text)?.explore : null;
+            map = ex != null ? mapJsons.Where(t => t != null).Select(t => JsonUtility.FromJson<MapLayoutFile>(t.text)).FirstOrDefault(m => m.mapId == ex.map) : null;
+            if (ex == null || map == null) { Debug.LogWarning($"[Explore2D] 場所がない: {placeName}"); return; }
+            peopleList = new List<(string, string, Texture2D, float)>();
+            view.SetPlace(asset);
+            string stateId = stateOf.TryGetValue(map.mapId, out var sid) ? sid : ex.state;
+            State = (!string.IsNullOrEmpty(stateId) ? map.State(stateId) : null) ?? map.states?.FirstOrDefault();
 
             // 人を並べる（アルシェ以外）
             // 場面の見え方（空・効果）。変わるときは組み立て直すので、人を並べる前に
@@ -107,7 +130,15 @@ namespace Srpg.Battle
             }
             peopleList = list;
             view.SetPeople(list);
-            view.PlayerX = State?.player != null ? X("player", State.player.Cell) : view.WalkMinX;
+            // 戻ってきた扉の前（少し内側）。なければ場面の始まりの位置
+            var back = fromMap != null ? map.exits?.FirstOrDefault(e => e.toMap == fromMap) : null;
+            if (back != null)
+            {
+                float bx = CellsX(back.id, back.cells);
+                view.PlayerX = bx + (bx < view.Length / 2f ? 50f : -50f);
+                view.Face(view.Length / 2f);
+            }
+            else view.PlayerX = State?.player != null ? X("player", State.player.Cell) : view.WalkMinX;
 
             // 入ったときの会話
             var onEnter = (State?.onEnter ?? Array.Empty<string>()).ToList();
@@ -115,6 +146,31 @@ namespace Srpg.Battle
         }
 
         private void OnViewRebuilt() => view.SetPeople(peopleList);
+
+        /// <summary>場所を移る: 暗くする → 入る → 明るくする（0.25 秒ずつ）</summary>
+        private System.Collections.IEnumerator Move(Action enter)
+        {
+            moving = true;
+            if (fade == null)
+            {
+                var go = new GameObject("場所の移動", typeof(Canvas), typeof(UnityEngine.UI.Image), typeof(CanvasGroup));
+                var canvas = go.GetComponent<Canvas>();
+                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                canvas.sortingOrder = 350;
+                var img = go.GetComponent<UnityEngine.UI.Image>();
+                img.color = new Color(0.02f, 0.02f, 0.04f, 1f);
+                img.raycastTarget = false;
+                fade = go.GetComponent<CanvasGroup>();
+                fade.blocksRaycasts = false;
+            }
+            for (float t = 0f; t < 0.25f; t += Time.unscaledDeltaTime) { fade.alpha = t / 0.25f; yield return null; }
+            fade.alpha = 1f;
+            enter();
+            yield return null;
+            for (float t = 0f; t < 0.25f; t += Time.unscaledDeltaTime) { fade.alpha = 1f - t / 0.25f; yield return null; }
+            fade.alpha = 0f;
+            moving = false;
+        }
 
         private void GotItem(string item)
         {
@@ -235,8 +291,12 @@ namespace Srpg.Battle
                 PlayLines(new[] { new ScenarioLine { type = "line", speaker = "アルシェ", text = text } });
                 return;
             }
-            // ほかの場所はまだ2Dにしていない（自室の素材ができたら、場所をつなぐ）
-            view.Toast($"{ExitLabel(exit)}へ（2Dの場所はまだつながっていません）", 2.5f);
+            // 行き先が2Dの場所なら、暗くして入る。まだ2Dにしていない場所は一言だけ
+            string target = PlaceOfMap(exit.toMap);
+            if (target == null) { view.Toast($"{ExitLabel(exit)}へ（2Dの場所はまだつながっていません）", 2.5f); return; }
+            string from = map.mapId;
+            if (!Application.isPlaying) { EnterPlace(target, from); return; }
+            StartCoroutine(Move(() => EnterPlace(target, from)));
         }
 
         private bool Satisfied(string requirement)
@@ -308,6 +368,16 @@ namespace Srpg.Battle
             if (dialogue == null) return;
             view.ShowAction(null, null);
             dialogue.Play(new ScenarioBlock { id = "", part = "story", lines = lines }, null);
+        }
+
+        /// <summary>確認用: 調べる所・扉・人の横の位置（id）</summary>
+        public float SpotX(string id)
+        {
+            if (personX.TryGetValue(id, out var px)) return px;
+            var i = (State?.inspect ?? Array.Empty<MapInspect>()).Concat(map?.inspect ?? Array.Empty<MapInspect>()).FirstOrDefault(n => n.id == id);
+            if (i != null) return CellsX(i.id, i.cells);
+            var e = map?.exits?.FirstOrDefault(n => n.id == id);
+            return e != null ? CellsX(e.id, e.cells) : float.NaN;
         }
 
         /// <summary>確認用: その横の位置へ置き、近づくと流れる会話などを起こす（Update と同じ判定）</summary>
