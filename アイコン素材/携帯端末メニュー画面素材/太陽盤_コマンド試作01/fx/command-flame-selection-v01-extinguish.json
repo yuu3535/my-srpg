@@ -1,0 +1,32 @@
+{
+  "schema": "solar-flame-selection-apng-v01",
+  "sourceFrames": "command-flame-burn-v03-frames",
+  "origin": [
+    0.57,
+    0.78
+  ],
+  "stages": {
+    "extinguish": {
+      "frames": [
+        12,
+        13,
+        14,
+        15,
+        16,
+        17
+      ],
+      "durations": [
+        35,
+        35,
+        40,
+        40,
+        40,
+        10
+      ],
+      "loop": 1,
+      "src": "command-flame-selection-v01-extinguish.apng",
+      "durationMs": 200
+    }
+  },
+  "note": "既存コマを無加工で再梱包。短い消火。"
+}
