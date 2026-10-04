@@ -291,7 +291,9 @@ namespace Srpg.Battle
 
         private void CopyLook()
         {
-            string text = JsonUtility.ToJson(look, true);
+            // 0.2599999904… のような長い小数を、小数第3位までに丸める（読みやすく）
+            string text = System.Text.RegularExpressions.Regex.Replace(JsonUtility.ToJson(look, true), @"-?\d+\.\d{4,}",
+                m => Math.Round(double.Parse(m.Value, System.Globalization.CultureInfo.InvariantCulture), 3).ToString("0.###", System.Globalization.CultureInfo.InvariantCulture));
 #if UNITY_WEBGL && !UNITY_EDITOR
             SrpgCopyText(text);
 #else
