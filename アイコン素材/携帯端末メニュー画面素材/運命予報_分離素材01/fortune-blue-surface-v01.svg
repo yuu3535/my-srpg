@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1536" viewBox="0 0 1024 1536">
+  <title>運命予報の独立した濃紺文字面</title>
+  <desc>枠・星・文字・シールを含まない下地。fillとfill-opacityで色と透明度を調整できます。</desc>
+  <path fill="#10253b" fill-opacity="0.78" d="M 205 99 H 819 Q 896 99 907 198 V 1318 Q 907 1381 902 1422 Q 512 1324 122 1422 Q 117 1381 117 1318 V 198 Q 128 99 205 99 Z"/>
+</svg>
