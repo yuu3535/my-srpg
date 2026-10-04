@@ -53,6 +53,8 @@
   #stage .layer.fxShafts { isolation: auto; }   /* 光の筋は下の絵と「スクリーン」で混ぜる */
   .card.fxCard { border-color: #3c6d70; }
   .card.exCard { border-color: #8a6d3c; }
+  .card.scCard { border-color: #6d7f9a; }
+  .card.scCard .checks button { font-size: 12px; }
   .exRow { display: grid; grid-template-columns: 1fr 62px 56px 44px; gap: 4px; align-items: center; margin: 2px 0; font-size: 12px; }
   .exRow input { width: 100%; box-sizing: border-box; padding: 1px 3px; }
   .exRow.head { color: var(--muted); }
@@ -77,12 +79,18 @@
   <h1>横スクロールの重ね方</h1>
   <label>場所 <select id="place"></select></label>
   <button id="newPlace" title="新しい場所を足す（空・遠景・中景・床・モジュールのひな形から始める）">場所を足す</button>
+  <label title="同じ場所でも、場面（朝・昼・夕方、だれがいるか）ごとに見え方と組み立てを分けて保存する">シーン <select id="scene"></select></label>
+  <button id="newScene" title="配置表にない試しのシーンを足す（例: 夕方の試し）">シーンを足す</button>
+  <label title="Unity の見え方のファイルの名前（Assets/Data/Looks/<名前>.json）">見え方の名前 <input id="lookName" type="text" style="width:170px"></label>
   <label>素材のフォルダ <input id="folder" type="text" value="背景/オルクス城回廊横スクロール/採用候補/"></label>
   <button id="reload" title="素材のフォルダと 背景/ の中の絵を読み直す（新しく置いた絵を出す）">読み込み直す</button>
   <button id="add">層を足す</button>
   <button id="addProps" title="家具など1つずつ置く物の層を足す">家具の層を足す</button>
   <button id="copy">コピー</button>
-  <button id="reset">はじめの値に戻す</button>
+  <button id="reset" title="場所のふだん: 場所全体を Unity の値に。シーン: そのシーンだけを Unity の値（その場面の見え方）に">はじめの値に戻す</button>
+  <button id="saveFile" title="この場所の、ふだんと全部のシーンをファイルに保存する（ブラウザを替えても使えるように）">ファイルに保存</button>
+  <button id="openFile" title="「ファイルに保存」したファイルを読み込む">ファイルを開く</button>
+  <input id="fileIn" type="file" accept=".json,application/json" hidden>
   <span id="msg"></span>
 </header>
 <main>
@@ -148,18 +156,112 @@ async function listPlaces() {
   $("place").innerHTML = places.map(p => `<option value="${p.id}" ${p.id === place ? "selected" : ""}>${p.id}${p.unity ? "" : "（Unity にまだない）"}</option>`).join("");
 }
 
-// はじめの値: Unity の場所データ。なければひな形
-async function defaultsFor(id) {
+// 見え方（Unity の Assets/Data/Looks/<名前>.json）: 空の差し替え・効果・層ごとの霞とぼかし・この場面だけの組み立て（build）
+const LOOK_DIR = "/unity-prototype/Assets/Data/Looks/";
+async function fetchLook(name) {
+  if (!name) return null;
+  try { const r = await fetch(`${LOOK_DIR}${encodeURIComponent(name)}.json`, { cache: "no-store" }); if (r.ok) return await r.json(); } catch {}
+  return null;
+}
+// 空の層: Unity と同じく、モジュールと床でない最初の層
+const skyLayerOf = ls => ls.find(L => L.on !== false && L.kind !== "modules" && L.kind !== "floor");
+/** 見え方を層に重ねる（Unity の Corridor2DView.LoadLook・ApplyLayerEffects と同じ決め方） */
+function lookOnto(ls, look) {
+  if (!look) return ls;
+  if (look.build?.length) ls = clone(look.build).map(L => ({ ...L, on: true }));
+  const sky = skyLayerOf(ls);
+  if (look.sky && sky) sky.file = "/" + look.sky.replace(/^\/+/, "");
+  for (const o of look.layers || []) {
+    const L = ls.find(x => x.name === o.name);
+    if (!L) continue;
+    if (o.haze >= 0) L.fxHaze = o.haze;
+    if (o.blur >= 0) L.fxBlur = o.blur;
+  }
+  return ls;
+}
+// はじめの値: Unity の場所データ（とその見え方）。シーンを指定すると、その場面の見え方（explore.looks）を重ねる。Unity にない場所はひな形
+async function defaultsFor(id, stateId = "") {
   try {
     const r = await fetch(`${UNITY_DIR}${encodeURIComponent(id)}.json`, { cache: "no-store" });
     if (r.ok) {
       const d = await r.json();
-      return { folder: d.folder, hero: { y: d.heroFeetY ?? 352, h: d.heroHeight ?? 96, margin: d.cameraMargin ?? 60 }, layers: d.layers.map(L => ({ ...L, on: true })), effects: d.effects,
+      const mapped = stateId ? (d.explore?.looks || []).find(l => l.state === stateId)?.look || "" : "";
+      const lookName = mapped || d.look || "";
+      const look = await fetchLook(lookName);
+      return { folder: d.folder, hero: { y: d.heroFeetY ?? 352, h: d.heroHeight ?? 96, margin: d.cameraMargin ?? 60 },
+        layers: lookOnto(d.layers.map(L => ({ ...L, on: true })), look), effects: look?.effects ?? d.effects, lookName, mapped: !!mapped,
         explore: d.explore ? { ...d.explore, spots: d.explore.spots || [] } : null, walk: { min: d.walkMin ?? 40, max: d.walkMax ?? -40 } };
     }
   } catch {}
   const mine = readJson(PLACES_KEY, []).find(m => m.id === id);
-  return { folder: mine?.folder || `背景/${id}/採用候補/`, hero: { y: 352, h: 96, margin: 60 }, layers: clone(TEMPLATE) };
+  return { folder: mine?.folder || `背景/${id}/採用候補/`, hero: { y: 352, h: 96, margin: 60 }, layers: clone(TEMPLATE), lookName: "", mapped: false };
+}
+
+// ── シーン（2026-10-04 原作者: シーンごとの保存・組み立て・はじめの値・選択） ──
+// シーン＝場所の中の場面（配置表の場面 = Unity の状態。朝に起きる・昼に御伽噺を調べる など）と、ここで足した試しのシーン。
+// 場所全体のこと（素材のフォルダ・アルシェの大きさ・歩ける範囲・探索の配置）は場所のふだんに、
+// 見え方（空・効果・層ごとの霞とぼかし）と組み立て（層の並び）はシーンごとに保存する。
+// 組み立てが場所のふだんと違えば、書き出しに build（このシーンだけの組み立て）を付ける。
+let scene = "";             // "" = 場所のふだん
+let lookName = "";
+let baseLayersCache = [];   // 場所のふだんの組み立て（シーンの組み立てと比べる）
+const SCENE_LAST = "srpg.corridorScene";            // { 場所: 最後に開いたシーン }
+const customKey = () => `srpg.corridorScenes.${place}`;   // ここで足した試しのシーン [{ id, title }]
+const sceneKey = id => `${storeKey(place)}@${id}`;
+const mapStates = () => exMap?.states || [];
+const sceneTitle = id => mapStates().find(s => s.id === id)?.scene || readJson(customKey(), []).find(s => s.id === id)?.title || "";
+const shownState = () => (scene && mapStates().some(s => s.id === scene)) ? scene : ex?.state;
+function listScenes() {
+  const opts = [`<option value="">（場所のふだん）</option>`]
+    .concat(mapStates().map(s => `<option value="${s.id}" ${s.id === scene ? "selected" : ""}>${s.id}${s.scene ? "　" + shortLabel(s.scene) : ""}${readJson(sceneKey(s.id), null) ? " ＊" : ""}</option>`))
+    .concat(readJson(customKey(), []).map(s => `<option value="${s.id}" ${s.id === scene ? "selected" : ""}>${s.id}　${s.title || "試し"}（試し）${readJson(sceneKey(s.id), null) ? " ＊" : ""}</option>`));
+  $("scene").innerHTML = opts.join("");
+  $("scene").value = scene;
+}
+/** 組み立てだけを比べるための形（空の絵・霞とぼかし・出す/出さないの印は除く） */
+function buildShape(ls) {
+  const on = ls.filter(L => L.on !== false), sky = skyLayerOf(on);
+  return JSON.stringify(on.map(L => { const o = layerExport(L); delete o.fxHaze; delete o.fxBlur; delete o.name; if (L === sky) delete o.file; return o; }));
+}
+const ownBuild = () => scene && buildShape(layers) !== buildShape(baseLayersCache);
+async function baseLayers() {
+  const s = readJson(storeKey(place), null);
+  return s?.layers ? s.layers : (await defaultsFor(place)).layers;
+}
+/** シーンを開く。保存がなければ: Unity にその場面の見え方があればそれ、なければ場所のふだんの写し */
+async function enterScene(id, noSave = false) {
+  if (!noSave) save();
+  scene = id;
+  const last = readJson(SCENE_LAST, {}); last[place] = id; writeJson(SCENE_LAST, last);
+  baseLayersCache = clone(await baseLayers());
+  if (!id) {
+    const s = readJson(storeKey(place), null);
+    applyLook(s?.layers ? s : await defaultsFor(place));
+  } else {
+    const s = readJson(sceneKey(id), null);
+    if (s?.layers) applyLook(s);
+    else {
+      const d = await defaultsFor(place, id);
+      if (d.mapped) applyLook(d);
+      else {
+        const b = readJson(storeKey(place), null);
+        applyLook({ layers: clone(baseLayersCache), effects: clone(b?.effects || fx), lookName: suggestLookName(id) });
+      }
+    }
+  }
+  listScenes();
+}
+function suggestLookName(id) {
+  const t = sceneTitle(id);
+  const tod = /朝/.test(t) ? "morning" : /昼/.test(t) ? "noon" : /夕/.test(t) ? "dusk" : /夜/.test(t) ? "night" : id.replace(/^.*?_(\w+)$/, "$1");
+  return `${place}_${tod}`;
+}
+function applyLook(state) {
+  layers = clone(state.layers);
+  fx = { ...clone(FX_DEFAULT), ...(state.effects || {}) };
+  fx.chara = { ...clone(FX_DEFAULT.chara), ...(fx.chara || {}) };
+  lookName = state.lookName ?? "";
+  $("lookName").value = lookName;
 }
 
 // 効果（画面全体）: 空気遠近・被写界深度・ヴィネット・色調・光の筋（原作者 2026-10-04。まず調整ページで見比べ、Unity はあとで）
@@ -187,11 +289,9 @@ async function loadExploreMap() {
   try { const r = await fetch(`/unity-prototype/Assets/Data/Maps/${encodeURIComponent(ex.map)}.json`, { cache: "no-store" }); if (r.ok) exMap = await r.json(); } catch {}
 }
 function apply(state) {
-  layers = state.layers;
+  applyLook(state);
   ex = state.explore ? clone(state.explore) : null;
   if (state.walk) walk = { ...state.walk };
-  fx = { ...clone(FX_DEFAULT), ...(state.effects || {}) };
-  fx.chara = { ...clone(FX_DEFAULT.chara), ...(fx.chara || {}) };
   if (state.folder) $("folder").value = state.folder;
   if (state.hero) Object.assign(hero, state.hero);
   $("heroY").value = hero.y; $("heroH").value = hero.h; $("heroOn").checked = hero.on;
@@ -204,10 +304,23 @@ async function load() {
     const d = await defaultsFor(place);
     s.explore = d.explore; s.walk = d.walk;
   }
+  if (s?.layers && s.lookName === undefined) s.lookName = (await defaultsFor(place)).lookName;   // 前の保存には見え方の名前がない
+  scene = "";
   apply(s?.layers ? s : await defaultsFor(place));
   await loadExploreMap();
+  // 最後に開いていたシーンへ（なくなっていれば場所のふだん）
+  const want = readJson(SCENE_LAST, {})[place] || "";
+  const exists = id => mapStates().some(st => st.id === id) || readJson(customKey(), []).some(st => st.id === id);
+  await enterScene(want && exists(want) ? want : "");
 }
-function save() { writeJson(storeKey(place), { folder: $("folder").value, layers, hero, effects: fx, explore: ex, walk }); }
+function save() {
+  const placeState = { folder: $("folder").value, hero, explore: ex, walk };
+  if (!scene) { writeJson(storeKey(place), { ...placeState, layers, effects: fx, lookName }); baseLayersCache = clone(layers); return; }
+  // シーン: 場所全体のことは場所のふだんへ、見え方と組み立てはシーンへ
+  const b = readJson(storeKey(place), null) || {};
+  writeJson(storeKey(place), { ...b, ...placeState });
+  writeJson(sceneKey(scene), { layers, effects: fx, lookName });
+}
 const hero = { y: 352, h: 96, on: true, margin: 60 };
 
 const sizes = {};   // 画像の元の大きさ（file → {w,h}）
@@ -447,17 +560,39 @@ async function render() {
 }
 
 function exportText() {
-  const used = layers.filter(L => L.on).map(L => {
-    const o = { name: L.name, kind: L.kind, file: L.file, speed: L.speed, x: L.x };
-    if (L.fxHaze !== undefined) o.fxHaze = L.fxHaze;
-    if (L.fxBlur !== undefined) o.fxBlur = L.fxBlur;
-    if (L.kind === "floor") Object.assign(o, { top: L.top, bottom: L.bottom, tile: L.tile, rows: L.rows, shade: L.shade });
-    else if (L.kind === "props") { delete o.file; Object.assign(o, { opacity: L.opacity ?? 1, props: (L.props || []).map(p => ({ file: p.file, x: Number(p.x), bottom: Number(p.bottom), height: Number(p.height), flip: !!p.flip })) }); }
-    else if (L.kind === "modules") { delete o.file; Object.assign(o, { height: L.height, bottom: L.bottom, opacity: L.opacity, modules: L.modules.map(m => ({ file: m.file, overlap: Number(m.overlap || 0), dy: Number(m.dy || 0), dx: Number(m.dx || 0), scale: Number(m.scale || 1), front: !!m.front, shadeTop: Number(m.shadeTop || 0) })) }); }
-    else Object.assign(o, { height: L.height, bottom: L.bottom, overlap: L.overlap, repeat: L.repeat, mirror: L.mirror, opacity: L.opacity });
-    return o;
-  });
-  return JSON.stringify({ corridor: place, folder: $("folder").value, screen: [844, 390], heroFeetY: hero.y, heroHeight: hero.h, cameraMargin: hero.margin, effects: fx, explore: ex || undefined, layers: used }, null, 1);
+  if (scene) return JSON.stringify(sceneExport({ layers, effects: fx, lookName }, scene), null, 1);
+  return JSON.stringify(placeExport(), null, 1);
+}
+/** シーンの書き出し（Unity の見え方のファイルの形。組み立てが場所のふだんと違うときだけ build を付ける） */
+function sceneExport(st, id) {
+  const on = st.layers.filter(L => L.on !== false), sky = skyLayerOf(on);
+  let skyFile = sky?.file || "";
+  if (skyFile && !skyFile.startsWith("/")) skyFile = $("folder").value.replace(/^\/+/, "").replace(/\/?$/, "/") + skyFile;
+  const o = { look: st.lookName || "", place, scene: id, title: sceneTitle(id), sky: skyFile.replace(/^\/+/, ""), effects: st.effects,
+    layers: on.filter(L => L.fxHaze !== undefined || L.fxBlur !== undefined).map(L => ({ name: L.name, ...(L.fxHaze !== undefined ? { haze: L.fxHaze } : {}), ...(L.fxBlur !== undefined ? { blur: L.fxBlur } : {}) })) };
+  if (buildShape(st.layers) !== buildShape(baseLayersCache)) o.build = on.map(layerExport);
+  return o;
+}
+function placeExport() {
+  return { corridor: place, folder: $("folder").value, look: lookName || undefined, screen: [844, 390], heroFeetY: hero.y, heroHeight: hero.h, cameraMargin: hero.margin, effects: fx, explore: ex || undefined, layers: layers.filter(L => L.on).map(layerExport) };
+}
+/** 場所のふだんと、保存してある全部のシーン（「ファイルに保存」と「全部コピー」） */
+function allExport() {
+  const base = readJson(storeKey(place), null);
+  const ids = [...mapStates().map(s => s.id), ...readJson(customKey(), []).map(s => s.id)];
+  return { kind: "srpg.corridorLayers.place", place, base: scene ? base : { ...base, layers, effects: fx, lookName },
+    custom: readJson(customKey(), []),
+    scenes: Object.fromEntries(ids.map(id => [id, id === scene ? { layers, effects: fx, lookName } : readJson(sceneKey(id), null)]).filter(([, v]) => v)) };
+}
+function layerExport(L) {
+  const o = { name: L.name, kind: L.kind, file: L.file, speed: L.speed, x: L.x };
+  if (L.fxHaze !== undefined) o.fxHaze = L.fxHaze;
+  if (L.fxBlur !== undefined) o.fxBlur = L.fxBlur;
+  if (L.kind === "floor") Object.assign(o, { top: L.top, bottom: L.bottom, tile: L.tile, rows: L.rows, shade: L.shade });
+  else if (L.kind === "props") { delete o.file; Object.assign(o, { opacity: L.opacity ?? 1, props: (L.props || []).map(p => ({ file: p.file, x: Number(p.x), bottom: Number(p.bottom), height: Number(p.height), flip: !!p.flip })) }); }
+  else if (L.kind === "modules") { delete o.file; Object.assign(o, { height: L.height, bottom: L.bottom, opacity: L.opacity, modules: L.modules.map(m => ({ file: m.file, overlap: Number(m.overlap || 0), dy: Number(m.dy || 0), dx: Number(m.dx || 0), scale: Number(m.scale || 1), front: !!m.front, shadeTop: Number(m.shadeTop || 0) })) }); }
+  else Object.assign(o, { height: L.height, bottom: L.bottom, overlap: L.overlap, repeat: L.repeat, mirror: L.mirror, opacity: L.opacity });
+  return o;
 }
 
 // ── 探索の配置 ──
@@ -478,7 +613,8 @@ const shortLabel = t => { t = t || ""; const i = t.search(/[（(]/); return i > 
 /** この場所の探索の項目（横の位置つき）。auto＝配置表から決めた位置（spots で上書きしていない） */
 function exploreItems() {
   if (!ex || !exMap) return [];
-  const state = (ex.state && exMap.states?.find(s => s.id === ex.state)) || exMap.states?.[0];
+  const sid = shownState();   // シーンを選んでいればその場面の人・調べる所
+  const state = (sid && exMap.states?.find(s => s.id === sid)) || exMap.states?.[0];
   if (!state) return [];
   const items = [];
   const point = (id, kind, label, autoX, extra = {}) => { const sp = spotOf(id); items.push({ id, kind, label, x: sp ? resolveX(sp.x) : autoX, auto: !sp, ...extra }); };
@@ -576,6 +712,64 @@ function exCard() {
     card.appendChild(row);
   }
   return card;
+}
+
+// ── シーンの欄 ──
+function sceneCard() {
+  const card = document.createElement("div");
+  card.className = "card scCard";
+  if (!scene) {
+    card.innerHTML = `<div class="head"><b>場所のふだん（${place}）</b></div>`
+      + `<div class="hint">どのシーンにも共通の組み立てと見え方です。上の「シーン」で場面を選ぶと、その場面だけの見え方・組み立てを作れます（＊は保存のあるシーン）。`
+      + `素材のフォルダ・アルシェの大きさ・カメラの余白・探索の配置は、どのシーンでも場所で1つです。</div>`;
+    const all = document.createElement("button");
+    all.textContent = "全部のシーンをコピー";
+    all.title = "場所のふだんと、保存のある全部のシーンをまとめてコピー（総合担当に貼る）";
+    all.addEventListener("click", () => copyText(JSON.stringify(allExport(), null, 1), "場所のふだんと全部のシーンをコピーしました"));
+    card.appendChild(all);
+    return card;
+  }
+  const own = ownBuild(), saved = !!readJson(sceneKey(scene), null);
+  card.innerHTML = `<div class="head"><b>シーン: ${scene}</b></div>`
+    + `<div class="hint">${sceneTitle(scene) || "（説明なし）"}</div>`
+    + `<div class="hint">組み立て: <span style="color:${own ? "#f0d36a" : "var(--teal)"}">${own ? "このシーンだけの組み立て（書き出しに build が付く）" : "場所のふだんと同じ（空の絵・効果だけがこのシーンのもの）"}</span>`
+    + `${saved ? "　／ このブラウザに保存済み" : "　／ まだ保存なし（動かすと保存）"}</div>`;
+  const bar = document.createElement("div");
+  bar.className = "checks";
+  const btn = (label, title, fn) => { const b = document.createElement("button"); b.textContent = label; b.title = title; b.addEventListener("click", fn); bar.appendChild(b); };
+  btn("ふだんの組み立てを写す", "場所のふだんの組み立て（層の並び・家具・モジュール）をこのシーンに写す。空の絵と霞・ぼかしはこのシーンのまま", async () => {
+    const keep = Object.fromEntries(layers.map(L => [L.name, L])), sky = skyLayerOf(layers)?.file;
+    layers = clone(baseLayersCache).map(L => ({ ...L, fxHaze: keep[L.name]?.fxHaze, fxBlur: keep[L.name]?.fxBlur }));
+    const s = skyLayerOf(layers); if (s && sky) s.file = sky;
+    cards(); render(); $("msg").textContent = "場所のふだんの組み立てを写しました";
+  });
+  btn("この組み立てをふだんにする", "このシーンの組み立てを、場所のふだん（全部のシーンの元）にする。ふだんの空の絵と霞・ぼかしはそのまま", async () => {
+    if (!confirm("このシーンの組み立てを、場所のふだんにしますか？（ほかのシーンの組み立ては変わりません）")) return;
+    const b = readJson(storeKey(place), null) || {};
+    const keep = Object.fromEntries((b.layers || baseLayersCache).map(L => [L.name, L])), sky = skyLayerOf(b.layers || baseLayersCache)?.file;
+    const next = clone(layers).map(L => ({ ...L, fxHaze: keep[L.name]?.fxHaze, fxBlur: keep[L.name]?.fxBlur }));
+    const s = skyLayerOf(next); if (s && sky) s.file = sky;
+    writeJson(storeKey(place), { ...b, layers: next, effects: b.effects || fx, lookName: b.lookName ?? "" });
+    baseLayersCache = next;
+    cards(); render(); $("msg").textContent = "場所のふだんの組み立てにしました";
+  });
+  btn("シーンの保存を消す", "このシーンの保存を消して、はじめの値（Unity。なければ場所のふだんの写し）から", async () => {
+    if (!confirm(`シーン「${scene}」の保存を消しますか？`)) return;
+    localStorage.removeItem(sceneKey(scene));
+    await enterScene(scene, true); cards(); render();
+  });
+  if (readJson(customKey(), []).some(s => s.id === scene)) btn("試しのシーンを消す", "ここで足した試しのシーンを一覧から消す", async () => {
+    if (!confirm(`試しのシーン「${scene}」を消しますか？`)) return;
+    localStorage.removeItem(sceneKey(scene));
+    writeJson(customKey(), readJson(customKey(), []).filter(s => s.id !== scene));
+    await enterScene("", true); cards(); render();
+  });
+  card.appendChild(bar);
+  return card;
+}
+async function copyText(text, done) {
+  try { await navigator.clipboard.writeText(text); $("msg").textContent = done; }
+  catch { $("out").value = text; $("out").select(); document.execCommand("copy"); $("msg").textContent = done + "（下の欄）"; }
 }
 
 // ── 欄 ──
@@ -686,6 +880,7 @@ function check(L, key, label) {
 function cards() {
   const host = $("layers");
   host.innerHTML = "";
+  host.appendChild(sceneCard());
   if (ex) host.appendChild(exCard());
   host.appendChild(fxCard());
   layers.forEach((L, i) => {
@@ -809,12 +1004,19 @@ $("add").addEventListener("click", () => {
   cards(); render();
 });
 $("reset").addEventListener("click", async () => {
+  if (scene) {
+    if (!confirm(`シーン「${scene}」を、はじめの値（Unity のその場面の見え方。なければ場所のふだんの写し）に戻しますか？ 合わせた値は消えます`)) return;
+    localStorage.removeItem(sceneKey(scene));
+    await enterScene(scene, true); cards(); render(); $("msg").textContent = "シーンをはじめの値に戻しました";
+    return;
+  }
   if (!confirm(`「${place}」を、はじめの値（Unity に入っている値。なければひな形）に戻しますか？ 合わせた値は消えます`)) return;
-  apply(await defaultsFor(place)); await loadExploreMap(); await listFiles(); cards(); render(); $("msg").textContent = "はじめの値に戻しました";
+  apply(await defaultsFor(place)); baseLayersCache = clone(layers); await loadExploreMap(); listScenes(); await listFiles(); cards(); render(); $("msg").textContent = "はじめの値に戻しました";
 });
 $("place").addEventListener("change", async e => {
   save();
   place = e.target.value; writeJson(LAST_KEY, place);
+  scene = "";
   await load(); await listFiles(); cards(); render();
 });
 $("newPlace").addEventListener("click", async () => {
@@ -831,9 +1033,44 @@ $("newPlace").addEventListener("click", async () => {
   $("msg").textContent = `「${id}」を足しました。素材をフォルダに入れて「読み込み直す」を押してください`;
 });
 $("folder").addEventListener("change", async () => { await listFiles(); cards(); render(); });
-$("copy").addEventListener("click", async () => {
-  try { await navigator.clipboard.writeText(exportText()); $("msg").textContent = "コピーしました。総合担当に貼ってください"; }
-  catch { $("out").select(); document.execCommand("copy"); $("msg").textContent = "コピーしました（下の欄）"; }
+$("copy").addEventListener("click", () => copyText(exportText(), scene ? `シーン「${scene}」をコピーしました。総合担当に貼ってください` : "コピーしました。総合担当に貼ってください"));
+$("scene").addEventListener("change", async e => { await enterScene(e.target.value); cards(); render(); });
+$("lookName").addEventListener("input", e => { lookName = e.target.value.trim(); $("out").value = exportText(); save(); });
+$("newScene").addEventListener("click", async () => {
+  const id = (prompt("試しのシーンの名前（英数字と _。例: dusk_try）") || "").trim();
+  if (!id) return;
+  if (!/^[a-z0-9_]+$/.test(id)) { alert("英小文字・数字・_ だけにしてください"); return; }
+  if (mapStates().some(s => s.id === id) || readJson(customKey(), []).some(s => s.id === id)) { alert("もうある名前です"); return; }
+  const title = (prompt("説明（例: 夕方の試し）") || "").trim();
+  writeJson(customKey(), [...readJson(customKey(), []), { id, title }]);
+  await enterScene(id); cards(); render();
+  $("msg").textContent = `シーン「${id}」を足しました（今の見え方の写しから）`;
+});
+// ファイルに保存・開く: この場所のふだんと全部のシーン（このブラウザの保存はブラウザを替えると見えないので）
+$("saveFile").addEventListener("click", () => {
+  save();
+  const blob = new Blob([JSON.stringify(allExport(), null, 1)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `重ね方_${place}_${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  $("msg").textContent = "ファイルに保存しました";
+});
+$("openFile").addEventListener("click", () => $("fileIn").click());
+$("fileIn").addEventListener("change", async e => {
+  const f = e.target.files[0]; e.target.value = "";
+  if (!f) return;
+  let d;
+  try { d = JSON.parse(await f.text()); } catch { alert("読めないファイルです"); return; }
+  if (d?.kind !== "srpg.corridorLayers.place" || !d.place) { alert("「ファイルに保存」で作ったファイルではありません"); return; }
+  if (!confirm(`場所「${d.place}」のふだんと ${Object.keys(d.scenes || {}).length} のシーンを、このファイルの値にしますか？（今の値は上書きされます）`)) return;
+  place = d.place; writeJson(LAST_KEY, place);
+  if (d.base) writeJson(storeKey(place), d.base);
+  if (d.custom) writeJson(customKey(), d.custom);
+  for (const [id, v] of Object.entries(d.scenes || {})) writeJson(sceneKey(id), v);
+  await listPlaces(); await load(); await listFiles(); cards(); render();
+  $("msg").textContent = "ファイルを読み込みました";
 });
 $("reload").addEventListener("click", async () => { await listFiles(); await listBackgrounds(); cards(); render(); });
 
