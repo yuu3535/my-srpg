@@ -222,7 +222,14 @@ async function openScene(value) {
 }
 function sceneUnits(st) {
   const list = [];
-  if (st.player) list.push({ key: "player", id: st.player.id, kind: "player", side: "ally", x: st.player.x, y: st.player.y, facing: st.player.facing || "south", label: `${PEOPLE[st.player.id] || st.player.id}（操作するキャラ）` });
+  // 着いたら会話の場所（目的地の talkAt）があれば、会話のときのアルシェはそこ（入口から歩いてくる）
+  const talkGoal = (st.goals || []).find(g => g.hasTalkAt);
+  sceneInfo.talkGoal = talkGoal ? talkGoal.id : null;
+  if (st.player) {
+    const at = talkGoal ? talkGoal.talkAt : st.player;
+    list.push({ key: "player", id: st.player.id, kind: "player", side: "ally", x: at.x, y: at.y, facing: st.player.facing || "south",
+      label: `${PEOPLE[st.player.id] || st.player.id}（操作するキャラ${talkGoal ? "・会話のときの位置" : ""}）` });
+  }
   for (const p of st.people || []) list.push({ key: p.id, id: p.id, kind: "person", side: "wait", x: p.x, y: p.y, facing: p.facing || "south", label: p.name || PEOPLE[p.id] || p.id });
   return list;
 }
@@ -455,7 +462,7 @@ function outputText() {
     const pl = units.find(u => u.kind === "player");
     const one = u => JSON.stringify({ id: u.id, cell: [u.x, u.y], facing: u.facing });
     return [`// イベントの場面: ${sceneInfo.title}（配置表 ${sceneInfo.map}・場面 ${sceneInfo.state}）`,
-      ...(pl ? [`"player": ${one(pl)},`] : []),
+      ...(pl ? [sceneInfo.talkGoal ? `"talkAt"（目的地 ${sceneInfo.talkGoal}。入口から歩いてここで会話）: ${one(pl)},` : `"player": ${one(pl)},`] : []),
       `"people": [`, units.filter(u => u.kind === "person").map(u => "  " + one(u)).join(",\n"), `]`].join("\n");
   }
   const pad = s => (s + ":").padEnd(24);
