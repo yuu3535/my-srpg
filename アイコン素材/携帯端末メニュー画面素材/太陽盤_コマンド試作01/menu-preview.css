@@ -1,0 +1,72 @@
+/* 調整用の外側UIと、横844×390のメニュー構図を分ける。 */
+:root { color: #eceff2; background: #252a30; font-family: 'Yu Gothic UI', Meiryo, sans-serif; }
+main { width: min(100%, 1400px); padding: 24px; }
+h1 { font-size: 20px; }
+.menu-toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 20px 0 16px; }
+.menu-toolbar label { display: grid; gap: 5px; font-size: 12px; }
+.menu-toolbar select { min-width: 100px; }
+.menu-toolbar .effect-toggle { display: flex; align-items: center; min-height: 44px; gap: 6px; }
+.menu-toolbar button, .menu-toolbar select { padding: 8px 12px; }
+.menu-viewport { width: 100%; aspect-ratio: 844 / 390; position: relative; overflow: hidden; border: 1px solid #545d66; }
+/* 元PNGは1799×874、内窓はX113〜1682／Y109〜751。画像もメニューも引き伸ばさない。
+   内窓の高さ643に844:390のメニューを合わせ、左右の差分は端末内の暗い余白にする。 */
+.menu-device { position: relative; isolation: isolate; }
+.menu-device[data-frame="true"] { aspect-ratio: 1799 / 874; }
+.device-aperture { position: absolute; left: calc(100% * 110 / 1799); top: calc(100% * 106 / 874); width: calc(100% * 1577 / 1799); height: calc(100% * 649 / 874); border-radius: 5% / 12%; background: #13161a; pointer-events: none; }
+.menu-device[data-frame="true"] .menu-viewport { position: absolute; left: calc(100% * 202.2410256410 / 1799); top: calc(100% * 109 / 874); width: calc(100% * 1391.5179487179 / 1799); border: 0; border-radius: 4px; }
+.device-frame { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; user-select: none; z-index: 3; }
+.menu-device[data-frame="false"] .device-frame, .menu-device[data-frame="false"] .device-aperture { display: none; }
+.menu-screen { --motion: running; background: #85878b; }
+.menu-screen[data-background="light"] { background: #dddeda; }
+.wheel-frame { position: absolute; inset: 0; width: 844px; height: 390px; border: 0; background: transparent; z-index: 1; }
+.wheel-loading { position: absolute; top: 26px; left: 16px; padding: 6px 10px; color: #d0d5dc; background: #363c43; font-size: 12px; pointer-events: none; z-index: 1; }
+.map-card { position: absolute; left: 330.243px; top: 27.612px; width: 300px; height: 224px; padding: 0; border: 0; background: transparent; z-index: 1; color: #e6ce9e; }
+.map-card:hover { background: transparent; }
+.map-card svg { display: block; width: 100%; height: 100%; }
+.map-card:focus-visible { outline: 2px solid #e6ce9e; outline-offset: 3px; }
+.map-tab { fill: #191e25; fill-opacity: .92; }
+.map-outline { fill: none; stroke: #d8c198; stroke-width: 1; }
+.map-inner { fill: none; stroke: #d8c198; stroke-width: .65; opacity: .75; }
+.map-label { fill: #f1e9d9; font-family: 'Yu Mincho', serif; font-size: 14px; letter-spacing: .17em; }
+.map-compass { stroke: #ebd7ae; fill: #2c323a; stroke-width: .9; }
+.menu-tip { position: absolute; left: 344.994px; top: 336.504px; width: 285px; height: 28px; display: grid; align-items: center; padding: 0 14px; border: 1px solid rgb(214 221 228 / .48); border-radius: 5px; background: rgb(13 15 17 / .59); box-shadow: inset 0 1px 0 rgb(240 243 247 / .07); font-family: 'Yu Mincho', serif; font-size: 13px; line-height: 1.4; color: #eceae4; z-index: 1; }
+.menu-time { position: absolute; left: 652.622px; top: 10.003px; width: 160px; height: 64px; z-index: 1; }
+.fortune-frame { position: absolute; left: 630.871px; top: 75.997px; width: 196px; height: 294px; border: 0; background: transparent; z-index: 1; }
+.map-card, .menu-tip, .menu-time, .fortune-frame { transform: var(--position-offset, translate(0px, 0px)); }
+.map-card:active { transform: var(--position-offset, translate(0px, 0px)) scale(.98); }
+.menu-screen[data-edit-layout="true"] .map-card { transition: none; }
+.position-handle { position: absolute; z-index: 2; min-height: 0; padding: 0; border: 1px dashed #bbc8d4; border-radius: 0; background: transparent; cursor: grab; touch-action: none; user-select: none; text-align: left; transition: none; }
+.position-handle:hover, .position-handle:active { background: rgb(179 191 203 / .08); }
+.position-handle:active { cursor: grabbing; }
+.position-handle span { position: absolute; top: 0; left: 0; padding: 2px 6px; color: #eff2f6; background: #303a44; font-size: 10px; line-height: 1.5; pointer-events: none; }
+.layout-controls { padding-top: 16px; margin-top: 20px; border-top: 1px solid #535d68; }
+.layout-controls h2 { margin: 0 0 8px; font-size: 17px; font-weight: 500; }
+.position-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px; padding: 12px 0; }
+.position-fields fieldset { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; border: 0; padding: 8px 0; margin: 0; min-width: 0; }
+.position-fields legend { padding: 0; font-size: 13px; color: #c9d1dc; }
+.position-fields label, #menu-layout-details label { display: grid; gap: 5px; font-size: 12px; }
+.position-fields input, #menu-layout-json { width: 100%; min-width: 0; padding: 8px 10px; border: 1px solid #66717c; background: #303438; color: #eceff2; font: inherit; }
+.position-fields input:focus-visible, #menu-layout-json:focus-visible { outline: 2px solid #c7d4e1; outline-offset: 2px; }
+.layout-actions { display: flex; flex-wrap: wrap; gap: 10px; padding: 14px 0 8px; }
+.tip-size-controls { border: 0; border-top: 1px solid #535d68; padding: 12px 0; margin: 4px 0 12px; }
+.tip-size-controls legend { padding-right: 12px; font-size: 13px; }
+.tip-size-fields { display: grid; grid-template-columns: minmax(0, 1fr) 130px; gap: 18px; max-width: 600px; margin-bottom: 10px; }
+.tip-size-fields label { display: grid; gap: 5px; font-size: 12px; }
+.tip-size-fields input { width: 100%; min-width: 0; accent-color: #bcc8d7; }
+.tip-size-fields input[type="number"] { padding: 8px 10px; border: 1px solid #66717c; background: #303438; color: #eceff2; font: inherit; }
+.tip-size-controls button { margin-top: 10px; font-size: 12px; }
+#menu-layout-details { margin-top: 12px; }
+#menu-layout-details label { margin-top: 8px; }
+#menu-layout-json { font-family: Consolas, monospace; resize: vertical; }
+.menu-status { font-size: 13px; margin: 12px 0 8px; color: #c7cdd5; }
+.source-links { display: flex; flex-wrap: wrap; gap: 20px; padding-top: 16px; margin-top: 16px; border-top: 1px solid #535d68; font-size: 13px; }
+a { color: #c9d8e9; }
+dialog { width: min(580px, calc(100% - 40px)); color: #eceff2; background: #252c34; border: 1px solid #80909e; border-radius: 8px; padding: 22px; }
+dialog::backdrop { background: rgb(15 18 22 / .7); }
+dialog h2 { margin: 0 0 12px; font-size: 19px; font-weight: 500; }
+.dialog-close { float: right; min-height: 36px; padding: 5px 10px; }
+.map-options { display: flex; flex-wrap: wrap; gap: 10px; padding: 22px 0; }
+.map-options button[aria-pressed="true"] { border-color: #d5c39e; background: #454038; }
+[hidden] { display: none !important; }
+@media (max-width: 720px) { main { padding: 16px 10px; } .menu-toolbar { gap: 8px; } .position-fields { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .menu-screen .time-icon * { animation: none !important; } }

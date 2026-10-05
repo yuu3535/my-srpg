@@ -2,8 +2,9 @@
 (function (root) {
   'use strict';
   const commands = Object.freeze([
-    { id: 'settings', label: '設定' }, { id: 'items', label: '所持品' },
-    { id: 'friends', label: '仲間' }, { id: 'support', label: '支援' },
+    // 内部IDは既存の選択・埋め込み通信との互換用。表示名と本編の遷移は別に扱う。
+    { id: 'settings', label: '設定' }, { id: 'items', label: '出撃' },
+    { id: 'friends', label: '探索' }, { id: 'support', label: '支援会話' },
     { id: 'save', label: 'セーブ' }
   ].map(Object.freeze));
   const tip = { x: (1184 - 627) * 439 / 1254, y: (319 - 627) * 439 / 1254 };

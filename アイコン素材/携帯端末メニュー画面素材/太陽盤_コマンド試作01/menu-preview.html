@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>携帯端末 — メニュー全体の配置試作</title>
+<link rel="stylesheet" href="time-of-day.css?v=20261005a">
+<link rel="stylesheet" href="menu-preview.css?v=20261006a">
+</head>
+<body>
+<main>
+  <header><h1>携帯端末 — メニュー全体の配置試作</h1><p class="intro">単体で決めた部品を横画面に重ねた確認ページです。本編・Unity・保存処理には接続していません。</p></header>
+  <div class="menu-toolbar">
+    <label for="menu-character">操作キャラ<select id="menu-character"><option value="alche">アルシェ</option><option value="karima">カリマ</option></select></label>
+    <label for="menu-phase">時間帯<select id="menu-phase"><option value="morning">朝</option><option value="day">昼</option><option value="evening" selected>夕方</option><option value="night">夜</option></select></label>
+    <label for="menu-background">確認背景<select id="menu-background"><option value="corridor">既存の回廊</option><option value="gray">灰色</option><option value="light">明るい無地</option></select></label>
+    <label class="effect-toggle" for="menu-effects"><input id="menu-effects" type="checkbox" checked> 炎・時間帯の演出</label>
+    <button id="menu-replay-time" type="button">時間帯の演出を再生</button>
+    <label class="effect-toggle" for="menu-edit-layout"><input id="menu-edit-layout" type="checkbox"> 配置を調整する</label>
+    <label class="effect-toggle" for="menu-show-frame"><input id="menu-show-frame" type="checkbox" checked> 端末フレームを表示</label>
+  </div>
+  <div id="menu-device" class="menu-device" data-frame="true">
+    <div class="device-aperture" aria-hidden="true"></div>
+  <div id="menu-viewport" class="menu-viewport">
+    <div id="menu-screen" class="scene menu-screen" data-background="corridor" data-reduced="false">
+      <img id="menu-background-image" class="scene-background" src="../太陽盤_試作02/corridor-reference.png" alt="" aria-hidden="true">
+      <iframe id="menu-wheel" class="wheel-frame" src="layout.html?embed=menu&amp;v=20261006b" title="回転する太陽盤とコマンド" width="844" height="390"></iframe>
+      <div id="wheel-loading" class="wheel-loading" role="status">太陽盤を読み込み中</div>
+      <button id="map-open" class="map-card" type="button" aria-haspopup="dialog" aria-controls="map-dialog" aria-label="マップを開く：探索2D・章の戦闘・遭遇戦">
+        <!-- 比較見本のマップ絵部分だけを表示側で参照。新しい景色は生成しない。 -->
+        <svg viewBox="0 0 300 224" aria-hidden="true" focusable="false">
+          <defs><clipPath id="menu-map-clip"><path d="M8 26 L26 8 H260 L292 40 V200 L272 220 H22 L8 206 Z"/></clipPath></defs>
+          <g clip-path="url(#menu-map-clip)">
+            <svg width="300" height="224" viewBox="590 470 557 303" preserveAspectRatio="xMidYMid slice"><image href="time-of-day-art/selected-reference-v01.png" width="1536" height="1024"/></svg>
+            <path class="map-tab" d="M8 181 H70 L104 220 H22 L8 206 Z"/>
+          </g>
+          <path class="map-outline" d="M8 26 L26 8 H260 L292 40 V200 L272 220 H22 L8 206 Z"/>
+          <path class="map-inner" d="M14 29 L29 14 H257 L286 43 V197 L269 214 H104 M14 174 V202 L25 214 H65"/>
+          <text x="24" y="207" class="map-label">マップ</text>
+          <g class="map-compass" transform="translate(273 195)"><path d="M0-14 L3-3 L14 0 L3 3 L0 14 L-3 3 L-14 0 L-3-3 Z"/><circle r="4"/></g>
+        </svg>
+      </button>
+      <div id="menu-tip" class="menu-tip" role="status" aria-live="polite">戦闘マップへ出撃する</div>
+      <div id="menu-time" class="icon-slot menu-time" role="img" aria-label="時間帯：夕方"></div>
+      <iframe id="menu-fortune" class="fortune-frame" src="../運命予報_分離素材01/layers-preview.html?embed=menu&amp;v=20261005a" title="運命予報：蛇。失せモノに注意。笑う声が聞こえたら、振り返らないこと。" width="196" height="294"></iframe>
+      <button id="move-map" class="position-handle" type="button" hidden><span>マップを移動</span></button>
+      <button id="move-tip" class="position-handle" type="button" hidden><span>説明チップを移動</span></button>
+      <button id="move-time" class="position-handle" type="button" hidden><span>時間帯を移動</span></button>
+      <button id="move-fortune" class="position-handle" type="button" hidden><span>運命予報を移動</span></button>
+    </div>
+  </div>
+    <img id="menu-device-frame" class="device-frame" src="../横向きフレーム素材.png" width="1799" height="874" alt="" aria-hidden="true" draggable="false">
+  </div>
+  <p class="note">端末フレームは表示確認用です。素材とメニューの比率を保つため、内窓の左右に小さな暗い余白を設けています。配置の数値・保存JSONは引き続きメニュー内844×390が基準です。</p>
+  <p id="menu-warning" class="warning" role="alert" hidden></p>
+  <p id="menu-status" class="menu-status" role="status">メニューの素材を読み込んでいます。</p>
+  <section class="layout-controls" aria-labelledby="layout-controls-title">
+    <h2 id="layout-controls-title">部品の位置</h2>
+    <p id="menu-layout-help" class="note">「配置を調整する」をONにして各部品をドラッグ。矢印キーで1px、Shift＋矢印で10px移動できます。数値は横844×390の左上を基準にしたX／Yです。説明チップの高さ以外のサイズと内部の配置はそのまま。OFFで通常操作へ戻ります。</p>
+    <div class="position-fields">
+      <fieldset><legend>マップ</legend><label for="map-left">X<input id="map-left" type="number" min="0" step="0.1" aria-describedby="menu-layout-help"></label><label for="map-top">Y<input id="map-top" type="number" min="0" step="0.1" aria-describedby="menu-layout-help"></label></fieldset>
+      <fieldset><legend>説明チップ</legend><label for="tip-left">X<input id="tip-left" type="number" min="0" step="0.1" aria-describedby="menu-layout-help"></label><label for="tip-top">Y<input id="tip-top" type="number" min="0" step="0.1" aria-describedby="menu-layout-help"></label></fieldset>
+      <fieldset><legend>時間帯アイコン</legend><label for="time-left">X<input id="time-left" type="number" min="0" step="0.1" aria-describedby="menu-layout-help"></label><label for="time-top">Y<input id="time-top" type="number" min="0" step="0.1" aria-describedby="menu-layout-help"></label></fieldset>
+      <fieldset><legend>運命予報</legend><label for="fortune-left">X<input id="fortune-left" type="number" min="0" step="0.1" aria-describedby="menu-layout-help"></label><label for="fortune-top">Y<input id="fortune-top" type="number" min="0" step="0.1" aria-describedby="menu-layout-help"></label></fieldset>
+    </div>
+    <fieldset class="tip-size-controls"><legend>説明チップの細さ</legend>
+      <div class="tip-size-fields"><label for="tip-height">高さ：<output id="tip-height-value" for="tip-height">28px</output><input id="tip-height" type="range" min="22" max="48" step="1" value="28" aria-describedby="tip-height-help"></label><label for="tip-height-number">高さの数値（px）<input id="tip-height-number" type="number" min="22" max="48" step="1" value="28" aria-describedby="tip-height-help"></label></div>
+      <p id="tip-height-help" class="note">小さくするほど細身になります。幅・文字サイズ・透け感は変えず、22〜48pxで調整。左上の位置を維持し、下端がはみ出す場合だけ内側へ寄せます。</p>
+      <button id="tip-reset-height" type="button">高さだけ28pxへ戻す</button>
+    </fieldset>
+    <p id="menu-layout-status" class="note" role="status">変更した配置はこのブラウザに自動保存します。</p>
+    <div class="layout-actions"><button id="menu-copy-layout" type="button">配置をコピー</button><button id="menu-download-layout" type="button">配置JSONを書き出す</button><button id="menu-reset-layout" type="button">配置・高さを初期値へ</button></div>
+    <p id="menu-layout-export-status" class="note" role="status"></p>
+    <details id="menu-layout-details"><summary>配置のJSONを見る</summary><label for="menu-layout-json">配置設定<textarea id="menu-layout-json" rows="10" readonly></textarea></label></details>
+  </section>
+  <p class="note">コマンドは選択と説明の切り替えまで。マップを押すと3種類の入口見本が開きます。時間帯は数字の時計ではなくアイコンのみで表示します。フォントはPC内のものを使用するため、他端末では代替表示になる場合があります。</p>
+  <div class="source-links"><a href="layout.html">太陽盤・コマンドの調整</a><a href="../運命予報_分離素材01/layers-preview.html">運命予報の調整</a><a href="time-of-day-demo.html">時間帯の単体見本</a></div>
+  <noscript><p class="warning">JavaScriptが無効です。配置と時間帯・コマンドの連動にはJavaScriptが必要です。</p></noscript>
+</main>
+<dialog id="map-dialog" aria-labelledby="map-dialog-title">
+  <form method="dialog"><button class="dialog-close" aria-label="マップの入口を閉じる">閉じる</button></form>
+  <h2 id="map-dialog-title">マップ</h2>
+  <p class="note">入口の見本です。実際の探索・戦闘へはまだ接続していません。</p>
+  <div class="map-options"><button type="button" data-map-mode="exploration">探索2D</button><button type="button" data-map-mode="battle">章の戦闘</button><button type="button" data-map-mode="encounter">遭遇戦</button></div>
+  <p id="map-mode-note" class="note" role="status">行き先を選んで見比べてください。</p>
+</dialog>
+<script src="time-of-day.js?v=20261005a"></script>
+<script src="menu-preview-model.js?v=20261006b"></script>
+<script src="menu-preview.js?v=20261006a"></script>
+<script src="menu-position.js?v=20261005d"></script>
+</body>
+</html>

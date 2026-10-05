@@ -60,7 +60,7 @@ assert.equal(math.commands[4].id, 'save');
 assert.equal(math.commands[0].id, 'settings');
 assert.equal(math.commands[0].label, '設定');
 assert.equal(math.commands[1].id, 'items');
-assert.equal(math.commands[1].label, '所持品');
+assert.deepEqual(math.commands.map(command => command.label), ['設定', '出撃', '探索', '支援会話', 'セーブ']);
 assert(!math.commands.some(command => command.id === 'map'));
 for (const scale of [.46, .59, .72, 1, 1.42]) for (const gap of [-12, 0, 8, 40]) {
   const g = math.geometry(gap, scale);
@@ -493,7 +493,7 @@ async function run({ reduce = false, failImage = false, failFlame = false, failO
   assert(buttons.every(b => b.style.transform === 'scale(1)'));
   assert(bands.every(band => !band.classList.contains('selected')));
   elements['replay-flame'].events.click(); settle();
-  if (!reduce && !failFlame) assert.equal(buttons[2].attributes['aria-pressed'], 'true', '未選択の点火確認では中央の仲間を選択');
+  if (!reduce && !failFlame) assert.equal(buttons[2].attributes['aria-pressed'], 'true', '未選択の点火確認では中央の探索を選択');
   elements.clear.events.click(); settle();
   elements['reset-settings'].events.click(); assert.equal(elements.gap.value, -27); assert.equal(elements.bandHeight.value, 31);
   elements.character.value = 'karima'; elements.character.events.change();

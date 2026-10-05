@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>太陽盤 — 回転するコマンド輪</title>
+<script>if (new URLSearchParams(location.search).get('embed') === 'menu') document.documentElement.dataset.menuEmbed = 'true';</script>
 <style>
 :root { color-scheme: dark; font-family: 'Yu Gothic UI', 'Meiryo', sans-serif; color: #eeeff0; background: #25282b; --accent: #bba077; }
 * { box-sizing: border-box; }
@@ -100,6 +101,14 @@ a { color: #c9ced2; }
 @media (max-width: 1050px) { .workbench { grid-template-columns: minmax(0, 1fr) 240px; gap: 16px; } }
 @media (max-width: 760px) { main { padding: 12px; } .controls { grid-template-columns: 1fr 1fr; gap: 12px; } .workbench { grid-template-columns: 1fr; } .preview { z-index: 4; background: #25282b; } .adjustments { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; } .adjustments .actions, .adjustments details { grid-column: 1 / -1; } }
 @media (prefers-reduced-motion: reduce) { .command, .band-row .nameplate-shape .nameplate-backing { transition: none; } .selection-flame { display: none; } }
+/* メニュー全体の試作に埋め込む場合のみ。元の調整ページは変えない。 */
+html[data-menu-embed="true"], html[data-menu-embed="true"] body { background: transparent; width: 844px; height: 390px; overflow: hidden; }
+html[data-menu-embed="true"] main { width: 844px; max-width: none; padding: 0; margin: 0; }
+html[data-menu-embed="true"] main > :not(.workbench), html[data-menu-embed="true"] .adjustments, html[data-menu-embed="true"] .preview > :not(.viewport) { display: none; }
+html[data-menu-embed="true"] .workbench { display: block; }
+html[data-menu-embed="true"] .preview { position: relative; top: auto; background: transparent; z-index: auto; }
+html[data-menu-embed="true"] .viewport { width: 844px; height: 390px; border: 0; }
+html[data-menu-embed="true"] .screen { background: transparent !important; }
 </style>
 </head>
 <body>
@@ -134,7 +143,7 @@ a { color: #c9ced2; }
 <div class="actions"><button id="previous" type="button">前の項目</button><button id="next" type="button">次の項目</button><button id="clear" type="button">未選択に戻す</button></div>
 <label class="effect-control"><input id="selection-effects" type="checkbox" checked>選択中の炎を表示</label>
 <p id="flame-status" role="status">炎の素材を読み込んでいます。</p>
-<div class="note"><p>設定・所持品・仲間・支援・セーブの5項目。選択した札は太陽盤の真ん中へ回り、札・裏帯・内縁・文字を一体で18％拡大します。下に少し覗く裏帯は、選択時だけ少し広がる試作です。アルシェは黄金色、カリマは銀青色。設定はBGM・SE・会話速度・移動速度などの調整用。マップは右側の画像から探索2D・章の戦闘・遭遇戦を選ぶ入口に分ける方針です。今回は選択の動作見本のみで、設定・保存処理・マップ入口には未接続です。</p><p><a href="layout-static.html">静止配置を比較する</a> ／ <a href="index.html">最初の試作</a></p></div>
+<div class="note"><p>設定・出撃・探索・支援会話・セーブの5項目。選択した札は太陽盤の真ん中へ回り、札・裏帯・内縁・文字を一体で18％拡大します。下に少し覗く裏帯は、選択時だけ少し広がる試作です。アルシェは黄金色、カリマは銀青色。身支度・装備・キャラの詳細ステータスは右側の身支度アプリへまとめる方針です。今回は選択の動作見本のみで、出撃・探索・支援会話・設定・保存処理には未接続です。選択だけで戦闘は開始しません。</p><p><a href="layout-static.html">静止配置を比較する</a> ／ <a href="index.html">最初の試作</a></p></div>
 <p class="note">文字は細めの16px・字間0.12em、面は不透明度74％（選択中84％）。文字と枠は透かさず、裏帯は面の外だけに残します。札と針が合う直前に短く点火し、選択中は燃焼の連番を維持します。消火・再点火は繰り返しません。アルシェは金〜黄白、カリマは深い青紫。少数の火の粉はON／OFFで比較できます。同じ札を押すと点火から再生。動きを減らす端末設定では炎を非表示にします。</p>
 </section>
 <aside class="adjustments" aria-label="炎・輪・余白の調整">
@@ -175,9 +184,10 @@ a { color: #c9ced2; }
 </main>
 <script src="../太陽盤_試作03/material-engine.js?v=20261004a"></script>
 <script src="../太陽盤_試作03/character-colors.js?v=20261004a"></script>
-<script src="wheel-math.js?v=20261004l"></script>
+<script src="wheel-math.js?v=20261006b"></script>
 <script src="flame-model.js?v=20261004e"></script>
 <script src="command-burning.js?v=20261004c"></script>
 <script src="wheel.js?v=20261004u"></script>
+<script src="menu-embed.js?v=20261005a"></script>
 </body>
 </html>
