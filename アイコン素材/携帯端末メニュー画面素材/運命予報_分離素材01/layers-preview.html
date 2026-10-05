@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>運命予報 — 分離素材の確認</title>
+  <script>if (new URLSearchParams(location.search).get('embed') === 'menu') document.documentElement.dataset.menuEmbed = 'true';</script>
   <style>
     :root { color-scheme: dark; font-family: 'Yu Gothic UI', Meiryo, sans-serif; color: #eceff2; background: #252a30; }
     * { box-sizing: border-box; }
@@ -12,7 +13,7 @@
     h1 { font-size: 20px; font-weight: 500; margin: 0 0 12px; }
     .note { font-size: 13px; color: #b8c0c9; line-height: 1.7; }
     .workbench { display: grid; grid-template-columns: minmax(280px, 440px) minmax(260px, 1fr); gap: 28px; align-items: start; }
-    .stage { --surface-color: #10253b; --surface-opacity: 1; --star-opacity: .13; position: relative; isolation: isolate; width: 100%; aspect-ratio: 2 / 3; background: repeating-conic-gradient(#535a62 0% 25%, #41474e 0% 50%) 0 0 / 24px 24px; }
+    .stage { --surface-color: #0d0f11; --surface-opacity: .59; --star-opacity: .26; position: relative; isolation: isolate; width: 100%; aspect-ratio: 2 / 3; background: repeating-conic-gradient(#535a62 0% 25%, #41474e 0% 50%) 0 0 / 24px 24px; }
     .stage[data-background="light"] { background: #d7d9dc; }
     .stage[data-background="dark"] { background: #292e35; }
     .layer, .surface, .copy { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
@@ -20,14 +21,19 @@
     .surface { fill: var(--surface-color); opacity: var(--surface-opacity); }
     .star { opacity: var(--star-opacity); transform: translateY(9.4%) scale(.9); }
     .copy { color: #f1f2f4; container-type: inline-size; }
-    .title { position: absolute; top: 14%; width: 100%; margin: 0; text-align: center; font-size: 7.8cqw; font-weight: 600; letter-spacing: .07em; }
+    .title { position: absolute; top: 14%; width: 100%; margin: 0; text-align: center; font-family: var(--heading-font, 'Yu Gothic UI', Meiryo, sans-serif); font-size: 7.8cqw; font-weight: 600; letter-spacing: .07em; }
     .heading-rule { position: absolute; top: 22%; left: 25%; right: 25%; border-top: 1px solid #c9cdd2; }
-    .fortune-label { position: absolute; top: 23.8%; width: 100%; text-align: center; font-family: Georgia, serif; font-size: 3.2cqw; letter-spacing: .3em; }
+    .fortune-label { position: absolute; top: 23.8%; width: 100%; text-align: center; font-family: var(--fortune-font, Georgia, serif); font-size: 3.2cqw; letter-spacing: .3em; }
     .dots { position: absolute; top: 27.2%; width: 100%; display: flex; justify-content: center; gap: 3cqw; }
     .dots span { width: 1cqw; height: 1cqw; border-radius: 50%; background: #c9cdd2; }
-    .fortune-result { position: absolute; top: 29.3%; width: 100%; text-align: center; font-family: 'Yu Mincho', 'Hiragino Mincho ProN', serif; font-size: 10cqw; }
+    .fortune-result { position: absolute; top: 29.3%; width: 100%; text-align: center; font-family: var(--body-font, 'Yu Mincho', 'Hiragino Mincho ProN', serif); font-size: 10cqw; }
     .prose { position: absolute; top: 41%; left: 24%; right: 24%; bottom: 16%; display: flex; flex-direction: row-reverse; justify-content: space-between; }
-    .prose p { margin: 0; writing-mode: vertical-rl; text-orientation: mixed; font-family: 'Yu Mincho', 'Hiragino Mincho ProN', serif; font-size: 5.5cqw; line-height: 1.25; letter-spacing: .08em; }
+    .prose p { margin: 0; writing-mode: vertical-rl; text-orientation: mixed; font-family: var(--body-font, 'Yu Mincho', 'Hiragino Mincho ProN', serif); font-size: 5.5cqw; line-height: 1.25; letter-spacing: .08em; }
+    /* PNGは加工せず、シールが描かれた領域だけを操作対象にする。 */
+    .sticker { position: absolute; left: 78.125%; top: 1.3020833333%; width: 18.5546875%; height: 9.1145833333%; padding: 0; border: 0; border-radius: 0; background: transparent; overflow: hidden; cursor: grab; touch-action: none; user-select: none; transform: translate(var(--sticker-offset-x, 0%), var(--sticker-offset-y, 0%)) rotate(var(--sticker-rotation, 0deg)); }
+    .sticker img { position: absolute; max-width: none; width: 538.9473684211%; height: 1097.1428571429%; left: -421.0526315789%; top: -14.2857142857%; pointer-events: none; }
+    .sticker:hover, .sticker:focus-visible { outline: 1px dashed #d3dae2; outline-offset: 3px; }
+    .sticker:active { cursor: grabbing; transform: translate(var(--sticker-offset-x, 0%), var(--sticker-offset-y, 0%)) rotate(var(--sticker-rotation, 0deg)); }
     .controls { display: grid; gap: 18px; }
     fieldset { padding: 14px 0; margin: 0; border: 0; border-top: 1px solid #59616a; }
     legend { padding-right: 12px; color: #ccd2da; }
@@ -36,19 +42,32 @@
     .field small { color: #b4bdc7; line-height: 1.6; }
     input[type="range"] { width: 100%; accent-color: #bcc8d7; }
     input[type="color"] { width: 70px; height: 36px; border: 1px solid #626c78; background: transparent; }
-    select, button { font: inherit; color: inherit; padding: 8px 12px; border: 1px solid #626c78; background: #343c46; border-radius: 3px; }
+    select, button, input[type="number"], input[type="text"], textarea { font: inherit; color: inherit; padding: 8px 12px; border: 1px solid #626c78; background: #343c46; border-radius: 3px; }
+    .coordinate-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    input[type="number"] { width: 100%; min-width: 0; }
+    input[type="text"], select, textarea { width: 100%; min-width: 0; }
+    textarea { resize: vertical; font-family: Consolas, monospace; font-size: 12px; line-height: 1.6; }
+    .export-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid #d3dae2; outline-offset: 3px; }
+    button.sticker { padding: 0; border: 0; border-radius: 0; background: transparent; }
     button { cursor: pointer; }
     button:active { transform: scale(.98); }
     a { color: #c9d8e9; }
     .warning { color: #f0bda4; font-size: 13px; line-height: 1.6; }
     [hidden] { display: none !important; }
     @media (max-width: 720px) { body { padding: 16px; } .workbench { grid-template-columns: 1fr; } .stage { max-width: 380px; margin: auto; } }
+    /* 全体試作では調整UI・市松を外し、選択済みの四層だけを透明に重ねる。 */
+    html[data-menu-embed="true"], html[data-menu-embed="true"] body { background: transparent; padding: 0; overflow: hidden; }
+    html[data-menu-embed="true"] main > :not(.workbench), html[data-menu-embed="true"] .controls { display: none; }
+    html[data-menu-embed="true"] .workbench { display: block; }
+    html[data-menu-embed="true"] .stage { max-width: none; margin: 0; background: transparent !important; }
+    html[data-menu-embed="true"] .sticker { pointer-events: none; }
   </style>
 </head>
 <body>
 <main>
   <h1>運命予報 — 分離素材の確認</h1>
-  <p class="note">本編とは独立した素材確認用ページです。文字は画像に焼き込まず、下地と星の透明度をそれぞれ調整できます。</p>
+  <p class="note">枠と星の位置は固定。β版シールだけドラッグで移動できます。文字面の透け感と、見出し・Fortune・本文のフォントを見比べるための、本編とは独立した確認ページです。</p>
   <div class="workbench">
     <div class="stage" id="stage" data-background="checker" aria-label="分離素材の重ね合わせ">
       <svg id="surface-layer" class="surface" viewBox="0 0 1024 1536" aria-hidden="true"><path d="M 205 99 H 819 Q 896 99 907 198 V 1318 Q 907 1381 902 1422 Q 512 1324 122 1422 Q 117 1381 117 1318 V 198 Q 128 99 205 99 Z"/></svg>
@@ -62,59 +81,316 @@
         <span class="fortune-result">蛇</span>
         <div class="prose"><p>失せモノに注意。</p><p>笑う声が聞こえたら、</p><p>振り返らないこと。</p></div>
       </div>
-      <img id="beta-layer" class="layer" src="fortune-beta-sticker-v01.png" alt="β版">
+      <button id="beta-layer" class="sticker" type="button" aria-label="β版シールを移動" aria-describedby="sticker-help"><img src="fortune-beta-sticker-v01.png" alt="β版" draggable="false"></button>
     </div>
     <div class="controls">
       <fieldset>
         <legend>表示する素材</legend>
         <label class="toggle"><input type="checkbox" data-layer="beta-layer" checked> β版シール</label>
         <label class="toggle"><input type="checkbox" data-layer="frame-layer" checked> 銀線フレーム</label>
-        <label class="toggle"><input type="checkbox" data-layer="surface-layer" checked> 青い文字面</label>
+        <label class="toggle"><input type="checkbox" data-layer="surface-layer" checked> 文字面</label>
         <label class="toggle"><input type="checkbox" data-layer="star-layer" checked> 中央の星</label>
         <label class="toggle"><input type="checkbox" data-layer="text-layer" checked> 文字（HTML表示）</label>
       </fieldset>
       <fieldset>
         <legend>文字面と星</legend>
-        <label class="field" for="surface-color">下地の色<input id="surface-color" type="color" value="#10253b"></label>
-        <label class="field" for="surface-opacity">下地の不透明度 <output id="surface-value">78%</output><input id="surface-opacity" type="range" min="0" max="100" value="78"><small>銀線と文字は薄くならず、青い下地だけが変わります。</small></label>
-        <label class="field" for="star-opacity">星の濃さ <output id="star-value">13%</output><input id="star-opacity" type="range" min="0" max="100" value="13"></label>
+        <label class="field" for="surface-color">下地の色<input id="surface-color" type="color" value="#0d0f11"></label>
+        <label class="field" for="surface-opacity">文字面の濃さ <output id="surface-value">59%（透け感41%）</output><input id="surface-opacity" type="range" min="0" max="100" value="59"><small>0%で完全に透明、100%で不透明。枠・星・文字は変えず、下地だけを透かします。</small></label>
+        <label class="field" for="star-opacity">星の濃さ <output id="star-value">26%</output><input id="star-opacity" type="range" min="0" max="100" value="26"></label>
+      </fieldset>
+      <fieldset>
+        <legend>β版シールの貼り位置</legend>
+        <p id="sticker-help" class="note">シールをつかんで移動。フォーカスして矢印キーでも動かせます（Shiftで細かく）。数値は確認画面に対する割合です。</p>
+        <div class="coordinate-fields">
+          <label class="field" for="sticker-x">左から（%）<input id="sticker-x" type="number" min="0" max="81.4453125" step="0.1" value="62.898"></label>
+          <label class="field" for="sticker-y">上から（%）<input id="sticker-y" type="number" min="0" max="90.8854166667" step="0.1" value="10.393"></label>
+        </div>
+        <label class="field" for="sticker-angle">追加の傾き <output id="sticker-angle-value">6°</output><input id="sticker-angle" type="range" min="-180" max="180" step="1" value="6"><small>0°は素材の元の傾き。プラスで時計回り。回転後もシールが画面内に収まるよう位置を補正します。</small></label>
+        <label class="field" for="sticker-angle-number">傾きを数値で指定（°）<input id="sticker-angle-number" type="number" min="-180" max="180" step="1" value="6"></label>
+        <button id="reset-sticker" type="button">シールの位置・傾きを元に戻す</button>
+      </fieldset>
+      <fieldset>
+        <legend>文字のフォント</legend>
+        <label class="field" for="heading-font">見出し「運命予報」<select id="heading-font"><option value="gothic-ui">游ゴシック UI</option><option value="gothic">游ゴシック</option><option value="meiryo">メイリオ</option><option value="mincho">游明朝</option><option value="p-mincho">MS P明朝</option></select></label>
+        <label class="field" id="heading-custom-field" for="heading-custom-font" hidden>見出しのフォント名<input id="heading-custom-font" type="text" maxlength="120" placeholder="例：02うつくし明朝体"><small>PCに入っているフォントのファミリー名を入力します。</small></label>
+        <label class="field" for="fortune-font">小見出し「Fortune」<select id="fortune-font"><option value="georgia">Georgia（これまでの書体）</option><option value="garamond">Garamond</option><option value="book-antiqua">Book Antiqua</option><option value="bahnschrift">Bahnschrift</option><option value="segoe-ui">Segoe UI</option><option value="consolas">Consolas</option><option value="gothic-ui">游ゴシック UI</option><option value="mincho">游明朝</option></select></label>
+        <label class="field" id="fortune-custom-field" for="fortune-custom-font" hidden>Fortuneのフォント名<input id="fortune-custom-font" type="text" maxlength="120" placeholder="例：Garamond"></label>
+        <label class="field" for="body-font">運勢「蛇」と縦書き本文<select id="body-font"><option value="mincho">游明朝</option><option value="p-mincho">MS P明朝</option><option value="gothic">游ゴシック</option><option value="gothic-ui">游ゴシック UI</option><option value="meiryo">メイリオ</option></select></label>
+        <label class="field" id="body-custom-field" for="body-custom-font" hidden>本文のフォント名<input id="body-custom-font" type="text" maxlength="120" placeholder="例：異世明"></label>
+        <p class="note">「PC内で確認したフォント」はこのPCの候補です。ファイルのコピー・アップロードはしません。未導入の端末や、収録されていない文字は代替表示になります。本編に同梱する場合の利用条件は別途確認が必要です。</p>
       </fieldset>
       <label class="field" for="background">確認背景<select id="background"><option value="checker">市松</option><option value="dark">暗い無地</option><option value="light">明るい無地</option></select></label>
+      <fieldset>
+        <legend>設定を残す・渡す</legend>
+        <p class="note">コピーしてチャットに貼るか、JSONをダウンロードして保管してください。保存するのは位置・角度・透け感・フォントなどの設定で、合成画像ではありません。</p>
+        <div class="export-actions"><button id="copy-settings" type="button">設定をコピー</button><button id="download-settings" type="button">JSONを書き出す</button></div>
+        <label class="field" for="settings-json">現在の設定（手動コピーも可能）<textarea id="settings-json" rows="8" readonly spellcheck="false"></textarea></label>
+        <p id="export-status" class="note" role="status">コピーできない環境では、上の設定欄から手動でコピーできます。</p>
+      </fieldset>
       <button id="reset" type="button">初期状態に戻す</button>
+      <p class="note">初期状態は、原作者が選んだ黒い文字面59%・星26%・見出し「ベストテン-CRT」・本文「源界明朝」の試作設定です。保存済みの調整があれば、開いたときはそちらを優先します。</p>
       <p id="asset-warning" class="warning" role="alert" hidden></p>
-      <p class="note">画像生成で分離したため、輪郭は元見本と完全なピクセル一致ではありません。星の位置・縮尺はこのページで仮調整しています。下地は同じSVG輪郭を直接表示するため、file:でも外部マスクを使わず確認できます。</p>
+      <p id="save-status" class="note" role="status">調整はこのブラウザ内に保存されます。素材ファイル自体は変更しません。</p>
+      <p class="note">画像生成で分離したため、輪郭は元見本と完全なピクセル一致ではありません。枠と星は現在の位置・縮尺を固定。下地は同じSVG輪郭を直接表示するため、file:でも外部マスクを使わず確認できます。</p>
       <a href="README.md">素材一覧・生成条件・使い方</a>
     </div>
   </div>
 </main>
 <script>
+  // 原作者から受け取った試作値。正式な本編仕様とは別に、リセットの基準として残す。
+  const previewDefaults = {
+    surfaceColor: '#0d0f11', surfaceOpacity: 59, starOpacity: 26,
+    sticker: { x: 62.89772727272727, y: 10.392992424242424, angle: 6 },
+    headingFont: 'local:ベストテン-CRT', bodyFont: 'local:源界明朝', fortuneFont: 'local:Neko_no_Mezame',
+    background: 'checker'
+  };
   const stage = document.getElementById('stage');
+  const menuEmbedded = document.documentElement.dataset.menuEmbed === 'true';
   const surfaceColor = document.getElementById('surface-color');
   const surfaceOpacity = document.getElementById('surface-opacity');
   const starOpacity = document.getElementById('star-opacity');
+  const sticker = document.getElementById('beta-layer');
+  if (menuEmbedded) { sticker.disabled = true; sticker.tabIndex = -1; }
+  const stickerX = document.getElementById('sticker-x');
+  const stickerY = document.getElementById('sticker-y');
+  const stickerAngle = document.getElementById('sticker-angle');
+  const stickerAngleNumber = document.getElementById('sticker-angle-number');
+  const headingFont = document.getElementById('heading-font');
+  const bodyFont = document.getElementById('body-font');
+  const fortuneFont = document.getElementById('fortune-font');
+  const headingCustomFont = document.getElementById('heading-custom-font');
+  const bodyCustomFont = document.getElementById('body-custom-font');
+  const fortuneCustomFont = document.getElementById('fortune-custom-font');
+  const background = document.getElementById('background');
+  const storageKey = 'fortune-separated-preview-v02';
+  const fontStacks = {
+    'gothic-ui': "'Yu Gothic UI', Meiryo, sans-serif",
+    gothic: "'Yu Gothic', 'Hiragino Kaku Gothic ProN', sans-serif",
+    meiryo: "Meiryo, 'Hiragino Kaku Gothic ProN', sans-serif",
+    mincho: "'Yu Mincho', 'Hiragino Mincho ProN', serif",
+    'p-mincho': "'MS PMincho', 'Yu Mincho', serif",
+    georgia: 'Georgia, serif', garamond: 'Garamond, Georgia, serif', 'book-antiqua': "'Book Antiqua', Georgia, serif",
+    bahnschrift: "Bahnschrift, 'Segoe UI', sans-serif", 'segoe-ui': "'Segoe UI', sans-serif", consolas: 'Consolas, monospace'
+  };
+  // 2026-10-05にWindowsのInstalledFontCollectionで確認。フォント本体は読み出さない。
+  const pcFontFamilies = [
+    '02うつくし明朝体', 'Noto Serif JP', 'Noto Serif JP Light', 'Noto Sans JP', 'Noto Sans JP Light',
+    'BIZ UDP明朝 Medium', 'BIZ UD明朝 Medium', 'BIZ UDPゴシック', 'BIZ UDゴシック',
+    'UD デジタル 教科書体 N', 'UD デジタル 教科書体 NP', 'UD デジタル 教科書体 NK',
+    'HG丸ｺﾞｼｯｸM-PRO', 'HGP明朝B', 'HGP明朝E', 'HGP教科書体', 'HGP行書体', 'HG正楷書体-PRO',
+    'HGP創英角ﾎﾟｯﾌﾟ体', 'HGP創英角ｺﾞｼｯｸUB', 'MS UI Gothic', 'ＭＳ 明朝', 'ＭＳ ゴシック', 'ＭＳ Ｐゴシック',
+    '異世明', '異世ゴ', '源界明朝', '叛逆明朝', 'XANO明朝U32', '青柳隷書SIMO2_T',
+    'しねきゃぷしょん', 'ロンド B スクエア', 'ニコモジ＋v2', 'Neko_no_Mezame',
+    'リングス　オブ　サターン', 'kaimetsufont', 'アームドバナナ', 'ベストテン-CRT', 'ベストテンDOT'
+  ];
+  function cleanFontName(value) {
+    return typeof value === 'string' ? value.replace(/[\x00-\x1f\x7f]/g, '').trim().slice(0, 120) : '';
+  }
+  function localFontStack(family) { return JSON.stringify(family) + ", 'Yu Gothic', Meiryo, sans-serif"; }
+  [headingFont, bodyFont, fortuneFont].forEach(select => {
+    const group = document.createElement('optgroup');
+    group.label = 'PC内で確認したフォント';
+    pcFontFamilies.forEach(family => {
+      const id = 'local:' + family;
+      fontStacks[id] = localFontStack(family);
+      const option = document.createElement('option');
+      option.value = id; option.textContent = family;
+      group.appendChild(option);
+    });
+    select.appendChild(group);
+    const custom = document.createElement('option');
+    custom.value = 'custom'; custom.textContent = 'フォント名を直接指定…'; select.appendChild(custom);
+  });
+  function selectedFont(select, custom, fallback) {
+    if (select.value === 'custom') return cleanFontName(custom.value) ? localFontStack(cleanFontName(custom.value)) : fontStacks[fallback];
+    return Object.hasOwn(fontStacks, select.value) ? fontStacks[select.value] : fontStacks[fallback];
+  }
+  function selectedFamily(select, custom) {
+    if (select.value === 'custom') return cleanFontName(custom.value);
+    return select.value.startsWith('local:') ? select.value.slice(6) : { 'gothic-ui': 'Yu Gothic UI', gothic: 'Yu Gothic', meiryo: 'Meiryo', mincho: 'Yu Mincho', 'p-mincho': 'MS PMincho', georgia: 'Georgia', garamond: 'Garamond', 'book-antiqua': 'Book Antiqua', bahnschrift: 'Bahnschrift', 'segoe-ui': 'Segoe UI', consolas: 'Consolas' }[select.value];
+  }
+  const stickerBounds = { x: 800 / 1024 * 100, y: 20 / 1536 * 100, width: 190 / 1024 * 100, height: 140 / 1536 * 100 };
+  let stickerPosition = { ...previewDefaults.sticker };
+  let drag = null;
+  function clamp(value, min, max, fallback) {
+    if (value === '' || value == null || !Number.isFinite(Number(value))) return fallback;
+    return Math.min(max, Math.max(min, Number(value)));
+  }
+  function storageUnavailable() {
+    document.getElementById('save-status').textContent = 'この環境ではブラウザ保存を使えません。ページを閉じる前に調整値を控えてください。';
+  }
+  function getSettings() {
+    return {
+      schema: 'fortune-separated-preview-settings-v01', referenceResolution: { width: 1024, height: 1536 },
+      surfaceColor: surfaceColor.value, surfaceOpacity: Number(surfaceOpacity.value),
+      starOpacity: Number(starOpacity.value), sticker: { ...stickerPosition, positionUnit: 'percent', angleUnit: 'degrees-relative-to-original' },
+      headingFont: headingFont.value, bodyFont: bodyFont.value, fortuneFont: fortuneFont.value,
+      headingCustomFont: cleanFontName(headingCustomFont.value), bodyCustomFont: cleanFontName(bodyCustomFont.value),
+      fortuneCustomFont: cleanFontName(fortuneCustomFont.value),
+      headingFontFamily: selectedFamily(headingFont, headingCustomFont), bodyFontFamily: selectedFamily(bodyFont, bodyCustomFont),
+      fortuneFontFamily: selectedFamily(fortuneFont, fortuneCustomFont),
+      background: background.value
+    };
+  }
+  function updateExport() { document.getElementById('settings-json').value = JSON.stringify(getSettings(), null, 2); }
+  function saveSettings() {
+    updateExport();
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(getSettings()));
+      document.getElementById('save-status').textContent = '調整をこのブラウザ内に保存しました。素材ファイル自体は変更しません。';
+    } catch { storageUnavailable(); }
+  }
+  function updateSticker(x, y, angle = stickerPosition.angle) {
+    angle = clamp(angle, -180, 180, stickerPosition.angle);
+    const radians = angle * Math.PI / 180;
+    const rotatedWidth = (190 * Math.abs(Math.cos(radians)) + 140 * Math.abs(Math.sin(radians))) / 1024 * 100;
+    const rotatedHeight = (190 * Math.abs(Math.sin(radians)) + 140 * Math.abs(Math.cos(radians))) / 1536 * 100;
+    const minX = (rotatedWidth - stickerBounds.width) / 2;
+    const minY = (rotatedHeight - stickerBounds.height) / 2;
+    const maxX = 100 - stickerBounds.width - minX;
+    const maxY = 100 - stickerBounds.height - minY;
+    stickerPosition = {
+      x: clamp(x, minX, maxX, stickerPosition.x),
+      y: clamp(y, minY, maxY, stickerPosition.y), angle
+    };
+    // transformの割合はシール自身の大きさを基準にする。枠や星のtransformには触れない。
+    stage.style.setProperty('--sticker-offset-x', (stickerPosition.x - stickerBounds.x) / stickerBounds.width * 100 + '%');
+    stage.style.setProperty('--sticker-offset-y', (stickerPosition.y - stickerBounds.y) / stickerBounds.height * 100 + '%');
+    stage.style.setProperty('--sticker-rotation', angle + 'deg');
+    stickerX.min = String(minX); stickerX.max = String(maxX);
+    stickerY.min = String(minY); stickerY.max = String(maxY);
+    stickerX.value = String(Number(stickerPosition.x.toFixed(3)));
+    stickerY.value = String(Number(stickerPosition.y.toFixed(3)));
+    stickerAngle.value = String(angle); stickerAngleNumber.value = String(angle);
+    document.getElementById('sticker-angle-value').textContent = angle + '°';
+    updateExport();
+  }
   function updateMaterial() {
     stage.style.setProperty('--surface-color', surfaceColor.value);
     stage.style.setProperty('--surface-opacity', Number(surfaceOpacity.value) / 100);
     stage.style.setProperty('--star-opacity', Number(starOpacity.value) / 100);
-    document.getElementById('surface-value').textContent = surfaceOpacity.value + '%';
+    stage.style.setProperty('--heading-font', selectedFont(headingFont, headingCustomFont, 'gothic-ui'));
+    stage.style.setProperty('--body-font', selectedFont(bodyFont, bodyCustomFont, 'mincho'));
+    stage.style.setProperty('--fortune-font', selectedFont(fortuneFont, fortuneCustomFont, 'georgia'));
+    document.getElementById('heading-custom-field').hidden = headingFont.value !== 'custom';
+    document.getElementById('body-custom-field').hidden = bodyFont.value !== 'custom';
+    document.getElementById('fortune-custom-field').hidden = fortuneFont.value !== 'custom';
+    document.getElementById('surface-value').textContent = surfaceOpacity.value + '%（透け感' + (100 - Number(surfaceOpacity.value)) + '%）';
     document.getElementById('star-value').textContent = starOpacity.value + '%';
+    updateExport();
   }
   document.querySelectorAll('[data-layer]').forEach(input => {
     input.addEventListener('change', () => { document.getElementById(input.dataset.layer).hidden = !input.checked; });
   });
-  [surfaceColor, surfaceOpacity, starOpacity].forEach(input => input.addEventListener('input', updateMaterial));
-  document.getElementById('background').addEventListener('change', event => { stage.dataset.background = event.target.value; });
+  [surfaceColor, surfaceOpacity, starOpacity].forEach(input => input.addEventListener('input', () => { updateMaterial(); saveSettings(); }));
+  [headingFont, bodyFont, fortuneFont].forEach(input => input.addEventListener('change', () => { updateMaterial(); saveSettings(); }));
+  [headingCustomFont, bodyCustomFont, fortuneCustomFont].forEach(input => input.addEventListener('input', () => { updateMaterial(); saveSettings(); }));
+  background.addEventListener('change', () => { stage.dataset.background = background.value; saveSettings(); });
+  [stickerX, stickerY].forEach(input => input.addEventListener('change', () => { updateSticker(stickerX.value, stickerY.value); saveSettings(); }));
+  stickerAngle.addEventListener('input', () => { updateSticker(stickerPosition.x, stickerPosition.y, stickerAngle.value); saveSettings(); });
+  stickerAngleNumber.addEventListener('change', () => { updateSticker(stickerPosition.x, stickerPosition.y, stickerAngleNumber.value); saveSettings(); });
+  sticker.addEventListener('pointerdown', event => {
+    if (!event.isPrimary || event.button !== 0 || drag) return;
+    event.preventDefault();
+    sticker.focus({ preventScroll: true });
+    drag = { id: event.pointerId, clientX: event.clientX, clientY: event.clientY, x: stickerPosition.x, y: stickerPosition.y };
+    sticker.setPointerCapture(event.pointerId);
+  });
+  sticker.addEventListener('pointermove', event => {
+    if (!drag || event.pointerId !== drag.id) return;
+    const rect = stage.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+    updateSticker(drag.x + (event.clientX - drag.clientX) / rect.width * 100, drag.y + (event.clientY - drag.clientY) / rect.height * 100);
+  });
+  function finishDrag(event) {
+    if (!drag || event.pointerId !== drag.id) return;
+    drag = null;
+    if (sticker.hasPointerCapture(event.pointerId)) sticker.releasePointerCapture(event.pointerId);
+    saveSettings();
+  }
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(name => sticker.addEventListener(name, finishDrag));
+  sticker.addEventListener('keydown', event => {
+    const directions = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+    const direction = directions[event.key];
+    if (!direction) return;
+    event.preventDefault();
+    const step = event.shiftKey ? .1 : 1;
+    updateSticker(stickerPosition.x + direction[0] * step, stickerPosition.y + direction[1] * step);
+    saveSettings();
+  });
+  document.getElementById('reset-sticker').addEventListener('click', () => { updateSticker(previewDefaults.sticker.x, previewDefaults.sticker.y, previewDefaults.sticker.angle); saveSettings(); });
+  document.getElementById('copy-settings').addEventListener('click', async () => {
+    updateExport();
+    const status = document.getElementById('export-status');
+    try {
+      await navigator.clipboard.writeText(document.getElementById('settings-json').value);
+      status.textContent = '設定をコピーしました。このチャットに貼り付けて渡せます。';
+    } catch {
+      const output = document.getElementById('settings-json');
+      output.focus(); output.select();
+      status.textContent = '自動コピーを使えません。選択した設定をCtrl+C（またはコピー操作）でコピーしてください。';
+    }
+  });
+  document.getElementById('download-settings').addEventListener('click', () => {
+    updateExport();
+    const status = document.getElementById('export-status');
+    let url;
+    let link;
+    try {
+      url = URL.createObjectURL(new Blob([document.getElementById('settings-json').value], { type: 'application/json;charset=utf-8' }));
+      link = document.createElement('a');
+      link.href = url; link.download = 'fortune-preview-settings.json';
+      document.body.appendChild(link); link.click();
+      status.textContent = 'JSONのダウンロードを開始しました。ブラウザの保存先を確認してください。';
+    } catch {
+      status.textContent = 'ダウンロードを開始できませんでした。設定欄からコピーして保管してください。';
+    } finally {
+      if (link) link.remove();
+      if (url) setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+  });
   document.querySelectorAll('img').forEach(img => img.addEventListener('error', () => {
     const warning = document.getElementById('asset-warning');
     warning.textContent = '素材を読み込めません。PNGをこのHTMLと同じフォルダに置いてください。';
     warning.hidden = false;
   }));
-  document.getElementById('reset').addEventListener('click', () => {
-    surfaceColor.value = '#10253b'; surfaceOpacity.value = '78'; starOpacity.value = '13';
-    document.getElementById('background').value = 'checker'; stage.dataset.background = 'checker';
-    document.querySelectorAll('[data-layer]').forEach(input => { input.checked = true; document.getElementById(input.dataset.layer).hidden = false; });
+  function applyDefaults() {
+    surfaceColor.value = previewDefaults.surfaceColor; surfaceOpacity.value = String(previewDefaults.surfaceOpacity); starOpacity.value = String(previewDefaults.starOpacity);
+    headingFont.value = previewDefaults.headingFont; bodyFont.value = previewDefaults.bodyFont; fortuneFont.value = previewDefaults.fortuneFont;
+    headingCustomFont.value = ''; bodyCustomFont.value = ''; fortuneCustomFont.value = '';
+    background.value = previewDefaults.background; stage.dataset.background = previewDefaults.background;
+    drag = null;
+    updateSticker(previewDefaults.sticker.x, previewDefaults.sticker.y, previewDefaults.sticker.angle);
     updateMaterial();
+  }
+  document.getElementById('reset').addEventListener('click', () => {
+    applyDefaults();
+    document.querySelectorAll('[data-layer]').forEach(input => { input.checked = true; document.getElementById(input.dataset.layer).hidden = false; });
+    saveSettings();
   });
+  applyDefaults();
+  // file:の保存制限や、古い／壊れた保存値があっても初期状態で操作できる。
+  try {
+    const saved = menuEmbedded ? null : JSON.parse(localStorage.getItem(storageKey) || 'null');
+    if (saved && typeof saved === 'object') {
+      if (/^#[0-9a-f]{6}$/i.test(saved.surfaceColor)) surfaceColor.value = saved.surfaceColor;
+      surfaceOpacity.value = String(clamp(saved.surfaceOpacity, 0, 100, previewDefaults.surfaceOpacity));
+      starOpacity.value = String(clamp(saved.starOpacity, 0, 100, previewDefaults.starOpacity));
+      if (saved.headingFont === 'custom' || Object.hasOwn(fontStacks, saved.headingFont)) headingFont.value = saved.headingFont;
+      if (saved.bodyFont === 'custom' || Object.hasOwn(fontStacks, saved.bodyFont)) bodyFont.value = saved.bodyFont;
+      if (saved.fortuneFont === 'custom' || Object.hasOwn(fontStacks, saved.fortuneFont)) fortuneFont.value = saved.fortuneFont;
+      else if (!Object.hasOwn(saved, 'fortuneFont')) fortuneFont.value = 'georgia';
+      headingCustomFont.value = cleanFontName(saved.headingCustomFont);
+      bodyCustomFont.value = cleanFontName(saved.bodyCustomFont);
+      fortuneCustomFont.value = cleanFontName(saved.fortuneCustomFont);
+      if (['checker', 'dark', 'light'].includes(saved.background)) background.value = saved.background;
+      if (saved.sticker && typeof saved.sticker === 'object') updateSticker(saved.sticker.x, saved.sticker.y, saved.sticker.angle == null ? 0 : saved.sticker.angle);
+    }
+  } catch {
+    document.getElementById('save-status').textContent = '保存した調整を読み込めなかったため、初期状態で開きました。保存できない環境では、閉じる前に調整値を控えてください。';
+  }
+  stage.dataset.background = background.value;
+  updateSticker(stickerPosition.x, stickerPosition.y);
   updateMaterial();
 </script>
 </body>
