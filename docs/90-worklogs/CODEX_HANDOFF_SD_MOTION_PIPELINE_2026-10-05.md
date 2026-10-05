@@ -79,3 +79,15 @@
 
 - 本編（`game.js` など）と `unity-prototype/` は、方式が決まるまで変えない。
 - メニュー画面の UI は Codex の別の担当で進行中（総合担当は触らない）。
+
+## 8. 素材の置き場所（原作者 2026-10-06）
+
+| 物 | フォルダ |
+|---|---|
+| 兵種の衣装つきの身体 | `立ち絵透過下処理/兵種衣装/`（兵種・案ごとのフォルダ。例 `line_low_child_a/`・`braver_child_b/`） |
+| 合成用の SD の頭部（切り抜き） | `立ち絵透過下処理/SD頭部/` |
+| 武器（ChatGPT Work の汎用武器など） | `立ち絵透過下処理/武器/`（例 `orcus_mid_high_8_weapons/`・`alstro_mid_high_8_weapons/`・`plain_low_spear_bow/`） |
+
+- `立ち絵透過下処理/` は Git に入らない（`.gitignore`）。試作のページ（`prototypes/sd-battle-motion/shared-body/`）で使う物は、`assets/` へ写して登録する（写すときは元を変えない）。
+- 新しい兵種の衣装を試作のページで選べるようにするには、`fit-core.js` の身体の表と `preset-core.js` の兵種の登録に足す。
+
