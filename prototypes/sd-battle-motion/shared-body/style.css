@@ -132,3 +132,17 @@ footer a { color: #546e62; text-decoration: none; }
 .palette-left .hue-wheel::before { inset: 16px; }
 .palette-left .hue-wheel span { left: 42px; top: 42px; transform: rotate(var(--angle,145deg)) translateX(39px); }
 #outfits-panel { margin-top: 20px; }
+/* 2026-10-06: 操作しながら変化が見えるように（原作者「下にスクロールしないといけないんじゃ、変化を見ながら作業できない」）。
+   左の操作欄と右の画面を別々にスクロールし、右の上（いま表示している見た目・合わせる画面）は画面に残す */
+main { padding-top: 14px; padding-bottom: 10px; }
+header { padding-bottom: 12px; }
+header h1 { font-size: 20px; margin: 2px 0 4px; }
+.workspace { height: calc(100vh - 118px); min-height: 520px; padding: 14px 0 0; align-items: stretch; }
+.workspace > aside { overflow-y: auto; overscroll-behavior: contain; padding-bottom: 40px; }
+.workspace > .preview, .workspace > .preview.outfit-mode { position: relative; top: 0; overflow-y: auto; overscroll-behavior: contain; padding-right: 6px; }
+.now-showing { margin-bottom: 10px; padding: 8px 14px; }
+.preview .stage-top h2 { font-size: 15px; }
+#stage { margin-top: 8px; }
+/* 合わせる画面は、右の欄の高さに収める（縦が足りなくても全身が見える） */
+#fitting { width: auto; max-width: 100%; max-height: calc(100vh - 330px); min-height: 260px; margin: 0 auto; }
+@media(max-height:700px) { .workspace { height: calc(100vh - 100px); } #fitting { max-height: calc(100vh - 290px); } }
