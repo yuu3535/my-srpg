@@ -219,6 +219,17 @@ async function main() {
   assert.equal(failedOutfit.elements.controls.disabled, true); assert.equal(failedOutfit.elements.error.hidden, false);
   failedOutfit.setFailed(null); failedOutfit.elements.retry.click(); await settle();
   assert.equal(failedOutfit.elements.controls.disabled, false);
-  console.log('PASS: UI (now-showing source, outfits/palette/seams, record revisions, reload/recall, JSON v5, single JSON appearance recall, multi JSON selection, deduplicated import, invalid JSON atomicity, quota fallback, corrupt storage preservation, loading error/retry).');
+  if (core.outfitsOfClass('戦列攻撃上級').length) {
+    // 取り込んだ兵種の衣装（import_outfits.py）: 兵種を選ぶとその衣装に替わり、その兵種で記録できる
+    const brave=harness(); await settle();
+    brave.elements['class-id'].value='戦列攻撃上級'; brave.elements['class-id'].handlers.change();
+    const first=core.outfitsOfClass('戦列攻撃上級')[0];
+    assert.ok(brave.draws.some(d=>d.canvas==='fitting' && d.file===`assets/${core.bodies[first].file}`),'取り込んだ衣装を表示');
+    assert.equal(brave.elements['record-save'].disabled,false);
+    brave.elements['record-save'].click();
+    const saved=JSON.parse(brave.storage.get(presets.STORAGE_KEY)).records[0];
+    assert.equal(saved.classId,'戦列攻撃上級'); assert.equal(saved.appearance.templateId,first); assert.equal(saved.appearance.palette,null);
+  }
+  console.log('PASS: UI (imported class outfits, now-showing source, outfits/palette/seams, record revisions, reload/recall, JSON v5, single JSON appearance recall, multi JSON selection, deduplicated import, invalid JSON atomicity, quota fallback, corrupt storage preservation, loading error/retry).');
 }
 main().catch(error => { console.error(error); process.exitCode = 1; });

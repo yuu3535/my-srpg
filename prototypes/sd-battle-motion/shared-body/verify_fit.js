@@ -117,4 +117,11 @@ for (const key of core.outfitKeys) {
     assert.deepEqual(core.referenceFit(key, head), core.referenceFit('lineA1', head), '3案は同じ元SD基準');
   }
 }
-console.log(`PASS: ${cases} fitting cases, ${referenceCases} reference cases, ${assets.length} asset sizes, 11 immutable input copies; 3 equal outfit baselines`);
+for (const outfit of core.registry) {
+  if (!core.bodies[outfit.key]) continue;
+  assert.equal(hashFile(path.join(__dirname, 'assets', outfit.file)), outfit.sha256, '取り込んだ衣装は元の絵と同じ中身');
+  const original = path.join(project, outfit.source);
+  if (fs.existsSync(original)) assert.equal(hashFile(original), outfit.sha256);
+  assert.ok(core.outfitsOfClass(outfit.classId).includes(outfit.key));
+}
+console.log(`PASS: ${cases} fitting cases, ${referenceCases} reference cases, ${assets.length} asset sizes, 11 immutable input copies; ${core.outfitKeys.length} outfits with equal baselines (${core.registry.length} imported)`);

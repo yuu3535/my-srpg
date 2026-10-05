@@ -7,7 +7,7 @@
   // abilityData.jsのclassLinesとcharacters.jsの子供IDに対応。兵種の採用変更ではない。
   const classIds = ['戦列下級','戦列攻撃上級','戦列防御上級','術下級','術軍師上級','術魔法上級','騎兵下級','騎馬上級','飛行上級','隠密下級','隠密暗殺上級','隠密遊撃上級'];
   const characters = { arshe: 'young_arshe', karima: 'young_karima' };
-  const templates = Object.fromEntries(fit.outfitKeys.map(id => [id,{classId:'戦列下級',bodyType:'child'}]));
+  const templates = Object.fromEntries(fit.outfitKeys.map(id => [id,{classId:fit.bodies[id].classId,bodyType:fit.bodies[id].bodyType}]));   // 兵種の衣装ごと（取り込んだ衣装も）
   const copy = value => JSON.parse(JSON.stringify(value));
   const empty = () => ({ format: FORMAT, version: VERSION, state:'試作対象', records:[] });
   const fail = message => { throw new Error(message); };

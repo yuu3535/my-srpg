@@ -31,7 +31,19 @@
     arshe: { file: 'arshe_source_sd.png', size: [1254,1254], bounds: [313,60,931,1207] },
     karima: { file: 'karima_source_sd.png', size: [1254,1254], bounds: [349,51,907,1211] }
   };
-  const outfitKeys = ['lineA1', 'lineA2', 'lineA3'];
+  // 兵種の衣装: 戦列下級 A1〜A3（前から登録・首マスクと配色つき）と、import_outfits.py が取り込んだ衣装（outfit-registry.js）。
+  // 取り込んだ衣装は同じ子供素体から作っているので、首・足元・全高は A1 と同じ基準を使う（頭の合わせ方が衣装で変わらない）
+  for (const key of ['lineA1', 'lineA2', 'lineA3']) Object.assign(bodies[key], { classId: '戦列下級', bodyType: 'child', variant: key.slice(4) });
+  const registry = (typeof module !== 'undefined' ? (() => { try { return require('./outfit-registry.js'); } catch { return []; } })() : root.SharedBodyOutfits) || [];
+  const anchors = { child: bodies.lineA1 };
+  for (const o of registry) {
+    const base = anchors[o.bodyType];
+    if (!base || bodies[o.key]) continue;   // 大人の素体の基準はまだない
+    bodies[o.key] = { label: o.label, file: o.file, size: o.size, bounds: o.bounds, visibleHeight: base.visibleHeight, neck: [...base.neck], foot: [...base.foot], grip: [...base.grip],
+      height: base.height, ratio: base.ratio, weaponReady: false, extracted: true, classId: o.classId, bodyType: o.bodyType, variant: o.variant, source: o.source, sha256: o.sha256 };
+  }
+  const outfitKeys = Object.keys(bodies).filter(key => bodies[key].classId);
+  const outfitsOfClass = classId => outfitKeys.filter(key => bodies[key].classId === classId);
   const headKeys = bodyKey => Object.keys(bodies[bodyKey]?.extracted ? extractedHeads : heads);
   const headAsset = (bodyKey, headKey) => (bodies[bodyKey]?.extracted ? extractedHeads : heads)[headKey];
   const originalAsset = (bodyKey, headKey) => (bodies[bodyKey]?.extracted ? extractedOriginals : originals)[headKey];
@@ -74,7 +86,7 @@
     const scale = baselineHeight / (bottom - top) * a.scale * zoom;
     return { position: [foot[0] + a.x * zoom - (left + right) / 2 * scale, foot[1] + a.y * zoom - bottom * scale], scale, baselineHeight };
   }
-  const api = { bodies, heads, sword, originals, extractedHeads, extractedOriginals, seamMasks, paletteMask, outfitKeys, headKeys, headAsset, originalAsset, allAssets, defaults, fit, referenceFit, characterHeight };
+  const api = { bodies, heads, sword, originals, extractedHeads, extractedOriginals, seamMasks, paletteMask, outfitKeys, outfitsOfClass, registry, headKeys, headAsset, originalAsset, allAssets, defaults, fit, referenceFit, characterHeight };
   if (typeof module !== 'undefined') module.exports = api;
   else root.SharedBodyFit = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

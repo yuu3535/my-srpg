@@ -14,6 +14,16 @@
   let paletteSource, paletteLabels, paletteKeep, lastPngUrl;
   let bodyKey = 'lineA1', ready = false, dark = false;
   let library = presets.empty(), storageDamaged = false;
+  // 兵種の衣装のボタン（登録された衣装から作る。取り込んだ衣装も）。選んだ兵種の物だけ見せる
+  const outfitShort = { lineA1: '半袖', lineA2: '肘丈', lineA3: '長袖' };
+  for (const key of core.outfitKeys) {
+    const button = document.createElement('button');
+    button.type = 'button'; button.dataset.body = key; button.setAttribute('aria-pressed', String(key === 'lineA1'));
+    button.textContent = core.bodies[key].variant;
+    if (outfitShort[key]) { const span = document.createElement('span'); span.textContent = outfitShort[key]; button.appendChild(span); }
+    $('outfit-tabs').appendChild(button);
+  }
+  const classOutfits = () => core.outfitsOfClass($('class-id').value);
   // いま表示している見た目の出どころ（原作者 2026-10-06: どの設定を表示しているか分かるように）。
   // edit＝記録していない編集中 / record＝記録（from: save・list・json）/ workspace＝作業全体JSONから戻した値。edited＝呼び出したあとに変えた
   let shown = { kind: 'edit' };
@@ -27,7 +37,7 @@
   function renderNow() {
     if (!ready) return;
     const char = $('character').value, label = core.heads[char]?.label || char;
-    const fullLabel = core.bodies[bodyKey].label, outfit = /A\d/.test(fullLabel) ? '衣装' + fullLabel.slice(fullLabel.search(/A\d/)) : fullLabel;
+    const variant = core.bodies[bodyKey].variant, outfit = variant ? `衣装${variant}${outfitShort[bodyKey] ? ' / ' + outfitShort[bodyKey] : ''}` : core.bodies[bodyKey].label;
     const record = shown.kind === 'record' ? library.records.find(r => r.id === shown.id) : null;
     let title;
     if (record) {
@@ -73,7 +83,10 @@
     $('pair-names').classList.toggle('single', !$('side-by-side').checked);
     document.querySelectorAll('[data-body]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.body === bodyKey)));
     document.querySelectorAll('.names span').forEach((label, i) => { label.hidden = !available.includes(keys[i]); label.classList.toggle('selected', keys[i] === $('character').value); });
-    core.outfitKeys.forEach(key => $('caption-' + key).classList.toggle('selected', key === bodyKey));
+    const shown = classOutfits();
+    $('outfit-captions').replaceChildren(...shown.map(key => { const span = document.createElement('span'); span.textContent = core.bodies[key].variant + (outfitShort[key] ? ` / ${outfitShort[key]}` : ''); span.classList.toggle('selected', key === bodyKey); return span; }));
+    $('outfit-captions').style.gridTemplateColumns = `repeat(${Math.max(1, shown.length)},1fr)`;
+    document.querySelectorAll('[data-body]').forEach(button => { if (core.bodies[button.dataset.body].classId) button.hidden = core.bodies[button.dataset.body].classId !== $('class-id').value; });
     syncPalette();
     syncRecordControls();
     draw();
@@ -82,7 +95,7 @@
     const template=presets.templates[bodyKey], character=$('character').value;
     const supported=ready && template?.classId===$('class-id').value && !!presets.characters[character];
     $('record-save').disabled=!supported;
-    $('record-context').textContent=supported ? `記録する組み合わせ：${core.heads[character].label} / ${template.classId} / 子供 / 衣装${bodyKey.replace('line','')}` : 'この組み合わせは記録できません。STEP 1 で衣装A1〜A3と、衣装素材のある兵種を選んでください。';
+    $('record-context').textContent=supported ? `記録する組み合わせ：${core.heads[character].label} / ${template.classId} / 子供 / 衣装${core.bodies[bodyKey].variant}` : 'この組み合わせは記録できません。STEP 1 で衣装A1〜A3と、衣装素材のある兵種を選んでください。';
     $('record-load').disabled=!ready || !library.records.length;
   }
   function refreshRecords() {
@@ -95,7 +108,7 @@
       const char=Object.keys(presets.characters).find(key=>presets.characters[key]===record.characterId);
       const newest=latestByKey.get(presets.key(record)).id===record.id;
       const marks=(importedFrom.has(record.id) ? ' · JSONから' : '')+(shown.kind==='record' && shown.id===record.id ? ' ◀ 表示中' : '');
-      option.textContent=`${core.heads[char].label} / ${record.classId} / 子供 / ${record.appearance.templateId.replace('line','')} / 履歴${record.revision}${newest ? '（最新）' : ''} — ${record.name}${marks}`;
+      option.textContent=`${core.heads[char].label} / ${record.classId} / 子供 / ${core.bodies[record.appearance.templateId].variant} / 履歴${record.revision}${newest ? '（最新）' : ''} — ${record.name}${marks}`;
       return option;
     });
     if (!options.length) { const option=document.createElement('option');option.value='';option.textContent='記録なし';options.push(option); }
@@ -280,7 +293,8 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.strokeStyle = dark ? '#60776a' : '#c5d3cb'; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(20,360.5); ctx.lineTo(880,360.5); ctx.stroke();
-      core.outfitKeys.forEach((key, i) => character(ctx, $('character').value, [150 + i * 300, 360], 1, key));
+      const keysToShow = classOutfits(), step = canvas.width / Math.max(1, keysToShow.length);
+      keysToShow.forEach((key, i) => character(ctx, $('character').value, [step * (i + .5), 360], 1, key));
     }
     $('palette-panel').hidden = !core.bodies[bodyKey].extracted;   // 以前の身体試作では配色の欄を隠す
     if (core.bodies[bodyKey].extracted) {
@@ -336,11 +350,16 @@
       $('status').textContent = '読み込みエラー · 再試行できます';
     }
   }
-  document.querySelectorAll('[data-body]').forEach(button => button.addEventListener('click', () => { bodyKey = button.dataset.body; sync(); markEdited(true); }));
+  document.querySelectorAll('[data-body]').forEach(button => button.addEventListener('click', () => { bodyKey = button.dataset.body; if (core.bodies[bodyKey].classId) $('class-id').value = core.bodies[bodyKey].classId; sync(); markEdited(true); }));
   $('character').addEventListener('change', () => { $('record-name').value='';sync(); markEdited(true); });
-  $('class-id').addEventListener('change',syncRecordControls);
+  $('class-id').addEventListener('change',()=>{
+    const first=classOutfits()[0];
+    if (first && core.bodies[bodyKey].classId!==$('class-id').value) bodyKey=first;
+    $('record-name').value=''; sync(); markEdited(true);
+  });
   for (const classId of presets.classIds.filter(id=>id!=='戦列下級')) {
-    const option=document.createElement('option'); option.value=classId;option.textContent=classId+'（衣装素材未登録）';option.disabled=true;$('class-id').appendChild(option);
+    const has=core.outfitsOfClass(classId).length>0;
+    const option=document.createElement('option'); option.value=classId;option.textContent=has ? `${classId}（衣装${core.outfitsOfClass(classId).length}案）` : classId+'（衣装素材未登録）';option.disabled=!has;$('class-id').appendChild(option);
   }
   $('record-save').addEventListener('click',()=>{
     if (!ready || $('record-save').disabled) return;
@@ -419,7 +438,7 @@
   ['overlay','silhouette','side-by-side'].forEach(id => $(id).addEventListener('change', sync));
   $('reference-reset').addEventListener('click', () => { referenceProfiles[bodyKey][$('character').value] = core.defaults(); sync(); });
   $('reset').addEventListener('click', () => { profiles[bodyKey][$('character').value] = core.defaults(); sync(); markEdited(); });
-  $('match-outfits').addEventListener('click', () => { const a = { ...current() }; core.outfitKeys.forEach(key => { profiles[key][$('character').value] = { ...a }; }); sync(); markEdited(); });
+  $('match-outfits').addEventListener('click', () => { const a = { ...current() }; classOutfits().forEach(key => { profiles[key][$('character').value] = { ...a }; }); sync(); markEdited(); });
   $('weapon').addEventListener('change', () => { weaponSettings[bodyKey] = $('weapon').checked; draw(); });
   ['guides','mirror'].forEach(id => $(id).addEventListener('change', draw));
   $('seam').addEventListener('change', () => { draw(); markEdited(); });   // 首の接合は記録に入る

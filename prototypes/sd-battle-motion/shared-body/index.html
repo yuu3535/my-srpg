@@ -26,8 +26,8 @@
           <label for="character">キャラ</label><select id="character"><option value="arshe">アルシェ</option><option value="karima">カリマ</option><option id="gunter-option" value="gunter" disabled>ギュンター（旧試作のみ）</option></select>
           <label for="class-id">汎用兵種</label><select id="class-id"><option value="戦列下級">戦列下級</option></select>
           <p class="label-line">衣装案</p>
-          <div class="body-switch outfit-tabs"><button type="button" data-body="lineA1" aria-pressed="true">A1<span>半袖</span></button><button type="button" data-body="lineA2" aria-pressed="false">A2<span>肘丈</span></button><button type="button" data-body="lineA3" aria-pressed="false">A3<span>長袖</span></button></div>
-          <p class="helper">体型：子供。A1〜A3は同じ兵種の中の衣装の候補です。</p>
+          <div id="outfit-tabs" class="body-switch outfit-tabs"></div>
+          <p class="helper">体型：子供。兵種を選ぶと、その兵種の衣装の候補が並びます。新しい衣装は <code>立ち絵透過下処理/兵種衣装/</code> に置いて取り込みます（README）。</p>
           <details><summary>以前の身体試作（記録はできません）</summary><div class="body-switch"><button type="button" data-body="providedChild" aria-pressed="false">提供：子供素体<span>旧生成頭との比率比較</span></button><button type="button" data-body="child" aria-pressed="false">前の幼め試作<span>2.5頭身目安 / 旧生成頭</span></button><button type="button" data-body="standard" aria-pressed="false">標準<span>3頭身目安 / 旧生成頭</span></button></div></details>
         </section>
 
@@ -125,9 +125,9 @@
       <div class="pair-names" id="pair-names"><span id="fitting-label">アルシェ / 合成のみ</span><span id="pair-right">元SD / 同じ全高基準</span></div>
       <div class="extras">
         <details id="outfits-panel" class="all-characters">
-          <summary>3案を並べて見る</summary>
+          <summary>この兵種の衣装を並べて見る</summary>
           <div class="stage"><div class="outfits-loading" role="status"><span></span><span></span><span></span><p>衣装と元頭部を読み込んでいます</p></div><canvas id="outfits" width="900" height="400" aria-label="選択したキャラの元頭部と衣装A1・A2・A3の全身比較"></canvas></div>
-          <div class="outfit-captions"><span id="caption-lineA1">A1 / 半袖</span><span id="caption-lineA2">A2 / 肘丈</span><span id="caption-lineA3">A3 / 長袖</span></div>
+          <div id="outfit-captions" class="outfit-captions"></div>
         </details>
         <details class="all-characters"><summary id="characters-summary">2人を同じ衣装で比較</summary><div class="stage secondary-stage"><canvas id="comparison" width="840" height="420" aria-label="同じ衣装とキャラごとの頭部の比較"></canvas></div><div class="names"><span>アルシェ</span><span>カリマ</span><span>ギュンター</span></div></details>
         <details class="all-characters"><summary>70pxで見る（盤面の大きさ）</summary><canvas id="mini" width="380" height="100" aria-label="頭を含む全高約70pxでのキャラ比較"></canvas></details>
@@ -139,6 +139,6 @@
       <footer><span id="status" role="status" aria-live="polite">準備中</span><a href="../">以前のモーション試作</a><a href="README.md">試作の範囲・素材の記録</a></footer>
     </section>
   </main>
-  <script src="fit-core.js?v=20261006-9"></script><script src="pixel-core.js?v=20261006-9"></script><script src="preset-core.js?v=20261006-9"></script><script src="app.js?v=20261006-9"></script>
+  <script src="outfit-registry.js?v=20261006-10"></script><script src="fit-core.js?v=20261006-9"></script><script src="pixel-core.js?v=20261006-9"></script><script src="preset-core.js?v=20261006-9"></script><script src="app.js?v=20261006-9"></script>
 </body>
 </html>
