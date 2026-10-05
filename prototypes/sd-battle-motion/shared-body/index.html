@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>共通身体フィッティング / SD戦闘試作</title>
-  <link rel="stylesheet" href="style.css?v=20261005-3">
+  <link rel="stylesheet" href="style.css?v=20261006-4">
 </head>
 <body>
   <main>
     <header>
-      <div><p class="eyebrow">SD BATTLE / BODY TEMPLATE STUDY</p><h1>身体を共有する。個性は残す。</h1><p class="intro">同じ身体に3人の頭を重ねる、静止フィッティングの試作。</p></div>
+      <div><p class="eyebrow">SD BATTLE / BODY TEMPLATE STUDY</p><h1>元の頭で、衣装を比べる。</h1><p class="intro">戦列下級・子供の衣装3案 × アルシェ／カリマ。配色は仮、静止・武器なしの比較。</p></div>
       <span class="trial">試作対象 · 未採用</span>
     </header>
     <div class="workspace">
@@ -16,41 +16,88 @@
         <p class="section-number">01 / 身体の系統</p>
         <fieldset id="controls" disabled>
           <legend class="sr-only">フィッティング操作</legend>
-          <div class="body-switch"><button type="button" data-body="providedChild" aria-pressed="true">提供：子供素体<span>今回の素材 / 頭身のバランスを確認</span></button><button type="button" data-body="child" aria-pressed="false">前の幼め試作<span>2.5頭身目安 / 比較用に残す</span></button><button type="button" data-body="standard" aria-pressed="false">標準<span>3頭身目安 / 長ズボン</span></button></div>
+          <div class="body-switch"><button type="button" data-body="lineA1" aria-pressed="true">A1 · 半袖<span>前面1枚の腰布 / 丸い胸当て下辺</span></button><button type="button" data-body="lineA2" aria-pressed="false">A2 · 肘丈<span>左右2枚の腰布 / 台形の胸当て</span></button><button type="button" data-body="lineA3" aria-pressed="false">A3 · 長袖<span>尖り腰布 / 五角形の胸当て</span></button></div>
+          <details><summary>以前の身体試作を開く</summary><div class="body-switch"><button type="button" data-body="providedChild" aria-pressed="false">提供：子供素体<span>旧生成頭との比率比較</span></button><button type="button" data-body="child" aria-pressed="false">前の幼め試作<span>2.5頭身目安 / 旧生成頭</span></button><button type="button" data-body="standard" aria-pressed="false">標準<span>3頭身目安 / 旧生成頭</span></button></div></details>
           <p class="helper">身体は一枚絵のまま。腕や脚は分割しません。頭身は髪を含む見た目の目安です。</p>
           <p class="section-number second">02 / キャラごとの合わせ</p>
-          <label for="character">調整するキャラ</label><select id="character"><option value="arshe">アルシェ</option><option value="karima">カリマ</option><option value="gunter">ギュンター</option></select>
+          <label for="character">調整するキャラ</label><select id="character"><option value="arshe">アルシェ</option><option value="karima">カリマ</option><option id="gunter-option" value="gunter" disabled>ギュンター（旧試作のみ）</option></select>
+          <label for="class-id">記録する汎用兵種</label><select id="class-id"><option value="戦列下級">戦列下級</option></select>
+          <p class="helper">体型：子供。衣装素材が登録済みの兵種だけ保存できます。A1〜A3は衣装案で、別兵種ではありません。</p>
+          <p id="head-source" class="helper">元SDから切り出した頭部。髪・色・顔を再生成していません。</p>
           <div class="slider-label"><label for="head-scale">頭の大きさ</label><output id="scale-value" for="head-scale">100%</output></div><input id="head-scale" type="range" min="0.8" max="1.2" step="0.01" value="1">
           <div class="slider-label"><label for="head-x">首合わせ · 左右</label><output id="x-value" for="head-x">0px</output></div><input id="head-x" type="range" min="-18" max="18" step="1" value="0">
           <div class="slider-label"><label for="head-y">首合わせ · 上下</label><output id="y-value" for="head-y">0px</output></div><input id="head-y" type="range" min="-12" max="12" step="1" value="0">
           <button type="button" id="reset" class="quiet">このキャラの調整を戻す</button>
+          <button type="button" id="match-outfits" class="quiet">この頭の調整を3案へ揃える</button>
+          <div class="checks"><label><input type="checkbox" id="seam" checked> 首の接合マスクを使う</label></div><p class="helper">元PNGはそのまま。接合部の線だけを表示用マスクで隠します。OFFで修正前と比較できます。</p>
           <div class="checks"><label><input type="checkbox" id="weapon"> 剣を静止合成</label><label><input type="checkbox" id="guides"> 首・握り位置のガイド</label><label><input type="checkbox" id="mirror"> 左向きに反転</label></div>
-          <p id="weapon-note" class="helper">提供素体はまず武器なしで比較します。武器の握り姿勢は未作成です。</p>
+          <p id="weapon-note" class="helper">下げた手の静止姿勢なので、武器はまだ持たせません。今回は頭・衣装・首のつながりを確認します。</p>
           <p class="section-number second">03 / 元SDとの比較</p>
           <div class="checks reference-checks"><label><input type="checkbox" id="overlay" checked> 元SDを透かして重ねる</label><label><input type="checkbox" id="silhouette"> 重ねる元SDを単色シルエットに</label></div>
           <div class="slider-label"><label for="reference-opacity">元SDの不透明度</label><output id="opacity-value" for="reference-opacity">35%</output></div><input id="reference-opacity" type="range" min="0" max="100" step="1" value="35">
           <div class="slider-label"><label for="reference-scale">元SDの大きさ</label><output id="reference-scale-value" for="reference-scale">100%</output></div><input id="reference-scale" type="range" min="0.75" max="1.25" step="0.01" value="1">
-          <div class="slider-label"><label for="reference-x">重ね位置 · 左右</label><output id="reference-x-value" for="reference-x">0px</output></div><input id="reference-x" type="range" min="-60" max="60" step="1" value="0">
+          <div class="slider-label"><label for="reference-x">重ね位置 · 左右</label><output id="reference-x-value" for="reference-x">0px</output></div><input id="reference-x" type="range" min="-120" max="120" step="1" value="0">
           <div class="slider-label"><label for="reference-y">重ね位置 · 上下</label><output id="reference-y-value" for="reference-y">0px</output></div><input id="reference-y" type="range" min="-50" max="50" step="1" value="0">
           <button type="button" id="reference-reset" class="quiet">元SDの大きさ・位置を戻す</button>
           <p class="helper">元SDは初期合成の全高・足元に合わせています。頭を調整しても元SDは追従しません。ポーズ・服・武器の違いは残ります。</p>
-          <button type="button" id="save" class="save">調整データを保存</button><p class="helper">身体の系統ごとに調整値を保持。保存はJSONです。再読込すると初期値に戻ります。</p>
+          <p class="section-number second">04 / キャラ × 兵種の記録</p>
+          <p id="record-context" class="helper"></p>
+          <label for="record-name">記録名（任意）</label><input id="record-name" type="text" maxlength="80" placeholder="空欄ならキャラ・兵種名">
+          <button type="button" id="record-save" class="save">このキャラ×兵種の設定を記録</button>
+          <p id="record-message" class="helper" role="status" aria-live="polite">ブラウザ内に保存します。更新前の記録も履歴として残ります。</p>
+          <button type="button" id="save" class="quiet">作業全体JSONをバックアップ</button><p class="helper">頭・配色・比較調整と記録一覧をJSONへ書き出します。保存した記録は右の一覧から呼び出せます。</p>
           <details id="export-panel" hidden><summary>書き出したJSON</summary><label for="export-json">保存できない場合はここからコピー</label><textarea id="export-json" readonly spellcheck="false"></textarea></details>
         </fieldset>
       </aside>
       <section class="preview" aria-label="共通身体の比較">
-        <div class="stage-top"><div><p class="section-number">REFERENCE FIT / <span id="reference-character">アルシェ</span></p><h2 id="body-title">提供された子供素体 / 比率確認中</h2></div><button type="button" id="background" disabled>背景を濃色に</button></div>
-        <div id="stage" class="stage"><div id="loading" class="loading" role="status"><span></span><span></span><p>素材を読み込んでいます</p></div><canvas id="fitting" width="840" height="520" aria-label="左に調整中の合成と透かした元SD、右に元SDを並べた全身比較"></canvas><div id="error" hidden role="alert"><p></p><button type="button" id="retry">読み込みを再試行</button></div></div>
+        <section id="outfits-panel" aria-label="同じキャラで衣装3案を比較">
+          <p class="section-number">OUTFIT STUDY / A1 · A2 · A3</p><h2>同じ頭で、3案を並べる。</h2>
+          <div class="stage"><div class="outfits-loading" role="status"><span></span><span></span><span></span><p>衣装と元頭部を読み込んでいます</p></div><canvas id="outfits" width="900" height="400" aria-label="選択したキャラの元頭部と衣装A1・A2・A3の全身比較"></canvas></div>
+          <div class="outfit-captions"><span id="caption-lineA1">A1 / 半袖</span><span id="caption-lineA2">A2 / 肘丈</span><span id="caption-lineA3">A3 / 長袖</span></div>
+          <p class="helper">身体の表示倍率・足元は3案で共通。選んだ衣装の頭を左で調整します。「3案へ揃える」で同じ頭サイズ・首位置を各案へコピーできます。</p>
+        </section>
+        <section id="record-panel" aria-label="保存したキャラと兵種の記録">
+          <p class="section-number">APPEARANCE RECORDS / CHARACTER × CLASS</p><h2>記録して、呼び出す。</h2>
+          <p id="record-count" class="helper">まだ記録がありません。左の記録ボタンで、現在の衣装・配色・頭合わせを保存してください。</p>
+          <label for="record-list">保存済みの外見（過去の履歴も選べます）</label><select id="record-list"><option value="">記録なし</option></select>
+          <div class="record-actions"><button type="button" id="record-load" disabled>選択した記録を呼び出す</button><button type="button" id="record-backup">記録一覧JSONをバックアップ</button></div>
+          <p class="helper">ブラウザ内保存はこのURL・ブラウザに限られます。別PCへの共有・本編への受け渡しにはJSONを保存してください。記録は試作対象で、ゲームにはまだ接続していません。</p>
+          <details><summary>JSONから記録・作業設定を読み込む</summary><label for="record-import-file">JSONファイルを選ぶ</label><input id="record-import-file" type="file" accept=".json,application/json"><label for="record-import-text">またはJSON全文を貼り付け</label><textarea id="record-import-text" spellcheck="false"></textarea><button type="button" id="record-import">貼り付けたJSONを読み込む</button><p class="helper">一覧JSONは既存記録へ追加。作業JSON v3/v4/v5は調整も復元します。外部の素材パスやコードは読み込みません。</p></details>
+          <p id="record-import-message" class="helper" role="status" aria-live="polite"></p>
+          <details id="record-export-panel" hidden><summary>記録一覧JSON（保存できない場合はコピー）</summary><label for="record-export-text">バックアップ用JSON全文</label><textarea id="record-export-text" readonly spellcheck="false"></textarea></details>
+          <details id="storage-recovery" hidden><summary>読み取れなかった保存内容（保全用）</summary><label for="storage-recovery-text">元の内容は上書きしません。必要ならコピーして保管してください</label><textarea id="storage-recovery-text" readonly spellcheck="false"></textarea></details>
+        </section>
+        <section id="palette-panel" aria-label="A1の配色試作">
+          <p class="section-number">PALETTE STUDY / A1 ONLY</p><h2 id="palette-preview-label">アルシェのA1配色</h2>
+          <p id="palette-note" class="helper">A1だけの試作。キャラごとに配色を保持します。肌・頭・濃い線・バックルは元色です。</p>
+          <div class="palette-layout">
+            <fieldset id="palette-controls" disabled>
+              <legend class="sr-only">A1の配色操作</legend>
+              <label for="material">色を変えるパーツ</label><select id="material"><option value="cloth_tunic">上衣</option><option value="cloth_trousers">ズボン</option><option value="cloth_waist">腰布</option><option value="leather">革装備</option><option value="armor">防具</option></select>
+              <div class="checks"><label><input type="checkbox" id="color-enabled"> このパーツを色替えする</label></div>
+              <div class="wheel-row"><div id="hue-wheel" class="hue-wheel" role="slider" tabindex="0" aria-label="色相環" aria-valuemin="0" aria-valuemax="359" aria-valuenow="145" aria-disabled="true"><span id="hue-marker"></span></div><div><span id="color-swatch" class="color-swatch"></span><p class="helper">環をクリック・ドラッグ<br>矢印キーでも調整</p></div></div>
+              <div class="slider-label"><label for="color-hue">色相</label><output id="hue-value">145°</output></div><input id="color-hue" type="range" min="0" max="359" step="1" value="145">
+              <div class="slider-label"><label for="color-saturation">彩度</label><output id="saturation-value">40%</output></div><input id="color-saturation" type="range" min="0" max="100" step="1" value="40">
+              <div class="slider-label"><label for="color-lightness">明るさ補正</label><output id="lightness-value">0</output></div><input id="color-lightness" type="range" min="-45" max="45" step="1" value="0">
+              <div class="checks"><label><input type="checkbox" id="mask-view"> 選択パーツの範囲を確認</label></div>
+              <button type="button" id="color-reset" class="quiet">このパーツを元色に戻す</button><button type="button" id="palette-reset" class="quiet">このキャラのA1配色を戻す</button>
+              <button type="button" id="palette-png" class="quiet">A1の色替え身体PNGを保存</button>
+            </fieldset>
+            <div><div class="stage"><canvas id="palette-preview" width="700" height="480" aria-label="選択キャラのA1配色プレビュー"></canvas></div><p class="helper">陰影を残すため、色見本は目安です。保存PNGは頭なしの身体のみで、範囲の確認色は出力しません。配色を含む外見は左の「このキャラ×兵種の設定を記録」で保存できます。別PCへの共有にはJSONをバックアップしてください。</p><details id="png-export-panel" hidden><summary>書き出した身体PNG</summary><p id="png-export-meta" class="helper"></p><a id="png-download">PNGを保存</a><p class="helper">ダウンロードできない場合は、下の画像を右クリックして保存できます。</p><img id="png-export" alt="書き出した頭なしのA1身体PNG"></details></div>
+          </div>
+        </section>
+        <div class="stage-top"><div><p class="section-number">REFERENCE FIT / <span id="reference-character">アルシェ</span></p><h2 id="body-title">戦列下級・子供 A1 / 半袖・前面腰布</h2></div><button type="button" id="background" disabled>背景を濃色に</button></div>
+        <div id="stage" class="stage"><div id="loading" class="loading" role="status"><span></span><span></span><p>素材を読み込んでいます</p></div><canvas id="fitting" width="1000" height="520" aria-label="左に調整中の合成と透かした元SD、右に元SDを並べた全身比較"></canvas><div id="error" hidden role="alert"><p></p><button type="button" id="retry">読み込みを再試行</button></div></div>
         <div class="pair-names"><span id="fitting-label">アルシェ / 合成＋元SD</span><span>元SDそのまま / 同じ全高基準</span></div>
         <p class="helper">薄く重なる元SDの頭・肩・腰・足元と比較できます。右の元SDにも大きさの調整は反映し、重ね位置の移動は左だけに反映します。</p>
-        <details class="all-characters"><summary>3人の共通身体を並べて比較</summary><div class="stage secondary-stage"><canvas id="comparison" width="840" height="420" aria-label="3人の頭を同じ身体に合成した拡大比較"></canvas></div><div class="names"><span>アルシェ</span><span>カリマ</span><span>ギュンター</span></div></details>
-        <div class="small-strip"><div><p class="section-number">70 PX / 読みやすさ</p><p>小さくしたときの見え方</p></div><canvas id="mini" width="380" height="100" aria-label="全高約70pxでの3人の比較"></canvas></div>
+        <details class="all-characters"><summary id="characters-summary">2人を同じ衣装で比較</summary><div class="stage secondary-stage"><canvas id="comparison" width="840" height="420" aria-label="同じ衣装とキャラごとの頭部の比較"></canvas></div><div class="names"><span>アルシェ</span><span>カリマ</span><span>ギュンター</span></div></details>
+        <div class="small-strip"><div><p class="section-number">70 PX / 読みやすさ</p><p>頭を含む全身で約70px</p></div><canvas id="mini" width="380" height="100" aria-label="頭を含む全高約70pxでのキャラ比較"></canvas></div>
         <p class="note"><strong>ここでは静止構えだけ。</strong> 武器の差し替え・頭の追従・前後の重なりを含む攻撃モーションは、まだ検証していません。</p>
       </section>
     </div>
-    <section class="source-strip" aria-label="元のキャラクター素材"><div><p class="section-number">REFERENCE / 元の姿</p><p>今回の身体は提供された子供素体。前の衣装は仮の共通服です。<br>元素材は変更していません。頭は参照ベースの生成試作で、細部に変化があります。</p></div><figure><img src="assets/arshe_original.png" alt="元のアルシェのSD素材"><figcaption>アルシェ</figcaption></figure><figure><img src="assets/karima_original.png" alt="元のカリマのSD素材"><figcaption>カリマ</figcaption></figure><figure><img src="assets/gunter_original.png" alt="元のギュンターのSD素材"><figcaption>ギュンター</figcaption></figure></section>
+    <section class="source-strip" aria-label="元のキャラクター素材"><div><p class="section-number">REFERENCE / 元の姿</p><p>衣装3案には元SDの頭部を使用。身体・頭部・元SDは変更なしのコピーです。<br>以前の身体試作だけ旧生成頭を残しています。配色・衣装の採用はまだ決定していません。</p></div><figure><img id="source-arshe" src="assets/arshe_source_sd.png" alt="元のアルシェのSD素材"><figcaption>アルシェ</figcaption></figure><figure><img id="source-karima" src="assets/karima_source_sd.png" alt="元のカリマのSD素材"><figcaption>カリマ</figcaption></figure><figure><img src="assets/gunter_original.png" alt="旧試作で使ったギュンターのSD素材"><figcaption>ギュンター / 旧比較</figcaption></figure></section>
     <footer><span id="status" role="status" aria-live="polite">準備中</span><a href="../">以前のモーション試作</a><a href="README.md">試作の範囲・素材の記録</a></footer>
   </main>
-  <script src="fit-core.js?v=20261005-4"></script><script src="app.js?v=20261005-4"></script>
+  <script src="fit-core.js?v=20261006-4"></script><script src="pixel-core.js?v=20261006-4"></script><script src="preset-core.js?v=20261006-4"></script><script src="app.js?v=20261006-4"></script>
 </body>
 </html>

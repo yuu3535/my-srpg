@@ -1,0 +1,10 @@
+{
+  "version": 4,
+  "state": "操作検証用・未採用",
+  "selectedBody": "lineA1",
+  "selectedCharacter": "arshe",
+  "adjustments": { "lineA1": { "arshe": { "scale": 1.07, "x": 5, "y": -1 } } },
+  "referenceAdjustments": { "lineA1": { "arshe": { "scale": 1, "x": 40, "y": 0 } } },
+  "referenceView": { "overlay": true, "silhouette": false, "opacity": 0.35 },
+  "seamView": { "enabled": true }
+}
