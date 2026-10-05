@@ -1,0 +1,15 @@
+{
+  "state": "試作対象・未採用",
+  "method": "byte-identical copies; no regeneration, crop, recoloring or alpha processing",
+  "clothing_source_dir": "立ち絵透過下処理/兵種衣装/line_low_child_a_candidates/line_low_child_a",
+  "head_source_record": "立ち絵透過下処理/SD頭部/head_parts.json",
+  "copies": [
+    {"file":"line_child_a1.png", "source":"立ち絵透過下処理/兵種衣装/line_low_child_a_candidates/line_low_child_a/class_body_line_low_child_static_a1.png", "sha256":"eab1039e2e047081ccaf134adbcd9e2b1a2024204ac8356d9dc2589e94bc65b7"},
+    {"file":"line_child_a2.png", "source":"立ち絵透過下処理/兵種衣装/line_low_child_a_candidates/line_low_child_a/class_body_line_low_child_static_a2.png", "sha256":"3af516479f7030a540f77bc77e69cebffca754760506348a8a2a2cf9eeb53163"},
+    {"file":"line_child_a3.png", "source":"立ち絵透過下処理/兵種衣装/line_low_child_a_candidates/line_low_child_a/class_body_line_low_child_static_a3.png", "sha256":"8518345dd6406055eb878d9bdcf34e306cda3b79f2cd2a41710cdaea2a497585"},
+    {"file":"arshe_extracted_head.png", "source":"立ち絵透過下処理/SD頭部/アルシェ_頭部.png", "sha256":"31a9d2701b5a9483919913ca0d3cf37fdf2a77bf16bf941fadaad4484e1892ff"},
+    {"file":"karima_extracted_head.png", "source":"立ち絵透過下処理/SD頭部/カリマ_頭部.png", "sha256":"263be1a9446c379e73b79809b7faef1104849299a8ed7eb5eb6820ebdbaccea2"},
+    {"file":"arshe_source_sd.png", "source":"立ち絵透過下処理/AI_SD/アルシェ.png", "sha256":"651449d5efe941cac38a952da24e2bc2a109eeb851fbe3ac263ec46352bc801d"},
+    {"file":"karima_source_sd.png", "source":"立ち絵透過下処理/AI_SD/カリマ.png", "sha256":"b88cc96a186d230823fd17473df6d875b6126f0d2274ef4c44fefd3db4dcada5"}
+  ]
+}
