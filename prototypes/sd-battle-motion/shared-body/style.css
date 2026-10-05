@@ -146,3 +146,58 @@ header h1 { font-size: 20px; margin: 2px 0 4px; }
 /* 合わせる画面は、右の欄の高さに収める（縦が足りなくても全身が見える） */
 #fitting { width: auto; max-width: 100%; max-height: calc(100vh - 330px); min-height: 260px; margin: 0 auto; }
 @media(max-height:700px) { .workspace { height: calc(100vh - 100px); } #fitting { max-height: calc(100vh - 290px); } }
+
+/* ===== 作業用の3列の画面（2026-10-06 総合担当が組み直し。原作者「使いやすさに特化した UI に」） =====
+   左＝選ぶ・記録・呼出、真ん中＝合わせる画面（動かない）、右＝合わせる操作。それぞれ別にスクロールする */
+body { height: 100vh; overflow: hidden; min-width: 1100px; }
+.topbar { display: flex; align-items: center; gap: 18px; height: 66px; padding: 8px 16px; border-bottom: 1px solid var(--line); background: #fbfcfb; }
+.topbar .brand { display: flex; flex-direction: column; gap: 3px; min-width: 210px; }
+.topbar h1 { font-size: 16px; margin: 0; letter-spacing: -.02em; }
+.topbar .trial { align-self: flex-start; padding: 2px 8px; font-size: 10px; }
+.topbar .now-showing { position: static; flex: 1; margin: 0; padding: 6px 14px; }
+.topbar .now-showing .section-number { display: none; }
+.topbar .now-title { font-size: 13px; }
+.topbar .now-detail { font-size: 11.5px; }
+main.workspace { display: grid; grid-template-columns: 250px minmax(0,1fr) 300px; grid-template-areas: "left center right"; gap: 0;
+  height: calc(100vh - 66px); min-height: 0; max-width: none; margin: 0; padding: 0; align-items: stretch; }
+#controls { display: contents; }
+.panel { overflow-y: auto; overscroll-behavior: contain; padding: 10px 16px 40px; border: 0; }
+.panel.left { grid-area: left; border-right: 1px solid var(--line); }
+.panel.right { grid-area: right; border-left: 1px solid var(--line); background: #f9fbfa; }
+.workspace > .preview.center, .workspace > .preview.center.outfit-mode { grid-area: center; position: relative; top: auto; overflow-y: auto; overscroll-behavior: contain; padding: 10px 18px 20px; }
+.step { padding: 12px 0 14px; }
+.step h3 { font-size: 14px; margin: 1px 0 8px; }
+.outfit-tabs { grid-template-columns: repeat(3,1fr); gap: 6px; }
+.outfit-tabs button { text-align: center; padding: 8px 4px; font-size: 15px; font-weight: 600; }
+.outfit-tabs button span { font-size: 10px; font-weight: 400; }
+.nudge-row { display: grid; grid-template-columns: 30px minmax(0,1fr) 30px; gap: 6px; align-items: center; }
+.nudge-row input[type="range"] { margin: 0; }
+.nudge { padding: 5px 0; font-size: 12px; line-height: 1; }
+.pair-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.pair-buttons .quiet { margin-top: 10px; padding: 7px 4px; }
+.panel .checks { margin: 12px 0; gap: 8px; }
+.panel .wheel-row { grid-template-columns: 96px 1fr; gap: 10px; }
+.panel .hue-wheel { width: 96px; height: 96px; }
+.panel .hue-wheel::before { inset: 16px; }
+.panel .hue-wheel span { left: 42px; top: 42px; transform: rotate(var(--angle,145deg)) translateX(39px); }
+.json-box { margin-top: 14px; padding: 8px 10px 12px; }
+.json-box summary { margin: 0; }
+.center .stage-top h2 { font-size: 15px; }
+.center #stage { margin-top: 6px; }
+.center #fitting { width: auto; max-width: 100%; height: auto; max-height: calc(100vh - 66px - 120px); min-height: 240px; margin: 0 auto; }
+.center .pair-names { padding-top: 6px; }
+.extras { margin-top: 10px; }
+.extras .all-characters { margin-top: 8px; padding-top: 8px; }
+.extras #mini { width: 100%; max-width: 380px; height: auto; display: block; margin-top: 8px; }
+.extras .source-strip { display: grid; grid-template-columns: repeat(3,100px); gap: 20px; border: 0; padding: 8px 0; }
+.center footer { margin-top: 16px; }
+main.workspace > *, #controls > * { min-height: 0; }   /* 3列の高さを画面に収める（中身で伸びないように） */
+.panel select { margin: 4px 0 6px; padding: 6px 8px; }
+.panel label { margin-top: 6px; }
+.panel .helper { margin-top: 5px; }
+.panel .label-line { margin: 8px 0 5px; }
+.panel input[type="text"] { margin-top: 4px; padding: 7px; }
+.panel #record-save, .panel #record-load { margin-top: 8px; }
+.panel .step { padding: 8px 0 10px; }
+.workspace > .preview.center { align-self: stretch; }
+.center #fitting { width: min(100%, calc((100vh - 186px) * 1000 / 520)); max-height: none; }

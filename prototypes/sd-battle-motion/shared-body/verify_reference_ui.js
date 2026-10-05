@@ -122,9 +122,10 @@ async function main() {
   assert.ok(!ui.draws.some(d => d.canvas === 'fitting' && d.file === 'assets/orcus_sword.png'));
   switchBody('child'); assert.equal(el.weapon.disabled, false); assert.equal(el.weapon.checked, true);
   let referenceDraws = () => ui.draws.filter(d => d.canvas === 'fitting' && d.file === 'assets/arshe_original.png');
-  assert.deepEqual(referenceDraws().map(d => d.alpha), [.35], 'ふだんは1つの画面で、元SDは重ねるだけ');
-  check('side-by-side', true);
-  assert.deepEqual(referenceDraws().map(d => d.alpha), [.35, 1], '横にも並べると、半透明の重ねと原画そのままの隣表示');
+  assert.equal(referenceDraws().length, 0, 'ふだんは元のデザインを出さない（原作者 2026-10-06）');
+  assert.ok(ui.draws.some(d => d.canvas === 'fitting' && d.file === 'silhouette' && d.alpha === 1), 'ふだんは元SDをシルエットで横に並べる');
+  check('silhouette', false); check('overlay', true);
+  assert.deepEqual(referenceDraws().map(d => d.alpha), [.35, 1], '重ねると、半透明の重ねと原画そのままの隣表示');
   input('reference-opacity', 0); assert.deepEqual(referenceDraws().map(d => d.alpha), [0, 1]);
   input('reference-opacity', 100); assert.deepEqual(referenceDraws().map(d => d.alpha), [1, 1]);
   check('overlay', false); assert.equal(referenceDraws().length, 1); assert.match(el['fitting-label'].textContent, /合成のみ/);
@@ -134,7 +135,9 @@ async function main() {
   switchBody('standard'); assert.equal(el['reference-scale'].value, 1); assert.equal(el['head-scale'].value, 1);
   switchBody('child'); assert.equal(el['reference-scale'].value, 1.1); assert.equal(el['reference-x'].value, 15); assert.equal(el['head-scale'].value, 1.08);
   el.character.value = 'karima'; el.character.handlers.change(); assert.equal(el['reference-x'].value, 0);
+  check('silhouette', false);
   assert.ok(ui.draws.some(d => d.canvas === 'fitting' && d.file === 'assets/karima_original.png'));
+  check('silhouette', true);
   el.character.value = 'arshe'; el.character.handlers.change(); el.save.click();
   const data = JSON.parse(el['export-json'].value);
   assert.deepEqual(data.referenceAdjustments.child.arshe, { scale: 1.1, x: 15, y: -8 });

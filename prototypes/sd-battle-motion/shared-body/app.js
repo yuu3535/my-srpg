@@ -139,8 +139,8 @@
       editor:{reference:{...currentReference()},view:currentView()}};
   }
   function applyView(view,seam) {
-    for (const name of ['overlay','silhouette','mirror','guides']) $(name).checked=view[name];
-    $('reference-opacity').value=view.opacity*100; $('seam').checked=seam;
+    // 比べ方（横に並べる・シルエット・重ねる・濃さ・反転・ガイド）は作業する人の好みなので、呼び出しでは変えない（記録には今までどおり残す）
+    $('seam').checked=seam;
     $('mask-view').checked=false;
   }
   function applyRecord(record) {
@@ -255,7 +255,8 @@
     if ($('mirror').checked) { ctx.translate((foot[0] + adjustment.x) * 2, 0); ctx.scale(-1, 1); }
     ctx.globalAlpha = overlay ? Number($('reference-opacity').value) / 100 : 1;
     ctx.translate(...fit.position); ctx.scale(fit.scale, fit.scale);
-    ctx.drawImage(overlay && $('silhouette').checked ? silhouettes[asset.file] : images[asset.file], 0, 0);
+    // シルエットは重ねるときも横に並べるときも（原作者 2026-10-06: 元のデザインがそのまま見えると困る）
+    ctx.drawImage($('silhouette').checked ? silhouettes[asset.file] : images[asset.file], 0, 0);
     ctx.restore();
   }
   function drawFitting() {
@@ -264,7 +265,7 @@
     ctx.strokeStyle = dark ? '#60776a' : '#c5d3cb'; ctx.lineWidth = 1;
     // 1つの画面で合わせる（原作者 2026-10-06: 右の元SDは要らない）。横に並べるのは「表示の補助」で選んだときだけ
     const side = $('side-by-side').checked;
-    const left = side ? canvas.width / 4 : canvas.width / 2, right = canvas.width * .75, center = canvas.width / 2;
+    const left = side ? canvas.width * .32 : canvas.width / 2, right = canvas.width * .68, center = canvas.width / 2;   // 横に並べても触れない間隔
     ctx.beginPath(); ctx.moveTo(32, 460.5); ctx.lineTo(canvas.width - 32, 460.5);
     if (side) { ctx.moveTo(center + .5, 25); ctx.lineTo(center + .5, 495); }
     ctx.stroke();
@@ -424,6 +425,12 @@
   $('seam').addEventListener('change', () => { draw(); markEdited(); });   // 首の接合は記録に入る
   $('background').addEventListener('click', () => { dark = !dark; document.querySelectorAll('.stage').forEach(stage => stage.classList.toggle('dark', dark)); $('background').textContent = dark ? '背景を淡色に' : '背景を濃色に'; draw(); });
   $('retry').addEventListener('click', load);
+  // 1目盛りずつ動かすボタン（◀▶▲▼・−＋）。スライダーと同じ動きにする
+  document.querySelectorAll('[data-nudge]').forEach(button => button.addEventListener('click', () => {
+    const input = $(button.dataset.nudge), step = Number(button.dataset.step);
+    const next = Math.min(Number(input.max), Math.max(Number(input.min), Math.round((Number(input.value) + step) * 100) / 100));
+    input.value = next; input.dispatchEvent(new Event('input'));
+  }));
   $('save').addEventListener('click', () => {
     const data = { version: 5, state: '試作対象', pose: core.bodies[bodyKey].extracted ? '静止・武器なしの衣装比較' : '旧試作の静止構え', selectedBody: bodyKey, selectedCharacter: $('character').value, bodies: core.bodies, heads: core.heads, extractedHeads: core.extractedHeads, originals: core.originals, extractedOriginals: core.extractedOriginals, adjustments: profiles, referenceAdjustments: referenceProfiles, referenceView: { overlay: $('overlay').checked, silhouette: $('silhouette').checked, opacity: Number($('reference-opacity').value) / 100 } };
     data.presetLibrary=library;data.editorView={mirror:$('mirror').checked,guides:$('guides').checked};
