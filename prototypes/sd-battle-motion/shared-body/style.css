@@ -39,8 +39,23 @@ label { font-size: 11px; display: block; }
 select { width: 100%; margin: 7px 0 10px; padding: 8px; font-size: 12px; background: #fff; border: 1px solid var(--line); border-radius: 3px; color: inherit; }
 input[type="text"] { width: 100%; margin-top: 7px; padding: 9px; font: 11px "Yu Gothic UI",sans-serif; color: inherit; border: 1px solid var(--line); border-radius: 3px; background: #fff; }
 #record-save { margin-top: 12px; }
-#record-panel { border-top: 1px solid var(--line); padding: 20px 0 25px; }
-#record-panel label { margin-top: 12px; }
+/* 左の手順（STEP 1〜4）と、別の操作のJSON（原作者 2026-10-06: 迷わず使えるように） */
+.step { padding: 16px 0 18px; border-bottom: 1px solid var(--line); }
+.step:first-child { padding-top: 4px; }
+.step h3, .json-box h3 { margin: 2px 0 10px; font-size: 14px; font-weight: 650; }
+.step label { margin-top: 10px; }
+.label-line { font-size: 11px; margin: 14px 0 7px; color: #44574f; font-weight: 600; }
+.view-options { margin-top: 14px; padding: 8px 10px; border: 1px dashed var(--line); border-radius: 4px; }
+.view-options summary { font-size: 11px; margin-bottom: 4px; }
+.json-box { margin-top: 22px; padding: 14px 12px 16px; background: #eef2f0; border: 1px solid var(--line); border-radius: 5px; }
+.json-box .section-number { color: #8a7a5e; }
+.json-box label { margin-top: 8px; }
+#record-load { margin-top: 12px; }
+/* いま表示している見た目 */
+.now-showing { position: sticky; top: 0; z-index: 2; margin-bottom: 22px; padding: 12px 16px; background: #e3ede8; border: 1px solid #b7c9c2; border-left: 4px solid var(--accent); border-radius: 4px; }
+.now-showing.edited { background: #f6f0e4; border-color: #dccfb2; border-left-color: #b08a3c; }
+.now-title { font-size: 13px; font-weight: 650; color: #263331; }
+.now-detail { font-size: 12px; color: #4f625a; }
 .record-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .helper.problem { color: #965346; }
 input[type="file"] { max-width: 100%; font-size: 11px; margin: 8px 0; }

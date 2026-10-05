@@ -14,6 +14,34 @@
   let paletteSource, paletteLabels, paletteKeep, lastPngUrl;
   let bodyKey = 'lineA1', ready = false, dark = false;
   let library = presets.empty(), storageDamaged = false;
+  // いま表示している見た目の出どころ（原作者 2026-10-06: どの設定を表示しているか分かるように）。
+  // edit＝記録していない編集中 / record＝記録（from: save・list・json）/ workspace＝作業全体JSONから戻した値。edited＝呼び出したあとに変えた
+  let shown = { kind: 'edit' };
+  const importedFrom = new Map();   // 記録ID → 読み込んだJSONの名前（このタブで読んだもの。一覧に「JSONから」の印を付ける）
+  function show(next) { shown = next; refreshRecords(); }
+  function markEdited(reset = false) {
+    if (reset) shown = { kind: 'edit' };
+    else if (shown.kind !== 'edit') shown = { ...shown, edited: true };
+    renderNow();
+  }
+  function renderNow() {
+    if (!ready) return;
+    const char = $('character').value, label = core.heads[char]?.label || char;
+    const fullLabel = core.bodies[bodyKey].label, outfit = /A\d/.test(fullLabel) ? '衣装' + fullLabel.slice(fullLabel.search(/A\d/)) : fullLabel;
+    const record = shown.kind === 'record' ? library.records.find(r => r.id === shown.id) : null;
+    let title;
+    if (record) {
+      const from = shown.from === 'json' ? `JSON${shown.file ? `「${shown.file}」` : ''}から読み込んだ記録` : shown.from === 'save' ? '記録したばかりの見た目' : '一覧から呼び出した記録';
+      title = `${from}：「${record.name}」 履歴${record.revision}（STEP 4 の一覧にあります）`;
+    } else if (shown.kind === 'workspace') {
+      title = `作業全体JSON${shown.file ? `「${shown.file}」` : ''}から戻した調整中の値（記録ではありません）`;
+    } else {
+      title = '記録していない編集中の見た目（残すには STEP 3 で記録）';
+    }
+    $('now-title').textContent = title;
+    $('now-detail').textContent = `${label} / ${$('class-id').value} / 子供 / ${outfit}` + (shown.edited ? ' — 呼び出したあとに変更あり（まだ記録していません）' : '');
+    $('now-showing').classList.toggle('edited', shown.kind === 'edit' || !!shown.edited);
+  }
   const current = () => profiles[bodyKey][$('character').value];
   const currentReference = () => referenceProfiles[bodyKey][$('character').value];
   function sync() {
@@ -52,7 +80,7 @@
     const template=presets.templates[bodyKey], character=$('character').value;
     const supported=ready && template?.classId===$('class-id').value && !!presets.characters[character];
     $('record-save').disabled=!supported;
-    $('record-context').textContent=supported ? `${core.heads[character].label} / ${template.classId} / 子供 / ${bodyKey.replace('line','')}` : 'この組み合わせは記録対象外です。元頭部＋登録済み兵種衣装を選んでください。';
+    $('record-context').textContent=supported ? `記録する組み合わせ：${core.heads[character].label} / ${template.classId} / 子供 / 衣装${bodyKey.replace('line','')}` : 'この組み合わせは記録できません。STEP 1 で衣装A1〜A3と、衣装素材のある兵種を選んでください。';
     $('record-load').disabled=!ready || !library.records.length;
   }
   function refreshRecords() {
@@ -64,15 +92,17 @@
       const option=document.createElement('option'); option.value=record.id;
       const char=Object.keys(presets.characters).find(key=>presets.characters[key]===record.characterId);
       const newest=latestByKey.get(presets.key(record)).id===record.id;
-      option.textContent=`${core.heads[char].label} / ${record.classId} / 子供 / ${record.appearance.templateId.replace('line','')} / 履歴${record.revision}${newest ? '（最新）' : ''} — ${record.name}`;
+      const marks=(importedFrom.has(record.id) ? ' · JSONから' : '')+(shown.kind==='record' && shown.id===record.id ? ' ◀ 表示中' : '');
+      option.textContent=`${core.heads[char].label} / ${record.classId} / 子供 / ${record.appearance.templateId.replace('line','')} / 履歴${record.revision}${newest ? '（最新）' : ''} — ${record.name}${marks}`;
       return option;
     });
     if (!options.length) { const option=document.createElement('option');option.value='';option.textContent='記録なし';options.push(option); }
     $('record-list').replaceChildren(...options);
     $('record-list').value=records.some(r=>r.id===previous) ? previous : records[0]?.id || '';
     const count=new Set(records.map(presets.key)).size;
-    $('record-count').textContent=records.length ? `${count}組の外見 / 履歴${records.length}件。保存済み記録を選んで呼び出せます。` : 'まだ記録がありません。左の記録ボタンで、現在の衣装・配色・頭合わせを保存してください。';
+    $('record-count').textContent=records.length ? `${count}組の外見 / 履歴${records.length}件。選んで「選んだ見た目を呼び出す」を押してください。` : 'まだ記録がありません。STEP 3 で記録してください。';
     syncRecordControls();
+    renderNow();
   }
   function diskLibrary() {
     const raw=localStorage.getItem(presets.STORAGE_KEY);
@@ -123,13 +153,24 @@
     bodyKey=workspace.selectedBody; $('character').value=workspace.selectedCharacter; $('class-id').value=presets.templates[bodyKey].classId;
     $('record-name').value='';applyView(workspace.view,workspace.seam);sync();
   }
-  function importRecords(text) {
+  function importRecords(text, fileName = '') {
     if (!ready) return;
     try {
       const imported=presets.parse(text,identity()), workspace=presets.workspace(JSON.parse(text));
       const candidate=presets.merge(library,imported); // 全件検証が済むまで保存や調整を変えない。
-      persistLibrary(candidate,'record-import-message',`読込済み：記録${imported.records.length}件${workspace ? '＋作業調整を復元' : '。一覧から呼び出してください'}`);
-      if (workspace) applyWorkspace(workspace);
+      const chosen=presets.latest(imported,presets.characters[$('character').value],$('class-id').value,'child') ||
+        [...imported.records].sort((a,b)=>b.savedAt.localeCompare(a.savedAt) || b.revision-a.revision)[0];
+      const detail=workspace ? '衣装・配色・頭位置と作業調整を復元しました（右上の「いま表示している見た目」に出ています）。' : imported.records.length===1 ? '保存した見た目を表示しました。STEP 4 の一覧にも入っています。' : imported.records.length ? '読み込んだ記録は STEP 4 の一覧に入りました（「JSONから」の印）。選んで「選んだ見た目を呼び出す」で表示できます。' : '記録は0件です。現在の見た目は変更していません。';
+      for (const record of imported.records) importedFrom.set(record.id, fileName);
+      persistLibrary(candidate,'record-import-message',`JSON読込済み：記録${imported.records.length}件。${detail}`);
+      if (workspace) {
+        applyWorkspace(workspace);
+        show({ kind: 'workspace', file: fileName });
+        if (imported.records.length===1) $('record-list').value=imported.records[0].id;
+      } else if (chosen) {
+        if (imported.records.length===1) { applyRecord(library.records.find(record=>record.id===chosen.id)); show({ kind: 'record', id: chosen.id, from: 'json', file: fileName }); }
+        $('record-list').value=chosen.id;
+      }
     } catch(error) { recordMessage('record-import-message',`読み込めません：${error.message}。現在の記録・調整は変えていません。`,true); }
   }
   function exportJSON(data,file,panel,field) {
@@ -281,15 +322,15 @@
       }
       ready = true; $('controls').disabled = false; $('background').disabled = false;
       $('record-import').disabled=false; $('record-import-file').disabled=false;
-      $('loading').hidden = true; document.querySelector('.preview').classList.add('ready'); sync();
+      $('loading').hidden = true; document.querySelector('.preview').classList.add('ready'); sync(); renderNow();
       $('status').textContent = '静止フィッティング · 攻撃連番は未生成';
     } catch (error) {
       $('loading').hidden = true; $('error').hidden = false; $('error').querySelector('p').textContent = error.message;
       $('status').textContent = '読み込みエラー · 再試行できます';
     }
   }
-  document.querySelectorAll('[data-body]').forEach(button => button.addEventListener('click', () => { bodyKey = button.dataset.body; sync(); }));
-  $('character').addEventListener('change', () => { $('record-name').value='';sync(); });
+  document.querySelectorAll('[data-body]').forEach(button => button.addEventListener('click', () => { bodyKey = button.dataset.body; sync(); markEdited(true); }));
+  $('character').addEventListener('change', () => { $('record-name').value='';sync(); markEdited(true); });
   $('class-id').addEventListener('change',syncRecordControls);
   for (const classId of presets.classIds.filter(id=>id!=='戦列下級')) {
     const option=document.createElement('option'); option.value=classId;option.textContent=classId+'（衣装素材未登録）';option.disabled=true;$('class-id').appendChild(option);
@@ -300,15 +341,20 @@
       let base=library;
       try { base=presets.merge(diskLibrary(),library); } catch { /* 保存失敗時もこのタブの記録は保全する。 */ }
       const candidate=presets.append(base,captureRecord());
-      persistLibrary(candidate,'record-message','キャラ×兵種の外見をブラウザ内に記録しました。履歴から呼び出せます。');
-      $('record-list').value=candidate.records[candidate.records.length-1].id;
+      const savedId=candidate.records[candidate.records.length-1].id;
+      persistLibrary(candidate,'record-message','いまの見た目をブラウザ内に記録しました。STEP 4 の一覧から呼び出せます。');
+      show({ kind: 'record', id: savedId, from: 'save' });
+      $('record-list').value=savedId;
     } catch(error) { recordMessage('record-message',`記録できません：${error.message}`,true); }
   });
   $('record-load').addEventListener('click',()=>{
     if (!ready) return;
     const record=library.records.find(r=>r.id===$('record-list').value);
-    if (!record) { recordMessage('record-import-message','呼び出す記録を選んでください',true); return; }
-    applyRecord(record); recordMessage('record-import-message',`${record.name} / 履歴${record.revision}を呼び出しました。変更を残すには改めて記録してください。`);
+    if (!record) { recordMessage('record-load-message','呼び出す記録を選んでください',true); return; }
+    applyRecord(record);
+    show({ kind: 'record', id: record.id, from: importedFrom.has(record.id) ? 'json' : 'list', file: importedFrom.get(record.id) || '' });
+    $('record-list').value=record.id;
+    recordMessage('record-load-message',`「${record.name}」履歴${record.revision}を呼び出しました。変更を残すには STEP 3 で記録し直してください。`);
   });
   $('record-backup').addEventListener('click',()=>{
     exportJSON(library,'srpg-generic-outfits.json','record-export-panel','record-export-text');
@@ -318,20 +364,20 @@
   $('record-import-file').addEventListener('change',async()=>{
     const file=$('record-import-file').files?.[0];if (!file) return;
     if (file.size>2*1024*1024) { recordMessage('record-import-message','JSONは2MB以下にしてください',true);return; }
-    try { importRecords(await file.text()); } catch { recordMessage('record-import-message','ファイルを読み取れませんでした',true); }
+    try { importRecords(await file.text(), file.name || ''); } catch { recordMessage('record-import-message','ファイルを読み取れませんでした',true); }
     $('record-import-file').value='';
   });
   $('material').addEventListener('change', () => { syncPalette(); draw(); });
   function changeColor(field, value) {
     if (!ready || bodyKey !== 'lineA1') return;
     const setting = palettes[$('character').value][$('material').value];
-    setting[field] = value; setting.enabled = true; syncPalette(); draw();
+    setting[field] = value; setting.enabled = true; syncPalette(); draw(); markEdited();
   }
   for (const field of ['hue','saturation','lightness']) $('color-' + field).addEventListener('input', () => changeColor(field,Number($('color-' + field).value)));
-  $('color-enabled').addEventListener('change', () => { palettes[$('character').value][$('material').value].enabled = $('color-enabled').checked; draw(); });
+  $('color-enabled').addEventListener('change', () => { palettes[$('character').value][$('material').value].enabled = $('color-enabled').checked; draw(); markEdited(); });
   $('mask-view').addEventListener('change', draw);
-  $('color-reset').addEventListener('click', () => { const id=$('material').value; palettes[$('character').value][id]=pixels.paletteDefaults()[id]; syncPalette(); draw(); });
-  $('palette-reset').addEventListener('click', () => { palettes[$('character').value]=pixels.paletteDefaults(); syncPalette(); draw(); });
+  $('color-reset').addEventListener('click', () => { const id=$('material').value; palettes[$('character').value][id]=pixels.paletteDefaults()[id]; syncPalette(); draw(); markEdited(); });
+  $('palette-reset').addEventListener('click', () => { palettes[$('character').value]=pixels.paletteDefaults(); syncPalette(); draw(); markEdited(); });
   function wheelColor(event) {
     if (!ready || bodyKey !== 'lineA1') return;
     const box=$('hue-wheel').getBoundingClientRect();
@@ -360,15 +406,16 @@
       link.click(); $('status').textContent='頭なしのA1身体PNGを生成しました · 保存できない場合は書き出し画像から保存できます';
     },'image/png');
   });
-  for (const [id, field] of [['head-scale','scale'], ['head-x','x'], ['head-y','y']]) $(id).addEventListener('input', () => { current()[field] = Number($(id).value); sync(); });
+  for (const [id, field] of [['head-scale','scale'], ['head-x','x'], ['head-y','y']]) $(id).addEventListener('input', () => { current()[field] = Number($(id).value); sync(); markEdited(); });
   for (const [id, field] of [['reference-scale','scale'], ['reference-x','x'], ['reference-y','y']]) $(id).addEventListener('input', () => { currentReference()[field] = Number($(id).value); sync(); });
   $('reference-opacity').addEventListener('input', sync);
   ['overlay','silhouette'].forEach(id => $(id).addEventListener('change', sync));
   $('reference-reset').addEventListener('click', () => { referenceProfiles[bodyKey][$('character').value] = core.defaults(); sync(); });
-  $('reset').addEventListener('click', () => { profiles[bodyKey][$('character').value] = core.defaults(); sync(); });
-  $('match-outfits').addEventListener('click', () => { const a = { ...current() }; core.outfitKeys.forEach(key => { profiles[key][$('character').value] = { ...a }; }); sync(); });
+  $('reset').addEventListener('click', () => { profiles[bodyKey][$('character').value] = core.defaults(); sync(); markEdited(); });
+  $('match-outfits').addEventListener('click', () => { const a = { ...current() }; core.outfitKeys.forEach(key => { profiles[key][$('character').value] = { ...a }; }); sync(); markEdited(); });
   $('weapon').addEventListener('change', () => { weaponSettings[bodyKey] = $('weapon').checked; draw(); });
-  ['guides','mirror','seam'].forEach(id => $(id).addEventListener('change', draw));
+  ['guides','mirror'].forEach(id => $(id).addEventListener('change', draw));
+  $('seam').addEventListener('change', () => { draw(); markEdited(); });   // 首の接合は記録に入る
   $('background').addEventListener('click', () => { dark = !dark; document.querySelectorAll('.stage').forEach(stage => stage.classList.toggle('dark', dark)); $('background').textContent = dark ? '背景を淡色に' : '背景を濃色に'; draw(); });
   $('retry').addEventListener('click', load);
   $('save').addEventListener('click', () => {
