@@ -219,6 +219,8 @@ async function main() {
   assert.equal(failedOutfit.elements.controls.disabled, true); assert.equal(failedOutfit.elements.error.hidden, false);
   failedOutfit.setFailed(null); failedOutfit.elements.retry.click(); await settle();
   assert.equal(failedOutfit.elements.controls.disabled, false);
+  el['composite-png'].click(); assert.match(el.status.textContent,/頭つき/,'頭つきPNGを書き出せる');
+  assert.match(el['composite-download'].download,/_with_head\.png$/);
   if (core.outfitsOfClass('戦列攻撃上級').length) {
     // 取り込んだ兵種の衣装（import_outfits.py）: 兵種を選ぶとその衣装に替わり、その兵種で記録できる
     const brave=harness(); await settle();

@@ -418,6 +418,42 @@
     const delta=['ArrowLeft','ArrowDown'].includes(event.key) ? -1 : 1;
     changeColor('hue',event.key==='Home' ? 0 : event.key==='End' ? 359 : (currentHue+delta*(event.shiftKey ? 10 : 1)+360)%360);
   });
+  // 頭つきの見た目PNG（原作者 2026-10-06: 兵種ごとの色替えした見た目を頭つきでも保存したい）。
+  // いまの衣装・配色・頭合わせ・首の接合を、身体の元の絵と同じ細かさで描き、透明な余白を切り落とす。比べるための元SD・ガイド・剣・反転は入れない
+  let lastCompositeUrl;
+  function compositeCanvas() {
+    const key = $('character').value, body = core.bodies[bodyKey];
+    const zoom = (body.visibleHeight || body.size[1]) / body.height;   // 身体を元の絵の大きさで
+    const W = Math.ceil(body.size[0] * 1.6), H = Math.ceil(body.size[1] * 1.6);
+    const canvas = document.createElement('canvas'); canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    const fit = core.fit(bodyKey, key, profiles[bodyKey][key], [W / 2, H - 8], zoom);
+    imageLayer(ctx, body.file, fit.body, bodyKey === 'lineA1' ? paletteCanvas(key) : null);
+    imageLayer(ctx, core.headAsset(bodyKey, key).file, fit.head);
+    const data = ctx.getImageData(0, 0, W, H).data;
+    let left = W, top = H, right = -1, bottom = -1;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (data[(y * W + x) * 4 + 3]) { if (x < left) left = x; if (x > right) right = x; if (y < top) top = y; if (y > bottom) bottom = y; }
+    if (right < 0) return canvas;
+    const pad = 4, out = document.createElement('canvas');
+    out.width = right - left + 1 + pad * 2; out.height = bottom - top + 1 + pad * 2;
+    out.getContext('2d').drawImage(canvas, left, top, out.width - pad * 2, out.height - pad * 2, pad, pad, out.width - pad * 2, out.height - pad * 2);
+    return out;
+  }
+  $('composite-png').addEventListener('click', () => {
+    if (!ready) return;
+    const key = $('character').value, body = core.bodies[bodyKey];
+    $('status').textContent = '頭つきの見た目PNGを書き出しています';
+    compositeCanvas().toBlob(blob => {
+      if (!blob) { $('status').textContent = 'PNGを書き出せませんでした。再試行してください'; return; }
+      if (lastCompositeUrl) URL.revokeObjectURL(lastCompositeUrl);
+      lastCompositeUrl = URL.createObjectURL(blob);
+      const link = $('composite-download'); link.href = lastCompositeUrl;
+      link.download = `${bodyKey}_${key}${bodyKey === 'lineA1' ? '_palette' : ''}_with_head.png`;
+      $('composite-export-meta').textContent = `${core.heads[key]?.label || key} / ${body.classId || ''} / ${body.variant || body.label}。出力したときの頭合わせ・配色です。変えたあとは、もう一度保存してください。`;
+      $('composite-export').src = lastCompositeUrl; $('composite-export-panel').hidden = false; $('composite-export-panel').open = true;
+      link.click(); $('status').textContent = '頭つきの見た目PNGを生成しました · 保存できない場合は書き出し画像から保存できます';
+    }, 'image/png');
+  });
   $('palette-png').addEventListener('click', () => {
     if (!ready || bodyKey !== 'lineA1') return;
     const key=$('character').value;

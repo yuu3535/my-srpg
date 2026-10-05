@@ -37,6 +37,8 @@
           <label for="record-name">記録名（任意）</label><input id="record-name" type="text" maxlength="80" placeholder="空欄ならキャラ・兵種名">
           <button type="button" id="record-save" class="save">いまの見た目を記録</button>
           <p id="record-message" class="helper" role="status" aria-live="polite">ブラウザ内に保存します。記録し直すと新しい履歴になり、前の記録も残ります。</p>
+          <button type="button" id="composite-png" class="quiet">いまの見た目を頭つきPNGで保存</button>
+          <details id="composite-export-panel" hidden><summary>書き出した頭つきPNG</summary><p id="composite-export-meta" class="helper"></p><a id="composite-download">PNGを保存</a><p class="helper">ダウンロードできない場合は、下の画像を右クリックして保存できます。</p><img id="composite-export" alt="書き出した頭つきの見た目PNG"></details>
         </section>
 
         <section class="step" aria-labelledby="step4-title">
