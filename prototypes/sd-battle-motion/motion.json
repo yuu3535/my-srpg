@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "status": "proof-of-concept",
+  "coordinateSystem": {
+    "origin": "top-left",
+    "x": "right-positive",
+    "y": "down-positive",
+    "rotation": "clockwise-degrees"
+  },
+  "canvas": {
+    "width": 360,
+    "height": 360,
+    "fps": 24,
+    "groundY": 310
+  },
+  "body": {
+    "asset": "assets/character/young_arshe.png",
+    "sourceSize": { "width": 289, "height": 512 },
+    "referenceBodyHeight": 242,
+    "anchors": {
+      "foot": { "x": 145, "y": 492 },
+      "hand": { "x": 231, "y": 337 }
+    }
+  },
+  "weapon": {
+    "asset": "assets/weapon/one_hand_sword.png",
+    "size": { "width": 72, "height": 176 },
+    "grip": { "x": 36, "y": 140 },
+    "pivot": { "x": 36, "y": 140 },
+    "defaultScale": 0.78
+  },
+  "clips": {
+    "idle": {
+      "label": "待機",
+      "duration": 1.5,
+      "loop": true,
+      "bodyKeys": [
+        { "t": 0.0, "x": 0, "y": 0, "rotation": 0, "scale": 1.0 },
+        { "t": 0.72, "x": 0, "y": -2, "rotation": -0.4, "scale": 1.008 },
+        { "t": 1.5, "x": 0, "y": 0, "rotation": 0, "scale": 1.0 }
+      ],
+      "weaponKeys": [
+        { "t": 0.0, "angle": 18, "x": 0, "y": 0, "scale": 1.0, "layer": "front" },
+        { "t": 0.72, "angle": 20, "x": 0, "y": 0, "scale": 1.0, "layer": "front" },
+        { "t": 1.5, "angle": 18, "x": 0, "y": 0, "scale": 1.0, "layer": "front" }
+      ]
+    },
+    "attack": {
+      "label": "攻撃",
+      "duration": 0.92,
+      "loop": false,
+      "phases": [
+        { "id": "ready", "label": "構え", "from": 0.0, "to": 0.28 },
+        { "id": "swing", "label": "振り", "from": 0.28, "to": 0.54 },
+        { "id": "recover", "label": "復帰", "from": 0.54, "to": 0.92 }
+      ],
+      "bodyKeys": [
+        { "t": 0.0, "x": 0, "y": 0, "rotation": 0, "scale": 1.0 },
+        { "t": 0.22, "x": -5, "y": 0, "rotation": -2.2, "scale": 0.995 },
+        { "t": 0.36, "x": 11, "y": 1, "rotation": 4.2, "scale": 1.012 },
+        { "t": 0.5, "x": 14, "y": 0, "rotation": 3.0, "scale": 1.006 },
+        { "t": 0.72, "x": 2, "y": 0, "rotation": 0.5, "scale": 1.0 },
+        { "t": 0.92, "x": 0, "y": 0, "rotation": 0, "scale": 1.0 }
+      ],
+      "weaponKeys": [
+        { "t": 0.0, "angle": 18, "x": 0, "y": 0, "scale": 1.0, "layer": "front" },
+        { "t": 0.22, "angle": -92, "x": 0, "y": 0, "scale": 1.0, "layer": "behind" },
+        { "t": 0.3, "angle": -118, "x": 0, "y": 0, "scale": 1.0, "layer": "behind" },
+        { "t": 0.43, "angle": 68, "x": 0, "y": 0, "scale": 1.03, "layer": "front" },
+        { "t": 0.56, "angle": 91, "x": 0, "y": 0, "scale": 1.0, "layer": "front" },
+        { "t": 0.74, "angle": 30, "x": 0, "y": 0, "scale": 1.0, "layer": "front" },
+        { "t": 0.92, "angle": 18, "x": 0, "y": 0, "scale": 1.0, "layer": "front" }
+      ]
+    }
+  }
+}

@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>共通身体フィッティング / SD戦闘試作</title>
+  <link rel="stylesheet" href="style.css?v=20261005-3">
+</head>
+<body>
+  <main>
+    <header>
+      <div><p class="eyebrow">SD BATTLE / BODY TEMPLATE STUDY</p><h1>身体を共有する。個性は残す。</h1><p class="intro">同じ身体に3人の頭を重ねる、静止フィッティングの試作。</p></div>
+      <span class="trial">試作対象 · 未採用</span>
+    </header>
+    <div class="workspace">
+      <aside>
+        <p class="section-number">01 / 身体の系統</p>
+        <fieldset id="controls" disabled>
+          <legend class="sr-only">フィッティング操作</legend>
+          <div class="body-switch"><button type="button" data-body="providedChild" aria-pressed="true">提供：子供素体<span>今回の素材 / 頭身のバランスを確認</span></button><button type="button" data-body="child" aria-pressed="false">前の幼め試作<span>2.5頭身目安 / 比較用に残す</span></button><button type="button" data-body="standard" aria-pressed="false">標準<span>3頭身目安 / 長ズボン</span></button></div>
+          <p class="helper">身体は一枚絵のまま。腕や脚は分割しません。頭身は髪を含む見た目の目安です。</p>
+          <p class="section-number second">02 / キャラごとの合わせ</p>
+          <label for="character">調整するキャラ</label><select id="character"><option value="arshe">アルシェ</option><option value="karima">カリマ</option><option value="gunter">ギュンター</option></select>
+          <div class="slider-label"><label for="head-scale">頭の大きさ</label><output id="scale-value" for="head-scale">100%</output></div><input id="head-scale" type="range" min="0.8" max="1.2" step="0.01" value="1">
+          <div class="slider-label"><label for="head-x">首合わせ · 左右</label><output id="x-value" for="head-x">0px</output></div><input id="head-x" type="range" min="-18" max="18" step="1" value="0">
+          <div class="slider-label"><label for="head-y">首合わせ · 上下</label><output id="y-value" for="head-y">0px</output></div><input id="head-y" type="range" min="-12" max="12" step="1" value="0">
+          <button type="button" id="reset" class="quiet">このキャラの調整を戻す</button>
+          <div class="checks"><label><input type="checkbox" id="weapon"> 剣を静止合成</label><label><input type="checkbox" id="guides"> 首・握り位置のガイド</label><label><input type="checkbox" id="mirror"> 左向きに反転</label></div>
+          <p id="weapon-note" class="helper">提供素体はまず武器なしで比較します。武器の握り姿勢は未作成です。</p>
+          <p class="section-number second">03 / 元SDとの比較</p>
+          <div class="checks reference-checks"><label><input type="checkbox" id="overlay" checked> 元SDを透かして重ねる</label><label><input type="checkbox" id="silhouette"> 重ねる元SDを単色シルエットに</label></div>
+          <div class="slider-label"><label for="reference-opacity">元SDの不透明度</label><output id="opacity-value" for="reference-opacity">35%</output></div><input id="reference-opacity" type="range" min="0" max="100" step="1" value="35">
+          <div class="slider-label"><label for="reference-scale">元SDの大きさ</label><output id="reference-scale-value" for="reference-scale">100%</output></div><input id="reference-scale" type="range" min="0.75" max="1.25" step="0.01" value="1">
+          <div class="slider-label"><label for="reference-x">重ね位置 · 左右</label><output id="reference-x-value" for="reference-x">0px</output></div><input id="reference-x" type="range" min="-60" max="60" step="1" value="0">
+          <div class="slider-label"><label for="reference-y">重ね位置 · 上下</label><output id="reference-y-value" for="reference-y">0px</output></div><input id="reference-y" type="range" min="-50" max="50" step="1" value="0">
+          <button type="button" id="reference-reset" class="quiet">元SDの大きさ・位置を戻す</button>
+          <p class="helper">元SDは初期合成の全高・足元に合わせています。頭を調整しても元SDは追従しません。ポーズ・服・武器の違いは残ります。</p>
+          <button type="button" id="save" class="save">調整データを保存</button><p class="helper">身体の系統ごとに調整値を保持。保存はJSONです。再読込すると初期値に戻ります。</p>
+          <details id="export-panel" hidden><summary>書き出したJSON</summary><label for="export-json">保存できない場合はここからコピー</label><textarea id="export-json" readonly spellcheck="false"></textarea></details>
+        </fieldset>
+      </aside>
+      <section class="preview" aria-label="共通身体の比較">
+        <div class="stage-top"><div><p class="section-number">REFERENCE FIT / <span id="reference-character">アルシェ</span></p><h2 id="body-title">提供された子供素体 / 比率確認中</h2></div><button type="button" id="background" disabled>背景を濃色に</button></div>
+        <div id="stage" class="stage"><div id="loading" class="loading" role="status"><span></span><span></span><p>素材を読み込んでいます</p></div><canvas id="fitting" width="840" height="520" aria-label="左に調整中の合成と透かした元SD、右に元SDを並べた全身比較"></canvas><div id="error" hidden role="alert"><p></p><button type="button" id="retry">読み込みを再試行</button></div></div>
+        <div class="pair-names"><span id="fitting-label">アルシェ / 合成＋元SD</span><span>元SDそのまま / 同じ全高基準</span></div>
+        <p class="helper">薄く重なる元SDの頭・肩・腰・足元と比較できます。右の元SDにも大きさの調整は反映し、重ね位置の移動は左だけに反映します。</p>
+        <details class="all-characters"><summary>3人の共通身体を並べて比較</summary><div class="stage secondary-stage"><canvas id="comparison" width="840" height="420" aria-label="3人の頭を同じ身体に合成した拡大比較"></canvas></div><div class="names"><span>アルシェ</span><span>カリマ</span><span>ギュンター</span></div></details>
+        <div class="small-strip"><div><p class="section-number">70 PX / 読みやすさ</p><p>小さくしたときの見え方</p></div><canvas id="mini" width="380" height="100" aria-label="全高約70pxでの3人の比較"></canvas></div>
+        <p class="note"><strong>ここでは静止構えだけ。</strong> 武器の差し替え・頭の追従・前後の重なりを含む攻撃モーションは、まだ検証していません。</p>
+      </section>
+    </div>
+    <section class="source-strip" aria-label="元のキャラクター素材"><div><p class="section-number">REFERENCE / 元の姿</p><p>今回の身体は提供された子供素体。前の衣装は仮の共通服です。<br>元素材は変更していません。頭は参照ベースの生成試作で、細部に変化があります。</p></div><figure><img src="assets/arshe_original.png" alt="元のアルシェのSD素材"><figcaption>アルシェ</figcaption></figure><figure><img src="assets/karima_original.png" alt="元のカリマのSD素材"><figcaption>カリマ</figcaption></figure><figure><img src="assets/gunter_original.png" alt="元のギュンターのSD素材"><figcaption>ギュンター</figcaption></figure></section>
+    <footer><span id="status" role="status" aria-live="polite">準備中</span><a href="../">以前のモーション試作</a><a href="README.md">試作の範囲・素材の記録</a></footer>
+  </main>
+  <script src="fit-core.js?v=20261005-4"></script><script src="app.js?v=20261005-4"></script>
+</body>
+</html>

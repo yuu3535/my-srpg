@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 2,
+  "status": "proof-of-concept",
+  "coordinateSystem": { "origin": "top-left", "x": "right-positive", "y": "down-positive", "rotation": "clockwise-degrees", "armAngles": "absolute-from-down-before-body-rotation" },
+  "canvas": { "width": 440, "height": 400, "fps": 24, "groundY": 350 },
+  "body": {
+    "asset": "assets/rig/body.png", "sourceSize": { "width": 580, "height": 1000 },
+    "referenceBodyHeight": 242,
+    "anchors": { "foot": { "x": 330, "y": 980 }, "shoulder": { "x": 395, "y": 465 } }
+  },
+  "rig": {
+    "upperArm": {
+      "asset": "assets/rig/upper_arm.png", "sourceSize": { "width": 160, "height": 280 },
+      "start": { "x": 80, "y": 45 }, "end": { "x": 75, "y": 250 }, "length": 118
+    },
+    "forearm": {
+      "asset": "assets/rig/forearm.png", "sourceSize": { "width": 120, "height": 237 },
+      "start": { "x": 60, "y": 38 }, "end": { "x": 60, "y": 203 }, "length": 92
+    },
+    "hand": {
+      "asset": "assets/rig/hand.png", "sourceSize": { "width": 145, "height": 156 },
+      "wrist": { "x": 63, "y": 33 }, "grip": { "x": 76, "y": 85 }, "scale": 0.68
+    }
+  },
+  "weapon": {
+    "asset": "assets/weapon/orcus_sword.png", "size": { "width": 1024, "height": 1536 },
+    "grip": { "x": 512, "y": 1260 }, "pivot": { "x": 512, "y": 1260 }, "defaultScale": 0.08
+  },
+  "clips": {
+    "idle": {
+      "label": "待機", "duration": 1.5, "loop": true,
+      "bodyKeys": [
+        { "t": 0, "x": 0, "y": 0, "rotation": 0, "scale": 1 },
+        { "t": 0.72, "x": 0, "y": 0, "rotation": -0.35, "scale": 1 },
+        { "t": 1.5, "x": 0, "y": 0, "rotation": 0, "scale": 1 }
+      ],
+      "armKeys": [
+        { "t": 0, "upperAngle": -20, "elbowBend": -65, "wristAngle": 105, "layer": "front" },
+        { "t": 0.72, "upperAngle": -22, "elbowBend": -62, "wristAngle": 106, "layer": "front" },
+        { "t": 1.5, "upperAngle": -20, "elbowBend": -65, "wristAngle": 105, "layer": "front" }
+      ]
+    },
+    "attack": {
+      "label": "片手剣・斬り", "duration": 1.05, "loop": false,
+      "phases": [
+        { "id": "ready", "label": "構え", "from": 0, "to": 0.38 },
+        { "id": "swing", "label": "振り", "from": 0.38, "to": 0.61 },
+        { "id": "recover", "label": "復帰", "from": 0.61, "to": 1.05 }
+      ],
+      "bodyKeys": [
+        { "t": 0, "x": 0, "y": 0, "rotation": 0, "scale": 1 },
+        { "t": 0.30, "x": -6, "y": 0, "rotation": -2, "scale": 1 },
+        { "t": 0.38, "x": -6, "y": 0, "rotation": -2, "scale": 1 },
+        { "t": 0.53, "x": 16, "y": 0, "rotation": 4, "scale": 1 },
+        { "t": 0.66, "x": 13, "y": 0, "rotation": 3, "scale": 1 },
+        { "t": 0.85, "x": 4, "y": 0, "rotation": 1, "scale": 1 },
+        { "t": 1.05, "x": 0, "y": 0, "rotation": 0, "scale": 1 }
+      ],
+      "armKeys": [
+        { "t": 0, "upperAngle": -20, "elbowBend": -65, "wristAngle": 105, "layer": "front" },
+        { "t": 0.30, "upperAngle": -140, "elbowBend": 50, "wristAngle": 45, "layer": "behind" },
+        { "t": 0.38, "upperAngle": -140, "elbowBend": 50, "wristAngle": 45, "layer": "behind" },
+        { "t": 0.44, "upperAngle": -100, "elbowBend": -10, "wristAngle": 118, "layer": "front" },
+        { "t": 0.53, "upperAngle": -70, "elbowBend": -40, "wristAngle": 180, "layer": "front" },
+        { "t": 0.66, "upperAngle": -15, "elbowBend": -30, "wristAngle": 155, "layer": "front" },
+        { "t": 0.85, "upperAngle": -15, "elbowBend": -55, "wristAngle": 112, "layer": "front" },
+        { "t": 1.05, "upperAngle": -20, "elbowBend": -65, "wristAngle": 105, "layer": "front" }
+      ]
+    }
+  }
+}

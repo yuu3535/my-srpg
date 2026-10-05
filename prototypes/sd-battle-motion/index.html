@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SD戦闘モーション PoC</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23d0a968' d='M15 2h2v18h-2zM8 18h16v3H8zm5 3h6v9h-6z'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css?v=arm-rig-2">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="masthead">
+      <div>
+        <p class="eyebrow">MOTION STUDY / PROOF OF CONCEPT</p>
+        <h1>SD戦闘モーション調整室</h1>
+      </div>
+      <div class="scope-note">
+        <span class="scope-mark"></span>
+        <span>幼少アルシェ / 動く腕＋オルクスの片手剣</span>
+      </div>
+    </header>
+
+    <section class="workspace" aria-label="モーション確認画面">
+      <div class="preview-column">
+        <div class="preview-frame">
+          <div id="loadingState" class="state-panel">
+            <span class="skeleton skeleton-line"></span>
+            <span class="skeleton skeleton-stage"></span>
+            <p>モーション定義と素材を読み込んでいます</p>
+          </div>
+          <div id="errorState" class="state-panel state-panel-error" hidden>
+            <p class="state-title">読み込みできませんでした</p>
+            <p id="errorMessage"></p>
+            <p>READMEの手順でローカルサーバーから開いてください。</p>
+          </div>
+          <div id="previewContent" class="preview-content" hidden>
+            <div class="stage-wrap">
+              <canvas id="motionCanvas" width="320" height="320" aria-label="SDキャラクターのモーションプレビュー"></canvas>
+              <div class="ground-line" aria-hidden="true"></div>
+            </div>
+            <div class="timeline-block">
+              <div class="timeline-meta">
+                <span id="clipLabel">待機</span>
+                <span id="timeLabel" class="mono">0.000 / 1.500 s</span>
+              </div>
+              <input id="timeline" type="range" min="0" max="1.5" step="0.001" value="0" aria-label="再生位置">
+              <div id="phaseTrack" class="phase-track" aria-label="攻撃フェーズ"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="readout-strip" aria-label="現在のモーション値">
+          <div><span class="readout-label">BODY</span><strong id="bodyReadout" class="mono">x 0.0 / y 0.0 / 0.0°</strong></div>
+          <div><span class="readout-label">WEAPON</span><strong id="weaponReadout" class="mono">18.0° / FRONT</strong></div>
+          <div><span class="readout-label">GRIP ERROR</span><strong id="gripReadout" class="mono">0.00 px</strong></div>
+          <div><span class="readout-label">ARM</span><strong id="armReadout" class="mono">肩 −20° / 肘 −65°</strong></div>
+        </div>
+      </div>
+
+      <aside class="control-rail" aria-label="調整項目">
+        <section class="control-section primary-controls">
+          <div class="segmented" role="group" aria-label="モーション選択">
+            <button class="segment is-active" type="button" data-clip="idle">待機</button>
+            <button class="segment" type="button" data-clip="attack">攻撃</button>
+          </div>
+          <div class="button-row">
+            <button id="playButton" class="action-button action-primary" type="button">再生</button>
+            <button id="stopButton" class="action-button" type="button">停止</button>
+          </div>
+        </section>
+
+        <section class="control-section">
+          <div class="section-heading">
+            <h2>再生</h2>
+            <button id="flipButton" class="text-toggle" type="button" aria-pressed="false">左向き: OFF</button>
+          </div>
+          <label class="range-control" for="speed">
+            <span>速度</span><output id="speedValue" class="mono">1.00×</output>
+            <input id="speed" type="range" min="0.25" max="2" step="0.05" value="1">
+          </label>
+          <label class="check-row">
+            <input id="debugOverlay" type="checkbox">
+            <span>肩・肘・手・足元を表示</span>
+          </label>
+        </section>
+
+        <section class="control-section">
+          <div class="section-heading"><h2>握り手の Anchor</h2><span class="unit-label">手パーツpx</span></div>
+          <label class="range-control" for="handX">
+            <span>X 補正</span><output id="handXValue" class="mono">+0</output>
+            <input id="handX" type="range" min="-32" max="32" step="1" value="0">
+          </label>
+          <label class="range-control" for="handY">
+            <span>Y 補正</span><output id="handYValue" class="mono">+0</output>
+            <input id="handY" type="range" min="-32" max="32" step="1" value="0">
+          </label>
+        </section>
+
+        <section class="control-section">
+          <div class="section-heading"><h2>剣の Grip / 大きさ</h2><span class="unit-label">剣画像px</span></div>
+          <label class="range-control" for="gripX">
+            <span>Grip X</span><output id="gripXValue" class="mono">+0</output>
+            <input id="gripX" type="range" min="-140" max="140" step="5" value="0">
+          </label>
+          <label class="range-control" for="gripY">
+            <span>Grip Y</span><output id="gripYValue" class="mono">+0</output>
+            <input id="gripY" type="range" min="-140" max="140" step="5" value="0">
+          </label>
+          <label class="range-control" for="weaponScale">
+            <span>大きさ</span><output id="weaponScaleValue" class="mono">1.00×</output>
+            <input id="weaponScale" type="range" min="0.55" max="1.45" step="0.05" value="1">
+          </label>
+          <button id="resetButton" class="reset-button" type="button">調整値を初期化</button>
+        </section>
+
+        <section class="limitation-note">
+          <p class="note-kicker">KNOWN LIMIT</p>
+          <p>片手剣を持つ腕の試作です。肩・肘・手を動かして構え、斬り、復帰します。人物パーツは画像生成による試作素材で、元絵との細かな違いと関節のつなぎ目は確認対象です。</p>
+        </section>
+      </aside>
+    </section>
+  </main>
+  <script src="motion-core-v2.js?v=arm-rig-2"></script>
+  <script src="app.js?v=arm-rig-2"></script>
+</body>
+</html>
