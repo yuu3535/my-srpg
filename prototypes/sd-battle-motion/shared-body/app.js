@@ -188,11 +188,50 @@
       }
     } catch(error) { recordMessage('record-import-message',`読み込めません：${error.message}。現在の記録・調整は変えていません。`,true); }
   }
+  // ── 保存先のフォルダ（原作者 2026-10-06: ダウンロードではなく、選んだフォルダへ保存したい） ──
+  // Chrome のフォルダを選ぶ機能（File System Access）で一度選ぶと、次からそのフォルダへ直接書く。選んだフォルダはこのブラウザに覚える。
+  // 使えないブラウザ・選ばなかったときは、今までどおりダウンロードへ
+  let saveDir = null;
+  const canPickFolder = typeof window !== 'undefined' && typeof window.showDirectoryPicker === 'function' && typeof indexedDB !== 'undefined';
+  function folderDb(mode, fn) {
+    return new Promise((resolve, reject) => {
+      const open = indexedDB.open('srpg-shared-body', 1);
+      open.onupgradeneeded = () => open.result.createObjectStore('handles');
+      open.onerror = () => reject(open.error);
+      open.onsuccess = () => { const tx = open.result.transaction('handles', mode), req = fn(tx.objectStore('handles')); tx.oncomplete = () => resolve(req.result); tx.onerror = () => reject(tx.error); };
+    });
+  }
+  function showFolder() {
+    $('save-folder').textContent = saveDir ? `保存先：選んだフォルダ「${saveDir.name}」` : canPickFolder ? '保存先：ダウンロードのフォルダ（「保存先のフォルダを選ぶ」で変えられます）' : '保存先：ダウンロードのフォルダ（このブラウザはフォルダを選べません。Chrome なら選べます）';
+    $('choose-folder').hidden = !canPickFolder;
+  }
+  async function chooseFolder() {
+    try {
+      saveDir = await window.showDirectoryPicker({ id: 'srpg-shared-body', mode: 'readwrite' });
+      await folderDb('readwrite', store => store.put(saveDir, 'saveDir'));
+    } catch { /* 選ばなかった */ }
+    showFolder();
+  }
+  async function saveFile(blob, file) {
+    if (saveDir) {
+      try {
+        if ((await saveDir.queryPermission({ mode: 'readwrite' })) !== 'granted' && (await saveDir.requestPermission({ mode: 'readwrite' })) !== 'granted') throw new Error('許可がない');
+        const handle = await saveDir.getFileHandle(file, { create: true }), writable = await handle.createWritable();
+        await writable.write(blob); await writable.close();
+        return `「${saveDir.name}」に保存しました（${file}）`;
+      } catch { /* 書けなければダウンロードへ */ }
+    }
+    const url = URL.createObjectURL(blob), link = document.createElement('a');
+    link.href = url; link.download = file; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+    return `ダウンロードのフォルダに保存しました（${file}）`;
+  }
+  if (canPickFolder) folderDb('readonly', store => store.get('saveDir')).then(handle => { saveDir = handle || null; showFolder(); }).catch(() => showFolder());
+  showFolder();
+  $('choose-folder').addEventListener('click', chooseFolder);
   function exportJSON(data,file,panel,field) {
     const serialized=JSON.stringify(data,null,2);
     $(field).value=serialized;$(panel).hidden=false;$(panel).open=true;
-    const url=URL.createObjectURL(new Blob([serialized],{type:'application/json'})), link=document.createElement('a');
-    link.href=url;link.download=file;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    saveFile(new Blob([serialized],{type:'application/json'}),file).then(message=>{ $('status').textContent=message; });
   }
   function syncPalette() {
     const active = ready && bodyKey === 'lineA1';
@@ -448,10 +487,12 @@
       if (lastCompositeUrl) URL.revokeObjectURL(lastCompositeUrl);
       lastCompositeUrl = URL.createObjectURL(blob);
       const link = $('composite-download'); link.href = lastCompositeUrl;
-      link.download = `${bodyKey}_${key}${bodyKey === 'lineA1' ? '_palette' : ''}_with_head.png`;
+      const fileName = `${bodyKey}_${key}${bodyKey === 'lineA1' ? '_palette' : ''}_with_head.png`;
+      link.download = fileName;
       $('composite-export-meta').textContent = `${core.heads[key]?.label || key} / ${body.classId || ''} / ${body.variant || body.label}。出力したときの頭合わせ・配色です。変えたあとは、もう一度保存してください。`;
       $('composite-export').src = lastCompositeUrl; $('composite-export-panel').hidden = false; $('composite-export-panel').open = true;
-      link.click(); $('status').textContent = '頭つきの見た目PNGを生成しました · 保存できない場合は書き出し画像から保存できます';
+      $('status').textContent = '頭つきの見た目PNGを生成しました';
+      saveFile(blob, fileName).then(message => { $('status').textContent = `頭つきの見た目PNG：${message}`; });
     }, 'image/png');
   });
   $('palette-png').addEventListener('click', () => {
@@ -465,7 +506,8 @@
       const link=$('png-download'); link.href=lastPngUrl; link.download=`line_low_child_a1_${key}_palette.png`;
       $('png-export-meta').textContent=`出力時の${core.heads[key].label}の配色です。設定を変えた後は、もう一度PNGを保存してください。`;
       $('png-export').src=lastPngUrl; $('png-export-panel').hidden=false; $('png-export-panel').open=true;
-      link.click(); $('status').textContent='頭なしのA1身体PNGを生成しました · 保存できない場合は書き出し画像から保存できます';
+      $('status').textContent='頭なしのA1身体PNGを生成しました';
+      saveFile(blob, link.download).then(message => { $('status').textContent=`頭なしのA1身体PNG：${message}`; });
     },'image/png');
   });
   for (const [id, field] of [['head-scale','scale'], ['head-x','x'], ['head-y','y']]) $(id).addEventListener('input', () => { current()[field] = Number($(id).value); sync(); markEdited(); });
