@@ -1,0 +1,32 @@
+{
+  "ok": true,
+  "evaluator": "motion-core-v2.js (same as browser)",
+  "definitionSha256": "70d5d33a51ce3d3c0f211efcf5cf889b7f8f67dbe3a1ab5d010d0b38563dd3b5",
+  "clips": {
+    "idle": {
+      "checkedSamples": 181,
+      "maxGripErrorPx": 6.355287432313019e-14,
+      "maxJointErrorPx": 6.355287432313019e-14,
+      "maxFootAnchorErrorPx": 2.842170943040401e-14,
+      "clippedSamples": 0,
+      "apngFrameMismatches": 0,
+      "durationMs": 1500,
+      "sheetFrames": 36,
+      "apngFrames": 36,
+      "decodedDurationMs": 1500.0
+    },
+    "attack": {
+      "checkedSamples": 127,
+      "maxGripErrorPx": 6.355287432313019e-14,
+      "maxJointErrorPx": 8.038873388460929e-14,
+      "maxFootAnchorErrorPx": 2.842170943040401e-14,
+      "clippedSamples": 0,
+      "apngFrameMismatches": 0,
+      "durationMs": 1050,
+      "sheetFrames": 26,
+      "apngFrames": 25,
+      "decodedDurationMs": 1050.0
+    }
+  },
+  "issues": []
+}

@@ -1,0 +1,38 @@
+{
+  "ok": true,
+  "sourceSnapshot": {
+    "matchesUpstream": true,
+    "sha256": "948c527de27c1933068bba3ed9a66a886e2eb6fb09d2f7264fd165a88381763a"
+  },
+  "bodyAlphaBounds": [
+    12,
+    12,
+    277,
+    500
+  ],
+  "weaponAlphaBounds": [
+    10,
+    2,
+    63,
+    173
+  ],
+  "clips": [
+    {
+      "clip": "idle",
+      "checkedFrames": 37,
+      "maxGripErrorPx": 0.0,
+      "maxFootAnchorErrorPx": 0.0,
+      "edgeHits": 0,
+      "mirrorMismatches": 0
+    },
+    {
+      "clip": "attack",
+      "checkedFrames": 24,
+      "maxGripErrorPx": 0.0,
+      "maxFootAnchorErrorPx": 0.0,
+      "edgeHits": 0,
+      "mirrorMismatches": 0
+    }
+  ],
+  "issues": []
+}
