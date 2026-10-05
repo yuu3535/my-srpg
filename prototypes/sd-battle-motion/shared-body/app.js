@@ -69,6 +69,8 @@
     $('opacity-value').value = `${$('reference-opacity').value}%`;
     $('reference-character').textContent = label;
     $('fitting-label').textContent = `${label} / ${$('overlay').checked ? '合成＋元SD' : '合成のみ'}`;
+    $('pair-right').hidden = !$('side-by-side').checked;
+    $('pair-names').classList.toggle('single', !$('side-by-side').checked);
     document.querySelectorAll('[data-body]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.body === bodyKey)));
     document.querySelectorAll('.names span').forEach((label, i) => { label.hidden = !available.includes(keys[i]); label.classList.toggle('selected', keys[i] === $('character').value); });
     core.outfitKeys.forEach(key => $('caption-' + key).classList.toggle('selected', key === bodyKey));
@@ -129,7 +131,7 @@
     refreshRecords();
   }
   function identity() { return {id:crypto.randomUUID(),savedAt:new Date().toISOString()}; }
-  function currentView() { return {overlay:$('overlay').checked,silhouette:$('silhouette').checked,opacity:Number($('reference-opacity').value)/100,mirror:$('mirror').checked,guides:$('guides').checked}; }
+  function currentView() { return {overlay:$('overlay').checked,silhouette:$('silhouette').checked,opacity:Number($('reference-opacity').value)/100,mirror:$('mirror').checked,guides:$('guides').checked}; }   // 横に並べる（side-by-side）は記録に入れない（保存形式を変えない）
   function captureRecord() {
     const char=$('character').value;
     return {...identity(),revision:1,characterId:presets.characters[char],classId:$('class-id').value,bodyType:'child',name:$('record-name').value.trim() || `${core.heads[char].label} / ${$('class-id').value}`,
@@ -260,11 +262,15 @@
     const canvas = $('fitting'), ctx = canvas.getContext('2d'), key = $('character').value;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.strokeStyle = dark ? '#60776a' : '#c5d3cb'; ctx.lineWidth = 1;
-    const left = canvas.width / 4, right = canvas.width * .75, center = canvas.width / 2;
-    ctx.beginPath(); ctx.moveTo(32, 460.5); ctx.lineTo(canvas.width - 32, 460.5); ctx.moveTo(center + .5, 25); ctx.lineTo(center + .5, 495); ctx.stroke();
+    // 1つの画面で合わせる（原作者 2026-10-06: 右の元SDは要らない）。横に並べるのは「表示の補助」で選んだときだけ
+    const side = $('side-by-side').checked;
+    const left = side ? canvas.width / 4 : canvas.width / 2, right = canvas.width * .75, center = canvas.width / 2;
+    ctx.beginPath(); ctx.moveTo(32, 460.5); ctx.lineTo(canvas.width - 32, 460.5);
+    if (side) { ctx.moveTo(center + .5, 25); ctx.lineTo(center + .5, 495); }
+    ctx.stroke();
     character(ctx, key, [left, 460], 1);
     if ($('overlay').checked) reference(ctx, key, [left, 460], currentReference(), true);
-    reference(ctx, key, [right, 460], { ...currentReference(), x: 0, y: 0 }, false);
+    if (side) reference(ctx, key, [right, 460], { ...currentReference(), x: 0, y: 0 }, false);
   }
   function draw() {
     if (!ready) return;
@@ -275,7 +281,7 @@
       ctx.beginPath(); ctx.moveTo(20,360.5); ctx.lineTo(880,360.5); ctx.stroke();
       core.outfitKeys.forEach((key, i) => character(ctx, $('character').value, [150 + i * 300, 360], 1, key));
     }
-    $('palette-panel').hidden = !core.bodies[bodyKey].extracted;
+    $('palette-panel').hidden = !core.bodies[bodyKey].extracted;   // 以前の身体試作では配色の欄を隠す
     if (core.bodies[bodyKey].extracted) {
       const palette=$('palette-preview'), ctx=palette.getContext('2d'); ctx.clearRect(0,0,palette.width,palette.height);
       character(ctx,$('character').value,[350,440],1.3,'lineA1');
@@ -409,7 +415,7 @@
   for (const [id, field] of [['head-scale','scale'], ['head-x','x'], ['head-y','y']]) $(id).addEventListener('input', () => { current()[field] = Number($(id).value); sync(); markEdited(); });
   for (const [id, field] of [['reference-scale','scale'], ['reference-x','x'], ['reference-y','y']]) $(id).addEventListener('input', () => { currentReference()[field] = Number($(id).value); sync(); });
   $('reference-opacity').addEventListener('input', sync);
-  ['overlay','silhouette'].forEach(id => $(id).addEventListener('change', sync));
+  ['overlay','silhouette','side-by-side'].forEach(id => $(id).addEventListener('change', sync));
   $('reference-reset').addEventListener('click', () => { referenceProfiles[bodyKey][$('character').value] = core.defaults(); sync(); });
   $('reset').addEventListener('click', () => { profiles[bodyKey][$('character').value] = core.defaults(); sync(); markEdited(); });
   $('match-outfits').addEventListener('click', () => { const a = { ...current() }; core.outfitKeys.forEach(key => { profiles[key][$('character').value] = { ...a }; }); sync(); markEdited(); });

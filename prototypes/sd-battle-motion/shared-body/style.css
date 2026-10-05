@@ -124,3 +124,11 @@ footer a { color: #546e62; text-decoration: none; }
 @media(max-width:1100px) { main { padding: 24px; } .workspace { gap: 24px; grid-template-columns: 225px minmax(550px,1fr); } aside { padding-right: 20px; } }
 @media(max-height:700px) { .preview { position: static; } }
 @media(prefers-reduced-motion:reduce) { button { transition: none; } }
+/* 2026-10-06: 合わせる画面は1つ。配色は左の STEP 2 の中 */
+.pair-names.single { grid-template-columns: 1fr; }
+.palette-left { margin-top: 18px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.palette-left .wheel-row { grid-template-columns: 96px 1fr; gap: 10px; }
+.palette-left .hue-wheel { width: 96px; height: 96px; }
+.palette-left .hue-wheel::before { inset: 16px; }
+.palette-left .hue-wheel span { left: 42px; top: 42px; transform: rotate(var(--angle,145deg)) translateX(39px); }
+#outfits-panel { margin-top: 20px; }

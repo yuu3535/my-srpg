@@ -122,7 +122,9 @@ async function main() {
   assert.ok(!ui.draws.some(d => d.canvas === 'fitting' && d.file === 'assets/orcus_sword.png'));
   switchBody('child'); assert.equal(el.weapon.disabled, false); assert.equal(el.weapon.checked, true);
   let referenceDraws = () => ui.draws.filter(d => d.canvas === 'fitting' && d.file === 'assets/arshe_original.png');
-  assert.deepEqual(referenceDraws().map(d => d.alpha), [.35, 1], '半透明の重ねと原画そのままの隣表示');
+  assert.deepEqual(referenceDraws().map(d => d.alpha), [.35], 'ふだんは1つの画面で、元SDは重ねるだけ');
+  check('side-by-side', true);
+  assert.deepEqual(referenceDraws().map(d => d.alpha), [.35, 1], '横にも並べると、半透明の重ねと原画そのままの隣表示');
   input('reference-opacity', 0); assert.deepEqual(referenceDraws().map(d => d.alpha), [0, 1]);
   input('reference-opacity', 100); assert.deepEqual(referenceDraws().map(d => d.alpha), [1, 1]);
   check('overlay', false); assert.equal(referenceDraws().length, 1); assert.match(el['fitting-label'].textContent, /合成のみ/);
