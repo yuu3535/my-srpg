@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="768" height="768" viewBox="0 0 768 768" role="img" aria-labelledby="title desc">
+  <title id="title">ウロボロスの双子 — アプリアイコン清書</title>
+  <desc id="desc">二匹の蛇が互いの尾を噛む円環。銀と灰の菱形模様、赤い目。内側に十二の目盛りと金の円、中央に赤い縦長の瞳孔。</desc>
+  <defs>
+    <mask id="scale-cutouts" maskUnits="userSpaceOnUse" x="240" y="70" width="750" height="710">
+      <rect x="240" y="70" width="750" height="710" fill="#fff"/>
+      <path d="M 574.101 129.601 L 605.852 115.045 L 638.091 128.484 L 606.34 143.041 Z" fill="#000"/>
+      <path d="M 647.931 129.605 L 682.367 123.763 L 710.03 145.088 L 675.593 150.931 Z" fill="#000"/>
+      <path d="M 719.244 148.718 L 754.019 151.987 L 775.219 179.746 L 740.444 176.477 Z" fill="#000"/>
+      <path d="M 783.18 185.636 L 815.924 197.795 L 829.218 230.095 L 796.474 217.936 Z" fill="#000"/>
+      <path d="M 835.383 237.845 L 863.864 258.064 L 868.345 292.704 L 839.864 272.485 Z" fill="#000"/>
+      <path d="M 872.294 301.786 L 894.572 328.687 L 889.935 363.306 L 867.657 336.405 Z" fill="#000"/>
+    </mask>
+    <mask id="scale-cutouts-shadow" maskUnits="userSpaceOnUse" x="240" y="70" width="750" height="710">
+      <rect x="240" y="70" width="750" height="710" fill="#fff"/>
+      <path d="M 648.074 700.397 L 616.323 714.954 L 584.084 701.514 L 615.834 686.958 Z" fill="#000"/>
+      <path d="M 571.65 700.098 L 537.214 705.94 L 509.551 684.615 L 543.988 678.772 Z" fill="#000"/>
+      <path d="M 497.908 680.028 L 463.133 676.759 L 441.933 649 L 476.708 652.27 Z" fill="#000"/>
+      <path d="M 431.873 641.557 L 399.129 629.399 L 385.836 597.099 L 418.58 609.257 Z" fill="#000"/>
+      <path d="M 378.046 587.305 L 349.564 567.087 L 345.083 532.447 L 373.565 552.666 Z" fill="#000"/>
+      <path d="M 340.093 520.971 L 317.815 494.069 L 322.452 459.45 L 344.731 486.352 Z" fill="#000"/>
+    </mask>
+  </defs>
+  <!-- 全体は透過。星・針・数字・背景・アプリ外枠を追加しない。 -->
+  <g transform="translate(-227 -26)" stroke-linecap="butt" stroke-linejoin="round">
+    <g id="snake-light">
+      <g id="snake-light-body" mask="url(#scale-cutouts)">
+        <path d="M 371 292 C 426 165 545 86 650 100 C 812 116 928 245 943 383 C 948 415 944 437 928 451 L 913 461 C 934 446 937 431 926 412 L 860 395 C 847 348 835 316 812 285 C 767 218 697 183 623 174 C 519 156 433 199 383 290 Z" fill="#eef0ee"/>
+        <path d="M 371 292 C 408 207 474 145 552 116 C 572 126 594 137 616 147 C 515 143 433 199 383 290 Z" fill="#5a6673"/>
+        <path d="M 649 111 C 800 133 908 253 929 390" fill="none" stroke="#5a6673" stroke-width="7"/>
+        <path d="M 380 277 C 432 176 529 126 604 135" fill="none" stroke="#b8c0c8" stroke-width="3"/>
+      </g>
+      <g id="snake-light-scales" fill="none" stroke="#eef0ee" stroke-width="3.3" stroke-linejoin="round">
+        <path d="M 364.102 276.185 L 372.627 243.089 L 400.811 223.759 L 392.286 256.855 Z"/>
+      <path d="M 403.809 220.43 L 420.087 190.38 L 452.11 178.442 L 435.832 208.493 Z"/>
+      <path d="M 455.824 175.937 L 478.889 150.717 L 512.849 146.881 L 489.785 172.101 Z"/>
+      </g>
+      <g id="snake-light-gold" fill="#e9bf80">
+        <path d="M 324 317 C 362 214 443 138 548 107 L 523 120 C 430 158 362 227 340 306 Z"/>
+        <path d="M 495 198 C 539 170 587 165 632 171 C 731 177 810 249 850 354 L 858 382 L 868 389 C 835 268 743 184 633 164 C 585 158 533 170 495 198 Z"/>
+        <path d="M 862 355 C 887 366 909 387 920 411 L 925 430 C 912 400 894 383 865 378 Z"/>
+      </g>
+    </g>
+    <g id="snake-shadow">
+      <g id="snake-shadow-body" mask="url(#scale-cutouts-shadow)">
+        <path d="M 862 546 C 810 652 713 724 620 735 C 461 752 333 638 308 507 C 301 468 300 429 314 400 L 329 384 C 330 422 350 454 389 474 C 402 563 502 662 616 663 C 718 667 806 614 862 546 Z" fill="#eef0ee"/>
+        <path d="M 862 546 C 814 646 743 703 655 728 L 622 695 C 719 677 804 614 862 546 Z" fill="#5a6673"/>
+        <path d="M 328 441 C 349 590 471 712 623 721" fill="none" stroke="#5a6673" stroke-width="7"/><path d="M 329 384 C 330 424 350 455 389 474 C 408 568 505 650 617 662 L 619 679 C 504 669 397 579 371 498 C 348 466 331 426 329 384 Z" fill="#5a6673"/>
+        <path d="M 380 277 C 432 176 529 126 604 135" transform="rotate(180 611 410)" fill="none" stroke="#b8c0c8" stroke-width="3"/>
+      </g>
+      <g id="snake-shadow-scales" transform="rotate(180 611 410)" fill="none" stroke="#eef0ee" stroke-width="3.3" stroke-linejoin="round">
+        <path d="M 364.102 276.185 L 372.627 243.089 L 400.811 223.759 L 392.286 256.855 Z"/>
+      <path d="M 403.809 220.43 L 420.087 190.38 L 452.11 178.442 L 435.832 208.493 Z"/>
+      <path d="M 455.824 175.937 L 478.889 150.717 L 512.849 146.881 L 489.785 172.101 Z"/>
+      </g>
+      <g id="snake-shadow-gold" fill="#e9bf80">
+        <path d="M 324 317 C 362 214 443 138 548 107 L 523 120 C 430 158 362 227 340 306 Z" transform="rotate(180 611 410)"/>
+        <path d="M 389 474 C 402 563 502 662 616 663 C 718 667 806 614 862 546 L 852 558 C 800 621 718 674 616 671 C 505 669 402 568 389 474 Z"/>
+        
+      </g>
+    </g>
+    <g id="snake-heads">
+      <path id="head-light" d="M 371 288 C 383 279 388 301 379 326 L 364 359 C 365 379 352 395 337 402 L 334 384 C 345 378 350 373 339 369 C 322 366 299 391 288 426 C 285 394 294 363 318 337 C 335 318 352 301 371 288 Z" fill="#eef0ee"/>
+      <path id="head-shadow" d="M 910 437 C 888 444 877 461 870 480 C 861 498 857 526 862 546 C 864 558 875 553 891 542 C 927 517 958 477 962 419 C 956 439 939 452 916 458 C 903 462 900 457 911 453 Z" fill="#5a6673"/>
+      <ellipse id="eye-light" cx="354" cy="334" rx="7.8" ry="13" transform="rotate(31 354 334)" fill="#6c1d34"/>
+      <ellipse id="eye-shadow" cx="898" cy="503" rx="7.8" ry="13" transform="rotate(36 898 503)" fill="#6c1d34"/>
+    </g>
+    <!-- 尾の先は相手の口の下へ接続し、頭と胴の二匹を保つ。 -->
+    <g id="mouth-tail-joints" fill="#e9bf80">
+      <path d="M 288 426 C 298 401 317 380 339 377 C 340 372 333 371 325 375 C 308 385 294 404 288 426 Z"/>
+      <path d="M 330 386 C 331 424 351 455 389 474 L 383 454 C 354 448 337 420 330 386 Z"/>
+      <path d="M 913 461 C 936 456 955 440 962 419 C 960 442 944 459 922 466 C 916 467 911 464 913 461 Z"/>
+    </g>
+    <g id="clock-dial" fill="none" stroke="#b8c0c8" stroke-width="2.6">
+      <circle cx="611" cy="410" r="210"/>
+      <circle cx="611" cy="410" r="201"/>
+      <path d="M 611 247 L 611 214" stroke="#e9bf80" stroke-width="4.5"/>
+    <path d="M 695 264.508 L 709 240.259" stroke="#b8c0c8" stroke-width="3"/>
+    <path d="M 756.492 326 L 780.741 312" stroke="#b8c0c8" stroke-width="3"/>
+    <path d="M 774 410 L 807 410" stroke="#e9bf80" stroke-width="4.5"/>
+    <path d="M 756.492 494 L 780.741 508" stroke="#b8c0c8" stroke-width="3"/>
+    <path d="M 695 555.492 L 709 579.741" stroke="#b8c0c8" stroke-width="3"/>
+    <path d="M 611 573 L 611 606" stroke="#e9bf80" stroke-width="4.5"/>
+    <path d="M 527 555.492 L 513 579.741" stroke="#b8c0c8" stroke-width="3"/>
+    <path d="M 465.508 494 L 441.259 508" stroke="#b8c0c8" stroke-width="3"/>
+    <path d="M 448 410 L 415 410" stroke="#e9bf80" stroke-width="4.5"/>
+    <path d="M 465.508 326 L 441.259 312" stroke="#b8c0c8" stroke-width="3"/>
+    <path d="M 527 264.508 L 513 240.259" stroke="#b8c0c8" stroke-width="3"/>
+    </g>
+    <g id="iris">
+      <circle id="gold-ring" cx="611" cy="410" r="155" fill="none" stroke="#e9bf80" stroke-width="7"/>
+      <path id="red-pupil" d="M 611 347 C 634 391 634 429 611 473 C 588 429 588 391 611 347 Z" fill="#a5243d"/>
+    </g>
+  </g>
+</svg>
