@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ウロボロス — PNG清書確認</title>
+  <link rel="stylesheet" href="icon-preview.css?v=20261006-1">
+  <script src="icon-preview.js?v=20261006-1" defer></script>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">携帯端末 / 謎のアプリ</p>
+      <h1>ウロボロスの円環</h1>
+      <p class="intro">原作者が修正したPNGを採用。絵には追加加工せず、そのまま表示しています。以前のPNG・見本・SVG試作は保存済み。本編・メニューへの差し替えはまだ行っていません。</p>
+    </header>
+    <form class="controls" aria-label="表示の確認" onsubmit="return false">
+      <label>確認背景
+        <select id="background"><option value="dark">濃色</option><option value="checker">市松</option><option value="light">淡色</option></select>
+      </label>
+      <label>小サイズ <output id="size-value" for="icon-size">64px</output>
+        <input id="icon-size" type="range" min="32" max="128" step="8" value="64">
+      </label>
+      <a href="ouroboros-approved.png" download>採用PNGを保存</a>
+      <a href="ouroboros-png-clean-v06.png" download>以前の白塗り案を保存</a>
+      <a href="ouroboros-png-clean-v05.png" download>前回の修正案を保存</a>
+      <a href="ouroboros-png-clean-v04.png" download>直接補修する前のPNGを保存</a>
+      <a href="ouroboros-png-clean-v03.png" download>白い線を消す前のPNGを保存</a>
+      <a href="ouroboros-png-clean-v02.png" download>胴体色を直す前のPNGを保存</a>
+      <a href="ouroboros-png-clean-v01.png" download>修正前のPNGを保存</a>
+      <a href="ouroboros-clean-v01.svg" download>以前のSVG試作を保存</a>
+    </form>
+    <section class="comparison" aria-label="見本と清書の比較">
+      <figure>
+        <figcaption>採用した見本 <span>画像生成</span></figcaption>
+        <div class="reference-crop"><img src="reference-approved.png" alt="採用された二匹の蛇・時計盤・金色の円・赤い瞳孔の見本"></div>
+      </figure>
+      <figure>
+        <figcaption>採用PNG <span>原作者修正版・追加加工なし</span></figcaption>
+        <div class="stage"><img class="large-icon" src="ouroboros-approved.png?v=20261006-8" alt="原作者が修正したウロボロスの採用PNG"></div>
+      </figure>
+    </section>
+    <section class="size-check" aria-labelledby="size-title">
+      <div><h2 id="size-title">小さくしたときの見え方</h2><p>背景とサイズを切り替えて、赤い目・瞳孔・鱗の残り方を確認できます。</p></div>
+      <div class="small-stage"><img id="small-icon" width="64" height="64" src="ouroboros-approved.png?v=20261006-8" alt="小サイズのウロボロス採用PNG"></div>
+      <div class="app-tile"><img id="tile-icon" width="64" height="64" src="ouroboros-approved.png?v=20261006-8" alt="アプリ下地に重ねたウロボロス採用PNG"></div>
+    </section>
+    <p id="asset-error" role="alert" hidden>素材を読み込めませんでした。このHTMLと同じフォルダにSVG・PNG・見本画像があるか確認してください。</p>
+    <footer>紋章とアプリ下地は別素材です。採用PNGは原作者の修正ファイルと同一。今回は静止画素材の採用と確認ページへの反映のみです。</footer>
+  </main>
+</body>
+</html>
