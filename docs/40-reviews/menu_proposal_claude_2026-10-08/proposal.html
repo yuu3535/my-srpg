@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>携帯端末メニュー 総合担当の案</title>
+<!-- 総合担当（Claude Code）の提案の見本。Codex の試作の素材を参照するだけで、試作のファイルは変えない。?owner=karima でカリマの端末 -->
+<link rel="stylesheet" href="../../../アイコン素材/携帯端末メニュー画面素材/太陽盤_コマンド試作01/time-of-day.css">
+<style>
+  :root {
+    --ink: #0d1923; --panel: rgb(9 20 30 / .78); --line: rgb(217 225 229 / .28);
+    --silver: #d9e1e5; --text: #f0f1ec; --muted: #a6b7bd;
+    --accent: #e3a35c;            /* アルシェ: 本棚の橙の花 */
+  }
+  body[data-owner="karima"] { --accent: #b9a6dc; }   /* カリマ: 本棚の藤の花 */
+  html, body { margin: 0; height: 100%; background: #0b1016; overflow: hidden; }
+  body { display: grid; place-items: center; font-family: 'Yu Gothic UI', 'Noto Sans JP', Meiryo, sans-serif; color: var(--text); }
+  .screen { position: relative; width: 844px; height: 390px; overflow: hidden; transform-origin: center; }
+  /* 壁紙: 双子の部屋を暗く。持ち主の色をうっすら重ねる（持ち主が分かる） */
+  .wallpaper { position: absolute; inset: 0; background: url('../../../背景/双子の部屋/アルシェとカリマの部屋.jpg') center / cover; filter: brightness(.38) saturate(.75); }
+  .tint { position: absolute; inset: 0; background: radial-gradient(120% 90% at 85% 10%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 60%), linear-gradient(90deg, rgb(8 12 16 / .35), rgb(8 12 16 / .1) 40%, rgb(8 12 16 / .55)); }
+  .wheel { position: absolute; inset: 0; width: 844px; height: 390px; border: 0; background: transparent; }
+  .right { position: absolute; left: 338px; top: 0; width: 494px; height: 390px; }
+
+  /* ① 上の帯: 端末の「状態の帯」。章・場所・時間帯・残金・名声をここへまとめる（アプリの中の数字をやめ、大きい字で） */
+  .status { position: absolute; left: 0; top: 8px; width: 494px; height: 30px; display: flex; align-items: center; gap: 10px; }
+  .where { font-size: 14px; letter-spacing: .06em; white-space: nowrap; }
+  .where small { color: var(--muted); font-size: 12px; margin-right: 8px; }
+  .chips { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+  .chip { height: 24px; padding: 0 9px; display: flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); font-size: 13px; white-space: nowrap; }
+  .chip b { font-weight: 500; color: var(--silver); font-family: Consolas, 'Yu Gothic UI', monospace; }
+  .chip.time { padding: 0 4px; }
+  .chip.time .mini { position: relative; width: 68px; height: 22px; overflow: hidden; display: block; }
+  .chip.time .scene { transform: scale(.42); width: 160px; height: 52px; background: none; top: -4px; }
+  .chip.time .menu-time { position: absolute; left: 0; top: 0; width: 160px; height: 52px; }
+  .owner { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px rgb(255 255 255 / .08); }
+
+  /* ② 知らせ: シナリオの「カリマからのメッセージ」などを、上から一行で（押すと全文） */
+  .notice { position: absolute; left: 0; top: 44px; width: 494px; height: 30px; display: flex; align-items: center; gap: 10px; padding: 0 12px; box-sizing: border-box; border-radius: 8px; background: var(--panel); border: 1px solid var(--line); font-size: 13.5px; }
+  .notice .from { color: var(--accent); font-weight: 600; }
+  .notice .ago { margin-left: auto; color: var(--muted); font-size: 12px; }
+
+  /* ③ マップの窓: 今の章・場所の絵。下に「今日のタスク」（シナリオのタスク＝今の目的） */
+  .map { position: absolute; left: 0; top: 82px; width: 494px; height: 190px; border-radius: 10px; overflow: hidden; border: 1px solid rgb(217 225 229 / .4); box-shadow: inset 0 0 0 1px rgb(0 0 0 / .4); }
+  .map img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 45%; display: block; filter: saturate(.9); }
+  .map .cap { position: absolute; left: 0; right: 0; bottom: 0; padding: 22px 14px 9px; background: linear-gradient(transparent, rgb(6 10 14 / .88)); }
+  .cap .label { font-size: 12px; color: var(--muted); letter-spacing: .12em; }
+  .cap .task { font-size: 16px; margin-top: 2px; }
+  .cap .task::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 8px; border: 1.5px solid var(--accent); transform: rotate(45deg) translateY(-1px); }
+  .map .go { position: absolute; right: 12px; bottom: 12px; height: 26px; padding: 0 12px; display: flex; align-items: center; border-radius: 13px; background: rgb(240 241 236 / .92); color: #13202a; font-size: 13px; font-weight: 600; }
+
+  /* ④ 下のドック: アプリは「アイコン＋名前」だけ。字は14px（縮んでも約10px以上） */
+  .dock { position: absolute; left: 0; top: 282px; width: 494px; height: 98px; display: grid; grid-template-columns: repeat(5, 1fr); align-items: center; border-radius: 14px; background: rgb(9 20 30 / .62); border: 1px solid var(--line); }
+  .app { display: grid; justify-items: center; gap: 4px; font-size: 14px; position: relative; }
+  .app img { width: 58px; height: 58px; object-fit: contain; }
+  .app .badge { position: absolute; top: -2px; right: 16px; min-width: 16px; height: 16px; border-radius: 8px; background: var(--accent); color: #111; font-size: 11px; font-weight: 700; display: grid; place-items: center; padding: 0 3px; }
+  .app.locked img { filter: grayscale(1) brightness(.45); }
+  .app.locked span { color: var(--muted); }
+</style>
+</head>
+<body data-owner="alche">
+<div class="screen" id="screen">
+  <div class="wallpaper"></div><div class="tint"></div>
+  <iframe class="wheel" id="wheel" src="../../../アイコン素材/携帯端末メニュー画面素材/太陽盤_コマンド試作01/layout.html?embed=menu" title="太陽盤とコマンド"></iframe>
+  <div class="right">
+    <div class="status">
+      <span class="owner" title="持ち主の色"></span>
+      <span class="where"><small>第1章 プロローグ</small>オルクス城・回廊</span>
+      <span class="chips">
+        <span class="chip time"><span class="mini"><span class="scene" id="time-scene" data-reduced="true"><span class="icon-slot menu-time" id="time"></span></span></span></span>
+        <span class="chip">残金 <b>—</b></span>
+        <span class="chip">名声 <b>—</b></span>
+      </span>
+    </div>
+    <div class="notice" id="notice"><span class="from">カリマ</span><span>もう訓練場にいるから早く来て。</span><span class="ago">6:00</span></div>
+    <div class="map">
+      <img src="../../../背景/ブラッシュアップ版/オルクス回廊.png" alt="">
+      <div class="cap"><div class="label">今日のタスク</div><div class="task">ギュンターとの演習（訓練場）</div></div>
+      <span class="go">出撃／探索 ▸</span>
+    </div>
+    <div class="dock">
+      <div class="app"><img src="../../../アイコン素材/携帯端末メニュー画面素材/アプリアイコン_清書01/preparation-icon-v01.png" alt=""><span>身支度</span></div>
+      <div class="app"><img src="../../../アイコン素材/携帯端末メニュー画面素材/アプリアイコン_清書01/wallet-icon-v01.png" alt=""><span>ウォレット</span></div>
+      <div class="app"><img src="../../../アイコン素材/携帯端末メニュー画面素材/アプリアイコン_清書01/renown-icon-v01.png" alt=""><span>名声</span></div>
+      <div class="app"><img src="../../../アイコン素材/携帯端末メニュー画面素材/アプリアイコン_清書01/fortune-icon-v01.png" alt=""><span>運命予報</span><span class="badge">1</span></div>
+      <div class="app locked"><img src="../../../アイコン素材/携帯端末メニュー画面素材/アプリアイコン_清書01/ouroboros-style-match-v01.png" alt=""><span>？？？</span></div>
+    </div>
+  </div>
+</div>
+<script src="../../../アイコン素材/携帯端末メニュー画面素材/太陽盤_コマンド試作01/time-of-day.js"></script>
+<script>
+  const owner = new URLSearchParams(location.search).get('owner') === 'karima' ? 'karima' : 'alche';
+  document.body.dataset.owner = owner;
+  if (owner === 'karima') {
+    // カリマの端末: 知らせはアルシェから（見本の文。シナリオの文ではない）
+    document.getElementById('notice').innerHTML = '<span class="from">アルシェ</span><span>いま起きた！すぐ行く！</span><span class="ago">7:40</span>';
+  }
+  const slot = document.getElementById('time');
+  if (window.TimeOfDay) {
+    slot.innerHTML = TimeOfDay.icon('evening', 'menu-time');
+    // 時間帯の絵は試作のフォルダからの相対の場所なので、この見本の場所から読み直す
+    slot.querySelectorAll('img').forEach(img => img.src = '../../../アイコン素材/携帯端末メニュー画面素材/太陽盤_コマンド試作01/' + img.getAttribute('src'));
+  }
+  const wheel = document.getElementById('wheel');
+  wheel.addEventListener('load', () => wheel.contentWindow.postMessage({ type: 'solar-menu-config', character: owner, effects: true, select: 'items' }, '*'));
+  // 窓が大きいときは画面いっぱいへ（横長の比率のまま）
+  function fit() { const s = Math.min(innerWidth / 844, innerHeight / 390); document.getElementById('screen').style.transform = `scale(${s})`; }
+  addEventListener('resize', fit); fit();
+</script>
+</body>
+</html>
