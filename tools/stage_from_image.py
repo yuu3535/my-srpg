@@ -7,7 +7,8 @@
 4. 歩ける所の高さの表（床・階段・台）と、前後関係のための奥行き（床は奥へ押しやり、柱・燭台などだけで隠す）を書き出す
 
 使い方（リポジトリのルートで）:
-    py -3.12 tools/stage_from_image.py 背景/ブラッシュアップ版/オルクス謁見の間.png orcus_audience_hall [確かめ用の画像を出すフォルダ]
+    py -3.12 tools/stage_from_image.py 背景/ブラッシュアップ版/オルクス謁見の間.png orcus_audience_hall [確かめ用の画像を出すフォルダ] [--floor=0.72]
+    --floor: 床を探す帯（絵の上からの割合。ここより下が床。絵ごとに合わせる）
 出力: unity-prototype/Assets/Art/Stage/<名前>/（background.png・occlusion.png・stage.json）
 モデルは ~/.cache/depth-anything/ に置く（リポジトリには入れない）。
 """
@@ -93,11 +94,45 @@ def fit_plane(points, iters=400, tol=0.04, seed=0):
     return nrm, -nrm @ c
 
 
+def find_lights(image, depth_to_world, max_lights=24):
+    """絵の中の光（炎・魔法の灯り・ステンドグラスなど）: 明るくて色のついた所のかたまり。
+    場所は奥行きから3Dに、色はかたまりの平均、強さは大きさと明るさから（原作者 2026-10-07: 背景になじませる仕組み）"""
+    rgb = np.asarray(image, dtype=np.float32) / 255.0
+    mx, mn = rgb.max(-1), rgb.min(-1)
+    sat = np.where(mx > 0, (mx - mn) / np.maximum(mx, 1e-6), 0)
+    glow = (mx > .78) & (sat > .35)
+    glow = ndimage.binary_opening(glow, iterations=1)
+    lab, n = ndimage.label(ndimage.binary_dilation(glow, iterations=3))
+    lights = []
+    for i, sl in enumerate(ndimage.find_objects(lab)):
+        if sl is None:
+            continue
+        m = (lab[sl] == i + 1) & glow[sl]
+        area = int(m.sum())
+        if area < 25:
+            continue
+        ys, xs = np.nonzero(m)
+        ys, xs = ys + sl[0].start, xs + sl[1].start
+        col = rgb[ys, xs].mean(0)
+        col = col / max(col.max(), 1e-6)
+        pos = np.median(depth_to_world[ys, xs], axis=0)
+        if pos[1] < .3:   # 床の高さ＝床に映った光（反射）。光の元ではない
+            continue
+        lights.append({"position": [round(float(v), 3) for v in pos], "color": [round(float(v), 3) for v in col],
+                       "power": round(float(np.sqrt(area) * mx[ys, xs].mean() / 10), 3),
+                       "pixel": [int(xs.mean()), int(ys.mean())], "area": area})
+    lights.sort(key=lambda l: -l["power"])
+    return lights[:max_lights]
+
+
 def main():
     sys.stdout.reconfigure(encoding="utf-8")
-    src, name = PROJECT / sys.argv[1], sys.argv[2]
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    opts = dict(a[2:].split("=", 1) for a in sys.argv[1:] if a.startswith("--") and "=" in a)
+    src, name = PROJECT / args[0], args[1]
     out = PROJECT / "unity-prototype" / "Assets" / "Art" / "Stage" / name
-    prev = Path(sys.argv[3]) if len(sys.argv) > 3 else out
+    prev = Path(args[2]) if len(args) > 2 else out
+    floor_top = float(opts.get("floor", .72))   # 床を探す帯（絵の上からの割合。ここより下）
     out.mkdir(parents=True, exist_ok=True)
     image = Image.open(src).convert("RGB")
     w, h = image.size
@@ -105,12 +140,12 @@ def main():
     gray = np.asarray(image.convert("L"), dtype=np.float32)
 
     # 1回目: 床の帯を大まかに（絵の下 30%）。消失点 → カメラの中心
-    cx, cy = vanishing_point(gray, h * .70)
+    cx, cy = vanishing_point(gray, h * (floor_top - .02))
     f = (h / 2) / np.tan(np.radians(FOV_Y) / 2)
     ys, xs = np.mgrid[0:h, 0:w]
     P = np.stack([(xs - cx) / f * depth, -(ys - cy) / f * depth, depth], -1)   # カメラから見た点（x右・y上・z前）
     sub = P[::4, ::4]
-    region = (ys[::4, ::4] > h * .72) & (xs[::4, ::4] > w * .15) & (xs[::4, ::4] < w * .85)
+    region = (ys[::4, ::4] > h * floor_top) & (xs[::4, ::4] > w * .15) & (xs[::4, ::4] < w * .85)
     n, d = fit_plane(sub[region].reshape(-1, 3))
     print(f"絵 {w}x{h}  消失点 ({cx},{cy})  画角 {FOV_Y}°  カメラの高さ {d:.2f} m  床の傾き {np.degrees(np.arccos(n[1])):.1f}°")
 
@@ -177,6 +212,13 @@ def main():
     Image.fromarray((np.clip(occ / dmax, 0, 1) * 65535).astype(np.uint16)).save(out / "occlusion.png")
     image.save(out / "background.png")
 
+    # 光は、歩ける所のまわり（左右・奥に 3 m まで、高さ 5 m まで）だけ。空・遠くの景色の明るい所は光の元にしない
+    wx, wz = np.nonzero(walk.T)
+    lo_x, hi_x = x0 + wx.min() * CELL - 3, x0 + wx.max() * CELL + 3
+    lo_z, hi_z = z0 + wz.min() * CELL - 3, z0 + wz.max() * CELL + 3
+    lights = [l for l in find_lights(image, W, max_lights=60)
+              if lo_x <= l["position"][0] <= hi_x and lo_z <= l["position"][2] <= hi_z and l["position"][1] <= 5.0][:24]
+    print(f"光 {len(lights)} 個（いちばん強い: 色 {lights[0]['color'] if lights else '-'} 場所 {lights[0]['position'] if lights else '-'}）")
     cam_fwd = to_world @ np.array([0, 0, 1.0])
     cam_up = to_world @ np.array([0, 1.0, 0])
     stage = {
@@ -184,6 +226,7 @@ def main():
         "source": sys.argv[1], "size": [w, h], "fovY": FOV_Y, "principal": [int(cx), int(cy)],
         "cameraHeight": float(d), "cameraForward": cam_fwd.tolist(), "cameraUp": cam_up.tolist(),
         "occlusionMax": dmax,
+        "lights": [{k: l[k] for k in ("position", "color", "power")} for l in lights],
         "grid": {"x0": float(x0), "z0": float(z0), "cell": CELL, "nx": nx, "nz": nz,
                  "height": [round(float(v), 3) for v in np.nan_to_num(height, nan=0).ravel()],
                  "walk": "".join("1" if v else "0" for v in walk.ravel())},
@@ -194,6 +237,11 @@ def main():
     # 確かめ用: 歩ける所（緑）と、隠す物として扱う所（そのまま）
     vis = np.asarray(image, dtype=np.float32) * .55
     vis[on_walk] = vis[on_walk] * .4 + np.array([60, 200, 120]) * .6
+    for l in lights:   # 拾った光を黄色の丸で
+        px_, py_ = l["pixel"]; r = int(6 + l["power"] * 2)
+        yy, xx = np.ogrid[:h, :w]
+        ring = np.abs(np.hypot(xx - px_, yy - py_) - r) < 2
+        vis[ring] = [255, 230, 80]
     Image.fromarray(vis.astype(np.uint8)).save(prev / f"{name}_walk_check.jpg", quality=85)
     top = np.zeros((nz, nx, 3), np.uint8)
     hn = np.clip(height / max(.5, np.nanmax(height[walk])), 0, 1)
