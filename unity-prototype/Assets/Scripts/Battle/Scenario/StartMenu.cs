@@ -21,6 +21,7 @@ namespace Srpg.Battle
         public static bool Holding { get; private set; }
 
         private static bool shownOnce;
+        private static string currentScene;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Hook()
@@ -33,17 +34,19 @@ namespace Srpg.Battle
 
         private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
+            currentScene = scene.name;
             if (Application.isBatchMode) { Holding = false; return; }
+            if (SaveSystem.HasPending) { shownOnce = true; Holding = false; AddBackButton(); return; }   // ロード（続きから）で開いた
             if (scene.name == ExploreScene && ExploreHandoff.Pending) { shownOnce = true; Holding = false; AddBackButton(); }   // 2Dの探索から来た
             else if (scene.name == ExploreScene && !shownOnce) { shownOnce = true; Holding = true; Show(); }
             else if (scene.name == TrialScene || scene.name == CorridorScene) { Holding = false; AddBackButton(); }
             else Holding = false;
         }
 
-        private static Font FontOf() =>
+        internal static Font FontOf() =>
             JapaneseFont.Get(new[] { "Noto Serif JP", "Yu Mincho", "游明朝", "MS PMincho", "Hiragino Mincho ProN" }, 16);
 
-        private static Canvas NewCanvas(string name, int order)
+        internal static Canvas NewCanvas(string name, int order)
         {
             var go = new GameObject(name, typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             var canvas = go.GetComponent<Canvas>();
@@ -59,7 +62,7 @@ namespace Srpg.Battle
             return canvas;
         }
 
-        private static RectTransform Rect(string name, Transform parent, Vector2 anchor, Vector2 pos, Vector2 size)
+        internal static RectTransform Rect(string name, Transform parent, Vector2 anchor, Vector2 pos, Vector2 size)
         {
             var rt = new GameObject(name, typeof(RectTransform)).GetComponent<RectTransform>();
             rt.SetParent(parent, false);
@@ -69,7 +72,7 @@ namespace Srpg.Battle
             return rt;
         }
 
-        private static Text Label(Transform parent, string text, Vector2 pos, Vector2 size, int fontSize, Color color, Font font)
+        internal static Text Label(Transform parent, string text, Vector2 pos, Vector2 size, int fontSize, Color color, Font font)
         {
             var rt = Rect("Label", parent, new Vector2(0.5f, 0.5f), pos, size);
             var t = rt.gameObject.AddComponent<Text>();
@@ -84,7 +87,7 @@ namespace Srpg.Battle
             return t;
         }
 
-        private static Button SilverButton(Transform parent, string title, string note, Vector2 pos, Font font, System.Action onClick)
+        internal static Button SilverButton(Transform parent, string title, string note, Vector2 pos, Font font, System.Action onClick)
         {
             var rt = Rect(title, parent, new Vector2(0.5f, 0.5f), pos, new Vector2(300f, 54f));
             rt.gameObject.AddComponent<Image>().color = HudPalette.Panel;
@@ -111,25 +114,27 @@ namespace Srpg.Battle
             dim.anchorMin = Vector2.zero;
             dim.anchorMax = Vector2.one;
             dim.gameObject.AddComponent<Image>().color = new Color(0.05f, 0.09f, 0.12f, 1f);
-            Label(root, "自作SRPG", new Vector2(0f, 140f), new Vector2(500f, 40f), 30, HudPalette.Text, font);
-            Label(root, "Unity版の試し（スマホ・ブラウザで遊べる形）", new Vector2(0f, 110f), new Vector2(500f, 20f), 12, HudPalette.Silver, font);
-            SilverButton(root, "プロローグから", "探索 → 訓練の戦闘（人形 → ギュンター）", new Vector2(0f, 52f), font, () =>
+            Label(root, "自作SRPG", new Vector2(0f, 160f), new Vector2(500f, 40f), 30, HudPalette.Text, font);
+            Label(root, "Unity版の試し（スマホ・ブラウザで遊べる形）", new Vector2(0f, 132f), new Vector2(500f, 20f), 12, HudPalette.Silver, font);
+            SilverButton(root, "続きから", "セーブした所から（2026-10-08）", new Vector2(0f, 82f), font, () => SaveMenu.Open(SaveMenu.Mode.Load));
+            SilverButton(root, "プロローグから", "探索 → 訓練の戦闘（人形 → ギュンター）", new Vector2(0f, 22f), font, () =>
             {
                 Object.Destroy(canvas.gameObject);
                 Holding = false;
+                AddBackButton();
                 Object.FindFirstObjectByType<ExploreController>()?.Begin();
             });
-            SilverButton(root, "試験の戦闘", "森の境（ブラウザ版の試験の戦闘と同じ）", new Vector2(0f, -10f), font, () =>
+            SilverButton(root, "試験の戦闘", "森の境（ブラウザ版の試験の戦闘と同じ）", new Vector2(0f, -38f), font, () =>
             {
                 Holding = false;
                 SceneManager.LoadScene(TrialScene);
             });
-            SilverButton(root, "探索（2Dの試し）", "自室で起きて回廊へ（◀ ▶ で歩く。部屋は仮）", new Vector2(0f, -72f), font, () =>
+            SilverButton(root, "探索（2Dの試し）", "自室で起きて回廊へ（◀ ▶ で歩く。部屋は仮）", new Vector2(0f, -98f), font, () =>
             {
                 Holding = false;
                 SceneManager.LoadScene(CorridorScene);
             });
-            Label(root, "戻るときは、右下の「最初へ」かページの読み込み直し", new Vector2(0f, -130f), new Vector2(500f, 18f), 11, HudPalette.Muted, font);
+            Label(root, "戻るときは、右下の「最初へ」かページの読み込み直し", new Vector2(0f, -150f), new Vector2(500f, 18f), 11, HudPalette.Muted, font);
         }
 
         /// <summary>試験の戦闘の画面の左下に「最初へ」（入口の画面へ戻る）</summary>
@@ -144,6 +149,14 @@ namespace Srpg.Battle
             button.onClick.AddListener(() => { shownOnce = false; SceneManager.LoadScene(ExploreScene); });
             var t = Label(rt, "最初へ", Vector2.zero, new Vector2(64f, 18f), 11, HudPalette.Silver, font);
             t.rectTransform.anchorMin = t.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            if (currentScene == TrialScene) return;   // 試験の戦闘はセーブしない
+            // セーブ（仮の最小限。メニュー画面ができたら、そちらから開く。2026-10-08）
+            var sv = Rect("Save", canvas.transform, new Vector2(1f, 0f), new Vector2(-78f, 22f), new Vector2(64f, 18f));
+            sv.pivot = new Vector2(1f, 0f);
+            sv.gameObject.AddComponent<Image>().color = new Color(0.035f, 0.08f, 0.12f, 0.85f);
+            sv.gameObject.AddComponent<Button>().onClick.AddListener(() => SaveMenu.Open(SaveMenu.Mode.Save));
+            var st = Label(sv, "セーブ", Vector2.zero, new Vector2(64f, 18f), 11, HudPalette.Silver, font);
+            st.rectTransform.anchorMin = st.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
         }
     }
 }

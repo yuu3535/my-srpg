@@ -1868,6 +1868,7 @@ namespace Srpg.Battle
 
         private bool IsOverButtons(Vector2 screenPosition)
         {
+            if (SaveMenu.IsOpen) return true;   // セーブの画面の上を押した
             if (IsOverOtherGui != null && IsOverOtherGui(screenPosition)) return true;
             if (!showGuiButtons) return false;
             var guiPoint = new Vector2(screenPosition.x, Screen.height - screenPosition.y) / GuiScale;

@@ -98,6 +98,8 @@ namespace Srpg.Battle
                 dialogue.OnDirection -= OnDirection; dialogue.OnDirection += OnDirection;
                 dialogue.Closed -= OnTalkClosed; dialogue.Closed += OnTalkClosed;
             }
+            var saved = SaveSystem.Take(SaveSystem.Scene2D);
+            if (saved != null && PlaceAsset(saved.place) != null) { Restore(saved); return; }
             if (ExploreHandoff.Pending2D && PlaceAsset(ExploreHandoff.Place2D) != null)
             {
                 // 戦闘の場所から戻ってきた: 流した会話・持ち物を引き継ぎ、その場所の指定の場面から
@@ -111,6 +113,37 @@ namespace Srpg.Battle
                 return;
             }
             EnterPlace(placeJsons.Any(t => t != null && t.name == startPlace) ? startPlace : placeJsons[0].name, null);
+        }
+
+        // ── セーブ（2026-10-08） ──
+
+        /// <summary>今の進み具合を取り出す（SaveSystem が日時・遊んだ時間を足す）</summary>
+        public SaveData Capture()
+        {
+            var d = new SaveData
+            {
+                scene = SaveSystem.Scene2D,
+                place = Place,
+                placeName = !string.IsNullOrEmpty(map?.name) ? map.name : Place,
+                playerX = view != null ? view.PlayerX : 0f,
+                seen = seen.ToList(),
+                played = played.ToList(),
+                items = items.ToList(),
+            };
+            d.SetStates(stateOf);
+            return d;
+        }
+
+        /// <summary>セーブの所から続ける（流した会話・持ち物・場面を戻し、その場所のその位置に立つ）</summary>
+        public void Restore(SaveData d)
+        {
+            seen.Clear(); seen.UnionWith(d.seen);
+            played.Clear(); played.UnionWith(d.played);
+            items.Clear(); items.AddRange(d.items);
+            stateOf.Clear();
+            foreach (var kv in d.StateMap()) stateOf[kv.Key] = kv.Value;
+            EnterPlace(d.place, null);
+            if (view != null) view.PlayerX = Mathf.Clamp(d.playerX, view.WalkMinX, view.WalkMaxX);
         }
 
         private TextAsset PlaceAsset(string name) => placeJsons.FirstOrDefault(t => t != null && t.name == name);

@@ -75,6 +75,8 @@ namespace Srpg.Battle
         public void Begin()
         {
             Load();
+            var saved = SaveSystem.Take(SaveSystem.Scene3D);
+            if (saved != null && places.ContainsKey(saved.place)) { Restore(saved); return; }
             if (ExploreHandoff.Pending && places.ContainsKey(ExploreHandoff.MapId))
             {
                 // 2Dの探索から来た（戦闘になる場所へ）。流した会話・持ち物を引き継ぐ
@@ -88,6 +90,37 @@ namespace Srpg.Battle
                 return;
             }
             EnterPlace(startMap, null, null);
+        }
+
+        // ── セーブ（2026-10-08） ──
+
+        /// <summary>今の進み具合を取り出す（SaveSystem が日時・遊んだ時間を足す）</summary>
+        public SaveData Capture()
+        {
+            var d = new SaveData
+            {
+                scene = SaveSystem.Scene3D,
+                place = Place?.mapId,
+                placeName = !string.IsNullOrEmpty(Place?.name) ? Place.name : Place?.mapId,
+                cellX = Player.x,
+                cellY = Player.y,
+                seen = seen.ToList(),
+                played = played.ToList(),
+                items = items.ToList(),
+            };
+            d.SetStates(stateOf);
+            return d;
+        }
+
+        /// <summary>セーブの所から続ける（流した会話・持ち物・場面を戻し、そのマスに立つ）</summary>
+        public void Restore(SaveData d)
+        {
+            seen.Clear(); seen.UnionWith(d.seen);
+            played.Clear(); played.UnionWith(d.played);
+            items.Clear(); items.AddRange(d.items);
+            stateOf.Clear();
+            foreach (var kv in d.StateMap()) stateOf[kv.Key] = kv.Value;
+            EnterPlace(d.place, new Vector2Int(d.cellX, d.cellY), null);
         }
 
         private void Load()

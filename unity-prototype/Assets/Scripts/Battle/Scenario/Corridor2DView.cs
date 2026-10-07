@@ -355,7 +355,7 @@ namespace Srpg.Battle
             }
             int dir = Locked || scriptedWalk ? 0 : holding;
             var kb = Keyboard.current;
-            if (kb != null && !Locked && !scriptedWalk)
+            if (kb != null && !Locked && !scriptedWalk && !SaveMenu.IsOpen)
             {
                 if (kb.leftArrowKey.isPressed || kb.aKey.isPressed) dir = -1;
                 else if (kb.rightArrowKey.isPressed || kb.dKey.isPressed) dir = 1;
@@ -368,7 +368,7 @@ namespace Srpg.Battle
                 walkTime += Time.deltaTime;
             }
             else walkTime = 0f;
-            if (kb != null && !Locked && (kb.enterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame) && (nearExit != null || (Controlled && actionUse != null))) UseExit();
+            if (kb != null && !Locked && !SaveMenu.IsOpen && (kb.enterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame) && (nearExit != null || (Controlled && actionUse != null))) UseExit();
             foreach (var b in walkButtons) if (b != null) b.gameObject.SetActive(!Locked);
             Apply();
         }
