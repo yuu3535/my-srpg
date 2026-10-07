@@ -137,6 +137,9 @@ namespace Srpg.Battle
             Label(root, "戻るときは、右下の「最初へ」かページの読み込み直し", new Vector2(0f, -150f), new Vector2(500f, 18f), 11, HudPalette.Muted, font);
         }
 
+        /// <summary>入口の画面へ戻る</summary>
+        internal static void BackToStart() { shownOnce = false; SceneManager.LoadScene(ExploreScene); }
+
         /// <summary>試験の戦闘の画面の左下に「最初へ」（入口の画面へ戻る）</summary>
         private static void AddBackButton()
         {
@@ -146,7 +149,7 @@ namespace Srpg.Battle
             rt.pivot = new Vector2(1f, 0f);
             rt.gameObject.AddComponent<Image>().color = new Color(0.035f, 0.08f, 0.12f, 0.85f);
             var button = rt.gameObject.AddComponent<Button>();
-            button.onClick.AddListener(() => { shownOnce = false; SceneManager.LoadScene(ExploreScene); });
+            button.onClick.AddListener(BackToStart);
             var t = Label(rt, "最初へ", Vector2.zero, new Vector2(64f, 18f), 11, HudPalette.Silver, font);
             t.rectTransform.anchorMin = t.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
             if (currentScene == TrialScene) return;   // 試験の戦闘はセーブしない

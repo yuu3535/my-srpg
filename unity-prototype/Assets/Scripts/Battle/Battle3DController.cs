@@ -1378,6 +1378,31 @@ namespace Srpg.Battle
         /// <summary>確認用: 勝敗と召喚の片付けを今すぐ行う</summary>
         public bool CheckBattleEnd() => CheckEnd();
 
+        /// <summary>戦闘の結果の画面に出す数（2026-10-08）。経験値は成長を入れたら足す</summary>
+        public struct ResultSummary
+        {
+            public string title;
+            public int turns, enemiesDefeated, enemiesTotal, alliesDown, alliesTotal;
+        }
+
+        public ResultSummary Summary()
+        {
+            var enemies = units.Where(u => u.Side == "enemy" && !u.summoned).ToList();
+            var allies = units.Where(u => u.Side == "ally" && !u.summoned).ToList();
+            return new ResultSummary
+            {
+                title = BattleTitle,
+                turns = Turn,
+                enemiesDefeated = enemies.Count(u => !u.Alive),
+                enemiesTotal = enemies.Count,
+                alliesDown = allies.Count(u => !u.Alive),
+                alliesTotal = allies.Count,
+            };
+        }
+
+        /// <summary>勝ち負けを今すぐ確かめる（テスト・台本で HP を変えたあと）</summary>
+        public bool EvaluateEnd() => CheckEnd();
+
         private bool CheckEnd()
         {
             CleanupSummons();

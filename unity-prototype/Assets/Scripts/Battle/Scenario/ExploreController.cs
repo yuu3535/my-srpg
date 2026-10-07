@@ -655,6 +655,7 @@ namespace Srpg.Battle
             if (battle == null || Place == null) { Log?.Invoke("戦闘の部品がない"); return; }
             StopWalking();
             InBattle = true;
+            battleArea = areaId;
             view.CellTapped -= Tap;
             battle.gameObject.SetActive(true);
             if (battle.Hud != null) battle.Hud.gameObject.SetActive(true);
@@ -688,11 +689,28 @@ namespace Srpg.Battle
             else EndBattle(phase);
         }
 
+        private string battleArea;
+
+        /// <summary>
+        /// 「勝利」「敗北」を少し見せ、会話（手引きの締めなど）が終わってから、戦闘のあとの画面（2026-10-08）。
+        /// 勝ち →「次へ」で探索の次の場面へ。負け →「この戦闘をやり直す」（原作者: その戦闘の最初から）
+        /// </summary>
         private IEnumerator EndBattleLater(Battle3DController.Phase phase)
         {
-            yield return new WaitForSeconds(1.6f);   // 「勝利」を少し見せる
+            yield return new WaitForSeconds(1.6f);
             while (dialogue != null && dialogue.IsPlaying) yield return null;
-            EndBattle(phase);
+            if (phase == Battle3DController.Phase.Victory)
+                BattleResultView.ShowVictory(battle.Summary(), () => EndBattle(phase));
+            else
+                BattleResultView.ShowDefeat(battle.BattleTitle, "敗北条件: " + battle.DefeatText, RetryBattle);
+        }
+
+        /// <summary>負けた戦闘を、最初の配置からもう一度（会話・歩いて位置につく所は飛ばす）</summary>
+        public void RetryBattle()
+        {
+            if (!InBattle || string.IsNullOrEmpty(battleArea)) return;
+            Log?.Invoke("戦闘をやり直す");
+            StartBattle(battleArea);
         }
 
         /// <summary>戦闘を閉じて探索に戻る。勝ったら配置表の次の場面（戦闘のあと。入ったときの会話が流れる）</summary>
