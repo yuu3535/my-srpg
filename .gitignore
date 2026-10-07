@@ -30,3 +30,7 @@ unity-prototype/PlaythroughShots/
 # Unity の確認用の画像（組み立てのたびに撮り直す。数百MBになるので Git に入れない。手元のフォルダで見る。2026-09-28）
 unity-prototype/Assets/Previews/
 unity-prototype/Assets/Previews.meta
+
+# 手元だけで使う素材（再配布禁止の VRM など。2026-10-07）
+unity-prototype/Assets/LocalOnly/
+unity-prototype/Assets/LocalOnly.meta
