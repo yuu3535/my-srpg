@@ -15,17 +15,21 @@ namespace Srpg.EditorAgent
     /// </summary>
     public static class StageBuilder
     {
-        private const string Name = "orcus_audience_hall";
-        private static string Dir => $"Assets/Art/Stage/{Name}";
+        // 舞台（tools/stage_from_image.py が作った物）と、画面のボタンの名前
+        private static readonly (string id, string label)[] Stages = { ("orcus_audience_hall", "謁見の間"), ("orcus_corridor_hall", "回廊"), ("orcus_town", "城下町") };
+        private static string DirOf(string id) => $"Assets/Art/Stage/{id}";
         private const string ScenePath = "Assets/Scenes/StageTest.unity";
 
         public static void Build()
         {
             try
             {
-                Configure($"{Dir}/background.png", linear: false, readable: true);
-                Configure($"{Dir}/occlusion.png", linear: true, readable: false);
-                AssetDatabase.ImportAsset($"{Dir}/stage.json", ImportAssetOptions.ForceSynchronousImport);
+                foreach (var (id, _) in Stages)
+                {
+                    Configure($"{DirOf(id)}/background.png", linear: false, readable: true);
+                    Configure($"{DirOf(id)}/occlusion.png", linear: true, readable: false);
+                    AssetDatabase.ImportAsset($"{DirOf(id)}/stage.json", ImportAssetOptions.ForceSynchronousImport);
+                }
 
                 var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
                 int rendererIndex = Board3DTestBuilder.EnsureUniversalRenderer();   // 2D 用ではなく 3D の描き方（盤面と同じ）
@@ -42,12 +46,23 @@ namespace Srpg.EditorAgent
                 var stageGo = new GameObject("Stage");
                 var stage = stageGo.AddComponent<StageFromImage>();
                 var so = new SerializedObject(stage);
-                so.FindProperty("stageJson").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TextAsset>($"{Dir}/stage.json");
-                so.FindProperty("background").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Texture2D>($"{Dir}/background.png");
-                so.FindProperty("occlusion").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Texture2D>($"{Dir}/occlusion.png");
+                void Fill<T>(string prop, Func<string, T> load) where T : UnityEngine.Object
+                {
+                    var arr = so.FindProperty(prop); arr.arraySize = Stages.Length;
+                    for (int i = 0; i < Stages.Length; i++) arr.GetArrayElementAtIndex(i).objectReferenceValue = load(Stages[i].id);
+                }
+                Fill("stageJsons", id => AssetDatabase.LoadAssetAtPath<TextAsset>($"{DirOf(id)}/stage.json"));
+                Fill("backgrounds", id => AssetDatabase.LoadAssetAtPath<Texture2D>($"{DirOf(id)}/background.png"));
+                Fill("occlusions", id => AssetDatabase.LoadAssetAtPath<Texture2D>($"{DirOf(id)}/occlusion.png"));
+                var labels = so.FindProperty("stageLabels"); labels.arraySize = Stages.Length;
+                for (int i = 0; i < Stages.Length; i++) labels.GetArrayElementAtIndex(i).stringValue = Stages[i].label;
                 so.FindProperty("backgroundShader").objectReferenceValue = Shader.Find("Srpg/StageBackground");
                 so.FindProperty("toonShader").objectReferenceValue = Shader.Find("Srpg/StageToon");
                 so.FindProperty("blobShader").objectReferenceValue = Shader.Find("Srpg/StageBlob");
+                var keep = so.FindProperty("importShaders");
+                var keepNames = new[] { "UniGLTF/UniUnlit", "Universal Render Pipeline/Lit", "Universal Render Pipeline/Unlit" };
+                keep.arraySize = keepNames.Length;
+                for (int i = 0; i < keepNames.Length; i++) keep.GetArrayElementAtIndex(i).objectReferenceValue = Shader.Find(keepNames[i]);
                 so.FindProperty("targetCamera").objectReferenceValue = camera;
                 so.FindProperty("keyLight").objectReferenceValue = light;
                 so.ApplyModifiedPropertiesWithoutUndo();
@@ -113,6 +128,18 @@ namespace Srpg.EditorAgent
                 }
                 Debug.Log($"[StageBuilder] 歩くコマ {frame} 枚: {frames}");
                 Debug.Log($"[StageBuilder] 歩いた先: {stage.Position}");
+                // ほかの舞台（手前・真ん中・奥の左右）
+                for (int si = 1; si < Stages.Length; si++)
+                {
+                    stage.SwitchStage(si);
+                    g = stage.Data.grid;
+                    string id = Stages[si].id;
+                    Shot($"{id}_01_front", stage.StartPoint(), 180f);
+                    Shot($"{id}_02_middle", CellAt(.5f, .5f), 150f);
+                    Shot($"{id}_03_far_left", CellAt(.2f, .8f), 90f);
+                    Shot($"{id}_04_far_right", CellAt(.8f, .8f), 270f);
+                }
+                stage.SwitchStage(0);
                 camera.targetTexture = null;
                 Debug.Log("[StageBuilder] 作った: " + ScenePath);
             }
@@ -121,6 +148,48 @@ namespace Srpg.EditorAgent
                 Debug.LogException(e);
                 if (Application.isBatchMode) EditorApplication.Exit(1);
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// 手元で遊ぶ版（Windows）を書き出す（原作者 2026-10-07: 押した所へ歩く試し。公開しない）。
+        /// 書き出し先 unity-prototype/Builds/StageTest/（Git に入らない）。VRM は書き出した版の StreamingAssets にだけ写す（Assets には置かない）
+        /// バッチ: -executeMethod Srpg.EditorAgent.StageBuilder.BuildLocal
+        /// </summary>
+        public static void BuildLocal()
+        {
+            const string outDir = "Builds/StageTest";
+            var oldMode = PlayerSettings.fullScreenMode; int oldW = PlayerSettings.defaultScreenWidth, oldH = PlayerSettings.defaultScreenHeight;
+            var oldName = PlayerSettings.productName;
+            try
+            {
+                PlayerSettings.fullScreenMode = FullScreenMode.Windowed;   // 窓で開く（閉じやすい）
+                PlayerSettings.defaultScreenWidth = 1536; PlayerSettings.defaultScreenHeight = 1024;
+                PlayerSettings.productName = "StageTest";
+                var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+                {
+                    scenes = new[] { ScenePath },
+                    locationPathName = $"{outDir}/StageTest.exe",
+                    target = BuildTarget.StandaloneWindows64,
+                    options = BuildOptions.None,
+                });
+                string vrm = Path.Combine(Application.dataPath, "LocalOnly/VRM/Alsche_Proxy_StageTest.vrm");
+                string sa = Path.Combine(outDir, "StageTest_Data", "StreamingAssets");
+                Directory.CreateDirectory(sa);
+                if (File.Exists(vrm)) File.Copy(vrm, Path.Combine(sa, Path.GetFileName(vrm)), true);
+                Debug.Log($"[StageBuilder] 手元の版: {report.summary.result}・エラー {report.summary.totalErrors}・{Path.GetFullPath(outDir)}");
+                if (report.summary.result != UnityEditor.Build.Reporting.BuildResult.Succeeded && Application.isBatchMode) EditorApplication.Exit(1);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                if (Application.isBatchMode) EditorApplication.Exit(1);
+                throw;
+            }
+            finally
+            {
+                PlayerSettings.fullScreenMode = oldMode; PlayerSettings.defaultScreenWidth = oldW; PlayerSettings.defaultScreenHeight = oldH;
+                PlayerSettings.productName = oldName;
             }
         }
 

@@ -18,14 +18,24 @@ namespace Srpg.Stage
     public class StageFromImage : MonoBehaviour
     {
         [Serializable] public class GridData { public float x0, z0, cell; public int nx, nz; public float[] height; public string walk; }
-        [Serializable] public class StageData { public string source; public int[] size; public float fovY; public int[] principal; public float cameraHeight; public float[] cameraForward, cameraUp; public float occlusionMax; public GridData grid; }
+        [Serializable] public class LightData { public float[] position, color; public float power; }
+        [Serializable] public class StageData { public string source; public int[] size; public float fovY; public int[] principal; public float cameraHeight; public float[] cameraForward, cameraUp; public float occlusionMax; public LightData[] lights; public GridData grid; }
 
-        [SerializeField] private TextAsset stageJson;
-        [SerializeField] private Texture2D background;
-        [SerializeField] private Texture2D occlusion;
+        // 舞台は何枚でも（画面の上のボタンで切り替える）。同じ番号の stage.json・背景・奥行き
+        [SerializeField] private TextAsset[] stageJsons = Array.Empty<TextAsset>();
+        [SerializeField] private Texture2D[] backgrounds = Array.Empty<Texture2D>();
+        [SerializeField] private Texture2D[] occlusions = Array.Empty<Texture2D>();
+        [SerializeField] private string[] stageLabels = Array.Empty<string>();
+        [SerializeField] private int stageIndex;
+        [SerializeField] private float lightGain = 1f;      // 絵から拾った光の強さ（画面で変えられる）
+        [SerializeField] private float ambientGain = 0.85f;    // 影の明るさ（足元のまわりの背景の色から）
+        private Texture2D background;
+        private GameObject backgroundObject;
+        private Camera bandCamera;
         [SerializeField] private Shader backgroundShader;   // Srpg/StageBackground
         [SerializeField] private Shader toonShader;         // Srpg/StageToon
         [SerializeField] private Shader blobShader;         // Srpg/StageBlob
+        [SerializeField] private Shader[] importShaders = Array.Empty<Shader>();   // VRM の読み込みが名前で探す Shader（書き出した版に入れるため持っておく）
         [SerializeField] private Camera targetCamera;
         [SerializeField] private Light keyLight;
         [SerializeField] private string vrmPath = "LocalOnly/VRM/Alsche_Proxy_StageTest.vrm";   // Assets からの場所
@@ -52,9 +62,22 @@ namespace Srpg.Stage
 
         // ── 舞台 ──
 
+        public int StageCount => stageJsons.Length;
+        public int StageIndex => stageIndex;
+
+        /// <summary>舞台を切り替える（キャラは新しい舞台の手前の真ん中へ）</summary>
+        public void SwitchStage(int index)
+        {
+            stageIndex = Mathf.Clamp(index, 0, stageJsons.Length - 1);
+            Build();
+            if (Character != null) PlaceAt(StartPoint(), 180f);
+        }
+
         public void Build()
         {
-            Data = JsonUtility.FromJson<StageData>(stageJson.text);
+            Data = JsonUtility.FromJson<StageData>(stageJsons[stageIndex].text);
+            background = backgrounds[stageIndex];
+            if (backgroundObject != null) DestroyImmediate(backgroundObject);
             var g = Data.grid;
             walkable = new bool[g.nx * g.nz];
             for (int i = 0; i < walkable.Length; i++) walkable[i] = g.walk[i] == '1';
@@ -65,16 +88,27 @@ namespace Srpg.Stage
             FitViewport();
             targetCamera.clearFlags = CameraClearFlags.SolidColor;
             targetCamera.backgroundColor = new Color(0.04f, 0.035f, 0.05f);
+            // 絵の外（上下・左右の帯）を塗るカメラ。絵のカメラは自分の枠の中しか消さないので
+            if (bandCamera == null)
+            {
+                bandCamera = new GameObject("BandCamera").AddComponent<Camera>();
+                bandCamera.transform.SetParent(transform, false);
+                bandCamera.cullingMask = 0;
+                bandCamera.depth = targetCamera.depth - 1;
+                bandCamera.clearFlags = CameraClearFlags.SolidColor;
+                bandCamera.backgroundColor = targetCamera.backgroundColor;
+            }
+            bandCamera.targetTexture = targetCamera.targetTexture;
 
             // 背景（画面いっぱいの三角形。頂点の位置は使わないので、見切れないよう大きな箱にする）
-            var bg = new GameObject("StageBackground");
+            var bg = backgroundObject = new GameObject("StageBackground");
             bg.transform.SetParent(transform, false);
             var mesh = new Mesh { name = "Fullscreen", vertices = new Vector3[3], triangles = new[] { 0, 1, 2 } };
             mesh.bounds = new Bounds(Vector3.zero, Vector3.one * 100000f);
             bg.AddComponent<MeshFilter>().sharedMesh = mesh;
             var mat = new Material(backgroundShader) { name = "StageBackground" };
             mat.SetTexture("_MainTex", background);
-            mat.SetTexture("_Occlusion", occlusion);
+            mat.SetTexture("_Occlusion", occlusions[stageIndex]);
             mat.SetFloat("_OcclusionMax", Data.occlusionMax);
             var mr = bg.AddComponent<MeshRenderer>();
             mr.sharedMaterial = mat;
@@ -191,7 +225,9 @@ namespace Srpg.Stage
 
         public void LoadCharacter()
         {
+            // エディタでは Assets/LocalOnly/、手元の試し版（ビルド）では StreamingAssets/ に同じ名前で置く
             string full = Path.Combine(Application.dataPath, vrmPath);
+            if (!File.Exists(full)) full = Path.Combine(Application.streamingAssetsPath, Path.GetFileName(vrmPath));
             if (!File.Exists(full)) { Debug.LogWarning($"[Stage] VRM がない: {full}（Assets/LocalOnly/ に置く）"); return; }
             var bytes = File.ReadAllBytes(full);
             using var data = new UniGLTF.GlbBinaryParser(bytes, full).Parse();
@@ -324,9 +360,15 @@ namespace Srpg.Stage
             if (hips != null) hips.localPosition = new Vector3(hips.localPosition.x, hips.localPosition.y, hips.localPosition.z);
         }
 
-        /// <summary>足元の影を床に合わせ、影の色（環境の色）を足元のまわりの背景からとる</summary>
+        /// <summary>
+        /// 足元の影を床に合わせ、光を決める（原作者 2026-10-07: 背景になじませる仕組み。どの背景でも同じ）。
+        /// ・主な光: 絵から拾った光（燭台・窓など）を、キャラの胸の高さで近い順に足し合わせた向きと色。近くを通ると、その光で照らされる
+        /// ・縁の光: キャラより奥（カメラから見て向こう）にある光の色
+        /// ・影の色: 足元のまわりの背景の色
+        /// </summary>
         private void UpdateBlobAndLight()
         {
+            UpdateSceneLight();
             var p = Character.position;
             float r = characterHeight * 0.32f;
             blob.position = p + Vector3.up * 0.01f;
@@ -343,21 +385,75 @@ namespace Srpg.Stage
                 }
                 c /= n;
                 // 暗い背景の色を少し持ち上げて影の色に（真っ黒にしない）
-                var amb = Color.Lerp(new Color(0.16f, 0.14f, 0.2f), c * 1.25f, 0.6f);
+                var amb = Color.Lerp(new Color(0.16f, 0.14f, 0.2f), c * 1.25f, 0.6f) * ambientGain;
                 Shader.SetGlobalColor("_StageAmbient", amb);
             }
         }
 
-        // ── 画面の大きさの調整（キャラの大きさ） ──
-        private bool InToolbar(Vector2 screen) => screen.y > Screen.height - 44 && screen.x < 420;
+        public float LightGain { get => lightGain; set => lightGain = Mathf.Clamp(value, 0f, 3f); }
+        public float AmbientGain { get => ambientGain; set => ambientGain = Mathf.Clamp(value, 0f, 3f); }
+
+        private void UpdateSceneLight()
+        {
+            if (keyLight == null || Character == null) return;
+            var chest = Character.position + Vector3.up * characterHeight * 0.6f;
+            var dir = Vector3.zero; var key = new Color(0, 0, 0); var rim = new Color(0, 0, 0);
+            var camFwd = targetCamera.transform.forward;
+            foreach (var l in Data.lights ?? Array.Empty<LightData>())
+            {
+                var to = V(l.position) - chest;
+                float d = to.magnitude;
+                float att = l.power / (1f + d * d / 4f);          // 2 m で半分くらい
+                var c = new Color(l.color[0], l.color[1], l.color[2]) * att;
+                dir += -to.normalized * c.grayscale;
+                key += c;
+                rim += c * Mathf.Clamp01(Vector3.Dot(to.normalized, camFwd));   // キャラより奥の光ほど縁に
+            }
+            float k = Mathf.Max(key.r, key.g, key.b);
+            if (k > 1e-4f && dir.sqrMagnitude > 1e-6f)
+            {
+                keyLight.transform.rotation = Quaternion.LookRotation(dir.normalized);
+                keyLight.color = key / k;
+                keyLight.intensity = Mathf.Clamp(k * 0.12f, 0f, 0.9f) * lightGain;
+            }
+            float r = Mathf.Max(rim.r, rim.g, rim.b);
+            Shader.SetGlobalColor("_StageRim", r > 1e-4f ? new Color(rim.r / r, rim.g / r, rim.b / r, Mathf.Clamp01(r * 0.25f) * lightGain) : new Color(0, 0, 0, 0));
+        }
+
+        // ── 画面の操作（舞台の切り替え・キャラの大きさ・光） ──
+        private const int PanelW = 440, PanelH = 150;
+        private bool InToolbar(Vector2 screen) => screen.y > Screen.height - PanelH - 10 && screen.x < PanelW + 10;   // 入力の座標は下が 0
+
+        private GUIStyle[] styles;
 
         private void OnGUI()
         {
-            GUILayout.BeginArea(new Rect(8, 8, 420, 36), GUI.skin.box);
+            // 書き出した版でも日本語が出るよう、Windows の字を使う
+            if (styles == null)
+            {
+                var font = Font.CreateDynamicFontFromOSFont(new[] { "Yu Gothic UI", "Meiryo UI", "MS UI Gothic" }, 14);
+                styles = new[] { GUI.skin.label, GUI.skin.button, GUI.skin.box };
+                foreach (var st in styles) st.font = font;
+            }
+            GUILayout.BeginArea(new Rect(8, 8, PanelW, PanelH), GUI.skin.box);
+            GUILayout.Label("床を押すと、そこまで歩きます（試作・手元だけ）");
             GUILayout.BeginHorizontal();
-            GUILayout.Label($"キャラの背の高さ {characterHeight:0.00} m", GUILayout.Width(170));
-            CharacterHeight = GUILayout.HorizontalSlider(characterHeight, 0.8f, 2.2f, GUILayout.Width(220));
+            for (int i = 0; i < stageJsons.Length; i++)
+            {
+                string label = i < stageLabels.Length ? stageLabels[i] : stageJsons[i].name;
+                if (GUILayout.Toggle(i == stageIndex, label, GUI.skin.button) && i != stageIndex) SwitchStage(i);
+            }
             GUILayout.EndHorizontal();
+            void Slider(string label, float value, float min, float max, Action<float> set)
+            {
+                GUILayout.BeginHorizontal();
+                GUILayout.Label(label, GUILayout.Width(180));
+                set(GUILayout.HorizontalSlider(value, min, max, GUILayout.Width(230)));
+                GUILayout.EndHorizontal();
+            }
+            Slider($"キャラの背の高さ {characterHeight:0.00} m", characterHeight, 0.8f, 2.2f, v => CharacterHeight = v);
+            Slider($"光の強さ {lightGain:0.00}", lightGain, 0f, 3f, v => LightGain = v);
+            Slider($"影の明るさ {ambientGain:0.00}", ambientGain, 0f, 3f, v => AmbientGain = v);
             GUILayout.EndArea();
         }
     }
