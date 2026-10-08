@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="166" viewBox="0 0 440 166">
+  <title>携帯端末メニューのマップ窓枠</title>
+  <desc>中央は透明。章・場所の画像は別レイヤーで表示する。左下のラベル下地と右下の方位飾りのみ面を持つ。</desc>
+  <!-- 内容画像のクリップ輪郭：M8 25 L25 8 H399 L432 36 V138 L414 158 H22 L8 144 Z -->
+  <path d="M8 123 H70 L103 158 H22 L8 144 Z" fill="#191e25" fill-opacity=".92"/>
+  <path d="M8 25 L25 8 H399 L432 36 V138 L414 158 H22 L8 144 Z" fill="none" stroke="#d8c198" stroke-width="1"/>
+  <path d="M14 28 L28 14 H396 L426 39 V135 L411 152 H104 M14 118 V140 L25 152 H65" fill="none" stroke="#d8c198" stroke-width=".65" opacity=".75"/>
+  <text x="24" y="146" fill="#f1e9d9" font-family="'Yu Mincho',serif" font-size="14" letter-spacing=".17em">マップ</text>
+  <g transform="translate(411 133)" stroke="#ebd7ae" fill="#2c323a" stroke-width=".9">
+    <path d="M0-14 L3-3 L14 0 L3 3 L0 14 L-3 3 L-14 0 L-3-3 Z"/>
+    <circle r="4"/>
+  </g>
+</svg>
