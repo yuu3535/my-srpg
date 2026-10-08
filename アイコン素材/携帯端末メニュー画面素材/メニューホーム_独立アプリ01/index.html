@@ -6,7 +6,7 @@
 <title>携帯端末 — 独立アプリのホーム試作</title>
 <link rel="stylesheet" href="../太陽盤_コマンド試作01/time-of-day.css?v=20261005a">
 <link rel="stylesheet" href="../太陽盤_コマンド試作01/menu-preview.css?v=20261006a">
-<link rel="stylesheet" href="home.css?v=20261008g">
+<link rel="stylesheet" href="home.css?v=20261009d">
 </head>
 <body>
 <main>
@@ -19,7 +19,13 @@
 <label class="effect-toggle" for="menu-show-frame"><input id="menu-show-frame" type="checkbox"> 端末フレームを比較表示</label>
 <label class="effect-toggle" for="home-mystery"><input id="home-mystery" type="checkbox" checked> 謎アプリも比較表示</label>
 <label class="effect-toggle" for="menu-effects"><input id="menu-effects" type="checkbox" checked> 炎・時間帯の演出</label>
-<label class="effect-toggle" for="notice-scroll"><input id="notice-scroll" type="checkbox" checked> 予報を流す</label>
+<label class="effect-toggle" for="notice-scroll"><input id="notice-scroll" type="checkbox" checked> 予報の再生・順送り</label>
+<label for="notice-before">流す前の読む間（秒）<input id="notice-before" type="number" min="1" max="12" step="1" value="5" aria-describedby="notice-timing-help"></label>
+<label for="notice-after">流した後の読む間（秒）<input id="notice-after" type="number" min="1" max="12" step="1" value="3" aria-describedby="notice-timing-help"></label>
+<label class="effect-toggle" for="notice-font-auto"><input id="notice-font-auto" type="checkbox" checked> 予報本文のサイズを自動調整</label>
+<label for="notice-font">本文サイズ（上限・px）<input id="notice-font" type="number" min="12" max="13.5" step="0.1" value="13.5" aria-describedby="notice-font-help"></label>
+<p id="notice-font-help" class="note">表示中の本文：<output id="notice-font-size" for="notice-font notice-font-auto">13.5</output>px。自動調整は12pxまで。まだ収まらない文は流します。見出し・β・種類は変更しません。</p>
+<p id="notice-timing-help" class="note">試作値。短文は前後の合計時間だけ静止。時遊び後の見本4件を順に表示し、「予報なし」は順送りしません。</p>
 <button type="button" id="home-screen-only">画面だけで見る</button>
 </div>
 <div id="menu-device" class="menu-device" data-frame="false">
@@ -31,11 +37,11 @@
 <div id="wheel-loading" class="wheel-loading" role="status">太陽盤を読み込み中</div>
 <div class="home-right">
 <div class="home-status"><span class="owner-dot" aria-hidden="true"></span><span class="home-where"><small id="home-chapter">プロローグ</small><span id="home-place">オルクス城・回廊</span></span><div id="home-time" class="icon-slot home-time" role="img" aria-label="時間帯：夕方"></div></div>
-<button type="button" class="home-notice" id="home-notice" data-fortune="true" aria-haspopup="dialog" aria-controls="home-dialog"><span class="notice-heading"><span class="notice-from" id="notice-from">運命予報</span><span class="notice-beta" id="notice-beta">β</span></span><span class="notice-viewport" id="notice-viewport" aria-hidden="true"><span class="notice-track" id="notice-track"><span class="notice-copy" id="notice-copy">失せモノに注意。笑う声が聞こえたら、振り返らないこと。</span><span class="notice-copy notice-repeat" id="notice-repeat"></span></span></span><span class="notice-period" id="notice-period">章のヒント</span></button>
+<button type="button" class="home-notice" id="home-notice" data-fortune="true" aria-haspopup="dialog" aria-controls="home-dialog"><span class="notice-heading"><span class="notice-from" id="notice-from">運命予報</span><span class="notice-beta" id="notice-beta">β</span></span><span class="notice-viewport" id="notice-viewport" aria-hidden="true"><span class="notice-measure" id="notice-measure">失せモノに注意。笑う声が聞こえたら、振り返らないこと。</span><span class="notice-track" id="notice-track"><span class="notice-copy" id="notice-copy">失せモノに注意。笑う声が聞こえたら、振り返らないこと。</span></span></span></button>
 <div class="home-map" data-loading="true" id="home-map">
 <img id="home-location" src="../../../背景/ブラッシュアップ版/オルクス回廊.png" alt="オルクス城・回廊の仮の場所画像">
 <div id="map-fallback" class="map-fallback" role="status" hidden>場所の画像を読み込めません。オルクス城・回廊</div>
-<button type="button" id="map-open" class="home-map-open" aria-haspopup="dialog" aria-controls="home-dialog" aria-label="マップの入口を開く"><span class="map-caption"><small>今日のタスク</small><span id="home-task">ギュンターとの演習（訓練場）</span></span><span class="map-go">出撃／探索</span></button>
+<button type="button" id="map-open" class="home-map-open" aria-haspopup="dialog" aria-controls="home-dialog" aria-label="マップの入口を開く"><span class="map-caption"><small>今日のタスク</small><span id="home-task">ギュンターとの演習（訓練場）</span></span><svg class="map-go" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12H19M14 7L19 12L14 17"/></svg></button>
 <img id="home-map-frame" class="home-map-frame" src="map-frame-silver-gold-v01.png?v=20261008a" width="2022" height="778" alt="" aria-hidden="true" draggable="false">
 </div>
 <nav class="independent-apps" aria-label="携帯端末のアプリ">
@@ -70,7 +76,7 @@
 <script src="../太陽盤_コマンド試作01/time-of-day.js?v=20261005a"></script>
 <script src="../太陽盤_コマンド試作01/menu-preview-model.js?v=20261006b"></script>
 <script src="../太陽盤_コマンド試作01/menu-apps-model.js?v=20261008a"></script>
-<script src="home-model.js?v=20261008d"></script>
-<script src="home.js?v=20261008e"></script>
+<script src="home-model.js?v=20261009b"></script>
+<script src="home.js?v=20261009c"></script>
 </body>
 </html>

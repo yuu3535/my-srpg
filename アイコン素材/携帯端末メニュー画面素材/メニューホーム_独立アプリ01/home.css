@@ -24,16 +24,14 @@
 .forecast-options button { font-size:13px; }
 .forecast-options button[aria-pressed="true"] { border-color:#d5bb83; background:#29333a; color:#ead6ac; }
 .forecast-options button:active { transform:scale(.98); }
-.notice-viewport { display:block; flex:1; min-width:0; overflow:hidden; }
-.notice-track { display:flex; width:max-content; gap:48px; }
-.notice-copy { display:block; flex:none; min-width:var(--ticker-item-width,0px); white-space:nowrap; }
-.notice-repeat { display:none; }
-/* 本文だけを一定速度で左へ流す。複製は読上げ対象から外し、全文は詳細でも読める。 */
-.home-notice[data-scrolling="true"] .notice-repeat { display:block; }
-.home-notice[data-scrolling="true"] .notice-track { animation:fortune-ticker var(--ticker-duration,20s) linear 2s infinite; animation-play-state:var(--ticker-play,running); }
-.home-notice:hover .notice-track, .home-notice:focus-within .notice-track { animation-play-state:paused; }
-@keyframes fortune-ticker { from { transform:translateX(0); } to { transform:translateX(var(--ticker-end,-500px)); } }
-.notice-period { flex:none; margin-left:auto; color:var(--home-muted); font-size:12px; }
+.notice-viewport { position:relative; display:block; flex:1; min-width:0; overflow:hidden; }
+.notice-track { display:flex; width:max-content; transform:translateX(var(--ticker-offset,0px)); }
+.notice-copy { display:block; flex:none; white-space:nowrap; font-size:var(--ticker-font,13.5px); }
+/* 上限サイズで測る専用要素。本文と同じ書体を継承し、縮小と再計測が循環しないよう分ける。 */
+.notice-measure { position:absolute; left:0; top:0; width:max-content; white-space:nowrap; font-size:var(--ticker-base-font,13.5px); visibility:hidden; pointer-events:none; }
+/* 前後に読む間を取る単発の移動。順送りと停止はhome.jsが管理し、本文は複製しない。 */
+.home-notice[data-ticker-phase="scroll"] .notice-track { will-change:transform; }
+#notice-before, #notice-after, #notice-font { width:80px; min-height:40px; padding:8px; }
 .home-map { position:absolute; left:0; top:82px; width:494px; height:190px; overflow:hidden; border:1px solid rgb(201 204 205 / .6); border-radius:4px; background:#1c1d1f; box-shadow:none; }
 .home-map[data-frame-ready="true"] { border-color:transparent; }
 .home-map>#home-location { display:block; width:100%; height:100%; object-fit:cover; object-position:50% 45%; }
@@ -44,11 +42,13 @@
 .map-fallback { position:absolute; inset:0; padding:24px; display:grid; place-content:center; font-size:14px; color:#dce3e5; }
 .home-map-open { position:absolute; inset:0; width:100%; height:100%; min-height:0; padding:0; border:0; border-radius:3px; background:transparent; display:flex; align-items:end; justify-content:space-between; color:#f0f1ec; text-align:left; }
 .home-map-open:hover { background:rgb(217 225 229 / .04); }
-.home-map-open:focus-visible { outline-offset:-4px; }
-.map-caption { width:100%; display:grid; gap:2px; padding:10px 120px 9px 14px; background:rgb(6 10 14 / .78); }
+.home-map-open:focus-visible { outline:2px solid #d3ad59; outline-offset:-6px; }
+.map-caption { width:100%; display:grid; gap:2px; padding:10px 44px 9px 14px; background:rgb(6 10 14 / .78); }
 .map-caption small { color:var(--home-muted); font-size:12px; letter-spacing:.1em; }
 .map-caption>span { font-size:16px; line-height:1.5; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.map-go { position:absolute; right:12px; bottom:12px; padding:4px 12px; border-radius:13px; background:rgb(240 241 236 / .92); color:#13202a; font-size:13px; font-weight:600; }
+/* 窓全体が入口。白い札を外し、枠や文字を遮らない小さな金の矢印だけにする。 */
+.map-go { position:absolute; right:14px; bottom:15px; width:18px; height:18px; fill:none; stroke:#d3ad59; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; pointer-events:none; }
+.home-map-open:active .map-go { transform:translateX(2px); }
 /* 名前は下地の外。列を囲むドックの面・枠は設けない。 */
 .independent-apps { position:absolute; left:0; top:282px; width:494px; height:98px; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); align-items:start; gap:8px; background:transparent; border:0; }
 .independent-app { display:grid; justify-items:center; align-content:start; gap:9px; width:100%; min-height:92px; padding:0; border:0; border-radius:0; background:transparent; font-size:14px; line-height:1.35; color:#f0f1ec; }
@@ -78,4 +78,4 @@ body[data-screen-only="true"] main { padding:0; width:100%; max-width:none; heig
 body[data-screen-only="true"] .preview-only { display:none; }
 body[data-screen-only="true"] .menu-device { width:var(--home-view-width); }
 body[data-screen-only="true"] .menu-viewport { border:0; }
-@media (prefers-reduced-motion:reduce) { .app-art { transition:none; } .home-notice .notice-track { animation:none !important; } .home-notice .notice-repeat { display:none !important; } }
+@media (prefers-reduced-motion:reduce) { .app-art { transition:none; } .home-notice .notice-track { transform:none; will-change:auto; } }

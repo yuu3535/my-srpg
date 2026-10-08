@@ -5,10 +5,13 @@
     const byId=id=>doc.getElementById(id),screen=byId('menu-screen'),wheel=byId('menu-wheel'),dialog=byId('home-dialog');
     const character=byId('menu-character'),phase=byId('menu-phase'),stage=byId('home-stage'),kind=byId('notice-kind');
     const effects=byId('menu-effects'),frame=byId('menu-show-frame'),frameImage=byId('menu-device-frame');
-    const notice=byId('home-notice'),tickerTrack=byId('notice-track'),tickerViewport=byId('notice-viewport'),tickerCopy=byId('notice-copy'),tickerRepeat=byId('notice-repeat'),tickerToggle=byId('notice-scroll');
+    const notice=byId('home-notice'),tickerTrack=byId('notice-track'),tickerViewport=byId('notice-viewport'),tickerCopy=byId('notice-copy'),tickerToggle=byId('notice-scroll');
+    const tickerBefore=byId('notice-before'),tickerAfter=byId('notice-after');
+    const tickerMeasure=byId('notice-measure'),tickerFont=byId('notice-font'),tickerAuto=byId('notice-font-auto');
     const buttons=Array.from(doc.querySelectorAll('[data-home-app]')),mapButtons=Array.from(doc.querySelectorAll('[data-map-mode]'));
     const failures=new Map(),disposers=[],media=win.matchMedia?win.matchMedia('(prefers-reduced-motion: reduce)'):null;
     let destroyed=false,wheelInitialized=false,selected='items',hovered=null,focused=null,fortuneRequested=false,fortuneLoaded=false;
+    let tickerPlan=null,tickerElapsed=0,tickerFrame=null,tickerLastTime=null,tickerHovered=false,tickerFocused=false,pageSuspended=false;
     function listen(node,type,fn) { node.addEventListener(type,fn);disposers.push(()=>node.removeEventListener(type,fn)); }
     function warning(key,message) {
       if(message)failures.set(key,message);else failures.delete(key);
@@ -25,23 +28,61 @@
       screen.dataset.reduced=String(!effects.checked||Boolean(media&&media.matches));
       screen.style.setProperty('--motion',doc.hidden?'paused':'running');configureWheel();tickerMotion();
     }
-    function tickerMotion() {
+    function tickerEligible() { return Boolean(tickerPlan&&stage.value==='after'&&model.forecast(kind.value).key!=='none'); }
+    function tickerPaused() {
       const openAttribute=dialog.getAttribute('open'),dialogShown=Boolean(dialog.open||openAttribute!==undefined&&openAttribute!==null);
-      screen.style.setProperty('--ticker-play',!tickerToggle.checked||Boolean(media&&media.matches)||doc.hidden||dialogShown?'paused':'running');
+      return !tickerToggle.checked||Boolean(media&&media.matches)||doc.hidden||pageSuspended||dialogShown||tickerHovered||tickerFocused;
+    }
+    function stopTicker() {
+      if(tickerFrame!==null)win.cancelAnimationFrame?.(tickerFrame);
+      tickerFrame=null;tickerLastTime=null;
+    }
+    function paintTicker() {
+      const state=model.tickerState(tickerEligible()?tickerPlan:null,tickerElapsed);
+      if(notice.dataset.tickerPhase!==state.phase)notice.dataset.tickerPhase=state.phase;
+      const scrolling=String(tickerEligible()&&tickerPlan.distance>0),offset=state.offset+'px';
+      if(notice.dataset.scrolling!==scrolling)notice.dataset.scrolling=scrolling;
+      if(tickerTrack.style.getPropertyValue?.('--ticker-offset')!==offset)tickerTrack.style.setProperty('--ticker-offset',offset);
+    }
+    function queueTicker() {
+      if(destroyed||!tickerEligible()||tickerPaused()||tickerFrame!==null||typeof win.requestAnimationFrame!=='function')return;
+      tickerFrame=win.requestAnimationFrame(tickTicker);
+    }
+    function tickTicker(now) {
+      tickerFrame=null;
+      if(destroyed||!tickerEligible()||tickerPaused()){tickerLastTime=null;return;}
+      if(tickerLastTime!==null)tickerElapsed+=Math.max(0,now-tickerLastTime)/1000;
+      tickerLastTime=now;
+      if(model.tickerState(tickerPlan,tickerElapsed).done) {
+        kind.value=model.nextForecast(kind.value);presentation();
+      } else paintTicker();
+      queueTicker();
+    }
+    function tickerMotion() {
+      screen.style.setProperty('--ticker-play',tickerPaused()?'paused':'running');
+      if(media&&media.matches){tickerElapsed=0;paintTicker();}
+      if(tickerPaused()||!tickerEligible())stopTicker();else queueTicker();
     }
     function measureTicker(reset=false) {
       if(destroyed)return;
-      // 文が変わる場合だけ先頭へ戻す。hoverや手動停止では進行位置を保つ。
-      if(reset)notice.dataset.scrolling='false';
-      tickerTrack.style.setProperty('--ticker-item-width',(tickerViewport.clientWidth||0)+'px');
-      const metrics=model.ticker(tickerCopy.offsetWidth,tickerViewport.clientWidth);
-      const value=model.presentation(character.value,stage.value,kind.value);
-      notice.dataset.scrolling=String(Boolean(metrics&&value.after&&model.forecast(kind.value).key!=='none'));
-      if(metrics) {
-        tickerTrack.style.setProperty('--ticker-end',-metrics.distance+'px');
-        tickerTrack.style.setProperty('--ticker-duration',metrics.duration+'s');
+      const base=stage.value==='after'?model.noticeFontLimit(tickerFont.value):13.5;
+      const baseValue=base+'px';
+      if(tickerMeasure.style.getPropertyValue?.('--ticker-base-font')!==baseValue)tickerMeasure.style.setProperty('--ticker-base-font',baseValue);
+      let size=tickerAuto.checked&&stage.value==='after'?model.noticeFontSize(tickerMeasure.offsetWidth,tickerViewport.clientWidth,base):base;
+      function applySize() {
+        const value=size+'px';
+        if(tickerCopy.style.getPropertyValue?.('--ticker-font')!==value)tickerCopy.style.setProperty('--ticker-font',value);
       }
-      tickerMotion();
+      applySize();
+      // 字のヒンティング等で比例計算と実幅が違っても、下限までに留めて再計測する。
+      if(tickerAuto.checked&&stage.value==='after'&&tickerViewport.clientWidth>0) {
+        while(size>12&&tickerCopy.offsetWidth>tickerViewport.clientWidth){size=Math.max(12,Math.round((size-.1)*10)/10);applySize();}
+      }
+      byId('notice-font-size').textContent=String(size);
+      const metrics=model.ticker(tickerCopy.offsetWidth,tickerViewport.clientWidth,tickerBefore.value,tickerAfter.value);
+      // 文・実幅・読む間が変わった時は読み直せる先頭へ。単なる停止／再開では進行を保つ。
+      if(reset||!metrics||!tickerPlan||metrics.distance!==tickerPlan.distance||metrics.before!==tickerPlan.before||metrics.after!==tickerPlan.after){stopTicker();tickerElapsed=0;}
+      tickerPlan=metrics;paintTicker();tickerMotion();
     }
     function fit() {
       if(doc.body.dataset.screenOnly==='true') {
@@ -65,8 +106,8 @@
     function presentation() {
       character.value=model.owner(character.value);screen.dataset.owner=character.value;
       const value=model.presentation(character.value,stage.value,kind.value);
-      for(const [id,key] of [['home-chapter','chapter'],['home-place','place'],['notice-from','from'],['notice-copy','copy'],['notice-period','period'],['home-task','task']])byId(id).textContent=value[key];
-      tickerRepeat.textContent=value.copy;
+      for(const [id,key] of [['home-chapter','chapter'],['home-place','place'],['notice-from','from'],['notice-copy','copy'],['home-task','task']])byId(id).textContent=value[key];
+      tickerMeasure.textContent=value.copy;
       byId('notice-kind-control').hidden=!value.after;
       byId('home-notice').dataset.fortune=String(value.after);
       byId('notice-beta').hidden=!value.after;
@@ -145,6 +186,11 @@
     listen(character,'change',presentation);listen(stage,'change',presentation);listen(kind,'change',presentation);
     listen(phase,'change',drawTime);listen(effects,'change',motion);listen(frame,'change',framing);listen(byId('home-mystery'),'change',mystery);
     listen(tickerToggle,'change',tickerMotion);listen(dialog,'close',tickerMotion);
+    listen(notice,'pointerenter',event=>{if(event.pointerType==='touch')return;tickerHovered=true;tickerMotion();});listen(notice,'pointerleave',()=>{tickerHovered=false;tickerMotion();});
+    listen(notice,'focus',()=>{tickerFocused=true;tickerMotion();});listen(notice,'blur',()=>{tickerFocused=false;tickerMotion();});
+    for(const [input,fallback] of [[tickerBefore,5],[tickerAfter,3]])listen(input,'change',()=>{input.value=String(model.readingSeconds(input.value,fallback));measureTicker(true);});
+    listen(tickerFont,'change',()=>{tickerFont.value=String(model.noticeFontLimit(tickerFont.value));measureTicker(true);});
+    listen(tickerAuto,'change',()=>measureTicker(true));
     listen(byId('home-notice'),'click',()=>{const value=model.presentation(character.value,stage.value,kind.value);if(value.after)openForecast();else open(value.from+'からのメッセージ',value.detail);});
     for(const button of doc.querySelectorAll('[data-forecast-kind]'))listen(button,'click',()=>{
       if(stage.value!=='after'||!Object.hasOwn(model.forecasts,button.dataset.forecastKind))return;
@@ -167,12 +213,12 @@
     listen(doc,'visibilitychange',motion);if(media?.addEventListener)listen(media,'change',motion);
     listen(win,'resize',fit);
     if(win.ResizeObserver){const observer=new win.ResizeObserver(fit);observer.observe(byId('menu-viewport'));disposers.push(()=>observer.disconnect());}
-    if(win.ResizeObserver){const observer=new win.ResizeObserver(()=>measureTicker());observer.observe(tickerViewport);observer.observe(tickerCopy);disposers.push(()=>observer.disconnect());}
+    if(win.ResizeObserver){const observer=new win.ResizeObserver(()=>measureTicker());observer.observe(tickerViewport);observer.observe(tickerCopy);observer.observe(tickerMeasure);disposers.push(()=>observer.disconnect());}
     if(doc.fonts?.addEventListener)listen(doc.fonts,'loadingdone',()=>measureTicker());
     doc.fonts?.ready?.then(()=>measureTicker());
-    function destroy() { if(destroyed)return;destroyed=true;screen.style.setProperty('--motion','paused');screen.style.setProperty('--ticker-play','paused');notice.dataset.scrolling='false';disposers.splice(0).forEach(dispose=>dispose()); }
-    listen(win,'pagehide',event=>{if(!event.persisted)destroy();else {screen.style.setProperty('--motion','paused');screen.style.setProperty('--ticker-play','paused');}});
-    listen(win,'pageshow',()=>{fit();motion();});
+    function destroy() { if(destroyed)return;destroyed=true;stopTicker();screen.style.setProperty('--motion','paused');screen.style.setProperty('--ticker-play','paused');notice.dataset.scrolling='false';disposers.splice(0).forEach(dispose=>dispose()); }
+    listen(win,'pagehide',event=>{if(!event.persisted)destroy();else {pageSuspended=true;screen.style.setProperty('--motion','paused');tickerMotion();}});
+    listen(win,'pageshow',()=>{pageSuspended=false;fit();motion();});
     if(win.location?.search&&new URLSearchParams(win.location.search).get('view')==='screen')doc.body.dataset.screenOnly='true';
     presentation();drawTime();mystery();framing();configureWheel('items');
     return {destroy,openApp,presentation,fit};

@@ -39,6 +39,13 @@ assert.ok(rule('.home-wallpaper').includes('filter:none;')&&rule('.home-wallpape
 assert.ok(rule('.independent-home').includes('background:#1c1d1f;'),'画像未読込時も無地の炭色');
 assert.ok(rule('.home-right').includes('left:338px; top:0px; width:494px; height:390px;'),'生成見本の配置変更は取り込まない');
 assert.ok(rule('.home-map').includes('top:82px; width:494px; height:190px;'),'マップ位置・サイズを維持');
+assert.ok(rule('.home-map-open').includes('inset:0; width:100%; height:100%;'),'マップの窓全体を一つのボタンにする');
+assert.ok(html.includes('id="map-open"')&&html.includes('aria-label="マップの入口を開く"'),'矢印だけでも入口名は読上げに残す');
+assert.ok(!html.includes('<span class="map-go">出撃／探索</span>'),'白い出撃／探索札を撤去');
+assert.ok(html.includes('<svg class="map-go" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'),'矢印は独立した操作対象にしない');
+assert.ok(rule('.map-go').includes('width:18px; height:18px;')&&rule('.map-go').includes('stroke:#d3ad59;')&&rule('.map-go').includes('fill:none;'),'小さな金の線だけの矢印');
+assert.ok(!rule('.map-go').includes('background:')&&rule('.map-go').includes('pointer-events:none;'),'矢印の札下地はなく、クリックを遮らない');
+assert.ok(rule('.home-map-open:focus-visible').includes('outline:2px solid #d3ad59;'),'キーボード操作中は入口を見失わない');
 assert.ok(html.includes('class="home-map-frame"')&&html.includes('src="map-frame-silver-gold-v01.png?v=20261008a"'),'景色と飾り枠の別素材');
 const frameAsset=fs.readFileSync(path.join(__dirname,'map-frame-silver-gold-v01.png'));
 assert.equal(frameAsset.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
@@ -46,11 +53,34 @@ assert.equal(frameAsset.readUInt32BE(16),2022);assert.equal(frameAsset.readUInt3
 assert.ok(rule('.home-map>.home-map-frame').includes('pointer-events:none;'),'枠の画像で入口のクリックを遮らない');
 assert.ok(rule('.home-map[data-loading="true"]>#home-location').includes('opacity:0;'),'背景だけを隠し、枠は読み込み状態で消さない');
 assert.ok(html.includes('id="notice-viewport" aria-hidden="true"'),'本文の複製は読上げ対象から外す');
-assert.ok(css.includes('animation-play-state:paused;')&&css.includes('animation:none !important;'),'hover／focus／動きを減らす設定で止める');
-assert.ok(css.includes('transform:translateX(var(--ticker-end,-500px));'),'移動はtransformのみ');
+assert.ok(!html.includes('id="notice-period"')&&!css.includes('.notice-period'),'右端の種類欄を外し、その幅と余白を本文へ戻す');
+assert.ok(rule('.notice-viewport').includes('flex:1;')&&rule('.notice-heading').includes('flex:none;'),'本文が残りの幅を使い、見出しとβは縮めない');
+assert.ok(css.includes('transform:translateX(var(--ticker-offset,0px));'),'移動はtransformのみ');
+assert.ok(!html.includes('id="notice-repeat"')&&!css.includes('@keyframes fortune-ticker'),'複製による無限スクロールを使わない');
+assert.ok(css.includes('.home-notice .notice-track { transform:none;'),'OSの動きを減らす設定は静止');
 assert.ok(!html.includes('<marquee'),'非推奨のmarquee要素を使わない');
-assert.deepEqual(model.ticker(420,300),{distance:468,duration:468/28});
-assert.deepEqual(model.ticker(90,300),{distance:348,duration:348/28},'短文も同じ速度で循環する');
+const longPlan={distance:120,duration:120/28,before:5,after:3,total:8+120/28};
+assert.deepEqual(model.ticker(420,300),longPlan);
+assert.deepEqual(model.ticker(90,300),{distance:0,duration:0,before:5,after:3,total:8},'短文は読む間だけ静止');
+assert.equal(model.ticker(300,300).distance,0,'ぴったり収まる文も静止');
+assert.deepEqual(model.tickerState(longPlan,4),{phase:'before',offset:0,done:false});
+assert.deepEqual(model.tickerState(longPlan,6),{phase:'scroll',offset:-28,done:false});
+assert.deepEqual(model.tickerState(longPlan,10),{phase:'after',offset:-120,done:false});
+assert.equal(model.tickerState(longPlan,longPlan.total).done,true);
+assert.deepEqual(model.tickerState(model.ticker(90,300),7),{phase:'reading',offset:0,done:false});
+assert.equal(model.nextForecast('encounter'),'story');assert.equal(model.nextForecast('none'),'story');
+assert.deepEqual(model.forecastOrder,['story','sale','support','encounter']);
+assert.equal(model.ticker(420,300,2,4).total,6+120/28);
+assert.equal(model.readingSeconds('',5),5);assert.equal(model.readingSeconds(99,3),3);
+assert.equal(model.noticeFontSize(290,300),13.5,'収まる文は元の大きさを維持');
+assert.equal(model.noticeFontSize(310,300),13,'少しだけはみ出す文は0.1px単位で調整');
+assert.equal(model.noticeFontSize(450,300),12,'長文でも12pxより小さくしない');
+assert.equal(model.noticeFontSize(100,300,12.5),12.5,'選んだ上限を守る');
+assert.equal(model.noticeFontLimit(11),13.5);assert.equal(model.noticeFontLimit(14),13.5);assert.equal(model.noticeFontLimit(''),13.5);
+for(const width of [0,NaN,Infinity])assert.equal(model.noticeFontSize(width,300),13.5,'未計測では無理に縮めない');
+assert.ok(rule('.notice-copy').includes('font-size:var(--ticker-font,13.5px);'),'サイズ変更は本文だけ');
+assert.ok(rule('.notice-measure').includes('visibility:hidden;')&&rule('.notice-measure').includes('position:absolute;'),'測定用の文字は表示・配置に混ぜない');
+assert.ok(html.includes('id="notice-font-auto" type="checkbox" checked'),'自動調整の初期値はON');
 for(const [text,viewport] of [[0,300],[420,0],[-1,300],[NaN,300],[Infinity,300],[420,NaN]])assert.equal(model.ticker(text,viewport),null);
 // CSS配置の数値確認。ブラウザでの実測ではない。
 const slotWidth=(494-8*4)/5,artExtent=64+4;
@@ -69,14 +99,25 @@ assert.equal(model.presentation('alche','after','__proto__').copy,model.forecast
 assert.equal(model.forecast('__proto__').key,'story');
 assert.equal(model.fit(844,390),1);assert.ok(model.fit(390,844)<1);assert.ok(model.fit(844,390,true)<1);
 function node() {return {dataset:{},handlers:new Map(),hidden:false,attributes:{},style:{properties:{},setProperty(k,v){this.properties[k]=v;}},addEventListener(t,f){if(!this.handlers.has(t))this.handlers.set(t,new Set());this.handlers.get(t).add(f);},removeEventListener(t,f){this.handlers.get(t)?.delete(f);},emit(t,event={}){for(const f of [...this.handlers.get(t)||[]])f(event);},getAttribute(k){return this.attributes[k];},setAttribute(k,v){this.attributes[k]=v;},removeAttribute(k){delete this.attributes[k];},querySelectorAll(){return [];},getBoundingClientRect(){return {width:844};}};}
-function setup(native=true,wallpaperReady=null) {
-  const items=new Map(),byId=id=>{if(!items.has(id))items.set(id,node());return items.get(id);};
+function setup(native=true,wallpaperReady=null,fontWidth=null) {
+  const items=new Map(),byId=id=>{if(id==='notice-period')return null;if(!items.has(id))items.set(id,node());return items.get(id);};
   const doc=node(),win=node();doc.body=node();doc.hidden=false;doc.getElementById=byId;
+  const frames=new Map();let frameId=0,clock=0;
+  win.requestAnimationFrame=fn=>{frames.set(++frameId,fn);return frameId;};win.cancelAnimationFrame=id=>frames.delete(id);
+  win.step=ms=>{clock+=ms;const callbacks=[...frames.values()];frames.clear();callbacks.forEach(fn=>fn(clock));};win.pendingFrames=()=>frames.size;
   win.innerWidth=844;win.innerHeight=390;win.location={protocol:'http:',origin:'http://localhost:8931',search:''};
   const media=Object.assign(node(),{matches:false});win.matchMedia=()=>media;
   byId('menu-character').value='alche';byId('menu-phase').value='evening';byId('home-stage').value='prologue';byId('notice-kind').value='story';
   byId('menu-effects').checked=true;byId('home-mystery').checked=true;byId('menu-show-frame').checked=false;
   byId('notice-scroll').checked=true;byId('notice-viewport').clientWidth=300;byId('notice-copy').offsetWidth=420;
+  byId('notice-before').value='5';byId('notice-after').value='3';
+  // 従来の仮想時計は縮小OFFで同じ移動距離を検査。別ケースはフォントに比例する実幅を模擬。
+  byId('notice-font').value='13.5';byId('notice-font-auto').checked=fontWidth!==null;
+  if(fontWidth!==null) {
+    let naturalWidth=fontWidth;
+    Object.defineProperty(byId('notice-copy'),'offsetWidth',{get(){return Math.ceil(naturalWidth*(parseFloat(this.style.properties['--ticker-font'])||13.5)/13.5);},set(value){naturalWidth=value;}});
+    Object.defineProperty(byId('notice-measure'),'offsetWidth',{get(){return Math.ceil(naturalWidth*(parseFloat(this.style.properties['--ticker-base-font'])||13.5)/13.5);}});
+  } else Object.defineProperty(byId('notice-measure'),'offsetWidth',{get(){return byId('notice-copy').offsetWidth;}});
   const sent=[];byId('menu-wheel').contentWindow={postMessage(m){sent.push(m);}};
   const buttons=Object.keys(apps.apps).map(id=>{
     const button=id==='ouroboros'?byId('home-ouroboros'):node();button.dataset.homeApp=id;button.art=node();button.img=node();button.fallback=node();
@@ -102,10 +143,10 @@ s.byId('home-notice').emit('click');assert.equal(s.byId('home-dialog-title').tex
 s.byId('menu-character').value='karima';s.byId('menu-character').emit('change');assert.equal(s.byId('notice-from').textContent,'アルシェ');assert.equal(s.byId('menu-screen').dataset.owner,'karima');
 s.byId('home-stage').value='after';s.byId('home-stage').emit('change');assert.equal(s.byId('notice-kind-control').hidden,false);
 assert.equal(s.byId('home-notice').dataset.scrolling,'true');
-assert.equal(s.byId('notice-track').style.properties['--ticker-end'],'-468px');
-assert.equal(s.byId('notice-track').style.properties['--ticker-duration'],468/28+'s');
-assert.equal(s.byId('notice-repeat').textContent,model.forecasts.story.copy);
+assert.equal(s.byId('notice-track').style.properties['--ticker-offset'],'0px');
+assert.equal(s.byId('home-notice').dataset.tickerPhase,'before');
 assert.ok(s.byId('home-notice').attributes['aria-label'].includes(model.forecasts.story.copy),'読み上げは完全な文を一度だけ');
+assert.ok(s.byId('home-notice').attributes['aria-label'].includes(model.forecasts.story.label),'種類は帯の読み上げ名に残す');
 s.byId('home-dialog').close();assert.equal(s.byId('menu-screen').style.properties['--ticker-play'],'running');
 s.byId('notice-scroll').checked=false;s.byId('notice-scroll').emit('change');assert.equal(s.byId('menu-screen').style.properties['--ticker-play'],'paused');
 s.byId('notice-scroll').checked=true;s.byId('notice-scroll').emit('change');assert.equal(s.byId('menu-screen').style.properties['--ticker-play'],'running');
@@ -116,6 +157,7 @@ s.media.matches=false;s.media.emit('change');assert.equal(s.byId('menu-screen').
 s.byId('notice-kind').value='sale';s.byId('notice-kind').emit('change');assert.equal(s.byId('notice-copy').textContent,model.forecasts.sale.copy);
 assert.equal(s.byId('notice-beta').hidden,false);assert.equal(s.byId('home-notice').dataset.fortune,'true');
 s.byId('home-notice').emit('click');assert.equal(s.byId('home-dialog-title').textContent,'運命予報β — セール');assert.ok(s.byId('home-dialog-body').textContent.includes('この試作は価格を変えません'));
+assert.ok(s.byId('home-notice').attributes['aria-label'].includes(model.forecasts.sale.label),'切替後も種類の読み上げ名を更新');
 assert.equal(s.byId('menu-screen').style.properties['--ticker-play'],'paused','詳細閲覧中は停止');
 assert.equal(s.byId('home-forecast-copy').textContent,model.forecasts.sale.copy);assert.equal(s.byId('home-forecast-copy').hidden,false);
 assert.equal(s.byId('home-fortune').src,undefined,'セールには蛇の章ヒントを読み込まない');
@@ -123,7 +165,6 @@ const saleTitle=s.byId('home-dialog-title').textContent;s.api.openApp('fortune')
 for(const button of s.forecastButtons) {
   button.emit('click');assert.equal(s.byId('notice-kind').value,button.dataset.forecastKind);
   assert.equal(s.byId('notice-copy').textContent,model.forecasts[button.dataset.forecastKind].copy);
-  assert.equal(s.byId('notice-repeat').textContent,model.forecasts[button.dataset.forecastKind].copy);
   assert.equal(s.byId('home-notice').dataset.scrolling,String(button.dataset.forecastKind!=='none'),'予報なしは流さない');
   assert.equal(s.byId('home-fortune').hidden,button.dataset.forecastKind!=='story');
   assert.equal(button.attributes['aria-pressed'],'true');
@@ -148,6 +189,7 @@ s.win.emit('message',{source:{},origin:s.win.location.origin,data:{type:'solar-m
 s.win.emit('message',{source:s.byId('menu-wheel').contentWindow,origin:'http://untrusted.invalid',data:{type:'solar-menu-state',selected:'items'}});assert.ok(s.byId('home-status').textContent.startsWith(wheel.description('save')));
 s.byId('home-mystery').checked=false;s.byId('home-mystery').emit('change');assert.equal(s.byId('home-ouroboros').hidden,true);s.byId('home-dialog-title').textContent='guard';s.api.openApp('ouroboros');s.api.openApp('__proto__');assert.equal(s.byId('home-dialog-title').textContent,'guard');
 s.byId('home-location').emit('error');assert.equal(s.byId('map-fallback').hidden,false);s.byId('home-location').emit('load');assert.equal(s.byId('map-fallback').hidden,true);
+s.byId('map-open').emit('click');assert.equal(s.byId('home-dialog-title').textContent,'マップ');assert.equal(s.byId('map-options').hidden,false,'札を外しても窓から既存の入口が開く');
 s.byId('home-map-frame').emit('error');assert.equal(s.byId('home-map-frame').hidden,true);assert.equal(s.byId('home-map').dataset.frameReady,'false');
 s.byId('home-map-frame').emit('load');assert.equal(s.byId('home-map-frame').hidden,false);assert.equal(s.byId('home-map').dataset.frameReady,'true');
 s.byId('home-wallpaper').emit('error');assert.equal(s.byId('home-wallpaper').hidden,true);assert.ok(s.byId('home-warning').textContent.includes('無地の炭色'));
@@ -162,4 +204,66 @@ s.api.destroy();s.api.destroy();s.byId('home-dialog-title').textContent='destroy
 assert.equal(s.byId('menu-screen').style.properties['--ticker-play'],'paused');assert.equal(s.byId('home-notice').dataset.scrolling,'false');
 const f=setup(false);f.api.openApp('wallet');assert.equal(f.byId('home-dialog').attributes.open,'');let prevented=false;f.byId('home-dialog-close').emit('click',{preventDefault(){prevented=true;}});assert.equal(prevented,true);assert.equal(f.byId('home-dialog').attributes.open,undefined);f.api.destroy();
 for(const ready of [true,false]){const cached=setup(true,ready);assert.equal(cached.byId('home-wallpaper').hidden,!ready);assert.equal(cached.byId('home-warning').hidden,ready);cached.api.destroy();}
-console.log('PASS: 銀／金の別素材マップ枠・予報本文の一定速度テロップ／複製と全文・手動停止／非表示／動きを減らす設定／詳細開閉・予報なし停止・既存入口／遅延読込／通信／画像復旧／破棄。描画QA未実施。');
+// 仮想時計で「読む→流す→読む→次へ」と、停止中の時間が加算されないことを検査。
+const flow=setup();flow.byId('home-stage').value='after';flow.byId('home-stage').emit('change');
+flow.win.step(0);flow.win.step(4000);assert.equal(flow.byId('home-notice').dataset.tickerPhase,'before');
+flow.win.step(1000);assert.equal(flow.byId('home-notice').dataset.tickerPhase,'scroll');
+flow.win.step(2000);assert.equal(flow.byId('notice-track').style.properties['--ticker-offset'],'-56px');
+flow.byId('home-notice').emit('pointerenter',{pointerType:'mouse'});assert.equal(flow.win.pendingFrames(),0);
+flow.win.step(20000);assert.equal(flow.byId('notice-track').style.properties['--ticker-offset'],'-56px');
+flow.byId('home-notice').emit('pointerleave');flow.win.step(0);flow.win.step(1000);
+assert.equal(flow.byId('notice-track').style.properties['--ticker-offset'],'-84px','再開時に停止中の20秒を加算しない');
+flow.byId('home-notice').emit('focus');assert.equal(flow.win.pendingFrames(),0);flow.win.step(20000);
+flow.byId('home-notice').emit('blur');flow.win.step(0);flow.win.step(2000);
+assert.equal(flow.byId('home-notice').dataset.tickerPhase,'after');assert.equal(flow.byId('notice-track').style.properties['--ticker-offset'],'-120px');
+assert.equal(flow.byId('notice-kind').value,'story','末尾で読む間にも次へ飛ばない');
+flow.win.step(2400);assert.equal(flow.byId('notice-kind').value,'sale');assert.equal(flow.byId('notice-copy').textContent,model.forecasts.sale.copy);
+assert.ok(flow.byId('home-notice').attributes['aria-label'].includes(model.forecasts.sale.copy),'帯を開く／読む対象も新しい予報へ');
+flow.byId('notice-copy').offsetWidth=90;flow.win.emit('resize');assert.equal(flow.byId('home-notice').dataset.scrolling,'false');
+flow.win.step(0);flow.win.step(7000);assert.equal(flow.byId('home-notice').dataset.tickerPhase,'reading');assert.equal(flow.byId('notice-kind').value,'sale');
+flow.win.step(1000);assert.equal(flow.byId('notice-kind').value,'support');
+flow.win.step(0);flow.win.step(8000);assert.equal(flow.byId('notice-kind').value,'encounter');
+flow.win.step(0);flow.win.step(8000);assert.equal(flow.byId('notice-kind').value,'story','4件の末尾から先頭へ循環');
+flow.byId('home-notice').emit('click');assert.equal(flow.win.pendingFrames(),0);flow.win.step(90000);assert.equal(flow.byId('notice-kind').value,'story','詳細中は順送りも停止');
+flow.byId('home-dialog').close();flow.byId('notice-scroll').checked=false;flow.byId('notice-scroll').emit('change');assert.equal(flow.win.pendingFrames(),0);
+flow.byId('notice-scroll').checked=true;flow.byId('notice-scroll').emit('change');flow.doc.hidden=true;flow.doc.emit('visibilitychange');assert.equal(flow.win.pendingFrames(),0);
+flow.doc.hidden=false;flow.doc.emit('visibilitychange');flow.media.matches=true;flow.media.emit('change');assert.equal(flow.win.pendingFrames(),0);assert.equal(flow.byId('notice-track').style.properties['--ticker-offset'],'0px');
+flow.media.matches=false;flow.media.emit('change');flow.byId('notice-before').value='2';flow.byId('notice-before').emit('change');flow.byId('notice-after').value='1';flow.byId('notice-after').emit('change');
+flow.win.step(0);flow.win.step(3000);assert.equal(flow.byId('notice-kind').value,'sale','読む間の調整を短文にも反映');
+flow.byId('notice-after').value='0';flow.byId('notice-after').emit('change');assert.equal(flow.byId('notice-after').value,'3','不正な秒数は初期値へ戻す');
+flow.byId('notice-kind').value='none';flow.byId('notice-kind').emit('change');assert.equal(flow.win.pendingFrames(),0);flow.win.step(90000);assert.equal(flow.byId('notice-kind').value,'none');
+flow.byId('notice-kind').value='story';flow.byId('notice-kind').emit('change');flow.byId('home-stage').value='prologue';flow.byId('home-stage').emit('change');assert.equal(flow.win.pendingFrames(),0,'通信は順送りしない');
+flow.byId('home-stage').value='after';flow.byId('home-stage').emit('change');flow.win.emit('pagehide',{persisted:true});assert.equal(flow.win.pendingFrames(),0);flow.win.emit('pageshow');assert.equal(flow.win.pendingFrames(),1);
+flow.byId('home-notice').emit('pointerenter',{pointerType:'touch'});assert.equal(flow.win.pendingFrames(),1,'タッチのpointerenterでhover停止が残らない');
+flow.byId('notice-copy').offsetWidth=0;flow.win.emit('resize');assert.equal(flow.win.pendingFrames(),0,'未計測なら順送りせず待つ');
+flow.byId('notice-copy').offsetWidth=90;flow.win.emit('resize');assert.equal(flow.win.pendingFrames(),1);
+flow.api.destroy();assert.equal(flow.win.pendingFrames(),0,'破棄時に次フレームを取り消す');flow.win.step(90000);
+const fontFit=setup(true,null,310);fontFit.byId('home-stage').value='after';fontFit.byId('home-stage').emit('change');
+assert.equal(fontFit.byId('notice-copy').style.properties['--ticker-font'],'13px');
+assert.equal(fontFit.byId('notice-font-size').textContent,'13');assert.equal(fontFit.byId('home-notice').dataset.scrolling,'false','縮めて収まれば静止する');
+assert.equal(fontFit.byId('notice-measure').textContent,fontFit.byId('notice-copy').textContent);
+fontFit.win.step(0);fontFit.win.step(8000);assert.equal(fontFit.byId('notice-kind').value,'sale','自動調整後も次の予報へ進む');
+fontFit.byId('notice-copy').offsetWidth=450;fontFit.win.emit('resize');
+assert.equal(fontFit.byId('notice-copy').style.properties['--ticker-font'],'12px');assert.equal(fontFit.byId('home-notice').dataset.scrolling,'true','12pxでも長い文は流す');
+fontFit.win.step(0);fontFit.win.step(6000);assert.equal(fontFit.byId('notice-track').style.properties['--ticker-offset'],'-28px','縮小後の距離でも速度は変えない');
+fontFit.win.emit('resize');assert.equal(fontFit.byId('notice-track').style.properties['--ticker-offset'],'-28px','同じ寸法の再計測で毎回先頭へ戻さない');
+fontFit.byId('notice-copy').offsetWidth=280;fontFit.win.emit('resize');assert.equal(fontFit.byId('notice-copy').style.properties['--ticker-font'],'13.5px','短い文や幅の復帰で元のサイズへ');
+fontFit.byId('notice-font').value='12.5';fontFit.byId('notice-font').emit('change');assert.equal(fontFit.byId('notice-copy').style.properties['--ticker-font'],'12.5px');
+fontFit.byId('notice-font').value='11';fontFit.byId('notice-font').emit('change');assert.equal(fontFit.byId('notice-font').value,'13.5');
+fontFit.byId('notice-copy').offsetWidth=310;fontFit.byId('notice-font-auto').checked=false;fontFit.byId('notice-font-auto').emit('change');
+assert.equal(fontFit.byId('notice-copy').style.properties['--ticker-font'],'13.5px');assert.equal(fontFit.byId('home-notice').dataset.scrolling,'true','自動調整OFFなら選んだサイズを固定');
+fontFit.byId('notice-font-auto').checked=true;fontFit.byId('notice-font-auto').emit('change');assert.equal(fontFit.byId('home-notice').dataset.scrolling,'false');
+fontFit.byId('notice-copy').offsetWidth=0;fontFit.win.emit('resize');assert.equal(fontFit.win.pendingFrames(),0);
+fontFit.byId('notice-copy').offsetWidth=450;fontFit.byId('home-stage').value='prologue';fontFit.byId('home-stage').emit('change');assert.equal(fontFit.byId('notice-copy').style.properties['--ticker-font'],'13.5px','プロローグ通信の書体サイズは変えない');
+fontFit.api.destroy();assert.equal(fontFit.win.pendingFrames(),0);
+const widerBand=setup(true,null,450);widerBand.byId('home-stage').value='after';widerBand.byId('home-stage').emit('change');
+widerBand.byId('notice-font').value='12';widerBand.byId('notice-font').emit('change');
+assert.equal(widerBand.byId('home-notice').dataset.scrolling,'true','仮の狭い幅では12pxでも流す');
+widerBand.byId('notice-viewport').clientWidth=410;widerBand.win.emit('resize');
+assert.equal(widerBand.byId('notice-copy').style.properties['--ticker-font'],'12px');
+assert.equal(widerBand.byId('home-notice').dataset.scrolling,'false','本文幅が広がり収まれば静止へ戻る（実フォント幅の測定ではない）');
+assert.equal(widerBand.byId('notice-track').style.properties['--ticker-offset'],'0px');
+widerBand.byId('home-notice').emit('click');assert.equal(widerBand.byId('home-dialog-title').textContent,'運命予報β — 章のヒント');
+assert.equal(widerBand.byId('home-forecast-copy').textContent,model.forecasts.story.copy,'種類を帯から外しても詳細の全文は維持');
+widerBand.api.destroy();assert.equal(widerBand.win.pendingFrames(),0);
+console.log('PASS: 全面マップ入口・静止する短文／長文の前後の読む間・4件の順送り／全文・手動／hover／focus／詳細／非表示／OS設定での停止・秒数調整・予報なし／通信の静止・遅延読込／画像復旧／破棄。描画QA未実施。');

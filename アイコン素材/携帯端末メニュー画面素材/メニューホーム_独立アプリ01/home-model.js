@@ -21,12 +21,33 @@
   function fit(width,height,framed=false) { return Math.max(0,Math.min(width/844,height/(framed?844*874/1799:390))); }
   // このホームの小さいアプリ表示用。素材比較ページの保存値は上書きしない。
   const appBetaSize=40;
-  // 画面の拡大率ではなく、内部844×390のCSS pxを基準に一定速度へ。
-  function ticker(textWidth,viewportWidth) {
-    if(!Number.isFinite(textWidth)||!Number.isFinite(viewportWidth)||textWidth<=0||viewportWidth<=0)return null;
-    const distance=Math.max(textWidth,viewportWidth)+48;
-    return {distance,duration:distance/28};
+  const forecastOrder=Object.freeze(['story','sale','support','encounter']);
+  function nextForecast(kind) { return forecastOrder[(forecastOrder.indexOf(kind)+1)%forecastOrder.length]; }
+  function readingSeconds(value,fallback) { const number=Number(value);return Number.isFinite(number)&&number>=1&&number<=12?number:fallback; }
+  function noticeFontLimit(value) { const number=Number(value);return Number.isFinite(number)&&number>=12&&number<=13.5?number:13.5; }
+  // わずかなはみ出しだけ縮める。読みやすさの下限12pxより小さくしない。
+  function noticeFontSize(textWidth,viewportWidth,limit=13.5) {
+    const base=noticeFontLimit(limit);
+    if(!Number.isFinite(textWidth)||!Number.isFinite(viewportWidth)||textWidth<=0||viewportWidth<=0||textWidth<=viewportWidth)return base;
+    return Math.max(12,Math.min(base,Math.floor(base*viewportWidth/textWidth*10)/10));
   }
-  const api=Object.freeze({owners,forecasts,owner,forecast,presentation,fit,appBetaSize,ticker});
+  // 先頭と末尾を静止して読む。収まる文は動かさず、同じ合計時間を取る。
+  // 画面の拡大率ではなく、内部844×390のCSS pxを基準に一定速度へ。
+  function ticker(textWidth,viewportWidth,before=5,after=3) {
+    if(!Number.isFinite(textWidth)||!Number.isFinite(viewportWidth)||textWidth<=0||viewportWidth<=0)return null;
+    const distance=Math.max(0,textWidth-viewportWidth);
+    const holdBefore=readingSeconds(before,5),holdAfter=readingSeconds(after,3),duration=distance/28;
+    return {distance,duration,before:holdBefore,after:holdAfter,total:holdBefore+duration+holdAfter};
+  }
+  function tickerState(plan,elapsed) {
+    if(!plan)return {phase:'static',offset:0,done:false};
+    const seconds=Math.max(0,Number.isFinite(elapsed)?elapsed:0);
+    if(seconds>=plan.total)return {phase:'after',offset:-plan.distance,done:true};
+    if(!plan.distance)return {phase:'reading',offset:0,done:false};
+    if(seconds<plan.before)return {phase:'before',offset:0,done:false};
+    if(seconds<plan.before+plan.duration)return {phase:'scroll',offset:-(seconds-plan.before)*28,done:false};
+    return {phase:'after',offset:-plan.distance,done:false};
+  }
+  const api=Object.freeze({owners,forecasts,owner,forecast,presentation,fit,appBetaSize,ticker,tickerState,forecastOrder,nextForecast,readingSeconds,noticeFontLimit,noticeFontSize});
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.IndependentHomeModel=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
