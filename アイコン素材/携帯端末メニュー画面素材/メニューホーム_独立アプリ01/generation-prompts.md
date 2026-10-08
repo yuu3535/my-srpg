@@ -1,5 +1,21 @@
 # 無地・四隅の星飾りの背景初稿
 
+## 2026-10-09：色替え用の隅飾りを透過分離
+
+- imagegenスキル、内蔵ツールのbackground-extraction、transparent_background:true。CLI／APIキーは使用しない。
+- 編集対象は同フォルダの `home-wallpaper-stars-v01.png`。view_imageで確認してから指定。
+- 元の全面PNGは保持。左上の四芒星と二つの離れた弧のみを分離し、他の三隅は実装で反転配置する。生成の再構成であり画素一致の切り抜きではない。
+- 生成元：`C:/Users/jade-/.codex/generated_images/01a10163-0f98-7633-9c5a-e70ff4a002fe/exec-8b6ce6a6-7f4c-4ef1-9728-8fb05274668d.png`。
+- 保存先：`home-corner-star-mask-v01.png`（無加工コピー）。1254×1254 RGBA、119439 bytes。SHA256 `0b1cd9495178c9a31123d1d0653e803a121054cadd749eadf6856dd8efe185d8`。
+- アルファ検査：完全透明1531109画素、有効アルファ41407画素、外周の非ゼロ0。細線に微小ノイズあり、無断の画素補修はしない。実表示36pxでの鮮明さは未確認。
+- CSSで背景を別色、隅飾りをSVGフィルターで色替え。白銀色のPNGアルファは維持する。新規の景色・全画面背景を生成したものではない。
+
+送信プロンプト：
+
+```text
+Use case: background-extraction. Input image 1 is the edit target: existing charcoal wallpaper with four tiny corner ornaments. Extract ONLY the top-left ornament as a reusable single transparent PNG sprite. Preserve its exact visual design: one small four-point star with two detached thin gentle arc strokes extending to its right and downward. No additions, no extra stars, no extra flourish, no text, no frame. Remove ALL charcoal background completely, genuine alpha transparency even between the arcs, no shadow or glow or gradient, no residual rectangle. Enlarge this one ornament to fit a square canvas with about 8% transparent padding around the entire motif, star located near the upper-left quadrant, arcs pointing right and down as in original. Flat white/silver lines for recoloring with CSS alpha mask. This is extraction, not a new wallpaper or full menu mockup. Keep the same restrained thin linework and proportions.
+```
+
 2026-10-08。状態：背景の方向は原作者選定、分離素材の組み込み後の画面確認待ち。本編／Unityへは未反映。
 
 ## 選定と生成元
