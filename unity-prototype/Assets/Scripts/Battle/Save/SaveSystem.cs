@@ -56,6 +56,7 @@ namespace Srpg.Battle
         {
             d.savedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
             d.playSeconds = PlaySeconds;
+            d.party = Party.Snapshot();
             return d;
         }
 
@@ -77,6 +78,7 @@ namespace Srpg.Battle
             if (d == null) { message = "このセーブは読めません"; return false; }
             Pending = d;
             PlaySeconds = d.playSeconds;
+            Party.Restore(d.party);
             SceneManager.LoadScene(d.scene);
             return true;
         }
@@ -88,6 +90,7 @@ namespace Srpg.Battle
         {
             Pending = null;
             PlaySeconds = 0f;
+            Party.Reset();
             var go = new GameObject("PlayClock") { hideFlags = HideFlags.HideInHierarchy };
             go.AddComponent<PlayClock>();
             UnityEngine.Object.DontDestroyOnLoad(go);

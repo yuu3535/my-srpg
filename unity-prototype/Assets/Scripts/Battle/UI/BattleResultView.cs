@@ -34,7 +34,28 @@ namespace Srpg.Battle
             Row("ターン", $"{s.turns}");
             Row("倒した敵", $"{s.enemiesDefeated} / {s.enemiesTotal}");
             Row("倒れた味方", $"{s.alliesDown} / {s.alliesTotal}");
-            Button(root, "次へ", new Vector2(0f, -84f), font, Next);
+            // 仲間の経験値と、上がった因果Lv（2026-10-09）
+            y -= 4f;
+            foreach (var g in s.growth ?? new System.Collections.Generic.List<GrowthResult>())
+            {
+                bool up = g.levelAfter > g.levelBefore;
+                var n = StartMenu.Label(root, g.name, new Vector2(-110f, y), new Vector2(90f, 18f), 13, HudPalette.Text, font);
+                n.alignment = TextAnchor.MiddleLeft;
+                var e = StartMenu.Label(root, $"EXP +{g.exp}", new Vector2(-20f, y), new Vector2(90f, 18f), 13, HudPalette.Silver, font);
+                e.alignment = TextAnchor.MiddleLeft;
+                var lv = StartMenu.Label(root, up ? $"因果Lv {g.levelBefore} → {g.levelAfter}" : $"因果Lv {g.levelAfter}", new Vector2(95f, y), new Vector2(130f, 18f), 13, up ? HudPalette.Teal : HudPalette.Muted, font);
+                lv.alignment = TextAnchor.MiddleRight;
+                y -= 18f;
+                if (up)
+                {
+                    var gains = StartMenu.Label(root, g.GainsText, new Vector2(10f, y), new Vector2(300f, 16f), 11, HudPalette.Teal, font);
+                    gains.alignment = TextAnchor.MiddleLeft;
+                    y -= 17f;
+                }
+            }
+            float buttonY = Mathf.Min(-84f, y - 20f);
+            Button(root, "次へ", new Vector2(0f, buttonY), font, Next);
+            Fit(root, buttonY - 28f);
         }
 
         public static void ShowDefeat(string title, string reason, Action onRetry)
@@ -46,6 +67,7 @@ namespace Srpg.Battle
             Button(root, "この戦闘をやり直す", new Vector2(0f, -10f), font, Retry);
             Button(root, "セーブした所から", new Vector2(0f, -48f), font, () => SaveMenu.Open(SaveMenu.Mode.Load));
             Button(root, "最初の画面へ", new Vector2(0f, -86f), font, () => { Close(); StartMenu.BackToStart(); });
+            Fit(root, -86f - 28f);
         }
 
         /// <summary>「次へ」（ボタンとテストから）</summary>
@@ -81,7 +103,7 @@ namespace Srpg.Battle
             dim.anchorMin = Vector2.zero;
             dim.anchorMax = Vector2.one;
             dim.gameObject.AddComponent<Image>().color = new Color(0.03f, 0.06f, 0.09f, 0.72f);   // 盤面は薄く見えたまま
-            var panel = StartMenu.Rect("Panel", root, new Vector2(0.5f, 0.5f), new Vector2(0f, -4f), new Vector2(340f, 250f));
+            var panel = StartMenu.Rect("Panel", root, new Vector2(0.5f, 0.5f), new Vector2(0f, -22f), new Vector2(360f, 300f));
             panel.gameObject.AddComponent<Image>().color = HudPalette.Panel;
             var line = panel.gameObject.AddComponent<Outline>();
             line.effectColor = new Color(0.85f, 0.88f, 0.9f, 0.85f);
@@ -89,6 +111,15 @@ namespace Srpg.Battle
             StartMenu.Label(root, heading, new Vector2(0f, 92f), new Vector2(300f, 34f), 26, HudPalette.Silver, font);
             StartMenu.Label(root, title, new Vector2(0f, 64f), new Vector2(320f, 18f), 12, HudPalette.Muted, font);
             return (root, font);
+        }
+
+        /// <summary>欄の高さを中身に合わせる（上は見出しの上、下は bottom）</summary>
+        private static void Fit(Transform root, float bottom)
+        {
+            const float top = 123f;
+            var panel = (RectTransform)root.Find("Panel");
+            panel.sizeDelta = new Vector2(panel.sizeDelta.x, top - bottom);
+            panel.anchoredPosition = new Vector2(0f, (top + bottom) / 2f);
         }
 
         private static void Button(Transform parent, string title, Vector2 pos, Font font, Action onClick)

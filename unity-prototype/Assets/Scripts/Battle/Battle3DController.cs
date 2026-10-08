@@ -330,6 +330,7 @@ namespace Srpg.Battle
                 AddLog($"  {foe.Name}に{damage}ダメージ → HP {foe.plan.hp}/{foe.plan.maxHp}");
                 if (!foe.Alive) { AddLog($"  {foe.Name}は倒れた！"); view.RemoveUnit(foe.Id); }
             }
+            AwardArea(unit, foes, plan.hits.Count > 0);
             if (art.drain && plan.healed > 0)
             {
                 unit.plan.hp = plan.attackerHpAfter;
@@ -423,6 +424,7 @@ namespace Srpg.Battle
                     FinishAction(caster);
                     return;
                 }
+                Earn(caster, Growth.ActionExp);
                 string type = art == "虚像" ? "hitDown" : "immobilize";
                 target.plan.statusEffects.RemoveAll(e => e.type == type);
                 target.plan.statusEffects.Add(new PlanStatus { type = type, value = art == "虚像" ? 20 : 0, holdOwnPhase = true, name = art });
@@ -432,6 +434,7 @@ namespace Srpg.Battle
                 return;
             }
             int cost = PayMagicMp(caster, option.spell, rolls);
+            Earn(caster, Growth.ActionExp);   // 回復・補助をした
             if (art == "回復" || (string.IsNullOrEmpty(art) && option.spell?.effectType == "heal"))
             {
                 int amount = (6 + caster.plan.stats.mag / 4) * (art == "回復" ? 3 : 1);
@@ -548,6 +551,7 @@ namespace Srpg.Battle
                 AddLog($"{unit.Name}は倒れた");
                 view.RemoveUnit(unit.Id);
             }
+            AwardArea(attacker, targets, plan.steps.Any(st => st.hit));
         }
 
         /// <summary>
@@ -762,6 +766,10 @@ namespace Srpg.Battle
             if (battleJson == null) throw new InvalidOperationException("battleJson が設定されていない");
             if (view == null) throw new InvalidOperationException("view（Board3DView）が設定されていない");
             data = JsonUtility.FromJson<BattleDataFile>(battleJson.text);
+            useParty = place != null;   // 仲間の育ちを使うのは探索の中の戦闘（入口の「試験の戦闘」は使わない）
+            levelOf.Clear();
+            expEarned.Clear();
+            LastGrowth = new List<GrowthResult>();
             uiUnits.Clear();
             if (uiJson != null)
                 foreach (var u in JsonUtility.FromJson<UiDataFile>(uiJson.text).units ?? Array.Empty<UiUnit>())
@@ -828,6 +836,7 @@ namespace Srpg.Battle
                     state.plan.x = state.cell.x;
                     state.plan.y = state.cell.y;
                 }
+                ApplyGrowth(state);
                 if (source.reserve)
                 {
                     reserves.Add(state);
@@ -1324,6 +1333,7 @@ namespace Srpg.Battle
                 AddLog($"{unit.Name}は倒れた");
                 view.RemoveUnit(unit.Id);
             }
+            AwardCombat(attacker, defender, plan);
             return plan;
         }
 
@@ -1378,11 +1388,85 @@ namespace Srpg.Battle
         /// <summary>確認用: 勝敗と召喚の片付けを今すぐ行う</summary>
         public bool CheckBattleEnd() => CheckEnd();
 
-        /// <summary>戦闘の結果の画面に出す数（2026-10-08）。経験値は成長を入れたら足す</summary>
+        /// <summary>戦闘の結果の画面に出す数（2026-10-08）と、仲間の経験値・上がった因果Lv（2026-10-09）</summary>
         public struct ResultSummary
         {
             public string title;
             public int turns, enemiesDefeated, enemiesTotal, alliesDown, alliesTotal;
+            public List<GrowthResult> growth;
+        }
+
+        // ── 成長（2026-10-09。原作者: 敵を倒す・行動するたびに経験値、伸び方は確率＋救済） ──
+
+        private bool useParty;
+        private readonly Dictionary<string, int> levelOf = new Dictionary<string, int>();
+        private readonly Dictionary<string, int> expEarned = new Dictionary<string, int>();
+        /// <summary>勝ったときに仲間へ入れた経験値と上がった因果Lv（負けたら入れない＝やり直しは戦闘の前の育ちから）</summary>
+        public List<GrowthResult> LastGrowth { get; private set; } = new List<GrowthResult>();
+        public int LevelOf(UnitState unit) => unit != null && levelOf.TryGetValue(unit.Id, out var lv) ? lv : 1;
+        public int ExpEarned(UnitState unit) => unit != null && expEarned.TryGetValue(unit.Id, out var e) ? e : 0;
+
+        /// <summary>
+        /// 味方の能力を、仲間の今の育ちに合わせる。戦闘のデータはその戦闘の因果Lvの期待値で書き出してあるので、
+        /// 仲間の本人現在ステとの差を足す（装備・スキルの補正はデータのまま残る）。初めて出た味方は、その因果Lvで仲間に加わる
+        /// </summary>
+        private void ApplyGrowth(UnitState state)
+        {
+            int level = Growth.LevelIn(data.battleId, state.Id);
+            levelOf[state.Id] = level;
+            if (!useParty || state.Side != "ally" || state.plan?.stats == null) return;
+            var profile = Growth.Profile(state.Id);
+            var member = profile != null ? Party.Ensure(state.Id, level) : null;
+            if (member == null) return;
+            levelOf[state.Id] = member.level;
+            var expected = Growth.Expected(profile, level);
+            for (int i = 0; i < Growth.Keys.Length; i++)
+            {
+                int delta = Growth.Get(member.stats, i) - Growth.Get(expected, i);
+                if (delta == 0) continue;
+                Growth.Set(state.plan.stats, i, Growth.Get(state.plan.stats, i) + delta);
+                if (i == 0) { state.plan.maxHp += delta; state.plan.hp += delta; }
+            }
+        }
+
+        private void Earn(UnitState unit, int amount)
+        {
+            if (!useParty || unit == null || unit.Side != "ally" || unit.summoned || amount <= 0) return;
+            expEarned[unit.Id] = ExpEarned(unit) + amount;
+        }
+
+        /// <summary>交戦の経験値: 倒したら KillExp、当てたら 10、外した・受けただけなら 1（味方だけ）</summary>
+        private void AwardCombat(UnitState attacker, UnitState defender, PlanResult plan)
+        {
+            foreach (var (me, foe) in new[] { (attacker, defender), (defender, attacker) })
+            {
+                if (me.Side != "ally" || !me.Alive) continue;
+                bool hit = plan.steps.Any(s => s.actorId == me.Id && s.hit);
+                int amount = !foe.Alive && foe.Side == "enemy" ? Growth.KillExp(LevelOf(me), LevelOf(foe), foe.source.boss)
+                    : hit ? Growth.ActionExp : Growth.MissExp;
+                Earn(me, amount);
+            }
+        }
+
+        /// <summary>範囲の技の経験値: 倒した敵それぞれの KillExp の合計（100まで）。倒していなければ、当てたら 10・外したら 1</summary>
+        private void AwardArea(UnitState attacker, IEnumerable<UnitState> targets, bool anyHit)
+        {
+            if (attacker.Side != "ally" || !attacker.Alive) return;
+            int kills = targets.Where(t => !t.Alive && t.Side == "enemy").Sum(t => Growth.KillExp(LevelOf(attacker), LevelOf(t), t.source.boss));
+            Earn(attacker, kills > 0 ? Math.Min(Growth.ExpPerLevel, kills) : anyHit ? Growth.ActionExp : Growth.MissExp);
+        }
+
+        /// <summary>勝ったとき: たまった経験値を仲間へ入れ、因果Lvを上げる</summary>
+        private void ApplyExp()
+        {
+            LastGrowth = new List<GrowthResult>();
+            if (!useParty) return;
+            foreach (var unit in units.Concat(reserves).Where(u => u.Side == "ally" && !u.summoned).GroupBy(u => u.Id).Select(g => g.First()))
+            {
+                var r = Party.AddExp(unit.Id, unit.Name, ExpEarned(unit));
+                if (Party.Find(unit.Id) != null) LastGrowth.Add(r);
+                if (r.levelAfter > r.levelBefore) AddLog($"{unit.Name}の因果Lvが{r.levelAfter}に上がった（{r.GainsText}）");
+            }
         }
 
         public ResultSummary Summary()
@@ -1397,6 +1481,7 @@ namespace Srpg.Battle
                 enemiesTotal = enemies.Count,
                 alliesDown = allies.Count(u => !u.Alive),
                 alliesTotal = allies.Count,
+                growth = LastGrowth,
             };
         }
 
@@ -1413,7 +1498,7 @@ namespace Srpg.Battle
                 else BringReservesNow();
                 return false;
             }
-            if (!units.Any(u => u.Alive && u.Side == "enemy")) { CurrentPhase = Phase.Victory; AddLog("勝利！ すべての敵を倒した"); RaiseFinished(); return true; }
+            if (!units.Any(u => u.Alive && u.Side == "enemy")) { CurrentPhase = Phase.Victory; AddLog("勝利！ すべての敵を倒した"); ApplyExp(); RaiseFinished(); return true; }
             if (!units.Any(u => u.Alive && u.Side == "ally" && !u.summoned)) { CurrentPhase = Phase.Defeat; AddLog("敗北…"); RaiseFinished(); return true; }
             return false;
         }

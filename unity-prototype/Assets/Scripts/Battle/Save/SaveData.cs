@@ -5,13 +5,13 @@ namespace Srpg.Battle
 {
     /// <summary>
     /// セーブの中身（2026-10-08。原作者: 枠は多め、オートセーブはしない）。
-    /// 今は探索の進み具合だけ（場所・立っている所・流した会話・持ち物・場所ごとの場面）。
-    /// 仲間の成長（経験値・因果Lv）を入れたら、ここに足して version を上げる（古いセーブは FromJson で読み替える）
+    /// 探索の進み具合（場所・立っている所・流した会話・持ち物・場所ごとの場面）と、仲間の育ち（版2、2026-10-09）。
+    /// 中身を足したら version を上げる（古いセーブは SaveStore.FromJson で読み替える）
     /// </summary>
     [Serializable]
     public class SaveData
     {
-        public const int CurrentVersion = 1;
+        public const int CurrentVersion = 2;   // 1: 探索だけ / 2: 仲間の育ち（因果Lv・経験値・能力）を足した
 
         public int version = CurrentVersion;
         public string savedAt;          // 保存した日時（端末の時刻。"yyyy-MM-dd HH:mm"）
@@ -25,6 +25,7 @@ namespace Srpg.Battle
         public List<string> played = new List<string>();   // 一度だけの「近づくと流れる会話」の範囲
         public List<string> items = new List<string>();    // 持ち物
         public List<StateEntry> states = new List<StateEntry>();   // 配置表ごとの今の場面（戦闘のあと、など）
+        public List<PartyMember> party = new List<PartyMember>();  // 仲間の育ち（版2〜。版1のセーブは空＝次の戦闘で加わる）
 
         [Serializable] public class StateEntry { public string map, state; }
 

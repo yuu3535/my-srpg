@@ -83,6 +83,7 @@ namespace Srpg.Battle
             data.played ??= new System.Collections.Generic.List<string>();
             data.items ??= new System.Collections.Generic.List<string>();
             data.states ??= new System.Collections.Generic.List<SaveData.StateEntry>();
+            data.party ??= new System.Collections.Generic.List<PartyMember>();   // 版1: 仲間の育ちがない
             return data;
         }
 

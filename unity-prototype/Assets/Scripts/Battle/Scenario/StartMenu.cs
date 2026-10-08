@@ -121,6 +121,8 @@ namespace Srpg.Battle
             {
                 Object.Destroy(canvas.gameObject);
                 Holding = false;
+                Party.Reset();   // 新しく始める: 仲間の育ちを消す
+                SaveSystem.PlaySeconds = 0f;
                 AddBackButton();
                 Object.FindFirstObjectByType<ExploreController>()?.Begin();
             });
@@ -132,6 +134,8 @@ namespace Srpg.Battle
             SilverButton(root, "探索（2Dの試し）", "自室で起きて回廊へ（◀ ▶ で歩く。部屋は仮）", new Vector2(0f, -98f), font, () =>
             {
                 Holding = false;
+                Party.Reset();
+                SaveSystem.PlaySeconds = 0f;
                 SceneManager.LoadScene(CorridorScene);
             });
             Label(root, "戻るときは、右下の「最初へ」かページの読み込み直し", new Vector2(0f, -150f), new Vector2(500f, 18f), 11, HudPalette.Muted, font);
