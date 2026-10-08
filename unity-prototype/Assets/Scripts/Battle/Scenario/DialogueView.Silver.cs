@@ -225,7 +225,7 @@ namespace Srpg.Battle
 
         private void ShowPage()
         {
-            bodyText.text = pages[page];
+            BeginReveal(pages[page]);
             pageText.text = pages.Length > 1 ? $"{page + 1}/{pages.Length}" : "";
         }
 

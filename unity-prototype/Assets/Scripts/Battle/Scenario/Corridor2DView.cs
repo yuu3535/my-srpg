@@ -355,7 +355,7 @@ namespace Srpg.Battle
             }
             int dir = Locked || scriptedWalk ? 0 : holding;
             var kb = Keyboard.current;
-            if (kb != null && !Locked && !scriptedWalk && !SaveMenu.IsOpen)
+            if (kb != null && !Locked && !scriptedWalk && !SaveMenu.IsOpen && !SettingsMenu.IsOpen)
             {
                 if (kb.leftArrowKey.isPressed || kb.aKey.isPressed) dir = -1;
                 else if (kb.rightArrowKey.isPressed || kb.dKey.isPressed) dir = 1;
@@ -363,12 +363,12 @@ namespace Srpg.Battle
             if (dir != 0 && autoWalk != null) { StopCoroutine(autoWalk); autoWalk = null; }   // ◀ ▶ を押したら、押した所へ歩くのをやめる
             if (dir != 0)
             {
-                playerX = Mathf.Clamp(playerX + dir * walkSpeed * Time.deltaTime, WalkMinX, WalkMaxX);
+                playerX = Mathf.Clamp(playerX + dir * walkSpeed * GameSettings.MoveMultiplier * Time.deltaTime, WalkMinX, WalkMaxX);
                 facingLeft = dir < 0;
                 walkTime += Time.deltaTime;
             }
             else walkTime = 0f;
-            if (kb != null && !Locked && !SaveMenu.IsOpen && (kb.enterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame) && (nearExit != null || (Controlled && actionUse != null))) UseExit();
+            if (kb != null && !Locked && !SaveMenu.IsOpen && !SettingsMenu.IsOpen && (kb.enterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame) && (nearExit != null || (Controlled && actionUse != null))) UseExit();
             foreach (var b in walkButtons) if (b != null) b.gameObject.SetActive(!Locked);
             Apply();
         }
@@ -586,7 +586,7 @@ namespace Srpg.Battle
             var pos = new Vector2(playerX, playerY);
             while ((target - pos).magnitude > 0.5f)
             {
-                pos = Vector2.MoveTowards(pos, target, walkSpeed * Time.deltaTime);
+                pos = Vector2.MoveTowards(pos, target, walkSpeed * GameSettings.MoveMultiplier * Time.deltaTime);
                 playerX = pos.x;
                 playerY = pos.y;
                 walkTime += Time.deltaTime;

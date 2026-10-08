@@ -389,7 +389,7 @@ namespace Srpg.Battle
         {
             foreach (var cell in path)
             {
-                yield return new WaitForSeconds(stepSeconds);
+                yield return new WaitForSeconds(stepSeconds / GameSettings.MoveMultiplier);
                 if (!Step(cell)) { walking = null; yield break; }
             }
             walking = null;
@@ -548,7 +548,7 @@ namespace Srpg.Battle
             int steps = moves.Max(m => m.path.Count);
             for (int i = 0; i < steps; i++)
             {
-                yield return new WaitForSeconds(stepSeconds);
+                yield return new WaitForSeconds(stepSeconds / GameSettings.MoveMultiplier);
                 foreach (var m in moves) if (i < m.path.Count) MoveActor(m.token, m.personId, m.path[i]);
             }
             yield return new WaitForSeconds(0.3f);   // 位置についたのを少し見せる
@@ -567,7 +567,7 @@ namespace Srpg.Battle
             autoWalking = true;
             foreach (var c in path)
             {
-                yield return new WaitForSeconds(stepSeconds);
+                yield return new WaitForSeconds(stepSeconds / GameSettings.MoveMultiplier);
                 Player = c;
                 view.MoveUnit(PlayerId, c);
                 view.FollowCell(c);

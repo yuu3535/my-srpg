@@ -97,12 +97,14 @@ namespace Srpg.Battle
         public void Advance()
         {
             if (block == null || AdjusterOpen) return;   // 立ち絵の調整中は進めない
+            if (Revealing) { FinishReveal(); return; }    // 文字を出している途中なら、まず全部出す
             // 長い文は次のページへ（話す人・表情はそのまま。ログ・物を手に入れるのは最初のページだけ）
             if (page < pages.Length - 1) { page++; ShowPage(); return; }
             index++;
             if (index >= lines.Length) { Close(); return; }
             var line = lines[index];
             stage.Speak(line.type == "line" ? line.speaker : null);
+            NoteRead();
             if (index < directions.Length && !string.IsNullOrWhiteSpace(directions[index])) OnDirection?.Invoke(directions[index]);
             ShowLine(line);
             if (!string.IsNullOrEmpty(line.item)) OnItem?.Invoke(line.item);
@@ -118,6 +120,7 @@ namespace Srpg.Battle
             pages = Array.Empty<string>();
             page = 0;
             if (root != null) root.gameObject.SetActive(false);
+            GameSettings.FlushRead();
             var done = onEnd;
             onEnd = null;
             Closed?.Invoke();
@@ -305,6 +308,7 @@ namespace Srpg.Battle
             var logLabel = NewText("Text", logButtonRt, font, 10, textCol, TextAnchor.MiddleCenter);
             logLabel.text = "ログ";
             Stretch(logLabel.rectTransform);
+            BuildToggles(font);
 
             logPanel = NewRect("LogPanel", root);
             logPanel.anchorMin = new Vector2(0.5f, 0.5f);
@@ -341,6 +345,7 @@ namespace Srpg.Battle
 
         private void Update()
         {
+            TickReveal();   // 文字を少しずつ出す・オート・スキップ（DialogueView.Settings）
             // 長押しで早送り（レビュー 2026-09-28_2 J8）
             if (Application.isPlaying && IsPlaying && !AdjusterOpen)
             {

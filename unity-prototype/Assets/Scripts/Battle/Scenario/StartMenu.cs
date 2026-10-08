@@ -139,6 +139,13 @@ namespace Srpg.Battle
                 SceneManager.LoadScene(CorridorScene);
             });
             Label(root, "戻るときは、右下の「最初へ」かページの読み込み直し", new Vector2(0f, -150f), new Vector2(500f, 18f), 11, HudPalette.Muted, font);
+            // 設定（右上。仮の最小限。メニュー画面ができたらそちらから）
+            var cfg = Rect("Settings", root, new Vector2(1f, 1f), new Vector2(-12f, -12f), new Vector2(64f, 22f));
+            cfg.pivot = new Vector2(1f, 1f);
+            cfg.gameObject.AddComponent<Image>().color = new Color(0.035f, 0.08f, 0.12f, 0.85f);
+            cfg.gameObject.AddComponent<Button>().onClick.AddListener(SettingsMenu.Open);
+            var ct = Label(cfg, "設定", Vector2.zero, new Vector2(64f, 22f), 12, HudPalette.Silver, font);
+            ct.rectTransform.anchorMin = ct.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
         }
 
         /// <summary>入口の画面へ戻る</summary>
@@ -164,6 +171,13 @@ namespace Srpg.Battle
             sv.gameObject.AddComponent<Button>().onClick.AddListener(() => SaveMenu.Open(SaveMenu.Mode.Save));
             var st = Label(sv, "セーブ", Vector2.zero, new Vector2(64f, 18f), 11, HudPalette.Silver, font);
             st.rectTransform.anchorMin = st.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            // 設定（仮の最小限。2026-10-09）
+            var cf = Rect("Settings", canvas.transform, new Vector2(1f, 0f), new Vector2(-148f, 22f), new Vector2(64f, 18f));
+            cf.pivot = new Vector2(1f, 0f);
+            cf.gameObject.AddComponent<Image>().color = new Color(0.035f, 0.08f, 0.12f, 0.85f);
+            cf.gameObject.AddComponent<Button>().onClick.AddListener(SettingsMenu.Open);
+            var cft = Label(cf, "設定", Vector2.zero, new Vector2(64f, 18f), 11, HudPalette.Silver, font);
+            cft.rectTransform.anchorMin = cft.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
         }
     }
 }
