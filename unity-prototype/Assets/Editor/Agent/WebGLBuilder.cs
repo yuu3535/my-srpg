@@ -33,6 +33,9 @@ namespace Srpg.EditorAgent
                 PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
                 PlayerSettings.WebGL.decompressionFallback = true;   // GitHub Pages は圧縮の知らせを付けないので、読み込み側でほどく
                 PlayerSettings.WebGL.dataCaching = true;
+                // 書き出しの名前を中身から作る（2026-10-09: 更新した直後、ブラウザに残った古い framework.js と新しい wasm が混ざって
+                // LinkError で起動しなかった。名前が変われば、古い物と混ざらない）
+                PlayerSettings.WebGL.nameFilesAsHashes = true;
                 PlayerSettings.defaultWebScreenWidth = 1266;          // 横画面（844×390 と同じ比率）
                 PlayerSettings.defaultWebScreenHeight = 586;
                 PlayerSettings.productName = "自作SRPG（Unity版の試し）";
