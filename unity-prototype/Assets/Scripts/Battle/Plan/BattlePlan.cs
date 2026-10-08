@@ -87,6 +87,24 @@ namespace Srpg.Battle.Plan
 
         public struct DiceFormula { public int count, sides, bonus; }
 
+        /// <summary>
+        /// 魔法1回のコスト（ブラウザ版 bpMagicCost・trialMagicCost と同じ。原作者 2026-10-09: サイコロをやめて決まった値）。
+        /// 数字ならその値、古いサイコロの書き方なら平均の切り捨て、読めなければ 0。詠唱破棄は半分（切り上げ、最低1）
+        /// </summary>
+        public static int MagicCost(string formula, bool halve = false)
+        {
+            string s = (formula ?? "").Trim();
+            int cost = 0;
+            if (int.TryParse(s, out int n)) cost = n;
+            else
+            {
+                var m = System.Text.RegularExpressions.Regex.Match(s, @"^(\d+)d(\d+)$");
+                if (m.Success) cost = int.Parse(m.Groups[1].Value) * (int.Parse(m.Groups[2].Value) + 1) / 2;
+            }
+            if (halve && cost > 0) cost = Math.Max(1, (cost + 1) / 2);
+            return cost;
+        }
+
         public static DiceFormula ParseDice(string formula)
         {
             var m = Regex.Match((formula ?? "").Trim(), @"^(\d+)d(\d+)(?:\+(\d+))?$");
@@ -237,14 +255,9 @@ namespace Srpg.Battle.Plan
             }
             else if (IsMagic(action))
             {
-                int mpCost = rolls.Dice(string.IsNullOrEmpty(action.spell?.mpCost) ? "1d6" : action.spell.mpCost);
-                int quickChance = actor.Has("詠唱破棄") ? TrialRules.AbilityChance("詠唱破棄", actor.stats) : 0;
-                if (quickChance > 0)
-                {
-                    int roll = rolls.Percent("quickCast");
-                    step.quickCastRoll = roll; step.quickCastChance = quickChance; step.quickCastActive = roll <= quickChance;
-                    if (step.quickCastActive) mpCost = 0;
-                }
+                bool halve = actor.Has("詠唱破棄");   // いつも半分（兵種スキルの書き方にそろえた）
+                int mpCost = MagicCost(action.spell?.mpCost, halve);
+                step.quickCastActive = halve;
                 step.mpCost = mpCost;
                 actor.mp = Math.Max(0, actor.mp - mpCost);
                 step.actorMpAfter = actor.mp;

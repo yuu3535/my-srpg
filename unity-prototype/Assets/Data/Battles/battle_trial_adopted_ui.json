@@ -90,7 +90,7 @@
             "id": "火",
             "name": "火",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "magicDamage",
             "statusEffect": "burn"
           },
@@ -109,7 +109,7 @@
             "id": "破壊",
             "name": "破壊",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "break",
             "statusEffect": ""
           },
@@ -154,7 +154,7 @@
             "id": "火",
             "name": "火",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "magicDamage",
             "statusEffect": "burn"
           },
@@ -173,7 +173,7 @@
             "id": "破壊",
             "name": "破壊",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "break",
             "statusEffect": ""
           },
@@ -202,7 +202,7 @@
         {
           "label": "火",
           "sub": "魔核",
-          "mpCost": "1d6",
+          "mpCost": "3",
           "index": 3,
           "supportIndex": -1,
           "summonUnitId": "",
@@ -211,7 +211,7 @@
         {
           "label": "破壊",
           "sub": "魔核",
-          "mpCost": "1d6",
+          "mpCost": "3",
           "index": 4,
           "supportIndex": -1,
           "summonUnitId": "",
@@ -220,7 +220,7 @@
         {
           "label": "召喚「ヒトダマ」",
           "sub": "戦技",
-          "mpCost": "1d4",
+          "mpCost": "6",
           "index": -1,
           "supportIndex": -1,
           "summonUnitId": "hitodama",
@@ -302,9 +302,9 @@
       "portrait": "arshe",
       "cardUv": {
         "x": 0.4,
-        "y": 0.7016129032258065,
+        "y": 0.6935483870967742,
         "w": 0.3333333333333333,
-        "h": 0.29838709677419356
+        "h": 0.3064516129032258
       },
       "bustUv": {
         "x": 0.4,
@@ -359,7 +359,7 @@
             "id": "火",
             "name": "火",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "magicDamage",
             "statusEffect": "burn"
           },
@@ -378,7 +378,7 @@
             "id": "破壊",
             "name": "破壊",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "break",
             "statusEffect": ""
           },
@@ -397,7 +397,7 @@
             "id": "落雷",
             "name": "落雷",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "8",
             "effectType": "magicDamage",
             "statusEffect": ""
           },
@@ -416,7 +416,7 @@
             "id": "落雷",
             "name": "万雷",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "12",
             "effectType": "magicDamage",
             "statusEffect": ""
           },
@@ -462,7 +462,7 @@
             "id": "火",
             "name": "火",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "magicDamage",
             "statusEffect": "burn"
           },
@@ -481,7 +481,7 @@
             "id": "破壊",
             "name": "破壊",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "break",
             "statusEffect": ""
           },
@@ -500,7 +500,7 @@
             "id": "落雷",
             "name": "落雷",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "8",
             "effectType": "magicDamage",
             "statusEffect": ""
           },
@@ -518,7 +518,7 @@
         {
           "label": "火",
           "sub": "魔核",
-          "mpCost": "1d6",
+          "mpCost": "3",
           "index": 2,
           "supportIndex": -1,
           "summonUnitId": "",
@@ -527,7 +527,7 @@
         {
           "label": "破壊",
           "sub": "魔核",
-          "mpCost": "1d6",
+          "mpCost": "3",
           "index": 3,
           "supportIndex": -1,
           "summonUnitId": "",
@@ -536,7 +536,7 @@
         {
           "label": "封印",
           "sub": "魔核",
-          "mpCost": "1d8",
+          "mpCost": "4",
           "index": -1,
           "supportIndex": 0,
           "summonUnitId": "",
@@ -545,7 +545,7 @@
         {
           "label": "落雷",
           "sub": "戦技",
-          "mpCost": "1d6",
+          "mpCost": "8",
           "index": 4,
           "supportIndex": -1,
           "summonUnitId": "",
@@ -554,7 +554,7 @@
         {
           "label": "万雷",
           "sub": "戦技",
-          "mpCost": "1d6",
+          "mpCost": "12",
           "index": -1,
           "supportIndex": -1,
           "summonUnitId": "",
@@ -575,7 +575,7 @@
             "id": "封印",
             "name": "封印",
             "targetType": "enemy",
-            "mpCost": "1d8",
+            "mpCost": "4",
             "effectType": "stun",
             "statusEffect": ""
           },
@@ -643,9 +643,9 @@
       "portrait": "albas",
       "cardUv": {
         "x": 0.4125,
-        "y": 0.7308467511207827,
+        "y": 0.7308467972663142,
         "w": 0.25,
-        "h": 0.22379034565341085
+        "h": 0.22379029950787943
       },
       "bustUv": {
         "x": 0.4125,
@@ -674,7 +674,7 @@
             "id": "破壊",
             "name": "破壊",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "break",
             "statusEffect": ""
           },
@@ -695,7 +695,7 @@
             "id": "破壊",
             "name": "破壊",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "break",
             "statusEffect": ""
           },
@@ -714,7 +714,7 @@
         {
           "label": "治癒",
           "sub": "魔核",
-          "mpCost": "1d6",
+          "mpCost": "3",
           "index": -1,
           "supportIndex": 0,
           "summonUnitId": "",
@@ -723,7 +723,7 @@
         {
           "label": "破壊",
           "sub": "魔核",
-          "mpCost": "1d6",
+          "mpCost": "3",
           "index": 0,
           "supportIndex": -1,
           "summonUnitId": "",
@@ -732,7 +732,7 @@
         {
           "label": "結界",
           "sub": "魔核",
-          "mpCost": "1d6",
+          "mpCost": "3",
           "index": -1,
           "supportIndex": 1,
           "summonUnitId": "",
@@ -741,7 +741,7 @@
         {
           "label": "転移",
           "sub": "魔核",
-          "mpCost": "1d8",
+          "mpCost": "4",
           "index": -1,
           "supportIndex": 2,
           "summonUnitId": "",
@@ -750,7 +750,7 @@
         {
           "label": "回復",
           "sub": "戦技",
-          "mpCost": "1d6",
+          "mpCost": "6",
           "index": -1,
           "supportIndex": 3,
           "summonUnitId": "",
@@ -771,7 +771,7 @@
             "id": "治癒",
             "name": "治癒",
             "targetType": "ally",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "heal",
             "statusEffect": ""
           },
@@ -790,7 +790,7 @@
             "id": "結界",
             "name": "結界",
             "targetType": "ally",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "barrier",
             "statusEffect": ""
           },
@@ -809,7 +809,7 @@
             "id": "転移",
             "name": "転移",
             "targetType": "ally",
-            "mpCost": "1d8",
+            "mpCost": "4",
             "effectType": "teleport",
             "statusEffect": ""
           },
@@ -828,7 +828,7 @@
             "id": "治癒",
             "name": "回復",
             "targetType": "ally",
-            "mpCost": "1d6",
+            "mpCost": "6",
             "effectType": "heal",
             "statusEffect": ""
           },
@@ -852,7 +852,7 @@
       "skills": [
         {
           "name": "詠唱破棄",
-          "desc": "(魔攻+魔防)÷4の確率で魔法武器耐久とMP消費無し",
+          "desc": "魔法使用時、MPが半減する（魔法武器の耐久も同じだけ）",
           "kind": "passive"
         },
         {
@@ -899,9 +899,9 @@
       "portrait": "young_karima",
       "cardUv": {
         "x": 0.3666666666666667,
-        "y": 0.6798422038513885,
+        "y": 0.6711892895498517,
         "w": 0.3333333333333333,
-        "h": 0.3201577961486115
+        "h": 0.32881071045014826
       },
       "bustUv": {
         "x": 0.3666666666666667,
@@ -943,7 +943,7 @@
             "id": "火",
             "name": "火",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "magicDamage",
             "statusEffect": "burn"
           },
@@ -962,7 +962,7 @@
             "id": "落雷",
             "name": "落雷",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "8",
             "effectType": "magicDamage",
             "statusEffect": ""
           },
@@ -995,7 +995,7 @@
             "id": "火",
             "name": "火",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "magicDamage",
             "statusEffect": "burn"
           },
@@ -1014,7 +1014,7 @@
             "id": "落雷",
             "name": "落雷",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "8",
             "effectType": "magicDamage",
             "statusEffect": ""
           },
@@ -1026,7 +1026,7 @@
         {
           "label": "火",
           "sub": "魔核",
-          "mpCost": "1d6",
+          "mpCost": "3",
           "index": 1,
           "supportIndex": -1,
           "summonUnitId": "",
@@ -1035,7 +1035,7 @@
         {
           "label": "結界",
           "sub": "魔核",
-          "mpCost": "1d6",
+          "mpCost": "3",
           "index": -1,
           "supportIndex": 0,
           "summonUnitId": "",
@@ -1044,7 +1044,7 @@
         {
           "label": "封印",
           "sub": "魔核",
-          "mpCost": "1d8",
+          "mpCost": "4",
           "index": -1,
           "supportIndex": 1,
           "summonUnitId": "",
@@ -1053,7 +1053,7 @@
         {
           "label": "落雷",
           "sub": "戦技",
-          "mpCost": "1d6",
+          "mpCost": "8",
           "index": 2,
           "supportIndex": -1,
           "summonUnitId": "",
@@ -1074,7 +1074,7 @@
             "id": "結界",
             "name": "結界",
             "targetType": "ally",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "barrier",
             "statusEffect": ""
           },
@@ -1093,7 +1093,7 @@
             "id": "封印",
             "name": "封印",
             "targetType": "enemy",
-            "mpCost": "1d8",
+            "mpCost": "4",
             "effectType": "stun",
             "statusEffect": ""
           },
@@ -1226,9 +1226,9 @@
       "portrait": "dylan",
       "cardUv": {
         "x": 0.3214285714285714,
-        "y": 0.6241359776615547,
+        "y": 0.624135911739367,
         "w": 0.35714285714285715,
-        "h": 0.3758640223384453
+        "h": 0.37586408826063306
       },
       "bustUv": {
         "x": 0.3214285714285714,
@@ -1301,9 +1301,9 @@
       "portrait": "herel",
       "cardUv": {
         "x": 0.32456140350877194,
-        "y": 0.5246180289872433,
+        "y": 0.5246179966044142,
         "w": 0.3508771929824562,
-        "h": 0.3692699166833849
+        "h": 0.36926994906621396
       },
       "bustUv": {
         "x": 0.32456140350877194,
@@ -1332,7 +1332,7 @@
             "id": "隕石",
             "name": "隕石",
             "targetType": "enemy",
-            "mpCost": "1d8",
+            "mpCost": "4",
             "effectType": "magicDamage",
             "statusEffect": ""
           },
@@ -1340,7 +1340,7 @@
             "id": "隕石",
             "name": "隕石",
             "targetType": "enemy",
-            "mpCost": "1d8",
+            "mpCost": "4",
             "effectType": "magicDamage",
             "statusEffect": ""
           }
@@ -1360,7 +1360,7 @@
             "id": "隕石",
             "name": "隕石",
             "targetType": "enemy",
-            "mpCost": "1d8",
+            "mpCost": "4",
             "effectType": "magicDamage",
             "statusEffect": ""
           },
@@ -1368,7 +1368,7 @@
             "id": "隕石",
             "name": "隕石",
             "targetType": "enemy",
-            "mpCost": "1d8",
+            "mpCost": "4",
             "effectType": "magicDamage",
             "statusEffect": ""
           }
@@ -1379,7 +1379,7 @@
         {
           "label": "星の杖",
           "sub": "装備",
-          "mpCost": "1d8",
+          "mpCost": "4",
           "index": 0,
           "supportIndex": -1,
           "summonUnitId": "",
@@ -1413,9 +1413,9 @@
       "portrait": "albas_rival",
       "cardUv": {
         "x": 0.4125,
-        "y": 0.6915322811372819,
+        "y": 0.6915322580645161,
         "w": 0.25,
-        "h": 0.2631048156369117
+        "h": 0.2631048387096774
       },
       "bustUv": {
         "x": 0.4125,
@@ -1444,7 +1444,7 @@
             "id": "破壊",
             "name": "破壊",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "break",
             "statusEffect": ""
           },
@@ -1465,7 +1465,7 @@
             "id": "破壊",
             "name": "破壊",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "break",
             "statusEffect": ""
           },
@@ -1484,7 +1484,7 @@
         {
           "label": "治癒",
           "sub": "魔核",
-          "mpCost": "1d6",
+          "mpCost": "3",
           "index": -1,
           "supportIndex": 0,
           "summonUnitId": "",
@@ -1493,7 +1493,7 @@
         {
           "label": "破壊",
           "sub": "魔核",
-          "mpCost": "1d6",
+          "mpCost": "3",
           "index": 0,
           "supportIndex": -1,
           "summonUnitId": "",
@@ -1502,7 +1502,7 @@
         {
           "label": "結界",
           "sub": "魔核",
-          "mpCost": "1d6",
+          "mpCost": "3",
           "index": -1,
           "supportIndex": 1,
           "summonUnitId": "",
@@ -1511,7 +1511,7 @@
         {
           "label": "転移",
           "sub": "魔核",
-          "mpCost": "1d8",
+          "mpCost": "4",
           "index": -1,
           "supportIndex": 2,
           "summonUnitId": "",
@@ -1520,7 +1520,7 @@
         {
           "label": "回復",
           "sub": "戦技",
-          "mpCost": "1d6",
+          "mpCost": "6",
           "index": -1,
           "supportIndex": 3,
           "summonUnitId": "",
@@ -1541,7 +1541,7 @@
             "id": "治癒",
             "name": "治癒",
             "targetType": "ally",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "heal",
             "statusEffect": ""
           },
@@ -1560,7 +1560,7 @@
             "id": "結界",
             "name": "結界",
             "targetType": "ally",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "barrier",
             "statusEffect": ""
           },
@@ -1579,7 +1579,7 @@
             "id": "転移",
             "name": "転移",
             "targetType": "ally",
-            "mpCost": "1d8",
+            "mpCost": "4",
             "effectType": "teleport",
             "statusEffect": ""
           },
@@ -1598,7 +1598,7 @@
             "id": "治癒",
             "name": "回復",
             "targetType": "ally",
-            "mpCost": "1d6",
+            "mpCost": "6",
             "effectType": "heal",
             "statusEffect": ""
           },
@@ -1622,7 +1622,7 @@
       "skills": [
         {
           "name": "詠唱破棄",
-          "desc": "(魔攻+魔防)÷4の確率で魔法武器耐久とMP消費無し",
+          "desc": "魔法使用時、MPが半減する（魔法武器の耐久も同じだけ）",
           "kind": "passive"
         },
         {
@@ -1685,7 +1685,7 @@
             "id": "火",
             "name": "火",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "magicDamage",
             "statusEffect": "burn"
           },
@@ -1706,7 +1706,7 @@
             "id": "火",
             "name": "火",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "magicDamage",
             "statusEffect": "burn"
           },
@@ -1718,7 +1718,7 @@
         {
           "label": "火",
           "sub": "戦技",
-          "mpCost": "1d6",
+          "mpCost": "3",
           "index": 0,
           "supportIndex": -1,
           "summonUnitId": "",
@@ -1727,7 +1727,7 @@
         {
           "label": "治癒",
           "sub": "戦技",
-          "mpCost": "1d6",
+          "mpCost": "3",
           "index": -1,
           "supportIndex": 0,
           "summonUnitId": "",
@@ -1748,7 +1748,7 @@
             "id": "治癒",
             "name": "治癒",
             "targetType": "ally",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "heal",
             "statusEffect": ""
           },

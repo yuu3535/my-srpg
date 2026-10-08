@@ -76,7 +76,7 @@ namespace Srpg.Battle.Plan
                 case "野望": return Math.Min(100, stats.cha * 2);                                      // 反撃封じ
                 case "カウンター": return (int)Math.Floor(((maxHp > 0 ? maxHp : stats.hp) + stats.def) / 4.0);
                 case "祈り": return Math.Min(100, luck);
-                case "詠唱破棄": return (int)Math.Floor((stats.mag + stats.res) / 4.0);
+                case "詠唱破棄": return 100;   // 原作者 2026-10-09: 確率ではなく、いつも MP 半減
                 default: return 0;
             }
         }

@@ -255,7 +255,7 @@
         "type": "attack",
         "targetType": "enemy",
         "range": 2,
-        "mpCost": "1d8",
+        "mpCost": "4",
         "powerFormula": "1d12+MB",
         "effectType": "magicDamage",
         "areaNote": "縦3マス以内の敵全体",

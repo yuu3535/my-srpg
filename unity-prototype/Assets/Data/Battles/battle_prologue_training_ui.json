@@ -20,9 +20,9 @@
       "portrait": "young_arshe",
       "cardUv": {
         "x": 0.4,
-        "y": 0.7016129032258065,
+        "y": 0.7016128724621189,
         "w": 0.3333333333333333,
-        "h": 0.29838709677419356
+        "h": 0.29838712753788116
       },
       "bustUv": {
         "x": 0.4,
@@ -77,7 +77,7 @@
             "id": "火",
             "name": "火",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "magicDamage",
             "statusEffect": "burn"
           },
@@ -96,7 +96,7 @@
             "id": "破壊",
             "name": "破壊",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "break",
             "statusEffect": ""
           },
@@ -115,7 +115,7 @@
             "id": "火",
             "name": "火",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "magicDamage",
             "statusEffect": "burn"
           },
@@ -123,7 +123,7 @@
             "id": "火",
             "name": "火",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "magicDamage",
             "statusEffect": "burn"
           }
@@ -167,7 +167,7 @@
             "id": "火",
             "name": "火",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "magicDamage",
             "statusEffect": "burn"
           },
@@ -186,7 +186,7 @@
             "id": "破壊",
             "name": "破壊",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "break",
             "statusEffect": ""
           },
@@ -205,7 +205,7 @@
             "id": "火",
             "name": "火",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "magicDamage",
             "statusEffect": "burn"
           },
@@ -213,7 +213,7 @@
             "id": "火",
             "name": "火",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "magicDamage",
             "statusEffect": "burn"
           }
@@ -230,7 +230,7 @@
         {
           "label": "火",
           "sub": "魔核",
-          "mpCost": "1d6",
+          "mpCost": "3",
           "index": 2,
           "supportIndex": -1,
           "summonUnitId": "",
@@ -239,7 +239,7 @@
         {
           "label": "破壊",
           "sub": "魔核",
-          "mpCost": "1d6",
+          "mpCost": "3",
           "index": 3,
           "supportIndex": -1,
           "summonUnitId": "",
@@ -248,7 +248,7 @@
         {
           "label": "火の杖",
           "sub": "装備",
-          "mpCost": "1d6",
+          "mpCost": "3",
           "index": 4,
           "supportIndex": -1,
           "summonUnitId": "",
@@ -330,7 +330,7 @@
             "id": "火",
             "name": "火",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "magicDamage",
             "statusEffect": "burn"
           },
@@ -349,7 +349,7 @@
             "id": "火",
             "name": "火",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "magicDamage",
             "statusEffect": "burn"
           },
@@ -357,7 +357,7 @@
             "id": "火",
             "name": "火",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "magicDamage",
             "statusEffect": "burn"
           }
@@ -389,7 +389,7 @@
             "id": "火",
             "name": "火",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "magicDamage",
             "statusEffect": "burn"
           },
@@ -408,7 +408,7 @@
             "id": "火",
             "name": "火",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "magicDamage",
             "statusEffect": "burn"
           },
@@ -416,7 +416,7 @@
             "id": "火",
             "name": "火",
             "targetType": "enemy",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "magicDamage",
             "statusEffect": "burn"
           }
@@ -427,7 +427,7 @@
         {
           "label": "火",
           "sub": "魔核",
-          "mpCost": "1d6",
+          "mpCost": "3",
           "index": 1,
           "supportIndex": -1,
           "summonUnitId": "",
@@ -436,7 +436,7 @@
         {
           "label": "結界",
           "sub": "魔核",
-          "mpCost": "1d6",
+          "mpCost": "3",
           "index": -1,
           "supportIndex": 0,
           "summonUnitId": "",
@@ -445,7 +445,7 @@
         {
           "label": "火の杖",
           "sub": "装備",
-          "mpCost": "1d6",
+          "mpCost": "3",
           "index": 2,
           "supportIndex": -1,
           "summonUnitId": "",
@@ -466,7 +466,7 @@
             "id": "結界",
             "name": "結界",
             "targetType": "ally",
-            "mpCost": "1d6",
+            "mpCost": "3",
             "effectType": "barrier",
             "statusEffect": ""
           },
@@ -503,9 +503,9 @@
       "portrait": "gunter",
       "cardUv": {
         "x": 0.3214285714285714,
-        "y": 0.6802995721316007,
+        "y": 0.6802995391705069,
         "w": 0.35714285714285715,
-        "h": 0.3197004278683992
+        "h": 0.3197004608294931
       },
       "bustUv": {
         "x": 0.3214285714285714,
@@ -577,9 +577,9 @@
       "weaponCrit": "―",
       "portrait": "training_doll_1",
       "cardUv": {
-        "x": -0.0957957957957958,
+        "x": -0.06524216524216524,
         "y": 0,
-        "w": 1.1915915915915916,
+        "w": 1.1304843304843304,
         "h": 1
       },
       "bustUv": {
@@ -625,9 +625,9 @@
       "weaponCrit": "―",
       "portrait": "training_doll_2",
       "cardUv": {
-        "x": -0.09579573436929961,
+        "x": -0.06524216524216524,
         "y": 0,
-        "w": 1.1915914687385993,
+        "w": 1.1304843304843304,
         "h": 1
       },
       "bustUv": {
@@ -673,9 +673,9 @@
       "weaponCrit": "44",
       "portrait": "training_doll_counter",
       "cardUv": {
-        "x": -0.0957957957957958,
+        "x": -0.08011701730040116,
         "y": 0,
-        "w": 1.1915915915915916,
+        "w": 1.1602340346008022,
         "h": 1
       },
       "bustUv": {

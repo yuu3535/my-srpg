@@ -372,16 +372,12 @@ namespace Srpg.Battle
             CurrentMode = Mode.Support;
         }
 
-        /// <summary>魔法のMPを払う（詠唱破棄の判定つき。ブラウザ版 trialPayMagicMp）</summary>
+        /// <summary>魔法のMPを払う（決まった値。詠唱破棄は半分。ブラウザ版 trialPayMagicMp）</summary>
         private int PayMagicMp(UnitState caster, PlanSpell spell, IPlanRolls rolls)
         {
-            int cost = rolls.Dice(string.IsNullOrEmpty(spell?.mpCost) ? "1d6" : spell.mpCost);
-            if (caster.plan.Has("詠唱破棄"))
-            {
-                int chance = TrialRules.AbilityChance("詠唱破棄", caster.plan.stats, caster.plan.maxHp, caster.plan.luck);
-                int roll = rolls.Percent("詠唱破棄");
-                if (roll <= chance) { AddLog($"  詠唱破棄！MP消費なし（{roll}/{chance}%）"); cost = 0; }
-            }
+            bool halve = caster.plan.Has("詠唱破棄");
+            int cost = BattlePlan.MagicCost(spell?.mpCost, halve);   // 決まった値（原作者 2026-10-09）
+            if (halve) AddLog("  詠唱破棄！MP半減");
             caster.plan.mp = Math.Max(0, caster.plan.mp - cost);
             string staff = caster.plan.equippedItem;
             if (!string.IsNullOrEmpty(staff) && BattlePlan.Items.TryGetValue(staff, out var staffItem) && staffItem.kind == "grimoire")

@@ -1428,9 +1428,8 @@ namespace Srpg.Battle
         {
             var parts = new List<string>();
             var first = fc.first;
-            string formula = option?.spell?.mpCost ?? attacker.plan?.grimoireSpell?.mpCost;
             if (first?.mpCost is int mp && mp > 0)
-                parts.Add(string.IsNullOrEmpty(formula) ? $"MP {mp}" : $"MP {formula}（見込み{mp}）");
+                parts.Add($"MP-{mp}");   // 決まった値なので、予測と実際が同じ（原作者 2026-10-09）
             if (first?.artSealChance is int seal) parts.Add($"封じ {seal}%");
             if (!string.IsNullOrEmpty(first?.status))
             {
