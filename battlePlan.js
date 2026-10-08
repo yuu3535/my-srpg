@@ -261,6 +261,19 @@ function bpCounterPlanFor(defender, attacker) {
     };
 }
 
+/** 魔法1回のコスト（trialStatSystem.js の trialMagicCost と同じ）。数字ならその値、古いサイコロの書き方なら平均の切り捨て */
+function bpMagicCost(formula, halve = false) {
+    const s = String(formula ?? "").trim();
+    let cost = 0;
+    if (/^\d+$/.test(s)) cost = Number(s);
+    else {
+        const m = s.match(/^(\d+)d(\d+)$/);
+        if (m) cost = Math.floor(Number(m[1]) * (Number(m[2]) + 1) / 2);
+    }
+    if (halve && cost > 0) cost = Math.max(1, Math.ceil(cost / 2));
+    return cost;
+}
+
 /** 1撃を実行する（命中・必殺・結界・祈り・カウンターまで）。state の HP・MP・結界を更新する */
 function bpResolveStrike(actor, target, action, role, env, rolls) {
     const step = { type: "strike", role, actorId: actor.id, targetId: target.id, kind: action.kind, spellId: action.spell?.id || null };
@@ -269,13 +282,10 @@ function bpResolveStrike(actor, target, action, role, env, rolls) {
         step.mpCost = 0;
         step.actorMpAfter = actor.mp;
     } else if (bpIsMagic(action)) {
-        let mpCost = rolls.dice(action.spell?.mpCost || "1d6");
-        const quickChance = bpHas(actor, "詠唱破棄") ? bpAbilityChance("詠唱破棄", actor.stats) : 0;
-        if (quickChance > 0) {
-            const roll = rolls.percent("quickCast");
-            step.quickCast = { roll, chance: quickChance, active: roll <= quickChance };
-            if (step.quickCast.active) mpCost = 0;
-        }
+        // 決まった値（原作者 2026-10-09: サイコロをやめた）。詠唱破棄は半分（切り上げ、最低1）
+        const halve = bpHas(actor, "詠唱破棄");
+        const mpCost = bpMagicCost(action.spell?.mpCost, halve);
+        if (halve) step.quickCast = { active: true };
         step.mpCost = mpCost;
         actor.mp = Math.max(0, Number(actor.mp || 0) - mpCost);
         step.actorMpAfter = actor.mp;

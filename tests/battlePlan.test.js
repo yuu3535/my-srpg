@@ -230,10 +230,18 @@ const roles = plan => plan.steps.map(step => step.type === "strike" ? step.role 
     // 虚像: 命中−20
     assert.equal(bpStrike(unit("blind", { statusEffects: [{ type: "hitDown", value: 20 }] }), unit("t", { x: 1 }), weapon).hitRate, 45);   // 65 − 20
 
-    // 円舞・万雷: 範囲の対象それぞれに1撃。反撃はない。魔法のMPは1回だけ
+    // 円舞・万雷: 範囲の対象それぞれに1撃。反撃はない。魔法のMPは1回だけ（コストは決まった値。万雷は12。原作者 2026-10-09）
+    const RANGED_ART = { ...LIGHTNING, mpCost: "12" };
     const area = bpPlanArea(caster, [unit("e1", { side: "enemy", x: 1 }), unit("e2", { side: "enemy", x: 2 })],
-        { kind: "magicArt", artName: "万雷", spell: LIGHTNING }, {}, bpFixedRolls([50, 99, 99, 50, 99, 99], [4]));
-    assert.deepEqual(area.steps.map(s => [s.targetId, s.role, s.mpCost]), [["e1", "area", 4], ["e2", "area", 0]]);
+        { kind: "magicArt", artName: "万雷", spell: RANGED_ART }, {}, bpFixedRolls([50, 99, 99, 50, 99, 99]));
+    assert.deepEqual(area.steps.map(s => [s.targetId, s.role, s.mpCost]), [["e1", "area", 12], ["e2", "area", 0]]);
+    // 詠唱破棄: いつも半分（切り上げ、最低1）。サイコロも確率も使わない
+    const quick = unit("quick", { stats: caster.stats, abilityNames: ["詠唱破棄"], mp: 30 });
+    const halved = bpPlanArea(quick, [unit("e3", { side: "enemy", x: 1 })], { kind: "magicArt", artName: "万雷", spell: RANGED_ART }, {}, bpFixedRolls([50, 99, 99]));
+    assert.equal(halved.steps[0].mpCost, 6);
+    assert.equal(halved.steps[0].quickCast.active, true);
+    // 古いサイコロの書き方が残っていても、乱数にせず平均の切り捨て（1d6 → 3）
+    assert.equal(bpPlanExchange(caster, unit("e4", { side: "enemy", x: 1 }), { kind: "core", spell: LIGHTNING }, {}, bpFixedRolls([50, 99, 99, 99], [6])).steps[0].mpCost, 3);
 
     // 月詠: 最大HPの20%を削る（最低1） / 生命吸収: 10%を削り、合計を自分のHP・MPへ
     const moon = bpPlanDrain(caster, [unit("m1", { maxHp: 40, hp: 40 }), unit("m2", { maxHp: 3, hp: 3 })], 20);

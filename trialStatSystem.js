@@ -284,6 +284,31 @@ const TRIAL_MAGIC_ART_SPELLS = Object.freeze({
     "万雷": "落雷",   // 落雷の魔法データを使い、直線3マスの敵を巻き込む（game.js の万雷の処理）
 });
 
+// 魔法戦技のコスト（原作者 2026-10-09: サイコロをやめて決まった値。docs/30-planning/MAGIC_COST_DESIGN_2026-10-09.md）
+//   基本魔法（魔核・杖の魔法）は spells.js の mpCost（ふつう3）。魔法戦技は基本魔法より重い（採用版 SKILL_LOADOUT_RULES §9）。
+//   値は 2026-09-25 のたたき台（MAGIC_ARTS_AND_GRIMOIRE_DRAFT）の表、表にない物は基本魔法＋2〜3
+const TRIAL_MAGIC_ART_COSTS = Object.freeze({
+    "虚像": 4, "封印": 6, "結界": 6, "落雷": 8, "転移": 8, "加速": 10, "万雷": 12,
+    "破壊": 5, "悪夢": 5, "回復": 6, "召喚「ヒトダマ」": 6,
+});
+
+/**
+ * 魔法を1回使うコスト（MP。杖を持っていれば同じだけ耐久も）。サイコロは使わない。
+ *   数字ならその値。古いサイコロの書き方（"1d6" など）が残っていたら平均の切り捨て。読めなければ 0（「任意」など）。
+ *   詠唱破棄（原作者 2026-10-09: 兵種スキルの「魔法使用時、MPが半減」にそろえる）は半分（切り上げ、最低1）
+ */
+function trialMagicCost(formula, halve = false) {
+    const s = String(formula ?? "").trim();
+    let cost = 0;
+    if (/^\d+$/.test(s)) cost = Number(s);
+    else {
+        const m = s.match(/^(\d+)d(\d+)$/);
+        if (m) cost = Math.floor(Number(m[1]) * (Number(m[2]) + 1) / 2);
+    }
+    if (halve && cost > 0) cost = Math.max(1, Math.ceil(cost / 2));
+    return cost;
+}
+
 // 召喚（原作者 2026-09-27）: 戦技に入っている召喚だけ。召喚は1戦闘に1回（召喚を繰り返して増えないように）。
 //   delayTurns: 使ったターンを N として、ターン N+delayTurns の味方の番の始まりに出る（「召喚に2ターンかかる」）
 //   呼んだ者が倒れたら、出る前の召喚も、出ている召喚獣も消える
@@ -760,7 +785,7 @@ function trialAbilityChance(name, stats, extra = {}) {
     if (name === "野望") return Math.min(100, stats.cha * 2);                       // 反撃封じ
     if (name === "カウンター") return Math.floor((Number(extra.maxHp || stats.hp) + stats.def) / 4);
     if (name === "祈り") return Math.min(100, Number(extra.luck || 0));
-    if (name === "詠唱破棄") return Math.floor((stats.mag + stats.res) / 4);         // 因果スキル版
+    if (name === "詠唱破棄") return 100;   // 原作者 2026-10-09: 確率ではなく、いつも MP 半減（兵種スキルの書き方にそろえた）
     return 0;
 }
 
@@ -900,6 +925,8 @@ if (typeof module !== "undefined") {
         trialGearEquip,
         trialGearTransfer,
         trialMagicMenuFor,
+        TRIAL_MAGIC_ART_COSTS,
+        trialMagicCost,
         trialMagicCoresFor,
         TRIAL_CORE_ART_BEHAVIOR,
         TRIAL_ABILITY_SOURCE,

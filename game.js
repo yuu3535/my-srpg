@@ -1417,7 +1417,7 @@ function trialApplyStrike(step, actor, target) {
     const result = step.hit ? "命中" : "失敗";
     const indent = step.role === "counter" || step.role === "counterFollowUp" ? "    " : "  ";
 
-    if (step.quickCast?.active) addLog(`${indent}詠唱破棄！MP消費なし（${step.quickCast.roll}/${step.quickCast.chance}%）`);
+    if (step.quickCast?.active) addLog(`${indent}詠唱破棄！MP半減`);
     if (typeof step.actorMpAfter === "number") actor.mp = step.actorMpAfter;
     const durabilityNote = typeof step.durabilityCost === "number" && step.durabilityCost > 0 ? `・耐久-${step.durabilityCost}` : "";
     const mpNote = typeof step.mpCost === "number" && !(step.role === "area" && step.mpCost === 0) ? `  MP-${step.mpCost}${durabilityNote}` : "";
@@ -1514,14 +1514,11 @@ function trialHealAmount(caster, multiplier = 1) {
     return (6 + Math.floor(caster.trialStats.mag / 4)) * multiplier;
 }
 
-/** 魔法のMPを払う（詠唱破棄の判定つき） */
+/** 魔法のMPを払う（決まった値。詠唱破棄は半分。原作者 2026-10-09） */
 function trialPayMagicMp(caster, spell) {
-    let mpCost = rollDice(spell.mpCost || "1d6");
-    const quickCast = trialRollAbility(caster, "詠唱破棄");
-    if (quickCast.active) {
-        addLog(`  詠唱破棄！MP消費なし（${quickCast.roll}/${quickCast.chance}%）`);
-        mpCost = 0;
-    }
+    const halve = trialHasAbility(caster, "詠唱破棄");
+    const mpCost = trialMagicCost(spell.mpCost, halve);
+    if (halve) addLog("  詠唱破棄！MP半減");
     caster.mp = Math.max(0, caster.mp - mpCost);
     trialSpendStaffDurability(caster, mpCost);
     return mpCost;
@@ -3572,6 +3569,8 @@ function getLandscapeMagicEntries(unit, { includeBroken = false } = {}) {
                 const spell = {
                     ...base,
                     ...(artName ? { trialArtName: artName, name: artName } : {}),
+                    // 魔法戦技は戦技ごとのコスト（魔核の魔法は spells.js の基本の値のまま）
+                    ...(item.source === "戦技" && TRIAL_MAGIC_ART_COSTS[item.name] != null ? { mpCost: String(TRIAL_MAGIC_ART_COSTS[item.name]) } : {}),
                     ...(item.source === "固有" ? { trialFixed: true, name: item.name } : {}),
                     ...(item.source === "魔核" ? { trialCore: true, name: item.name } : {}),
                     ...(typeof range === "number" ? { range: range + rangeBonus } : {}),
@@ -4485,12 +4484,9 @@ function executeMagic(caster, spell, target) {
     const hit = getMagicHitResult(caster, target, spell, successVal);
 
     // MPコスト
-    let mpCost = rollDice(spell.mpCost || "1d6");
-    const quickCast = trialRollAbility(caster, "詠唱破棄");   // [trial]
-    if (quickCast.active) {
-        addLog(`  詠唱破棄！MP消費なし（${quickCast.roll}/${quickCast.chance}%）`);
-        mpCost = 0;
-    }
+    const halve = typeof trialHasAbility === "function" && trialHasAbility(caster, "詠唱破棄");   // [trial]
+    const mpCost = typeof trialMagicCost === "function" ? trialMagicCost(spell.mpCost, halve) : rollDice(spell.mpCost || "3");
+    if (halve) addLog("  詠唱破棄！MP半減");
     caster.mp    = Math.max(0, caster.mp - mpCost);
     addLog(`・${caster.name}が ${spell.name} 使用（${hit.note}）  MP-${mpCost}`);
 
