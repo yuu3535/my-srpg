@@ -1,7 +1,7 @@
 # 魔法のコスト（MP・杖の耐久）の設計の手がかりと案
 
 作成: 2026-10-09 / 総合担当（Claude Code）
-状態: **検討中**（原作者の確認待ち）
+状態: **正式採用**（原作者 2026-10-09。§5）
 きっかけ（原作者 2026-10-09）: 魔法のコストが「1d6」のサイコロのまま。サイコロ形式は SRPG と相性が悪いはず。Codex とのたたき台などで未決になっている履歴から、設計の手がかりを探す。
 
 ## 1. 履歴で見つかった手がかり
@@ -53,3 +53,14 @@
 - ブラウザ版: `spells.js` の `mpCost`、`game.js` の `trialPayMagicMp`（サイコロ → 数）、予測の表示。
 - Unity版: `Battle3DController.PayMagicMp`、`BattlePlan` の予測、`tools/export_unity_battle_plan.mjs` で書き出し直し、答え合わせのテスト（520件）を作り直す。
 - 採用版: `DAMAGE_WEAPON_ENEMY_RULES.md` §4.1 と `SKILL_LOADOUT_RULES.md` §9 の「具体値は未決」を書き換える。
+
+## 5. 原作者の答え（2026-10-09）と入れたもの
+
+1. この方向（決まった値・09-25 の表を土台）で → **正式採用**。§2-2 の値で入れた。
+2. 詠唱破棄は**兵種の書き方にそろえる**: 「魔法使用時、MPが半減する」（確率ではなく、いつも。杖の耐久も同じだけ）。因果スキルの CSV の文も同じ文に直し、`abilityData.js` を作り直した。
+3. 明星: 今の兵種・因果スキルのデータ（CSV・`abilityData.js`）には**ない**。2026-07 の TRPG の技能（修練度）からのたたき台（`COMBAT_ARTS_DESIGN.md`）にだけ残っていた案で、採用版は修練度を使わない（`SRPG_CHARACTER_STAT_GROWTH_STANDARD.md` §3.1）。決めなくてよい。同じたたき台の魔光・威光の「MP消費3倍」・詠唱短縮も同様に今のデータにはない（威光は今の CSV では別の効果）。
+
+入れた所:
+- ブラウザ版: `spells.js`（mpCost を数に。サイコロの平均の切り捨て）、`trialStatSystem.js`（`TRIAL_MAGIC_ART_COSTS`・`trialMagicCost`）、`game.js`（払う所・魔法の一覧で戦技のコスト）、`battlePlan.js`（`bpMagicCost`）。`index.html` の `?v=` を更新。
+- Unity版: `BattlePlan.MagicCost`、`Battle3DController.PayMagicMp`、予測の表示は「MP-3」のように。戦闘のデータと答え合わせ（584件）を書き出し直した。
+- テスト: ブラウザ版のテストすべて、Unity の EditMode 41・PlayMode 18 が通る。
