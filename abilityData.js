@@ -1649,7 +1649,7 @@ const ABILITY_DATA = Object.freeze({
         {
           "name": "詠唱破棄",
           "kind": "skill",
-          "desc": "(魔攻+魔防)÷4の確率で魔法武器耐久とMP消費無し",
+          "desc": "魔法使用時、MPが半減する（魔法武器の耐久も同じだけ）",
           "level": 10,
           "statBonus": null
         },
@@ -2169,7 +2169,7 @@ const ABILITY_DATA = Object.freeze({
         {
           "name": "詠唱破棄",
           "kind": "skill",
-          "desc": "(魔攻+魔防)÷4の確率で魔法武器耐久とMP消費無し",
+          "desc": "魔法使用時、MPが半減する（魔法武器の耐久も同じだけ）",
           "level": 45,
           "statBonus": null
         }
@@ -2278,7 +2278,7 @@ const ABILITY_DATA = Object.freeze({
         {
           "name": "詠唱破棄",
           "kind": "skill",
-          "desc": "(魔攻+魔防)÷4の確率で魔法武器耐久とMP消費無し",
+          "desc": "魔法使用時、MPが半減する（魔法武器の耐久も同じだけ）",
           "level": 20,
           "statBonus": null
         },
