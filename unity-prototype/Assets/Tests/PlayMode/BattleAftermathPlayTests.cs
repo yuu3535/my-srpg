@@ -123,6 +123,49 @@ namespace Srpg.Tests
             return file.units.First(u => u.id == id).stats.atk;
         }
 
+        /// <summary>持ち物の持ち越し（2026-10-09）: 前の持ち物で始まり、負けてやり直すと元どおり、勝つと使った・拾った結果が残る</summary>
+        [UnityTest]
+        public IEnumerator ItemsCarryOverOnVictoryOnly()
+        {
+            Party.Reset();
+            var member = Party.Ensure("young_arshe", 1);
+            member.items = new System.Collections.Generic.List<ItemData> { new ItemData { id = "salve", name = "傷薬", type = "heal", value = 5 } };
+            member.itemsSet = true;
+            ExploreController explore = null; Battle3DController battle = null; DialogueView dialogue = null;
+            yield return StartTrainingBattle((e, b, d) => { explore = e; battle = b; dialogue = d; });
+            var arshe = battle.Units.First(u => u.Id == "young_arshe");
+            CollectionAssert.AreEqual(new[] { "傷薬" }, arshe.items.Select(i => i.name).ToArray(), "前の戦闘の持ち物で始まらない");
+
+            // 負けてやり直す: 使ったことにしても、戦闘の前の持ち物に戻る
+            arshe.items.Clear();
+            foreach (var u in battle.Units.Where(u => u.Side == "ally")) u.plan.hp = 0;
+            battle.EvaluateEnd();
+            yield return WaitForResult(dialogue);
+            BattleResultView.Retry();
+            yield return null;
+            arshe = battle.Units.First(u => u.Id == "young_arshe");
+            CollectionAssert.AreEqual(new[] { "傷薬" }, arshe.items.Select(i => i.name).ToArray(), "やり直すと戦闘の前の持ち物に戻る");
+            for (int i = 0; i < 100 && dialogue.IsPlaying; i++) dialogue.Close();
+
+            // 勝つ: 傷薬を使って、別の物を拾ったことにする → 残る
+            arshe.items.Clear();
+            arshe.items.Add(new ItemData { id = "found", name = "拾った薬", type = "heal", value = 3 });
+            for (int round = 0; round < 6 && battle.CurrentPhase != Battle3DController.Phase.Victory; round++)
+            {
+                foreach (var u in battle.Units.Where(u => u.Side == "enemy")) u.plan.hp = 0;
+                battle.EvaluateEnd();
+                for (float t = 0f; t < 3f && battle.CurrentPhase != Battle3DController.Phase.Victory && !battle.Units.Any(u => u.Side == "enemy" && u.Alive); t += Time.unscaledDeltaTime)
+                {
+                    if (dialogue.IsPlaying) dialogue.Close();
+                    yield return null;
+                }
+            }
+            Assert.AreEqual(Battle3DController.Phase.Victory, battle.CurrentPhase);
+            CollectionAssert.AreEqual(new[] { "拾った薬" }, Party.Find("young_arshe").items.Select(i => i.name).ToArray(), "勝ったあとの持ち物が残らない");
+            Assert.IsTrue(Party.Find("young_karima").itemsSet, "初めて出たカリマも、戦闘のデータの持ち物で仲間に入る");
+            Party.Reset();
+        }
+
         [UnityTest]
         public IEnumerator VictoryShowsResultThenGoesOn()
         {

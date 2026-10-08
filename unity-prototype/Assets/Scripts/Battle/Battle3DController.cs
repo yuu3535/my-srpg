@@ -1419,6 +1419,17 @@ namespace Srpg.Battle
             var member = profile != null ? Party.Ensure(state.Id, level) : null;
             if (member == null) return;
             levelOf[state.Id] = member.level;
+            // 持ち物: 前の戦闘から持ち越す。初めてなら、この戦闘のデータの持ち物を仲間の持ち物にする
+            if (member.itemsSet)
+            {
+                state.items.Clear();
+                state.items.AddRange(member.items.Select(Party.CopyItem));
+            }
+            else
+            {
+                member.items = state.items.Select(Party.CopyItem).ToList();
+                member.itemsSet = true;
+            }
             var expected = Growth.Expected(profile, level);
             for (int i = 0; i < Growth.Keys.Length; i++)
             {
@@ -1464,6 +1475,8 @@ namespace Srpg.Battle
             foreach (var unit in units.Concat(reserves).Where(u => u.Side == "ally" && !u.summoned).GroupBy(u => u.Id).Select(g => g.First()))
             {
                 var r = Party.AddExp(unit.Id, unit.Name, ExpEarned(unit));
+                var member = Party.Find(unit.Id);
+                if (member != null) { member.items = unit.items.Select(Party.CopyItem).ToList(); member.itemsSet = true; }   // 勝ったら持ち物を持ち越す（HP・MP は次の戦闘で満タン）
                 if (Party.Find(unit.Id) != null) LastGrowth.Add(r);
                 if (r.levelAfter > r.levelBefore) AddLog($"{unit.Name}の因果Lvが{r.levelAfter}に上がった（{r.GainsText}）");
             }

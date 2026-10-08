@@ -13,6 +13,9 @@ namespace Srpg.Battle
         public int level = 1;
         public int exp;
         public PlanStats stats;
+        // 持ち物（消耗品など。2026-10-09 原作者: 拾った物は残り、使った物はなくなる）。itemsSet が false なら、次の戦闘のデータの持ち物で始める
+        public List<ItemData> items = new List<ItemData>();
+        public bool itemsSet;
     }
 
     /// <summary>戦闘で得た経験値と、上がった因果Lvの記録（結果の画面に出す）</summary>
@@ -84,14 +87,22 @@ namespace Srpg.Battle
         public static void Reset() => members.Clear();
 
         /// <summary>セーブ用の写し</summary>
-        public static List<PartyMember> Snapshot() => members.Select(m => new PartyMember { id = m.id, level = m.level, exp = m.exp, stats = Growth.Copy(m.stats) }).ToList();
+        public static List<PartyMember> Snapshot() => members.Select(Copy).ToList();
+
+        private static PartyMember Copy(PartyMember m) => new PartyMember
+        {
+            id = m.id, level = Math.Max(1, m.level), exp = Math.Max(0, m.exp), stats = Growth.Copy(m.stats),
+            items = (m.items ?? new List<ItemData>()).Where(i => i != null).Select(CopyItem).ToList(), itemsSet = m.itemsSet,
+        };
+
+        public static ItemData CopyItem(ItemData i) => new ItemData { id = i.id, name = i.name, type = i.type, value = i.value };
 
         public static void Restore(IEnumerable<PartyMember> list)
         {
             members.Clear();
             foreach (var m in list ?? Enumerable.Empty<PartyMember>())
                 if (m != null && !string.IsNullOrEmpty(m.id) && m.stats != null)
-                    members.Add(new PartyMember { id = m.id, level = Math.Max(1, m.level), exp = Math.Max(0, m.exp), stats = Growth.Copy(m.stats) });
+                    members.Add(Copy(m));
         }
     }
 }
