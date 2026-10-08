@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>携帯端末 — アプリアイコン清書v01</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#171e23;color:#edf0f1;font:15px/1.7 "Yu Gothic",Meiryo,sans-serif}main{max-width:1400px;margin:auto;padding:32px 24px}h1{font-size:22px;margin:0}p{color:#bfc8ce;margin:8px 0 20px}.controls{display:flex;gap:24px;flex-wrap:wrap;padding:18px 0;border-block:1px solid #46525a}.field{display:grid;gap:6px}label{font-size:13px}select,input,button{font:inherit}select,button{padding:7px 12px;background:#29353d;border:1px solid #65717a;border-radius:6px;color:inherit}button:active{transform:scale(.98)}input{accent-color:#d3b778}a{color:#e8d1a0;text-underline-offset:4px}.gallery{display:grid;grid-template-columns:repeat(5,minmax(130px,1fr));gap:16px;overflow:auto;padding:26px 0}.item{margin:0;min-width:130px}.stage{height:270px;display:grid;place-items:center;border-radius:12px;overflow:hidden;background:var(--surface,#202a30)}.stage img{width:var(--size,200px);height:var(--size,200px);max-width:95%;object-fit:contain}.checker .stage{background-color:#657077;background-image:linear-gradient(45deg,#79858c 25%,transparent 25%),linear-gradient(-45deg,#79858c 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#79858c 75%),linear-gradient(-45deg,transparent 75%,#79858c 75%);background-size:24px 24px;background-position:0 0,0 12px,12px -12px,-12px 0}figcaption{padding:12px 0}h2{font-size:16px;margin:0 0 5px}.sizes{display:flex;gap:16px;align-items:center;padding:14px 0;overflow:auto}.sizes img{object-fit:contain;flex:none}.sizes span{font-size:11px;color:#afbcc5}.note{font-size:13px}.reference{display:block;max-width:100%;height:auto;margin-top:15px}details{border-top:1px solid #46525a;padding:16px 0}summary{cursor:pointer}footer{padding-top:18px;border-top:1px solid #46525a}#status{color:#d3b778;min-height:24px}@media(max-width:800px){main{padding:20px 16px}.gallery{grid-template-columns:repeat(5,180px)}.stage{height:220px}}
+</style>
+<style>
+.fortune-icon{position:relative;width:min(var(--size,200px),95%);aspect-ratio:1}
+.stage .fortune-icon>img{width:100%;height:100%;max-width:none;display:block}
+/* 元PNGの透明余白は変更せず、190×140のシール領域だけを切り出して表示。 */
+.beta-sticker{position:absolute;left:var(--beta-x,85%);top:var(--beta-y,5%);width:var(--beta-size,30%);aspect-ratio:190/140;overflow:hidden;transform:translate(-50%,-50%) rotate(var(--beta-angle,-8deg));pointer-events:none}
+.stage .beta-sticker img,.sizes .beta-sticker img{position:absolute;width:538.9473684211%;height:1097.1428571429%;max-width:none;left:-421.0526315789%;top:-14.2857142857%;object-fit:fill}
+.beta-controls{padding:16px 0;margin:0;border:0;border-bottom:1px solid #46525a;display:flex;gap:20px;flex-wrap:wrap}
+.beta-controls legend{padding-top:18px;font-size:14px;color:#d9e0e4}.beta-controls .field{min-width:160px}
+.beta-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.beta-controls[hidden],.beta-sticker[hidden]{display:none}
+.sizes .fortune-icon{width:var(--small-size);flex:none}.sizes .fortune-icon>img{width:100%;height:100%;display:block}
+.settings-json{width:100%;max-width:700px;min-height:130px;background:#202a30;color:#e5e9ed;border:1px solid #65717a;font:12px/1.5 Consolas,monospace;padding:12px}
+</style>
+</head>
+<body>
+<main>
+<h1>携帯端末 — アプリアイコン清書v01</h1>
+<p>銀白・灰・金の透過PNG初稿。右端のウロボロスは「塗り合わせ案」と「原作者修正版」を切り替えられます。原作者修正版のファイルは変更していません。</p>
+<section class="controls" aria-label="表示調整">
+<div class="field"><label for="background">確認背景</label><select id="background"><option value="dark">濃色</option><option value="checker">市松</option><option value="light">淡色</option></select></div>
+<div class="field"><label for="size">表示サイズ <output id="sizeValue">200</output> px</label><input id="size" type="range" min="32" max="224" value="200"></div>
+<div class="field"><label for="beta">運命予報のβ版シール</label><select id="beta"><option value="on">別素材を重ねる</option><option value="off">表示しない</option></select></div>
+<div class="field"><label for="ouroborosVersion">ウロボロスの比較</label><select id="ouroborosVersion"><option value="matched">塗り合わせ案</option><option value="original">原作者修正版（元の塗り）</option></select></div>
+</section>
+<fieldset class="beta-controls" id="betaControls"><legend>β版シールの貼り方</legend>
+<div class="field"><label for="betaSize">大きさ（アイコン幅の <output id="betaSizeValue">30</output>%）</label><input id="betaSize" type="range" min="15" max="50" step="1" value="30"></div>
+<div class="field"><label for="betaX">横位置（中心：左から <output id="betaXValue">85</output>%）</label><input id="betaX" type="range" min="0" max="110" step="1" value="85"></div>
+<div class="field"><label for="betaY">縦位置（中心：上から <output id="betaYValue">5</output>%）</label><input id="betaY" type="range" min="-15" max="100" step="1" value="5"></div>
+<div class="field"><label for="betaAngle">追加の傾き <output id="betaAngleValue">-8</output>°</label><input id="betaAngle" type="range" min="-45" max="45" step="1" value="-8"><small>0°はPNGの元の傾きです。</small></div>
+<div class="beta-actions"><button id="resetBeta" type="button">貼り方を初期値に戻す</button><button id="saveBeta" type="button">設定JSONを保存</button></div>
+</fieldset>
+<p id="status" role="status" aria-live="polite"></p>
+<section class="gallery" aria-label="素材比較">
+<figure class="item"><div class="stage"><img src="preparation-icon-v01.png" alt="銀白の手が金の留め具の袋を持つ身支度アイコン"></div><figcaption><h2>身支度</h2><a href="preparation-icon-v01.png" download>透過PNGを保存</a></figcaption><div class="sizes" data-icon="preparation-icon-v01.png"></div></figure>
+<figure class="item"><div class="stage"><img src="wallet-icon-v01.png" alt="銀灰色の財布と金のコイン"></div><figcaption><h2>ウォレット</h2><a href="wallet-icon-v01.png" download>透過PNGを保存</a></figcaption><div class="sizes" data-icon="wallet-icon-v01.png"></div></figure>
+<figure class="item"><div class="stage"><img src="renown-icon-v01.png" alt="二人の人物と銀と金の月桂樹"></div><figcaption><h2>名声</h2><a href="renown-icon-v01.png" download>透過PNGを保存</a></figcaption><div class="sizes" data-icon="renown-icon-v01.png"></div></figure>
+<figure class="item"><div class="stage"><div class="fortune-icon"><img src="fortune-icon-v01.png" alt="星と月を描いた二枚のカード"><span class="beta-sticker"><img src="../運命予報_分離素材01/fortune-beta-sticker-v01.png" alt="β版の別レイヤーシール"></span></div></div><figcaption><h2>運命予報</h2><a href="fortune-icon-v01.png" download>カード本体の透過PNGを保存</a><br><span class="note">シールは独立レイヤー</span></figcaption><div class="sizes" data-icon="fortune-icon-v01.png" data-beta="true"></div></figure>
+<figure class="item" id="ouroborosFigure"><div class="stage"><img id="ouroborosImage" src="ouroboros-style-match-v01.png" alt="二匹の蛇の円環・塗り合わせ案"></div><figcaption><h2 id="ouroborosHeading">ウロボロス — 塗り合わせ案</h2><a id="ouroborosDownload" href="ouroboros-style-match-v01.png" download>表示中の透過PNGを保存</a><br><span class="note">元の採用PNGは保持</span></figcaption><div class="sizes" id="ouroborosSizes" data-icon="ouroboros-style-match-v01.png"></div></figure>
+</section>
+<p class="note">下段は32px・48px・64px。文字・残金・名声値・アプリ下地はPNGには含めていません。β版シールの表示は重ね方の確認だけで、本体素材とは独立しています。</p>
+<details><summary>元の採用見本と比較する</summary><img class="reference" src="reference-selected-sheet.png" alt="銀白・灰・金に統一した採用方向の見本"></details>
+<details><summary>β版シールの設定を確認・コピー</summary><p class="note">操作内容はこのブラウザに自動保存します。別の環境へ渡すときはJSONを保存するか、下の内容をコピーしてください。カード本体のPNGにはシールを焼き込みません。</p><textarea id="betaSettingsJson" class="settings-json" readonly aria-label="β版シール設定JSON"></textarea></details>
+<footer><p class="note">本編・Unityへは未接続です。</p><a href="../太陽盤_コマンド試作01/menu-apps-preview.html">メニューに並べたホーム試作</a> ／ <a href="generation-prompts.md">4素材の生成指示と出力記録</a> ／ <a href="ouroboros-style-match-prompt-v01.md">ウロボロスの編集指示</a></footer>
+</main>
+<script>
+const root = document.documentElement;
+const size = document.getElementById('size');
+size.addEventListener('input', () => { root.style.setProperty('--size', size.value + 'px'); document.getElementById('sizeValue').value = size.value; });
+document.getElementById('background').addEventListener('change', event => { document.body.classList.toggle('checker', event.target.value === 'checker'); root.style.setProperty('--surface', event.target.value === 'light' ? '#e5e8eb' : '#202a30'); });
+document.querySelectorAll('.sizes').forEach(container => { [32,48,64].forEach(pixels => {
+  const wrapper = document.createElement('div');
+  const img = document.createElement('img'); img.src = container.dataset.icon; img.alt = pixels + 'px表示'; img.width = pixels; img.height = pixels;
+  if (container.dataset.beta) {
+    const icon = document.createElement('div'); icon.className = 'fortune-icon'; icon.style.setProperty('--small-size', pixels + 'px');
+    const sticker = document.createElement('span'); sticker.className = 'beta-sticker'; const stickerImg = document.createElement('img'); stickerImg.src = '../運命予報_分離素材01/fortune-beta-sticker-v01.png'; stickerImg.alt = ''; sticker.append(stickerImg); icon.append(img, sticker); wrapper.append(icon);
+  } else { wrapper.append(img); }
+  const label = document.createElement('span'); label.textContent = pixels + 'px'; wrapper.append(document.createElement('br'), label); container.append(wrapper);
+}); });
+const betaDefaults = { visible: true, size: 30, x: 85, y: 5, angle: -8 };
+const betaStorageKey = 'solar-app-icon-beta-settings-v01';
+let betaState = { ...betaDefaults };
+let betaStorageAvailable = true;
+function normalizeBeta(raw) {
+  raw = raw && typeof raw === 'object' ? raw : {};
+  const clamp = (key, min, max) => typeof raw[key] === 'number' && Number.isFinite(raw[key]) ? Math.min(max, Math.max(min, raw[key])) : betaDefaults[key];
+  return { visible: typeof raw.visible === 'boolean' ? raw.visible : betaDefaults.visible, size: clamp('size',15,50), x: clamp('x',0,110), y: clamp('y',-15,100), angle: clamp('angle',-45,45) };
+}
+function betaSettings() {
+  return { schema: 'solar-app-icon-beta-settings-v01', icon: 'fortune-icon-v01.png', sticker: { ...betaState, sourceImage: '../運命予報_分離素材01/fortune-beta-sticker-v01.png', sizeUnit: 'percent-of-icon-width', positionUnit: 'percent-of-icon-square', positionAnchor: 'center', angleUnit: 'degrees-relative-to-original', sourceRect: { x:800, y:20, width:190, height:140 }, sourceResolution: { width:1024, height:1536 } } };
+}
+function applyBeta(save = false) {
+  document.getElementById('beta').value = betaState.visible ? 'on' : 'off';
+  document.getElementById('betaControls').hidden = !betaState.visible;
+  document.querySelectorAll('.beta-sticker').forEach(layer => { layer.hidden = !betaState.visible; });
+  for (const key of ['size','x','y','angle']) {
+    const id = 'beta' + key.charAt(0).toUpperCase() + key.slice(1);
+    document.getElementById(id).value = betaState[key]; document.getElementById(id + 'Value').textContent = betaState[key];
+    root.style.setProperty('--beta-' + key, betaState[key] + (key === 'angle' ? 'deg' : '%'));
+  }
+  document.getElementById('betaSettingsJson').value = JSON.stringify(betaSettings(), null, 2);
+  if (save) { try { localStorage.setItem(betaStorageKey, JSON.stringify(betaState)); } catch { betaStorageAvailable = false; } }
+  document.getElementById('status').textContent = betaStorageAvailable ? '' : 'ブラウザの自動保存を使えません。設定JSONを保存してください。';
+}
+try { const saved = localStorage.getItem(betaStorageKey); if (saved) betaState = normalizeBeta(JSON.parse(saved)); } catch { betaStorageAvailable = false; }
+document.getElementById('beta').addEventListener('change', event => { betaState.visible = event.target.value === 'on'; applyBeta(true); });
+for (const key of ['size','x','y','angle']) { const id = 'beta' + key.charAt(0).toUpperCase() + key.slice(1); document.getElementById(id).addEventListener('input', event => { betaState = normalizeBeta({ ...betaState, [key]: Number(event.target.value) }); applyBeta(true); }); }
+document.getElementById('resetBeta').addEventListener('click', () => { betaState = { ...betaDefaults }; applyBeta(true); });
+document.getElementById('saveBeta').addEventListener('click', () => {
+  const blob = new Blob([JSON.stringify(betaSettings(), null, 2)], { type:'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'fortune-app-beta-settings.json'; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  document.getElementById('status').textContent = '設定JSONの保存を開始しました。';
+});
+applyBeta();
+document.getElementById('ouroborosVersion').addEventListener('change', event => {
+  const original = event.target.value === 'original';
+  const src = original ? '../ウロボロス_清書01/ouroboros-approved.png' : 'ouroboros-style-match-v01.png';
+  const img = document.getElementById('ouroborosImage');
+  img.src = src;
+  img.alt = original ? '原作者が修正した二匹の蛇の円環' : '二匹の蛇の円環・塗り合わせ案';
+  document.getElementById('ouroborosDownload').href = src;
+  document.getElementById('ouroborosHeading').textContent = original ? 'ウロボロス — 原作者修正版' : 'ウロボロス — 塗り合わせ案';
+  document.getElementById('ouroborosSizes').dataset.icon = src;
+  document.querySelectorAll('#ouroborosSizes img').forEach(small => { small.src = src; });
+});
+document.querySelectorAll('img').forEach(img => img.addEventListener('error', () => { document.getElementById('status').textContent = '素材を読み込めませんでした。PNGをHTMLと同じフォルダに置いてください。'; }));
+</script>
+</body>
+</html>

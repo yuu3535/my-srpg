@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>携帯端末 — アプリホーム試作</title>
+<link rel="stylesheet" href="time-of-day.css?v=20261005a">
+<link rel="stylesheet" href="menu-preview.css?v=20261006a">
+<link rel="stylesheet" href="menu-apps-preview.css?v=20261008a">
+</head>
+<body>
+<main>
+<header><h1>携帯端末 — アプリホーム試作</h1><p class="intro">上段にアプリ、中央にマップ。太陽盤とコマンドはそのまま、既存背景と端末フレームで全体の見え方を確認します。本編・Unityには未接続です。</p></header>
+<div class="menu-toolbar">
+<label for="menu-character">操作キャラ<select id="menu-character"><option value="alche">アルシェ</option><option value="karima">カリマ</option></select></label>
+<label for="menu-phase">時間帯<select id="menu-phase"><option value="morning">朝</option><option value="day">昼</option><option value="evening" selected>夕方</option><option value="night">夜</option></select></label>
+<label for="menu-background">確認背景<select id="menu-background"><option value="corridor">既存の回廊</option><option value="gray">灰色</option><option value="light">明るい無地</option></select></label>
+<label class="effect-toggle" for="menu-effects"><input id="menu-effects" type="checkbox" checked> 炎・時間帯の演出</label>
+<button id="menu-replay-time" type="button">時間帯の演出を再生</button>
+<label class="effect-toggle" for="menu-show-frame"><input id="menu-show-frame" type="checkbox" checked> 端末フレーム</label>
+<label class="effect-toggle" for="home-mystery"><input id="home-mystery" type="checkbox" checked> 後から追加される謎アプリも表示（比較用）</label>
+</div>
+<div id="menu-device" class="menu-device" data-frame="true">
+<div class="device-aperture" aria-hidden="true"></div>
+<div id="menu-viewport" class="menu-viewport">
+<div id="menu-screen" class="scene menu-screen home-screen" data-background="corridor" data-reduced="false" data-mystery="true">
+<img id="menu-background-image" class="scene-background" src="../太陽盤_試作02/corridor-reference.png" alt="" aria-hidden="true">
+<iframe id="menu-wheel" class="wheel-frame" src="layout.html?embed=menu&amp;v=20261006b" title="回転する太陽盤とコマンド" width="844" height="390"></iframe>
+<div id="wheel-loading" class="wheel-loading" role="status">太陽盤を読み込み中</div>
+<div class="home-heading">オルクス <small>携帯端末</small></div>
+<div id="menu-time" class="icon-slot menu-time" role="img" aria-label="時間帯：夕方"></div>
+<nav id="home-apps" class="home-apps" aria-label="携帯端末のアプリ">
+<button class="home-app" type="button" data-home-app="preparation" aria-haspopup="dialog" aria-controls="home-app-dialog"><span class="app-art" data-loading="true"><img src="../アプリアイコン_清書01/preparation-icon-v01.png" alt=""><span class="app-fallback" hidden>素材未読込</span></span><span>身支度</span><span class="app-value" aria-hidden="true"></span></button>
+<button class="home-app" type="button" data-home-app="wallet" aria-haspopup="dialog" aria-controls="home-app-dialog"><span class="app-art" data-loading="true"><img src="../アプリアイコン_清書01/wallet-icon-v01.png" alt=""><span class="app-fallback" hidden>素材未読込</span></span><span>ウォレット</span><span class="app-value">残金 —</span></button>
+<button class="home-app" type="button" data-home-app="renown" aria-haspopup="dialog" aria-controls="home-app-dialog"><span class="app-art" data-loading="true"><img src="../アプリアイコン_清書01/renown-icon-v01.png" alt=""><span class="app-fallback" hidden>素材未読込</span></span><span>名声</span><span class="app-value">名声値 —</span></button>
+<button class="home-app" type="button" data-home-app="fortune" aria-haspopup="dialog" aria-controls="home-app-dialog"><span class="app-art" data-loading="true"><img src="../アプリアイコン_清書01/fortune-icon-v01.png" alt=""><span class="app-fallback" hidden>素材未読込</span><span class="app-beta" id="home-beta"><img src="../運命予報_分離素材01/fortune-beta-sticker-v01.png" alt="β版"></span></span><span>運命予報</span><span class="app-value" aria-hidden="true"></span></button>
+<button class="home-app" id="home-ouroboros" type="button" data-home-app="ouroboros" aria-haspopup="dialog" aria-controls="home-app-dialog"><span class="app-art" data-loading="true"><img src="../アプリアイコン_清書01/ouroboros-style-match-v01.png" alt=""><span class="app-fallback" hidden>素材未読込</span></span><span>？？？</span><span class="app-value" aria-hidden="true"></span></button>
+</nav>
+<button id="map-open" class="map-card" type="button" aria-haspopup="dialog" aria-controls="map-dialog" aria-label="マップを開く：探索2D・章の戦闘・遭遇戦">
+<svg viewBox="0 0 440 166" aria-hidden="true" focusable="false">
+<defs><clipPath id="home-map-clip"><path d="M8 25 L25 8 H399 L432 36 V138 L414 158 H22 L8 144 Z"/></clipPath></defs>
+<!-- 現在は比較見本の仮画像を切り出して表示。本編では章・場所の専用画像とその寸法に置き換える。 -->
+<g clip-path="url(#home-map-clip)"><svg id="home-map-content" width="440" height="166" viewBox="590 470 557 303" preserveAspectRatio="xMidYMid slice"><image id="home-map-location" href="time-of-day-art/selected-reference-v01.png" width="1536" height="1024"/></svg></g>
+<!-- 枠には地図・景色を焼き込まない。内容画像とは独立した透明中央の素材。 -->
+<image id="home-map-frame" href="map-window-frame-v01.svg?v=20261008a" width="440" height="166"/>
+</svg>
+</button>
+<div id="menu-tip" class="menu-tip" role="status" aria-live="polite">戦闘マップへ出撃する</div>
+</div></div>
+<img id="menu-device-frame" class="device-frame" src="../横向きフレーム素材.png" width="1799" height="874" alt="" aria-hidden="true" draggable="false">
+</div>
+<p class="note home-note">横844×390が基準。残金・名声値は未接続のため「—」表示です。謎アプリは比較用で、ゲーム開始時には非表示となる方針です。</p>
+<p id="menu-warning" class="warning" role="alert" hidden></p><p id="home-app-error" class="home-app-error note" role="alert" hidden></p>
+<p id="menu-status" class="menu-status" role="status">メニューの素材を読み込んでいます。</p>
+<p class="note">運命予報を押すと既存の縦書き予報が開きます。他のアプリは入口の見本です。β版シールは幅33%・中心X78%／Y21%・追加角度18°の指定設定を反映しています。</p>
+<div class="source-links home-source-links"><a href="menu-preview.html">以前の部品配置画面</a><a href="../アプリアイコン_清書01/icons-preview.html">アプリアイコン・シールの調整</a><a href="../アプリアイコン_清書01/fortune-app-beta-settings.json" download>今回のシール設定を保存</a><a href="map-window-frame-v01.svg" download>マップ枠のみ保存（SVG）</a><a href="../../../docs/30-planning/HANDOFF_MENU_APP_UI_REVIEW_2026-10-08.md">Claude Codeへのレビュー依頼</a></div>
+<noscript><p class="warning">JavaScriptが無効です。コマンドとアプリを操作するにはJavaScriptが必要です。</p></noscript>
+</main>
+<dialog id="map-dialog" aria-labelledby="map-dialog-title"><form method="dialog"><button class="dialog-close" aria-label="マップの入口を閉じる">閉じる</button></form><h2 id="map-dialog-title">マップ</h2><p class="note">入口の見本です。探索・戦闘への実際の接続はありません。</p><div class="map-options"><button type="button" data-map-mode="exploration">探索2D</button><button type="button" data-map-mode="battle">章の戦闘</button><button type="button" data-map-mode="encounter">遭遇戦</button></div><p id="map-mode-note" class="note" role="status">行き先を選んで見比べてください。</p></dialog>
+<dialog id="home-app-dialog" class="home-app-dialog" aria-labelledby="home-app-title"><form method="dialog"><button id="home-app-close" class="dialog-close" aria-label="アプリの見本を閉じる">閉じる</button></form><h2 id="home-app-title">アプリ</h2><img id="home-dialog-icon" class="home-dialog-icon" alt="" hidden><p id="home-app-body" class="app-dialog-body"></p><p class="note">携帯端末の表示見本。本編の処理には接続していません。</p><iframe id="menu-fortune" class="home-fortune" src="../運命予報_分離素材01/layers-preview.html?embed=menu&amp;v=20261005a" title="運命予報：蛇。失せモノに注意。笑う声が聞こえたら、振り返らないこと。" width="320" height="480" hidden></iframe></dialog>
+<script src="time-of-day.js?v=20261005a"></script>
+<script src="menu-preview-model.js?v=20261006b"></script>
+<script src="menu-preview.js?v=20261006a"></script>
+<script src="menu-apps-model.js?v=20261008a"></script>
+<script src="menu-apps-preview.js?v=20261008a"></script>
+</body></html>
