@@ -1,0 +1,530 @@
+{
+  "source": "trialStatSystem.js",
+  "profiles": [
+    {
+      "id": "ringholm",
+      "name": "リングホルム",
+      "base": {
+        "hp": 12,
+        "atk": 16,
+        "def": 13,
+        "mag": 16,
+        "res": 14,
+        "tec": 7,
+        "spd": 12,
+        "cha": 16
+      },
+      "growth": {
+        "hp": 45,
+        "atk": 75,
+        "def": 45,
+        "mag": 65,
+        "res": 65,
+        "tec": 75,
+        "spd": 70,
+        "cha": 60
+      },
+      "caps": {
+        "hp": 104,
+        "atk": 94,
+        "def": 94,
+        "mag": 110,
+        "res": 106,
+        "tec": 96,
+        "spd": 91,
+        "cha": 112
+      },
+      "luck": 35,
+      "courage": 90,
+      "causeLevel": 30
+    },
+    {
+      "id": "arshe",
+      "name": "アルシェ",
+      "base": {
+        "hp": 13,
+        "atk": 14,
+        "def": 13,
+        "mag": 18,
+        "res": 15,
+        "tec": 9,
+        "spd": 10,
+        "cha": 15
+      },
+      "growth": {
+        "hp": 70,
+        "atk": 60,
+        "def": 55,
+        "mag": 55,
+        "res": 50,
+        "tec": 70,
+        "spd": 70,
+        "cha": 60
+      },
+      "caps": {
+        "hp": 122,
+        "atk": 90,
+        "def": 108,
+        "mag": 104,
+        "res": 106,
+        "tec": 87,
+        "spd": 71,
+        "cha": 102
+      },
+      "luck": 90,
+      "courage": 90,
+      "causeLevel": 25
+    },
+    {
+      "id": "young_karima",
+      "name": "カリマ",
+      "base": {
+        "hp": 12,
+        "atk": 14,
+        "def": 13,
+        "mag": 18,
+        "res": 15,
+        "tec": 9,
+        "spd": 11,
+        "cha": 15
+      },
+      "growth": {
+        "hp": 55,
+        "atk": 50,
+        "def": 45,
+        "mag": 65,
+        "res": 70,
+        "tec": 70,
+        "spd": 70,
+        "cha": 65
+      },
+      "caps": {
+        "hp": 122,
+        "atk": 86,
+        "def": 108,
+        "mag": 106,
+        "res": 100,
+        "tec": 86,
+        "spd": 96,
+        "cha": 101
+      },
+      "luck": 90,
+      "courage": 90,
+      "causeLevel": 25
+    },
+    {
+      "id": "albas",
+      "name": "アルバス",
+      "base": {
+        "hp": 18,
+        "atk": 12,
+        "def": 13,
+        "mag": 24,
+        "res": 22,
+        "tec": 12,
+        "spd": 9,
+        "cha": 17
+      },
+      "growth": {
+        "hp": 65,
+        "atk": 40,
+        "def": 50,
+        "mag": 80,
+        "res": 75,
+        "tec": 80,
+        "spd": 55,
+        "cha": 70
+      },
+      "caps": {
+        "hp": 104,
+        "atk": 80,
+        "def": 89,
+        "mag": 110,
+        "res": 108,
+        "tec": 98,
+        "spd": 108,
+        "cha": 115
+      },
+      "luck": 65,
+      "courage": 65,
+      "causeLevel": 30
+    },
+    {
+      "id": "albas_rival",
+      "name": "アルバス",
+      "base": {
+        "hp": 18,
+        "atk": 12,
+        "def": 13,
+        "mag": 24,
+        "res": 22,
+        "tec": 12,
+        "spd": 9,
+        "cha": 17
+      },
+      "growth": {
+        "hp": 65,
+        "atk": 40,
+        "def": 50,
+        "mag": 80,
+        "res": 75,
+        "tec": 80,
+        "spd": 55,
+        "cha": 70
+      },
+      "caps": {
+        "hp": 104,
+        "atk": 80,
+        "def": 89,
+        "mag": 110,
+        "res": 108,
+        "tec": 98,
+        "spd": 108,
+        "cha": 115
+      },
+      "luck": 65,
+      "courage": 65,
+      "causeLevel": 30
+    },
+    {
+      "id": "forest_guard",
+      "name": "森の番人",
+      "base": {
+        "hp": 14,
+        "atk": 18,
+        "def": 16,
+        "mag": 12,
+        "res": 15,
+        "tec": 8,
+        "spd": 9,
+        "cha": 10
+      },
+      "growth": {
+        "hp": 60,
+        "atk": 55,
+        "def": 50,
+        "mag": 15,
+        "res": 30,
+        "tec": 45,
+        "spd": 45,
+        "cha": 25
+      },
+      "caps": {
+        "hp": 99,
+        "atk": 99,
+        "def": 99,
+        "mag": 99,
+        "res": 99,
+        "tec": 99,
+        "spd": 99,
+        "cha": 99
+      },
+      "luck": 40,
+      "courage": 50,
+      "causeLevel": 10
+    },
+    {
+      "id": "dylan",
+      "name": "ディラン",
+      "base": {
+        "hp": 23,
+        "atk": 24,
+        "def": 24,
+        "mag": 11,
+        "res": 15,
+        "tec": 9,
+        "spd": 11,
+        "cha": 10
+      },
+      "growth": {
+        "hp": 65,
+        "atk": 80,
+        "def": 60,
+        "mag": 20,
+        "res": 35,
+        "tec": 50,
+        "spd": 50,
+        "cha": 25
+      },
+      "caps": {
+        "hp": 130,
+        "atk": 110,
+        "def": 105,
+        "mag": 108,
+        "res": 61,
+        "tec": 97,
+        "spd": 94,
+        "cha": 107
+      },
+      "luck": 25,
+      "courage": 60,
+      "causeLevel": 25
+    },
+    {
+      "id": "young_arshe",
+      "name": "アルシェ",
+      "base": {
+        "hp": 13,
+        "atk": 14,
+        "def": 13,
+        "mag": 18,
+        "res": 15,
+        "tec": 9,
+        "spd": 10,
+        "cha": 15
+      },
+      "growth": {
+        "hp": 70,
+        "atk": 60,
+        "def": 55,
+        "mag": 55,
+        "res": 50,
+        "tec": 70,
+        "spd": 70,
+        "cha": 60
+      },
+      "caps": {
+        "hp": 122,
+        "atk": 90,
+        "def": 108,
+        "mag": 104,
+        "res": 106,
+        "tec": 87,
+        "spd": 71,
+        "cha": 102
+      },
+      "luck": 90,
+      "courage": 90,
+      "causeLevel": 1
+    },
+    {
+      "id": "gunter",
+      "name": "ギュンター",
+      "base": {
+        "hp": 17,
+        "atk": 21,
+        "def": 18,
+        "mag": 19,
+        "res": 19,
+        "tec": 11,
+        "spd": 9,
+        "cha": 14
+      },
+      "growth": {
+        "hp": 65,
+        "atk": 70,
+        "def": 60,
+        "mag": 50,
+        "res": 60,
+        "tec": 60,
+        "spd": 50,
+        "cha": 55
+      },
+      "caps": {
+        "hp": 99,
+        "atk": 99,
+        "def": 99,
+        "mag": 99,
+        "res": 99,
+        "tec": 99,
+        "spd": 99,
+        "cha": 99
+      },
+      "luck": 65,
+      "courage": 75,
+      "causeLevel": 25
+    },
+    {
+      "id": "training_doll_1",
+      "name": "訓練人形",
+      "base": {
+        "hp": 12,
+        "atk": 0,
+        "def": 10,
+        "mag": 0,
+        "res": 10,
+        "tec": 0,
+        "spd": 8,
+        "cha": 0
+      },
+      "growth": {
+        "hp": 0,
+        "atk": 0,
+        "def": 0,
+        "mag": 0,
+        "res": 0,
+        "tec": 0,
+        "spd": 0,
+        "cha": 0
+      },
+      "caps": {
+        "hp": 99,
+        "atk": 99,
+        "def": 99,
+        "mag": 99,
+        "res": 99,
+        "tec": 99,
+        "spd": 99,
+        "cha": 99
+      },
+      "luck": 0,
+      "courage": 0,
+      "causeLevel": 1
+    },
+    {
+      "id": "training_doll_2",
+      "name": "訓練人形",
+      "base": {
+        "hp": 12,
+        "atk": 0,
+        "def": 10,
+        "mag": 0,
+        "res": 10,
+        "tec": 0,
+        "spd": 8,
+        "cha": 0
+      },
+      "growth": {
+        "hp": 0,
+        "atk": 0,
+        "def": 0,
+        "mag": 0,
+        "res": 0,
+        "tec": 0,
+        "spd": 0,
+        "cha": 0
+      },
+      "caps": {
+        "hp": 99,
+        "atk": 99,
+        "def": 99,
+        "mag": 99,
+        "res": 99,
+        "tec": 99,
+        "spd": 99,
+        "cha": 99
+      },
+      "luck": 0,
+      "courage": 0,
+      "causeLevel": 1
+    },
+    {
+      "id": "training_doll_counter",
+      "name": "訓練人形（反撃）",
+      "base": {
+        "hp": 14,
+        "atk": 20,
+        "def": 10,
+        "mag": 0,
+        "res": 10,
+        "tec": 30,
+        "spd": 8,
+        "cha": 0
+      },
+      "growth": {
+        "hp": 0,
+        "atk": 0,
+        "def": 0,
+        "mag": 0,
+        "res": 0,
+        "tec": 0,
+        "spd": 0,
+        "cha": 0
+      },
+      "caps": {
+        "hp": 99,
+        "atk": 99,
+        "def": 99,
+        "mag": 99,
+        "res": 99,
+        "tec": 99,
+        "spd": 99,
+        "cha": 99
+      },
+      "luck": 0,
+      "courage": 0,
+      "causeLevel": 1
+    },
+    {
+      "id": "hitodama",
+      "name": "ヒトダマ",
+      "base": {
+        "hp": 20,
+        "atk": 6,
+        "def": 8,
+        "mag": 22,
+        "res": 20,
+        "tec": 14,
+        "spd": 20,
+        "cha": 12
+      },
+      "growth": {
+        "hp": 0,
+        "atk": 0,
+        "def": 0,
+        "mag": 0,
+        "res": 0,
+        "tec": 0,
+        "spd": 0,
+        "cha": 0
+      },
+      "caps": {
+        "hp": 99,
+        "atk": 99,
+        "def": 99,
+        "mag": 99,
+        "res": 99,
+        "tec": 99,
+        "spd": 99,
+        "cha": 99
+      },
+      "luck": 15,
+      "courage": 75,
+      "causeLevel": 25
+    },
+    {
+      "id": "herel",
+      "name": "ヘレル",
+      "base": {
+        "hp": 13,
+        "atk": 12,
+        "def": 12,
+        "mag": 15,
+        "res": 14,
+        "tec": 6,
+        "spd": 9,
+        "cha": 13
+      },
+      "growth": {
+        "hp": 45,
+        "atk": 25,
+        "def": 35,
+        "mag": 70,
+        "res": 60,
+        "tec": 60,
+        "spd": 50,
+        "cha": 50
+      },
+      "caps": {
+        "hp": 100,
+        "atk": 70,
+        "def": 86,
+        "mag": 82,
+        "res": 81,
+        "tec": 76,
+        "spd": 76,
+        "cha": 89
+      },
+      "luck": 90,
+      "courage": 70,
+      "causeLevel": 25
+    }
+  ],
+  "battleLevels": [
+    {
+      "battleId": "battle_prologue_training",
+      "id": "young_karima",
+      "causeLevel": 1
+    }
+  ]
+}
