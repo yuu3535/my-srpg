@@ -12,6 +12,19 @@ SRC="$ROOT/unity-prototype/Builds/WebGL"
 REPO="https://github.com/yuu3535/my-srpg-unity.git"
 [ -f "$SRC/index.html" ] || { echo "書き出しがない: $SRC"; exit 1; }
 WORK="$(mktemp -d)"
+# 1つ前の書き出しの Build/ のファイルも残す（2026-10-09）。書き出しの名前は中身から作るので（WebGLBuilder の nameFilesAsHashes）、
+# 更新した直後にブラウザに古い index.html が残っていても、それが指す古いファイルがまだあるので起動できる。
+# 残すのは1つ前だけ（その前の物は、今の公開に入っていないので自然に消える）
+PREV="$(mktemp -d)"
+if git clone -q --depth 1 "$REPO" "$PREV" 2>/dev/null && [ -f "$PREV/index.html" ]; then
+  mkdir -p "$WORK/Build"
+  # 1つ前の index.html が指しているファイルだけ（2つ前より古い物は持ち越さない）
+  # （index.html では buildUrl + "/名前" の形で書かれている）
+  grep -o '"/[^"]*\.\(js\|unityweb\|data\|wasm\)"' "$PREV/index.html" | tr -d '"/' | sort -u | while read -r f; do
+    if [ -f "$PREV/Build/$f" ]; then cp "$PREV/Build/$f" "$WORK/Build/$f"; fi
+  done
+fi
+rm -rf "$PREV"
 cp -r "$SRC"/. "$WORK"/
 touch "$WORK/.nojekyll"   # GitHub Pages に手を加えさせない
 cd "$WORK"
