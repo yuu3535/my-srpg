@@ -33,10 +33,45 @@ const wallpaper=fs.readFileSync(path.join(__dirname,'home-wallpaper-stars-v01.pn
 assert.equal(wallpaper.subarray(0,8).toString('hex'),'89504e470d0a1a0a');
 assert.equal(wallpaper.readUInt32BE(16),1844);assert.equal(wallpaper.readUInt32BE(20),853);
 assert.ok(Math.abs(1844/853-844/390)<.003,'生成素材は横844×390とほぼ同じ比率');
-assert.ok(html.includes('src="home-wallpaper-stars-v01.png?v=20261008a"'),'壁紙だけの独立素材を参照');
+assert.ok(html.includes('href="home-wallpaper-stars-v01.png"'),'元の背景は保存リンクから参照できる');
+assert.ok(!html.includes('src="home-wallpaper-stars-v01.png'),'元の全面背景を重ねて色を隠さない');
 assert.ok(!html.includes('class="home-shade"'),'隅の装飾を旧写真用の色かぶせで暗くしない');
-assert.ok(rule('.home-wallpaper').includes('filter:none;')&&rule('.home-wallpaper').includes('pointer-events:none;'));
-assert.ok(rule('.independent-home').includes('background:#1c1d1f;'),'画像未読込時も無地の炭色');
+assert.ok(rule('.home-corners').includes('pointer-events:none;'),'隅飾りは操作を遮らない');
+assert.equal([...html.matchAll(/class="home-corner home-corner-/g)].length,4,'同じ透過飾りを四隅へ反転して置く');
+assert.ok(rule('.home-corner').includes("filter:url('#home-corner-tint');")&&html.includes('in2="SourceAlpha" operator="in"'),'PNGのアルファを保って隅飾りだけ色替え');
+assert.ok(rule('.independent-home').includes('background:var(--home-surface,#1c1d1f);'),'画像なしでも持ち主の下地色');
+assert.ok(rule('.independent-home[data-app-names="false"] .app-name').includes('visibility:hidden;'),'名前OFFでも配置とタップ範囲を保つ');
+assert.ok(html.includes('id="home-app-names" type="checkbox" checked'),'名前は初期ONの比較操作');
+const cornerAsset=fs.readFileSync(path.join(__dirname,'home-corner-star-mask-v01.png'));
+assert.equal(cornerAsset.subarray(0,8).toString('hex'),'89504e470d0a1a0a');assert.equal(cornerAsset[25],6,'隅飾りはRGBA');
+assert.deepEqual(model.theme('alche'),{background:'#1c1d1f',backing:'#d3ad59',ornament:'#b9ad8c',text:'#eceff2'});
+assert.deepEqual(model.theme('karima'),{background:'#e7eef3',backing:'#7194ae',ornament:'#142a48',text:'#000000'});
+const authorSettings=model.readSettings(fs.readFileSync(path.join(__dirname,'home-settings-author-20261009.json'),'utf8'));
+assert.deepEqual(authorSettings.ownerThemes.karima.light,model.theme('karima'),'原作者指定ファイルと新しい初期色を一致させる');
+assert.deepEqual(authorSettings.ownerThemes.alche.dark,model.theme('alche'));assert.deepEqual(authorSettings.ownerThemes.karima.dark,model.theme('karima',{},'dark'));
+assert.equal(authorSettings.selectedOwner,'karima');assert.equal(authorSettings.preview.noticeKind,'encounter');assert.equal(authorSettings.preview.frame,false);
+assert.equal(authorSettings.corner.size,36);assert.equal(authorSettings.corner.inset,0);assert.equal(authorSettings.showAppNames,true);
+assert.deepEqual(model.theme('karima',{},'dark'),{background:'#181c22',backing:'#a8bac7',ornament:'#97a8ba',text:'#eceff2'});
+assert.equal(model.themeMode('alche','light'),'dark');assert.equal(model.themeMode('karima','light'),'light');assert.equal(model.themeMode('karima','dark'),'dark');
+assert.equal(model.themeMode('__proto__','light'),'dark');assert.equal(model.themeMode('karima','invalid'),'light');
+assert.equal(model.theme('__proto__',{backing:'url(bad)'}).backing,'#d3ad59');
+assert.equal(model.theme('karima',{background:'#ABCDEF'}).background,'#abcdef');
+assert.equal(model.theme('karima',null).background,'#e7eef3');
+assert.equal(model.theme('karima',{text:'url(bad)'}).text,'#000000');
+const lightRule=rule('.independent-home[data-owner="karima"][data-theme-mode="light"]');
+assert.ok(lightRule.includes('--notice-surface:#e9eef3;')&&lightRule.includes('--app-label-ink:var(--home-ink);')&&lightRule.includes('--app-label-shadow:none;'),'明るい下地に暗い文字、名前の影を外す');
+assert.ok(rule('.home-notice').includes('background:var(--notice-surface,rgb(13 15 17 / .86));')&&rule('.home-notice:hover').includes('var(--notice-hover'),'帯の通常・hoverをセットで切替');
+assert.ok(rule('.map-caption small').includes('color:#bcc6cb;')&&rule('.app-metric').includes('color:#f0f1ec;'),'暗い面に残す文字まで青墨にしない');
+function luminance(hex) {
+  const linear=hex.slice(1).match(/../g).map(value=>parseInt(value,16)/255).map(value=>value<=.04045?value/12.92:((value+.055)/1.055)**2.4);
+  return linear[0]*.2126+linear[1]*.7152+linear[2]*.0722;
+}
+function contrast(a,b) { const values=[luminance(a),luminance(b)].sort((x,y)=>y-x);return (values[0]+.05)/(values[1]+.05); }
+const lightTheme=model.theme('karima'),cssColor=key=>lightRule.match(new RegExp('--'+key+':(#[0-9a-f]{6});'))[1];
+for(const [ink,surface] of [[lightTheme.text,lightTheme.background],[lightTheme.text,cssColor('notice-surface')],[cssColor('home-muted'),lightTheme.background],[cssColor('home-accent'),cssColor('notice-surface')],[cssColor('notice-beta-ink'),cssColor('notice-surface')]]) {
+  assert.ok(contrast(ink,surface)>=4.5,'初期色の不透明な面／文字の計算値4.5:1以上（描画の実測ではない）');
+}
+assert.equal(model.ornamentSize(23),36);assert.equal(model.ornamentSize(64),64);assert.equal(model.ornamentInset(25),0);assert.equal(model.ornamentInset(12),12);
 assert.ok(rule('.home-right').includes('left:338px; top:0px; width:494px; height:390px;'),'生成見本の配置変更は取り込まない');
 assert.ok(rule('.home-map').includes('top:82px; width:494px; height:190px;'),'マップ位置・サイズを維持');
 assert.ok(rule('.home-map-open').includes('inset:0; width:100%; height:100%;'),'マップの窓全体を一つのボタンにする');
@@ -98,10 +133,18 @@ for(const kind of Object.keys(model.forecasts)) {
 assert.equal(model.presentation('alche','after','__proto__').copy,model.forecasts.story.copy);
 assert.equal(model.forecast('__proto__').key,'story');
 assert.equal(model.fit(844,390),1);assert.ok(model.fit(390,844)<1);assert.ok(model.fit(844,390,true)<1);
-function node() {return {dataset:{},handlers:new Map(),hidden:false,attributes:{},style:{properties:{},setProperty(k,v){this.properties[k]=v;}},addEventListener(t,f){if(!this.handlers.has(t))this.handlers.set(t,new Set());this.handlers.get(t).add(f);},removeEventListener(t,f){this.handlers.get(t)?.delete(f);},emit(t,event={}){for(const f of [...this.handlers.get(t)||[]])f(event);},getAttribute(k){return this.attributes[k];},setAttribute(k,v){this.attributes[k]=v;},removeAttribute(k){delete this.attributes[k];},querySelectorAll(){return [];},getBoundingClientRect(){return {width:844};}};}
-function setup(native=true,wallpaperReady=null,fontWidth=null) {
+function node() {return {dataset:{},handlers:new Map(),hidden:false,attributes:{},style:{properties:{},setProperty(k,v){this.properties[k]=v;}},addEventListener(t,f){if(!this.handlers.has(t))this.handlers.set(t,new Set());this.handlers.get(t).add(f);},removeEventListener(t,f){this.handlers.get(t)?.delete(f);},emit(t,event={}){for(const f of [...this.handlers.get(t)||[]])f(event);},async emitAsync(t,event={}){await Promise.all([...this.handlers.get(t)||[]].map(f=>f(event)));},focus(){this.focused=true;},select(){this.selected=true;},append(item){this.appended=item;},click(){this.clicked=true;this.emit('click');},remove(){this.removed=true;},getAttribute(k){return this.attributes[k];},setAttribute(k,v){this.attributes[k]=v;},removeAttribute(k){delete this.attributes[k];},querySelectorAll(){return [];},getBoundingClientRect(){return {width:844};}};}
+function setup(native=true,wallpaperReady=null,fontWidth=null,storageOptions={}) {
   const items=new Map(),byId=id=>{if(id==='notice-period')return null;if(!items.has(id))items.set(id,node());return items.get(id);};
   const doc=node(),win=node();doc.body=node();doc.hidden=false;doc.getElementById=byId;
+  const storage=storageOptions.data||new Map(),writes=[];
+  const localStorage={getItem(key){if(storageOptions.readFail)throw new Error('storage denied');return storage.get(key)||null;},setItem(key,value){if(storageOptions.writeFail)throw new Error('storage denied');storage.set(key,value);writes.push([key,value]);}};
+  if(storageOptions.getterFail)Object.defineProperty(win,'localStorage',{get(){throw new Error('SecurityError');}});else win.localStorage=localStorage;
+  const elements=[],urls=new Map(),revoked=[],timers=new Map();let urlId=0,timerId=0;
+  doc.createElement=tag=>{const element=node();element.tagName=tag;elements.push(element);return element;};
+  win.Blob=Blob;win.URL={createObjectURL(blob){const url='blob:settings-'+(++urlId);urls.set(url,blob);return url;},revokeObjectURL(url){revoked.push(url);urls.delete(url);}};
+  win.setTimeout=fn=>{timers.set(++timerId,fn);return timerId;};win.clearTimeout=id=>timers.delete(id);
+  win.flushTimeouts=()=>{for(const [id,fn] of [...timers]){timers.delete(id);fn();}};
   const frames=new Map();let frameId=0,clock=0;
   win.requestAnimationFrame=fn=>{frames.set(++frameId,fn);return frameId;};win.cancelAnimationFrame=id=>frames.delete(id);
   win.step=ms=>{clock+=ms;const callbacks=[...frames.values()];frames.clear();callbacks.forEach(fn=>fn(clock));};win.pendingFrames=()=>frames.size;
@@ -109,6 +152,7 @@ function setup(native=true,wallpaperReady=null,fontWidth=null) {
   const media=Object.assign(node(),{matches:false});win.matchMedia=()=>media;
   byId('menu-character').value='alche';byId('menu-phase').value='evening';byId('home-stage').value='prologue';byId('notice-kind').value='story';
   byId('menu-effects').checked=true;byId('home-mystery').checked=true;byId('menu-show-frame').checked=false;
+  byId('home-app-names').checked=true;byId('home-corner-size').value='36';byId('home-corner-inset').value='0';
   byId('notice-scroll').checked=true;byId('notice-viewport').clientWidth=300;byId('notice-copy').offsetWidth=420;
   byId('notice-before').value='5';byId('notice-after').value='3';
   // 従来の仮想時計は縮小OFFで同じ移動距離を検査。別ケースはフォントに比例する実幅を模擬。
@@ -127,11 +171,11 @@ function setup(native=true,wallpaperReady=null,fontWidth=null) {
   const forecastButtons=Object.keys(model.forecasts).map(id=>Object.assign(node(),{dataset:{forecastKind:id}}));
   doc.querySelectorAll=selector=>selector==='[data-home-app]'?buttons:selector==='[data-forecast-kind]'?forecastButtons:mapButtons;
   const sticker=node();byId('home-beta').querySelector=()=>sticker;
-  if(wallpaperReady!==null){byId('home-wallpaper').complete=true;byId('home-wallpaper').naturalWidth=wallpaperReady?1844:0;}
+  if(wallpaperReady!==null){byId('home-corner-source').complete=true;byId('home-corner-source').naturalWidth=wallpaperReady?1280:0;}
   byId('home-fortune').dataset.src='../運命予報_分離素材01/layers-preview.html?embed=menu&v=20261005a';
   const dialog=byId('home-dialog');if(native){dialog.showModal=function(){this.open=true;};dialog.close=function(){this.open=false;this.emit('close');};}
   const time={validPhase:p=>['morning','day','evening','night'].includes(p),phases:{morning:{label:'朝'},day:{label:'昼'},evening:{label:'夕方'},night:{label:'夜'}},icon:p=>p};
-  const api=mount(doc,win,model,apps,wheel,time);return {api,doc,win,byId,sent,buttons,mapButtons,forecastButtons,sticker,media};
+  const api=mount(doc,win,model,apps,wheel,time);return {api,doc,win,byId,sent,buttons,mapButtons,forecastButtons,sticker,media,storage,writes,elements,urls,revoked,timers};
 }
 const s=setup();assert.equal(s.byId('menu-device').dataset.frame,'false');assert.equal(s.byId('home-fortune').src,undefined);
 for(const [key,value] of Object.entries({size:'40%',x:'78%',y:'21%',angle:'18deg'}))assert.equal(s.byId('menu-screen').style.properties['--app-beta-'+key],value);
@@ -192,8 +236,8 @@ s.byId('home-location').emit('error');assert.equal(s.byId('map-fallback').hidden
 s.byId('map-open').emit('click');assert.equal(s.byId('home-dialog-title').textContent,'マップ');assert.equal(s.byId('map-options').hidden,false,'札を外しても窓から既存の入口が開く');
 s.byId('home-map-frame').emit('error');assert.equal(s.byId('home-map-frame').hidden,true);assert.equal(s.byId('home-map').dataset.frameReady,'false');
 s.byId('home-map-frame').emit('load');assert.equal(s.byId('home-map-frame').hidden,false);assert.equal(s.byId('home-map').dataset.frameReady,'true');
-s.byId('home-wallpaper').emit('error');assert.equal(s.byId('home-wallpaper').hidden,true);assert.ok(s.byId('home-warning').textContent.includes('無地の炭色'));
-s.byId('home-wallpaper').emit('load');assert.equal(s.byId('home-wallpaper').hidden,false);assert.ok(!s.byId('home-warning').textContent.includes('壁紙'));
+s.byId('home-corner-source').emit('error');assert.equal(s.byId('home-corners').dataset.ready,'false');assert.ok(s.byId('home-warning').textContent.includes('無地下地'));
+s.byId('home-corner-source').emit('load');assert.equal(s.byId('home-corners').dataset.ready,'true');assert.ok(!s.byId('home-warning').textContent.includes('隅飾り'));
 s.byId('map-open').emit('click');assert.equal(s.byId('map-options').hidden,false);s.mapButtons[0].emit('click');assert.ok(s.byId('home-dialog-body').textContent.includes('探索2D'));
 s.byId('menu-show-frame').checked=true;s.byId('menu-show-frame').emit('change');assert.equal(s.byId('menu-device').dataset.frame,'true');
 s.byId('menu-device-frame').emit('error');assert.equal(s.byId('menu-device').dataset.frame,'false');assert.equal(s.byId('menu-show-frame').disabled,true);
@@ -203,7 +247,43 @@ s.sticker.emit('error');assert.equal(s.byId('home-beta').hidden,true);s.sticker.
 s.api.destroy();s.api.destroy();s.byId('home-dialog-title').textContent='destroyed';s.buttons[0].emit('click');assert.equal(s.byId('home-dialog-title').textContent,'destroyed');
 assert.equal(s.byId('menu-screen').style.properties['--ticker-play'],'paused');assert.equal(s.byId('home-notice').dataset.scrolling,'false');
 const f=setup(false);f.api.openApp('wallet');assert.equal(f.byId('home-dialog').attributes.open,'');let prevented=false;f.byId('home-dialog-close').emit('click',{preventDefault(){prevented=true;}});assert.equal(prevented,true);assert.equal(f.byId('home-dialog').attributes.open,undefined);f.api.destroy();
-for(const ready of [true,false]){const cached=setup(true,ready);assert.equal(cached.byId('home-wallpaper').hidden,!ready);assert.equal(cached.byId('home-warning').hidden,ready);cached.api.destroy();}
+for(const ready of [true,false]){const cached=setup(true,ready);assert.equal(cached.byId('home-corners').dataset.ready,String(ready));assert.equal(cached.byId('home-warning').hidden,ready);cached.api.destroy();}
+const themeView=setup();
+assert.equal(themeView.byId('menu-screen').style.properties['--home-surface'],'#1c1d1f');
+themeView.byId('home-backing-color').value='#c7b492';themeView.byId('home-backing-color').emit('input');
+themeView.byId('menu-character').value='karima';themeView.byId('menu-character').emit('change');
+assert.equal(themeView.byId('home-backing-color').value,'#7194ae');assert.equal(themeView.byId('menu-screen').style.properties['--home-surface'],'#e7eef3');
+assert.equal(themeView.byId('menu-screen').dataset.themeMode,'light');assert.equal(themeView.byId('home-theme-mode-control').hidden,false);
+assert.equal(themeView.byId('menu-screen').style.properties['--home-ink'],'#000000');
+themeView.byId('home-text-color').value='#30465a';themeView.byId('home-text-color').emit('input');
+assert.equal(themeView.byId('menu-screen').style.properties['--home-ink'],'#30465a');
+themeView.byId('home-surface-color').value='#19202a';themeView.byId('home-surface-color').emit('input');
+themeView.byId('home-ornament-color').value='#98aabd';themeView.byId('home-ornament-color').emit('input');
+assert.equal(themeView.byId('home-corner-ink').attributes['flood-color'],'#98aabd');
+themeView.byId('menu-character').value='alche';themeView.byId('menu-character').emit('change');assert.equal(themeView.byId('home-backing-color').value,'#c7b492');
+themeView.byId('home-theme-reset').emit('click');assert.equal(themeView.byId('home-backing-color').value,'#d3ad59');
+themeView.byId('menu-character').value='karima';themeView.byId('menu-character').emit('change');assert.equal(themeView.byId('home-surface-color').value,'#19202a','他方のリセットで消さない');
+themeView.byId('home-backing-color').value='bad';themeView.byId('home-backing-color').emit('input');assert.equal(themeView.byId('home-backing-color').value,'#7194ae');
+themeView.byId('home-theme-mode').value='dark';themeView.byId('home-theme-mode').emit('change');
+assert.equal(themeView.byId('menu-screen').dataset.themeMode,'dark');assert.equal(themeView.byId('home-surface-color').value,'#181c22');assert.equal(themeView.byId('home-text-color').value,'#eceff2');
+themeView.byId('home-surface-color').value='#202630';themeView.byId('home-surface-color').emit('input');
+themeView.byId('home-theme-mode').value='light';themeView.byId('home-theme-mode').emit('change');
+assert.equal(themeView.byId('home-surface-color').value,'#19202a','暗い案の編集が明るい案へ漏れない');assert.equal(themeView.byId('home-text-color').value,'#30465a');
+themeView.byId('home-theme-reset').emit('click');assert.equal(themeView.byId('home-surface-color').value,'#e7eef3');assert.equal(themeView.byId('home-text-color').value,'#000000');
+themeView.byId('home-theme-mode').value='dark';themeView.byId('home-theme-mode').emit('change');assert.equal(themeView.byId('home-surface-color').value,'#202630','リセットは別案を消さない');
+themeView.byId('menu-character').value='alche';themeView.byId('menu-character').emit('change');assert.equal(themeView.byId('home-theme-mode-control').hidden,true);
+themeView.byId('home-theme-mode').value='light';themeView.byId('home-theme-mode').emit('change');assert.equal(themeView.byId('menu-screen').dataset.themeMode,'dark','アルシェを誤って明るくしない');
+themeView.byId('menu-character').value='karima';themeView.byId('menu-character').emit('change');assert.equal(themeView.byId('menu-screen').dataset.themeMode,'dark','持ち主の比較案選択も保持');
+themeView.byId('home-theme-mode').value='light';themeView.byId('home-theme-mode').emit('change');
+themeView.byId('home-corner-size').value='48';themeView.byId('home-corner-size').emit('change');assert.equal(themeView.byId('menu-screen').style.properties['--corner-size'],'48px');
+themeView.byId('home-corner-inset').value='8';themeView.byId('home-corner-inset').emit('change');assert.equal(themeView.byId('menu-screen').style.properties['--corner-inset'],'8px');
+themeView.byId('home-corner-size').value='100';themeView.byId('home-corner-size').emit('change');assert.equal(themeView.byId('home-corner-size').value,'36');
+themeView.byId('home-app-names').checked=false;themeView.byId('home-app-names').emit('change');assert.equal(themeView.byId('menu-screen').dataset.appNames,'false');
+for(const button of themeView.buttons)assert.equal(button.attributes['aria-label'],apps.apps[button.dataset.homeApp].label);
+themeView.buttons[0].emit('click');assert.equal(themeView.byId('home-dialog-title').textContent,apps.apps.preparation.label,'名前OFFでも入口は同じ');
+themeView.byId('home-app-names').checked=true;themeView.byId('home-app-names').emit('change');assert.equal(themeView.byId('menu-screen').dataset.appNames,'true');
+themeView.api.destroy();themeView.byId('home-app-names').checked=false;themeView.byId('home-app-names').emit('change');assert.equal(themeView.byId('menu-screen').dataset.appNames,'true','追加イベントも破棄');
+themeView.byId('home-theme-mode').value='dark';themeView.byId('home-theme-mode').emit('change');assert.equal(themeView.byId('menu-screen').dataset.themeMode,'light','比較案のイベントも破棄');
 // 仮想時計で「読む→流す→読む→次へ」と、停止中の時間が加算されないことを検査。
 const flow=setup();flow.byId('home-stage').value='after';flow.byId('home-stage').emit('change');
 flow.win.step(0);flow.win.step(4000);assert.equal(flow.byId('home-notice').dataset.tickerPhase,'before');
@@ -266,4 +346,43 @@ assert.equal(widerBand.byId('notice-track').style.properties['--ticker-offset'],
 widerBand.byId('home-notice').emit('click');assert.equal(widerBand.byId('home-dialog-title').textContent,'運命予報β — 章のヒント');
 assert.equal(widerBand.byId('home-forecast-copy').textContent,model.forecasts.story.copy,'種類を帯から外しても詳細の全文は維持');
 widerBand.api.destroy();assert.equal(widerBand.win.pendingFrames(),0);
-console.log('PASS: 全面マップ入口・静止する短文／長文の前後の読む間・4件の順送り／全文・手動／hover／focus／詳細／非表示／OS設定での停止・秒数調整・予報なし／通信の静止・遅延読込／画像復旧／破棄。描画QA未実施。');
+async function verifySettings() {
+  const save=setup();assert.equal(save.writes.length,0,'初期表示だけでは保存済みと偽らず上書きしない');
+  save.byId('home-theme-recover').emit('click');
+  assert.equal(save.byId('menu-character').value,'karima');assert.equal(save.byId('menu-screen').dataset.themeMode,'light');
+  for(const [key,id] of [['background','home-surface-color'],['text','home-text-color'],['backing','home-backing-color'],['ornament','home-ornament-color']])assert.equal(save.byId(id).value,model.karimaRecoveredTheme[key]);
+  assert.equal(save.byId('home-corner-size').value,'36');assert.equal(save.byId('home-corner-inset').value,'0');
+  const raw=save.storage.get(model.settingsStorageKey),saved=model.readSettings(raw);
+  assert.equal(saved.selectedOwner,'karima');assert.deepEqual(saved.ownerThemes.karima.light,model.karimaRecoveredTheme);
+  assert.equal(save.byId('home-settings-json').value,raw);assert.deepEqual(model.readSettings(JSON.stringify(saved)),saved);
+  assert.equal(model.settings(null),null);
+  for(const mutate of [v=>v.schema='other',v=>v.referenceResolution.width=1,v=>v.ownerModes.alche='light',v=>v.selectedOwner='__proto__',v=>v.ownerThemes.karima.light.text='url(bad)',v=>v.corner.size=100,v=>v.corner.inset=-1,v=>v.preview.phase='dusk',v=>v.showAppNames='false',v=>v.forecast.before=0,v=>v.forecast.fontLimit=11]) {
+    const invalid=JSON.parse(raw);mutate(invalid);assert.throws(()=>model.readSettings(JSON.stringify(invalid)));
+  }
+  assert.throws(()=>model.readSettings('{'));assert.throws(()=>model.readSettings('x'.repeat(65537)));
+  const loaded=setup(true,null,null,{data:save.storage});assert.equal(loaded.byId('menu-screen').dataset.owner,'karima');assert.equal(loaded.byId('home-text-color').value,'#000000');
+  assert.ok(loaded.byId('home-save-status').textContent.includes('復元'));assert.equal(loaded.writes.length,0);
+  loaded.byId('home-settings-import').value='{bad';loaded.byId('home-settings-import-button').emit('click');assert.equal(loaded.byId('home-surface-color').value,'#f6fafe');assert.equal(loaded.writes.length,0,'読めないJSONで今の状態と自動保存を消さない');
+  loaded.byId('home-app-names').checked=false;loaded.byId('home-app-names').emit('change');
+  loaded.byId('notice-before').value='7';loaded.byId('notice-before').emit('change');
+  loaded.byId('menu-phase').value='night';loaded.byId('menu-phase').emit('change');
+  const adjusted=model.readSettings(loaded.storage.get(model.settingsStorageKey));assert.equal(adjusted.showAppNames,false);assert.equal(adjusted.forecast.before,7);assert.equal(adjusted.preview.phase,'night');
+  const imported=setup();imported.byId('home-settings-import').value=JSON.stringify(adjusted);imported.byId('home-settings-import-button').emit('click');
+  assert.equal(imported.byId('menu-screen').dataset.appNames,'false');assert.equal(imported.byId('notice-before').value,'7');assert.equal(imported.byId('menu-phase').value,'night');assert.ok(imported.byId('home-save-status').textContent.includes('読み込み'));
+  imported.byId('home-settings-save').emit('click');const url=[...imported.urls.keys()][0];assert.equal(imported.elements.at(-1).download,'menu-home-settings.json');assert.equal(imported.elements.at(-1).clicked,true);assert.equal(imported.elements.at(-1).removed,true);
+  assert.deepEqual(model.readSettings(await imported.urls.get(url).text()),adjusted);imported.win.flushTimeouts();assert.ok(imported.revoked.includes(url));
+  imported.byId('home-settings-save').emit('click');const pending=[...imported.urls.keys()][0];imported.api.destroy();assert.ok(imported.revoked.includes(pending));assert.equal(imported.timers.size,0);
+  const denied=setup(true,null,null,{getterFail:true});denied.byId('home-theme-recover').emit('click');assert.ok(denied.byId('home-save-status').textContent.includes('自動保存できません'));denied.byId('home-settings-save').emit('click');assert.equal(denied.elements.at(-1).clicked,true,'保存禁止でもJSONダウンロードは独立');
+  await denied.byId('home-settings-copy').emitAsync('click');assert.equal(denied.byId('home-settings-json').selected,true,'clipboard禁止は手動選択へ');
+  let copied;denied.win.navigator={clipboard:{writeText:async text=>{copied=text;}}};await denied.byId('home-settings-copy').emitAsync('click');assert.equal(model.readSettings(copied).selectedOwner,'karima');
+  const corruptData=new Map([[model.settingsStorageKey,'{corrupt']]),corrupt=setup(true,null,null,{data:corruptData});assert.equal(corruptData.get(model.settingsStorageKey),'{corrupt');assert.ok(corrupt.byId('home-save-status').textContent.includes('上書きしていません'));
+  const quota=setup(true,null,null,{writeFail:true});quota.byId('home-theme-recover').emit('click');assert.ok(quota.byId('home-save-status').textContent.includes('自動保存できません'));
+  const fileView=setup();fileView.byId('home-settings-file').files=[{size:raw.length,text:async()=>raw}];await fileView.byId('home-settings-file').emitAsync('change');assert.equal(fileView.byId('home-surface-color').value,'#f6fafe');assert.equal(fileView.byId('home-settings-file').disabled,false);assert.equal(fileView.byId('home-settings-file').value,'');
+  const beforeInvalid=fileView.storage.get(model.settingsStorageKey);fileView.byId('home-settings-file').files=[{size:65537,text:()=>{throw new Error('must not read');}}];await fileView.byId('home-settings-file').emitAsync('change');assert.equal(fileView.storage.get(model.settingsStorageKey),beforeInvalid);assert.ok(fileView.byId('home-save-status').textContent.includes('大きすぎ'));
+  fileView.byId('home-settings-file').files=[{size:1,text:async()=>{throw new Error('file read failed');}}];await fileView.byId('home-settings-file').emitAsync('change');assert.equal(fileView.byId('home-settings-file').disabled,false);assert.equal(fileView.storage.get(model.settingsStorageKey),beforeInvalid);
+  const delayed=setup();let finish;delayed.byId('home-settings-file').files=[{size:raw.length,text:()=>new Promise(resolve=>{finish=resolve;})}];const task=delayed.byId('home-settings-file').emitAsync('change');delayed.api.destroy();finish(raw);await task;assert.equal(delayed.writes.length,0,'破棄後の読み込みは反映・保存しない');
+  const tickerSave=loaded.writes.length;loaded.byId('home-stage').value='after';loaded.byId('home-stage').emit('change');loaded.win.step(0);loaded.win.step(90000);assert.equal(loaded.writes.length,tickerSave+1,'自動テロップ切替を保存ループにしない');
+  for(const view of [save,loaded,denied,corrupt,quota,fileView])view.api.destroy();
+  console.log('PASS: 配色復元・自動保存／再読込・人物／案別保持・JSON保存／コピー／ファイルと貼付読込・破損／別形式／範囲外／保存禁止／読込失敗・非同期破棄とURL解放。既存のマップ入口・予報動作も成功。描画QA未実施。');
+}
+verifySettings().catch(error=>{console.error(error);process.exitCode=1;});

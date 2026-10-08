@@ -8,10 +8,16 @@
     const notice=byId('home-notice'),tickerTrack=byId('notice-track'),tickerViewport=byId('notice-viewport'),tickerCopy=byId('notice-copy'),tickerToggle=byId('notice-scroll');
     const tickerBefore=byId('notice-before'),tickerAfter=byId('notice-after');
     const tickerMeasure=byId('notice-measure'),tickerFont=byId('notice-font'),tickerAuto=byId('notice-font-auto');
+    const themeMode=byId('home-theme-mode');
+    const themeInputs={background:byId('home-surface-color'),backing:byId('home-backing-color'),ornament:byId('home-ornament-color'),text:byId('home-text-color')};
+    const ownerModes={alche:'dark',karima:'light'};
+    const ownerThemes={alche:{dark:model.theme('alche')},karima:{light:model.theme('karima'),dark:model.theme('karima',{},'dark')}};
     const buttons=Array.from(doc.querySelectorAll('[data-home-app]')),mapButtons=Array.from(doc.querySelectorAll('[data-map-mode]'));
     const failures=new Map(),disposers=[],media=win.matchMedia?win.matchMedia('(prefers-reduced-motion: reduce)'):null;
     let destroyed=false,wheelInitialized=false,selected='items',hovered=null,focused=null,fortuneRequested=false,fortuneLoaded=false;
     let tickerPlan=null,tickerElapsed=0,tickerFrame=null,tickerLastTime=null,tickerHovered=false,tickerFocused=false,pageSuspended=false;
+    let storageAvailable=true,importRun=0;
+    const downloadUrls=new Map();
     function listen(node,type,fn) { node.addEventListener(type,fn);disposers.push(()=>node.removeEventListener(type,fn)); }
     function warning(key,message) {
       if(message)failures.set(key,message);else failures.delete(key);
@@ -103,8 +109,95 @@
       byId('home-time').querySelectorAll('img').forEach(img=>img.src='../太陽盤_コマンド試作01/'+img.getAttribute('src'));
       byId('home-time').setAttribute('aria-label','時間帯：'+time.phases[phase.value].label);motion();
     }
+    function applyTheme() {
+      const who=model.owner(character.value),mode=ownerModes[who],value=ownerThemes[who][mode];
+      screen.dataset.themeMode=mode;themeMode.value=mode;
+      byId('home-theme-mode-control').hidden=who!=='karima';themeMode.disabled=who!=='karima';
+      for(const [key,property] of [['background','--home-surface'],['backing','--app-backing-color'],['ornament','--home-ornament'],['text','--home-ink']]) {
+        themeInputs[key].value=value[key];screen.style.setProperty(property,value[key]);
+      }
+      byId('home-corner-ink').setAttribute('flood-color',value.ornament);
+    }
+    function corners() {
+      const size=model.ornamentSize(byId('home-corner-size').value),inset=model.ornamentInset(byId('home-corner-inset').value);
+      byId('home-corner-size').value=String(size);byId('home-corner-inset').value=String(inset);
+      screen.style.setProperty('--corner-size',size+'px');screen.style.setProperty('--corner-inset',inset+'px');
+    }
+    function appNames() { screen.dataset.appNames=String(byId('home-app-names').checked); }
+    function snapshot() {
+      return model.settings({schema:model.settingsSchema,referenceResolution:{width:844,height:390},selectedOwner:model.owner(character.value),ownerModes,ownerThemes,
+        corner:{size:model.ornamentSize(byId('home-corner-size').value),inset:model.ornamentInset(byId('home-corner-inset').value)},showAppNames:Boolean(byId('home-app-names').checked),
+        preview:{phase:time.validPhase(phase.value)?phase.value:'evening',stage:stage.value==='after'?'after':'prologue',noticeKind:model.forecast(kind.value).key,mystery:Boolean(byId('home-mystery').checked),effects:Boolean(effects.checked),frame:Boolean(frame.checked)},
+        forecast:{play:Boolean(tickerToggle.checked),before:model.readingSeconds(tickerBefore.value,5),after:model.readingSeconds(tickerAfter.value,3),autoFont:Boolean(tickerAuto.checked),fontLimit:model.noticeFontLimit(tickerFont.value)}});
+    }
+    function settingsJson() { const text=JSON.stringify(snapshot(),null,2);byId('home-settings-json').value=text;return text; }
+    function saveStatus(message) { if(!destroyed)byId('home-save-status').textContent=message; }
+    function autoSave() {
+      const text=settingsJson();
+      try { win.localStorage.setItem(model.settingsStorageKey,text);storageAvailable=true;saveStatus('このブラウザに自動保存しました。別の環境へ渡すときは「設定JSONを保存」を使ってください。'); }
+      catch { storageAvailable=false;saveStatus('このブラウザでは自動保存できません。「設定JSONを保存」でファイルに残してください。'); }
+    }
+    function restoreSettings(value,render=true) {
+      for(const who of ['alche','karima']){ownerModes[who]=value.ownerModes[who];ownerThemes[who]=value.ownerThemes[who];}
+      character.value=value.selectedOwner;phase.value=value.preview.phase;stage.value=value.preview.stage;kind.value=value.preview.noticeKind;
+      effects.checked=value.preview.effects;frame.checked=value.preview.frame;byId('home-mystery').checked=value.preview.mystery;
+      byId('home-app-names').checked=value.showAppNames;byId('home-corner-size').value=String(value.corner.size);byId('home-corner-inset').value=String(value.corner.inset);
+      tickerToggle.checked=value.forecast.play;tickerBefore.value=String(value.forecast.before);tickerAfter.value=String(value.forecast.after);tickerAuto.checked=value.forecast.autoFont;tickerFont.value=String(value.forecast.fontLimit);
+      if(render){presentation();corners();appNames();drawTime();mystery();framing();}
+      settingsJson();
+    }
+    function loadAutomatic() {
+      let raw;
+      try { raw=win.localStorage.getItem(model.settingsStorageKey); }
+      catch { storageAvailable=false;saveStatus('このブラウザでは自動保存を使えません。設定JSONの保存・読み込みをご利用ください。');return; }
+      if(!raw){saveStatus('変更するとこのブラウザに自動保存します。ファイルにも残すなら「設定JSONを保存」。');return;}
+      try { restoreSettings(model.readSettings(raw),false);saveStatus('このブラウザに保存した設定を復元しました。'); }
+      catch { saveStatus('自動保存の内容を読めませんでした。初期表示のままです。保存データは上書きしていません。設定JSONから読み込めます。'); }
+    }
+    function importSettings(text) {
+      const value=model.readSettings(text);restoreSettings(value);autoSave();
+      saveStatus(storageAvailable?'設定JSONを読み込み、このブラウザにも保存しました。':'設定JSONを読み込みました。ブラウザ内の自動保存は使えないため、設定JSONファイルを保管してください。');
+    }
+    function revokeDownload(url) {
+      const timer=downloadUrls.get(url);if(timer!==undefined)win.clearTimeout?.(timer);
+      downloadUrls.delete(url);win.URL.revokeObjectURL(url);
+    }
+    listen(byId('home-settings-save'),'click',()=>{
+      autoSave();let url=null,link=null;
+      try {
+        const blob=new win.Blob([settingsJson()],{type:'application/json;charset=utf-8'});url=win.URL.createObjectURL(blob);
+        link=doc.createElement('a');link.href=url;link.download='menu-home-settings.json';doc.body.append(link);link.click();
+        downloadUrls.set(url,win.setTimeout(()=>revokeDownload(url),1000));
+        saveStatus('設定JSONのダウンロードを開始しました。'+(storageAvailable?'':'ブラウザ内の自動保存は使えません。'));
+      } catch { if(url)revokeDownload(url);saveStatus('ダウンロードを開始できません。「JSONをコピー」か下の設定JSON欄から保存してください。'); }
+      finally { link?.remove(); }
+    });
+    listen(byId('home-settings-copy'),'click',async()=>{
+      const text=settingsJson();
+      try {
+        if(!win.navigator?.clipboard?.writeText)throw new Error('clipboard unavailable');
+        await win.navigator.clipboard.writeText(text);saveStatus('設定JSONをコピーしました。こちらに貼り付けて配色を渡すこともできます。');
+      } catch {
+        if(destroyed)return;
+        byId('home-settings-json').focus();byId('home-settings-json').select();saveStatus('自動コピーを使えません。選択した設定JSONを手動でコピーしてください。');
+      }
+    });
+    listen(byId('home-settings-import-button'),'click',()=>{
+      try { importSettings(byId('home-settings-import').value); }
+      catch(error) { saveStatus(error.message); }
+    });
+    listen(byId('home-settings-file'),'change',async()=>{
+      const input=byId('home-settings-file'),file=input.files?.[0];if(!file)return;
+      const run=++importRun;input.disabled=true;byId('home-settings-import-button').disabled=true;saveStatus('設定ファイルを読み込み中…');
+      try {
+        if(file.size>65536)throw new Error('設定ファイルが大きすぎます。このホームで保存したJSONを選んでください。');
+        const text=await file.text();if(destroyed||run!==importRun)return;importSettings(text);
+      } catch(error) { if(!destroyed&&run===importRun)saveStatus(error.message); }
+      finally { if(!destroyed&&run===importRun){input.disabled=false;input.value='';byId('home-settings-import-button').disabled=false;} }
+    });
     function presentation() {
       character.value=model.owner(character.value);screen.dataset.owner=character.value;
+      applyTheme();
       const value=model.presentation(character.value,stage.value,kind.value);
       for(const [id,key] of [['home-chapter','chapter'],['home-place','place'],['notice-from','from'],['notice-copy','copy'],['home-task','task']])byId(id).textContent=value[key];
       tickerMeasure.textContent=value.copy;
@@ -146,6 +239,8 @@
     }
     for(const button of buttons) {
       const id=button.dataset.homeApp;
+      // 見た目の名前をOFFにしても、入口の名前を読み上げとhoverへ残す。
+      button.setAttribute('aria-label',valueLabel(id));button.setAttribute('title',valueLabel(id));
       listen(button,'click',()=>openApp(id));
       listen(button,'pointerenter',()=>{hovered=id;status();});listen(button,'pointerleave',()=>{hovered=null;status();});
       listen(button,'focus',()=>{focused=id;status();});listen(button,'blur',()=>{focused=null;status();});
@@ -170,11 +265,11 @@
     function mapFrameFail() { mapFrame.hidden=true;byId('home-map').dataset.frameReady='false';warning('map-frame','マップの飾り枠を読み込めません。細い銀色の罫線で表示しています。'); }
     listen(mapFrame,'load',mapFrameLoad);listen(mapFrame,'error',mapFrameFail);
     if(mapFrame.complete){if(mapFrame.naturalWidth)mapFrameLoad();else mapFrameFail();}
-    const wallpaper=byId('home-wallpaper');
-    function wallpaperLoad() { wallpaper.hidden=false;warning('wallpaper',''); }
-    function wallpaperFail() { wallpaper.hidden=true;warning('wallpaper','壁紙を読み込めません。無地の炭色で表示しています。'); }
-    listen(wallpaper,'error',wallpaperFail);listen(wallpaper,'load',wallpaperLoad);
-    if(wallpaper.complete){if(wallpaper.naturalWidth)wallpaperLoad();else wallpaperFail();}
+    const cornerSource=byId('home-corner-source');
+    function cornerLoad() { byId('home-corners').dataset.ready='true';warning('corners',''); }
+    function cornerFail() { byId('home-corners').dataset.ready='false';warning('corners','隅飾りを読み込めません。選んだ色の無地下地で表示しています。'); }
+    listen(cornerSource,'error',cornerFail);listen(cornerSource,'load',cornerLoad);
+    if(cornerSource.complete){if(cornerSource.naturalWidth)cornerLoad();else cornerFail();}
     listen(wheel,'load',()=>{configureWheel(wheelInitialized?selected:'items');wheelInitialized=true;});
     listen(win,'message',event=>{
       if(event.source!==wheel.contentWindow||!event.data||event.data.type!=='solar-menu-state')return;
@@ -184,6 +279,20 @@
       warning('wheel',event.data.failed?'太陽盤の素材を読み込めません。':'');status();
     });
     listen(character,'change',presentation);listen(stage,'change',presentation);listen(kind,'change',presentation);
+    listen(themeMode,'change',()=>{
+      const who=model.owner(character.value);ownerModes[who]=model.themeMode(who,themeMode.value);applyTheme();
+    });
+    for(const [key,input] of Object.entries(themeInputs))listen(input,'input',()=>{
+      const who=model.owner(character.value),mode=ownerModes[who];ownerThemes[who][mode]=model.theme(who,{...ownerThemes[who][mode],[key]:input.value},mode);applyTheme();
+    });
+    listen(byId('home-theme-reset'),'click',()=>{const who=model.owner(character.value),mode=ownerModes[who];ownerThemes[who][mode]=model.theme(who,{},mode);applyTheme();});
+    listen(byId('home-theme-recover'),'click',()=>{
+      character.value='karima';ownerModes.karima='light';ownerThemes.karima.light=model.theme('karima',model.karimaRecoveredTheme);
+      byId('home-corner-size').value='36';byId('home-corner-inset').value='0';byId('home-app-names').checked=true;
+      presentation();corners();appNames();
+    });
+    listen(byId('home-corner-size'),'change',corners);listen(byId('home-corner-inset'),'change',corners);
+    listen(byId('home-app-names'),'change',appNames);
     listen(phase,'change',drawTime);listen(effects,'change',motion);listen(frame,'change',framing);listen(byId('home-mystery'),'change',mystery);
     listen(tickerToggle,'change',tickerMotion);listen(dialog,'close',tickerMotion);
     listen(notice,'pointerenter',event=>{if(event.pointerType==='touch')return;tickerHovered=true;tickerMotion();});listen(notice,'pointerleave',()=>{tickerHovered=false;tickerMotion();});
@@ -219,8 +328,14 @@
     function destroy() { if(destroyed)return;destroyed=true;stopTicker();screen.style.setProperty('--motion','paused');screen.style.setProperty('--ticker-play','paused');notice.dataset.scrolling='false';disposers.splice(0).forEach(dispose=>dispose()); }
     listen(win,'pagehide',event=>{if(!event.persisted)destroy();else {pageSuspended=true;screen.style.setProperty('--motion','paused');tickerMotion();}});
     listen(win,'pageshow',()=>{pageSuspended=false;fit();motion();});
+    // 先に既存の表示更新を済ませた後で保存する。自動テロップの順送りでは保存しない。
+    for(const [input,event] of [[character,'change'],[phase,'change'],[stage,'change'],[kind,'change'],[themeMode,'change'],
+      ...Object.values(themeInputs).map(input=>[input,'input']),[byId('home-theme-reset'),'click'],[byId('home-theme-recover'),'click'],
+      [byId('home-corner-size'),'change'],[byId('home-corner-inset'),'change'],[byId('home-app-names'),'change'],[byId('home-mystery'),'change'],
+      [effects,'change'],[frame,'change'],[tickerToggle,'change'],[tickerBefore,'change'],[tickerAfter,'change'],[tickerFont,'change'],[tickerAuto,'change']])listen(input,event,autoSave);
+    disposers.push(()=>{++importRun;for(const url of Array.from(downloadUrls.keys()))revokeDownload(url);});
     if(win.location?.search&&new URLSearchParams(win.location.search).get('view')==='screen')doc.body.dataset.screenOnly='true';
-    presentation();drawTime();mystery();framing();configureWheel('items');
+    loadAutomatic();presentation();corners();appNames();drawTime();mystery();framing();configureWheel('items');settingsJson();
     return {destroy,openApp,presentation,fit};
   }
   if(typeof module!=='undefined'&&module.exports)module.exports={mount};else mount(document,root,root.IndependentHomeModel,root.SolarMenuApps,root.SolarMenuPreview,root.TimeOfDay);

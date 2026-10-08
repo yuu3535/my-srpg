@@ -6,7 +6,7 @@
 <title>携帯端末 — 独立アプリのホーム試作</title>
 <link rel="stylesheet" href="../太陽盤_コマンド試作01/time-of-day.css?v=20261005a">
 <link rel="stylesheet" href="../太陽盤_コマンド試作01/menu-preview.css?v=20261006a">
-<link rel="stylesheet" href="home.css?v=20261009d">
+<link rel="stylesheet" href="home.css?v=20261009h">
 </head>
 <body>
 <main>
@@ -18,21 +18,47 @@
 <label id="notice-kind-control" for="notice-kind">運命予報の内容（見本）<select id="notice-kind"><option value="story">章のヒント</option><option value="sale">店のセール</option><option value="support">飯屋のイベント</option><option value="encounter">レアな敵</option><option value="none">予報なし</option></select></label>
 <label class="effect-toggle" for="menu-show-frame"><input id="menu-show-frame" type="checkbox"> 端末フレームを比較表示</label>
 <label class="effect-toggle" for="home-mystery"><input id="home-mystery" type="checkbox" checked> 謎アプリも比較表示</label>
+<label class="effect-toggle" for="home-app-names"><input id="home-app-names" type="checkbox" checked> アプリ名を表示</label>
 <label class="effect-toggle" for="menu-effects"><input id="menu-effects" type="checkbox" checked> 炎・時間帯の演出</label>
 <label class="effect-toggle" for="notice-scroll"><input id="notice-scroll" type="checkbox" checked> 予報の再生・順送り</label>
 <label for="notice-before">流す前の読む間（秒）<input id="notice-before" type="number" min="1" max="12" step="1" value="5" aria-describedby="notice-timing-help"></label>
 <label for="notice-after">流した後の読む間（秒）<input id="notice-after" type="number" min="1" max="12" step="1" value="3" aria-describedby="notice-timing-help"></label>
 <label class="effect-toggle" for="notice-font-auto"><input id="notice-font-auto" type="checkbox" checked> 予報本文のサイズを自動調整</label>
 <label for="notice-font">本文サイズ（上限・px）<input id="notice-font" type="number" min="12" max="13.5" step="0.1" value="13.5" aria-describedby="notice-font-help"></label>
-<p id="notice-font-help" class="note">表示中の本文：<output id="notice-font-size" for="notice-font notice-font-auto">13.5</output>px。自動調整は12pxまで。まだ収まらない文は流します。見出し・β・種類は変更しません。</p>
+<p id="notice-font-help" class="note">表示中の本文：<output id="notice-font-size" for="notice-font notice-font-auto">13.5</output>px。自動調整は12pxまで。まだ収まらない文は流します。見出し・βは縮めません。</p>
 <p id="notice-timing-help" class="note">試作値。短文は前後の合計時間だけ静止。時遊び後の見本4件を順に表示し、「予報なし」は順送りしません。</p>
 <button type="button" id="home-screen-only">画面だけで見る</button>
 </div>
+<details class="owner-theme-controls preview-only" open><summary>持ち主別の配色と隅飾り（試作）</summary>
+<div class="menu-toolbar">
+<label id="home-theme-mode-control" for="home-theme-mode" hidden>カリマの配色案<select id="home-theme-mode" aria-describedby="home-theme-help"><option value="light">銀白・明るい下地</option><option value="dark" selected>銀青・これまでの下地</option></select></label>
+<label for="home-surface-color">背景の下地<input id="home-surface-color" type="color" value="#1c1d1f" aria-describedby="home-theme-help"></label>
+<label for="home-text-color">ホームの文字<input id="home-text-color" type="color" value="#eceff2" aria-describedby="home-theme-help"></label>
+<label for="home-backing-color">アプリの帯<input id="home-backing-color" type="color" value="#d3ad59" aria-describedby="home-theme-help"></label>
+<label for="home-ornament-color">隅飾り<input id="home-ornament-color" type="color" value="#b9ad8c" aria-describedby="home-theme-help"></label>
+<button type="button" id="home-theme-reset">この配色案を初期色へ戻す</button>
+<button type="button" id="home-theme-recover">保存前スクショの旧配色を復元</button>
+<label for="home-corner-size">飾りのサイズ（px）<input id="home-corner-size" type="number" min="24" max="64" step="1" value="36" aria-describedby="home-theme-help"></label>
+<label for="home-corner-inset">飾りの内側余白（px）<input id="home-corner-inset" type="number" min="0" max="24" step="1" value="0" aria-describedby="home-theme-help"></label>
+</div><p id="home-theme-help" class="note">色は持ち主・配色案別に自動保存。カリマの明るい案の初期色は原作者指定JSONの色（背景 #e7eef3・黒文字・青灰の帯・紺の飾り）。「この配色案を初期色へ戻す」で指定色へ戻せます。旧配色の復元ボタンは保存前スクショから採色した別の候補です。文字色は場所・予報本文・明るい案のアプリ名に反映。アイコンの絵、数値の白文字、マップ上の説明、詳細画面はそのまま。隅飾りのサイズ・余白と名前表示は共通です。</p>
+<div class="home-settings-actions">
+<button type="button" id="home-settings-save">設定JSONを保存</button>
+<button type="button" id="home-settings-copy">JSONをコピー</button>
+<label for="home-settings-file">設定JSONを読み込む<input id="home-settings-file" type="file" accept=".json,application/json" aria-describedby="home-save-status"></label>
+</div><p id="home-save-status" class="note" role="status" aria-live="polite">保存状態を確認中…</p>
+<p class="note"><a href="home-settings-author-20261009.json" download>原作者指定の設定JSONを保存（2026-10-09）</a>。保存したファイルを「設定JSONを読み込む」で選ぶと、この指定状態へ戻せます。現在の自動保存を勝手に上書きはしません。</p>
+<details class="home-settings-details"><summary>設定JSONを確認・貼り付けて読み込む</summary>
+<label for="home-settings-json">現在の設定（コピー用）<textarea id="home-settings-json" readonly spellcheck="false" aria-describedby="home-settings-help"></textarea></label>
+<label for="home-settings-import">読み込む設定JSON<textarea id="home-settings-import" spellcheck="false" aria-describedby="home-settings-help"></textarea></label>
+<button type="button" id="home-settings-import-button">貼り付けたJSONを読み込む</button>
+<p id="home-settings-help" class="note">両方の持ち主・カリマの両配色案、隅飾り、名前表示、時間帯・演出・予報の調整値を保存します。本編のセーブデータや素材PNGではありません。自動保存は同じブラウザ・同じページだけの補助です。別の環境や担当へ渡すときはJSONファイルを保管してください。</p>
+</details></details>
 <div id="menu-device" class="menu-device" data-frame="false">
 <div class="device-aperture" aria-hidden="true"></div>
 <div id="menu-viewport" class="menu-viewport">
 <div id="menu-screen" class="scene menu-screen independent-home" data-owner="alche" data-reduced="false" data-background="wallpaper">
-<img id="home-wallpaper" class="home-wallpaper" src="home-wallpaper-stars-v01.png?v=20261008a" width="1844" height="853" alt="" aria-hidden="true" draggable="false">
+<svg class="corner-color-filter" width="0" height="0" aria-hidden="true" focusable="false"><defs><filter id="home-corner-tint" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feFlood id="home-corner-ink" flood-color="#b9ad8c"/><feComposite in2="SourceAlpha" operator="in"/></filter></defs></svg>
+<div id="home-corners" class="home-corners" data-ready="false" aria-hidden="true"><img id="home-corner-source" class="home-corner home-corner-top-left" src="home-corner-star-mask-v01.png" alt="" draggable="false"><img class="home-corner home-corner-top-right" src="home-corner-star-mask-v01.png" alt="" draggable="false"><img class="home-corner home-corner-bottom-left" src="home-corner-star-mask-v01.png" alt="" draggable="false"><img class="home-corner home-corner-bottom-right" src="home-corner-star-mask-v01.png" alt="" draggable="false"></div>
 <iframe id="menu-wheel" class="wheel-frame" src="../太陽盤_コマンド試作01/layout.html?embed=menu&amp;v=20261006b" title="回転する太陽盤とコマンド" width="844" height="390"></iframe>
 <div id="wheel-loading" class="wheel-loading" role="status">太陽盤を読み込み中</div>
 <div class="home-right">
@@ -76,7 +102,7 @@
 <script src="../太陽盤_コマンド試作01/time-of-day.js?v=20261005a"></script>
 <script src="../太陽盤_コマンド試作01/menu-preview-model.js?v=20261006b"></script>
 <script src="../太陽盤_コマンド試作01/menu-apps-model.js?v=20261008a"></script>
-<script src="home-model.js?v=20261009b"></script>
-<script src="home.js?v=20261009c"></script>
+<script src="home-model.js?v=20261009f"></script>
+<script src="home.js?v=20261009f"></script>
 </body>
 </html>

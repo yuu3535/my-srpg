@@ -10,6 +10,47 @@
     none:{label:'予報なし',copy:'今は新しい予報がありません。',detail:'今は新しい予報がありません。\n\n予報がない状態の表示見本です。次の章や局面で更新する処理は未接続です。'}
   });
   function owner(value) { return Object.hasOwn(owners,value)?value:'alche'; }
+  // カリマの明るい案は2026-10-09原作者指定JSONの色。本編／Unityへの反映は別作業。
+  const themeDefaults=Object.freeze({alche:Object.freeze({background:'#1c1d1f',backing:'#d3ad59',ornament:'#b9ad8c',text:'#eceff2'}),karima:Object.freeze({background:'#e7eef3',backing:'#7194ae',ornament:'#142a48',text:'#000000'})});
+  const karimaDarkTheme=Object.freeze({background:'#181c22',backing:'#a8bac7',ornament:'#97a8ba',text:'#eceff2'});
+  // 原作者の保存前のスクショの色見本から採色。失われた設定値の完全な復旧保証ではない。
+  const karimaRecoveredTheme=Object.freeze({background:'#f6fafe',text:'#000000',backing:'#7194ae',ornament:'#22257c'});
+  function themeMode(who,value) { return owner(who)==='karima'&&value!=='dark'?'light':'dark'; }
+  function theme(who,values={},mode='light') {
+    const defaults=owner(who)==='karima'&&themeMode(who,mode)==='dark'?karimaDarkTheme:themeDefaults[owner(who)];
+    return Object.fromEntries(Object.keys(defaults).map(key=>[key,typeof values?.[key]==='string'&&/^#[0-9a-f]{6}$/i.test(values[key])?values[key].toLowerCase():defaults[key]]));
+  }
+  function ornamentSize(value) { const number=Number(value);return Number.isFinite(number)&&number>=24&&number<=64?number:36; }
+  function ornamentInset(value) { const number=Number(value);return Number.isFinite(number)&&number>=0&&number<=24?number:0; }
+  const settingsSchema='solar-independent-home-settings-v01';
+  const settingsStorageKey='solar-independent-home-settings-v01';
+  // 保存と読み込みは同じ検査を通す。知らない形式／不正な値を現在の設定へ混ぜない。
+  function settings(value) {
+    const record=item=>Boolean(item&&typeof item==='object'&&!Array.isArray(item));
+    const range=(item,min,max)=>typeof item==='number'&&Number.isFinite(item)&&item>=min&&item<=max;
+    const choices=(item,list)=>typeof item==='string'&&list.includes(item);
+    const boolean=item=>typeof item==='boolean';
+    if(!record(value)||value.schema!==settingsSchema||value.referenceResolution?.width!==844||value.referenceResolution?.height!==390)return null;
+    if(!choices(value.selectedOwner,['alche','karima'])||value.ownerModes?.alche!=='dark'||!choices(value.ownerModes?.karima,['light','dark']))return null;
+    const themes={alche:{},karima:{}};
+    for(const [who,mode] of [['alche','dark'],['karima','light'],['karima','dark']]) {
+      const colors=value.ownerThemes?.[who]?.[mode];
+      if(!record(colors)||!['background','backing','ornament','text'].every(key=>typeof colors[key]==='string'&&/^#[0-9a-f]{6}$/i.test(colors[key])))return null;
+      themes[who][mode]=theme(who,colors,mode);
+    }
+    const corner=value.corner,preview=value.preview,forecastSettings=value.forecast;
+    if(!record(corner)||!range(corner.size,24,64)||!range(corner.inset,0,24)||!boolean(value.showAppNames))return null;
+    if(!record(preview)||!choices(preview.phase,['morning','day','evening','night'])||!choices(preview.stage,['prologue','after'])||!choices(preview.noticeKind,Object.keys(forecasts))||!['mystery','effects','frame'].every(key=>boolean(preview[key])))return null;
+    if(!record(forecastSettings)||!range(forecastSettings.before,1,12)||!range(forecastSettings.after,1,12)||!range(forecastSettings.fontLimit,12,13.5)||!boolean(forecastSettings.play)||!boolean(forecastSettings.autoFont))return null;
+    return {schema:settingsSchema,referenceResolution:{width:844,height:390},selectedOwner:value.selectedOwner,ownerModes:{alche:'dark',karima:value.ownerModes.karima},ownerThemes:themes,corner:{size:corner.size,inset:corner.inset},showAppNames:value.showAppNames,preview:{phase:preview.phase,stage:preview.stage,noticeKind:preview.noticeKind,mystery:preview.mystery,effects:preview.effects,frame:preview.frame},forecast:{before:forecastSettings.before,after:forecastSettings.after,fontLimit:forecastSettings.fontLimit,play:forecastSettings.play,autoFont:forecastSettings.autoFont}};
+  }
+  function readSettings(text) {
+    if(typeof text!=='string'||text.length>65536)throw new Error('設定JSONが大きすぎるか、文字列ではありません。');
+    let value;try { value=JSON.parse(text); } catch { throw new Error('JSONを読めません。保存した設定ファイルの内容を確認してください。'); }
+    const result=settings(value);
+    if(!result)throw new Error('このホーム用の設定ではないか、色・数値などが範囲外です。今の設定は変更しません。');
+    return result;
+  }
   function forecast(kind) { const key=Object.hasOwn(forecasts,kind)?kind:'story';return {key,...forecasts[key]}; }
   function presentation(who,stage,kind) {
     const selected=owners[owner(who)];
@@ -48,6 +89,6 @@
     if(seconds<plan.before+plan.duration)return {phase:'scroll',offset:-(seconds-plan.before)*28,done:false};
     return {phase:'after',offset:-plan.distance,done:false};
   }
-  const api=Object.freeze({owners,forecasts,owner,forecast,presentation,fit,appBetaSize,ticker,tickerState,forecastOrder,nextForecast,readingSeconds,noticeFontLimit,noticeFontSize});
+  const api=Object.freeze({owners,forecasts,owner,themeDefaults,karimaDarkTheme,karimaRecoveredTheme,themeMode,theme,ornamentSize,ornamentInset,settingsSchema,settingsStorageKey,settings,readSettings,forecast,presentation,fit,appBetaSize,ticker,tickerState,forecastOrder,nextForecast,readingSeconds,noticeFontLimit,noticeFontSize});
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.IndependentHomeModel=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

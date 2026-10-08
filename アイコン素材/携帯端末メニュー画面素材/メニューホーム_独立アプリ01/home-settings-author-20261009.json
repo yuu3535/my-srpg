@@ -1,0 +1,56 @@
+{
+  "schema": "solar-independent-home-settings-v01",
+  "referenceResolution": {
+    "width": 844,
+    "height": 390
+  },
+  "selectedOwner": "karima",
+  "ownerModes": {
+    "alche": "dark",
+    "karima": "light"
+  },
+  "ownerThemes": {
+    "alche": {
+      "dark": {
+        "background": "#1c1d1f",
+        "backing": "#d3ad59",
+        "ornament": "#b9ad8c",
+        "text": "#eceff2"
+      }
+    },
+    "karima": {
+      "light": {
+        "background": "#e7eef3",
+        "backing": "#7194ae",
+        "ornament": "#142a48",
+        "text": "#000000"
+      },
+      "dark": {
+        "background": "#181c22",
+        "backing": "#a8bac7",
+        "ornament": "#97a8ba",
+        "text": "#eceff2"
+      }
+    }
+  },
+  "corner": {
+    "size": 36,
+    "inset": 0
+  },
+  "showAppNames": true,
+  "preview": {
+    "phase": "evening",
+    "stage": "after",
+    "noticeKind": "encounter",
+    "mystery": true,
+    "effects": true,
+    "frame": false
+  },
+  "forecast": {
+    "before": 5,
+    "after": 3,
+    "fontLimit": 13.5,
+    "play": true,
+    "autoFont": true
+  }
+}
