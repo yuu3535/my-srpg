@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>⑤ 日輪の扇｜開閉演出の試作</title>
+<link rel="stylesheet" href="transition.css?v=20261106m1"><link rel="stylesheet" href="sunfan.css?v=20261106sb">
+</head>
+<body class="sunfan-page">
+<main>
+<header class="sunfan-head">
+<div><p class="eyebrow">携帯端末 / 演出の試作 ⑤</p><h1>日輪の扇</h1></div>
+<p>太陽盤が左の端から回りながら昇り、光の針が「出撃」を指す。針が上下に割れて光の扇が開き、照らされた所からメニューが現れる。閉じるときは扇をたたみ、針を太陽へ戻して沈める。端末の枠は出さない案です。</p>
+</header>
+<div class="sunfan-slot"><div class="stage" id="stage" tabindex="0" aria-label="探索と端末メニュー（⑤ 日輪の扇）" data-state="closed" data-early-input="true">
+<div class="exploration"><img class="exploration-image" id="exploration" src="../../../docs/30-planning/menu_open_transition_2026-10-26/exploration-2d-author-reference.png" alt="2D探索の静止画" draggable="false"></div>
+<div class="dim" id="dim" aria-hidden="true"></div>
+<div class="logical-world" id="world">
+<iframe class="home" id="home" title="端末ホーム" width="844" height="390" src="../メニューホーム_独立アプリ01/index.html?view=screen&amp;embed=transition&amp;v=20261106e" tabindex="-1" inert></iframe>
+<div class="sun-wash" id="wash" aria-hidden="true"></div>
+<!-- 動いているあいだだけ使う太陽盤。元の素材（太陽盤_試作03）をそのまま使い、色もホームと同じ仕組みで付ける。開き切ったらホームの太陽へ入れ替える。 -->
+<svg class="sun-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="0" height="0"><defs id="sun-defs"></defs></svg>
+<div class="sun-art" id="sun-art" aria-hidden="true">
+<div class="sun-disk"><img id="art-disk-panes" class="sun-asset" src="../太陽盤_試作03/disk-panes.png" alt=""><img id="art-disk-frame" class="sun-asset" src="../太陽盤_試作03/disk-frame.png" alt=""></div>
+<div class="sun-rays"><div class="sun-rotor" id="art-rays-rotor"><img id="art-rays-panes" class="sun-asset" src="../太陽盤_試作03/rays-panes.png" alt=""><img id="art-rays-frame" class="sun-asset" src="../太陽盤_試作03/rays-frame.png" alt=""></div></div>
+<div class="sun-glint" id="glint"><i></i></div>
+</div>
+<div class="sun-fx" aria-hidden="true"><div class="sun-ring" id="ring"></div><div class="sun-ring sun-ring-soft" id="ring2"></div><div class="sun-edge sun-edge-up" id="edge-up"><i></i></div><div class="sun-edge sun-edge-down" id="edge-down"><i></i></div></div>
+</div>
+<button type="button" class="terminal-button" id="toggle" data-mode="open" aria-label="端末を開く"><svg class="icon-open" viewBox="0 0 28 20" aria-hidden="true"><rect x="1.5" y="1.5" width="25" height="17" rx="3"/><path d="M5 5H23V15H5Z"/></svg><svg class="icon-back" viewBox="0 0 28 20" aria-hidden="true"><path d="M23.5 2.5V8.5A4.5 4.5 0 0 1 19 13H5"/><path d="M9.5 8.5 5 13 9.5 17.5"/></svg><span class="terminal-label" id="toggle-label">端末</span></button>
+<div class="stage-cover" id="cover" role="status">探索画像とホームを準備中…</div>
+</div></div>
+<section class="toolbar sunfan-tools" aria-label="試作の設定">
+<label>持ち主<select id="owner"><option value="alche">アルシェ</option><option value="karima">カリマ</option></select></label>
+<label>端末の演出<select id="effect-mode"><option value="full">あり</option><option value="short">短い</option><option value="none">なし</option></select></label>
+<label>再生速度<select id="speed"><option value="1" selected>通常</option><option value="0.5">ゆっくり（0.5倍）</option><option value="0.25">詳細を見る（0.25倍）</option></select></label>
+<label>太陽の「きらっ」<select id="glint-mode"><option value="first" selected>初回だけ</option><option value="always">毎回</option><option value="off">出さない</option></select></label>
+<label class="scrub">コマ送り（開く・<output id="scrub-time">0</output>ms）<input id="scrub" type="range" min="0" max="560" step="5" value="0"></label>
+<button type="button" id="replay">開いて閉じるを再生</button>
+<p class="note" id="status" role="status"></p>
+</section>
+<p class="note">右下の「端末」で開き、同じ場所の「戻る」かEscで閉じます。途中で押すと、その場から反対へ動きます。通常速度：開く0.56秒（項目は0.35秒までに出そろい、そのあと光の名残が引いていく）、閉じる0.28秒。コマ送りを動かすと、その時刻の開く途中で止まります。</p>
+<nav class="source-links"><a href="index.html">①〜④の比較ページへ</a><a href="../../../docs/10-design/ui/MENU_OPEN_MOTION_SPEC_2026-11-06.md">演出の仕様</a></nav>
+</main>
+<script src="../太陽盤_試作03/material-engine.js?v=20261004a"></script><script src="../太陽盤_試作03/character-colors.js?v=20261004a"></script><script src="transition-model.js?v=20261106m1"></script><script src="sunfan-model.js?v=20261106sb"></script><script src="sunfan.js?v=20261106sb"></script>
+</body></html>

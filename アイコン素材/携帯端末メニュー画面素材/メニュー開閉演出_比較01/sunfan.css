@@ -1,0 +1,49 @@
+/* ⑤ 日輪の扇。共通の部品は transition.css を使い、この案だけの見た目をここに置く。 */
+.sunfan-page main{max-width:1400px}
+.sunfan-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:32px;align-items:end;margin-bottom:18px}
+.sunfan-head h1{margin:2px 0 0}.sunfan-head>p{margin:0;color:#b6c0c8;font-size:14px;max-width:62ch}
+.sunfan-slot{width:min(100%,calc((100dvh - 230px)*844/390));min-width:320px}
+.sunfan-tools{margin-top:14px}.scrub{min-width:220px}.scrub input{accent-color:#d3ad59}
+/* 光の色は太陽盤の色の隣の色（アルシェ＝金・橙→温かい琥珀、カリマ＝白・青→青い光）。COLOR_HARMONY_DIRECTION の決まりに合わせる。 */
+.stage{--sun-ink:#e6c780;--sun-ink-soft:#e6c78000;--sun-band:#e6c78047;--wash-a:#ffc47ae6;--wash-b:#e6965059;--wash-blend:screen;--glint:#fff1d2;--glint-blend:screen}
+.stage[data-owner="karima"]{--sun-ink:#cddae6;--sun-ink-soft:#cddae600;--sun-band:#cddae652;--wash-a:#96bee8e6;--wash-b:#b4cde659;--wash-blend:multiply;--glint:#ffffff;--glint-blend:normal}
+.stage[data-owner="karima"] .terminal-button{color:#d2dde6;border-color:#8d9fae}
+/* 回転と縮尺の軸は太陽盤の中心（ホームの0,195）。 */
+/* ホーム（メニュー画面）は回さない。見せる形 = 扇（--fan-mask）から、太陽の絵の形（--hole-mask）を抜いたもの。
+   太陽の絵の上は .sun-art（元の素材そのまま）が受け持ち、光条のすき間にはホームの地がそのまま見える。
+   開き終わりに穴をなくし、.sun-art を薄くしてホーム自身の太陽へ入れ替える。 */
+#home[data-masked="true"]{-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  -webkit-mask-image:var(--fan-mask),var(--hole-mask);mask-image:var(--fan-mask),var(--hole-mask);
+  -webkit-mask-size:100% 100%,844px 390px;mask-size:100% 100%,844px 390px;-webkit-mask-position:0 0,0 0;mask-position:0 0,0 0;
+  -webkit-mask-composite:source-out;mask-composite:subtract}
+/* 動いているあいだの太陽盤（太陽盤_コマンド試作01/layout.html と同じ配置：盤406px・光条439px、中心はホームの0,195） */
+.sun-defs{position:absolute;width:0;height:0;overflow:hidden}
+.sun-art{position:absolute;inset:0;pointer-events:none;transform-origin:0 195px;opacity:0;will-change:transform,opacity}
+.sun-disk,.sun-rays{position:absolute;left:0;top:0}
+.sun-disk{width:406px;height:406px;transform:translate(-243px,-8px)}
+.sun-rays{width:439px;height:439px;transform:translate(-219.5px,-24.5px)}
+.sun-rotor{position:relative;width:100%;height:100%;transform-origin:center}
+.sun-asset{position:absolute;inset:0;width:100%;height:100%}
+/* 光の帯は太陽の絵の形の中だけ（JSが今の針の角度で描いて --sun-mask に入れる。作れないときはぼかした円） */
+.stage{--sun-mask:radial-gradient(circle at 0 195px,#000 196px,transparent 226px)}
+.sun-glint{-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+.exploration{transform-origin:0 50%}
+.sun-fx{position:absolute;inset:0;pointer-events:none;overflow:visible}
+.sun-ring{position:absolute;left:-232px;top:-37px;width:464px;height:464px;border-radius:50%;border:1.5px solid var(--sun-ink);opacity:0}
+/* 光の針と扇のふち。軸で回し、線は太陽の外周から外へ伸びる。 */
+.sun-edge{position:absolute;left:0;top:195px;width:0;height:0;transform-origin:0 0}
+.sun-edge>i{position:absolute;left:226px;top:-.75px;width:760px;height:1.5px;transform-origin:0 50%;background:linear-gradient(90deg,var(--sun-ink) 0%,var(--sun-ink) 45%,var(--sun-ink-soft) 100%)}
+/* 扇のふちを「切り口」ではなく「光の筋」に見せる、内側へにじむ帯。 */
+.sun-edge>i::after{content:"";position:absolute;left:0;width:100%;height:22px;-webkit-mask-image:linear-gradient(90deg,#000 0,#000 35%,transparent);mask-image:linear-gradient(90deg,#000 0,#000 35%,transparent)}
+.sun-edge-up>i::after{top:.75px;background:linear-gradient(180deg,var(--sun-band),transparent)}
+.sun-edge-down>i::after{bottom:.75px;background:linear-gradient(0deg,var(--sun-band),transparent)}
+/* ステンドグラス越しの光の差しこみ（扇と同じ形に切り抜く） */
+.sun-wash{position:absolute;inset:0;pointer-events:none;opacity:0;transform-origin:0 195px;-webkit-mask-image:var(--fan-mask,none);mask-image:var(--fan-mask,none);mix-blend-mode:var(--wash-blend);background:radial-gradient(circle at 0 195px,var(--wash-a) 0,var(--wash-b) 270px,transparent 640px)}
+/* 太陽のガラスを走る光（光条の絵440pxの円の内側だけ） */
+.sun-glint{position:absolute;left:-220px;top:-25px;width:440px;height:440px;overflow:hidden;opacity:0;mix-blend-mode:var(--glint-blend);
+  /* 光は太陽の絵の上だけを走る（ホームと同じ形。この箱は左-220・上-25なので、844×390の形を220・25ずらす） */
+  -webkit-mask-image:var(--sun-mask);mask-image:var(--sun-mask);-webkit-mask-position:220px 25px;mask-position:220px 25px;-webkit-mask-size:844px 390px;mask-size:844px 390px}
+.sun-glint>i{position:absolute;left:50%;top:-30%;width:110px;height:160%;margin-left:-55px;background:linear-gradient(90deg,transparent 0,color-mix(in srgb,var(--glint) 30%,transparent) 30%,var(--glint) 47%,var(--glint) 53%,color-mix(in srgb,var(--glint) 30%,transparent) 70%,transparent 100%)}
+.sun-ring-soft{border-width:1px;box-shadow:0 0 14px 2px var(--sun-ink),inset 0 0 10px 1px var(--sun-ink)}
+.sun-edge>i::before{content:"";position:absolute;left:0;top:-2px;width:120px;height:5.5px;border-radius:3px;background:linear-gradient(90deg,var(--sun-ink),var(--sun-ink-soft));opacity:.35}
+@media(max-width:900px){.sunfan-head{grid-template-columns:1fr;gap:8px}}
