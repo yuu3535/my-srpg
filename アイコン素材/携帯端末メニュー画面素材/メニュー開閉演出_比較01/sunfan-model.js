@@ -96,6 +96,14 @@
     const h=Math.max(0,Number.isFinite(fan)?fan:0),a=(90-h).toFixed(3),b=(90+h).toFixed(3);
     return `conic-gradient(from 0deg at ${sun.x}px ${sun.y}px,transparent ${a}deg,#000 ${a}deg,#000 ${b}deg,transparent ${b}deg)`;
   }
+  // D スリープで閉じる（原作者の参考動画 2026-11-07）。画面の明るさが落ちるように黒い幕がかかり（100ms）、
+  // 真っ暗なあいだに端末をしまい（その下でホームは消え、背景の寄りも戻る）、少しおいて幕が引いて探索が戻る（170ms）。全体300ms。
+  const sleepTiming=Object.freeze({off:.10,hold:.03,on:.17,end:.30});
+  function sleepVeil(seconds) {
+    const t=Math.max(0,Number.isFinite(seconds)?seconds:0),s=sleepTiming;
+    const veil=t<s.off?Math.pow(portion(t,0,s.off),2):1-cubicOut(portion(t,s.off+s.hold,s.on));
+    return {veil:clamp(veil),closed:t>=s.off,done:t>=s.end};
+  }
   function mode(value){return ['full','short','none'].includes(value)?value:'full';}
   function speed(value){const n=Number(value);return [.25,.5,1,2].includes(n)?n:1;}
   // 実時間1秒あたりに進める時刻表の秒数。「短い」は同じ動きを縮め、「なし」は短いフェードだけ（描く側で扱う）。
@@ -122,6 +130,6 @@
       get visual(){return {...current,items:current.items.slice()};}
     };
   }
-  const api=Object.freeze({viewport,sun,timing,itemAngles,itemStarts,clamp,bezier,closedPose,openPose,pose,fanMask,mode,speed,timeScale,machine});
+  const api=Object.freeze({viewport,sun,timing,itemAngles,itemStarts,clamp,bezier,closedPose,openPose,pose,fanMask,sleepTiming,sleepVeil,mode,speed,timeScale,machine});
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.SunFanModel=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

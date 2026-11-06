@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>⑤ 日輪の扇｜開閉演出の試作</title>
-<link rel="stylesheet" href="transition.css?v=20261106m1"><link rel="stylesheet" href="sunfan.css?v=20261106sb">
+<link rel="stylesheet" href="transition.css?v=20261106m1"><link rel="stylesheet" href="sunfan.css?v=20261107a">
 </head>
 <body class="sunfan-page">
 <main>
@@ -25,7 +25,17 @@
 <div class="sun-glint" id="glint"><i></i></div>
 </div>
 <div class="sun-fx" aria-hidden="true"><div class="sun-ring" id="ring"></div><div class="sun-ring sun-ring-soft" id="ring2"></div><div class="sun-edge sun-edge-up" id="edge-up"><i></i></div><div class="sun-edge sun-edge-down" id="edge-down"><i></i></div></div>
+<!-- 戻るボタン（タップ）。ホームの上の段、場所の名前と時間帯の飾りのあいだ（844×390基準 x650〜706・y0〜44）。A・B・Cは見た目だけの違い。絵はコードで描く（新しい画像なし）。 -->
+<button type="button" class="back-key" id="back-key" data-style="a" aria-label="戻る（端末をしまう）" hidden><svg viewBox="0 0 56 44" aria-hidden="true">
+<defs><linearGradient id="back-rule" gradientUnits="userSpaceOnUse" x1="5.5" y1="0" x2="56" y2="0"><stop offset="0" style="stop-color:var(--back-gold)"/><stop offset=".7" style="stop-color:var(--back-gold)"/><stop offset="1" style="stop-color:var(--back-gold);stop-opacity:0"/></linearGradient></defs>
+<g class="style-a"><path class="ln" d="M12.5 13.5 7 19.5l5.5 6"/><text x="16.5" y="23.6">戻る</text><path class="rule" d="M5.5 31.5H56"/><path class="fill" d="M3.5 29.3 5.7 31.5 3.5 33.7 1.3 31.5Z"/></g>
+<g class="style-b"><rect class="card" x="15" y="3" width="26" height="38" rx="2.5"/><rect class="ln thin" x="17.5" y="5.5" width="21" height="33" rx="1.5"/><path class="ln" d="M31 15.5 24.5 22l6.5 6.5"/><circle class="fill" cx="28" cy="9.2" r=".95"/><circle class="fill" cx="28" cy="34.8" r=".95"/></g>
+<g class="style-c"><circle class="card" cx="28" cy="22" r="17"/><circle class="ln" cx="28" cy="22" r="17"/><circle class="ln thin" cx="28" cy="22" r="13.4"/><path class="ln thin" d="M28 7.4V5.8M28 36.6v1.6M42.6 22h1.6M13.4 22h-1.6M38.32 11.68l1.14-1.14M17.68 32.32l-1.14 1.14M38.32 32.32l1.14 1.14M17.68 11.68l-1.14-1.14"/><path class="ln" d="M31 15.5 24.5 22l6.5 6.5"/></g>
+<g class="style-d"><path class="ln moon" d="M32.6 11.8A10.4 10.4 0 1 0 38.4 27.6 8.2 8.2 0 0 1 32.6 11.8Z"/><path class="fill" d="M39.4 9.2 40.3 11l1.8.9-1.8.9-.9 1.8-.9-1.8-1.8-.9 1.8-.9Z"/><circle class="fill" cx="43.6" cy="16.4" r=".8"/></g>
+</svg></button>
 </div>
+<!-- D スリープ用の黒い幕。画面を消す → 探索が戻る、の「消える」部分。 -->
+<div class="sleep-veil" id="sleep-veil" aria-hidden="true"></div>
 <button type="button" class="terminal-button" id="toggle" data-mode="open" aria-label="端末を開く"><svg class="icon-open" viewBox="0 0 28 20" aria-hidden="true"><rect x="1.5" y="1.5" width="25" height="17" rx="3"/><path d="M5 5H23V15H5Z"/></svg><svg class="icon-back" viewBox="0 0 28 20" aria-hidden="true"><path d="M23.5 2.5V8.5A4.5 4.5 0 0 1 19 13H5"/><path d="M9.5 8.5 5 13 9.5 17.5"/></svg><span class="terminal-label" id="toggle-label">端末</span></button>
 <div class="stage-cover" id="cover" role="status">探索画像とホームを準備中…</div>
 </div></div>
@@ -33,13 +43,14 @@
 <label>持ち主<select id="owner"><option value="alche">アルシェ</option><option value="karima">カリマ</option></select></label>
 <label>端末の演出<select id="effect-mode"><option value="full">あり</option><option value="short">短い</option><option value="none">なし</option></select></label>
 <label>再生速度<select id="speed"><option value="1" selected>通常</option><option value="0.5">ゆっくり（0.5倍）</option><option value="0.25">詳細を見る（0.25倍）</option></select></label>
+<label>戻るボタン<select id="back-style"><option value="a" selected>A 右上の飾りと一体</option><option value="b">B 小さなタロットカード</option><option value="c">C 円い紋章</option><option value="d">D スリープ（月）</option></select></label>
 <label>太陽の「きらっ」<select id="glint-mode"><option value="first" selected>初回だけ</option><option value="always">毎回</option><option value="off">出さない</option></select></label>
 <label class="scrub">コマ送り（開く・<output id="scrub-time">0</output>ms）<input id="scrub" type="range" min="0" max="560" step="5" value="0"></label>
 <button type="button" id="replay">開いて閉じるを再生</button>
 <p class="note" id="status" role="status"></p>
 </section>
-<p class="note">右下の「端末」で開き、同じ場所の「戻る」かEscで閉じます。途中で押すと、その場から反対へ動きます。通常速度：開く0.56秒（項目は0.35秒までに出そろい、そのあと光の名残が引いていく）、閉じる0.28秒。コマ送りを動かすと、その時刻の開く途中で止まります。</p>
+<p class="note">右下の「端末」で開きます。しまうときは、上の段（時間帯の飾りの左）の「戻る」をタップ、またはEsc。戻るボタンの見た目は下の設定でA・B・Cを切り替えられます。途中で押すと、その場から反対へ動きます。通常速度：開く0.56秒（項目は0.35秒までに出そろい、そのあと光の名残が引いていく）、閉じる0.28秒。コマ送りを動かすと、その時刻の開く途中で止まります。</p>
 <nav class="source-links"><a href="index.html">①〜④の比較ページへ</a><a href="../../../docs/10-design/ui/MENU_OPEN_MOTION_SPEC_2026-11-06.md">演出の仕様</a></nav>
 </main>
-<script src="../太陽盤_試作03/material-engine.js?v=20261004a"></script><script src="../太陽盤_試作03/character-colors.js?v=20261004a"></script><script src="transition-model.js?v=20261106m1"></script><script src="sunfan-model.js?v=20261106sb"></script><script src="sunfan.js?v=20261106sb"></script>
+<script src="../太陽盤_試作03/material-engine.js?v=20261004a"></script><script src="../太陽盤_試作03/character-colors.js?v=20261004a"></script><script src="transition-model.js?v=20261106m1"></script><script src="sunfan-model.js?v=20261107a"></script><script src="sunfan.js?v=20261107a"></script>
 </body></html>

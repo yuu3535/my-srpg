@@ -49,7 +49,7 @@ class Node{constructor(){this.handlers=new Map();this.style={setProperty(k,v){th
   emit(t,e={}){for(const f of [...this.handlers.get(t)||[]])f(e);}setAttribute(k,v){this.attributes[k]=v;}getBoundingClientRect(){return {width:844};}}
 const ids=new Map(),$=id=>{if(!ids.has(id)){const n=new Node();n.firstElementChild=new Node();ids.set(id,n);}return ids.get(id);};
 const doc=new Node(),win=new Node();doc.getElementById=$;doc.hidden=false;
-$('owner').value='alche';$('glint-mode').value='first';$('effect-mode').value='full';$('speed').value='1';$('scrub').value='0';$('exploration').parentElement=new Node();
+$('owner').value='alche';$('glint-mode').value='first';$('back-style').value='a';$('effect-mode').value='full';$('speed').value='1';$('scrub').value='0';$('exploration').parentElement=new Node();
 const sent=[];$('home').contentWindow={postMessage(m){sent.push(m);}};
 const media=new Node();media.matches=false;win.matchMedia=()=>media;win.location={protocol:'http:',origin:'http://preview.test'};
 const frames=new Map();let serial=0,clock=0;win.requestAnimationFrame=f=>{frames.set(++serial,f);return serial;};win.cancelAnimationFrame=id=>frames.delete(id);
@@ -60,22 +60,37 @@ assert.equal($('toggle').disabled,true,'準備ができるまで開けない');
 win.emit('message',{source:{},origin:win.location.origin,data:{type:'menu-transition-ready',ready:true}});assert.equal(page.ready,false,'ほかの窓からの準備完了は受け取らない');
 win.emit('message',{source:$('home').contentWindow,origin:win.location.origin,data:{type:'menu-transition-ready',ready:true}});assert.equal(page.ready,true);
 assert.equal($('toggle').style.top,'282px');assert.equal($('toggle').dataset.fit,'true','④と同じ空き枠に置く');
-const config=sent.filter(m=>m.type==='menu-transition-config').at(-1);assert.equal(config.returnKey.visible,false);assert.equal(config.returnKey.enabled,true);
+const config=sent.filter(m=>m.type==='menu-transition-config').at(-1);assert.equal(config.returnKey.visible,false);assert.equal(config.returnKey.enabled,false,'ホームの戻るキーも空き枠も使わない');
 // 元の素材の太陽: 動いているあいだは .sun-art が回り、ホームは回さない（メニューが傾かない）。開き切るとホームの太陽へ入れ替わる。
 assert.equal(model.pose(.3).swap,0);assert.equal(done.swap,1);
 {const back=model.pose(.08,done,true);assert.equal(back.swap,0,'閉じ始め80msで動かせる太陽へ戻る');assert.ok(back.fan>80,'扇がたたまれる前に戻る');}
 page.machine.reset();$('scrub').value='120';$('scrub').emit('input');
 assert.equal($('home').style.transform,'none');assert.ok(Number($('sun-art').style.opacity)>0);assert.ok($('sun-art').style.transform.includes('rotate('));assert.equal($('home').dataset.masked,'true');
 page.machine.reset();page.draw();
-$('toggle').emit('click',{stopPropagation(){}});assert.equal(page.machine.state,'opening');assert.equal($('toggle-label').textContent,'戻る');assert.equal($('home').inert,false,'開き始めから押せる');assert.equal(page.machine.visual.glintOn,true,'初回は光の帯を出す');
-step(0);step(100);$('toggle').emit('click',{stopPropagation(){}});assert.equal(page.machine.state,'closing','開く途中の「戻る」はその場から閉じる');assert.equal($('toggle-label').textContent,'端末');
+$('toggle').emit('click',{stopPropagation(){}});assert.equal(page.machine.state,'opening');assert.equal($('toggle').hidden,true,'開いているあいだ「端末」は出さない');assert.equal($('back-key').hidden,false,'戻るボタンを出す');assert.equal($('back-key').dataset.style,'a');assert.equal($('home').inert,false,'開き始めから押せる');assert.equal(page.machine.visual.glintOn,true,'初回は光の帯を出す');
+step(0);step(100);
+// 戻るボタンのタップで、開く途中でもその場からしまい始める。独自のスワイプはない。
+const back=$('back-key'),tap=()=>back.emit('click',{stopPropagation(){}});
+tap();assert.equal(page.machine.state,'closing','戻るのタップでしまう');assert.equal(back.disabled,true,'しまい始めたら押せない');
+tap();assert.equal(page.machine.state,'closing','連打しても開き直さない');
+assert.equal($('toggle').hidden,false,'しまい始めたら「端末」を出す（押せばその場から開き直す）');
+assert.equal(back.handlers.has('pointermove'),false,'スワイプの操作を持たない');
 step(0);step(400);assert.equal(page.machine.state,'closed');
 $('toggle').emit('click',{stopPropagation(){}});step(0);step(1000);assert.equal(page.machine.state,'open');assert.equal($('home').dataset.masked,'false','開き切ったら切り抜かない');assert.equal($('sun-art').style.opacity,'0','開き切ったらホームの太陽だけ');
-$('toggle').emit('click',{stopPropagation(){}});step(0);step(1000);assert.equal(page.machine.state,'closed');
+$('back-style').value='c';$('back-style').emit('change');assert.equal(back.dataset.style,'c','見た目を切り替えられる');tap();assert.equal(page.machine.state,'closing','開き切ったあとも戻るでしまう');step(0);step(1000);assert.equal(page.machine.state,'closed');
 // 2回目からは光の帯（きらっ）を出さない。「毎回」を選べば出る。
 $('toggle').emit('click',{stopPropagation(){}});step(0);step(240);assert.equal(page.machine.visual.glintAlpha,0,'2回目は光の帯なし');step(1000);$('toggle').emit('click',{stopPropagation(){}});step(0);step(1000);
 $('glint-mode').value='always';$('glint-mode').emit('change');$('toggle').emit('click',{stopPropagation(){}});step(0);step(240);assert.ok(page.machine.visual.glintAlpha>.3,'毎回を選べば出る');step(1000);$('toggle').emit('click',{stopPropagation(){}});step(0);step(1000);assert.equal($('home').style.visibility,'hidden');
 $('scrub').value='230';$('scrub').emit('input');assert.equal(page.machine.state,'scrub');assert.ok(sent.filter(m=>m.type==='menu-transition-motion').at(-1).items[1]>0);
+// D スリープ: 黒い幕が100msでかかり、真っ暗になってからしまう。幕は300msまでに引く。途中のEscで二重に閉じない。
+{const sv=model.sleepVeil;assert.equal(sv(0).veil,0);assert.equal(sv(.05).closed,false);assert.equal(sv(.1).veil,1);assert.equal(sv(.1).closed,true);assert.ok(sv(.3).veil<1e-9&&sv(.3).done);assert.ok(model.sleepTiming.end>=.2&&model.sleepTiming.end<=.35);}
+page.machine.reset();page.draw();$('toggle').emit('click',{stopPropagation(){}});step(0);step(1000);assert.equal(page.machine.state,'open');
+$('back-style').value='d';$('back-style').emit('change');assert.equal(back.dataset.style,'d');
+tap();step(0);step(50);assert.equal(page.machine.state,'open','画面が消えきるまではしまわない');assert.ok(Number($('sleep-veil').style.opacity)>0);
+page.flip();assert.equal(page.machine.state,'open','消えていく途中のEscで二重に閉じない');tap();
+step(60);assert.equal(page.machine.state,'closed','真っ暗になったらしまう');assert.equal($('sleep-veil').style.opacity,'1');
+step(250);assert.equal($('sleep-veil').style.visibility,'hidden','幕が引いて探索へ戻る');assert.equal(frames.size,0);
+$('back-style').value='a';$('back-style').emit('change');
 $('effect-mode').value='none';$('effect-mode').emit('change');page.machine.reset();page.open();assert.equal($('home').dataset.masked,'false','「なし」は切り抜かない');
 page.destroy();assert.equal(frames.size,0);
 console.log('PASS: ⑤ 日輪の扇の長さ・出る順番（出撃が最初）・開き終わり・切り抜き・閉じるとき線を残さない・速さ／短い／なし・途中反転・ボタンの位置と切り替え・送信元・コマ送り。ブラウザ描画QAは別途。');

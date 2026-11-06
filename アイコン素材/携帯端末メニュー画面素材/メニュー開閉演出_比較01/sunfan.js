@@ -12,7 +12,8 @@
     function ready(){return homeReady&&imageReady;}
     function post(data){home.contentWindow?.postMessage(data,'*');}
     function postConfig(force=false){
-      const config={type:'menu-transition-config',owner:$('owner').value,active:interactive(),returnKey:{enabled:true,visible:false,viewScale,safeRight,safeBottom}};
+      // ホーム内の戻るキーも、そのための空き枠も使わない（アプリの列は元の並びに戻る）。しまうのはホームバー。
+      const config={type:'menu-transition-config',owner:$('owner').value,active:interactive(),returnKey:{enabled:false,visible:false,viewScale,safeRight,safeBottom}};
       const next=JSON.stringify(config);if(!force&&next===signature)return;signature=next;post(config);
     }
     function postItems(items,force=false){const next=items.map(v=>v.toFixed(3)).join();if(!force&&next===itemsSignature)return;itemsSignature=next;post({type:'menu-transition-motion',items});}
@@ -42,8 +43,16 @@
       const glint=$('glint');glint.style.opacity=String(v.glintAlpha||0);glint.firstElementChild.style.transform=`rotate(28deg) translateX(${-120+450*(v.glintPos||0)}px)`;// 太陽の左半分は画面の外なので、見えている右半分を横切らせる。
       $('dim').style.opacity=String(v.dim);$('exploration').parentElement.style.transform=`scale(${v.world})`;
       postItems(v.items);
-      const back=closes();toggle.dataset.mode=back?'back':'open';$('toggle-label').textContent=back?'戻る':'端末';
-      toggle.setAttribute('aria-label',back?'端末を閉じて戻る':'端末を開く');toggle.disabled=!back&&!ready();
+      // 「端末」ボタンは探索側のボタン。開いているあいだは出さず、しまう操作は画面の下のホームバー（スマホと同じ）で行う。
+      const shown=closes();toggle.hidden=shown;toggle.dataset.mode='open';$('toggle-label').textContent='端末';
+      toggle.setAttribute('aria-label','端末を開く');toggle.disabled=!ready();
+      // 戻るボタンは上の段（状態の行）と一緒に現れる。しまい始めたら隠す（連打で開き直したりしない）。
+      // しまい始めたら押せなくし、押した光が見えるよう140msかけて消す。
+      const back=$('back-key'),fading=state==='closing'?Math.max(0,1-machine.progress/.5):0;
+      back.hidden=!shown&&fading<=0;back.disabled=!(state==='open'||state==='opening')||sleeping!=null;back.dataset.style=['a','b','c','d'].includes($('back-style').value)?$('back-style').value:'a';
+      back.setAttribute('aria-label',back.dataset.style==='d'?'スリープ（端末をしまう）':'戻る（端末をしまう）');
+      back.style.opacity=String(state==='closing'?fading*(back.dataset.from??1):none?1:Math.max(0,Math.min(1,v.items[5]??1)));
+      if(state!=='closing')back.dataset.from=back.style.opacity;
       home.inert=!interactive();home.tabIndex=interactive()?0:-1;
       const labels={closed:'探索',opening:'開く途中',open:'ホーム',closing:'閉じる途中',scrub:'コマ送りで停止中'};
       $('status').textContent=`${labels[state]}　／　端末の演出：${{full:'あり',short:'短い',none:'なし'}[motion()]}${media.matches?'（OSの動きを減らす設定）':''}`;
@@ -100,7 +109,8 @@
       machine.open(glint);if(glint)glintShown=true;draw();schedule();
     }
     function close(){sunShape();machine.close();draw();schedule();}
-    function flip(){win.clearTimeout(replayTimer);if(closes())close();else open();}
+    // スリープで画面が消えていく途中（まだしまう前）は、Escなどで二重に閉じない。
+    function flip(){win.clearTimeout(replayTimer);if(sleeping&&!sleeping.closed)return;if(closes())close();else open();}
     function fit(){
       const width=stage.getBoundingClientRect().width;if(width>0)viewScale=width/844;
       $('world').style.setProperty('--view-scale',String(viewScale));
@@ -114,6 +124,33 @@
     }
     function readiness(){$('cover').hidden=ready();draw();}
     listen(toggle,'click',event=>{event.stopPropagation();flip();});
+    // 戻るボタン: タップ（クリック・Enter）でしまう。独自のスワイプは使わない（OSの操作とぶつけない）。
+    // 押した瞬間に金の縁を一度だけ柔らかく光らせる。しまい始めたらボタンは隠れるので、連打しても二重にしまったり開き直したりしない。
+    const backKey=$('back-key');
+    listen(backKey,'click',event=>{
+      event.stopPropagation();if(backKey.disabled||!interactive())return;
+      backKey.classList?.remove('is-pressed');void backKey.offsetWidth;backKey.classList?.add('is-pressed');
+      if(backKey.dataset.style==='d')sleep();else close();
+    });
+    // D スリープ: 画面を消して（黒い幕）、真っ暗なあいだにしまい、幕が引いて探索へ戻る。「なし」の設定では普通にしまう。
+    let sleeping=null;
+    function sleepFrame(now){
+      if(!sleeping||destroyed)return;
+      if(sleeping.last!==null)sleeping.t+=Math.max(0,(now-sleeping.last)/1000)*model.speed($('speed').value);sleeping.last=now;
+      const s=model.sleepVeil(sleeping.t),veil=$('sleep-veil');
+      veil.style.visibility='visible';veil.style.opacity=String(s.veil);
+      if(s.closed&&!sleeping.closed){sleeping.closed=true;stop();machine.reset();draw();}
+      if(s.done){veil.style.opacity='0';veil.style.visibility='hidden';sleeping=null;return;}
+      sleeping.raf=win.requestAnimationFrame(sleepFrame);
+    }
+    function sleep(){
+      if(sleeping||!interactive())return;
+      if(motion()==='none'){close();return;}
+      backKey.disabled=true;sleeping={t:0,last:null,closed:false,raf:null};sleeping.raf=win.requestAnimationFrame(sleepFrame);
+    }
+    disposers.push(()=>{if(sleeping?.raf!=null)win.cancelAnimationFrame(sleeping.raf);sleeping=null;});
+    listen(backKey,'animationend',()=>backKey.classList?.remove('is-pressed'));
+    listen($('back-style'),'change',()=>draw());
     listen($('exploration'),'load',()=>{imageReady=true;readiness();});listen($('exploration'),'error',()=>{imageReady=true;readiness();});
     if($('exploration').complete)imageReady=true;
     listen(home,'load',()=>{signature='';itemsSignature='';postConfig(true);draw();});
