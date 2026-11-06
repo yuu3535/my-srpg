@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>携帯端末メニュー 開閉モーション試作</title>
+<style>
+body{margin:0;background:#0e0b12;color:#cfc6da;font-family:system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;gap:12px;padding:16px}
+#stage{position:relative;width:min(100%,900px);aspect-ratio:844/390;overflow:hidden;border-radius:12px;background:#17121f;cursor:pointer}
+#world,#dim{position:absolute;inset:0}
+#dim{background:#07050b;opacity:0;pointer-events:none}
+#dev{position:absolute;left:11%;top:8%;width:78%;height:84%;background:#100d14;border:1.5px solid #4a3f52;border-radius:16px;opacity:0;box-sizing:border-box}
+#scr{position:absolute;left:4%;right:4%;top:6%;bottom:6%;background:#15111b;border:1px solid #8a6d32;border-radius:4px;overflow:hidden;transform:scaleY(.01);display:grid;grid-template-columns:30% 1fr;gap:5%;padding:4% 4% 4% 3%;box-sizing:border-box}
+.mb{border:1px solid #b8913f;color:#e9d6a6;font-size:clamp(11px,1.6vw,15px);padding:0 6px;height:18%;display:flex;align-items:center;border-radius:2px;background:#1e1724;margin-bottom:5%}
+.mb.on{background:#5a4320;color:#fff3d0}
+.pic{height:58%;background:#3d3050;border:1px solid #8a6d32}
+.ic{display:flex;justify-content:space-between;margin-top:7%}
+.ic span{width:15%;aspect-ratio:1;border:1px solid #b8913f;border-radius:50%;background:#241b2b}
+.hd{height:9%;border-bottom:1px solid #8a6d32;margin-bottom:6%}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:13px}
+button,select{background:#1e1826;color:#e9d6a6;border:1px solid #6b5636;border-radius:6px;padding:6px 12px;font-size:13px}
+</style>
+</head>
+<body>
+<div id="stage">
+<svg id="world" viewBox="0 0 844 390" preserveAspectRatio="none" aria-hidden="true">
+<rect width="844" height="390" fill="#2a2236"/>
+<g fill="#8FA6D8"><path d="M95 300V125A62 62 0 0 1 219 125V300Z"/><path d="M270 300V125A62 62 0 0 1 394 125V300Z"/><path d="M450 300V125A62 62 0 0 1 574 125V300Z"/><path d="M625 300V125A62 62 0 0 1 749 125V300Z"/></g>
+<g fill="#D9E2F3"><ellipse cx="160" cy="170" rx="40" ry="10"/><ellipse cx="510" cy="150" rx="45" ry="11"/><ellipse cx="690" cy="185" rx="35" ry="9"/></g>
+<rect y="262" width="844" height="12" fill="#3a3048"/><rect y="274" width="844" height="116" fill="#211a2b"/>
+<rect x="400" y="236" width="18" height="38" rx="5" fill="#d9d4e6"/><circle cx="409" cy="230" r="10" fill="#4a7ad8"/>
+</svg>
+<div id="dim"></div>
+<div id="dev"><div id="scr">
+<div><div class="mb it">セーブ</div><div class="mb it">身支度</div><div class="mb on it">出撃</div><div class="mb it">探索</div></div>
+<div><div class="hd it"></div><div class="pic it"></div><div class="ic"><span class="it"></span><span class="it"></span><span class="it"></span><span class="it"></span><span class="it"></span></div></div>
+</div></div>
+</div>
+<div class="row">
+<button id="tg">開く</button>
+<select id="mode"><option value="push">枠を抜けて全画面（採用）</option><option value="keep">枠を残す（比較用）</option></select>
+<select id="spd"><option value="1">等速</option><option value="4">1/4スロー</option></select>
+</div>
+<div class="row" id="info">画面クリック、または M キーで開閉。Esc で閉じる。</div>
+<script>
+// 仕様は menu_motion_spec.md を参照。数値（ms）は等速時。
+const st=document.getElementById('stage'),dev=document.getElementById('dev'),scr=document.getElementById('scr'),dim=document.getElementById('dim'),world=document.getElementById('world'),its=[...document.querySelectorAll('.it')],tg=document.getElementById('tg'),info=document.getElementById('info');
+let open=false;
+const k=()=>+document.getElementById('spd').value;
+const A=(el,kf,o)=>{el.getAnimations().forEach(a=>a.cancel());return el.animate(kf,Object.assign({fill:'both'},o,{duration:o.duration*k(),delay:(o.delay||0)*k()}))};
+const OUT='cubic-bezier(.16,1,.3,1)',SNAP='cubic-bezier(.2,.9,.25,1.12)';
+// 端末の「画面部分」がステージ全体を覆う倍率を、その都度計算する
+function coverScale(){
+  // offsetWidth/Height は transform の影響を受けないレイアウト上のサイズ
+  const w=scr.offsetWidth,h=scr.offsetHeight;
+  return Math.max(st.offsetWidth/w,st.offsetHeight/h)*1.02;
+}
+function doOpen(){
+  const push=document.getElementById('mode').value==='push';
+  const sc=push?coverScale():1;
+  A(dim,[{opacity:0},{opacity:.6}],{duration:160,easing:'ease-out'});
+  A(world,[{transform:'scale(1)'},{transform:'scale(1.05)'}],{duration:400,easing:OUT});
+  const end=`translateY(0) rotate(0) scale(${sc})`;
+  A(dev,push?[{transform:'translateY(70%) rotate(4deg) scale(.94)',opacity:0},{transform:'translateY(0) rotate(0) scale(1)',opacity:1,offset:.45,easing:OUT},{transform:end,opacity:1}]
+    :[{transform:'translateY(70%) rotate(4deg) scale(.94)',opacity:0},{transform:end,opacity:1}],
+    {duration:push?380:200,easing:push?'cubic-bezier(.3,0,.2,1)':SNAP});
+  A(scr,[{transform:'scaleY(.01)',filter:'brightness(3)'},{transform:'scaleY(1)',filter:'brightness(1)'}],{delay:130,duration:130,easing:'cubic-bezier(.3,0,.1,1)'});
+  its.forEach((e,i)=>A(e,[{opacity:0,transform:'translateX(-10px)'},{opacity:1,transform:'none'}],{delay:200+i*22,duration:150,easing:'ease-out'}));
+  info.textContent='操作できるまで 約260ms／全体 約'+Math.round(200+its.length*22+150)+'ms（入力は開き始めから受付）';
+}
+function doClose(){
+  its.forEach(e=>A(e,[{opacity:1},{opacity:0}],{duration:70,easing:'linear'}));
+  A(scr,[{transform:'scaleY(1)',filter:'brightness(1)'},{transform:'scaleY(.01)',filter:'brightness(2.5)'}],{delay:30,duration:90,easing:'cubic-bezier(.7,0,.9,.6)'});
+  A(dev,[{transform:getComputedStyle(dev).transform,opacity:1},{transform:'translateY(75%) rotate(-3deg) scale(.94)',opacity:0}],{delay:90,duration:150,easing:'cubic-bezier(.5,0,.9,.4)'});
+  A(dim,[{opacity:.6},{opacity:0}],{delay:90,duration:150});
+  A(world,[{transform:'scale(1.05)'},{transform:'scale(1)'}],{delay:90,duration:200,easing:OUT});
+  info.textContent='閉じる 約240ms';
+}
+function toggle(){open=!open;open?doOpen():doClose();tg.textContent=open?'閉じる':'開く';}
+tg.onclick=toggle;st.onclick=toggle;
+document.addEventListener('keydown',e=>{if(e.key==='m'||e.key==='M'||(e.key==='Escape'&&open))toggle();});
+</script>
+</body>
+</html>

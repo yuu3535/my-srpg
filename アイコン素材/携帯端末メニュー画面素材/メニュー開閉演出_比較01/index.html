@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>2D探索 → 端末ホーム｜開閉演出の比較</title>
+<link rel="stylesheet" href="transition.css?v=20261106e">
+</head>
+<body>
+<main>
+<header><p class="eyebrow">携帯端末 / 演出の比較試作</p><h1>探索から、端末ホームへ。</h1><p>採用方針は④「枠抜け全画面」・通常速度。右下の「戻る」をホームへ組み込んだ試作です。既存3案も比較用に残しています。Unity・ゲーム本編には接続しません。</p></header>
+<section class="toolbar" aria-label="比較の設定">
+<label>持ち主<select id="owner"><option value="alche">アルシェ</option><option value="karima">カリマ</option></select></label>
+<label>場面（判定の試し）<select id="context"><option value="free">イベント以外・自由操作</option><option value="event">イベント中（シナリオ・支援会話等）</option></select></label>
+<label>再生速度<select id="speed"><option value="1" selected>通常</option><option value="0.5">ゆっくり（0.5倍）</option><option value="0.25">詳細を見る（0.25倍）</option><option value="2">速く（2倍）</option></select></label>
+<label>Escで操作する案<select id="active"><option value="approach">③＋寄り</option><option value="dissolve">修正版</option><option value="raise">①</option><option value="frameout" selected>④ 枠抜け全画面（新案）</option></select></label>
+<button type="button" id="settings-open">設定</button><button type="button" id="open-all">4案を同時に開く</button><button type="button" id="close-all">すべて閉じる</button>
+<p id="mode-summary" class="note" role="status"></p>
+</section>
+<p class="note">④・通常速度を初期値にしています。速さは「設定」でも変更・保存できます。ホーム右下の「戻る」かEscで閉じます。小さく感じる場合は「大きく見る」へ。画面外の再生・比較ボタンは確認用です。入口・戻るキーは実寸44px以上。極小表示では画面外の操作を使ってください。</p>
+<section class="comparison" aria-label="4案の動く比較">
+<article class="candidate" data-variant="approach"><div class="candidate-heading"><span class="tag">以前の比較案</span><h2>③＋寄り</h2><p>内窓が画面いっぱいになるまで寄る。<br>枠は薄めず、画面の外へ抜ける。</p></div><div class="stage-slot"></div><div class="candidate-actions"><button type="button" data-action="open">開く／途中は最後へ</button><button type="button" data-action="close">閉じる</button><button type="button" data-action="large">大きく見る</button></div><p class="state" role="status"></p><p class="input-note"></p></article>
+<article class="candidate" data-variant="dissolve"><div class="candidate-heading"><span class="tag">元の修正版</span><h2>③＋小さな浮き上がり</h2><p>探索のカメラは固定。<br>枠だけを薄くしてホームへつなぐ。</p></div><div class="stage-slot"></div><div class="candidate-actions"><button type="button" data-action="open">開く／途中は最後へ</button><button type="button" data-action="close">閉じる</button><button type="button" data-action="large">大きく見る</button></div><p class="state" role="status"></p><p class="input-note"></p></article>
+<article class="candidate" data-variant="raise"><div class="candidate-heading"><span class="tag">構える動きを比較</span><h2>① 構えて寄る</h2><p>下から現れて、傾きを戻しながら寄る。<br>SDに取り出す動作は付けない。</p></div><div class="stage-slot"></div><div class="candidate-actions"><button type="button" data-action="open">開く／途中は最後へ</button><button type="button" data-action="close">閉じる</button><button type="button" data-action="large">大きく見る</button></div><p class="state" role="status"></p><p class="input-note"></p></article>
+<article class="candidate" data-variant="frameout"><div class="candidate-heading"><span class="tag">採用方針・通常速度</span><h2>④ 枠抜け全画面（新案）</h2><p>浮き上がり → 線から点灯 → 項目を順に表示。<br>探索も少し寄り、閉じるときは短く畳む。</p></div><div class="stage-slot"></div><div class="candidate-actions"><button type="button" data-action="open">開く／途中は最後へ</button><button type="button" data-action="close">閉じる</button><button type="button" data-action="large">大きく見る</button></div><p class="state" role="status"></p><p class="input-note"></p></article>
+</section>
+<p class="note">探索は原作者のスクリーンショットによる静止画です。背景クリックと←／→／A／Dは入力の切替テストだけで、SDは動きません。端末を開くと移動入力・目的地を消し、閉じた後も押していたキーを離すまで再開しません。</p>
+<p class="note">画像とホームは先に読み込みます。「準備中」は実際の読み込み状態です。イベント中は開けません。戦闘の詳細な許可タイミングは今回確定しません。</p>
+<p id="storage-status" class="note" role="status"></p>
+<nav class="source-links"><a href="../メニューホーム_独立アプリ01/index.html">ホームの配色・配置試作へ</a><a href="../../../docs/40-reviews/MENU_OPEN_TRANSITION_DISCUSSION_2026-10-26.md">総合担当の意見・原作者の答え</a></nav>
+<noscript><p class="warning">JavaScriptが必要です。演出は再生できません。</p></noscript>
+</main>
+<dialog id="settings-dialog" aria-labelledby="settings-title"><form method="dialog"><button class="dialog-close" aria-label="設定を閉じる">閉じる</button></form><h2 id="settings-title">設定</h2>
+<label>端末の演出<select id="effect-mode"><option value="full">あり</option><option value="short">短い</option><option value="none">なし</option></select></label>
+<label for="effect-speed">端末の演出の速さ<select id="effect-speed" aria-describedby="effect-speed-help"><option value="0.5">ゆっくり（0.5倍）</option><option value="1" selected>通常</option><option value="2">速く（2倍）</option><option value="0.25">動きを確認する（0.25倍・比較用）</option></select></label>
+<p id="effect-speed-help">通常が基準です。開く・閉じる両方の速さを変え、次にこのページを開いたときも保持します。設定は比較ページ専用です。</p>
+<label class="check-field"><input id="wake-enabled" type="checkbox" checked> 既存3案のスリープ解除のつなぎを表示</label><p>既存3案は、暗い画面を上下に開いてホームを見せます。④は独自の線から点く短い起動を使い、このチェックの影響は受けません。長いロック画面や初回専用の演出は今回追加しません。</p><p>「あり／短い／なし」は4案共通。「なし」は拡大・浮き上がり・点灯・項目の順次表示を省略し、短いフェードだけにします。OSの「動きを減らす」が有効な場合も同じです。</p><p class="note">通常速度：開く＝0.36秒／0.36秒／0.50秒／④0.614秒。④は本体0.38秒・点灯0.13〜0.26秒・項目を0.20秒から22msずつ順に表示。閉じる＝既存0.20秒、④本体0.24秒・背景の復帰まで0.29秒。短い＝開く0.18秒／閉じる0.12秒、なし＝0.10秒／0.08秒。「ゆっくり」は2倍、「動きを確認する」は4倍の長さ。④・通常速度を採用方針とし、距離や細かな秒数は調整可能です。</p></dialog>
+<div id="large-view" class="large-view" hidden><header><h2 id="large-title">大きく見る</h2><button type="button" id="large-back">比較へ戻る</button></header><div id="large-slot"></div><div class="large-actions" aria-label="試作用の再生操作"><button type="button" id="large-open">演出を再生／途中は最後へ</button><button type="button" id="large-close">閉じる演出を確認</button></div></div>
+<template id="stage-template"><div class="stage" tabindex="0">
+<div class="exploration"><img class="exploration-image" src="../../../docs/30-planning/menu_open_transition_2026-10-26/exploration-2d-author-reference.png" alt="2D探索の静止画。キャラに取り出す動作は付けません" draggable="false"></div>
+<div class="dim" aria-hidden="true"></div><div class="logical-world"><div class="device-plane"><div class="aperture" aria-hidden="true"></div>
+<iframe class="home" title="端末ホームの操作見本" width="844" height="390" src="../メニューホーム_独立アプリ01/index.html?view=screen&amp;embed=transition&amp;v=20261106e" tabindex="-1" inert></iframe>
+<div class="screen-flash" aria-hidden="true" hidden></div>
+<div class="wake-screen" aria-hidden="true"><div class="wake-half wake-top"></div><div class="wake-half wake-bottom"></div><div class="wake-mark"><span>端末</span><small class="wake-label">スリープ解除</small></div><div class="wake-line"></div></div>
+<img class="phone-frame" src="../横向きフレーム素材.png" alt="" aria-hidden="true" draggable="false"></div></div>
+<button type="button" class="terminal-button" aria-label="端末を開く"><svg viewBox="0 0 28 20" aria-hidden="true"><rect x="1.5" y="1.5" width="25" height="17" rx="3"/><path d="M5 5H23V15H5Z"/></svg><span>端末</span></button>
+<div class="stage-cover" role="status">探索画像とホームを準備中…</div><div class="resource-error" role="alert" hidden></div><button type="button" class="retry-home" hidden>ホームを再読込</button></div></template>
+<script src="transition-model.js?v=20261106d"></script><script src="transition.js?v=20261106e"></script>
+</body></html>
