@@ -11,12 +11,15 @@
     function active(){return cards.find(card=>card.id===$('active').value)||cards[0];}
     function interactive(card){return card.machine.state==='open'||card.id==='frameout'&&card.machine.state==='opening';}
     function choose(card){$('active').value=card.id;}
+    function toggleCloses(card){return card.machine.state==='open'||card.machine.state==='opening';}
     function store(){try{win.localStorage.setItem(storageKey,JSON.stringify({mode:model.mode($('effect-mode').value),wake:$('wake-enabled').checked,speed:model.speed($('speed').value)}));$('storage-status').textContent='端末の演出モード・速さ・スリープ解除の比較設定を保存しています。ホームの配色JSONは変更しません。';}catch{$('storage-status').textContent='ブラウザへ保存できません。このページを開いている間だけ設定を保持します。';}}
     try{const saved=JSON.parse(win.localStorage.getItem(storageKey)||'null');if(saved&&['full','short','none'].includes(saved.mode))$('effect-mode').value=saved.mode;if(typeof saved?.wake==='boolean')$('wake-enabled').checked=saved.wake;$('speed').value=String(model.speed(saved?.speed));}catch{$('speed').value='1';$('storage-status').textContent='保存済み設定を読めないため、初期の「あり・通常速度」で比較します。';}
     $('effect-speed').value=$('speed').value;
+    // ホームにはアプリ列の右の空き枠だけを作ってもらい、ホーム内の戻るキーは出さない（visible:false）。
+    // その枠の上に、親の「端末／戻る」ボタンを重ねる。ホーム側のファイルは変えない。
     function postConfig(card,force=false){
       card.element.dataset.owner=$('owner').value;
-      const config={type:'menu-transition-config',owner:$('owner').value,active:interactive(card),returnKey:{enabled:true,visible:card.machine.state==='open',viewScale:card.viewScale||1,safeRight:card.safeRight||0,safeBottom:card.safeBottom||0}};
+      const config={type:'menu-transition-config',owner:$('owner').value,active:interactive(card),returnKey:{enabled:true,visible:false,viewScale:card.viewScale||1,safeRight:card.safeRight||0,safeBottom:card.safeBottom||0}};
       const signature=JSON.stringify(config);if(!force&&card.configSignature===signature)return;
       card.configSignature=signature;card.iframe.contentWindow?.postMessage(config,'*');
     }
@@ -29,9 +32,11 @@
       card.plane.style.opacity=String(p.opacity);card.plane.style.visibility=isClosed?'hidden':'visible';
       card.frame.style.opacity=String(p.frameOpacity);card.aperture.style.opacity=String(p.frameOpacity);card.dim.style.opacity=String(p.dim);
       card.image.parentElement?.style.setProperty('transform',`scale(${p.worldScale||1})`);
-      card.iframe.style.transform=`scaleY(${p.screenY??1})`;card.flash.hidden=!animated;card.flash.style.transform=`scaleY(${p.screenY??1})`;card.flash.style.opacity=String(p.flash||0);
+      card.iframe.style.transform=`scaleY(${p.screenY??1})`;card.iframe.style.opacity=String(p.screenOpacity??1);card.flash.hidden=!animated;card.flash.style.transform=`scaleY(${p.screenY??1})`;card.flash.style.opacity=String(p.flash||0);
       if(newMotion)card.iframe.contentWindow?.postMessage({type:'menu-transition-motion',items:animated?p.items:Array(model.itemCount).fill(1)},'*');
-      card.entry.hidden=!isClosed;card.entry.disabled=!card.ready||!model.canOpen($('context').value);
+      // 直し④: 開く「端末」と閉じる「戻る」は同じ位置・同じ見た目の一つのボタン。開く途中から「戻る」になる。
+      const back=toggleCloses(card);card.entry.dataset.mode=back?'back':'open';card.entry.setAttribute('aria-label',back?'端末を閉じて戻る':'端末を開く');
+      card.entryLabel.textContent=back?'戻る':'端末';card.entry.hidden=false;card.entry.disabled=back?false:!card.ready||!model.canOpen($('context').value);
       card.closeButton.disabled=isClosed;if(large===card)$('large-close').disabled=isClosed;
       const waking=model.wake(machine.progress,motionMode(card),$('wake-enabled').checked);
       card.wake.hidden=newMotion||isClosed||motionMode(card)==='none'||!$('wake-enabled').checked;
@@ -74,7 +79,13 @@
         if(width>0){card.viewScale=scale;card.machine.setCover?.(model.framedScale*model.coverScale(width,width*390/844,844*scale*model.framedScale,390*scale*model.framedScale));}
         const css=win.getComputedStyle?.(card.stage);
         card.safeRight=Math.max(0,Math.min(200,parseFloat(css?.getPropertyValue('--safe-right'))||0));
-        card.safeBottom=Math.max(0,Math.min(200,parseFloat(css?.getPropertyValue('--safe-bottom'))||0));postConfig(card);}
+        card.safeBottom=Math.max(0,Math.min(200,parseFloat(css?.getPropertyValue('--safe-bottom'))||0));postConfig(card);placeToggle(card);}
+    }
+    function placeToggle(card){
+      const box=card.viewScale?model.toggleKeyBox(card.viewScale,card.safeRight,card.safeBottom):null,style=card.entry.style;
+      card.entry.dataset.fit=String(Boolean(box));
+      for(const [key,value]of Object.entries({right:box?.right,top:box?.top,width:box?.width,height:box?.height}))style[key]=box?value+'px':'';
+      style.bottom=box?'auto':'';style.setProperty('--key-icon',box?box.icon+'px':'');style.setProperty('--key-font',box?box.font+'px':'');
     }
     function largeView(card){
       if(large)exitLarge();choose(card);large=card;doc.body.dataset.large='true';card.element.dataset.large='true';
@@ -88,7 +99,7 @@
       const slot=element.querySelector('.stage-slot');slot.append($('stage-template').content.cloneNode(true));
       const stage=slot.querySelector('.stage'),find=selector=>stage.querySelector(selector);
       const card={id:element.dataset.variant,element,slot,stage,world:find('.logical-world'),plane:find('.device-plane'),frame:find('.phone-frame'),aperture:find('.aperture'),dim:find('.dim'),iframe:find('.home'),entry:find('.terminal-button'),cover:find('.stage-cover'),error:find('.resource-error'),retry:find('.retry-home'),image:find('.exploration-image'),state:element.querySelector('.state'),inputNote:element.querySelector('.input-note'),openButton:element.querySelector('[data-action="open"]'),largeButton:element.querySelector('[data-action="large"]'),machine:model.machine(element.dataset.variant),input:model.inputGate(),homeReady:false,homeWarning:'',ready:false,previous:'closed'};
-      Object.assign(card,{closeButton:element.querySelector('[data-action="close"]'),flash:find('.screen-flash'),wake:find('.wake-screen'),wakeTop:find('.wake-top'),wakeBottom:find('.wake-bottom'),wakeMark:find('.wake-mark'),wakeLine:find('.wake-line'),wakeLabel:find('.wake-label')});
+      Object.assign(card,{entryLabel:card.entry.querySelector('.terminal-label'),closeButton:element.querySelector('[data-action="close"]'),flash:find('.screen-flash'),wake:find('.wake-screen'),wakeTop:find('.wake-top'),wakeBottom:find('.wake-bottom'),wakeMark:find('.wake-mark'),wakeLine:find('.wake-line'),wakeLabel:find('.wake-label')});
       card.closeButton.textContent='閉じる演出を確認';card.closeButton.setAttribute('aria-label','比較用：端末を閉じる演出を確認');
       cards.push(card);stage.setAttribute('aria-label',model.variants[card.id].label+'の探索と端末');
       for(const [key,value]of Object.entries(model.frameBox))card.frame.style[key]=value+'px';
@@ -100,7 +111,8 @@
         const loaded=failed=>{card[type+'Settled']=true;card[type+'Failed']=failed;image.hidden=failed;readiness(card);};
         listen(image,'load',()=>loaded(false));listen(image,'error',()=>loaded(true));if(image.complete)loaded(!image.naturalWidth);
       }
-      for(const button of [card.entry,card.openButton])listen(button,'click',event=>{event.stopPropagation();open(card);});
+      listen(card.entry,'click',event=>{event.stopPropagation();if(toggleCloses(card))close(card);else open(card);});
+      listen(card.openButton,'click',event=>{event.stopPropagation();open(card);});
       listen(card.closeButton,'click',event=>{event.stopPropagation();close(card);});
       listen(card.largeButton,'click',()=>largeView(card));listen(stage,'pointerenter',()=>choose(card));listen(stage,'focusin',()=>choose(card));
       listen(stage,'pointerdown',event=>{if(event.target.closest('button,iframe')||card.machine.state!=='closed'||!model.canOpen($('context').value))return;choose(card);card.input.walk({x:event.clientX,y:event.clientY},true);inputStatus(card);});

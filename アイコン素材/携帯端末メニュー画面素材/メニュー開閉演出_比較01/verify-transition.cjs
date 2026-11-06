@@ -77,10 +77,14 @@ s.doc.emit('keydown',s.key('ArrowRight'));assert.equal(a.input.moving,true);s.ap
 s.step(0);s.step(100);const halfway=a.machine.progress;s.api.close(a);assert.equal(a.machine.progress,halfway);s.step(40);assert.ok(a.machine.progress<halfway,JSON.stringify({halfway,progress:a.machine.progress,state:a.machine.state,pending:s.frames.size}));
 s.step(500);assert.equal(a.machine.state,'closed');s.doc.emit('keydown',s.key('ArrowRight',true));assert.equal(a.input.moving,false);
 s.doc.emit('keyup',{key:'ArrowRight'});s.doc.emit('keydown',s.key('ArrowRight'));assert.equal(a.input.moving,true);
-// 端末ボタンのclickは移動へ渡さず、開く途中の再操作は最後へ。
-a.entry.emit('click',{stopPropagation(){}});assert.equal(a.machine.state,'opening');a.entry.emit('click',{stopPropagation(){}});assert.equal(a.machine.state,'open');assert.equal(a.iframe.inert,false);
+// 端末ボタンのclickは移動へ渡さない。開き始めると同じボタンが「戻る」になり、もう一度押すとその場から閉じる。
+a.entry.emit('click',{stopPropagation(){}});assert.equal(a.machine.state,'opening');assert.equal(a.entry.dataset.mode,'back');assert.equal(a.entryLabel.textContent,'戻る');assert.equal(a.entry.hidden,false);
+a.entry.emit('click',{stopPropagation(){}});assert.equal(a.machine.state,'closing','開く途中の「戻る」はその場から閉じる');assert.equal(a.entry.dataset.mode,'open');assert.equal(a.entryLabel.textContent,'端末');
+a.entry.emit('click',{stopPropagation(){}});assert.equal(a.machine.state,'opening','閉じる途中の「端末」はその場から開き直す');
+a.openButton.emit('click',{stopPropagation(){}});assert.equal(a.machine.state,'open','比較用の再生ボタンは途中を最後へ');assert.equal(a.iframe.inert,false);assert.equal(a.entry.dataset.mode,'back');
 assert.equal(a.closeButton.disabled,false);assert.equal(a.closeButton.textContent,'閉じる演出を確認');
-assert.equal(a.iframe.messages.filter(m=>m.type==='menu-transition-config').at(-1).returnKey.visible,true);
+const shownConfig=a.iframe.messages.filter(m=>m.type==='menu-transition-config').at(-1).returnKey;
+assert.equal(shownConfig.enabled,true,'ホームには戻る用の空き枠を作ってもらう');assert.equal(shownConfig.visible,false,'ホーム内の戻るキーは出さず、親の同じボタンを使う');
 assert.equal(a.wakeTop.style.transform,'translateY(-100%)');assert.equal(a.wakeBottom.style.transform,'translateY(100%)');
 s.message(a,{type:'menu-transition-settings'});assert.equal(s.$('settings-dialog').open,true);s.$('effect-mode').value='none';s.$('effect-mode').emit('change');assert.equal(a.frame.style.opacity,'0');assert.equal(a.wake.hidden,true);assert.equal(s.storage.size,1);s.$('settings-dialog').close();
 s.message(a,{type:'menu-transition-escape'});assert.equal(a.machine.state,'closing');s.step(0);s.step(200);assert.equal(a.machine.state,'closed');assert.equal(a.iframe.inert,true);
@@ -96,28 +100,42 @@ s.api.destroy();s.api.destroy();assert.equal(s.frames.size,0);assert.equal(s.tim
 const late=setup(),lateCard=late.api.cards[0];for(const timer of [...late.timers.values()])timer();assert.equal(lateCard.retry.hidden,false);assert.ok(lateCard.error.textContent.includes('応答'));lateCard.retry.emit('click');assert.equal(lateCard.ready,false);assert.ok(lateCard.iframe.src.includes('embed=transition'));late.message(lateCard,{type:'menu-transition-ready',ready:true});late.api.open(lateCard);lateCard.stage.emit('click',{target:lateCard.stage});assert.equal(lateCard.machine.state,'open','開く途中の画面タップは最後へ');late.api.destroy();assert.equal(late.timers.size,0);
 const wakeView=setup(),wakeCard=wakeView.api.cards[0];wakeView.message(wakeCard,{type:'menu-transition-ready',ready:true});wakeView.api.open(wakeCard);wakeView.step(0);wakeView.step(100);assert.equal(wakeCard.wake.hidden,false);assert.ok(wakeCard.wakeMark.style.opacity>0);wakeCard.closeButton.emit('click',{stopPropagation(){}});assert.equal(wakeCard.machine.state,'closing');assert.equal(wakeCard.wakeLabel.textContent,'スリープへ');wakeView.step(1000);assert.equal(wakeCard.machine.state,'closed');wakeView.$('wake-enabled').checked=false;wakeView.$('wake-enabled').emit('change');wakeView.api.open(wakeCard);assert.equal(wakeCard.wake.hidden,true);assert.equal(JSON.parse([...wakeView.storage.values()][0]).wake,false);wakeView.api.destroy();
 // 新案は独立した開閉時計。実時間と要素ごとの順番、反転時の連続性を確認。
-assert.equal(model.duration('frameout'),.614);assert.equal(model.duration('frameout','full',true),.29);
-assert.equal(model.duration('frameout','full',false,.25),2.456);
+assert.equal(model.duration('frameout'),.53);assert.equal(model.duration('frameout','full',true),.29);
+assert.equal(model.duration('frameout','full',false,.25),2.12);
+// 直し②: 0.6秒以内に出そろい、最初は「出撃」（太陽盤の2番目）。13項目を一度ずつ出す。
+const timing=model.frameoutTiming.open;assert.ok(timing.itemStart+12*timing.itemStep+timing.itemLength<=timing.end+1e-9);assert.ok(timing.end<=.6);
+assert.equal(model.frameoutOrder[0],1);assert.deepEqual([...model.frameoutOrder].sort((x,y)=>x-y),[...Array(13).keys()]);
+// 直し①: 画面が半分より広がったら、光はほとんど残らない（明るい板のコマを作らない）。
+for(let t=0;t<=timing.end;t+=.005){const v=model.frameoutPose(t);if(v.screenY>.4)assert.ok(v.flash<.05,`t=${t} flash=${v.flash}`);}
+assert.ok(Math.max(...Array.from({length:40},(_,i)=>model.frameoutPose(.09+i*.001).flash))>.5,'細い線のときは光る');
+// 直し③: 線が消えてから暗幕を戻す。
+{const shut=model.frameoutTiming.close,opened=model.frameoutPose(timing.end);
+  for(let t=0;t<=shut.end;t+=.005){const v=model.frameoutPose(t,opened,1,true);if(v.dim<.6-1e-9)assert.equal(v.screenOpacity,0,`t=${t} 線が残ったまま背景が明るくなる`);if(v.screenOpacity===0)assert.equal(v.flash,0);}}
+// 直し④: 端末／戻るボタンの置き場所はホームの空き枠と同じ式。
+assert.deepEqual(model.toggleKeyBox(1,0,0),{width:44,height:64,right:4,top:282,icon:22,font:11});
+{const small=model.toggleKeyBox(360/844);assert.ok(Math.abs(small.width-44)<1e-9&&small.height>=44&&small.icon===22&&small.font===11);}
+assert.equal(model.toggleKeyBox(.2),null);assert.equal(model.toggleKeyBox(NaN),null);
 assert.equal(model.coverScale(844,390,844*.7,390*.7),1/.7);assert.equal(model.coverScale(390,844,844,390),844/390);
 assert.equal(model.coverScale(0,390,844,390),1);
-const timeline=model.machine('frameout');assert.equal(timeline.open(false),false);timeline.open();timeline.step(.12,.614);
+const timeline=model.machine('frameout');assert.equal(timeline.open(false),false);timeline.open();timeline.step(.12,.53);
 assert.equal(timeline.visual.screenY,.01);assert.ok(timeline.visual.items.every(v=>v===0));assert.ok(timeline.visual.worldScale>1);
-timeline.step(.14,.614);assert.equal(timeline.visual.screenY,1);assert.ok(timeline.visual.items[0]>timeline.visual.items[1]);assert.equal(timeline.visual.items[12],0);
-timeline.step(.12,.614);assert.equal(timeline.visual.scale,1);assert.equal(timeline.visual.frameOpacity,1,'枠はフェードしない');assert.equal(timeline.state,'opening','項目の余韻は本体の着地後も続く');
-timeline.step(.234,.614);assert.equal(timeline.state,'open');assert.ok(timeline.visual.items.every(v=>v===1));assert.equal(timeline.visual.worldScale,1.05);
-timeline.close();const closeStart=timeline.visual;timeline.step(.07,.29);assert.ok(timeline.visual.items.every(v=>v===0));assert.equal(timeline.visual.y,closeStart.y);
-timeline.step(.17,.29);assert.equal(timeline.visual.opacity,0);assert.ok(timeline.visual.worldScale>1,'本体240ms、背景復帰は290ms');
+timeline.step(.14,.53);assert.equal(timeline.visual.screenY,1);const early=timeline.visual.items;assert.ok(early[1]>early[2]&&early[2]>early[0],'出撃→探索→身支度の順');assert.equal(early[6],0,'上の予報は最後');
+timeline.step(.12,.53);assert.equal(timeline.visual.scale,1);assert.equal(timeline.visual.frameOpacity,1,'枠はフェードしない');assert.equal(timeline.state,'opening','項目の余韻は本体の着地後も続く');
+timeline.step(.15,.53);assert.equal(timeline.state,'open');assert.ok(timeline.visual.items.every(v=>v===1));assert.equal(timeline.visual.worldScale,1.05);
+timeline.close();const closeStart=timeline.visual;timeline.step(.06,.29);assert.ok(timeline.visual.items.every(v=>v===0));assert.equal(timeline.visual.y,closeStart.y);
+timeline.step(.06,.29);assert.ok(timeline.visual.screenOpacity<1e-9,'120msで線が消える');assert.ok(timeline.visual.dim>.6-1e-9,'線が消えるまで暗幕は残る');
+timeline.step(.12,.29);assert.equal(timeline.visual.opacity,0);assert.equal(timeline.visual.dim,0);assert.ok(timeline.visual.worldScale>1,'本体240ms、背景復帰は290ms');
 timeline.step(.05,.29);assert.equal(timeline.state,'closed');assert.equal(timeline.visual.worldScale,1);
 for(const when of [.04,.18,.29,.47]){
-  const reverse=model.machine('frameout');reverse.open();reverse.step(when,.614);const atClose=reverse.visual;
+  const reverse=model.machine('frameout');reverse.open();reverse.step(when,.53);const atClose=reverse.visual;
   reverse.close();assert.deepEqual(reverse.visual,atClose);reverse.step(0,.29);assert.deepEqual(reverse.visual,atClose,'反転した最初のフレームも飛ばない');
-  reverse.step(.11,.29);const atReopen=reverse.visual;reverse.open();reverse.step(0,.614);assert.deepEqual(reverse.visual,atReopen);
-  reverse.step(1,.614);assert.equal(reverse.state,'open');reverse.close();reverse.close();reverse.step(.29,.29);assert.equal(reverse.state,'closed');
+  reverse.step(.11,.29);const atReopen=reverse.visual;reverse.open();reverse.step(0,.53);assert.deepEqual(reverse.visual,atReopen);
+  reverse.step(1,.53);assert.equal(reverse.state,'open');reverse.close();reverse.close();reverse.step(.29,.29);assert.equal(reverse.state,'closed');
 }
 const fourth=setup(),newCard=fourth.api.cards[3];fourth.message(newCard,{type:'menu-transition-ready',ready:true});
 fourth.api.open(newCard);assert.equal(newCard.iframe.inert,false,'④は開き始めから操作を受け付ける');assert.equal(newCard.wake.hidden,true);
 assert.equal(newCard.iframe.messages.at(-1).active,true);fourth.step(0);fourth.step(260);assert.equal(newCard.iframe.style.transform,'scaleY(1)');
-assert.ok(newCard.iframe.messages.some(m=>m.type==='menu-transition-motion'&&m.items[0]>0&&m.items[12]===0));
+assert.ok(newCard.iframe.messages.some(m=>m.type==='menu-transition-motion'&&m.items[1]>0&&m.items[6]===0));
 newCard.closeButton.emit('click',{stopPropagation(){}});assert.equal(newCard.machine.state,'closing');assert.equal(newCard.iframe.inert,true);
 fourth.step(300);assert.equal(newCard.machine.state,'closed');assert.equal(newCard.iframe.messages.filter(m=>m.type==='menu-transition-config').at(-1).returnKey.visible,false);
 fourth.api.open(newCard);fourth.step(0);fourth.step(180);const frozen=newCard.machine.visual;fourth.doc.hidden=true;fourth.doc.emit('visibilitychange');fourth.step(8000);assert.deepEqual(newCard.machine.visual,frozen);
@@ -139,6 +157,7 @@ navigation.api.open(home);navigation.api.open(home);assert.equal(home.machine.st
 home.stage.width=844;home.stage.safe={'--safe-right':'24px','--safe-bottom':'16px'};navigation.win.emit('resize');
 const config=home.iframe.messages.filter(m=>m.type==='menu-transition-config').at(-1);
 assert.equal(config.returnKey.viewScale,1);assert.equal(config.returnKey.safeRight,24);assert.equal(config.returnKey.safeBottom,16);
+assert.equal(home.entry.dataset.fit,'true');assert.equal(home.entry.style.right,'28px');assert.equal(home.entry.style.top,'282px');assert.equal(home.entry.style.width,'44px');assert.equal(home.entry.style.bottom,'auto');
 navigation.message(home,{type:'menu-transition-back'},{});assert.equal(home.machine.state,'open');
 navigation.message(home,{type:'menu-transition-back'},home.iframe.contentWindow,'http://other.test');assert.equal(home.machine.state,'open');
 navigation.message(home,{type:'menu-transition-back'});assert.equal(home.machine.state,'closing');navigation.step(0);navigation.step(300);assert.equal(home.machine.state,'closed');
