@@ -18,6 +18,11 @@ namespace Srpg.Battle.Menu
         private float width = 1f;
         private Color[] pointColors;   // 線の点ごとの色（null なら color）
 
+        /// <summary>線のふちをやわらかくする（斜めの細い線がスマホでギザギザに見えないように。2026-11-09 原作者「流星軌道がガビガビ」）</summary>
+        public bool Soft { get => soft; set { soft = value; SetMaterialDirty(); SetVerticesDirty(); } }
+        private bool soft;
+        public override Texture mainTexture => soft ? Hub2Textures.SoftLine : base.mainTexture;
+
         public void Set(IList<Vector2> pts, Mode m, bool close = true, float lineWidth = 1f, Color[] colors = null)
         {
             points.Clear();
@@ -41,10 +46,11 @@ namespace Srpg.Battle.Menu
                 Vector2 ext = d.normalized * (width / 2f);   // 角が欠けないよう少しのばす
                 Color ca = pointColors != null ? pointColors[i] : color, cb = pointColors != null ? pointColors[(i + 1) % n] : color;
                 int v = vh.currentVertCount;
-                vh.AddVert(a - ext + nrm, ca, Vector4.zero);
-                vh.AddVert(b + ext + nrm, cb, Vector4.zero);
-                vh.AddVert(b + ext - nrm, cb, Vector4.zero);
-                vh.AddVert(a - ext - nrm, ca, Vector4.zero);
+                // やわらかい線は、横切る向きに 0→1 の uv（Hub2Textures.SoftLine の濃さの山）
+                vh.AddVert(a - ext + nrm, ca, new Vector4(0.5f, 0f));
+                vh.AddVert(b + ext + nrm, cb, new Vector4(0.5f, 0f));
+                vh.AddVert(b + ext - nrm, cb, new Vector4(0.5f, 1f));
+                vh.AddVert(a - ext - nrm, ca, new Vector4(0.5f, 1f));
                 vh.AddTriangle(v, v + 1, v + 2);
                 vh.AddTriangle(v, v + 2, v + 3);
             }
@@ -52,7 +58,7 @@ namespace Srpg.Battle.Menu
 
         private void Fill(VertexHelper vh)
         {
-            foreach (var p in points) vh.AddVert(p, color, Vector4.zero);
+            foreach (var p in points) vh.AddVert(p, color, new Vector4(0.5f, 0.5f));
             foreach (var t in Triangulate(points)) vh.AddTriangle(t.x, t.y, t.z);
         }
 

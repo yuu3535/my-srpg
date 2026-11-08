@@ -116,7 +116,7 @@ namespace Srpg.Battle.Menu
         private Explore2DController explore;
         private Corridor2DView corridor;
         private Font font;
-        private RectTransform canvasRect, menuRoot, content, fx, closeStar, closeStarImg, menuStar, menuStarImg, reticle, newBadge, newRing, tickerDot;
+        private RectTransform canvasRect, menuRoot, content, leftGroup, fx, closeStar, closeStarImg, menuStar, menuStarImg, reticle, newBadge, newRing, tickerDot;
         private CanvasGroup menuGroup;
         private TearMaskGraphic tearMask;
         private PolyGraphic cutLine, cutGlow, edgeUpper, edgeLower, tail;
@@ -192,8 +192,8 @@ namespace Srpg.Battle.Menu
             {
                 var m = Hub2Motion.MeteorAt(f.c, g);
                 var pts = new[] { L(g.S), L(m.pos) };
-                cutLine.Set(pts, PolyGraphic.Mode.Stroke, false, 3f);
-                cutGlow.Set(pts, PolyGraphic.Mode.Stroke, false, 12f);
+                cutLine.Set(pts, PolyGraphic.Mode.Stroke, false, 6f);
+                cutGlow.Set(pts, PolyGraphic.Mode.Stroke, false, 26f);
                 bool flying = f.phase == Hub2Motion.Phase.Cut;
                 meteor.gameObject.SetActive(flying);
                 meteorGlow.gameObject.SetActive(flying);
@@ -207,7 +207,7 @@ namespace Srpg.Battle.Menu
                     meteorGlow.rectTransform.anchoredPosition = L(m.pos);
                     meteorGlow.rectTransform.localScale = Vector3.one * m.scale;
                     Vector2 back = m.pos - g.u * Hub2Motion.Tail * Mathf.Min(1f, f.c * 3f);
-                    tail.Set(new[] { L(back), L(m.pos) }, PolyGraphic.Mode.Stroke, false, 5f * m.scale, new[] { new Color(Glow.r, Glow.g, Glow.b, 0f), new Color(1f, 0.95f, 0.8f, 0.95f) });
+                    tail.Set(new[] { L(back), L(m.pos) }, PolyGraphic.Mode.Stroke, false, 10f * m.scale, new[] { new Color(Glow.r, Glow.g, Glow.b, 0f), new Color(1f, 0.95f, 0.8f, 0.95f) });
                 }
                 edgeUpper.gameObject.SetActive(false);
                 edgeLower.gameObject.SetActive(false);
@@ -223,8 +223,8 @@ namespace Srpg.Battle.Menu
                 float a = 1f - f.o;   // ふちの金は、開くにつれて消える
                 edgeUpper.gameObject.SetActive(true); edgeLower.gameObject.SetActive(true);
                 edgeUpper.color = edgeLower.color = new Color(Glow.r, Glow.g, Glow.b, a);
-                edgeUpper.Set(up, PolyGraphic.Mode.Stroke, false, 3f);
-                edgeLower.Set(lo, PolyGraphic.Mode.Stroke, false, 3f);
+                edgeUpper.Set(up, PolyGraphic.Mode.Stroke, false, 6f);
+                edgeLower.Set(lo, PolyGraphic.Mode.Stroke, false, 6f);
             }
 
             // CLOSE の星: 弾ける／着地
@@ -331,6 +331,12 @@ namespace Srpg.Battle.Menu
             content.anchoredPosition = Vector2.zero;
 
             BuildScrims();
+
+            // 太陽盤のまとまり（太陽盤・コマンド・NEW の札）は画面の左の端に付ける（横に長い画面で、左にすき間ができて見切れて見えないように。2026-11-09 原作者）
+            leftGroup = Node("LeftGroup", menuRoot);
+            leftGroup.anchorMin = leftGroup.anchorMax = leftGroup.pivot = new Vector2(0f, 0.5f);
+            leftGroup.sizeDelta = new Vector2(668f, Hub2Motion.BaseHeight);
+            leftGroup.anchoredPosition = Vector2.zero;
             BuildWatermark();
             BuildDots();
             BuildDial();
@@ -348,11 +354,12 @@ namespace Srpg.Battle.Menu
             // 切り裂きの線・流星
             fx = Stretch("TearFx", canvasRect);
             fx.pivot = new Vector2(0f, 1f);
-            cutGlow = Poly("CutGlow", fx, new Color(Glow.r, Glow.g, Glow.b, 0.28f));
+            cutGlow = Poly("CutGlow", fx, new Color(Glow.r, Glow.g, Glow.b, 0.35f));
             cutLine = Poly("Cut", fx, new Color(1f, 0.93f, 0.72f, 1f));
             edgeUpper = Poly("EdgeUpper", fx, Glow);
             edgeLower = Poly("EdgeLower", fx, Glow);
             tail = Poly("Tail", fx, Color.white);
+            foreach (var p in new[] { cutGlow, cutLine, edgeUpper, edgeLower, tail }) p.Soft = true;   // スマホでギザギザに見えないように（2026-11-09 原作者「流星軌道がガビガビ」）
             meteorGlow = Raw("MeteorGlow", fx, Hub2Textures.Glow, new Vector2(140f, 140f), new Color(Glow.r, Glow.g, Glow.b, 0.55f));
             meteor = Raw("Meteor", fx, Hub2Textures.Star, new Vector2(60f, 60f), Color.white);
             foreach (var ri in new[] { meteor, meteorGlow })
@@ -393,8 +400,13 @@ namespace Srpg.Battle.Menu
 
         private void BuildWatermark()
         {
-            var t = Label(content, "ORCUS", 712f, -44f, 980f, 260f, 220, new Color(Ink.r, Ink.g, Ink.b, 0.028f), FontStyle.Bold);   // 正本は輪郭線だけ（ほぼ見えない）。字の輪郭は描けないので、ごく薄い塗り
+            // 正本は輪郭線だけ（ほぼ見えない）。塗りを透明にして、Outline（字を上下左右に1pxずらした写し）で輪郭のように見せる
+            var t = Label(content, "ORCUS", 712f, -44f, 980f, 260f, 220, new Color(Ink.r, Ink.g, Ink.b, 0f), FontStyle.Bold);
             t.alignment = TextAnchor.UpperLeft;
+            Spacing(t, 0.04f);
+            var ol = t.gameObject.AddComponent<Outline>();
+            ol.effectColor = new Color(Ink.r, Ink.g, Ink.b, 0.07f);
+            ol.effectDistance = new Vector2(1f, -1f);
         }
 
         private void BuildDots()
@@ -413,11 +425,11 @@ namespace Srpg.Battle.Menu
         private void BuildDial()
         {
             var tex = Resources.Load<Texture2D>("Menu/sun_dial_arshe");
-            var ri = Raw("SunDial", content, tex, Vector2.zero, Color.white);
+            var ri = Raw("SunDial", leftGroup, tex, Vector2.zero, Color.white);
             Place(ri.rectTransform, 0f, 0f, 668f, 780f);
             foreach (var c in DialCommands)
             {
-                var b = Place(Node("Cmd_" + c.label, content), c.x, c.y, c.w, c.h);
+                var b = Place(Node("Cmd_" + c.label, leftGroup), c.x, c.y, c.w, c.h);
                 b.gameObject.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0f);
                 var label = c.label;
                 b.gameObject.AddComponent<Button>().onClick.AddListener(() => Command(label));
@@ -426,13 +438,15 @@ namespace Srpg.Battle.Menu
 
         private void BuildHeader()
         {
-            var en = Label(content, "PROLOGUE", 770f, 26f, 140f, 22f, 15, Gold, FontStyle.Bold);
+            var en = Label(content, "PROLOGUE", 770f, 26f, 160f, 22f, 15, Gold, FontStyle.Bold);
             en.alignment = TextAnchor.MiddleLeft;
-            Fill(content, 770f + 112f, 37f, 36f, 1f, Gold);
-            var sub = Label(content, "百年戦争と祝賀会の朝", 770f + 162f, 26f, 400f, 22f, 16, InkMid2, FontStyle.Bold);
+            Spacing(en, 0.34f);
+            Fill(content, 770f + 132f, 37f, 36f, 1f, Gold);
+            var sub = Label(content, "百年戦争と祝賀会の朝", 770f + 182f, 26f, 400f, 22f, 16, InkMid2, FontStyle.Bold);
             sub.alignment = TextAnchor.MiddleLeft;
-            var place = Label(content, "オルクス城・回廊", 768f, 54f, 800f, 70f, 56, InkHi, FontStyle.Bold);
+            var place = Label(content, "オルクス城・回廊", 768f, 54f, 860f, 70f, 56, InkHi, FontStyle.Bold);
             place.alignment = TextAnchor.MiddleLeft;
+            Spacing(place, 0.08f);
             Shadow(place, 0.8f);
         }
 
@@ -450,8 +464,9 @@ namespace Srpg.Battle.Menu
             tickerDot = Fill(b, 126f, 14.5f, 7f, 7f, Gold).rectTransform;
             Fill(b, 145f, 10f, 1f, 16f, new Color(Gold.r, Gold.g, Gold.b, 0.45f));
             // 流さない（原作者 2026-11-08）。止まった1行で、はみ出しは「…」
-            var body = Label(b, Ellipsize("運勢：蛇。　失せモノに注意。　笑う声が聞こえたら、振り返らないこと。", 36), 158f, 0f, 760f, 36f, 17, Ink, FontStyle.Normal);
+            var body = Label(b, Ellipsize("運勢：蛇。　失せモノに注意。　笑う声が聞こえたら、振り返らないこと。", 33), 158f, 0f, 760f, 36f, 17, Ink, FontStyle.Normal);
             body.alignment = TextAnchor.MiddleLeft;
+            Spacing(body, 0.12f);
             var line = Raw("Underline", b, Hub2Textures.Gradient("tickerline", Gold, new Vector2(0f, 0.6f), new Vector2(0.7f, 0.15f), new Vector2(1f, 0f)), Vector2.zero, Color.white);
             Place(line.rectTransform, 0f, 38f, 918f, 1f);
         }
@@ -488,8 +503,8 @@ namespace Srpg.Battle.Menu
             var dc = Poly("Center", reticle, Gold); dc.rectTransform.anchorMin = dc.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
             dc.Set(new[] { new Vector2(0, 3), new Vector2(3, 0), new Vector2(0, -3), new Vector2(-3, 0) }, PolyGraphic.Mode.Fill);
             // 文字
-            var en = Label(box, "MAIN EVENT", 42f, 14f, 120f, 20f, 14, Gold, FontStyle.Bold); en.alignment = TextAnchor.MiddleLeft;
-            var jp = Label(box, "メインイベント", 150f, 14f, 140f, 20f, 14, InkMid3, FontStyle.Normal); jp.alignment = TextAnchor.MiddleLeft;
+            var en = Label(box, "MAIN EVENT", 42f, 14f, 150f, 20f, 14, Gold, FontStyle.Bold); en.alignment = TextAnchor.MiddleLeft; Spacing(en, 0.3f);
+            var jp = Label(box, "メインイベント", 186f, 14f, 140f, 20f, 14, InkMid3, FontStyle.Normal); jp.alignment = TextAnchor.MiddleLeft;
             var title = Label(box, "ギュンターとの演習", 42f, 38f, 500f, 54f, 38, InkHi, FontStyle.Bold); title.alignment = TextAnchor.MiddleLeft; Shadow(title, 0.85f);
             var pin = Poly("Pin", box, Gold);
             pin.Set(new[] { P(42, 106), P(52, 106), P(52, 112), P(47, 122), P(42, 112) }, PolyGraphic.Mode.Fill);
@@ -504,7 +519,7 @@ namespace Srpg.Battle.Menu
 
         private void BuildSupport()
         {
-            var head = Label(content, "支援の深い仲間", 836f, 392f, 200f, 24f, 19, InkHi, FontStyle.Bold); head.alignment = TextAnchor.MiddleLeft;
+            var head = Label(content, "支援の深い仲間", 836f, 392f, 200f, 24f, 19, InkHi, FontStyle.Bold); head.alignment = TextAnchor.MiddleLeft; Spacing(head, 0.1f);
             Fill(content, 836f + 170f, 404f, 470f - 170f - 64f, 1f, C(226, 176, 74, 0.3f));
             for (int i = 0; i < 3; i++)
             {
@@ -553,8 +568,8 @@ namespace Srpg.Battle.Menu
 
         private void BuildStatus()
         {
-            var en = Label(content, "STATUS", 1352f, 396f, 80f, 20f, 14, Gold, FontStyle.Bold); en.alignment = TextAnchor.MiddleLeft;
-            Fill(content, 1352f + 76f, 406f, 318f - 76f, 1f, C(226, 176, 74, 0.3f));
+            var en = Label(content, "STATUS", 1352f, 396f, 100f, 20f, 14, Gold, FontStyle.Bold); en.alignment = TextAnchor.MiddleLeft; Spacing(en, 0.3f);
+            Fill(content, 1352f + 96f, 406f, 318f - 96f, 1f, C(226, 176, 74, 0.3f));
             StatusRow(1352f, 422f, "Menu/wallet_icon", "所持金", "FUNDS", "—", "G");
             StatusRow(1352f, 490f, "Menu/renown_icon", "名声", "FAME", "—", "pt");
             var tile = TileShape("Reward", 1352f, 570f, 318f, 64f);
@@ -571,7 +586,7 @@ namespace Srpg.Battle.Menu
             var ic = Raw("Icon", content, Resources.Load<Texture2D>(icon), Vector2.zero, Color.white);
             Place(ic.rectTransform, x, y + 12f, 44f, 44f);
             var n = Label(content, name, x + 56f, y + 14f, 100f, 22f, 16, InkHi, FontStyle.Bold); n.alignment = TextAnchor.MiddleLeft;
-            var e = Label(content, en, x + 56f, y + 36f, 100f, 16f, 11, InkLow, FontStyle.Normal); e.alignment = TextAnchor.MiddleLeft;
+            var e = Label(content, en, x + 56f, y + 36f, 100f, 16f, 11, InkLow, FontStyle.Normal); e.alignment = TextAnchor.MiddleLeft; Spacing(e, 0.3f);
             var v = Label(content, value, x + 150f, y + 12f, 136f, 44f, 30, InkHi, FontStyle.Bold); v.alignment = TextAnchor.MiddleRight;
             var u = Label(content, unit, x + 290f, y + 26f, 28f, 22f, 14, InkMid3, FontStyle.Normal); u.alignment = TextAnchor.MiddleLeft;
             Fill(content, x, y + 66f, 318f, 1f, C(241, 234, 217, 0.1f));
@@ -583,7 +598,7 @@ namespace Srpg.Battle.Menu
             var gear = Raw("Icon", cfg, Resources.Load<Texture2D>("Menu/settings_icon"), Vector2.zero, Color.white);
             Place(gear.rectTransform, 12f, 12f, 40f, 40f);
             var t1 = Label(cfg, "設定", 62f, 10f, 80f, 24f, 17, InkHi, FontStyle.Bold); t1.alignment = TextAnchor.MiddleLeft;
-            var e1 = Label(cfg, "CONFIG", 62f, 34f, 80f, 18f, 11, InkLow, FontStyle.Normal); e1.alignment = TextAnchor.MiddleLeft;
+            var e1 = Label(cfg, "CONFIG", 62f, 34f, 90f, 18f, 11, InkLow, FontStyle.Normal); e1.alignment = TextAnchor.MiddleLeft; Spacing(e1, 0.3f);
             cfg.GetComponent<Button>().onClick.AddListener(SettingsMenu.Open);
             var log = TileShape("Log", 1350f + 168f, 668f, 156f, 64f);
             var doc = Poly("LogIcon", log, Gold);
@@ -591,7 +606,7 @@ namespace Srpg.Battle.Menu
             var lines = Poly("LogLines", log, Gold);
             lines.Set(new[] { P(22, 30), P(32, 30) }, PolyGraphic.Mode.Stroke, false, 1.2f);
             var t2 = Label(log, "ログ", 62f, 10f, 80f, 24f, 17, InkHi, FontStyle.Bold); t2.alignment = TextAnchor.MiddleLeft;
-            var e2 = Label(log, "LOG", 62f, 34f, 80f, 18f, 11, InkLow, FontStyle.Normal); e2.alignment = TextAnchor.MiddleLeft;
+            var e2 = Label(log, "LOG", 62f, 34f, 80f, 18f, 11, InkLow, FontStyle.Normal); e2.alignment = TextAnchor.MiddleLeft; Spacing(e2, 0.3f);
             log.GetComponent<Button>().onClick.AddListener(() => Toast("ログは、まだつながっていません"));
         }
 
@@ -610,7 +625,7 @@ namespace Srpg.Battle.Menu
         // NEW の札（太陽盤の「支援会話」の右上。新しい支援会話があるときだけ。今は見本として出す）
         private void BuildNewBadge()
         {
-            newBadge = Place(Node("NewBadge", content), 500f, 616f, 62f, 24f);
+            newBadge = Place(Node("NewBadge", leftGroup), 500f, 616f, 62f, 24f);
             newRing = Node("Ring", newBadge);
             newRing.anchorMin = Vector2.zero; newRing.anchorMax = Vector2.one; newRing.sizeDelta = Vector2.zero;
             var ringImg = newRing.gameObject.AddComponent<Image>(); ringImg.raycastTarget = false;
@@ -653,16 +668,25 @@ namespace Srpg.Battle.Menu
             rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(1f, 1f);
             rt.sizeDelta = new Vector2(104f, 124f);
             rt.anchoredPosition = new Vector2(withBg ? 0f : -2f, withBg ? 0f : 2f);
+            // 押せる所（見えない）。MENU の黒い四角の下地はやめた（2026-11-09 原作者「黒のブロックになってる」）。明るい景色でも星が見えるよう、星の後ろにやわらかい暗がりを置く
             var bg = rt.gameObject.AddComponent<Image>();
-            bg.color = withBg ? C(12, 10, 20, 0.55f) : new Color(0f, 0f, 0f, 0f);
+            bg.color = new Color(0f, 0f, 0f, 0f);
             rt.gameObject.AddComponent<Button>().transition = Selectable.Transition.None;
+            if (withBg)
+            {
+                var shade = Raw("Shade", rt, Hub2Textures.Glow, new Vector2(150f, 150f), C(12, 10, 20, 0.6f));
+                Centered(shade.rectTransform, 52f, 62f);
+            }
             glow = Raw("Glow", rt, Hub2Textures.Glow, new Vector2(110f, 110f), new Color(Glow.r, Glow.g, Glow.b, 0.35f));
             Centered(glow.rectTransform, 52f, 56f);
             var star = Raw("Star", rt, Hub2Textures.Star, new Vector2(60f, 60f), Color.white);
             Centered(star.rectTransform, 52f, 56f);
             starImg = star.rectTransform;
             var t = Label(rt, label, 0f, 92f, 104f, 20f, 12, withBg ? Ink : InkMid, FontStyle.Bold);
-            t.alignment = TextAnchor.MiddleCenter;
+            t.alignment = TextAnchor.MiddleLeft;
+            Spacing(t, 0.34f);
+            t.rectTransform.anchoredPosition = new Vector2(52f - label.Length * 12f * (0.62f + 0.34f) / 2f, -92f);   // 字間の分を見込んで、だいたいまん中に
+            Shadow(t, 0.9f);
             return rt;
         }
 
@@ -761,6 +785,9 @@ namespace Srpg.Battle.Menu
             t.raycastTarget = false;
             return t;
         }
+
+        /// <summary>字間（正本の letter-spacing。em＝文字の大きさに対する割合）。Shadow より先に付ける</summary>
+        private static void Spacing(Text t, float em) => t.gameObject.AddComponent<LetterSpacing>().em = em;
 
         private static void Shadow(Text t, float a)
         {

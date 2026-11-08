@@ -7,7 +7,26 @@ namespace Srpg.Battle.Menu
     /// <summary>コードで作る小さな絵（星・ドット・グラデーション）。作った物は使い回す</summary>
     public static class Hub2Textures
     {
-        private static Texture2D star, glow, dots;
+        private static Texture2D star, glow, dots, softLine;
+
+        /// <summary>線を横切る向きの濃さ（まん中が濃く、ふちへ向かって消える）。縦に 32px</summary>
+        public static Texture2D SoftLine
+        {
+            get
+            {
+                if (softLine != null) return softLine;
+                const int H = 32;
+                softLine = new Texture2D(1, H, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Bilinear, name = "Hub2SoftLine" };
+                for (int y = 0; y < H; y++)
+                {
+                    float d = Mathf.Abs((y + 0.5f) / H * 2f - 1f);   // 0＝まん中、1＝ふち
+                    float a = Mathf.Clamp01((1f - d) / 0.45f);
+                    softLine.SetPixel(0, y, new Color(1f, 1f, 1f, a * a * (3f - 2f * a)));
+                }
+                softLine.Apply();
+                return softLine;
+            }
+        }
         private static readonly Dictionary<string, Texture2D> gradients = new Dictionary<string, Texture2D>();
 
         /// <summary>細い光が四方に伸びる金の星（素材 C が見つかるまでの仮。試作と同じくコードで描く）</summary>
