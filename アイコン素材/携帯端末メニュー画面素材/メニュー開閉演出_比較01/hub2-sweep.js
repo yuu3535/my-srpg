@@ -104,17 +104,26 @@
     // ティッカー（§3-4）は流さない（原作者 2026-11-08）。押すと運命予報カードが開き、既読になる。
     listen($('ticker'),'click',openFortune);listen($('fortune-scrim'),'click',closeFortune);listen($('fortune-close'),'click',closeFortune);
     disposers.push(()=>win.clearTimeout(fortuneTimer));
-    // NEW の札（§3-5）は太陽盤の「支援会話」の右上に付ける。太陽盤が回ると札の場所も動くので、回っている間（約1.5秒）ついていく。
-    // 太陽盤は 844×390 基準のページを2倍で表示しているので、中の座標を2倍すると画面の座標になる。
-    let badgeRaf=null,badgeUntil=0;
-    function placeBadge(){
-      const doc2=$('sun-wheel').contentDocument,badge=doc2&&[...doc2.querySelectorAll('.command')].find(b=>b.textContent.includes('支援会話'));
-      const nb=doc.querySelector?.('.new-badge');if(!badge||!nb)return;const r=badge.getBoundingClientRect();
-      nb.style.left=(r.right*2-44)+'px';nb.style.top=(r.top*2-20)+'px';
+    // NEW の札（§3-5）は太陽盤の「支援会話」の札の右上に付ける。太陽盤は 844×390 基準のページを2倍で表示しているので、中の座標を2倍すると画面の座標になる。
+    // 太陽盤が回っている間は札の動きに1コマ遅れて浮いて見える（原作者 2026-11-08「NEW がクルクルしてるとコマンドから浮く」）ので、
+    // 動いている間は消しておき、止まったら軽く弾んで出す。
+    let badgeRaf=null,badgeLast=null,badgeStill=0;
+    function badgeTarget(){
+      const doc2=$('sun-wheel').contentDocument,cmd=doc2&&[...doc2.querySelectorAll('.command')].find(b=>b.textContent.includes('支援会話'));
+      const face=cmd&&(cmd.querySelector('.nameplate-face')||cmd);if(!face)return null;const r=face.getBoundingClientRect();return {x:r.right*2-44,y:r.top*2-22};
     }
-    function followBadge(){badgeUntil=(win.performance?.now?.()??0)+1500;if(badgeRaf!==null)return;
-      const loop=()=>{badgeRaf=null;if(destroyed)return;try{placeBadge();}catch{}if((win.performance?.now?.()??0)<badgeUntil)badgeRaf=win.requestAnimationFrame(loop);};loop();}
-    listen($('sun-wheel'),'load',followBadge);disposers.push(()=>{if(badgeRaf!==null)win.cancelAnimationFrame(badgeRaf);});
+    function followBadge(){if(badgeRaf!==null||destroyed)return;badgeStill=0;
+      const nb=doc.querySelector?.('.new-badge');if(!nb)return;
+      const loop=()=>{badgeRaf=null;if(destroyed)return;let p=null;try{p=badgeTarget();}catch{}
+        if(p){const moved=!badgeLast||Math.hypot(p.x-badgeLast.x,p.y-badgeLast.y)>.5;badgeLast=p;
+          if(moved){badgeStill=0;nb.dataset.moving='true';}else badgeStill++;
+          // 止まって約0.1秒たったら、その場所に置いて出す。
+          if(badgeStill===6){nb.style.left=p.x+'px';nb.style.top=p.y+'px';nb.dataset.moving='false';}}
+        if(badgeStill<6||!p)badgeRaf=win.requestAnimationFrame(loop);};
+      loop();}
+    // 太陽盤の中を押したら（回り始める前に）追いかけ始める。
+    listen($('sun-wheel'),'load',()=>{try{const d2=$('sun-wheel').contentDocument;d2.addEventListener('pointerdown',followBadge);d2.addEventListener('keydown',followBadge);}catch{}followBadge();});
+    disposers.push(()=>{if(badgeRaf!==null)win.cancelAnimationFrame(badgeRaf);});
     listen(win,'message',event=>{if(event.data&&event.data.type==='solar-menu-state'&&event.source===$('sun-wheel').contentWindow)followBadge();});
     // 埋め込んだ太陽盤（iframe）の中で Esc を押したときも、同じように閉じる。
     listen(win,'message',event=>{if(event.data&&event.data.type==='solar-menu-escape'&&event.source===$('sun-wheel').contentWindow)escape();});
@@ -131,7 +140,7 @@
     listen($('flow'),'change',()=>{refreshGeometry();settle();});
     listen($('phase'),'change',renderTime);
     // ページ送りの菱形の配色（原作者に選んでもらう）。
-    const applyDia=()=>{screen.dataset.dia=['ref','gold','spec'].includes($('dia').value)?$('dia').value:'ref';};listen($('dia'),'change',applyDia);applyDia();
+    const applyDia=()=>{screen.dataset.dia=['ref','gold','moon','ember','spec'].includes($('dia').value)?$('dia').value:'ref';};listen($('dia'),'change',applyDia);applyDia();
     // 立ち絵の位置合わせ（確認用）。--l／--t／--w（カード内の px）を、ドラッグとホイールで変える。決めた値は「位置をコピー」で渡してもらう。
     const cards=[...(screen.querySelectorAll?.('.card')||[])];let drag=null;
     const artOf=card=>card.querySelector('.card-art img');
