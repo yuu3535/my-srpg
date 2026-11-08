@@ -39,9 +39,11 @@
     function tick(now){
       raf=null;if(destroyed||doc.hidden){last=null;return;}
       const dt=last===null?0:Math.max(0,(now-last)/1000)*Number($('speed').value||1);last=now;
-      machine.step(dt,setting());draw();if(machine.locked)schedule();else last=null;
+      const before=machine.state;machine.step(dt,setting());draw();
+      if(before==='opening'&&machine.state==='open')flowTicker(); // 開き終わったら、新着のティッカーを1回だけ流す
+      if(machine.locked)schedule();else last=null;
     }
-    function close(){if(machine.close()){draw();schedule();}}
+    function close(){if(machine.close()){stopTicker();draw();schedule();}}
     function open(){if(machine.open()){draw();schedule();}}
     listen($('close-star'),'click',close);listen($('menu-star'),'click',open);
     // 運命予報カード（§3-11）。ティッカーを押すと出て、ティッカーは既読になる（点が消え、文字が落ち着いた色に）。
@@ -60,6 +62,19 @@
       const d=fortuneVars(true);fortune.dataset.state='closing';
       fortuneTimer=win.setTimeout(()=>{fortune.hidden=true;fortune.dataset.state='closed';$('ticker').focus?.({preventScroll:true});},d.total*1000+20);
     }
+    // ティッカー（§3-4）: 新着なら、メニューが開いたときに1回だけ流す。流し終わり・タップで止まった1行に。
+    const tickerState={isNew:true,flowed:false};let tickerAnim=null;
+    function stopTicker(){try{tickerAnim?.cancel();}catch{}tickerAnim=null;$('ticker-body').dataset.flowing='false';}
+    function flowTicker(){
+      if(!model.tickerShouldFlow(tickerState)||setting()==='none')return;
+      const body=$('ticker-body'),track=$('ticker-track');if(typeof track.animate!=='function'){tickerState.flowed=true;return;}
+      stopTicker();body.dataset.flowing='true';
+      const from=body.clientWidth,to=-track.scrollWidth;
+      tickerAnim=track.animate([{transform:`translateX(${from}px)`},{transform:`translateX(${to}px)`}],{duration:model.tickerFlowSeconds($('speed').value)*1000,easing:'linear'});
+      tickerAnim.onfinish=()=>{tickerState.flowed=true;stopTicker();};
+    }
+    listen($('ticker'),'click',()=>{tickerState.isNew=false;stopTicker();});
+    disposers.push(stopTicker);
     listen($('ticker'),'click',openFortune);listen($('fortune-scrim'),'click',closeFortune);listen($('fortune-close'),'click',closeFortune);
     disposers.push(()=>win.clearTimeout(fortuneTimer));
     listen(doc,'keydown',event=>{if(event.key!=='Escape'||event.repeat||event.target.closest?.('select,input'))return;event.preventDefault();
@@ -77,7 +92,8 @@
     listen(win,'resize',fit);if(win.ResizeObserver){const o=new win.ResizeObserver(fit);o.observe(stage);disposers.push(()=>o.disconnect());}
     // 素材の読み込みを待ってから見せる（立ち絵は Git 管理外のフォルダにあるので、無い環境では空のカードになる）。
     const images=[...screen.querySelectorAll('img')];let pending=images.length;
-    const done=()=>{if(--pending<=0)$('cover').hidden=true;};
+    // 読み込みが終わったら（＝このページではメニューが開いた状態から始まる）、新着のティッカーを1回流す。
+    const done=()=>{if(--pending<=0){$('cover').hidden=true;flowTicker();}};
     for(const img of images){if(img.complete)done();else{listen(img,'load',done);listen(img,'error',done);}}
     if(!images.length)$('cover').hidden=true;
     function destroy(){if(destroyed)return;destroyed=true;stop();win.clearTimeout(replayTimer);disposers.splice(0).forEach(d=>d());}

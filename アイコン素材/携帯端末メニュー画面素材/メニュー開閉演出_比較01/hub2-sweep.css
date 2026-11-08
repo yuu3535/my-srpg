@@ -115,6 +115,10 @@ body{margin:0;background:#141219;color:#e7e1d3;font-family:'Yu Gothic UI',Meiryo
   font-size:15px!important;letter-spacing:.3em;padding-left:.3em!important;opacity:0;transition:opacity var(--d-scrim,.3s) ease}
 .fortune[data-state="open"] .fortune-close{opacity:1}.fortune-close:hover{border-color:var(--gold-hi)!important}
 .ticker[data-new="false"] .ticker-dot{display:none}.ticker[data-new="false"] .ticker-body{color:var(--ink-mid3)}
+/* 流れている間だけ: 1行の省略をやめ、右端60pxをフェードで切る。 */
+.ticker-track{display:inline-block;white-space:nowrap}
+.ticker-body[data-flowing="true"]{text-overflow:clip;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 60px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 60px),transparent)}
+.ticker-body:not([data-flowing="true"]) .ticker-track{display:inline}
 
 /* ---- CLOSE / MENU の星（§3-12・§3-15） ---- */
 .star-button{position:absolute;width:104px;height:124px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}

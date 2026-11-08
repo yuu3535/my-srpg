@@ -23,6 +23,11 @@
     // 閉じるは仕様書に無いので演出担当の案: 同じ向きへ回り続けて+80°へ裏返るように去る（0.3秒）、暗幕0.25秒。
     fortune:Object.freeze({open:Object.freeze({scrim:.3,card:.55,fade:.2,fromRotate:-80,fromScale:.92}),close:Object.freeze({scrim:.25,card:.3,fade:.3,toRotate:80,toScale:.92})})
   });
+  // 運命予報のティッカー（§3-4）: 新着があれば、メニューを開いたときに1回だけ右から左へ流す（13秒・等速、右端60pxはフェード）。
+  // 流し終わったら／新着なし／タップで既読: 止まった1行表示（はみ出しは「…」）。メニューを開くたびには流さない。
+  const ticker=Object.freeze({seconds:13,fade:60});
+  function tickerShouldFlow(state){return Boolean(state&&state.isNew&&!state.flowed);}
+  function tickerFlowSeconds(rate=1){const r=[.25,.5,1,2].includes(Number(rate))?Number(rate):1;return ticker.seconds/r;}
   // 運命予報カードの時間。速さ（確認用の0.5倍など）で割る。「短い」は約半分、「なし」は回さず0.15秒のフェード。
   function fortuneDurations(setting='full',closing=false,rate=1) {
     const m=mode(setting),f=closing?timing.fortune.close:timing.fortune.open,r=[.25,.5,1,2].includes(Number(rate))?Number(rate):1;
@@ -106,6 +111,6 @@
       reset(to='open'){state=to;kind=null;elapsed=0;}
     };
   }
-  const api=Object.freeze({base,timing,clamp,bezier,easeInOut,geometry,flow,travel,fortuneDurations,band,coverage,mode,durations,frame,burstPose,landPose,machine});
+  const api=Object.freeze({base,timing,clamp,bezier,easeInOut,geometry,flow,travel,fortuneDurations,ticker,tickerShouldFlow,tickerFlowSeconds,band,coverage,mode,durations,frame,burstPose,landPose,machine});
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.Hub2SweepModel=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

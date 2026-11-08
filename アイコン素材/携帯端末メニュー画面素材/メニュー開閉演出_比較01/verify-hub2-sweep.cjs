@@ -49,6 +49,9 @@ assert.equal(model.durations('short').sweep,.8);assert.equal(model.frame('close'
 {const F=T.fortune;assert.equal(F.open.scrim,.3);assert.equal(F.open.card,.55);assert.equal(F.open.fromRotate,-80);assert.equal(F.open.fromScale,.92);
   assert.equal(model.fortuneDurations('full').card,.55);assert.equal(model.fortuneDurations('full',false,.25).card,2.2);
   assert.equal(model.fortuneDurations('none').card,0);assert.ok(model.fortuneDurations('full',true).total<model.fortuneDurations('full').total,'閉じるのは開くより短い');}
+// ティッカー（§3-4）: 新着で、まだ流していないときだけ流す（13秒）。開くたびには流さない。
+assert.equal(model.ticker.seconds,13);assert.equal(model.ticker.fade,60);assert.equal(model.tickerFlowSeconds(.5),26);
+assert.equal(model.tickerShouldFlow({isNew:true,flowed:false}),true);assert.equal(model.tickerShouldFlow({isNew:true,flowed:true}),false,'流し終わったら流さない');assert.equal(model.tickerShouldFlow({isNew:false,flowed:false}),false,'既読なら流さない');
 // 演出中は入力を受け付けない。
 const m=model.machine();assert.equal(m.state,'open');assert.equal(m.close(),true);assert.equal(m.locked,true);assert.equal(m.open(),false,'閉じる途中に開けない');assert.equal(m.close(),false,'二重に閉じない');
 m.step(5);assert.equal(m.state,'closed');assert.equal(m.open(),true);m.step(5);assert.equal(m.state,'open');
@@ -65,7 +68,7 @@ win.setTimeout=()=>0;win.clearTimeout=()=>{};
 const step=ms=>{clock+=ms;const list=[...frames.values()];frames.clear();list.forEach(fn=>fn(clock));};
 const page=mount(doc,win,model);
 assert.equal($('screen').style.transform,'scale(0.5)');assert.equal($('menu-star').hidden,true);
-$('close-star').emit('click');assert.equal(page.machine.state,'closing');assert.equal($('close-star').disabled,true);
+$('close-star').emit('click');assert.equal(page.machine.state,'closing');assert.equal($('ticker-body').dataset.flowing,'false','閉じ始めたらティッカーは止める');assert.equal($('close-star').disabled,true);
 step(0);step(400);assert.equal($('band').style.visibility,'visible');assert.ok($('band').style.transform.includes('rotate(24.8'),'右上からの帯');
 $('menu-star').emit('click');assert.equal(page.machine.state,'closing','演出中のクリックは無視');
 step(1000);assert.equal($('menu').style.display,'none');step(1000);assert.equal(page.machine.state,'closed');assert.equal($('menu-star').hidden,false);assert.equal($('band').style.visibility,'hidden');
