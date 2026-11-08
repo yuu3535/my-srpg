@@ -90,7 +90,7 @@ body{margin:0;background:#141219;color:#e7e1d3;font-family:'Yu Gothic UI',Meiryo
 .page-dia{width:9px;height:9px;transform:rotate(45deg);border:1px solid rgba(201,205,210,.5);transition:border-color .3s,background .3s}
 .screen[data-dia="spec"] .page-dia.on{border-color:var(--teal);background:rgba(79,163,168,.25);box-shadow:0 0 6px var(--teal)}
 .screen[data-dia="ref"] .page-dia{width:10px;height:10px;background:none;box-shadow:none;border-color:rgba(226,176,74,.32)}
-.screen[data-dia="ref"] .page-dia:first-of-type{border-color:rgba(158,146,182,.55)}
+.screen[data-dia="ref"] .page-dia:nth-of-type(3){border-color:rgba(158,146,182,.6)} /* 見出しの横線も i なので、3番目の i が2つ目の菱形 */
 .screen[data-dia="ref"] .page-dia.on{border-color:rgba(79,163,168,.9)}
 .screen[data-dia="gold"] .page-dia{border-color:rgba(226,176,74,.38);background:none;box-shadow:none}
 .screen[data-dia="gold"] .page-dia.on{border-color:var(--gold);background:rgba(226,176,74,.55)}
