@@ -23,11 +23,7 @@
     // 閉じるは仕様書に無いので演出担当の案: 同じ向きへ回り続けて+80°へ裏返るように去る（0.3秒）、暗幕0.25秒。
     fortune:Object.freeze({open:Object.freeze({scrim:.3,card:.55,fade:.2,fromRotate:-80,fromScale:.92}),close:Object.freeze({scrim:.25,card:.3,fade:.3,toRotate:80,toScale:.92})})
   });
-  // 運命予報のティッカー（§3-4）: 新着があれば、メニューを開いたときに1回だけ右から左へ流す（13秒・等速、右端60pxはフェード）。
-  // 流し終わったら／新着なし／タップで既読: 止まった1行表示（はみ出しは「…」）。メニューを開くたびには流さない。
-  const ticker=Object.freeze({seconds:13,fade:60});
-  function tickerShouldFlow(state){return Boolean(state&&state.isNew&&!state.flowed);}
-  function tickerFlowSeconds(rate=1){const r=[.25,.5,1,2].includes(Number(rate))?Number(rate):1;return ticker.seconds/r;}
+  // 運命予報のティッカー（§3-4）は流さない（原作者 2026-11-08「電光掲示板みたいに流れてくるのはやめよう」）。止まった1行表示で、はみ出しは「…」。
   // 運命予報カードの時間。速さ（確認用の0.5倍など）で割る。「短い」は約半分、「なし」は回さず0.15秒のフェード。
   function fortuneDurations(setting='full',closing=false,rate=1) {
     const m=mode(setting),f=closing?timing.fortune.close:timing.fortune.open,r=[.25,.5,1,2].includes(Number(rate))?Number(rate):1;
@@ -96,21 +92,80 @@
     return {menu:swapped,menuOpacity:1,explore:!swapped,sweep:sp<1?sp:null,burst:null,land:swapped?(land===null?0:land):null,done:t>=total,total};
   }
   // CLOSE の星: 弾ける（1.5倍に膨らみつつ回転 → 縮んで消える）。着地（1.7倍・-90°から弾むように戻る）。
+  // ── 切り裂き（ジッパー）。原作者 2026-11-08: 「CLOSE の星を押したら、流星が右上の星の所から始まり、画面の斜め端から斜め端までジッパーみたいに切り裂いていく方がきれい」（添付のAPNG）。
+  // 押した星が弾けて流星になり、星の所から左下の角へ一本の切れ目を引く → 切れ目が、流星の出た側から大きく裂けて開く。
+  // 閉じる: メニューが裂けて探索が見える。開く: 探索が裂けてメニューが見える（切れ目の内側にメニュー）。どちらも右上の星から始まる。
+  const tear=Object.freeze({flare:.2,cut:.55,hold:.06,open:.62,land:.5,margin:120,peak:.22,spread:4200,samples:32,tail:420});
+  function tearDurations(setting='full'){
+    const m=mode(setting);if(m==='none')return {flare:0,cut:0,hold:0,open:0,land:0,fade:timing.none.fade};
+    const k=m==='short'?.55:1;return {flare:tear.flare*k,cut:tear.cut*k,hold:tear.hold*k,open:tear.open*k,land:tear.land*(m==='short'?.6:1),fade:0};
+  }
+  // 切れ目の線。S＝流星の出る所（押した星の中心）、B＝左下の角。S から B と反対へのばして画面の端に当たる所が A。
+  function tearGeometry(width=base.width,height=base.height,start={x:width-54,y:58}){
+    const S={x:start.x,y:start.y},B={x:0,y:height},dx=S.x-B.x,dy=S.y-B.y,len=Math.hypot(dx,dy),u={x:-dx/len,y:-dy/len},n={x:-u.y,y:u.x};
+    // A: S から -u の向きに進んで画面の外枠に当たる所。
+    const cands=[];if(u.x<0)cands.push((S.x-width)/u.x);if(u.y>0)cands.push((S.y-0)/u.y);const back=Math.max(0,Math.min(...cands.filter(v=>v>=0),1e9));
+    const A={x:S.x-u.x*back,y:S.y-u.y*back},m=tear.margin;
+    const A2={x:A.x-u.x*m,y:A.y-u.y*m},B2={x:B.x+u.x*m,y:B.y+u.y*m},L=Math.hypot(B2.x-A2.x,B2.y-A2.y);
+    return {width,height,S,A,B,A2,B2,u,n,L,back};
+  }
+  // 裂け目はゆっくり裂け始め、後半で一気に開く（裂ける物の自然な動き）。
+  const cutEase=p=>bezier(.6,0,.4,1,p),openEase=p=>Math.pow(clamp(p),2.2);
+  // 流星の位置（切れ目の先）と大きさ。APNGのように、走りながら大きくなり、終わりに小さくなる。
+  function meteor(c,g=tearGeometry()){
+    const p=clamp(c),k=cutEase(p),P={x:g.S.x+(g.B2.x-g.S.x)*k,y:g.S.y+(g.B2.y-g.S.y)*k};
+    const scale=p<.3?1+.7*(p/.3):1.7-1.3*((p-.3)/.7);
+    return {x:P.x,y:P.y,scale,rotate:540*k,angle:Math.atan2(g.u.y,g.u.x)*180/Math.PI};
+  }
+  // 裂け目の形（線の片側ずつの点の列）。裂け目は流星の出た側（peak の位置）がいちばん広く、反対の端は閉じたまま。
+  function tearShape(v){return v<=tear.peak?Math.sqrt(v/tear.peak):(1-v)/(1-tear.peak);}
+  function tearLens(o,g=tearGeometry()){
+    const D=tear.spread*openEase(o),upper=[],lower=[];
+    for(let i=0;i<=tear.samples;i++){const v=i/tear.samples,x=g.A2.x+(g.B2.x-g.A2.x)*v,y=g.A2.y+(g.B2.y-g.A2.y)*v,w=D*tearShape(v);
+      upper.push({x:x+g.n.x*w,y:y+g.n.y*w});lower.push({x:x-g.n.x*w,y:y-g.n.y*w});}
+    return {upper,lower,D};
+  }
+  const pts=list=>list.map(p=>`${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' L');
+  function lensPath(o,g=tearGeometry()){const l=tearLens(o,g);return `M${pts(l.upper)} L${pts([...l.lower].reverse())}Z`;}
+  function edgePath(list){return 'M'+pts(list);}
+  // 点が裂け目の中か（検査用）。
+  function insideLens(o,x,y,g=tearGeometry()){
+    const px=x-g.A2.x,py=y-g.A2.y,along=px*g.u.x+py*g.u.y,v=along/g.L;if(v<=0||v>=1)return false;
+    return Math.abs(px*g.n.x+py*g.n.y)<=tear.spread*openEase(o)*tearShape(v);
+  }
+  // 戻り値: menu／explore は帯と同じ。tear＝{phase:'flare'|'cut'|'hold'|'open', c, o, clip:'outside'（メニューを裂く）|'inside'（裂け目からメニュー）}。
+  // burst＝CLOSE の星が弾ける、exploreBurst＝MENU の星が弾ける（どちらも弾けたあと流星になる）、land＝開き終わりの CLOSE の星の着地。
+  function tearFrame(kind,seconds,setting='full'){
+    const d=tearDurations(setting),t=Math.max(0,Number.isFinite(seconds)?seconds:0);
+    if(d.fade)return frame(kind,t,'none');
+    const a=d.flare,b=a+d.cut,c=b+d.hold,e=c+d.open,total=kind==='open'?e+d.land:e;
+    let tr=null;
+    if(t<a)tr={phase:'flare',c:0,o:0};else if(t<b)tr={phase:'cut',c:clamp((t-a)/d.cut),o:0};else if(t<c)tr={phase:'hold',c:1,o:0};else if(t<e)tr={phase:'open',c:1,o:clamp((t-c)/d.open)};
+    const burstQ=a>0?clamp(t/a):1;
+    if(kind==='close'){
+      const gone=t>=e;
+      return {menu:!gone,menuOpacity:1,explore:gone,sweep:null,tear:tr&&{...tr,clip:tr.phase==='open'?'outside':null},burst:gone?null:burstQ,exploreBurst:null,land:null,done:t>=total,total};
+    }
+    const shown=t>=c;
+    return {menu:shown,menuOpacity:1,explore:!shown,sweep:null,tear:tr&&{...tr,clip:tr.phase==='open'?'inside':null},burst:null,exploreBurst:shown?null:burstQ,land:t<e?(shown?0:null):clamp((t-e)/d.land),done:t>=total,total};
+  }
   function burstPose(q){const p=clamp(q);if(p<.5){const k=p/.5;return {scale:1+.5*k,rotate:90*k,opacity:1};}const k=(p-.5)/.5;return {scale:1.5*(1-k),rotate:90+90*k,opacity:1-k};}
   function landPose(q){const p=clamp(q),k=bezier(.34,1.56,.64,1,p);return {scale:1.7+(1-1.7)*k,rotate:-90+90*k,opacity:Math.min(1,p*4)};}
   function machine(){
     let state='open',kind=null,elapsed=0;
+    // style: 'tear'（切り裂き）か 'band'（帯スイープ）。
+    const pick=(k,t,setting,style)=>style==='tear'?tearFrame(k,t,setting):frame(k,t,setting);
     return {
       get state(){return state;},get kind(){return kind;},get elapsed(){return elapsed;},
       get locked(){return state==='closing'||state==='opening';},
       close(){if(state!=='open')return false;state='closing';kind='close';elapsed=0;return true;},
       open(){if(state!=='closed')return false;state='opening';kind='open';elapsed=0;return true;},
-      step(seconds,setting='full'){if(!this.locked)return;elapsed+=Math.max(0,Number.isFinite(seconds)?seconds:0);if(frame(kind,elapsed,setting).done){state=kind==='close'?'closed':'open';kind=null;elapsed=0;}},
-      frame(setting='full'){return kind?frame(kind,elapsed,setting):{menu:state==='open',menuOpacity:1,explore:state==='closed',sweep:null,burst:null,land:state==='open'?1:null,done:true,total:0};},
+      step(seconds,setting='full',style='band'){if(!this.locked)return;elapsed+=Math.max(0,Number.isFinite(seconds)?seconds:0);if(pick(kind,elapsed,setting,style).done){state=kind==='close'?'closed':'open';kind=null;elapsed=0;}},
+      frame(setting='full',style='band'){return kind?pick(kind,elapsed,setting,style):{menu:state==='open',menuOpacity:1,explore:state==='closed',sweep:null,burst:null,land:state==='open'?1:null,done:true,total:0};},
       scrub(k,seconds){state=k==='close'?'closing':'opening';kind=k;elapsed=Math.max(0,seconds);},
       reset(to='open'){state=to;kind=null;elapsed=0;}
     };
   }
-  const api=Object.freeze({base,timing,clamp,bezier,easeInOut,geometry,flow,travel,fortuneDurations,ticker,tickerShouldFlow,tickerFlowSeconds,band,coverage,mode,durations,frame,burstPose,landPose,machine});
+  const api=Object.freeze({base,timing,clamp,bezier,easeInOut,geometry,flow,travel,fortuneDurations,band,tear,tearDurations,tearGeometry,meteor,tearLens,lensPath,edgePath,insideLens,tearFrame,coverage,mode,durations,frame,burstPose,landPose,machine});
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.Hub2SweepModel=api;
 })(typeof globalThis!=='undefined'?globalThis:this);

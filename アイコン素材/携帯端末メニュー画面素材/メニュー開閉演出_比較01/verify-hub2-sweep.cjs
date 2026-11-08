@@ -49,9 +49,28 @@ assert.equal(model.durations('short').sweep,.8);assert.equal(model.frame('close'
 {const F=T.fortune;assert.equal(F.open.scrim,.3);assert.equal(F.open.card,.55);assert.equal(F.open.fromRotate,-80);assert.equal(F.open.fromScale,.92);
   assert.equal(model.fortuneDurations('full').card,.55);assert.equal(model.fortuneDurations('full',false,.25).card,2.2);
   assert.equal(model.fortuneDurations('none').card,0);assert.ok(model.fortuneDurations('full',true).total<model.fortuneDurations('full').total,'閉じるのは開くより短い');}
-// ティッカー（§3-4）: 新着で、まだ流していないときだけ流す（13秒）。開くたびには流さない。
-assert.equal(model.ticker.seconds,13);assert.equal(model.ticker.fade,60);assert.equal(model.tickerFlowSeconds(.5),26);
-assert.equal(model.tickerShouldFlow({isNew:true,flowed:false}),true);assert.equal(model.tickerShouldFlow({isNew:true,flowed:true}),false,'流し終わったら流さない');assert.equal(model.tickerShouldFlow({isNew:false,flowed:false}),false,'既読なら流さない');
+// ティッカー（§3-4）は流さない（原作者 2026-11-08）。
+assert.equal(model.ticker,undefined);assert.ok(!/data-flowing|animate\(/.test(fs.readFileSync(path.join(__dirname,'hub2-sweep.js'),'utf8')),'ティッカーを流す処理が残っていない');
+// 切り裂き（原作者の指摘 2026-11-08）: 押した星（右上）から左下の角へ切れ目、右上の側から裂けて開く。
+{const tg=model.tearGeometry(1688,780,{x:1634,y:58});
+  assert.equal(tg.B.x,0);assert.equal(tg.B.y,780);assert.ok(tg.A.x>=1688-1e-6||tg.A.y<=1e-6,'A は画面の右か上の端');
+  const m0=model.meteor(0,tg),m1=model.meteor(1,tg);assert.ok(Math.abs(m0.x-1634)<1e-6&&Math.abs(m0.y-58)<1e-6,'流星は星の所から始まる');assert.ok(m1.x<0&&m1.y>780,'左下の角の外まで抜ける');
+  let miss=0;for(let x=0;x<=1688;x+=16)for(let y=0;y<=780;y+=16)if(!model.insideLens(1,x,y,tg))miss++;assert.equal(miss,0,'裂け終わりで画面を全部開く');
+  assert.equal(model.insideLens(0,800,400,tg),false,'裂ける前は閉じている');
+  // 裂け始めは右上の側（流星の出た側）が先に開き、左下の端はまだ閉じている。
+  const near={x:tg.A.x+(tg.B.x-tg.A.x)*.2,y:tg.A.y+(tg.B.y-tg.A.y)*.2},far={x:tg.A.x+(tg.B.x-tg.A.x)*.9,y:tg.A.y+(tg.B.y-tg.A.y)*.9};
+  const off=(p,d)=>({x:p.x+tg.n.x*d,y:p.y+tg.n.y*d});
+  assert.ok(model.insideLens(.3,off(near,60).x,off(near,60).y,tg)&&!model.insideLens(.3,off(far,60).x,off(far,60).y,tg),'右上の側から裂ける');
+  assert.ok(model.lensPath(.5,tg).startsWith('M')&&model.lensPath(.5,tg).endsWith('Z'));}
+{let f=model.tearFrame('close',.1);assert.equal(f.tear.phase,'flare');assert.ok(f.burst>0);assert.equal(f.menu,true);
+  f=model.tearFrame('close',.5);assert.equal(f.tear.phase,'cut');assert.equal(f.tear.clip,null);
+  f=model.tearFrame('close',1.1);assert.equal(f.tear.phase,'open');assert.equal(f.tear.clip,'outside');assert.equal(f.menu,true);
+  f=model.tearFrame('close',1.44);assert.equal(f.done,true);assert.equal(f.menu,false);assert.equal(f.explore,true);
+  f=model.tearFrame('open',.1);assert.ok(f.exploreBurst>0,'MENU の星が弾けて流星になる');assert.equal(f.menu,false);
+  f=model.tearFrame('open',1.1);assert.equal(f.tear.clip,'inside');assert.equal(f.menu,true);assert.equal(f.explore,false);
+  f=model.tearFrame('open',1.43+.25);assert.equal(f.tear,null);assert.ok(f.land>0&&f.land<1,'開き終わりに CLOSE の星が着地');
+  assert.equal(model.tearFrame('open',1.94).done,true);
+  assert.ok(model.tearFrame('close',0,'short').total<.8);assert.equal(model.tearFrame('close',0,'none').total,.15);}
 // 演出中は入力を受け付けない。
 const m=model.machine();assert.equal(m.state,'open');assert.equal(m.close(),true);assert.equal(m.locked,true);assert.equal(m.open(),false,'閉じる途中に開けない');assert.equal(m.close(),false,'二重に閉じない');
 m.step(5);assert.equal(m.state,'closed');assert.equal(m.open(),true);m.step(5);assert.equal(m.state,'open');
@@ -61,17 +80,25 @@ class Node{constructor(){this.h=new Map();this.style={setProperty(k,v){this[k]=v
   emit(t,e={}){for(const fn of [...this.h.get(t)||[]])fn(e);}setAttribute(k,v){this.attrs[k]=v;}getBoundingClientRect(){return {width:844};}querySelectorAll(){return [];}dispatchEvent(){}}
 const ids=new Map(),$=id=>{if(!ids.has(id))ids.set(id,new Node());return ids.get(id);};
 const doc=new Node(),win=new Node();doc.getElementById=$;doc.hidden=false;
-$('flow').value='topright';$('phase').value='morning';$('effect-mode').value='full';$('speed').value='1';$('scrub-kind').value='close';$('scrub').value='0';
+$('flow').value='tear';$('phase').value='morning';$('effect-mode').value='full';$('speed').value='1';$('scrub-kind').value='close';$('scrub').value='0';
 const media=new Node();media.matches=false;win.matchMedia=()=>media;win.Event=function(){};
 const frames=new Map();let serial=0,clock=0;win.requestAnimationFrame=fn=>{frames.set(++serial,fn);return serial;};win.cancelAnimationFrame=id=>frames.delete(id);
 win.setTimeout=()=>0;win.clearTimeout=()=>{};
 const step=ms=>{clock+=ms;const list=[...frames.values()];frames.clear();list.forEach(fn=>fn(clock));};
 win.TimeOfDay=require('../太陽盤_コマンド試作01/time-of-day.js');
+$('sun-wheel').contentWindow={};
 const page=mount(doc,win,model);
 assert.ok($('time-slot').innerHTML.includes('data-phase="morning"'),'時間帯アイコンを作る');assert.ok($('time-slot').innerHTML.includes('../太陽盤_コマンド試作01/time-of-day-art/'),'素材のパスを直す');assert.ok(!/src="time-of-day-art/.test($('time-slot').innerHTML));
 assert.equal($('screen').style.transform,'scale(0.5)');assert.equal($('menu-star').hidden,true);
-$('close-star').emit('click');assert.equal(page.machine.state,'closing');assert.equal($('ticker-body').dataset.flowing,'false','閉じ始めたらティッカーは止める');assert.equal($('close-star').disabled,true);
-step(0);step(400);assert.equal($('band').style.visibility,'visible');assert.ok($('band').style.transform.includes('rotate(24.8'),'右上からの帯');
+// 切り裂き（初期値）: 閉じる → 切れ目 → メニューが裂ける → 探索。
+$('close-star').emit('click');assert.equal(page.machine.state,'closing');assert.equal($('close-star').disabled,true);
+step(0);step(400);assert.equal($('tear').style.visibility,'visible');assert.ok($('tear-seam').attrs.d.startsWith('M1688'),'切れ目は右上の端から');assert.equal($('meteor').style.visibility,'visible');
+step(600);assert.ok($('menu').style.clipPath.startsWith('path(evenodd'),'メニューが裂ける');
+step(1000);assert.equal(page.machine.state,'closed');assert.equal($('menu').style.display,'none');assert.equal($('menu').style.clipPath,'');assert.equal($('menu-star').hidden,false);
+$('menu-star').emit('click');step(0);step(1100);assert.ok($('menu').style.clipPath.startsWith('path("M'),'開くときは裂け目からメニュー');step(2000);assert.equal(page.machine.state,'open');
+// 帯（比較用）も残す。
+$('flow').value='topright';$('flow').emit('change');
+$('close-star').emit('click');step(0);step(400);assert.equal($('band').style.visibility,'visible');assert.ok($('band').style.transform.includes('rotate(24.8'),'右上からの帯');assert.equal($('tear').style.visibility,'hidden');
 $('menu-star').emit('click');assert.equal(page.machine.state,'closing','演出中のクリックは無視');
 step(1000);assert.equal($('menu').style.display,'none');step(1000);assert.equal(page.machine.state,'closed');assert.equal($('menu-star').hidden,false);assert.equal($('band').style.visibility,'hidden');
 $('time-slot').innerHTML='';$('menu-star').emit('click');step(0);step(900);assert.ok($('time-slot').innerHTML.length>0,'メニューが出たら時間帯アイコンを作り直す（日の出をもう一度）');assert.equal($('menu').style.display,'');step(2000);assert.equal(page.machine.state,'open');
@@ -83,5 +110,8 @@ const esc={key:'Escape',repeat:false,target:{closest:()=>null},preventDefault(){
 timers.splice(0).forEach(fn=>fn());assert.equal($('fortune').hidden,true);assert.equal($('fortune').dataset.state,'closed');
 $('ticker').emit('click');$('fortune-scrim').emit('click');assert.equal($('fortune').dataset.state,'closing','暗幕で閉じる');timers.splice(0).forEach(fn=>fn());
 $('scrub-kind').value='open';$('scrub').value='1000';$('scrub').emit('input');assert.equal(page.machine.kind,'open');assert.equal($('runner').dataset.dir,'close','右上からは開くときも同じ向き');
+// 太陽盤の中の Esc（iframe からの知らせ）でも閉じる。よそからの知らせは無視。
+page.machine.reset('open');win.emit('message',{data:{type:'solar-menu-escape'},source:{}});assert.equal(page.machine.state,'open','よその知らせは無視');
+win.emit('message',{data:{type:'solar-menu-escape'},source:$('sun-wheel').contentWindow});assert.equal(page.machine.state,'closing','太陽盤の中のEscで閉じる');
 page.destroy();assert.equal(frames.size,0);
 console.log('PASS: Hub2 の帯スイープの数値（1.75秒・46〜54%で覆う・0.875秒で入れ替え・155.2°）、幾何（画面を覆いきる）、閉じる（星が弾ける→帯）・開く（帯→星が着地）、演出中は入力なし、短い／なしの案、ページの制御。ブラウザ描画は別途。');

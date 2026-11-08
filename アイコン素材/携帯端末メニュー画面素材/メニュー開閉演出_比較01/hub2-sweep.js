@@ -5,9 +5,16 @@
     const $=id=>doc.getElementById(id),disposers=[],machine=model.machine(),media=win.matchMedia('(prefers-reduced-motion: reduce)');
     const stage=$('stage'),screen=$('screen'),band=$('band'),runner=$('runner');
     let raf=null,last=null,destroyed=false,scale=1,replayTimer=null,geometry=null;
-    // 帯の流れ方: 右上から（原作者の指摘による案。初期値）／仕様書どおり（左上から・開くは逆）。
+    // 開閉の形: 切り裂き（原作者の指摘 2026-11-08。初期値）／帯・右上から／帯・仕様書どおり。
+    function style(){return $('flow').value==='tear'?'tear':'band';}
     function flowName(){return $('flow').value==='spec'?'spec':'topright';}
     function refreshGeometry(){geometry=model.geometry(model.base.width,model.base.height,model.flow(flowName()).angle);}
+    // 切り裂きの線は、押した星の中心から始まる（CLOSE も MENU も右上）。星の位置は画面から測る。
+    let tearG=null;
+    function starCenter(id){const el=$(id),r=el.getBoundingClientRect?.(),sr=screen.getBoundingClientRect?.();
+      if(!r||!sr||!r.width||!sr.width)return {x:model.base.width-54,y:58};const k=sr.width/model.base.width,x=(r.left+r.width/2-sr.left)/k,y=(r.top+r.height/2-sr.top)/k;
+      return Number.isFinite(x)&&Number.isFinite(y)?{x,y}:{x:model.base.width-54,y:58};}
+    function refreshTear(kind){tearG=model.tearGeometry(model.base.width,model.base.height,starCenter(kind==='open'?'menu-star-wrap':'close-star-wrap'));}
     refreshGeometry();
     function listen(node,type,handler,options){node.addEventListener(type,handler,options);disposers.push(()=>node.removeEventListener(type,handler,options));}
     function setting(){return media.matches?'none':model.mode($('effect-mode').value);}
@@ -27,13 +34,37 @@
       slot.setAttribute?.('aria-label','時間帯：'+phaseNames[phase]);if(!tod)return;
       slot.innerHTML=tod.icon(phase,'hub2').replaceAll('time-of-day-art/','../太陽盤_コマンド試作01/time-of-day-art/');
     }
+    // 切り裂きを描く。切れ目の金の線・流星・裂け目のふちは SVG、裂け目はメニューの clip-path。
+    const tearSvg=$('tear'),seam=$('tear-seam'),edgeU=$('tear-edge-u'),edgeL=$('tear-edge-l'),met=$('meteor'),tail=$('meteor-tail'),tailGrad=$('meteor-grad');
+    function drawTear(f,menu){
+      const tr=f.tear;
+      if(!tr){tearSvg.style.visibility='hidden';menu.style.clipPath='';return;}
+      const g=tearG||model.tearGeometry();tearSvg.style.visibility='visible';
+      // 切れ目（A から流星の今の位置まで）。裂け始めたら薄れていく。
+      const m=model.meteor(tr.c,g),end=tr.phase==='flare'?g.S:(tr.phase==='cut'?m:g.B2);
+      seam.setAttribute('d',tr.phase==='flare'?'':`M${g.A.x} ${g.A.y}L${end.x} ${end.y}`);seam.style.opacity=String(tr.phase==='open'?Math.max(0,1-tr.o*3):1);
+      // 流星（星と光の尾）。切っている間だけ。
+      if(tr.phase==='cut'){const tx=m.x-g.u.x*model.tear.tail,ty=m.y-g.u.y*model.tear.tail;
+        met.style.visibility='visible';met.setAttribute('transform',`translate(${m.x} ${m.y}) rotate(${m.rotate}) scale(${m.scale})`);
+        tail.setAttribute('x1',tx);tail.setAttribute('y1',ty);tail.setAttribute('x2',m.x);tail.setAttribute('y2',m.y);
+        tailGrad.setAttribute('x1',tx);tailGrad.setAttribute('y1',ty);tailGrad.setAttribute('x2',m.x);tailGrad.setAttribute('y2',m.y);tail.style.visibility='visible';}
+      else{met.style.visibility='hidden';tail.style.visibility='hidden';}
+      // 裂け目。閉じる＝メニューの裂け目の外だけ見せる、開く＝裂け目の中だけメニューを見せる。
+      if(tr.phase==='open'){const l=model.tearLens(tr.o,g),lens=model.lensPath(tr.o,g),W=model.base.width,H=model.base.height;
+        menu.style.clipPath=tr.clip==='outside'?`path(evenodd,"M0 0H${W}V${H}H0Z ${lens}")`:`path("${lens}")`;
+        edgeU.setAttribute('d',model.edgePath(l.upper));edgeL.setAttribute('d',model.edgePath(l.lower));const fade=String(Math.max(0,1-Math.max(0,tr.o-.55)/.45));edgeU.style.opacity=fade;edgeL.style.opacity=fade;}
+      else{menu.style.clipPath='';edgeU.setAttribute('d','');edgeL.setAttribute('d','');}
+    }
     function draw(){
-      const f=machine.frame(setting());
+      const f=machine.frame(setting(),style());
       screen.dataset.reduced=String(setting()==='none');
       if(f.menu&&menuShown===false)renderTime();menuShown=f.menu;
       const menu=$('menu');menu.style.display=f.menu?'':'none';menu.style.opacity=String(f.menuOpacity??1);
       $('menu-star').hidden=!f.explore;
-      if(f.sweep===null)band.style.visibility='hidden';else placeBand(f.sweep,machine.kind);
+      if(f.sweep===null||f.sweep===undefined)band.style.visibility='hidden';else placeBand(f.sweep,machine.kind);
+      drawTear(f,menu);
+      const mw=$('menu-star-wrap'),mp=f.exploreBurst!==null&&f.exploreBurst!==undefined?model.burstPose(f.exploreBurst):null;
+      mw.style.transform=mp?`rotate(${mp.rotate}deg) scale(${mp.scale})`:'';mw.style.opacity=mp?String(mp.opacity):'';
       const wrap=$('close-star-wrap');let pose=null;
       if(f.burst!==null&&f.burst!==undefined)pose=model.burstPose(f.burst);else if(f.land!==null&&f.land!==undefined&&f.land<1)pose=model.landPose(f.land);
       wrap.style.transform=pose?`rotate(${pose.rotate}deg) scale(${pose.scale})`:'';wrap.style.opacity=pose?String(pose.opacity):'';
@@ -48,12 +79,11 @@
     function tick(now){
       raf=null;if(destroyed||doc.hidden){last=null;return;}
       const dt=last===null?0:Math.max(0,(now-last)/1000)*Number($('speed').value||1);last=now;
-      const before=machine.state;machine.step(dt,setting());draw();
-      if(before==='opening'&&machine.state==='open')flowTicker(); // 開き終わったら、新着のティッカーを1回だけ流す
+      machine.step(dt,setting(),style());draw();
       if(machine.locked)schedule();else last=null;
     }
-    function close(){if(machine.close()){stopTicker();draw();schedule();}}
-    function open(){if(machine.open()){draw();schedule();}}
+    function close(){if(machine.state==='open')refreshTear('close');if(machine.close()){draw();schedule();}}
+    function open(){if(machine.state==='closed')refreshTear('open');if(machine.open()){draw();schedule();}}
     listen($('close-star'),'click',close);listen($('menu-star'),'click',open);
     // 運命予報カード（§3-11）。ティッカーを押すと出て、ティッカーは既読になる（点が消え、文字が落ち着いた色に）。
     // 閉じる途中・開く途中でも反対の操作はその場から（CSSのトランジションが今の姿から戻る）。
@@ -71,28 +101,19 @@
       const d=fortuneVars(true);fortune.dataset.state='closing';
       fortuneTimer=win.setTimeout(()=>{fortune.hidden=true;fortune.dataset.state='closed';$('ticker').focus?.({preventScroll:true});},d.total*1000+20);
     }
-    // ティッカー（§3-4）: 新着なら、メニューが開いたときに1回だけ流す。流し終わり・タップで止まった1行に。
-    const tickerState={isNew:true,flowed:false};let tickerAnim=null;
-    function stopTicker(){try{tickerAnim?.cancel();}catch{}tickerAnim=null;$('ticker-body').dataset.flowing='false';}
-    function flowTicker(){
-      if(!model.tickerShouldFlow(tickerState)||setting()==='none')return;
-      const body=$('ticker-body'),track=$('ticker-track');if(typeof track.animate!=='function'){tickerState.flowed=true;return;}
-      stopTicker();body.dataset.flowing='true';
-      const from=body.clientWidth,to=-track.scrollWidth;
-      tickerAnim=track.animate([{transform:`translateX(${from}px)`},{transform:`translateX(${to}px)`}],{duration:model.tickerFlowSeconds($('speed').value)*1000,easing:'linear'});
-      tickerAnim.onfinish=()=>{tickerState.flowed=true;stopTicker();};
-    }
-    listen($('ticker'),'click',()=>{tickerState.isNew=false;stopTicker();});
-    disposers.push(stopTicker);
+    // ティッカー（§3-4）は流さない（原作者 2026-11-08）。押すと運命予報カードが開き、既読になる。
     listen($('ticker'),'click',openFortune);listen($('fortune-scrim'),'click',closeFortune);listen($('fortune-close'),'click',closeFortune);
     disposers.push(()=>win.clearTimeout(fortuneTimer));
-    listen(doc,'keydown',event=>{if(event.key!=='Escape'||event.repeat||event.target.closest?.('select,input'))return;event.preventDefault();
-      if(fortune.dataset.state==='open'){closeFortune();return;}if(fortune.dataset.state==='closing')return;
-      if(machine.state==='open')close();else if(machine.state==='closed')open();});
+    // 埋め込んだ太陽盤（iframe）の中で Esc を押したときも、同じように閉じる。
+    listen(win,'message',event=>{if(event.data&&event.data.type==='solar-menu-escape'&&event.source===$('sun-wheel').contentWindow)escape();});
+    function escape(){if(fortune.dataset.state==='open'){closeFortune();return;}if(fortune.dataset.state==='closing')return;
+      if(machine.state==='open')close();else if(machine.state==='closed')open();}
+    listen(doc,'keydown',event=>{if(event.key!=='Escape'||event.repeat||event.target.closest?.('select,input'))return;event.preventDefault();escape();});
     listen($('replay'),'click',()=>{win.clearTimeout(replayTimer);stop();machine.reset('open');draw();close();
-      const d=model.frame('close',0,setting()).total,s=Number($('speed').value||1);replayTimer=win.setTimeout(open,(d/s+.8)*1000);});
-    function scrubMax(){const kind=$('scrub-kind').value;const total=model.frame(kind,0,setting()).total;$('scrub').max=String(Math.round(total*1000));}
-    listen($('scrub'),'input',()=>{win.clearTimeout(replayTimer);stop();const ms=Number($('scrub').value)||0;$('scrub-time').textContent=String(ms);machine.scrub($('scrub-kind').value,ms/1000);draw();});
+      const d=total('close'),s=Number($('speed').value||1);replayTimer=win.setTimeout(open,(d/s+.8)*1000);});
+    function total(kind){return (style()==='tear'?model.tearFrame(kind,0,setting()):model.frame(kind,0,setting())).total;}
+    function scrubMax(){$('scrub').max=String(Math.round(total($('scrub-kind').value)*1000));}
+    listen($('scrub'),'input',()=>{win.clearTimeout(replayTimer);stop();const ms=Number($('scrub').value)||0;$('scrub-time').textContent=String(ms);refreshTear($('scrub-kind').value);machine.scrub($('scrub-kind').value,ms/1000);draw();});
     listen($('scrub-kind'),'change',()=>{scrubMax();$('scrub').value='0';$('scrub').dispatchEvent(new win.Event('input'));});
     const settle=()=>{stop();machine.reset(machine.state==='closed'||machine.kind==='close'?'closed':'open');scrubMax();draw();};
     listen($('flow'),'change',()=>{refreshGeometry();settle();});
@@ -102,8 +123,7 @@
     listen(win,'resize',fit);if(win.ResizeObserver){const o=new win.ResizeObserver(fit);o.observe(stage);disposers.push(()=>o.disconnect());}
     // 素材の読み込みを待ってから見せる（立ち絵は Git 管理外のフォルダにあるので、無い環境では空のカードになる）。
     const images=[...screen.querySelectorAll('img')];let pending=images.length;
-    // 読み込みが終わったら（＝このページではメニューが開いた状態から始まる）、新着のティッカーを1回流す。
-    const done=()=>{if(--pending<=0){$('cover').hidden=true;flowTicker();}};
+    const done=()=>{if(--pending<=0)$('cover').hidden=true;};
     for(const img of images){if(img.complete)done();else{listen(img,'load',done);listen(img,'error',done);}}
     if(!images.length)$('cover').hidden=true;
     function destroy(){if(destroyed)return;destroyed=true;stop();win.clearTimeout(replayTimer);disposers.splice(0).forEach(d=>d());}

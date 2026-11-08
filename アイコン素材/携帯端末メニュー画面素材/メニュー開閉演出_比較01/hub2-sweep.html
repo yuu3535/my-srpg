@@ -2,30 +2,31 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Hub2 帯スイープ｜開閉演出の試作</title>
+<title>Hub2 開閉｜開閉演出の試作</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Shippori+Mincho:wght@600;700;800&display=swap">
-<link rel="stylesheet" href="hub2-sweep.css?v=20261108h">
+<link rel="stylesheet" href="hub2-sweep.css?v=20261108i">
 </head>
 <body>
 <main class="page">
 <header class="page-head">
-<div><p class="eyebrow">携帯端末 / Hub2 の開閉の試作</p><h1>帯スイープ</h1></div>
-<p>原作者の仕様書（<code>docs/10-design/ui/MENU_HUB2_SPEC_2026-11-08.md</code>）の §3-12・§3-14・§3-15 どおりの開閉。右上の CLOSE の星で閉じ、探索の MENU の星で開きます。メニューの中身は、仕様書の数値で主な部品を並べた見本です（Claude Design のモックそのものではありません）。</p>
+<div><p class="eyebrow">携帯端末 / Hub2 の開閉の試作</p><h1>切り裂き／帯スイープ</h1></div>
+<p>原作者の仕様書（<code>docs/10-design/ui/MENU_HUB2_SPEC_2026-11-08.md</code>）の §3-12・§3-14・§3-15 どおりの開閉。右上の CLOSE の星で閉じ、探索の MENU の星で開きます。初期値は原作者の指摘による「切り裂き」（押した星が流星になり、斜めに切れ目を引いて裂ける）。メニューの中身は、仕様書の数値で主な部品を並べた見本です（Claude Design のモックそのものではありません）。</p>
 </header>
 
 <div class="slot"><div class="stage" id="stage"><div class="screen" id="screen" aria-label="探索と拠点メニュー（Hub2）">
   <!-- 1. 探索シーン（仮背景 A） -->
   <img class="explore-bg" src="../../../背景/ブラッシュアップ版/オルクス回廊.png" alt="探索の仮背景（オルクス城・回廊）" draggable="false">
   <!-- 探索側の MENU の星（§3-15） -->
-  <button type="button" class="star-button menu-star" id="menu-star" aria-label="メニューを開く" hidden><span class="star-wrap"><svg class="star" viewBox="-40 -40 80 80" aria-hidden="true"><use href="#sparkle" x="-40" y="-40" width="80" height="80"/></svg></span><span class="star-label">MENU</span></button>
+  <button type="button" class="star-button menu-star" id="menu-star" aria-label="メニューを開く" hidden><span class="star-wrap" id="menu-star-wrap"><svg class="star" viewBox="-40 -40 80 80" aria-hidden="true"><use href="#sparkle" x="-40" y="-40" width="80" height="80"/></svg></span><span class="star-label">MENU</span></button>
 
   <!-- 拠点メニュー -->
   <div class="menu" id="menu">
     <div class="scrim-left"></div><div class="scrim-right"></div>
     <div class="watermark" aria-hidden="true">ORCUS</div>
     <div class="dot-band" aria-hidden="true"></div>
-    <img class="sun-mock" src="../太陽盤とコマンド_PNG_20261108/太陽盤とコマンド_アルシェ_出撃選択_1688x780.png" alt="太陽盤とコマンド（見本の画像）" draggable="false">
+    <!-- 太陽盤とコマンド（§3-5「既存実装をそのまま使う」）。ホームと同じ太陽盤を埋め込む（844×390 基準を2倍。左の太陽盤の部分だけ）。 -->
+    <iframe class="sun-wheel" id="sun-wheel" src="../太陽盤_コマンド試作01/layout.html?embed=menu&amp;profile=independent-home&amp;v=20261106c" title="回転する太陽盤とコマンド" width="340" height="390"></iframe>
     <span class="new-badge" aria-label="新しい支援会話あり"><svg viewBox="0 0 14 12" aria-hidden="true"><path d="M2 1h10a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H6l-3 2.5V9H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1Z"/></svg>NEW</span>
 
     <div class="head"><p class="chapter"><span class="en">PROLOGUE</span><i></i><span>百年戦争と祝賀会の朝</span></p><h2>オルクス城・回廊</h2></div>
@@ -78,22 +79,29 @@
   <!-- 帯スイープ（§3-14） -->
   <div class="band" id="band" aria-hidden="true"><div class="band-fill"></div><i class="band-edge edge-a"></i><i class="band-edge edge-b"></i>
     <div class="runner" id="runner"><i class="tail"></i><svg class="star runner-star" id="runner-star" viewBox="-40 -40 80 80"><use href="#sparkle" x="-40" y="-40" width="80" height="80"/></svg></div></div>
+  <!-- 切り裂き（原作者の指摘 2026-11-08）: 切れ目の金の線・流星・裂け目のふち -->
+  <svg class="tear" id="tear" viewBox="0 0 1688 780" aria-hidden="true">
+    <defs><linearGradient id="meteor-grad" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#f2cd78" stop-opacity="0"/><stop offset="1" stop-color="#fff3d2"/></linearGradient></defs>
+    <path class="tear-seam" id="tear-seam" d=""/><path class="tear-edge" id="tear-edge-u" d=""/><path class="tear-edge" id="tear-edge-l" d=""/>
+    <line class="meteor-tail" id="meteor-tail" stroke="url(#meteor-grad)"/>
+    <g class="meteor" id="meteor"><use href="#sparkle" x="-40" y="-40" width="80" height="80"/></g>
+  </svg>
   <div class="cover" id="cover" role="status">素材を読み込み中…</div>
 </div></div></div>
 
 <section class="tools" aria-label="試作の設定">
-<label>帯の向き<select id="flow"><option value="topright" selected>右上から（開く・閉じるとも）</option><option value="spec">仕様書どおり（左上から・開くは逆向き）</option></select></label>
+<label>開閉の形<select id="flow"><option value="tear" selected>切り裂き（右上の星から・1.43秒）</option><option value="topright">帯・右上から（1.75秒）</option><option value="spec">帯・仕様書どおり（左上から・開くは逆向き）</option></select></label>
 <label>時間帯<select id="phase"><option value="morning" selected>朝</option><option value="day">昼</option><option value="evening">夕方</option><option value="night">夜</option></select></label>
-<label>端末の演出<select id="effect-mode"><option value="full" selected>あり（1.75秒）</option><option value="short">短い（案: 0.8秒）</option><option value="none">なし（案: 0.15秒のフェード）</option></select></label>
+<label>端末の演出<select id="effect-mode"><option value="full" selected>あり</option><option value="short">短い（案: 約半分）</option><option value="none">なし（案: 0.15秒のフェード）</option></select></label>
 <label>再生速度<select id="speed"><option value="1" selected>通常</option><option value="0.5">ゆっくり（0.5倍）</option><option value="0.25">詳細を見る（0.25倍）</option></select></label>
 <button type="button" id="replay">閉じて開くを再生</button>
 <label>コマ送り<select id="scrub-kind"><option value="close">閉じる</option><option value="open">開く</option></select></label>
 <label class="scrub">時刻 <output id="scrub-time">0</output>ms<input id="scrub" type="range" min="0" max="2250" step="5" value="0"></label>
 <p class="note" id="status" role="status"></p>
 </section>
-<p class="note">CLOSE の星で閉じる（星が弾ける0.28秒 → 帯1.75秒、覆いきった0.875秒で探索へ）。MENU の星で開く（逆向きに帯 → 覆いきった瞬間にメニュー → CLOSE の星が着地0.5秒）。演出中は入力を受け付けません。Escでも開閉。CLOSE／MENU の星の元の画像（素材 C）が見つからないため、星はコードで描いた仮の物です。立ち絵は全身の絵を胸から上に切り出して代わりにしています（仕様書は胸上の立ち絵）。</p>
+<p class="note">切り裂き: CLOSE の星を押すと星が弾けて流星になり、星の所から左下の角へ切れ目を引く（0.2＋0.55秒）→ 切れ目が右上の側から大きく裂けて、探索が見える（0.62秒）。開くときは MENU の星から同じように切り、裂け目からメニューが現れて CLOSE の星が着地。帯: CLOSE の星で閉じる（星が弾ける0.28秒 → 帯1.75秒、覆いきった0.875秒で探索へ）。運命予報のティッカーは流さない（止まった1行）。太陽盤はホームと同じ物を埋め込んでいる（回せる）。演出中は入力を受け付けません。Escでも開閉。CLOSE／MENU の星の元の画像（素材 C）が見つからないため、星はコードで描いた仮の物です。立ち絵は全身の絵を胸から上に切り出して代わりにしています（仕様書は胸上の立ち絵）。</p>
 <nav class="links"><a href="sunfan.html">⑤ 日輪の扇へ</a><a href="index.html">①〜④の比較へ</a><a href="../../../docs/10-design/ui/MENU_HUB2_SPEC_2026-11-08.md">Hub2 の仕様書</a></nav>
 </main>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="sparkle" viewBox="-40 -40 80 80"><g transform="rotate(18)"><path d="M0-36 2.2-3.2 34 0 2.2 3.2 0 36-2.2 3.2-34 0-2.2-3.2Z"/><path d="M0-13 5.5-5.5 13 0 5.5 5.5 0 13-5.5 5.5-13 0-5.5-5.5Z" opacity=".55"/><path d="M-1-1 15-15M1 1 15 15M-1 1-15 15M1-1-15-15" stroke-width="1.1" opacity=".75"/></g></symbol></defs></svg>
-<script src="../太陽盤_コマンド試作01/time-of-day.js?v=20261005a"></script><script src="hub2-sweep-model.js?v=20261108g"></script><script src="hub2-sweep.js?v=20261108h"></script>
+<script src="../太陽盤_コマンド試作01/time-of-day.js?v=20261005a"></script><script src="hub2-sweep-model.js?v=20261108i"></script><script src="hub2-sweep.js?v=20261108i"></script>
 </body></html>

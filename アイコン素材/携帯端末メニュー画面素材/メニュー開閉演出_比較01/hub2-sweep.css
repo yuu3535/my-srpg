@@ -23,7 +23,7 @@ body{margin:0;background:#141219;color:#e7e1d3;font-family:'Yu Gothic UI',Meiryo
 .watermark{position:absolute;left:712px;top:-44px;font:700 220px/1 var(--en);letter-spacing:.04em;color:transparent;-webkit-text-stroke:1px rgba(241,234,217,.07);pointer-events:none}
 .dot-band{position:absolute;left:744px;top:206px;width:924px;height:176px;opacity:.55;background:radial-gradient(circle at 8px 8px,rgba(241,234,217,.5) 1.1px,transparent 1.6px) 0 0/16px 16px;
   -webkit-mask-image:linear-gradient(90deg,transparent 0,rgba(0,0,0,.15) 30%,#000 78%);mask-image:linear-gradient(90deg,transparent 0,rgba(0,0,0,.15) 30%,#000 78%)}
-.sun-mock{position:absolute;left:0;top:0;width:1688px;height:780px;pointer-events:none;user-select:none}
+.sun-wheel{position:absolute;left:0;top:0;width:340px;height:390px;border:0;background:transparent;transform:scale(2);transform-origin:0 0;color-scheme:normal}
 .new-badge{position:absolute;left:500px;top:616px;display:inline-flex;align-items:center;gap:5px;padding:4px 8px;background:var(--gold);color:#17161b;font:700 13px/1 var(--en);letter-spacing:.1em;border-radius:2px;animation:badge-pulse 2.2s ease-out infinite}
 .new-badge svg{width:14px;height:12px;fill:#17161b}
 @keyframes badge-pulse{0%{box-shadow:0 0 0 0 rgba(226,176,74,.55)}100%{box-shadow:0 0 0 12px rgba(226,176,74,0)}}
@@ -137,9 +137,7 @@ body{margin:0;background:#141219;color:#e7e1d3;font-family:'Yu Gothic UI',Meiryo
 .fortune[data-state="open"] .fortune-close{opacity:1}.fortune-close:hover{border-color:var(--gold-hi)!important}
 .ticker[data-new="false"] .ticker-dot{display:none}.ticker[data-new="false"] .ticker-body{color:var(--ink-mid3)}
 /* 流れている間だけ: 1行の省略をやめ、右端60pxをフェードで切る。 */
-.ticker-track{display:inline-block;white-space:nowrap}
-.ticker-body[data-flowing="true"]{text-overflow:clip;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 60px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 60px),transparent)}
-.ticker-body:not([data-flowing="true"]) .ticker-track{display:inline}
+.ticker-track{display:inline}
 
 /* ---- CLOSE / MENU の星（§3-12・§3-15） ---- */
 .star-button{position:absolute;width:104px;height:124px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
@@ -169,3 +167,10 @@ body{margin:0;background:#141219;color:#e7e1d3;font-family:'Yu Gothic UI',Meiryo
 .links{display:flex;gap:18px;margin-top:14px;font-size:12px}.links a{color:#d1bc91}
 @media(max-width:900px){.page-head{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){.star,.reticle,.new-badge,.ticker-dot{animation:none}}
+
+/* 切り裂き（原作者の指摘 2026-11-08） */
+.tear{position:absolute;left:0;top:0;width:1688px;height:780px;pointer-events:none;visibility:hidden;overflow:visible}
+.tear-seam{fill:none;stroke:#f2cd78;stroke-width:2;stroke-linecap:round;filter:drop-shadow(0 0 4px #f2cd78) drop-shadow(0 0 14px rgba(242,205,120,.6))}
+.tear-edge{fill:none;stroke:#f2cd78;stroke-width:2.5;filter:drop-shadow(0 0 6px #f2cd78) drop-shadow(0 0 22px rgba(242,205,120,.55))}
+.meteor-tail{stroke-width:3;stroke-linecap:round}
+.meteor{fill:#f6d98e;stroke:#f6d98e;filter:drop-shadow(0 0 6px #f2cd78) drop-shadow(0 0 20px rgba(242,205,120,.8))}
