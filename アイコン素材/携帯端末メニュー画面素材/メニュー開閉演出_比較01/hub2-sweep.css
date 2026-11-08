@@ -201,3 +201,18 @@ body{margin:0;background:#141219;color:#e7e1d3;font-family:'Yu Gothic UI',Meiryo
 .art-values{font:12px/1.5 ui-monospace,Consolas,monospace;white-space:pre;margin:0}
 
 .page-dia{pointer-events:auto}
+
+/* cycle＝巡る（原作者の発案 2026-11-08「菱形の色が1つずつ変化するアニメーション」）。
+   水色→藤色→赤→金を12秒で1周。各色2秒止まって1秒でゆっくり移る。隣の菱形は1色ずつずらすので、3つはいつも違う色。
+   今のページは色ではなく光（光彩と薄い塗り）で見分ける。動きを減らす設定・演出なしでは止める。 */
+@keyframes dia-cycle-on{0%,17%{border-color:rgba(79,163,168,1);box-shadow:0 0 7px rgba(79,163,168,.9);background:rgba(79,163,168,.18)}25%,42%{border-color:rgba(176,164,202,1);box-shadow:0 0 7px rgba(158,146,182,.9);background:rgba(158,146,182,.18)}50%,67%{border-color:rgba(206,92,98,1);box-shadow:0 0 7px rgba(184,72,78,.9);background:rgba(184,72,78,.2)}75%,92%{border-color:rgba(240,196,98,1);box-shadow:0 0 7px rgba(226,176,74,.9);background:rgba(226,176,74,.2)}100%{border-color:rgba(79,163,168,1);box-shadow:0 0 7px rgba(79,163,168,.9);background:rgba(79,163,168,.18)}}
+/* どの菱形も同じアニメーションにしておき（今のページを変えても巡りがずれない）、今のページ以外は光と塗りを !important で消して少し暗くする。 */
+.screen[data-dia="cycle"] .page-dia{width:10px;height:10px;border-color:rgba(79,163,168,.85);cursor:pointer;animation:dia-cycle-on 12s ease-in-out infinite;transition:opacity .4s}
+.screen[data-dia="cycle"] .page-dia:not(.on){box-shadow:none!important;background:none!important;opacity:.72}
+.screen[data-dia="cycle"] .page-dia:nth-of-type(3){animation-delay:-3s}
+.screen[data-dia="cycle"] .page-dia:nth-of-type(4){animation-delay:-6s}
+.screen[data-dia="cycle"][data-reduced="true"] .page-dia{animation:none}
+.screen[data-dia="cycle"][data-reduced="true"] .page-dia:nth-of-type(3){border-color:rgba(184,72,78,.8)}
+.screen[data-dia="cycle"][data-reduced="true"] .page-dia:nth-of-type(4){border-color:rgba(226,176,74,.7)}
+.screen[data-dia="cycle"][data-reduced="true"] .page-dia.on{box-shadow:0 0 6px rgba(79,163,168,.85);background:rgba(79,163,168,.15)}
+@media(prefers-reduced-motion:reduce){.screen[data-dia="cycle"] .page-dia{animation:none}}
