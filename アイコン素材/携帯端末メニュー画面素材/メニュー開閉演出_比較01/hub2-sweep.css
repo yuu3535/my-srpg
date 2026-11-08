@@ -83,7 +83,17 @@ body{margin:0;background:#141219;color:#e7e1d3;font-family:'Yu Gothic UI',Meiryo
 
 .bond-head{position:absolute;left:836px;top:402px;width:470px;display:flex;align-items:center;gap:10px;font-size:19px;font-weight:700;letter-spacing:.1em}
 .bond-head .rule{flex:1;height:1px;background:rgba(226,176,74,.3)}
-.page-dia{width:9px;height:9px;transform:rotate(45deg);border:1px solid rgba(201,205,210,.5)}.page-dia.on{border-color:var(--teal);background:rgba(79,163,168,.25);box-shadow:0 0 6px var(--teal)}
+/* ページ送りの菱形。配色は原作者に選んでもらう（2026-11-08）。
+   spec＝仕様書どおり（今のページだけティールで塗り＋光彩、他は銀の枠）
+   ref＝原作者の参考画像に合わせる（どれも細い枠だけ。今のページはティール、他は藤色がかった灰と、くすんだ金）
+   gold＝カードの角の金の菱形とそろえる（今のページは金の塗り、他はくすんだ金の枠。ティールを使わない） */
+.page-dia{width:9px;height:9px;transform:rotate(45deg);border:1px solid rgba(201,205,210,.5);transition:border-color .3s,background .3s}
+.screen[data-dia="spec"] .page-dia.on{border-color:var(--teal);background:rgba(79,163,168,.25);box-shadow:0 0 6px var(--teal)}
+.screen[data-dia="ref"] .page-dia{width:10px;height:10px;background:none;box-shadow:none;border-color:rgba(226,176,74,.32)}
+.screen[data-dia="ref"] .page-dia:first-of-type{border-color:rgba(158,146,182,.55)}
+.screen[data-dia="ref"] .page-dia.on{border-color:rgba(79,163,168,.9)}
+.screen[data-dia="gold"] .page-dia{border-color:rgba(226,176,74,.38);background:none;box-shadow:none}
+.screen[data-dia="gold"] .page-dia.on{border-color:var(--gold);background:rgba(226,176,74,.55)}
 .card{position:absolute;left:var(--x);top:var(--y);width:110px;height:270px;transition:transform .3s cubic-bezier(.2,.8,.2,1)}
 .card-art{position:absolute;inset:0;overflow:hidden;background:rgba(12,10,20,.45);clip-path:polygon(0 11%,100% 0,100% 89%,0 100%)}
 .card-art::after{content:"";position:absolute;left:0;right:0;bottom:0;height:40%;background:linear-gradient(0deg,rgba(14,13,20,.92),rgba(14,13,20,0))}
@@ -91,8 +101,8 @@ body{margin:0;background:#141219;color:#e7e1d3;font-family:'Yu Gothic UI',Meiryo
 .card-art img{position:absolute;left:var(--l);top:var(--t);width:var(--w);max-width:none;transition:transform .3s;transform-origin:50% 10%}
 .card-frame{position:absolute;inset:0;width:100%;height:100%;overflow:visible}.card-frame polygon{fill:none;stroke:var(--silver);stroke-width:1;vector-effect:non-scaling-stroke;transition:stroke .3s}
 .card .d-tr{width:8px;height:8px;right:-4px;top:-4px}.card .d-bl{width:8px;height:8px;left:-4px;bottom:-4px}
-.card-label{position:absolute;left:9%;bottom:13%;display:flex;flex-direction:column;gap:2px;font-size:16px;font-weight:800;color:var(--ink-hi);text-shadow:0 2px 6px rgba(0,0,0,.9)}
-.card-label .en{font-size:13px;color:var(--gold);letter-spacing:.1em}.card-label.carrie{left:18px;top:188px;bottom:auto}
+.card-label{position:absolute;left:12px;bottom:36px;display:flex;flex-direction:column;gap:2px;font-size:16px;font-weight:800;color:var(--ink-hi);text-shadow:0 2px 6px rgba(0,0,0,.9)}
+.card-label .en{font-size:13px;color:var(--gold);letter-spacing:.1em}
 .card:hover{transform:translateY(-6px)}.card:hover .card-art img{transform:scale(1.05)}.card:hover .card-frame polygon{stroke:var(--gold-hi)}
 
 .status{position:absolute;left:1352px;top:406px;width:318px}
@@ -174,3 +184,9 @@ body{margin:0;background:#141219;color:#e7e1d3;font-family:'Yu Gothic UI',Meiryo
 .tear-edge{fill:none;stroke:#f2cd78;stroke-width:2.5;filter:drop-shadow(0 0 6px #f2cd78) drop-shadow(0 0 22px rgba(242,205,120,.55))}
 .meteor-tail{stroke-width:3;stroke-linecap:round}
 .meteor{fill:#f6d98e;stroke:#f6d98e;filter:drop-shadow(0 0 6px #f2cd78) drop-shadow(0 0 20px rgba(242,205,120,.8))}
+
+/* 立ち絵の位置合わせ（確認用）。オンのときはカードを浮かせず、絵をドラッグで動かし、ホイールで大きさを変える。 */
+.screen[data-adjust="true"] .card{cursor:move;transform:none}
+.screen[data-adjust="true"] .card:hover .card-art img{transform:none}
+.screen[data-adjust="true"] .card-frame polygon{stroke:var(--teal)}
+.art-values{font:12px/1.5 ui-monospace,Consolas,monospace;white-space:pre;margin:0}

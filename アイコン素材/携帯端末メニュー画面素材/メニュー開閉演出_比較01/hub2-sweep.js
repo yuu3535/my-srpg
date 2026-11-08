@@ -130,6 +130,24 @@
     const settle=()=>{stop();machine.reset(machine.state==='closed'||machine.kind==='close'?'closed':'open');scrubMax();draw();};
     listen($('flow'),'change',()=>{refreshGeometry();settle();});
     listen($('phase'),'change',renderTime);
+    // ページ送りの菱形の配色（原作者に選んでもらう）。
+    const applyDia=()=>{screen.dataset.dia=['ref','gold','spec'].includes($('dia').value)?$('dia').value:'ref';};listen($('dia'),'change',applyDia);applyDia();
+    // 立ち絵の位置合わせ（確認用）。--l／--t／--w（カード内の px）を、ドラッグとホイールで変える。決めた値は「位置をコピー」で渡してもらう。
+    const cards=[...(screen.querySelectorAll?.('.card')||[])];let drag=null;
+    const artOf=card=>card.querySelector('.card-art img');
+    const px=(img,name)=>parseFloat(img.style.getPropertyValue(name))||0;
+    function artText(){return cards.map(c=>{const img=artOf(c),name=c.querySelector('.card-label')?.textContent.replace(/^\d+/,'')||'';return `${name}: --w:${px(img,'--w').toFixed(0)}px; --l:${px(img,'--l').toFixed(0)}px; --t:${px(img,'--t').toFixed(0)}px`;}).join('\n');}
+    function showArt(){const out=$('art-values');out.hidden=!$('art-adjust').checked;out.textContent=artText();}
+    listen($('art-adjust'),'change',()=>{screen.dataset.adjust=String($('art-adjust').checked);showArt();});
+    for(const card of cards){
+      listen(card,'pointerdown',e=>{if(!$('art-adjust').checked)return;e.preventDefault();const img=artOf(card);drag={img,x:e.clientX,y:e.clientY,l:px(img,'--l'),t:px(img,'--t'),id:e.pointerId};card.setPointerCapture?.(e.pointerId);});
+      listen(card,'pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;drag.img.style.setProperty('--l',(drag.l+(e.clientX-drag.x)/scale)+'px');drag.img.style.setProperty('--t',(drag.t+(e.clientY-drag.y)/scale)+'px');showArt();});
+      const end=e=>{if(drag&&drag.id===e.pointerId)drag=null;};listen(card,'pointerup',end);listen(card,'pointercancel',end);
+      // ホイール: カードの真ん中を中心に大きさを変える（顔の位置がずれにくいように）。
+      listen(card,'wheel',e=>{if(!$('art-adjust').checked)return;e.preventDefault();const img=artOf(card),w=px(img,'--w'),k=e.deltaY<0?1.03:1/1.03,nw=Math.max(110,Math.min(900,w*k)),cx=55,cy=135,f=nw/w;
+        img.style.setProperty('--w',nw+'px');img.style.setProperty('--l',(cx-(cx-px(img,'--l'))*f)+'px');img.style.setProperty('--t',(cy-(cy-px(img,'--t'))*f)+'px');showArt();},{passive:false});
+    }
+    listen($('art-copy'),'click',()=>{const t=artText();$('art-values').hidden=false;$('art-values').textContent=t;win.navigator?.clipboard?.writeText(t).catch(()=>{});});
     listen($('effect-mode'),'change',settle);listen($('speed'),'change',()=>{});listen(media,'change',settle);
     listen(doc,'visibilitychange',()=>{if(doc.hidden)stop();else{last=null;schedule();}});
     listen(win,'resize',fit);if(win.ResizeObserver){const o=new win.ResizeObserver(fit);o.observe(stage);disposers.push(()=>o.disconnect());}

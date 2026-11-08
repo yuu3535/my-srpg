@@ -5,7 +5,7 @@
 <title>Hub2 開閉｜開閉演出の試作</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Shippori+Mincho:wght@600;700;800&display=swap">
-<link rel="stylesheet" href="hub2-sweep.css?v=20261108j">
+<link rel="stylesheet" href="hub2-sweep.css?v=20261108k">
 </head>
 <body>
 <main class="page">
@@ -45,9 +45,9 @@
     </button>
 
     <div class="bond-head"><span>支援の深い仲間</span><i class="rule"></i><i class="page-dia on"></i><i class="page-dia"></i><i class="page-dia"></i></div>
-    <button type="button" class="card c1" style="--x:876px;--y:464px"><span class="card-art"><img src="../../../立ち絵透過下処理/カリマ立ち絵_clear.png" alt="" style="--w:410px;--l:-152px;--t:-26px"></span><svg class="card-frame" viewBox="0 0 110 270" preserveAspectRatio="none" aria-hidden="true"><polygon points="0,29.7 110,0 110,240.3 0,270"/></svg><i class="diamond d-tr"></i><i class="diamond d-bl"></i><span class="card-label"><span class="en">01</span>カリマ</span></button>
-    <button type="button" class="card c2" style="--x:1025px;--y:458px"><span class="card-art"><img src="../../../立ち絵透過下処理/サブキャラ表情/ギュンター呆れ_clear.png" alt="" style="--w:420px;--l:-160px;--t:-24px"></span><svg class="card-frame" viewBox="0 0 110 270" preserveAspectRatio="none" aria-hidden="true"><polygon points="0,29.7 110,0 110,240.3 0,270"/></svg><i class="diamond d-tr"></i><i class="diamond d-bl"></i><span class="card-label"><span class="en">02</span>ギュンター</span></button>
-    <button type="button" class="card c3" style="--x:1164px;--y:450px"><span class="card-art"><img src="../../../立ち絵透過下処理/キャリー背景白_clear.png" alt="" style="--w:410px;--l:-150px;--t:-30px"></span><svg class="card-frame" viewBox="0 0 110 270" preserveAspectRatio="none" aria-hidden="true"><polygon points="0,29.7 110,0 110,240.3 0,270"/></svg><i class="diamond d-tr"></i><i class="diamond d-bl"></i><span class="card-label carrie"><span class="en">03</span>キャリー</span></button>
+    <button type="button" class="card c1" style="--x:876px;--y:464px"><span class="card-art"><img src="../../../立ち絵透過下処理/カリマ立ち絵_clear.png" alt="" style="--w:394px;--l:-139px;--t:10px"></span><svg class="card-frame" viewBox="0 0 110 270" preserveAspectRatio="none" aria-hidden="true"><polygon points="0,29.7 110,0 110,240.3 0,270"/></svg><i class="diamond d-tr"></i><i class="diamond d-bl"></i><span class="card-label"><span class="en">01</span>カリマ</span></button>
+    <button type="button" class="card c2" style="--x:1025px;--y:458px"><span class="card-art"><img src="../../../立ち絵透過下処理/サブキャラ表情/ギュンター呆れ_clear.png" alt="" style="--w:430px;--l:-163px;--t:1px"></span><svg class="card-frame" viewBox="0 0 110 270" preserveAspectRatio="none" aria-hidden="true"><polygon points="0,29.7 110,0 110,240.3 0,270"/></svg><i class="diamond d-tr"></i><i class="diamond d-bl"></i><span class="card-label"><span class="en">02</span>ギュンター</span></button>
+    <button type="button" class="card c3" style="--x:1164px;--y:450px"><span class="card-art"><img src="../../../立ち絵透過下処理/キャリー背景白_clear.png" alt="" style="--w:492px;--l:-194px;--t:10px"></span><svg class="card-frame" viewBox="0 0 110 270" preserveAspectRatio="none" aria-hidden="true"><polygon points="0,29.7 110,0 110,240.3 0,270"/></svg><i class="diamond d-tr"></i><i class="diamond d-bl"></i><span class="card-label"><span class="en">03</span>キャリー</span></button>
 
     <div class="status">
       <div class="status-head"><span class="en">STATUS</span><i></i></div>
@@ -91,17 +91,20 @@
 
 <section class="tools" aria-label="試作の設定">
 <label>開閉の形<select id="flow"><option value="tear" selected>切り裂き（右上の星から・1.43秒）</option><option value="topright">帯・右上から（1.75秒）</option><option value="spec">帯・仕様書どおり（左上から・開くは逆向き）</option></select></label>
+<label>菱形の色<select id="dia"><option value="ref" selected>参考の画像に合わせる</option><option value="gold">金でそろえる</option><option value="spec">仕様書どおり（ティールの塗り）</option></select></label>
 <label>時間帯<select id="phase"><option value="morning" selected>朝</option><option value="day">昼</option><option value="evening">夕方</option><option value="night">夜</option></select></label>
 <label>端末の演出<select id="effect-mode"><option value="full" selected>あり</option><option value="short">短い（案: 約半分）</option><option value="none">なし（案: 0.15秒のフェード）</option></select></label>
 <label>再生速度<select id="speed"><option value="1" selected>通常</option><option value="0.5">ゆっくり（0.5倍）</option><option value="0.25">詳細を見る（0.25倍）</option></select></label>
 <button type="button" id="replay">閉じて開くを再生</button>
 <label>コマ送り<select id="scrub-kind"><option value="close">閉じる</option><option value="open">開く</option></select></label>
 <label class="scrub">時刻 <output id="scrub-time">0</output>ms<input id="scrub" type="range" min="0" max="2250" step="5" value="0"></label>
+<label><input type="checkbox" id="art-adjust"> 立ち絵の位置を調整（ドラッグで移動・ホイールで大きさ）</label><button type="button" id="art-copy">位置をコピー</button>
 <p class="note" id="status" role="status"></p>
+<pre class="art-values" id="art-values" hidden></pre>
 </section>
 <p class="note">切り裂き: CLOSE の星を押すと星が弾けて流星になり、星の所から左下の角へ切れ目を引く（0.2＋0.55秒）→ 切れ目が右上の側から大きく裂けて、探索が見える（0.62秒）。開くときは MENU の星から同じように切り、裂け目からメニューが現れて CLOSE の星が着地。帯: CLOSE の星で閉じる（星が弾ける0.28秒 → 帯1.75秒、覆いきった0.875秒で探索へ）。運命予報のティッカーは流さない（止まった1行）。太陽盤はホームと同じ物を埋め込んでいる（回せる）。演出中は入力を受け付けません。Escでも開閉。CLOSE／MENU の星の元の画像（素材 C）が見つからないため、星はコードで描いた仮の物です。立ち絵は全身の絵を胸から上に切り出して代わりにしています（仕様書は胸上の立ち絵）。</p>
 <nav class="links"><a href="sunfan.html">⑤ 日輪の扇へ</a><a href="index.html">①〜④の比較へ</a><a href="../../../docs/10-design/ui/MENU_HUB2_SPEC_2026-11-08.md">Hub2 の仕様書</a></nav>
 </main>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="sparkle" viewBox="-40 -40 80 80"><g transform="rotate(18)"><path d="M0-36 2.2-3.2 34 0 2.2 3.2 0 36-2.2 3.2-34 0-2.2-3.2Z"/><path d="M0-13 5.5-5.5 13 0 5.5 5.5 0 13-5.5 5.5-13 0-5.5-5.5Z" opacity=".55"/><path d="M-1-1 15-15M1 1 15 15M-1 1-15 15M1-1-15-15" stroke-width="1.1" opacity=".75"/></g></symbol></defs></svg>
-<script src="../太陽盤_コマンド試作01/time-of-day.js?v=20261005a"></script><script src="hub2-sweep-model.js?v=20261108i"></script><script src="hub2-sweep.js?v=20261108j"></script>
+<script src="../太陽盤_コマンド試作01/time-of-day.js?v=20261005a"></script><script src="hub2-sweep-model.js?v=20261108i"></script><script src="hub2-sweep.js?v=20261108k"></script>
 </body></html>
