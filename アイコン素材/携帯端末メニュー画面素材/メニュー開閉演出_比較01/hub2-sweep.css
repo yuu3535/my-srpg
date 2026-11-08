@@ -229,31 +229,4 @@ body{margin:0;background:#141219;color:#e7e1d3;font-family:'Yu Gothic UI',Meiryo
 .screen[data-event-dia="cards"] .event .d-tr,.screen[data-event-dia="cards"] .event .d-bl{display:block}
 .screen[data-event-dia="none"] .event .diamond{display:none}
 
-/* orbit＝周回（原作者の発案 2026-11-08）。ふだんは右下の角で止まり、18秒に1回だけ枠のふちを1周する。
-   ゆっくり動き出し → 上の辺で一気に加速 → ブレーキをかけて右下の角へ戻る。動いている間だけ光る。
-   道は枠の外形（event-frame の outer と同じ点）を右下の角から時計回りに。動きを減らす設定・演出なしでは止まったまま。 */
-.screen[data-event-dia="orbit"] .event .d-tl,.screen[data-event-dia="orbit"] .event .d-tr,.screen[data-event-dia="orbit"] .event .d-bl{display:none}
-.screen[data-event-dia="orbit"] .event .d-br{left:0;top:0;right:auto;bottom:auto;offset-path:path("M542 156L14 156L0 142L0 102L20 78L0 54L0 14L14 0L542 0L556 14L556 142Z");offset-rotate:0deg;offset-anchor:50% 50%;animation:event-orbit 18s infinite}
-@keyframes event-orbit{
-  0%,76%{offset-distance:0%;box-shadow:none;animation-timing-function:cubic-bezier(.55,0,.9,.4)}
-  83%{offset-distance:16%;box-shadow:0 0 8px rgba(243,205,120,.9);animation-timing-function:cubic-bezier(.3,.1,.7,.9)}
-  91%{offset-distance:72%;box-shadow:0 0 10px rgba(243,205,120,.95);animation-timing-function:cubic-bezier(.15,.6,.3,1)}
-  99%,100%{offset-distance:100%;box-shadow:none}}
-.screen[data-event-dia="orbit"][data-reduced="true"] .event .d-br{animation:none;offset-distance:0%}
-@media(prefers-reduced-motion:reduce){.screen[data-event-dia="orbit"] .event .d-br{animation:none;offset-distance:0%}}
-
-/* orbit2＝周回・2つ（原作者「ひとつだけだと結構うっとうしいかも」2026-11-08）。左上と右下（仕様書の場所）の2つが、
-   枠の反対側どうしを保ったまま同じ動きで1周する。1つだと虫が這うように見えるが、2つが対になると模様として読める。
-   左上の菱形は右下から道に沿って約50.5%の所（閉じた道なので100%を超えた分は1周目に戻る）。 */
-.screen[data-event-dia="orbit2"] .event .d-tr,.screen[data-event-dia="orbit2"] .event .d-bl{display:none}
-.screen[data-event-dia="orbit2"] .event :is(.d-tl,.d-br){left:0;top:0;right:auto;bottom:auto;offset-path:path("M542 156L14 156L0 142L0 102L20 78L0 54L0 14L14 0L542 0L556 14L556 142Z");offset-rotate:0deg;offset-anchor:50% 50%;animation:event-orbit 18s infinite}
-.screen[data-event-dia="orbit2"] .event .d-tl{animation-name:event-orbit-half}
-@keyframes event-orbit-half{
-  0%,76%{offset-distance:50.5%;box-shadow:none;animation-timing-function:cubic-bezier(.55,0,.9,.4)}
-  83%{offset-distance:66.5%;box-shadow:0 0 8px rgba(243,205,120,.9);animation-timing-function:cubic-bezier(.3,.1,.7,.9)}
-  91%{offset-distance:122.5%;box-shadow:0 0 10px rgba(243,205,120,.95);animation-timing-function:cubic-bezier(.15,.6,.3,1)}
-  99%,100%{offset-distance:150.5%;box-shadow:none}}
-.screen[data-event-dia="orbit2"][data-reduced="true"] .event :is(.d-tl,.d-br){animation:none}
-.screen[data-event-dia="orbit2"][data-reduced="true"] .event .d-br{offset-distance:0%}
-.screen[data-event-dia="orbit2"][data-reduced="true"] .event .d-tl{offset-distance:50.5%}
-@media(prefers-reduced-motion:reduce){.screen[data-event-dia="orbit2"] .event :is(.d-tl,.d-br){animation:none}.screen[data-event-dia="orbit2"] .event .d-br{offset-distance:0%}.screen[data-event-dia="orbit2"] .event .d-tl{offset-distance:50.5%}}
+/* 周回（1つ・2つ）は試したが「視界の端でうっとうしい」（原作者 2026-11-08）ので取りやめ。メインイベントの菱形は動かさない。 */
