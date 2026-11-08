@@ -71,6 +71,12 @@ assert.equal(model.ticker,undefined);assert.ok(!/data-flowing|animate\(/.test(fs
   f=model.tearFrame('open',1.43+.25);assert.equal(f.tear,null);assert.ok(f.land>0&&f.land<1,'開き終わりに CLOSE の星が着地');
   assert.equal(model.tearFrame('open',1.94).done,true);
   assert.ok(model.tearFrame('close',0,'short').total<.8);assert.equal(model.tearFrame('close',0,'none').total,.15);}
+// 菱形の3色: 水色が今のページへ移る／色は場所に付く。
+{const c=model.diaColors('crimson','tag','follow',1).map(x=>x.key).join('');assert.equal(c,'atg','水色は2つ目へ、残りは並びの順');
+  assert.equal(model.diaColors('crimson','tag','slot',1).map(x=>x.key).join(''),'tag','場所に付く色は変わらない');
+  assert.equal(model.diaColors('crimson','gat','follow',0).map(x=>x.key).join(''),'tga');
+  assert.equal(model.diaColors('ref','tag').find(x=>x.key==='a').rgb,'158,146,182');assert.equal(model.diaColors('crimson','tag').find(x=>x.key==='a').rgb,'184,72,78');
+  assert.equal(model.diaColors('crimson','tag','follow',2).filter(x=>x.active).length,1);}
 // 演出中は入力を受け付けない。
 const m=model.machine();assert.equal(m.state,'open');assert.equal(m.close(),true);assert.equal(m.locked,true);assert.equal(m.open(),false,'閉じる途中に開けない');assert.equal(m.close(),false,'二重に閉じない');
 m.step(5);assert.equal(m.state,'closed');assert.equal(m.open(),true);m.step(5);assert.equal(m.state,'open');
@@ -80,7 +86,7 @@ class Node{constructor(){this.h=new Map();this.style={setProperty(k,v){this[k]=v
   emit(t,e={}){for(const fn of [...this.h.get(t)||[]])fn(e);}setAttribute(k,v){this.attrs[k]=v;}getBoundingClientRect(){return {width:844};}querySelectorAll(){return [];}dispatchEvent(){}}
 const ids=new Map(),$=id=>{if(!ids.has(id))ids.set(id,new Node());return ids.get(id);};
 const doc=new Node(),win=new Node();doc.getElementById=$;doc.hidden=false;
-$('flow').value='tear';$('phase').value='morning';$('effect-mode').value='full';$('speed').value='1';$('scrub-kind').value='close';$('scrub').value='0';
+$('flow').value='tear';$('dia').value='crimson';$('dia-order').value='tag';$('dia-mode').value='follow';$('dia-page').value='0';$('dia-order').options=[];$('dia').classList=undefined;$('phase').value='morning';$('effect-mode').value='full';$('speed').value='1';$('scrub-kind').value='close';$('scrub').value='0';
 const media=new Node();media.matches=false;win.matchMedia=()=>media;win.Event=function(){};
 const frames=new Map();let serial=0,clock=0;win.requestAnimationFrame=fn=>{frames.set(++serial,fn);return serial;};win.cancelAnimationFrame=id=>frames.delete(id);
 win.setTimeout=()=>0;win.clearTimeout=()=>{};

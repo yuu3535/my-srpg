@@ -140,7 +140,18 @@
     listen($('flow'),'change',()=>{refreshGeometry();settle();});
     listen($('phase'),'change',renderTime);
     // ページ送りの菱形の配色（原作者に選んでもらう）。
-    const applyDia=()=>{screen.dataset.dia=['crimson','ref','gold','moon','ember','spec'].includes($('dia').value)?$('dia').value:'crimson';};listen($('dia'),'change',applyDia);applyDia();
+    // 3色の案（ref・crimson）では、並び順・めくり方・今のページから各菱形の色を決める。菱形を押してもページが変わる。
+    const dias=[...(screen.querySelectorAll?.('.page-dia')||[])];
+    function applyDia(){
+      const sch=['crimson','ref','gold','moon','ember','spec'].includes($('dia').value)?$('dia').value:'crimson',three=sch==='ref'||sch==='crimson';screen.dataset.dia=sch;
+      const accent=sch==='ref'?'藤色':'赤';for(const opt of [...($('dia-order').options||[])])opt.textContent=opt.value.split('').map(k=>k==='t'?'水色':k==='g'?'金':accent).join('・');
+      $('dia-order').disabled=!three;$('dia-mode').disabled=!three;
+      const page=Number($('dia-page').value)||0,cols=model.diaColors(sch,$('dia-order').value,$('dia-mode').value,page);
+      dias.forEach((d,i)=>{d.classList.toggle('on',i===page);d.dataset.key=cols[i].key;d.style.setProperty('--dc',cols[i].rgb);});
+    }
+    for(const id of ['dia','dia-order','dia-mode','dia-page'])listen($(id),'change',applyDia);
+    dias.forEach((d,i)=>listen(d,'click',e=>{e.stopPropagation?.();$('dia-page').value=String(i);applyDia();}));
+    applyDia();
     // 立ち絵の位置合わせ（確認用）。--l／--t／--w（カード内の px）を、ドラッグとホイールで変える。決めた値は「位置をコピー」で渡してもらう。
     const cards=[...(screen.querySelectorAll?.('.card')||[])];let drag=null;
     const artOf=card=>card.querySelector('.card-art img');

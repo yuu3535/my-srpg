@@ -90,15 +90,13 @@ body{margin:0;background:#141219;color:#e7e1d3;font-family:'Yu Gothic UI',Meiryo
    gold＝カードの角の金の菱形とそろえる（今のページは金の塗り、他はくすんだ金の枠。ティールを使わない） */
 .page-dia{width:9px;height:9px;transform:rotate(45deg);border:1px solid rgba(201,205,210,.5);transition:border-color .3s,background .3s}
 .screen[data-dia="spec"] .page-dia.on{border-color:var(--teal);background:rgba(79,163,168,.25);box-shadow:0 0 6px var(--teal)}
-.screen[data-dia="ref"] .page-dia{width:10px;height:10px;background:none;box-shadow:none;border-color:rgba(226,176,74,.32)}
-.screen[data-dia="ref"] .page-dia:nth-of-type(3){border-color:rgba(158,146,182,.6)} /* 見出しの横線も i なので、3番目の i が2つ目の菱形 */
-.screen[data-dia="ref"] .page-dia.on{border-color:rgba(79,163,168,.95);box-shadow:0 0 6px rgba(79,163,168,.85),inset 0 0 3px rgba(79,163,168,.5)}
 .screen[data-dia="gold"] .page-dia{border-color:rgba(226,176,74,.38);background:none;box-shadow:none}
 .screen[data-dia="gold"] .page-dia.on{border-color:var(--gold);background:rgba(226,176,74,.55);box-shadow:0 0 6px rgba(226,176,74,.8)}
+/* ref・crimson は3色。色はページ側（hub2-sweep.js）が並び順とめくり方から決めて --dc に入れる。今のページはその色で光る。 */
+.screen:is([data-dia="ref"],[data-dia="crimson"]) .page-dia{width:10px;height:10px;background:none;box-shadow:none;border-color:rgba(var(--dc),.6);cursor:pointer}
+.screen:is([data-dia="ref"],[data-dia="crimson"]) .page-dia[data-key="g"]{border-color:rgba(var(--dc),.42)}
+.screen:is([data-dia="ref"],[data-dia="crimson"]) .page-dia.on{border-color:rgba(var(--dc),.95);background:rgba(var(--dc),.12);box-shadow:0 0 6px rgba(var(--dc),.85),inset 0 0 3px rgba(var(--dc),.5)}
 /* crimson＝水色・赤・金（原作者の指定 2026-11-08）: 参考の画像の藤色を、くすんだ赤に置き換えた。今のページは水色の光 */
-.screen[data-dia="crimson"] .page-dia{width:10px;height:10px;background:none;box-shadow:none;border-color:rgba(226,176,74,.36)}
-.screen[data-dia="crimson"] .page-dia:nth-of-type(3){border-color:rgba(184,72,78,.7)}
-.screen[data-dia="crimson"] .page-dia.on{border-color:rgba(79,163,168,.95);box-shadow:0 0 6px rgba(79,163,168,.85),inset 0 0 3px rgba(79,163,168,.5)}
 /* moon＝月白: 今のページは白い光、他は銀の線。色を足さず、金の線と立ち絵の色を邪魔しない */
 .screen[data-dia="moon"] .page-dia{border-color:rgba(201,205,210,.4);background:none;box-shadow:none}
 .screen[data-dia="moon"] .page-dia.on{border-color:#f1ead9;background:rgba(241,234,217,.22);box-shadow:0 0 6px rgba(241,234,217,.75)}
@@ -201,3 +199,5 @@ body{margin:0;background:#141219;color:#e7e1d3;font-family:'Yu Gothic UI',Meiryo
 .screen[data-adjust="true"] .card:hover .card-art img{transform:none}
 .screen[data-adjust="true"] .card-frame polygon{stroke:var(--teal)}
 .art-values{font:12px/1.5 ui-monospace,Consolas,monospace;white-space:pre;margin:0}
+
+.page-dia{pointer-events:auto}

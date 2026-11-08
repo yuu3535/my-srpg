@@ -149,6 +149,16 @@
     const shown=t>=c;
     return {menu:shown,menuOpacity:1,explore:!shown,sweep:null,tear:tr&&{...tr,clip:tr.phase==='open'?'inside':null},burst:null,exploreBurst:shown?null:burstQ,land:t<e?(shown?0:null):clamp((t-e)/d.land),done:t>=total,total};
   }
+  // ── ページ送りの菱形の3色（原作者と相談中 2026-11-08）。t＝水色、a＝藤色か赤（配色案による）、g＝金。
+  // order＝左から並べる3色（例 'tag'）。mode: 'slot'＝色は場所に付き、今のページはその場所の色で光る／'follow'＝水色が今のページへ移り、残りは並びの順に他の2色。
+  const dia=Object.freeze({t:'79,163,168',a:{ref:'158,146,182',crimson:'184,72,78'},g:'226,176,74',orders:Object.freeze(['tag','tga','atg','gta','agt','gat'])});
+  function diaColors(scheme='crimson',order='tag',modeName='follow',page=0){
+    const o=dia.orders.includes(order)?order:'tag',p=[0,1,2].includes(page)?page:0,rgb=k=>k==='t'?dia.t:k==='g'?dia.g:(dia.a[scheme]||dia.a.crimson);
+    let keys;
+    if(modeName==='slot')keys=o.split('');
+    else{const rest=o.split('').filter(k=>k!=='t');keys=[0,1,2].map(i=>i===p?'t':rest.shift());}
+    return keys.map((k,i)=>({key:k,rgb:rgb(k),active:i===p}));
+  }
   function burstPose(q){const p=clamp(q);if(p<.5){const k=p/.5;return {scale:1+.5*k,rotate:90*k,opacity:1};}const k=(p-.5)/.5;return {scale:1.5*(1-k),rotate:90+90*k,opacity:1-k};}
   function landPose(q){const p=clamp(q),k=bezier(.34,1.56,.64,1,p);return {scale:1.7+(1-1.7)*k,rotate:-90+90*k,opacity:Math.min(1,p*4)};}
   function machine(){
@@ -166,6 +176,6 @@
       reset(to='open'){state=to;kind=null;elapsed=0;}
     };
   }
-  const api=Object.freeze({base,timing,clamp,bezier,easeInOut,geometry,flow,travel,fortuneDurations,band,tear,tearDurations,tearGeometry,meteor,tearLens,lensPath,edgePath,insideLens,tearFrame,coverage,mode,durations,frame,burstPose,landPose,machine});
+  const api=Object.freeze({base,timing,clamp,bezier,easeInOut,geometry,flow,travel,fortuneDurations,band,tear,tearDurations,tearGeometry,meteor,tearLens,lensPath,edgePath,insideLens,tearFrame,dia,diaColors,coverage,mode,durations,frame,burstPose,landPose,machine});
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.Hub2SweepModel=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
