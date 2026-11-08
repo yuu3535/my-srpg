@@ -45,13 +45,17 @@ assert.equal(model.burstPose(1).opacity,0);assert.ok(model.burstPose(.5).scale>1
 assert.ok(Math.abs(model.landPose(0).scale-1.7)<1e-9);assert.equal(model.landPose(0).rotate,-90);assert.equal(model.landPose(1).scale,1);assert.equal(model.landPose(1).rotate,0);
 // 「短い」「なし」（演出担当の案）。
 assert.equal(model.durations('short').sweep,.8);assert.equal(model.frame('close',0,'none').total,.15);assert.equal(model.frame('close',.15,'none').menu,false);
+// 運命予報カード（§3-11）: 暗幕0.3秒・カード0.55秒（-80°・0.92倍から）。閉じるは案（+80°へ0.3秒）。「なし」は回さない。
+{const F=T.fortune;assert.equal(F.open.scrim,.3);assert.equal(F.open.card,.55);assert.equal(F.open.fromRotate,-80);assert.equal(F.open.fromScale,.92);
+  assert.equal(model.fortuneDurations('full').card,.55);assert.equal(model.fortuneDurations('full',false,.25).card,2.2);
+  assert.equal(model.fortuneDurations('none').card,0);assert.ok(model.fortuneDurations('full',true).total<model.fortuneDurations('full').total,'閉じるのは開くより短い');}
 // 演出中は入力を受け付けない。
 const m=model.machine();assert.equal(m.state,'open');assert.equal(m.close(),true);assert.equal(m.locked,true);assert.equal(m.open(),false,'閉じる途中に開けない');assert.equal(m.close(),false,'二重に閉じない');
 m.step(5);assert.equal(m.state,'closed');assert.equal(m.open(),true);m.step(5);assert.equal(m.state,'open');
 // ページの制御（DOMの代わり）。
-class Node{constructor(){this.h=new Map();this.style={};this.dataset={};this.hidden=false;this.disabled=false;}
+class Node{constructor(){this.h=new Map();this.style={setProperty(k,v){this[k]=v;}};this.attrs={};this.dataset={};this.hidden=false;this.disabled=false;}
   addEventListener(t,fn){if(!this.h.has(t))this.h.set(t,new Set());this.h.get(t).add(fn);}removeEventListener(t,fn){this.h.get(t)?.delete(fn);}
-  emit(t,e={}){for(const fn of [...this.h.get(t)||[]])fn(e);}getBoundingClientRect(){return {width:844};}querySelectorAll(){return [];}dispatchEvent(){}}
+  emit(t,e={}){for(const fn of [...this.h.get(t)||[]])fn(e);}setAttribute(k,v){this.attrs[k]=v;}getBoundingClientRect(){return {width:844};}querySelectorAll(){return [];}dispatchEvent(){}}
 const ids=new Map(),$=id=>{if(!ids.has(id))ids.set(id,new Node());return ids.get(id);};
 const doc=new Node(),win=new Node();doc.getElementById=$;doc.hidden=false;
 $('flow').value='topright';$('effect-mode').value='full';$('speed').value='1';$('scrub-kind').value='close';$('scrub').value='0';
@@ -66,6 +70,13 @@ step(0);step(400);assert.equal($('band').style.visibility,'visible');assert.ok($
 $('menu-star').emit('click');assert.equal(page.machine.state,'closing','演出中のクリックは無視');
 step(1000);assert.equal($('menu').style.display,'none');step(1000);assert.equal(page.machine.state,'closed');assert.equal($('menu-star').hidden,false);assert.equal($('band').style.visibility,'hidden');
 $('menu-star').emit('click');step(0);step(900);assert.equal($('menu').style.display,'');step(2000);assert.equal(page.machine.state,'open');
+// 運命予報カード: ティッカーを押すと開き、既読になる。暗幕・閉じる・Escで閉じる。Escはカードを先に閉じ、メニューは閉じない。
+const timers=[];win.setTimeout=(fn,ms)=>{timers.push(fn);return timers.length;};
+$('ticker').dataset.new='true';$('ticker').emit('click');assert.equal($('fortune').hidden,false);assert.equal($('fortune').dataset.state,'open');assert.equal($('ticker').dataset.new,'false');
+assert.equal($('fortune').style['--d-card'],'0.55s');
+const esc={key:'Escape',repeat:false,target:{closest:()=>null},preventDefault(){}};doc.emit('keydown',esc);assert.equal($('fortune').dataset.state,'closing');assert.equal(page.machine.state,'open','Escはカードを先に閉じる');
+timers.splice(0).forEach(fn=>fn());assert.equal($('fortune').hidden,true);assert.equal($('fortune').dataset.state,'closed');
+$('ticker').emit('click');$('fortune-scrim').emit('click');assert.equal($('fortune').dataset.state,'closing','暗幕で閉じる');timers.splice(0).forEach(fn=>fn());
 $('scrub-kind').value='open';$('scrub').value='1000';$('scrub').emit('input');assert.equal(page.machine.kind,'open');assert.equal($('runner').dataset.dir,'close','右上からは開くときも同じ向き');
 page.destroy();assert.equal(frames.size,0);
 console.log('PASS: Hub2 の帯スイープの数値（1.75秒・46〜54%で覆う・0.875秒で入れ替え・155.2°）、幾何（画面を覆いきる）、閉じる（星が弾ける→帯）・開く（帯→星が着地）、演出中は入力なし、短い／なしの案、ページの制御。ブラウザ描画は別途。');

@@ -44,7 +44,27 @@
     function close(){if(machine.close()){draw();schedule();}}
     function open(){if(machine.open()){draw();schedule();}}
     listen($('close-star'),'click',close);listen($('menu-star'),'click',open);
-    listen(doc,'keydown',event=>{if(event.key!=='Escape'||event.repeat||event.target.closest?.('select,input'))return;event.preventDefault();if(machine.state==='open')close();else if(machine.state==='closed')open();});
+    // 運命予報カード（§3-11）。ティッカーを押すと出て、ティッカーは既読になる（点が消え、文字が落ち着いた色に）。
+    // 閉じる途中・開く途中でも反対の操作はその場から（CSSのトランジションが今の姿から戻る）。
+    const fortune=$('fortune');let fortuneTimer=null;
+    function fortuneVars(closing){const d=model.fortuneDurations(setting(),closing,$('speed').value);
+      fortune.style.setProperty('--d-scrim',d.scrim+'s');fortune.style.setProperty('--d-card',d.card+'s');fortune.style.setProperty('--d-fade',d.fade+'s');return d;}
+    function openFortune(){
+      if(machine.state!=='open'||fortune.dataset.state==='open')return;win.clearTimeout(fortuneTimer);
+      fortuneVars(false);fortune.hidden=false;void fortune.offsetWidth;fortune.dataset.state='open';
+      const t=$('ticker');t.dataset.new='false';t.setAttribute('aria-label','運命予報を開く');
+      fortuneTimer=win.setTimeout(()=>$('fortune-close').focus?.({preventScroll:true}),model.fortuneDurations(setting(),false,$('speed').value).total*1000);
+    }
+    function closeFortune(){
+      if(fortune.dataset.state!=='open')return;win.clearTimeout(fortuneTimer);
+      const d=fortuneVars(true);fortune.dataset.state='closing';
+      fortuneTimer=win.setTimeout(()=>{fortune.hidden=true;fortune.dataset.state='closed';$('ticker').focus?.({preventScroll:true});},d.total*1000+20);
+    }
+    listen($('ticker'),'click',openFortune);listen($('fortune-scrim'),'click',closeFortune);listen($('fortune-close'),'click',closeFortune);
+    disposers.push(()=>win.clearTimeout(fortuneTimer));
+    listen(doc,'keydown',event=>{if(event.key!=='Escape'||event.repeat||event.target.closest?.('select,input'))return;event.preventDefault();
+      if(fortune.dataset.state==='open'){closeFortune();return;}if(fortune.dataset.state==='closing')return;
+      if(machine.state==='open')close();else if(machine.state==='closed')open();});
     listen($('replay'),'click',()=>{win.clearTimeout(replayTimer);stop();machine.reset('open');draw();close();
       const d=model.frame('close',0,setting()).total,s=Number($('speed').value||1);replayTimer=win.setTimeout(open,(d/s+.8)*1000);});
     function scrubMax(){const kind=$('scrub-kind').value;const total=model.frame(kind,0,setting()).total;$('scrub').max=String(Math.round(total*1000));}
