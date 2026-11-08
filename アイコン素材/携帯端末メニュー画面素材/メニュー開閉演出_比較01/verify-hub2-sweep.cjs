@@ -86,7 +86,7 @@ class Node{constructor(){this.h=new Map();this.style={setProperty(k,v){this[k]=v
   emit(t,e={}){for(const fn of [...this.h.get(t)||[]])fn(e);}setAttribute(k,v){this.attrs[k]=v;}getBoundingClientRect(){return {width:844};}querySelectorAll(){return [];}dispatchEvent(){}}
 const ids=new Map(),$=id=>{if(!ids.has(id))ids.set(id,new Node());return ids.get(id);};
 const doc=new Node(),win=new Node();doc.getElementById=$;doc.hidden=false;
-$('flow').value='tear';$('dia').value='crimson';$('dia-order').value='tag';$('dia-mode').value='follow';$('dia-page').value='0';$('line-dia').value='none';$('event-dia').value='br';$('dia-order').options=[];$('dia').classList=undefined;$('phase').value='morning';$('effect-mode').value='full';$('speed').value='1';$('scrub-kind').value='close';$('scrub').value='0';
+$('flow').value='tear';$('dia').value='crimson';$('dia-order').value='tag';$('dia-mode').value='follow';$('dia-page').value='0';$('event-dia').value='br';$('dia-order').options=[];$('dia').classList=undefined;$('phase').value='morning';$('effect-mode').value='full';$('speed').value='1';$('scrub-kind').value='close';$('scrub').value='0';
 const media=new Node();media.matches=false;win.matchMedia=()=>media;win.Event=function(){};
 const frames=new Map();let serial=0,clock=0;win.requestAnimationFrame=fn=>{frames.set(++serial,fn);return serial;};win.cancelAnimationFrame=id=>frames.delete(id);
 win.setTimeout=()=>0;win.clearTimeout=()=>{};

@@ -152,9 +152,9 @@
     for(const id of ['dia','dia-order','dia-mode','dia-page'])listen($(id),'change',applyDia);
     dias.forEach((d,i)=>listen(d,'click',e=>{e.stopPropagation?.();$('dia-page').value=String(i);applyDia();}));
     applyDia();
-    // 線の端の菱形・メインイベントの角の菱形（見比べ用）。
-    const applyDeco=()=>{screen.dataset.lineDia=['none','one','three'].includes($('line-dia').value)?$('line-dia').value:'none';screen.dataset.eventDia=['br','spec','cards','none'].includes($('event-dia').value)?$('event-dia').value:'br';};
-    listen($('line-dia'),'change',applyDeco);listen($('event-dia'),'change',applyDeco);applyDeco();
+    // メインイベントの角の菱形（見比べ用）。
+    const applyDeco=()=>{screen.dataset.eventDia=['br','spec','cards','none'].includes($('event-dia').value)?$('event-dia').value:'br';};
+    listen($('event-dia'),'change',applyDeco);applyDeco();
     // 立ち絵の位置合わせ（確認用）。--l／--t／--w（カード内の px）を、ドラッグとホイールで変える。決めた値は「位置をコピー」で渡してもらう。
     const cards=[...(screen.querySelectorAll?.('.card')||[])];let drag=null;
     const artOf=card=>card.querySelector('.card-art img');

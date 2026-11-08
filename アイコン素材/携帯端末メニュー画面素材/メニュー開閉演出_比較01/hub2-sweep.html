@@ -5,7 +5,7 @@
 <title>Hub2 開閉｜開閉演出の試作</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Shippori+Mincho:wght@600;700;800&display=swap">
-<link rel="stylesheet" href="hub2-sweep.css?v=20261108s">
+<link rel="stylesheet" href="hub2-sweep.css?v=20261108t">
 </head>
 <body>
 <main class="page">
@@ -94,7 +94,6 @@
 <label>菱形の色<select id="dia"><option value="cycle" selected>巡る（水色→藤色→赤→金がゆっくり入れ替わり、ときどき波のように跳ねる）</option><option value="crimson">水色・赤・金</option><option value="ref">参考の画像に合わせる（水色・藤色・金）</option><option value="gold">金でそろえる</option><option value="moon">月白（白い光と銀）</option><option value="ember">琥珀（炎の色）</option><option value="spec">仕様書どおり（ティールの塗り）</option></select></label>
 <label>菱形の並び（左から）<select id="dia-order"><option value="tag" selected>水色・赤・金</option><option value="tga">水色・金・赤</option><option value="atg">赤・水色・金</option><option value="gta">金・水色・赤</option><option value="agt">赤・金・水色</option><option value="gat">金・赤・水色</option></select></label>
 <label>めくったとき<select id="dia-mode"><option value="follow" selected>水色が今のページへ移る</option><option value="slot">色は場所に付く（今のページはその色で光る）</option></select></label>
-<label>線の端の菱形<select id="line-dia"><option value="none" selected>付けない</option><option value="one">小さな金の菱形1つ</option><option value="three">3色の小さな菱形（動かない）</option></select></label>
 <label>メインイベントの角の菱形<select id="event-dia"><option value="br" selected>右下だけ</option><option value="spec">仕様書どおり（左上・右下）</option><option value="cards">右上と左下（カードと同じ向き）</option><option value="none">なし</option></select></label>
 <label>今のページ<select id="dia-page"><option value="0" selected>1</option><option value="1">2</option><option value="2">3</option></select></label>
 <label>時間帯<select id="phase"><option value="morning" selected>朝</option><option value="day">昼</option><option value="evening">夕方</option><option value="night">夜</option></select></label>
@@ -111,5 +110,5 @@
 <nav class="links"><a href="sunfan.html">⑤ 日輪の扇へ</a><a href="index.html">①〜④の比較へ</a><a href="../../../docs/10-design/ui/MENU_HUB2_SPEC_2026-11-08.md">Hub2 の仕様書</a></nav>
 </main>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="sparkle" viewBox="-40 -40 80 80"><g transform="rotate(18)"><path d="M0-36 2.2-3.2 34 0 2.2 3.2 0 36-2.2 3.2-34 0-2.2-3.2Z"/><path d="M0-13 5.5-5.5 13 0 5.5 5.5 0 13-5.5 5.5-13 0-5.5-5.5Z" opacity=".55"/><path d="M-1-1 15-15M1 1 15 15M-1 1-15 15M1-1-15-15" stroke-width="1.1" opacity=".75"/></g></symbol></defs></svg>
-<script src="../太陽盤_コマンド試作01/time-of-day.js?v=20261005a"></script><script src="hub2-sweep-model.js?v=20261108o"></script><script src="hub2-sweep.js?v=20261108s"></script>
+<script src="../太陽盤_コマンド試作01/time-of-day.js?v=20261005a"></script><script src="hub2-sweep-model.js?v=20261108o"></script><script src="hub2-sweep.js?v=20261108t"></script>
 </body></html>
