@@ -62,14 +62,14 @@ assert.equal(model.ticker,undefined);assert.ok(!/data-flowing|animate\(/.test(fs
   const off=(p,d)=>({x:p.x+tg.n.x*d,y:p.y+tg.n.y*d});
   assert.ok(model.insideLens(.3,off(near,60).x,off(near,60).y,tg)&&!model.insideLens(.3,off(far,60).x,off(far,60).y,tg),'右上の側から裂ける');
   assert.ok(model.lensPath(.5,tg).startsWith('M')&&model.lensPath(.5,tg).endsWith('Z'));}
-{let f=model.tearFrame('close',.1);assert.equal(f.tear.phase,'flare');assert.ok(f.burst>0);assert.equal(f.menu,true);
-  f=model.tearFrame('close',.5);assert.equal(f.tear.phase,'cut');assert.equal(f.tear.clip,null);
-  f=model.tearFrame('close',1.1);assert.equal(f.tear.phase,'open');assert.equal(f.tear.clip,'outside');assert.equal(f.menu,true);
-  f=model.tearFrame('close',1.44);assert.equal(f.done,true);assert.equal(f.menu,false);assert.equal(f.explore,true);
-  f=model.tearFrame('open',.1);assert.ok(f.exploreBurst>0,'MENU の星が弾けて流星になる');assert.equal(f.menu,false);
-  f=model.tearFrame('open',1.1);assert.equal(f.tear.clip,'inside');assert.equal(f.menu,true);assert.equal(f.explore,false);
-  f=model.tearFrame('open',1.43+.25);assert.equal(f.tear,null);assert.ok(f.land>0&&f.land<1,'開き終わりに CLOSE の星が着地');
-  assert.equal(model.tearFrame('open',1.94).done,true);
+{let f=model.tearFrame('close',.1,'full','long');assert.equal(f.tear.phase,'flare');assert.ok(f.burst>0);assert.equal(f.menu,true);
+  f=model.tearFrame('close',.5,'full','long');assert.equal(f.tear.phase,'cut');assert.equal(f.tear.clip,null);
+  f=model.tearFrame('close',1.1,'full','long');assert.equal(f.tear.phase,'open');assert.equal(f.tear.clip,'outside');assert.equal(f.menu,true);
+  f=model.tearFrame('close',1.44,'full','long');assert.equal(f.done,true);assert.equal(f.menu,false);assert.equal(f.explore,true);
+  f=model.tearFrame('open',.1,'full','long');assert.ok(f.exploreBurst>0,'MENU の星が弾けて流星になる');assert.equal(f.menu,false);
+  f=model.tearFrame('open',1.1,'full','long');assert.equal(f.tear.clip,'inside');assert.equal(f.menu,true);assert.equal(f.explore,false);
+  f=model.tearFrame('open',1.43+.25,'full','long');assert.equal(f.tear,null);assert.ok(f.land>0&&f.land<1,'開き終わりに CLOSE の星が着地');
+  assert.equal(model.tearFrame('open',1.94,'full','long').done,true);
   assert.ok(model.tearFrame('close',0,'short').total<.8);assert.equal(model.tearFrame('close',0,'none').total,.15);}
 // 菱形の3色: 水色が今のページへ移る／色は場所に付く。
 {const c=model.diaColors('crimson','tag','follow',1).map(x=>x.key).join('');assert.equal(c,'atg','水色は2つ目へ、残りは並びの順');
@@ -77,7 +77,15 @@ assert.equal(model.ticker,undefined);assert.ok(!/data-flowing|animate\(/.test(fs
   assert.equal(model.diaColors('crimson','gat','follow',0).map(x=>x.key).join(''),'tga');
   assert.equal(model.diaColors('ref','tag').find(x=>x.key==='a').rgb,'158,146,182');assert.equal(model.diaColors('crimson','tag').find(x=>x.key==='a').rgb,'184,72,78');
   assert.equal(model.diaColors('crimson','tag','follow',2).filter(x=>x.active).length,1);}
-// 演出中は入力を受け付けない。
+// 短い版と節目（原作者の決定 2026-11-09）。
+{const S=model.tearShort;assert.equal(+(S.flare+S.cut+S.hold+S.open).toFixed(2),.62,'短い版の閉じるは0.62秒');assert.equal(+model.tearFrame('open',0,'full','short').total.toFixed(2),.82,'短い版の開くは0.82秒（着地込み）');
+  assert.equal(+model.tearFrame('open',0,'full','long').total.toFixed(2),1.93);assert.equal(+model.tearFrame('open',0,'short','long').total.toFixed(2),.82,'設定「短い」は長い版を流さない');assert.equal(model.tearFrame('open',0,'none','long').total,.15);
+  let st=model.milestoneState();assert.deepEqual(model.openLength('full',st,1),{length:'long',reason:'boot'});st=model.afterOpen(st,1);
+  assert.equal(model.openLength('full',st,1).length,'short');assert.equal(model.openLength('full',st,2).reason,'day');
+  st=model.markMilestone(st,'battle');st=model.markMilestone(st,'chapter');st=model.markMilestone(st,'event');assert.equal(model.openLength('full',st,1).reason,'chapter','重い節目を残す');
+  assert.equal(model.openLength('short',st,1).length,'short');st=model.afterOpen(st,1);assert.equal(st.pending,null);
+  const mm=model.machine();mm.close();assert.equal(mm.skip(),true);assert.equal(mm.state,'closed');assert.equal(mm.skip(),false,'演出中でなければ何もしない');}
+// 演出中は入力を受け付けない（飛ばす操作だけ受け付ける）。
 const m=model.machine();assert.equal(m.state,'open');assert.equal(m.close(),true);assert.equal(m.locked,true);assert.equal(m.open(),false,'閉じる途中に開けない');assert.equal(m.close(),false,'二重に閉じない');
 m.step(5);assert.equal(m.state,'closed');assert.equal(m.open(),true);m.step(5);assert.equal(m.state,'open');
 // ページの制御（DOMの代わり）。
@@ -86,7 +94,7 @@ class Node{constructor(){this.h=new Map();this.style={setProperty(k,v){this[k]=v
   emit(t,e={}){for(const fn of [...this.h.get(t)||[]])fn(e);}setAttribute(k,v){this.attrs[k]=v;}getBoundingClientRect(){return {width:844};}querySelectorAll(){return [];}dispatchEvent(){}}
 const ids=new Map(),$=id=>{if(!ids.has(id))ids.set(id,new Node());return ids.get(id);};
 const doc=new Node(),win=new Node();doc.getElementById=$;doc.hidden=false;
-$('flow').value='tear';$('dia').value='crimson';$('dia-order').value='tag';$('dia-mode').value='follow';$('dia-page').value='0';$('event-dia').value='br';$('dia-order').options=[];$('dia').classList=undefined;$('phase').value='morning';$('effect-mode').value='full';$('speed').value='1';$('scrub-kind').value='close';$('scrub').value='0';
+$('flow').value='tear';$('dia').value='crimson';$('dia-order').value='tag';$('dia-mode').value='follow';$('dia-page').value='0';$('event-dia').value='br';$('dia-order').options=[];$('dia').classList=undefined;$('phase').value='morning';$('effect-mode').value='full';$('speed').value='1';$('scrub-kind').value='close';$('scrub').value='0';$('scrub-length').value='long';$('milestone').value='event';
 const media=new Node();media.matches=false;win.matchMedia=()=>media;win.Event=function(){};
 const frames=new Map();let serial=0,clock=0;win.requestAnimationFrame=fn=>{frames.set(++serial,fn);return serial;};win.cancelAnimationFrame=id=>frames.delete(id);
 win.setTimeout=()=>0;win.clearTimeout=()=>{};
@@ -94,15 +102,28 @@ const step=ms=>{clock+=ms;const list=[...frames.values()];frames.clear();list.fo
 win.TimeOfDay=require('../太陽盤_コマンド試作01/time-of-day.js');
 $('sun-wheel').contentWindow={};
 assert.ok(/\.sun-wheel\{[^}]*color-scheme:dark/.test(fs.readFileSync(path.join(__dirname,'hub2-sweep.css'),'utf8')),'太陽盤の下地が黒くならない（color-scheme を中のページと合わせる）');
-const page=mount(doc,win,model);
+const page=mount(doc,win,model);const draw0=()=>page.draw();
 assert.ok($('time-slot').innerHTML.includes('data-phase="morning"'),'時間帯アイコンを作る');assert.ok($('time-slot').innerHTML.includes('../太陽盤_コマンド試作01/time-of-day-art/'),'素材のパスを直す');assert.ok(!/src="time-of-day-art/.test($('time-slot').innerHTML));
 assert.equal($('screen').style.transform,'scale(0.5)');assert.equal($('menu-star').hidden,true);
 // 切り裂き（初期値）: 閉じる → 切れ目 → メニューが裂ける → 探索。
 $('close-star').emit('click');assert.equal(page.machine.state,'closing');assert.equal($('close-star').disabled,true);
-step(0);step(400);assert.equal($('tear').style.visibility,'visible');assert.ok($('tear-seam').attrs.d.startsWith('M1688'),'切れ目は右上の端から');assert.equal($('meteor').style.visibility,'visible');
-step(600);assert.ok($('menu').style.clipPath.startsWith('path(evenodd'),'メニューが裂ける');
+// 閉じるのはいつも短い版（0.62秒）。
+assert.equal(page.machine.length,'short','閉じるのは短い版');
+step(0);step(200);assert.equal($('tear').style.visibility,'visible');assert.ok($('tear-seam').attrs.d.startsWith('M1688'),'切れ目は右上の端から');assert.equal($('meteor').style.visibility,'visible');
+step(250);assert.ok($('menu').style.clipPath.startsWith('path(evenodd'),'メニューが裂ける');
 step(1000);assert.equal(page.machine.state,'closed');assert.equal($('menu').style.display,'none');assert.equal($('menu').style.clipPath,'');assert.equal($('menu-star').hidden,false);
-$('menu-star').emit('click');step(0);step(1100);assert.ok($('menu').style.clipPath.startsWith('path("M'),'開くときは裂け目からメニュー');step(2000);assert.equal(page.machine.state,'open');
+// 起動して最初に開くのは長い版（1.93秒）。
+$('menu-star').emit('click');assert.equal(page.machine.length,'long','起動して最初は長い版');step(0);step(1100);assert.ok($('menu').style.clipPath.startsWith('path("M'),'開くときは裂け目からメニュー');step(2000);assert.equal(page.machine.state,'open');
+// 同じ日の2回目は短い版。演出中に押すと最後まで飛ばす。
+$('close-star').emit('click');step(0);step(1000);$('menu-star').emit('click');assert.equal(page.machine.length,'short','同じ日の2回目は短い版');
+step(0);step(100);$('screen').emit('pointerdown',{preventDefault(){}});assert.equal(page.machine.state,'open','押したら最後まで飛ばす');assert.equal($('menu').style.clipPath,'');assert.equal($('tear').style.visibility,'hidden');
+// 節目（メインイベントが変わった）のあとは長い版。日を進めても長い版。
+$('close-star').emit('click');doc.emit('keydown',{key:'Enter',repeat:false,target:{closest:()=>null},preventDefault(){}});assert.equal(page.machine.state,'closed','Enterでも飛ばす');
+$('raise-milestone').emit('click');$('menu-star').emit('click');assert.equal(page.machine.length,'long','節目のあとは長い版');page.machine.skip();
+$('close-star').emit('click');page.machine.skip();$('menu-star').emit('click');assert.equal(page.machine.length,'short','節目は1回で消える');page.machine.skip();
+$('close-star').emit('click');page.machine.skip();$('advance-day').emit('click');$('menu-star').emit('click');assert.equal(page.machine.length,'long','その日の最初は長い版');page.machine.skip();
+// 設定「短い」なら節目でも短い版。
+$('effect-mode').value='short';$('close-star').emit('click');page.machine.skip();$('raise-milestone').emit('click');$('menu-star').emit('click');assert.equal(page.machine.length,'short','設定「短い」は節目でも短い版');page.machine.skip();$('effect-mode').value='full';draw0();
 // 帯（比較用）も残す。
 $('flow').value='topright';$('flow').emit('change');
 $('close-star').emit('click');step(0);step(400);assert.equal($('band').style.visibility,'visible');assert.ok($('band').style.transform.includes('rotate(24.8'),'右上からの帯');assert.equal($('tear').style.visibility,'hidden');

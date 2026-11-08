@@ -97,10 +97,12 @@
 <label>メインイベントの角の菱形<select id="event-dia"><option value="br" selected>右下だけ（原作者が選んだ）</option><option value="spec">仕様書どおり（左上・右下）</option><option value="cards">右上と左下（カードと同じ向き）</option><option value="none">なし</option></select></label>
 <label>今のページ<select id="dia-page"><option value="0" selected>1</option><option value="1">2</option><option value="2">3</option></select></label>
 <label>時間帯<select id="phase"><option value="morning" selected>朝</option><option value="day">昼</option><option value="evening">夕方</option><option value="night">夜</option></select></label>
-<label>端末の演出<select id="effect-mode"><option value="full" selected>あり</option><option value="short">短い（案: 約半分）</option><option value="none">なし（案: 0.15秒のフェード）</option></select></label>
+<label>端末の演出<select id="effect-mode"><option value="full" selected>あり（節目だけ長い版）</option><option value="short">短い（いつも短い版）</option><option value="none">なし（案: 0.15秒のフェード）</option></select></label>
 <label>再生速度<select id="speed"><option value="1" selected>通常</option><option value="0.5">ゆっくり（0.5倍）</option><option value="0.25">詳細を見る（0.25倍）</option></select></label>
 <button type="button" id="replay">閉じて開くを再生</button>
-<label>コマ送り<select id="scrub-kind"><option value="close">閉じる</option><option value="open">開く</option></select></label>
+<button type="button" id="advance-day">日を進める</button>
+<label>節目<select id="milestone"><option value="chapter">章の始まり</option><option value="event" selected>メインイベントが変わった</option><option value="battle">物語の戦闘に勝った</option></select></label><button type="button" id="raise-milestone">節目を起こす</button>
+<label>コマ送り<select id="scrub-kind"><option value="close">閉じる</option><option value="open">開く</option></select></label><label>長さ<select id="scrub-length"><option value="long" selected>長い版</option><option value="short">短い版</option></select></label>
 <label class="scrub">時刻 <output id="scrub-time">0</output>ms<input id="scrub" type="range" min="0" max="2250" step="5" value="0"></label>
 <label><input type="checkbox" id="art-adjust"> 立ち絵の位置を調整（ドラッグで移動・ホイールで大きさ）</label><button type="button" id="art-copy">位置をコピー</button>
 <p class="note" id="status" role="status"></p>
@@ -110,5 +112,5 @@
 <nav class="links"><a href="sunfan.html">⑤ 日輪の扇へ</a><a href="index.html">①〜④の比較へ</a><a href="../../../docs/10-design/ui/MENU_HUB2_SPEC_2026-11-08.md">Hub2 の仕様書</a></nav>
 </main>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="sparkle" viewBox="-40 -40 80 80"><g transform="rotate(18)"><path d="M0-36 2.2-3.2 34 0 2.2 3.2 0 36-2.2 3.2-34 0-2.2-3.2Z"/><path d="M0-13 5.5-5.5 13 0 5.5 5.5 0 13-5.5 5.5-13 0-5.5-5.5Z" opacity=".55"/><path d="M-1-1 15-15M1 1 15 15M-1 1-15 15M1-1-15-15" stroke-width="1.1" opacity=".75"/></g></symbol></defs></svg>
-<script src="../太陽盤_コマンド試作01/time-of-day.js?v=20261005a"></script><script src="hub2-sweep-model.js?v=20261108o"></script><script src="hub2-sweep.js?v=20261108x"></script>
+<script src="../太陽盤_コマンド試作01/time-of-day.js?v=20261005a"></script><script src="hub2-sweep-model.js?v=20261109a"></script><script src="hub2-sweep.js?v=20261109a"></script>
 </body></html>

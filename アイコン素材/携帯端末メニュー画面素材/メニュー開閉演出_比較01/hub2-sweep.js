@@ -71,8 +71,10 @@
       // 演出中は入力を受け付けない（Hub2 の決まり）。
       $('close-star').disabled=machine.locked||machine.state!=='open';$('menu-star').disabled=machine.locked||machine.state!=='closed';
       screen.dataset.locked=String(machine.locked);
-      const labels={open:'メニュー',closed:'探索',closing:'閉じる途中（入力なし）',opening:'開く途中（入力なし）'};
-      $('status').textContent=`${labels[machine.state]}　／　端末の演出：${{full:'あり',short:'短い（案）',none:'なし（案）'}[setting()]}${media.matches?'（OSの動きを減らす設定）':''}`;
+      const labels={open:'メニュー',closed:'探索',closing:'閉じる途中（押すと飛ばす）',opening:'開く途中（押すと飛ばす）'};
+      const nx=style()==='tear'?model.openLength(setting(),ms,day):null,len=machine.locked&&style()==='tear'?`（${machine.length==='long'?'長い版':'短い版'}）`:'';
+      const next=nx?`　／　次に開くとき：${nx.length==='long'?'長い版（'+model.milestoneReasons[nx.reason]+'）':'短い版'}`:'';
+      $('status').textContent=`${labels[machine.state]}${len}　／　${day}日目　／　端末の演出：${{full:'あり（節目だけ長い）',short:'短い',none:'なし（案）'}[setting()]}${media.matches?'（OSの動きを減らす設定）':''}${next}`;
     }
     function stop(){if(raf!==null)win.cancelAnimationFrame(raf);raf=null;last=null;}
     function schedule(){if(!destroyed&&!doc.hidden&&raf===null&&machine.locked)raf=win.requestAnimationFrame(tick);}
@@ -82,9 +84,18 @@
       machine.step(dt,setting(),style());draw();
       if(machine.locked)schedule();else last=null;
     }
-    function close(){if(machine.state==='open')refreshTear('close');if(machine.close()){draw();schedule();}}
-    function open(){if(machine.state==='closed')refreshTear('open');if(machine.open()){draw();schedule();}}
+    // 長い版と短い版（原作者の決定 2026-11-09）。閉じるのはいつも短い版。開くときは節目だけ長い版（model.openLength）。
+    // 試作では「ゲームの中の日」と「節目」を下の道具で起こせる。このページを開いたときは「起動して最初」なので、最初に開くのは長い版。
+    let ms=model.milestoneState(),day=1;
+    function close(){if(machine.state==='open')refreshTear('close');if(machine.close('short')){draw();schedule();}}
+    function open(){if(machine.state!=='closed')return;refreshTear('open');const nx=model.openLength(setting(),ms,day);
+      if(machine.open(nx.length)){ms=model.afterOpen(ms,day);draw();schedule();}}
+    // 演出中に押したら最後まで飛ばす（原作者の決定 2026-11-09）。画面のどこを押しても、Esc・Enter・スペースでも。
+    function skip(){if(!machine.locked)return false;machine.skip();stop();draw();return true;}
+    listen(screen,'pointerdown',e=>{if(skip())e.preventDefault?.();},{capture:true});
     listen($('close-star'),'click',close);listen($('menu-star'),'click',open);
+    listen($('advance-day'),'click',()=>{day++;draw();});
+    listen($('raise-milestone'),'click',()=>{ms=model.markMilestone(ms,$('milestone').value);draw();});
     // 運命予報カード（§3-11）。ティッカーを押すと出て、ティッカーは既読になる（点が消え、文字が落ち着いた色に）。
     // 閉じる途中・開く途中でも反対の操作はその場から（CSSのトランジションが今の姿から戻る）。
     const fortune=$('fortune');let fortuneTimer=null;
@@ -129,13 +140,15 @@
     listen(win,'message',event=>{if(event.data&&event.data.type==='solar-menu-escape'&&event.source===$('sun-wheel').contentWindow)escape();});
     function escape(){if(fortune.dataset.state==='open'){closeFortune();return;}if(fortune.dataset.state==='closing')return;
       if(machine.state==='open')close();else if(machine.state==='closed')open();}
-    listen(doc,'keydown',event=>{if(event.key!=='Escape'||event.repeat||event.target.closest?.('select,input'))return;event.preventDefault();escape();});
+    listen(doc,'keydown',event=>{if(event.repeat||event.target.closest?.('select,input'))return;
+      if(machine.locked&&['Escape','Enter',' '].includes(event.key)){event.preventDefault();skip();return;}
+      if(event.key!=='Escape')return;event.preventDefault();escape();});
     listen($('replay'),'click',()=>{win.clearTimeout(replayTimer);stop();machine.reset('open');draw();close();
       const d=total('close'),s=Number($('speed').value||1);replayTimer=win.setTimeout(open,(d/s+.8)*1000);});
-    function total(kind){return (style()==='tear'?model.tearFrame(kind,0,setting()):model.frame(kind,0,setting())).total;}
+    function total(kind){return (style()==='tear'?model.tearFrame(kind,0,setting(),$('scrub-length').value):model.frame(kind,0,setting())).total;}
     function scrubMax(){$('scrub').max=String(Math.round(total($('scrub-kind').value)*1000));}
-    listen($('scrub'),'input',()=>{win.clearTimeout(replayTimer);stop();const ms=Number($('scrub').value)||0;$('scrub-time').textContent=String(ms);refreshTear($('scrub-kind').value);machine.scrub($('scrub-kind').value,ms/1000);draw();});
-    listen($('scrub-kind'),'change',()=>{scrubMax();$('scrub').value='0';$('scrub').dispatchEvent(new win.Event('input'));});
+    listen($('scrub'),'input',()=>{win.clearTimeout(replayTimer);stop();const msec=Number($('scrub').value)||0;$('scrub-time').textContent=String(msec);refreshTear($('scrub-kind').value);machine.scrub($('scrub-kind').value,msec/1000,$('scrub-length').value);draw();});
+    const rescrub=()=>{scrubMax();$('scrub').value='0';$('scrub').dispatchEvent(new win.Event('input'));};listen($('scrub-kind'),'change',rescrub);listen($('scrub-length'),'change',rescrub);
     const settle=()=>{stop();machine.reset(machine.state==='closed'||machine.kind==='close'?'closed':'open');scrubMax();draw();};
     listen($('flow'),'change',()=>{refreshGeometry();settle();});
     listen($('phase'),'change',renderTime);

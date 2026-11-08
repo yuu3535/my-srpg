@@ -96,10 +96,37 @@
   // 押した星が弾けて流星になり、星の所から左下の角へ一本の切れ目を引く → 切れ目が、流星の出た側から大きく裂けて開く。
   // 閉じる: メニューが裂けて探索が見える。開く: 探索が裂けてメニューが見える（切れ目の内側にメニュー）。どちらも右上の星から始まる。
   const tear=Object.freeze({flare:.2,cut:.55,hold:.06,open:.62,land:.5,margin:120,peak:.22,spread:4200,samples:32,tail:420});
-  function tearDurations(setting='full'){
+  // 短い版（原作者の決定 2026-11-09「長い切り裂きは、その日の最初の1回や物語の節目だけ。普段は短い版」）。
+  // 形は長い版と同じ（星が弾ける→切れ目→裂ける）で、各段を詰める。閉じる0.62秒・開く0.82秒（着地込み）。
+  // 弾ける0.08（押した手応えだけ）、切れ目0.22（シュッと一筋）、止まり0.02（ほぼ無し）、裂ける0.30、着地0.20。
+  const tearShort=Object.freeze({flare:.08,cut:.22,hold:.02,open:.30,land:.2});
+  // length: 'long'（長い版）／'short'（短い版）。設定「なし」・OSの動きを減らす設定は、どちらでも0.15秒のフェード。
+  function tearDurations(setting='full',length='short'){
     const m=mode(setting);if(m==='none')return {flare:0,cut:0,hold:0,open:0,land:0,fade:timing.none.fade};
-    const k=m==='short'?.55:1;return {flare:tear.flare*k,cut:tear.cut*k,hold:tear.hold*k,open:tear.open*k,land:tear.land*(m==='short'?.6:1),fade:0};
+    const src=m==='full'&&length==='long'?tear:tearShort;return {flare:src.flare,cut:src.cut,hold:src.hold,open:src.open,land:src.land,fade:0};
   }
+  // ── 長い版を流すとき（「節目」）。原作者の決定 2026-11-09 を、メニュー演出担当が決まりにした案。
+  // 長い版は「開く」ときだけ（物語や1日の始まりを見せる場面）。閉じるのは、いつも短い版（すぐ遊びに戻る）。
+  // 開くときに長い版になる理由（どれか1つ）:
+  //   day＝その日の最初の1回（ゲームの中の日が変わってから、最初に開くとき）
+  //   boot＝ゲームを起動・ロードして最初に開くとき
+  //   chapter＝章（シナリオ1本）が始まった／event＝メインイベントが変わった／battle＝物語の戦闘に勝った
+  // 理由は「次に開くまで」取っておき、長い版を1回流したら消える（同じ節目で何度も長くならない）。設定「短い」なら節目でも短い版。
+  const milestoneReasons=Object.freeze({chapter:'章の始まり',event:'メインイベントが変わった',battle:'物語の戦闘に勝った',boot:'起動して最初',day:'その日の最初'});
+  function milestoneState(){return {lastDay:null,pending:null,booted:false};}
+  // 節目が起きた（シナリオ側から呼ぶ）。すでに理由があれば、重い方（章＞イベント＞戦闘）を残す。
+  function markMilestone(state,reason){const order=['chapter','event','battle'];if(!order.includes(reason))return state;
+    const keep=state.pending&&order.indexOf(state.pending)<order.indexOf(reason)?state.pending:reason;return {...state,pending:keep};}
+  // 次に開くときの長さと理由。
+  function openLength(setting,state,day){
+    if(mode(setting)!=='full')return {length:'short',reason:null};
+    if(state.pending)return {length:'long',reason:state.pending};
+    if(!state.booted)return {length:'long',reason:'boot'};
+    if(state.lastDay!==day)return {length:'long',reason:'day'};
+    return {length:'short',reason:null};
+  }
+  // 開いたあと（長くても短くても）。理由を消し、今日は開いた、と覚える。
+  function afterOpen(state,day){return {lastDay:day,pending:null,booted:true};}
   // 切れ目の線。S＝流星の出る所（押した星の中心）、B＝左下の角。S から B と反対へのばして画面の端に当たる所が A。
   function tearGeometry(width=base.width,height=base.height,start={x:width-54,y:58}){
     const S={x:start.x,y:start.y},B={x:0,y:height},dx=S.x-B.x,dy=S.y-B.y,len=Math.hypot(dx,dy),u={x:-dx/len,y:-dy/len},n={x:-u.y,y:u.x};
@@ -135,8 +162,8 @@
   }
   // 戻り値: menu／explore は帯と同じ。tear＝{phase:'flare'|'cut'|'hold'|'open', c, o, clip:'outside'（メニューを裂く）|'inside'（裂け目からメニュー）}。
   // burst＝CLOSE の星が弾ける、exploreBurst＝MENU の星が弾ける（どちらも弾けたあと流星になる）、land＝開き終わりの CLOSE の星の着地。
-  function tearFrame(kind,seconds,setting='full'){
-    const d=tearDurations(setting),t=Math.max(0,Number.isFinite(seconds)?seconds:0);
+  function tearFrame(kind,seconds,setting='full',length='short'){
+    const d=tearDurations(setting,length),t=Math.max(0,Number.isFinite(seconds)?seconds:0);
     if(d.fade)return frame(kind,t,'none');
     const a=d.flare,b=a+d.cut,c=b+d.hold,e=c+d.open,total=kind==='open'?e+d.land:e;
     let tr=null;
@@ -162,20 +189,23 @@
   function burstPose(q){const p=clamp(q);if(p<.5){const k=p/.5;return {scale:1+.5*k,rotate:90*k,opacity:1};}const k=(p-.5)/.5;return {scale:1.5*(1-k),rotate:90+90*k,opacity:1-k};}
   function landPose(q){const p=clamp(q),k=bezier(.34,1.56,.64,1,p);return {scale:1.7+(1-1.7)*k,rotate:-90+90*k,opacity:Math.min(1,p*4)};}
   function machine(){
-    let state='open',kind=null,elapsed=0;
-    // style: 'tear'（切り裂き）か 'band'（帯スイープ）。
-    const pick=(k,t,setting,style)=>style==='tear'?tearFrame(k,t,setting):frame(k,t,setting);
+    let state='open',kind=null,elapsed=0,length='short';
+    // style: 'tear'（切り裂き）か 'band'（帯スイープ）。length: 'long'／'short'（切り裂きのとき）。
+    const pick=(k,t,setting,style)=>style==='tear'?tearFrame(k,t,setting,length):frame(k,t,setting);
+    const finish=()=>{state=kind==='close'?'closed':'open';kind=null;elapsed=0;};
     return {
-      get state(){return state;},get kind(){return kind;},get elapsed(){return elapsed;},
+      get state(){return state;},get kind(){return kind;},get elapsed(){return elapsed;},get length(){return length;},
       get locked(){return state==='closing'||state==='opening';},
-      close(){if(state!=='open')return false;state='closing';kind='close';elapsed=0;return true;},
-      open(){if(state!=='closed')return false;state='opening';kind='open';elapsed=0;return true;},
-      step(seconds,setting='full',style='band'){if(!this.locked)return;elapsed+=Math.max(0,Number.isFinite(seconds)?seconds:0);if(pick(kind,elapsed,setting,style).done){state=kind==='close'?'closed':'open';kind=null;elapsed=0;}},
+      close(len='short'){if(state!=='open')return false;state='closing';kind='close';elapsed=0;length=len==='long'?'long':'short';return true;},
+      open(len='short'){if(state!=='closed')return false;state='opening';kind='open';elapsed=0;length=len==='long'?'long':'short';return true;},
+      // 演出中に押したら最後まで飛ばす（原作者の決定 2026-11-09）。演出中に受け付けるのはこの操作だけ。
+      skip(){if(!this.locked)return false;finish();return true;},
+      step(seconds,setting='full',style='band'){if(!this.locked)return;elapsed+=Math.max(0,Number.isFinite(seconds)?seconds:0);if(pick(kind,elapsed,setting,style).done)finish();},
       frame(setting='full',style='band'){return kind?pick(kind,elapsed,setting,style):{menu:state==='open',menuOpacity:1,explore:state==='closed',sweep:null,burst:null,land:state==='open'?1:null,done:true,total:0};},
-      scrub(k,seconds){state=k==='close'?'closing':'opening';kind=k;elapsed=Math.max(0,seconds);},
+      scrub(k,seconds,len){state=k==='close'?'closing':'opening';kind=k;elapsed=Math.max(0,seconds);if(len)length=len==='long'?'long':'short';},
       reset(to='open'){state=to;kind=null;elapsed=0;}
     };
   }
-  const api=Object.freeze({base,timing,clamp,bezier,easeInOut,geometry,flow,travel,fortuneDurations,band,tear,tearDurations,tearGeometry,meteor,tearLens,lensPath,edgePath,insideLens,tearFrame,dia,diaColors,coverage,mode,durations,frame,burstPose,landPose,machine});
+  const api=Object.freeze({base,timing,clamp,bezier,easeInOut,geometry,flow,travel,fortuneDurations,band,tear,tearDurations,tearGeometry,meteor,tearLens,lensPath,edgePath,insideLens,tearFrame,tearShort,milestoneReasons,milestoneState,markMilestone,openLength,afterOpen,dia,diaColors,coverage,mode,durations,frame,burstPose,landPose,machine});
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.Hub2SweepModel=api;
 })(typeof globalThis!=='undefined'?globalThis:this);
