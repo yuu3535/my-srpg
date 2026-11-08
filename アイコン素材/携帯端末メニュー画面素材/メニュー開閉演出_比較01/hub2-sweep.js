@@ -112,14 +112,14 @@
       const doc2=$('sun-wheel').contentDocument,cmd=doc2&&[...doc2.querySelectorAll('.command')].find(b=>b.textContent.includes('支援会話'));
       const face=cmd&&(cmd.querySelector('.nameplate-face')||cmd);if(!face)return null;const r=face.getBoundingClientRect();return {x:r.right*2-44,y:r.top*2-22};
     }
-    function followBadge(){if(badgeRaf!==null||destroyed)return;badgeStill=0;
+    // 押してから回り始めるまでに間があるので、追いかけは止めずに毎コマ続ける（1コマに位置を1回測るだけ）。止まって約0.1秒で出す。
+    function followBadge(){if(badgeRaf!==null||destroyed)return;
       const nb=doc.querySelector?.('.new-badge');if(!nb)return;
       const loop=()=>{badgeRaf=null;if(destroyed)return;let p=null;try{p=badgeTarget();}catch{}
-        if(p){const moved=!badgeLast||Math.hypot(p.x-badgeLast.x,p.y-badgeLast.y)>.5;badgeLast=p;
-          if(moved){badgeStill=0;nb.dataset.moving='true';}else badgeStill++;
-          // 止まって約0.1秒たったら、その場所に置いて出す。
+        if(p){const moved=!badgeLast||Math.hypot(p.x-badgeLast.x,p.y-badgeLast.y)>.3;badgeLast=p;
+          if(moved){badgeStill=0;if(nb.dataset.moving!=='true')nb.dataset.moving='true';}else badgeStill++;
           if(badgeStill===6){nb.style.left=p.x+'px';nb.style.top=p.y+'px';nb.dataset.moving='false';}}
-        if(badgeStill<6||!p)badgeRaf=win.requestAnimationFrame(loop);};
+        badgeRaf=win.requestAnimationFrame(loop);};
       loop();}
     // 太陽盤の中を押したら（回り始める前に）追いかけ始める。
     listen($('sun-wheel'),'load',()=>{try{const d2=$('sun-wheel').contentDocument;d2.addEventListener('pointerdown',followBadge);d2.addEventListener('keydown',followBadge);}catch{}followBadge();});
@@ -152,6 +152,9 @@
     for(const id of ['dia','dia-order','dia-mode','dia-page'])listen($(id),'change',applyDia);
     dias.forEach((d,i)=>listen(d,'click',e=>{e.stopPropagation?.();$('dia-page').value=String(i);applyDia();}));
     applyDia();
+    // 線の端の菱形・メインイベントの角の菱形（見比べ用）。
+    const applyDeco=()=>{screen.dataset.lineDia=['none','one','three'].includes($('line-dia').value)?$('line-dia').value:'none';screen.dataset.eventDia=['br','spec','cards','none'].includes($('event-dia').value)?$('event-dia').value:'br';};
+    listen($('line-dia'),'change',applyDeco);listen($('event-dia'),'change',applyDeco);applyDeco();
     // 立ち絵の位置合わせ（確認用）。--l／--t／--w（カード内の px）を、ドラッグとホイールで変える。決めた値は「位置をコピー」で渡してもらう。
     const cards=[...(screen.querySelectorAll?.('.card')||[])];let drag=null;
     const artOf=card=>card.querySelector('.card-art img');
