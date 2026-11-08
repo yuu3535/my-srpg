@@ -140,7 +140,7 @@
     listen($('flow'),'change',()=>{refreshGeometry();settle();});
     listen($('phase'),'change',renderTime);
     // ページ送りの菱形の配色（原作者に選んでもらう）。
-    const applyDia=()=>{screen.dataset.dia=['ref','gold','moon','ember','spec'].includes($('dia').value)?$('dia').value:'ref';};listen($('dia'),'change',applyDia);applyDia();
+    const applyDia=()=>{screen.dataset.dia=['crimson','ref','gold','moon','ember','spec'].includes($('dia').value)?$('dia').value:'crimson';};listen($('dia'),'change',applyDia);applyDia();
     // 立ち絵の位置合わせ（確認用）。--l／--t／--w（カード内の px）を、ドラッグとホイールで変える。決めた値は「位置をコピー」で渡してもらう。
     const cards=[...(screen.querySelectorAll?.('.card')||[])];let drag=null;
     const artOf=card=>card.querySelector('.card-art img');

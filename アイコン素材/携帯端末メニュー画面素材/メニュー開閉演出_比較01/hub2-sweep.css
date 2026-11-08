@@ -95,6 +95,10 @@ body{margin:0;background:#141219;color:#e7e1d3;font-family:'Yu Gothic UI',Meiryo
 .screen[data-dia="ref"] .page-dia.on{border-color:rgba(79,163,168,.95);box-shadow:0 0 6px rgba(79,163,168,.85),inset 0 0 3px rgba(79,163,168,.5)}
 .screen[data-dia="gold"] .page-dia{border-color:rgba(226,176,74,.38);background:none;box-shadow:none}
 .screen[data-dia="gold"] .page-dia.on{border-color:var(--gold);background:rgba(226,176,74,.55);box-shadow:0 0 6px rgba(226,176,74,.8)}
+/* crimson＝水色・赤・金（原作者の指定 2026-11-08）: 参考の画像の藤色を、くすんだ赤に置き換えた。今のページは水色の光 */
+.screen[data-dia="crimson"] .page-dia{width:10px;height:10px;background:none;box-shadow:none;border-color:rgba(226,176,74,.36)}
+.screen[data-dia="crimson"] .page-dia:nth-of-type(3){border-color:rgba(184,72,78,.7)}
+.screen[data-dia="crimson"] .page-dia.on{border-color:rgba(79,163,168,.95);box-shadow:0 0 6px rgba(79,163,168,.85),inset 0 0 3px rgba(79,163,168,.5)}
 /* moon＝月白: 今のページは白い光、他は銀の線。色を足さず、金の線と立ち絵の色を邪魔しない */
 .screen[data-dia="moon"] .page-dia{border-color:rgba(201,205,210,.4);background:none;box-shadow:none}
 .screen[data-dia="moon"] .page-dia.on{border-color:#f1ead9;background:rgba(241,234,217,.22);box-shadow:0 0 6px rgba(241,234,217,.75)}
