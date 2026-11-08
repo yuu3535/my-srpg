@@ -57,8 +57,29 @@ body{margin:0;background:#141219;color:#e7e1d3;font-family:'Yu Gothic UI',Meiryo
 .event-dest svg{width:12px;height:16px;fill:none;stroke:var(--gold);stroke-width:1.3}
 .event-chip{position:absolute;right:18px;bottom:14px;display:flex;align-items:center;gap:6px;padding:5px 9px;font-size:13px;color:#f3dca6;background:rgba(10,10,15,.7);border:1px solid rgba(226,176,74,.55)}
 .event-chip svg{width:16px;height:12px;fill:none;stroke:#f3dca6;stroke-width:1.1}
-/* 時間帯アイコン（§3-6）。アトラスの左上＝朝。動きは今回は付けない（開閉の試作のため） */
-.time-icon{position:absolute;left:402px;top:32px;width:160px;height:64px;background:url("../太陽盤_コマンド試作01/time-of-day-art/time-icons-atlas-v01.png") no-repeat;background-size:320px 320px;background-position:0 -50px}
+/* 時間帯アイコン（§3-6）: (1206,236,160,64)。中身は既存の 太陽盤_コマンド試作01/time-of-day.js が作る（アトラスの部品を切り出す）。
+   動きの指定は 太陽盤_コマンド試作01/time-of-day.css から、アイコンの部分だけを写した（あのCSSはページ全体の指定を含むため読み込まない）。
+   メニューが出るたびに作り直すので、朝は日が昇り、夕方は日が沈む（1回）。地平線のきらめき・昼の光・星は繰り返す。 */
+.time-slot{position:absolute;left:402px;top:32px;width:160px;height:64px;display:grid;place-items:center;color:#efdab0;pointer-events:none}
+.time-icon{width:100%;height:100%;display:block;position:relative}
+.art-group{position:absolute;inset:0;display:block}.art-piece{position:absolute;display:block;overflow:hidden}.art-piece img{position:absolute;display:block;max-width:none;pointer-events:none}
+.sky-clip{clip-path:inset(0 0 14.0625% 0)}.horizon{opacity:.8}.horizon-glint{opacity:0}.dawn-rays{opacity:.9}.sun-travel{transform:translateY(0)}
+.time-icon[data-phase="day"] .rays{transform-origin:50% 50%}.twinkle{transform-box:border-box;transform-origin:center}
+.time-icon[data-phase="evening"] .sun-travel{transform:translateY(14.0625%)}.time-icon[data-phase="evening"] .dawn-rays{opacity:.72}
+.screen:not([data-reduced="true"]) .time-icon[data-phase="morning"] .sun-travel{animation:tod-sunrise 1.5s cubic-bezier(.16,1,.3,1) both}
+.screen:not([data-reduced="true"]) .time-icon[data-phase="morning"] .dawn-rays{animation:tod-dawn 1.5s ease-out both}
+.screen:not([data-reduced="true"]) .time-icon[data-phase="evening"] .sun-travel{animation:tod-sunset 1.6s cubic-bezier(.45,0,.2,1) both}
+.screen:not([data-reduced="true"]) .time-icon[data-phase="evening"] .dawn-rays{animation:tod-dusk 1.6s ease-in-out both}
+.screen:not([data-reduced="true"]) .horizon-glint{animation:tod-horizon 4s 1.6s ease-in-out infinite both}
+.screen:not([data-reduced="true"]) .time-icon[data-phase="day"] .rays{animation:tod-daylight 3.8s ease-in-out infinite}
+.screen:not([data-reduced="true"]) .twinkle{animation:tod-star 4.4s ease-in-out infinite}.screen .twinkle.star-b{animation-delay:-1.8s;animation-duration:4.9s}
+@keyframes tod-sunrise{from{transform:translateY(35.9375%)}to{transform:translateY(0)}}
+@keyframes tod-sunset{from{transform:translateY(-21.875%)}to{transform:translateY(14.0625%)}}
+@keyframes tod-dawn{from{opacity:.15;transform:translateY(25%)}to{opacity:.9;transform:translateY(0)}}
+@keyframes tod-dusk{from{opacity:.9;transform:scale(.85)}to{opacity:.72;transform:scale(1)}}
+@keyframes tod-horizon{0%,12%{opacity:0;transform:translateX(-24%)}45%{opacity:.9}88%,100%{opacity:0;transform:translateX(24%)}}
+@keyframes tod-daylight{0%,100%{opacity:.4;transform:scale(.9) rotate(-4deg)}50%{opacity:1;transform:scale(1.08) rotate(4deg)}}
+@keyframes tod-star{0%,100%{opacity:.18;transform:translateY(0) scale(.5)}45%{opacity:1;transform:translateY(-15%) scale(1.4)}}
 
 .bond-head{position:absolute;left:836px;top:402px;width:470px;display:flex;align-items:center;gap:10px;font-size:19px;font-weight:700;letter-spacing:.1em}
 .bond-head .rule{flex:1;height:1px;background:rgba(226,176,74,.3)}

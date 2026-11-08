@@ -61,18 +61,20 @@ class Node{constructor(){this.h=new Map();this.style={setProperty(k,v){this[k]=v
   emit(t,e={}){for(const fn of [...this.h.get(t)||[]])fn(e);}setAttribute(k,v){this.attrs[k]=v;}getBoundingClientRect(){return {width:844};}querySelectorAll(){return [];}dispatchEvent(){}}
 const ids=new Map(),$=id=>{if(!ids.has(id))ids.set(id,new Node());return ids.get(id);};
 const doc=new Node(),win=new Node();doc.getElementById=$;doc.hidden=false;
-$('flow').value='topright';$('effect-mode').value='full';$('speed').value='1';$('scrub-kind').value='close';$('scrub').value='0';
+$('flow').value='topright';$('phase').value='morning';$('effect-mode').value='full';$('speed').value='1';$('scrub-kind').value='close';$('scrub').value='0';
 const media=new Node();media.matches=false;win.matchMedia=()=>media;win.Event=function(){};
 const frames=new Map();let serial=0,clock=0;win.requestAnimationFrame=fn=>{frames.set(++serial,fn);return serial;};win.cancelAnimationFrame=id=>frames.delete(id);
 win.setTimeout=()=>0;win.clearTimeout=()=>{};
 const step=ms=>{clock+=ms;const list=[...frames.values()];frames.clear();list.forEach(fn=>fn(clock));};
+win.TimeOfDay=require('../太陽盤_コマンド試作01/time-of-day.js');
 const page=mount(doc,win,model);
+assert.ok($('time-slot').innerHTML.includes('data-phase="morning"'),'時間帯アイコンを作る');assert.ok($('time-slot').innerHTML.includes('../太陽盤_コマンド試作01/time-of-day-art/'),'素材のパスを直す');assert.ok(!/src="time-of-day-art/.test($('time-slot').innerHTML));
 assert.equal($('screen').style.transform,'scale(0.5)');assert.equal($('menu-star').hidden,true);
 $('close-star').emit('click');assert.equal(page.machine.state,'closing');assert.equal($('ticker-body').dataset.flowing,'false','閉じ始めたらティッカーは止める');assert.equal($('close-star').disabled,true);
 step(0);step(400);assert.equal($('band').style.visibility,'visible');assert.ok($('band').style.transform.includes('rotate(24.8'),'右上からの帯');
 $('menu-star').emit('click');assert.equal(page.machine.state,'closing','演出中のクリックは無視');
 step(1000);assert.equal($('menu').style.display,'none');step(1000);assert.equal(page.machine.state,'closed');assert.equal($('menu-star').hidden,false);assert.equal($('band').style.visibility,'hidden');
-$('menu-star').emit('click');step(0);step(900);assert.equal($('menu').style.display,'');step(2000);assert.equal(page.machine.state,'open');
+$('time-slot').innerHTML='';$('menu-star').emit('click');step(0);step(900);assert.ok($('time-slot').innerHTML.length>0,'メニューが出たら時間帯アイコンを作り直す（日の出をもう一度）');assert.equal($('menu').style.display,'');step(2000);assert.equal(page.machine.state,'open');
 // 運命予報カード: ティッカーを押すと開き、既読になる。暗幕・閉じる・Escで閉じる。Escはカードを先に閉じ、メニューは閉じない。
 const timers=[];win.setTimeout=(fn,ms)=>{timers.push(fn);return timers.length;};
 $('ticker').dataset.new='true';$('ticker').emit('click');assert.equal($('fortune').hidden,false);assert.equal($('fortune').dataset.state,'open');assert.equal($('ticker').dataset.new,'false');

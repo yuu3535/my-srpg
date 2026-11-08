@@ -20,8 +20,17 @@
       runner.dataset.dir=b.sign>0?'close':'open';runner.style.left=(g.L/2)+'px';runner.style.top=(b.sign>0?g.T:0)+'px';
       $('runner-star').style.transform=`rotate(${b.starTurn}deg)`;
     }
+    // 時間帯アイコン（§3-6）。既存の TimeOfDay（太陽盤_コマンド試作01/time-of-day.js）で作る。メニューが出るたびに作り直し、朝の日の出・夕方の日没を1回流す。
+    const phaseNames={morning:'朝',day:'昼',evening:'夕方',night:'夜'};let menuShown=null;
+    function renderTime(){
+      const tod=win.TimeOfDay,slot=$('time-slot'),phase=Object.hasOwn(phaseNames,$('phase').value)?$('phase').value:'morning';
+      slot.setAttribute?.('aria-label','時間帯：'+phaseNames[phase]);if(!tod)return;
+      slot.innerHTML=tod.icon(phase,'hub2').replaceAll('time-of-day-art/','../太陽盤_コマンド試作01/time-of-day-art/');
+    }
     function draw(){
       const f=machine.frame(setting());
+      screen.dataset.reduced=String(setting()==='none');
+      if(f.menu&&menuShown===false)renderTime();menuShown=f.menu;
       const menu=$('menu');menu.style.display=f.menu?'':'none';menu.style.opacity=String(f.menuOpacity??1);
       $('menu-star').hidden=!f.explore;
       if(f.sweep===null)band.style.visibility='hidden';else placeBand(f.sweep,machine.kind);
@@ -87,6 +96,7 @@
     listen($('scrub-kind'),'change',()=>{scrubMax();$('scrub').value='0';$('scrub').dispatchEvent(new win.Event('input'));});
     const settle=()=>{stop();machine.reset(machine.state==='closed'||machine.kind==='close'?'closed':'open');scrubMax();draw();};
     listen($('flow'),'change',()=>{refreshGeometry();settle();});
+    listen($('phase'),'change',renderTime);
     listen($('effect-mode'),'change',settle);listen($('speed'),'change',()=>{});listen(media,'change',settle);
     listen(doc,'visibilitychange',()=>{if(doc.hidden)stop();else{last=null;schedule();}});
     listen(win,'resize',fit);if(win.ResizeObserver){const o=new win.ResizeObserver(fit);o.observe(stage);disposers.push(()=>o.disconnect());}
@@ -98,7 +108,7 @@
     if(!images.length)$('cover').hidden=true;
     function destroy(){if(destroyed)return;destroyed=true;stop();win.clearTimeout(replayTimer);disposers.splice(0).forEach(d=>d());}
     listen(win,'pagehide',destroy);
-    fit();scrubMax();draw();
+    fit();scrubMax();renderTime();draw();
     return {machine,open,close,draw,destroy};
   }
   if(typeof module!=='undefined'&&module.exports)module.exports={mount};else root.Hub2SweepPage=mount(document,root,root.Hub2SweepModel);

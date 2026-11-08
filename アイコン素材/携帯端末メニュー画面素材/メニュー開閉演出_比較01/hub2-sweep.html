@@ -5,7 +5,7 @@
 <title>Hub2 帯スイープ｜開閉演出の試作</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Shippori+Mincho:wght@600;700;800&display=swap">
-<link rel="stylesheet" href="hub2-sweep.css?v=20261108g">
+<link rel="stylesheet" href="hub2-sweep.css?v=20261108h">
 </head>
 <body>
 <main class="page">
@@ -40,7 +40,7 @@
       <span class="event-title">ギュンターとの演習</span>
       <span class="event-dest"><svg viewBox="0 0 12 16" aria-hidden="true"><path d="M6 15s5-5.2 5-9A5 5 0 0 0 1 6c0 3.8 5 9 5 9Z"/><circle cx="6" cy="6" r="1.8"/></svg>訓練場へ向かう</span>
       <span class="event-chip"><svg viewBox="0 0 16 12" aria-hidden="true"><path d="M1 2l4-1 6 2 4-1v9l-4 1-6-2-4 1Z M5 1v9 M11 3v9"/></svg>マップで確認</span>
-      <span class="time-icon" aria-label="時間帯：朝"></span>
+      <span class="time-slot" id="time-slot" role="img" aria-label="時間帯：朝"></span>
     </button>
 
     <div class="bond-head"><span>支援の深い仲間</span><i class="rule"></i><i class="page-dia on"></i><i class="page-dia"></i><i class="page-dia"></i></div>
@@ -83,6 +83,7 @@
 
 <section class="tools" aria-label="試作の設定">
 <label>帯の向き<select id="flow"><option value="topright" selected>右上から（開く・閉じるとも）</option><option value="spec">仕様書どおり（左上から・開くは逆向き）</option></select></label>
+<label>時間帯<select id="phase"><option value="morning" selected>朝</option><option value="day">昼</option><option value="evening">夕方</option><option value="night">夜</option></select></label>
 <label>端末の演出<select id="effect-mode"><option value="full" selected>あり（1.75秒）</option><option value="short">短い（案: 0.8秒）</option><option value="none">なし（案: 0.15秒のフェード）</option></select></label>
 <label>再生速度<select id="speed"><option value="1" selected>通常</option><option value="0.5">ゆっくり（0.5倍）</option><option value="0.25">詳細を見る（0.25倍）</option></select></label>
 <button type="button" id="replay">閉じて開くを再生</button>
@@ -94,5 +95,5 @@
 <nav class="links"><a href="sunfan.html">⑤ 日輪の扇へ</a><a href="index.html">①〜④の比較へ</a><a href="../../../docs/10-design/ui/MENU_HUB2_SPEC_2026-11-08.md">Hub2 の仕様書</a></nav>
 </main>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="sparkle" viewBox="-40 -40 80 80"><g transform="rotate(18)"><path d="M0-36 2.2-3.2 34 0 2.2 3.2 0 36-2.2 3.2-34 0-2.2-3.2Z"/><path d="M0-13 5.5-5.5 13 0 5.5 5.5 0 13-5.5 5.5-13 0-5.5-5.5Z" opacity=".55"/><path d="M-1-1 15-15M1 1 15 15M-1 1-15 15M1-1-15-15" stroke-width="1.1" opacity=".75"/></g></symbol></defs></svg>
-<script src="hub2-sweep-model.js?v=20261108g"></script><script src="hub2-sweep.js?v=20261108g"></script>
+<script src="../太陽盤_コマンド試作01/time-of-day.js?v=20261005a"></script><script src="hub2-sweep-model.js?v=20261108g"></script><script src="hub2-sweep.js?v=20261108h"></script>
 </body></html>
