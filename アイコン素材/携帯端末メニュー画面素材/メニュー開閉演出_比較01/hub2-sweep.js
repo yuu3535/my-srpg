@@ -153,7 +153,7 @@
     dias.forEach((d,i)=>listen(d,'click',e=>{e.stopPropagation?.();$('dia-page').value=String(i);applyDia();}));
     applyDia();
     // メインイベントの角の菱形（見比べ用）。
-    const applyDeco=()=>{screen.dataset.eventDia=['orbit','br','spec','cards','none'].includes($('event-dia').value)?$('event-dia').value:'orbit';};
+    const applyDeco=()=>{screen.dataset.eventDia=['orbit2','orbit','br','spec','cards','none'].includes($('event-dia').value)?$('event-dia').value:'orbit2';};
     listen($('event-dia'),'change',applyDeco);applyDeco();
     // 立ち絵の位置合わせ（確認用）。--l／--t／--w（カード内の px）を、ドラッグとホイールで変える。決めた値は「位置をコピー」で渡してもらう。
     const cards=[...(screen.querySelectorAll?.('.card')||[])];let drag=null;
