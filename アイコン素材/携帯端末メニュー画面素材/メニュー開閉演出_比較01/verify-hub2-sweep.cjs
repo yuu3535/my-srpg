@@ -87,6 +87,7 @@ win.setTimeout=()=>0;win.clearTimeout=()=>{};
 const step=ms=>{clock+=ms;const list=[...frames.values()];frames.clear();list.forEach(fn=>fn(clock));};
 win.TimeOfDay=require('../太陽盤_コマンド試作01/time-of-day.js');
 $('sun-wheel').contentWindow={};
+assert.ok(/\.sun-wheel\{[^}]*color-scheme:dark/.test(fs.readFileSync(path.join(__dirname,'hub2-sweep.css'),'utf8')),'太陽盤の下地が黒くならない（color-scheme を中のページと合わせる）');
 const page=mount(doc,win,model);
 assert.ok($('time-slot').innerHTML.includes('data-phase="morning"'),'時間帯アイコンを作る');assert.ok($('time-slot').innerHTML.includes('../太陽盤_コマンド試作01/time-of-day-art/'),'素材のパスを直す');assert.ok(!/src="time-of-day-art/.test($('time-slot').innerHTML));
 assert.equal($('screen').style.transform,'scale(0.5)');assert.equal($('menu-star').hidden,true);

@@ -104,6 +104,18 @@
     // ティッカー（§3-4）は流さない（原作者 2026-11-08）。押すと運命予報カードが開き、既読になる。
     listen($('ticker'),'click',openFortune);listen($('fortune-scrim'),'click',closeFortune);listen($('fortune-close'),'click',closeFortune);
     disposers.push(()=>win.clearTimeout(fortuneTimer));
+    // NEW の札（§3-5）は太陽盤の「支援会話」の右上に付ける。太陽盤が回ると札の場所も動くので、回っている間（約1.5秒）ついていく。
+    // 太陽盤は 844×390 基準のページを2倍で表示しているので、中の座標を2倍すると画面の座標になる。
+    let badgeRaf=null,badgeUntil=0;
+    function placeBadge(){
+      const doc2=$('sun-wheel').contentDocument,badge=doc2&&[...doc2.querySelectorAll('.command')].find(b=>b.textContent.includes('支援会話'));
+      const nb=doc.querySelector?.('.new-badge');if(!badge||!nb)return;const r=badge.getBoundingClientRect();
+      nb.style.left=(r.right*2-44)+'px';nb.style.top=(r.top*2-20)+'px';
+    }
+    function followBadge(){badgeUntil=(win.performance?.now?.()??0)+1500;if(badgeRaf!==null)return;
+      const loop=()=>{badgeRaf=null;if(destroyed)return;try{placeBadge();}catch{}if((win.performance?.now?.()??0)<badgeUntil)badgeRaf=win.requestAnimationFrame(loop);};loop();}
+    listen($('sun-wheel'),'load',followBadge);disposers.push(()=>{if(badgeRaf!==null)win.cancelAnimationFrame(badgeRaf);});
+    listen(win,'message',event=>{if(event.data&&event.data.type==='solar-menu-state'&&event.source===$('sun-wheel').contentWindow)followBadge();});
     // 埋め込んだ太陽盤（iframe）の中で Esc を押したときも、同じように閉じる。
     listen(win,'message',event=>{if(event.data&&event.data.type==='solar-menu-escape'&&event.source===$('sun-wheel').contentWindow)escape();});
     function escape(){if(fortune.dataset.state==='open'){closeFortune();return;}if(fortune.dataset.state==='closing')return;
