@@ -20,12 +20,14 @@ namespace Srpg.Battle
             public int moveSpeed = 1;     // 探索の歩く速さ 0 ゆっくり / 1 ふつう / 2 速い
             public int musicVolume = 3;   // 音楽 0〜4（音はまだ入っていない。入れたらこの値を使う）
             public int soundVolume = 3;   // 効果音 0〜4
+            public int menuEffect;        // 端末の演出 0 あり / 1 短い / 2 なし（拠点メニュー Hub2 の開閉。2026-11-09）
         }
 
         public static readonly string[] TextSpeedNames = { "遅い", "ふつう", "速い", "すぐ" };
         public static readonly string[] AutoSpeedNames = { "ゆっくり", "ふつう", "速い" };
         public static readonly string[] MoveSpeedNames = { "ゆっくり", "ふつう", "速い" };
         public static readonly string[] VolumeNames = { "なし", "小", "中", "大", "最大" };
+        public static readonly string[] MenuEffectNames = { "あり", "短い", "なし" };
 
         private const string Key = "settings_v1", ReadKey = "read_lines_v1";
         private static Values current;
@@ -68,6 +70,7 @@ namespace Srpg.Battle
             v.moveSpeed = Mathf.Clamp(v.moveSpeed, 0, 2);
             v.musicVolume = Mathf.Clamp(v.musicVolume, 0, 4);
             v.soundVolume = Mathf.Clamp(v.soundVolume, 0, 4);
+            v.menuEffect = Mathf.Clamp(v.menuEffect, 0, 2);
             return v;
         }
 

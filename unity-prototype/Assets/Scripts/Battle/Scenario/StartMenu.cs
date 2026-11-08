@@ -36,7 +36,7 @@ namespace Srpg.Battle
         {
             currentScene = scene.name;
             if (Application.isBatchMode) { Holding = false; return; }
-            if (SaveSystem.HasPending) { shownOnce = true; Holding = false; AddBackButton(); return; }   // ロード（続きから）で開いた
+            if (SaveSystem.HasPending) { shownOnce = true; Holding = false; Menu.Hub2Menu.ResetBoot(); AddBackButton(); return; }   // ロード（続きから）で開いた（次にメニューを開くのは長い版）
             if (scene.name == ExploreScene && ExploreHandoff.Pending) { shownOnce = true; Holding = false; AddBackButton(); }   // 2Dの探索から来た
             else if (scene.name == ExploreScene && !shownOnce) { shownOnce = true; Holding = true; Show(); }
             else if (scene.name == TrialScene || scene.name == CorridorScene) { Holding = false; AddBackButton(); }
@@ -164,6 +164,12 @@ namespace Srpg.Battle
             var t = Label(rt, "最初へ", Vector2.zero, new Vector2(64f, 18f), 11, HudPalette.Silver, font);
             t.rectTransform.anchorMin = t.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
             if (currentScene == TrialScene) return;   // 試験の戦闘はセーブしない
+            if (currentScene == CorridorScene)
+            {
+                // 2Dの探索は拠点メニュー Hub2（右上の MENU の星）からセーブ・設定を開く（2026-11-09）
+                Menu.Hub2Menu.Attach();
+                return;
+            }
             // セーブ（仮の最小限。メニュー画面ができたら、そちらから開く。2026-10-08）
             var sv = Rect("Save", canvas.transform, new Vector2(1f, 0f), new Vector2(-78f, 22f), new Vector2(64f, 18f));
             sv.pivot = new Vector2(1f, 0f);

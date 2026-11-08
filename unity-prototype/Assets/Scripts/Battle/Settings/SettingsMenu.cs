@@ -46,6 +46,7 @@ namespace Srpg.Battle
             Row("歩く速さ", GameSettings.MoveSpeedNames, v.moveSpeed, i => v.moveSpeed = i);
             Row("音楽", GameSettings.VolumeNames, v.musicVolume, i => v.musicVolume = i);
             Row("効果音", GameSettings.VolumeNames, v.soundVolume, i => v.soundVolume = i);
+            Row("端末の演出", GameSettings.MenuEffectNames, v.menuEffect, i => v.menuEffect = i);
             StartMenu.Label(root, "音楽・効果音はまだ入っていません（入れたら、この大きさで鳴らします）", new Vector2(0f, y + 8f), new Vector2(600f, 16f), 11, HudPalette.Muted, font);
             Choice(root, "初めの値に戻す", new Vector2(-70f, -160f), new Vector2(130f, 24f), font, false, () => { GameSettings.ResetToDefaults(); Open(); });
             Choice(root, "閉じる", new Vector2(70f, -160f), new Vector2(130f, 24f), font, false, Close);

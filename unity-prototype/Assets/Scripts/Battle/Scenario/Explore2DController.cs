@@ -103,6 +103,7 @@ namespace Srpg.Battle
             if (ExploreHandoff.Pending2D && PlaceAsset(ExploreHandoff.Place2D) != null)
             {
                 // 戦闘の場所から戻ってきた: 流した会話・持ち物を引き継ぎ、その場所の指定の場面から
+                Menu.Hub2Menu.MarkMilestone(Menu.Hub2Motion.ReasonBattle);   // 物語の戦闘に勝った（負けたらやり直しなので、戻るのは勝ったとき）。次にメニューを開くのは長い版
                 seen.UnionWith(ExploreHandoff.Seen);
                 foreach (var it in ExploreHandoff.Items) if (!items.Contains(it)) items.Add(it);
                 string place = ExploreHandoff.Place2D, state = ExploreHandoff.State2D;

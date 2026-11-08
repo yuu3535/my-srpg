@@ -353,9 +353,9 @@ namespace Srpg.Battle
                 shotNow = Vector3.MoveTowards(Vector3.Lerp(shotNow, shotTarget, 1f - Mathf.Exp(-7f * Time.unscaledDeltaTime)), shotTarget, 0.5f * Time.unscaledDeltaTime);
                 ApplyZoom();
             }
-            int dir = Locked || scriptedWalk ? 0 : holding;
+            int dir = Locked || scriptedWalk || Menu.Hub2Menu.Blocking ? 0 : holding;
             var kb = Keyboard.current;
-            if (kb != null && !Locked && !scriptedWalk && !SaveMenu.IsOpen && !SettingsMenu.IsOpen)
+            if (kb != null && !Locked && !scriptedWalk && !SaveMenu.IsOpen && !SettingsMenu.IsOpen && !Menu.Hub2Menu.Blocking)
             {
                 if (kb.leftArrowKey.isPressed || kb.aKey.isPressed) dir = -1;
                 else if (kb.rightArrowKey.isPressed || kb.dKey.isPressed) dir = 1;
@@ -368,8 +368,8 @@ namespace Srpg.Battle
                 walkTime += Time.deltaTime;
             }
             else walkTime = 0f;
-            if (kb != null && !Locked && !SaveMenu.IsOpen && !SettingsMenu.IsOpen && (kb.enterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame) && (nearExit != null || (Controlled && actionUse != null))) UseExit();
-            foreach (var b in walkButtons) if (b != null) b.gameObject.SetActive(!Locked);
+            if (kb != null && !Locked && !SaveMenu.IsOpen && !SettingsMenu.IsOpen && !Menu.Hub2Menu.Blocking && (kb.enterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame) && (nearExit != null || (Controlled && actionUse != null))) UseExit();
+            foreach (var b in walkButtons) if (b != null) b.gameObject.SetActive(!Locked && !Menu.Hub2Menu.Blocking);
             Apply();
         }
 
@@ -465,11 +465,11 @@ namespace Srpg.Battle
                 nearExit = (data.exits ?? Array.Empty<CorridorExit>()).Where(e => Mathf.Abs(ExitX(e) - playerX) < 70f).OrderBy(e => Mathf.Abs(ExitX(e) - playerX)).FirstOrDefault();
                 if (exitButton != null)
                 {
-                    exitButton.gameObject.SetActive(nearExit != null);
+                    exitButton.gameObject.SetActive(nearExit != null && !Menu.Hub2Menu.Blocking);
                     if (nearExit != null) exitLabel.text = nearExit.label;
                 }
             }
-            else if (exitButton != null) exitButton.gameObject.SetActive(actionUse != null && !Locked);
+            else if (exitButton != null) exitButton.gameObject.SetActive(actionUse != null && !Locked && !Menu.Hub2Menu.Blocking);   // メニュー（Hub2）を開いている間は隠す
             // 人（アルシェのほうを向く）
             foreach (var (rt, img, x) in people)
             {
