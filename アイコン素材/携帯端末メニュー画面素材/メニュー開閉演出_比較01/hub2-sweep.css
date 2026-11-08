@@ -203,14 +203,17 @@ body{margin:0;background:#141219;color:#e7e1d3;font-family:'Yu Gothic UI',Meiryo
 .page-dia{pointer-events:auto}
 
 /* cycle＝巡る（原作者の発案 2026-11-08「菱形の色が1つずつ変化するアニメーション」）。
-   水色→藤色→赤→金を12秒で1周。各色2秒止まって1秒でゆっくり移る。隣の菱形は1色ずつずらすので、3つはいつも違う色。
+   水色→藤色→赤→金を20秒で1周（原作者「もっとゆっくり」）。各色約3.4秒止まって約1.6秒でゆっくり移る。
+   ときどき（9秒に1回）左から右へ、波のように小さく跳ねる（原作者の発案）。跳ねは translate なので、菱形の rotate(45deg) と重ならない。隣の菱形は1色ずつずらすので、3つはいつも違う色。
    今のページは色ではなく光（光彩と薄い塗り）で見分ける。動きを減らす設定・演出なしでは止める。 */
 @keyframes dia-cycle-on{0%,17%{border-color:rgba(79,163,168,1);box-shadow:0 0 7px rgba(79,163,168,.9);background:rgba(79,163,168,.18)}25%,42%{border-color:rgba(176,164,202,1);box-shadow:0 0 7px rgba(158,146,182,.9);background:rgba(158,146,182,.18)}50%,67%{border-color:rgba(206,92,98,1);box-shadow:0 0 7px rgba(184,72,78,.9);background:rgba(184,72,78,.2)}75%,92%{border-color:rgba(240,196,98,1);box-shadow:0 0 7px rgba(226,176,74,.9);background:rgba(226,176,74,.2)}100%{border-color:rgba(79,163,168,1);box-shadow:0 0 7px rgba(79,163,168,.9);background:rgba(79,163,168,.18)}}
 /* どの菱形も同じアニメーションにしておき（今のページを変えても巡りがずれない）、今のページ以外は光と塗りを !important で消して少し暗くする。 */
-.screen[data-dia="cycle"] .page-dia{width:10px;height:10px;border-color:rgba(79,163,168,.85);cursor:pointer;animation:dia-cycle-on 12s ease-in-out infinite;transition:opacity .4s}
+.screen[data-dia="cycle"] .page-dia{width:10px;height:10px;border-color:rgba(79,163,168,.85);cursor:pointer;animation:dia-cycle-on 20s ease-in-out infinite,dia-hop 9s linear infinite;transition:opacity .4s}
 .screen[data-dia="cycle"] .page-dia:not(.on){box-shadow:none!important;background:none!important;opacity:.72}
-.screen[data-dia="cycle"] .page-dia:nth-of-type(3){animation-delay:-3s}
-.screen[data-dia="cycle"] .page-dia:nth-of-type(4){animation-delay:-6s}
+.screen[data-dia="cycle"] .page-dia:nth-of-type(3){animation-delay:-5s,.13s}
+.screen[data-dia="cycle"] .page-dia:nth-of-type(4){animation-delay:-10s,.26s}
+/* 跳ね: 9秒のうち最後の約0.7秒だけ。上へ5px → 少し沈んで戻る（重い物が着地するように）。 */
+@keyframes dia-hop{0%,91%{translate:0 0;animation-timing-function:cubic-bezier(.3,0,.4,1)}93.5%{translate:0 -5px;animation-timing-function:cubic-bezier(.5,0,.7,1)}96%{translate:0 1px}97.5%,100%{translate:0 0}}
 .screen[data-dia="cycle"][data-reduced="true"] .page-dia{animation:none}
 .screen[data-dia="cycle"][data-reduced="true"] .page-dia:nth-of-type(3){border-color:rgba(184,72,78,.8)}
 .screen[data-dia="cycle"][data-reduced="true"] .page-dia:nth-of-type(4){border-color:rgba(226,176,74,.7)}
