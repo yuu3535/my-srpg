@@ -68,4 +68,10 @@
 @keyframes back-glint{0%{filter:drop-shadow(0 0 0 transparent)}30%{filter:drop-shadow(0 0 2.5px var(--back-gold))}100%{filter:drop-shadow(0 0 0 transparent)}}
 .back-key:disabled{opacity:inherit;cursor:default}
 .back-key:focus-visible{outline:1.5px solid var(--back-gold);outline-offset:2px}
+/* ホームの背景を「世界」にする見比べ（原作者 2026-11-07）。ホームの暗い板をなくし、開いた瞬間の探索の景色をぼかして暗く沈めた物を後ろに置く。
+   ぼかしは動かない1枚の絵にかけるだけ（不透明度だけを動かす）。Unityでも「開いた瞬間の画面を1枚撮ってぼかす」で軽く作れる。
+   左（太陽盤の後ろ）は少し明るく世界が見え、右（文字の多い側）ほど暗くして読みやすさを保つ。ホームのファイルは変えず、このページの中だけで背景を透かす。 */
+.exploration-blur{filter:blur(6px) saturate(.85);opacity:0}
+.stage[data-backdrop="world"] #home{background:transparent}
+.stage[data-backdrop="world"] .dim{background:linear-gradient(90deg,#0c1016a6 0%,#0c1016b8 30%,#0c1016d9 55%,#0c1016e6 100%)}
 @media(max-width:900px){.sunfan-head{grid-template-columns:1fr;gap:8px}}

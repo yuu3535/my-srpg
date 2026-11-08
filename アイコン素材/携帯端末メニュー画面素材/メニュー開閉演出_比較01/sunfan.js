@@ -41,7 +41,10 @@
       const ring=(id,value,alpha,grow)=>{$(id).style.opacity=String(value>0&&value<1?alpha*(1-value):0);$(id).style.transform=`scale(${1+grow*value})`;};
       ring('ring',v.ring,.55,.55);ring('ring2',v.ring2||0,.4,.42);
       const glint=$('glint');glint.style.opacity=String(v.glintAlpha||0);glint.firstElementChild.style.transform=`rotate(28deg) translateX(${-120+450*(v.glintPos||0)}px)`;// 太陽の左半分は画面の外なので、見えている右半分を横切らせる。
-      $('dim').style.opacity=String(v.dim);$('exploration').parentElement.style.transform=`scale(${v.world})`;
+      // 「世界が透ける」では、暗幕は左から右へ濃くなる帯（CSS）にして、開き具合（0〜1）で出す。ぼかした景色も同じ割合で重ねる。
+      const world=$('backdrop').value==='world',openness=Math.max(0,Math.min(1,v.dim/.62));
+      $('dim').style.opacity=String(world?openness:v.dim);$('exploration-blur').style.opacity=String(world?openness:0);
+      $('exploration').parentElement.style.transform=`scale(${v.world})`;
       postItems(v.items);
       // 「端末」ボタンは探索側のボタン。開いているあいだは出さず、しまう操作は画面の下のホームバー（スマホと同じ）で行う。
       const shown=closes();toggle.hidden=shown;toggle.dataset.mode='open';$('toggle-label').textContent='端末';
@@ -151,6 +154,18 @@
     disposers.push(()=>{if(sleeping?.raf!=null)win.cancelAnimationFrame(sleeping.raf);sleeping=null;});
     listen(backKey,'animationend',()=>backKey.classList?.remove('is-pressed'));
     listen($('back-style'),'change',()=>draw());
+    // ホームの背景の見比べ。ホームの暗い板（html・body・#menu-screen の地の色）を、このページの中でだけ透明にする。
+    // ホームのファイルは変えない（同じ origin のときだけ効く。file:// では今のまま）。
+    function applyBackdrop(){
+      const world=$('backdrop').value==='world';stage.dataset.backdrop=world?'world':'panel';
+      try{
+        const hd=home.contentDocument;if(!hd?.head)return;let tag=hd.getElementById('sunfan-world-backdrop');
+        if(world&&!tag){tag=hd.createElement('style');tag.id='sunfan-world-backdrop';tag.textContent='html,body,#menu-screen{background:transparent!important}';hd.head.appendChild(tag);}
+        if(!world&&tag)tag.remove();
+      }catch{/* 透かせなければ今のまま */}
+      draw();
+    }
+    listen($('backdrop'),'change',applyBackdrop);listen(home,'load',applyBackdrop);
     listen($('exploration'),'load',()=>{imageReady=true;readiness();});listen($('exploration'),'error',()=>{imageReady=true;readiness();});
     if($('exploration').complete)imageReady=true;
     listen(home,'load',()=>{signature='';itemsSignature='';postConfig(true);draw();});

@@ -91,6 +91,11 @@ page.flip();assert.equal(page.machine.state,'open','消えていく途中のEsc�
 step(60);assert.equal(page.machine.state,'closed','真っ暗になったらしまう');assert.equal($('sleep-veil').style.opacity,'1');
 step(250);assert.equal($('sleep-veil').style.visibility,'hidden','幕が引いて探索へ戻る');assert.equal(frames.size,0);
 $('back-style').value='a';$('back-style').emit('change');
+// ホームの背景「世界が透ける」: 開いているあいだ、ぼかした景色と左右で濃さの違う暗幕を出す。閉じたら消える。
+$('backdrop').value='world';$('backdrop').emit('change');assert.equal($('stage').dataset.backdrop,'world');
+$('toggle').emit('click',{stopPropagation(){}});step(0);step(1000);assert.equal($('exploration-blur').style.opacity,'1');assert.equal($('dim').style.opacity,'1');
+tap();step(0);step(1000);assert.equal($('exploration-blur').style.opacity,'0');
+$('backdrop').value='panel';$('backdrop').emit('change');assert.equal($('stage').dataset.backdrop,'panel');
 $('effect-mode').value='none';$('effect-mode').emit('change');page.machine.reset();page.open();assert.equal($('home').dataset.masked,'false','「なし」は切り抜かない');
 page.destroy();assert.equal(frames.size,0);
 console.log('PASS: ⑤ 日輪の扇の長さ・出る順番（出撃が最初）・開き終わり・切り抜き・閉じるとき線を残さない・速さ／短い／なし・途中反転・ボタンの位置と切り替え・送信元・コマ送り。ブラウザ描画QAは別途。');

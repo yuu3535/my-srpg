@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>⑤ 日輪の扇｜開閉演出の試作</title>
-<link rel="stylesheet" href="transition.css?v=20261106m1"><link rel="stylesheet" href="sunfan.css?v=20261107a">
+<link rel="stylesheet" href="transition.css?v=20261106m1"><link rel="stylesheet" href="sunfan.css?v=20261107b">
 </head>
 <body class="sunfan-page">
 <main>
@@ -12,7 +12,7 @@
 <p>太陽盤が左の端から回りながら昇り、光の針が「出撃」を指す。針が上下に割れて光の扇が開き、照らされた所からメニューが現れる。閉じるときは扇をたたみ、針を太陽へ戻して沈める。端末の枠は出さない案です。</p>
 </header>
 <div class="sunfan-slot"><div class="stage" id="stage" tabindex="0" aria-label="探索と端末メニュー（⑤ 日輪の扇）" data-state="closed" data-early-input="true">
-<div class="exploration"><img class="exploration-image" id="exploration" src="../../../docs/30-planning/menu_open_transition_2026-10-26/exploration-2d-author-reference.png" alt="2D探索の静止画" draggable="false"></div>
+<div class="exploration"><img class="exploration-image" id="exploration" src="../../../docs/30-planning/menu_open_transition_2026-10-26/exploration-2d-author-reference.png" alt="2D探索の静止画" draggable="false"><img class="exploration-image exploration-blur" id="exploration-blur" src="../../../docs/30-planning/menu_open_transition_2026-10-26/exploration-2d-author-reference.png" alt="" aria-hidden="true" draggable="false"></div>
 <div class="dim" id="dim" aria-hidden="true"></div>
 <div class="logical-world" id="world">
 <iframe class="home" id="home" title="端末ホーム" width="844" height="390" src="../メニューホーム_独立アプリ01/index.html?view=screen&amp;embed=transition&amp;v=20261106e" tabindex="-1" inert></iframe>
@@ -43,6 +43,7 @@
 <label>持ち主<select id="owner"><option value="alche">アルシェ</option><option value="karima">カリマ</option></select></label>
 <label>端末の演出<select id="effect-mode"><option value="full">あり</option><option value="short">短い</option><option value="none">なし</option></select></label>
 <label>再生速度<select id="speed"><option value="1" selected>通常</option><option value="0.5">ゆっくり（0.5倍）</option><option value="0.25">詳細を見る（0.25倍）</option></select></label>
+<label>ホームの背景<select id="backdrop"><option value="panel" selected>今のまま（暗い板）</option><option value="world">世界が透ける</option></select></label>
 <label>戻るボタン<select id="back-style"><option value="a" selected>A 右上の飾りと一体</option><option value="b">B 小さなタロットカード</option><option value="c">C 円い紋章</option><option value="d">D スリープ（月）</option></select></label>
 <label>太陽の「きらっ」<select id="glint-mode"><option value="first" selected>初回だけ</option><option value="always">毎回</option><option value="off">出さない</option></select></label>
 <label class="scrub">コマ送り（開く・<output id="scrub-time">0</output>ms）<input id="scrub" type="range" min="0" max="560" step="5" value="0"></label>
@@ -52,5 +53,5 @@
 <p class="note">右下の「端末」で開きます。しまうときは、上の段（時間帯の飾りの左）の「戻る」をタップ、またはEsc。戻るボタンの見た目は下の設定でA・B・Cを切り替えられます。途中で押すと、その場から反対へ動きます。通常速度：開く0.56秒（項目は0.35秒までに出そろい、そのあと光の名残が引いていく）、閉じる0.28秒。コマ送りを動かすと、その時刻の開く途中で止まります。</p>
 <nav class="source-links"><a href="index.html">①〜④の比較ページへ</a><a href="../../../docs/10-design/ui/MENU_OPEN_MOTION_SPEC_2026-11-06.md">演出の仕様</a></nav>
 </main>
-<script src="../太陽盤_試作03/material-engine.js?v=20261004a"></script><script src="../太陽盤_試作03/character-colors.js?v=20261004a"></script><script src="transition-model.js?v=20261106m1"></script><script src="sunfan-model.js?v=20261107a"></script><script src="sunfan.js?v=20261107a"></script>
+<script src="../太陽盤_試作03/material-engine.js?v=20261004a"></script><script src="../太陽盤_試作03/character-colors.js?v=20261004a"></script><script src="transition-model.js?v=20261106m1"></script><script src="sunfan-model.js?v=20261107b"></script><script src="sunfan.js?v=20261107b"></script>
 </body></html>
