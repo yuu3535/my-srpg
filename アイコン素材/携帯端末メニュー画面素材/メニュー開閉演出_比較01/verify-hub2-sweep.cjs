@@ -19,6 +19,8 @@ const g=model.geometry();assert.ok(Math.abs(g.rotate+24.8)<.05,String(g.rotate))
 for(const dir of ['close','open']){
   assert.equal(model.coverage(0,dir,g),0);assert.equal(model.coverage(1,dir,g),0);
   for(let p=.46;p<=.54;p+=.01)assert.equal(model.coverage(p,dir,g),1,`${dir} ${p}`);
+  // 真っ暗なのは「一瞬」だけ（原作者の動画で長すぎた）: 42%・58%の時点ではまだ画面のどこかが見えている。
+  assert.ok(model.coverage(.42,dir,g)<1&&model.coverage(.58,dir,g)<1,`${dir} 真っ暗が長すぎる`);
   assert.equal(model.band(.5,dir,g).covering,true);assert.equal(model.band(.3,dir,g).covering,false);
 }
 // 帯の向き（原作者の指摘 2026-11-08）: 「右上から」は開く・閉じるとも右上の角から入り、左下へ抜ける。「仕様書どおり」は左上から入り、開くときは逆向き。

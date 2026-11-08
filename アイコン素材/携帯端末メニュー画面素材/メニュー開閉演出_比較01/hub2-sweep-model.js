@@ -32,7 +32,9 @@
   function geometry(width=base.width,height=base.height,angle=timing.angle) {
     const a=angle*Math.PI/180,n={x:Math.sin(a),y:-Math.cos(a)},e={x:-n.y,y:n.x};
     const min=Math.min(0,width*n.x)+Math.min(0,height*n.y),max=Math.max(0,width*n.x)+Math.max(0,height*n.y);
-    const glow=70,T=(max-min)+2*glow,L=Math.hypot(width,height)*1.6;
+    // 帯の厚みは「画面をちょうど覆いきれる」だけにする。厚すぎると真っ暗な時間が長くなる（原作者の動画 2026-11-08 で約0.5秒真っ暗だった）。
+    // ちょうどの厚みなら、真っ暗になるのは仕様書の「46〜54%で覆って一瞬止まる」の間だけ。光る線の光彩（glow）は帯の外へにじむ分として、画面の外へ出しきる距離にだけ使う。
+    const glow=70,T=(max-min)+2,L=Math.hypot(width,height)*1.6;
     return {n,e,min,max,mid:(min+max)/2,T,L,glow,width,height,rotate:Math.atan2(-n.x,n.y)*180/Math.PI};
   }
   // 帯の流れ方（向きの角度と、開くとき逆向きにするか）。
