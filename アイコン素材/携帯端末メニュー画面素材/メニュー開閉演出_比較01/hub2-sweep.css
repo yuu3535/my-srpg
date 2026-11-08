@@ -1,0 +1,118 @@
+/* Hub2 の帯スイープの試作。数値は docs/10-design/ui/MENU_HUB2_SPEC_2026-11-08.md の基準 1688×780 px。 */
+*{box-sizing:border-box}[hidden]{display:none!important}
+:root{color-scheme:dark;--ink:#f1ead9;--ink-hi:#fbf5e7;--ink-mid:#cfc7b6;--ink-mid2:#c9c1b0;--ink-mid3:#b9b1a1;--ink-low:#a59e90;--gold:#e2b04a;--gold-hi:#f3cd78;--gold-ret:#d9a845;--silver:rgba(201,205,210,.75);--silver-in:rgba(201,205,210,.25);--teal:#4fa3a8;
+  --jp:'Shippori Mincho','Yu Mincho','Hiragino Mincho ProN',serif;--en:'Barlow Condensed','Arial Narrow',sans-serif;--crt:'BestTen-CRT','ベストテン-CRT',var(--jp);--genkai:'源界明朝','genkai-mincho',var(--jp)}
+body{margin:0;background:#141219;color:#e7e1d3;font-family:'Yu Gothic UI',Meiryo,sans-serif}
+.page{max-width:1400px;margin:auto;padding:24px 20px 40px}
+.page-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.7fr);gap:28px;align-items:end;margin-bottom:16px}
+.page-head h1{font-family:var(--jp);font-weight:700;font-size:28px;margin:2px 0 0}.page-head>p{margin:0;font-size:13px;line-height:1.7;color:#b7b0a2}
+.eyebrow{margin:0;font-size:12px;letter-spacing:.16em;color:#c8ad74}code{font-size:12px}
+.slot{width:min(100%,calc((100dvh - 210px)*1688/780));min-width:320px}
+.stage{position:relative;width:100%;aspect-ratio:1688/780;overflow:hidden;background:#0d0c12;outline:1px solid #3c3846}
+.screen{position:absolute;left:0;top:0;width:1688px;height:780px;transform-origin:0 0;overflow:hidden;font-family:var(--jp);color:var(--ink)}
+.screen button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+.en{font-family:var(--en);text-transform:uppercase;letter-spacing:.3em}
+.explore-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;user-select:none}
+.cover{position:absolute;inset:0;display:grid;place-content:center;background:#0d0c12e6;font-size:20px;color:#cfc7b6}
+
+/* ---- 拠点メニュー ---- */
+.menu{position:absolute;inset:0}
+.scrim-left{position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,9,16,.45) 0%,rgba(10,9,16,.30) 30%,rgba(10,9,16,0) 42%)}
+.scrim-right{position:absolute;left:690px;top:0;width:998px;height:780px;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+  background:linear-gradient(90deg,rgba(12,10,20,0) 0,rgba(12,10,20,.62) 60px,rgba(12,10,20,.72) 100%);-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 60px);mask-image:linear-gradient(90deg,transparent 0,#000 60px)}
+.watermark{position:absolute;left:712px;top:-44px;font:700 220px/1 var(--en);letter-spacing:.04em;color:transparent;-webkit-text-stroke:1px rgba(241,234,217,.07);pointer-events:none}
+.dot-band{position:absolute;left:744px;top:206px;width:924px;height:176px;opacity:.55;background:radial-gradient(circle at 8px 8px,rgba(241,234,217,.5) 1.1px,transparent 1.6px) 0 0/16px 16px;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,rgba(0,0,0,.15) 30%,#000 78%);mask-image:linear-gradient(90deg,transparent 0,rgba(0,0,0,.15) 30%,#000 78%)}
+.sun-mock{position:absolute;left:0;top:0;width:1688px;height:780px;pointer-events:none;user-select:none}
+.new-badge{position:absolute;left:500px;top:616px;display:inline-flex;align-items:center;gap:5px;padding:4px 8px;background:var(--gold);color:#17161b;font:700 13px/1 var(--en);letter-spacing:.1em;border-radius:2px;animation:badge-pulse 2.2s ease-out infinite}
+.new-badge svg{width:14px;height:12px;fill:#17161b}
+@keyframes badge-pulse{0%{box-shadow:0 0 0 0 rgba(226,176,74,.55)}100%{box-shadow:0 0 0 12px rgba(226,176,74,0)}}
+
+.head{position:absolute;left:770px;top:26px}
+.chapter{display:flex;align-items:center;gap:14px;margin:0;font-size:16px;font-weight:600;color:var(--ink-mid2)}
+.chapter .en{font-size:15px;font-weight:600;color:var(--gold);letter-spacing:.34em}.chapter i{width:36px;height:1px;background:var(--gold)}
+.head h2{margin:10px 0 0;font-size:56px;font-weight:800;letter-spacing:.08em;line-height:1.1;color:var(--ink-hi)}
+
+.ticker{position:absolute;left:772px;top:146px;width:918px;height:36px;display:flex;align-items:center;gap:12px;text-align:left}
+.ticker::after{content:"";position:absolute;left:0;right:0;bottom:-3px;height:1px;background:linear-gradient(90deg,rgba(226,176,74,.6),rgba(226,176,74,.15) 70%,rgba(226,176,74,0))}
+.ticker img{width:26px;height:27px;object-fit:contain}
+.ticker-name{font:16px/1 var(--crt);color:var(--gold);white-space:nowrap}.ticker-name sup{font-size:11px;margin-left:2px}
+.ticker-dot{width:7px;height:7px;border-radius:50%;background:var(--gold);animation:dot-pulse 2.2s ease-in-out infinite}
+@keyframes dot-pulse{50%{opacity:.35}}
+.ticker-rule{width:1px;height:16px;background:rgba(226,176,74,.45)}
+.ticker-body{flex:1;min-width:0;font:17px/1 var(--genkai);letter-spacing:.12em;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.event{position:absolute;left:804px;top:204px;width:556px;height:156px;text-align:left}
+.event-frame{position:absolute;inset:0;overflow:visible}.event-frame polygon{vector-effect:non-scaling-stroke;transition:stroke .25s,fill .25s}
+.event-frame .outer{fill:rgba(12,10,20,.38);stroke:var(--silver);stroke-width:1}.event-frame .inner{fill:none;stroke:var(--silver-in);stroke-width:1}
+.event:hover .outer,.event:active .outer{stroke:rgba(243,205,120,.95);fill:rgba(20,17,30,.5)}
+.diamond{position:absolute;width:7px;height:7px;background:var(--gold);transform:rotate(45deg)}
+.event .d-tl{left:12px;top:-3px}.event .d-br{right:12px;bottom:-3px}
+.reticle{position:absolute;left:-9px;top:61px;width:34px;height:34px;overflow:visible;animation:spin 18s linear infinite}
+.reticle circle{fill:rgba(12,10,20,.85);stroke:var(--gold-ret);stroke-width:1}.reticle path{stroke:var(--gold-ret);stroke-width:1.2}.reticle rect{fill:var(--gold)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.event-label{position:absolute;left:42px;top:24px;font-size:14px;color:var(--ink-mid3)}.event-label .en{font-size:14px;color:var(--gold);margin-right:10px}
+.event-title{position:absolute;left:42px;top:54px;font-size:38px;font-weight:800;color:var(--ink-hi);text-shadow:0 2px 10px rgba(0,0,0,.85);white-space:nowrap}
+.event-dest{position:absolute;left:42px;top:112px;display:flex;align-items:center;gap:8px;font-size:18px;font-weight:600;color:var(--ink-mid)}
+.event-dest svg{width:12px;height:16px;fill:none;stroke:var(--gold);stroke-width:1.3}
+.event-chip{position:absolute;right:18px;bottom:14px;display:flex;align-items:center;gap:6px;padding:5px 9px;font-size:13px;color:#f3dca6;background:rgba(10,10,15,.7);border:1px solid rgba(226,176,74,.55)}
+.event-chip svg{width:16px;height:12px;fill:none;stroke:#f3dca6;stroke-width:1.1}
+/* 時間帯アイコン（§3-6）。アトラスの左上＝朝。動きは今回は付けない（開閉の試作のため） */
+.time-icon{position:absolute;left:402px;top:32px;width:160px;height:64px;background:url("../太陽盤_コマンド試作01/time-of-day-art/time-icons-atlas-v01.png") no-repeat;background-size:320px 320px;background-position:0 -50px}
+
+.bond-head{position:absolute;left:836px;top:402px;width:470px;display:flex;align-items:center;gap:10px;font-size:19px;font-weight:700;letter-spacing:.1em}
+.bond-head .rule{flex:1;height:1px;background:rgba(226,176,74,.3)}
+.page-dia{width:9px;height:9px;transform:rotate(45deg);border:1px solid rgba(201,205,210,.5)}.page-dia.on{border-color:var(--teal);background:rgba(79,163,168,.25);box-shadow:0 0 6px var(--teal)}
+.card{position:absolute;left:var(--x);top:var(--y);width:110px;height:270px;transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.card-art{position:absolute;inset:0;overflow:hidden;background:rgba(12,10,20,.45);clip-path:polygon(0 11%,100% 0,100% 89%,0 100%)}
+.card-art::after{content:"";position:absolute;left:0;right:0;bottom:0;height:40%;background:linear-gradient(0deg,rgba(14,13,20,.92),rgba(14,13,20,0))}
+/* 全身の立ち絵を胸から上に切り出す代わりの指定（仕様書の素材は胸上の立ち絵） */
+.card-art img{position:absolute;left:var(--l);top:var(--t);width:var(--w);max-width:none;transition:transform .3s;transform-origin:50% 10%}
+.card-frame{position:absolute;inset:0;width:100%;height:100%;overflow:visible}.card-frame polygon{fill:none;stroke:var(--silver);stroke-width:1;vector-effect:non-scaling-stroke;transition:stroke .3s}
+.card .d-tr{width:8px;height:8px;right:-4px;top:-4px}.card .d-bl{width:8px;height:8px;left:-4px;bottom:-4px}
+.card-label{position:absolute;left:9%;bottom:13%;display:flex;flex-direction:column;gap:2px;font-size:16px;font-weight:800;color:var(--ink-hi);text-shadow:0 2px 6px rgba(0,0,0,.9)}
+.card-label .en{font-size:13px;color:var(--gold);letter-spacing:.1em}.card-label.carrie{left:18px;top:188px;bottom:auto}
+.card:hover{transform:translateY(-6px)}.card:hover .card-art img{transform:scale(1.05)}.card:hover .card-frame polygon{stroke:var(--gold-hi)}
+
+.status{position:absolute;left:1352px;top:406px;width:318px}
+.status-head{display:flex;align-items:center;gap:10px}.status-head .en{font-size:14px;color:var(--gold)}.status-head i{flex:1;height:1px;background:rgba(226,176,74,.3)}
+.status-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(241,234,217,.1)}
+.status-row img{width:44px;height:44px;object-fit:contain}
+.status-name{display:flex;flex-direction:column;font-size:16px;font-weight:700}.status-name small{font:11px/1.2 var(--en);letter-spacing:.3em;color:var(--ink-low)}
+.status-value{margin-left:auto;font:600 30px/1 var(--en)}.status-value small{font-size:14px;margin-left:4px;color:var(--ink-mid3)}
+.tile{position:relative;display:flex;align-items:center;gap:12px;height:64px;padding:0 14px;text-align:left;background:rgba(16,14,24,.72);clip-path:polygon(0 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%);transition:background .2s}
+.tile:hover{background:rgba(34,31,44,.94)}
+.tile img{width:40px;height:38px;object-fit:contain}.reward{margin-top:12px;width:100%}.reward img{width:46px;height:46px}
+.tile-name{display:flex;flex-direction:column;font-size:17px;font-weight:700}.tile-name small{font-size:12px;font-weight:600;color:var(--ink-low)}.tile-name small.en{font:11px/1.2 var(--en);letter-spacing:.3em}
+.chev{margin-left:auto;color:var(--gold);font-size:26px}
+.tiles{position:absolute;left:1350px;top:668px;width:324px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.log-icon{width:24px;height:28px;fill:none;stroke:var(--gold);stroke-width:1.3}
+
+/* ---- CLOSE / MENU の星（§3-12・§3-15） ---- */
+.star-button{position:absolute;width:104px;height:124px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.close-star{left:1582px;top:-2px}.menu-star{left:1584px;top:0;background:rgba(12,10,20,.55)}
+.star-wrap{display:block;width:60px;height:60px;transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.star{width:60px;height:60px;fill:#f2cd78;stroke:#f2cd78;filter:drop-shadow(0 0 4px rgba(242,205,120,.9)) drop-shadow(0 0 12px rgba(242,205,120,.45));animation:twinkle 3.4s ease-in-out infinite}
+@keyframes twinkle{50%{opacity:.72}}
+.star-button:hover .star-wrap{transform:rotate(45deg) scale(1.12)}.star-button:hover .star{filter:drop-shadow(0 0 6px rgba(242,205,120,1)) drop-shadow(0 0 18px rgba(242,205,120,.7))}
+.star-label{font:12px/1 var(--en);letter-spacing:.34em;color:var(--ink-mid);padding-left:.34em}.menu-star .star-label{color:var(--ink)}
+
+/* ---- 帯スイープ（§3-14） ---- */
+.band{position:absolute;left:0;top:0;transform-origin:50% 50%;pointer-events:none;visibility:hidden}
+.band-fill{position:absolute;inset:0;background:#08070c}
+.band-edge{position:absolute;left:0;right:0;height:3px;background:#f2cd78;box-shadow:0 0 8px #f2cd78,0 0 26px rgba(242,205,120,.7),0 0 60px rgba(242,205,120,.45)}
+.edge-a{top:-1.5px}.edge-b{bottom:-1.5px}
+.runner{position:absolute;width:0;height:0}
+.runner-star{position:absolute;left:-30px;top:-30px;filter:drop-shadow(0 0 6px #f2cd78) drop-shadow(0 0 20px rgba(242,205,120,.8));animation:none}
+.tail{position:absolute;left:-2px;width:4px;height:420px;border-radius:2px}
+.runner[data-dir="close"] .tail{bottom:0;background:linear-gradient(0deg,#f2cd78,rgba(242,205,120,0));box-shadow:0 0 14px rgba(242,205,120,.5)}
+.runner[data-dir="open"] .tail{top:0;background:linear-gradient(180deg,#f2cd78,rgba(242,205,120,0));box-shadow:0 0 14px rgba(242,205,120,.5)}
+
+/* ---- 試作の設定 ---- */
+.tools{display:flex;flex-wrap:wrap;align-items:end;gap:12px;padding:14px 0;border-bottom:1px solid #3a3644}
+.tools label{display:grid;gap:6px;font-size:12px}.scrub{min-width:240px}.scrub input{accent-color:#d3ad59}
+.tools select,.tools button{font:inherit;color:inherit;background:#26222e;border:1px solid #5c5668;border-radius:3px;min-height:40px;padding:6px 10px}
+.tools button{cursor:pointer}.note{font-size:12px;line-height:1.7;color:#b0a99c;flex-basis:100%;margin:6px 0 0}
+.links{display:flex;gap:18px;margin-top:14px;font-size:12px}.links a{color:#d1bc91}
+@media(max-width:900px){.page-head{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.star,.reticle,.new-badge,.ticker-dot{animation:none}}

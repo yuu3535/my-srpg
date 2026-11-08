@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Hub2 帯スイープ｜開閉演出の試作</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Shippori+Mincho:wght@600;700;800&display=swap">
+<link rel="stylesheet" href="hub2-sweep.css?v=20261108b">
+</head>
+<body>
+<main class="page">
+<header class="page-head">
+<div><p class="eyebrow">携帯端末 / Hub2 の開閉の試作</p><h1>帯スイープ</h1></div>
+<p>原作者の仕様書（<code>docs/10-design/ui/MENU_HUB2_SPEC_2026-11-08.md</code>）の §3-12・§3-14・§3-15 どおりの開閉。右上の CLOSE の星で閉じ、探索の MENU の星で開きます。メニューの中身は、仕様書の数値で主な部品を並べた見本です（Claude Design のモックそのものではありません）。</p>
+</header>
+
+<div class="slot"><div class="stage" id="stage"><div class="screen" id="screen" aria-label="探索と拠点メニュー（Hub2）">
+  <!-- 1. 探索シーン（仮背景 A） -->
+  <img class="explore-bg" src="../../../背景/ブラッシュアップ版/オルクス回廊.png" alt="探索の仮背景（オルクス城・回廊）" draggable="false">
+  <!-- 探索側の MENU の星（§3-15） -->
+  <button type="button" class="star-button menu-star" id="menu-star" aria-label="メニューを開く" hidden><span class="star-wrap"><svg class="star" viewBox="-40 -40 80 80" aria-hidden="true"><use href="#sparkle" x="-40" y="-40" width="80" height="80"/></svg></span><span class="star-label">MENU</span></button>
+
+  <!-- 拠点メニュー -->
+  <div class="menu" id="menu">
+    <div class="scrim-left"></div><div class="scrim-right"></div>
+    <div class="watermark" aria-hidden="true">ORCUS</div>
+    <div class="dot-band" aria-hidden="true"></div>
+    <img class="sun-mock" src="../太陽盤とコマンド_PNG_20261108/太陽盤とコマンド_アルシェ_出撃選択_1688x780.png" alt="太陽盤とコマンド（見本の画像）" draggable="false">
+    <span class="new-badge" aria-label="新しい支援会話あり"><svg viewBox="0 0 14 12" aria-hidden="true"><path d="M2 1h10a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H6l-3 2.5V9H2a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1Z"/></svg>NEW</span>
+
+    <div class="head"><p class="chapter"><span class="en">PROLOGUE</span><i></i><span>百年戦争と祝賀会の朝</span></p><h2>オルクス城・回廊</h2></div>
+
+    <button type="button" class="ticker"><img src="../アプリアイコン_清書01/fortune-icon-v01.png" alt=""><span class="ticker-name">運命予報<sup>β</sup></span><span class="ticker-dot"></span><span class="ticker-rule"></span><span class="ticker-body">運勢：蛇。　失せモノに注意。　笑う声が聞こえたら、振り返らないこと。</span></button>
+
+    <button type="button" class="event">
+      <svg class="event-frame" viewBox="0 0 556 156" aria-hidden="true"><polygon class="outer" points="14,0 542,0 556,14 556,142 542,156 14,156 0,142 0,102 20,78 0,54 0,14"/><polygon class="inner" points="18,6 538,6 550,18 550,138 538,150 18,150 8,140 8,98 26,78 8,58 8,16"/></svg>
+      <i class="diamond d-tl"></i><i class="diamond d-br"></i>
+      <svg class="reticle" viewBox="-17 -17 34 34" aria-hidden="true"><circle r="10"/><path d="M0-16v5M0 11v5M-16 0h5M11 0h5"/><rect x="-2.2" y="-2.2" width="4.4" height="4.4" transform="rotate(45)"/></svg>
+      <span class="event-label"><span class="en">MAIN EVENT</span>メインイベント</span>
+      <span class="event-title">ギュンターとの演習</span>
+      <span class="event-dest"><svg viewBox="0 0 12 16" aria-hidden="true"><path d="M6 15s5-5.2 5-9A5 5 0 0 0 1 6c0 3.8 5 9 5 9Z"/><circle cx="6" cy="6" r="1.8"/></svg>訓練場へ向かう</span>
+      <span class="event-chip"><svg viewBox="0 0 16 12" aria-hidden="true"><path d="M1 2l4-1 6 2 4-1v9l-4 1-6-2-4 1Z M5 1v9 M11 3v9"/></svg>マップで確認</span>
+      <span class="time-icon" aria-label="時間帯：朝"></span>
+    </button>
+
+    <div class="bond-head"><span>支援の深い仲間</span><i class="rule"></i><i class="page-dia on"></i><i class="page-dia"></i><i class="page-dia"></i></div>
+    <button type="button" class="card c1" style="--x:876px;--y:464px"><span class="card-art"><img src="../../../立ち絵透過下処理/カリマ立ち絵_clear.png" alt="" style="--w:410px;--l:-152px;--t:-26px"></span><svg class="card-frame" viewBox="0 0 110 270" preserveAspectRatio="none" aria-hidden="true"><polygon points="0,29.7 110,0 110,240.3 0,270"/></svg><i class="diamond d-tr"></i><i class="diamond d-bl"></i><span class="card-label"><span class="en">01</span>カリマ</span></button>
+    <button type="button" class="card c2" style="--x:1025px;--y:458px"><span class="card-art"><img src="../../../立ち絵透過下処理/サブキャラ表情/ギュンター呆れ_clear.png" alt="" style="--w:420px;--l:-160px;--t:-24px"></span><svg class="card-frame" viewBox="0 0 110 270" preserveAspectRatio="none" aria-hidden="true"><polygon points="0,29.7 110,0 110,240.3 0,270"/></svg><i class="diamond d-tr"></i><i class="diamond d-bl"></i><span class="card-label"><span class="en">02</span>ギュンター</span></button>
+    <button type="button" class="card c3" style="--x:1164px;--y:450px"><span class="card-art"><img src="../../../立ち絵透過下処理/キャリー背景白_clear.png" alt="" style="--w:410px;--l:-150px;--t:-30px"></span><svg class="card-frame" viewBox="0 0 110 270" preserveAspectRatio="none" aria-hidden="true"><polygon points="0,29.7 110,0 110,240.3 0,270"/></svg><i class="diamond d-tr"></i><i class="diamond d-bl"></i><span class="card-label carrie"><span class="en">03</span>キャリー</span></button>
+
+    <div class="status">
+      <div class="status-head"><span class="en">STATUS</span><i></i></div>
+      <div class="status-row"><img src="../アプリアイコン_清書01/wallet-icon-v01.png" alt=""><span class="status-name">所持金<small>FUNDS</small></span><span class="status-value">—<small>G</small></span></div>
+      <div class="status-row"><img src="../アプリアイコン_清書01/renown-icon-v01.png" alt=""><span class="status-name">名声<small>FAME</small></span><span class="status-value">—<small>pt</small></span></div>
+      <button type="button" class="tile reward"><img src="../アプリアイコン_清書01/ouroboros-style-match-v01.png" alt=""><span class="tile-name">名声報酬<small>武器・ボーナスアイテムと交換</small></span><span class="chev">›</span></button>
+    </div>
+    <div class="tiles"><button type="button" class="tile"><img src="../アプリアイコン_清書01/settings-icon-v01.png" alt=""><span class="tile-name">設定<small class="en">CONFIG</small></span></button><button type="button" class="tile"><svg class="log-icon" viewBox="0 0 24 28" aria-hidden="true"><path d="M5 2h10l5 5v19H5Z M15 2v5h5 M8 13h9 M8 17h9 M8 21h6"/></svg><span class="tile-name">ログ<small class="en">LOG</small></span></button></div>
+
+    <!-- CLOSE の星（§3-12） -->
+    <button type="button" class="star-button close-star" id="close-star" aria-label="メニューを閉じる"><span class="star-wrap" id="close-star-wrap"><svg class="star" viewBox="-40 -40 80 80" aria-hidden="true"><use href="#sparkle" x="-40" y="-40" width="80" height="80"/></svg></span><span class="star-label">CLOSE</span></button>
+  </div>
+
+  <!-- 帯スイープ（§3-14） -->
+  <div class="band" id="band" aria-hidden="true"><div class="band-fill"></div><i class="band-edge edge-a"></i><i class="band-edge edge-b"></i>
+    <div class="runner" id="runner"><i class="tail"></i><svg class="star runner-star" id="runner-star" viewBox="-40 -40 80 80"><use href="#sparkle" x="-40" y="-40" width="80" height="80"/></svg></div></div>
+  <div class="cover" id="cover" role="status">素材を読み込み中…</div>
+</div></div></div>
+
+<section class="tools" aria-label="試作の設定">
+<label>帯の向き<select id="flow"><option value="topright" selected>右上から（開く・閉じるとも）</option><option value="spec">仕様書どおり（左上から・開くは逆向き）</option></select></label>
+<label>端末の演出<select id="effect-mode"><option value="full" selected>あり（1.75秒）</option><option value="short">短い（案: 0.8秒）</option><option value="none">なし（案: 0.15秒のフェード）</option></select></label>
+<label>再生速度<select id="speed"><option value="1" selected>通常</option><option value="0.5">ゆっくり（0.5倍）</option><option value="0.25">詳細を見る（0.25倍）</option></select></label>
+<button type="button" id="replay">閉じて開くを再生</button>
+<label>コマ送り<select id="scrub-kind"><option value="close">閉じる</option><option value="open">開く</option></select></label>
+<label class="scrub">時刻 <output id="scrub-time">0</output>ms<input id="scrub" type="range" min="0" max="2250" step="5" value="0"></label>
+<p class="note" id="status" role="status"></p>
+</section>
+<p class="note">CLOSE の星で閉じる（星が弾ける0.28秒 → 帯1.75秒、覆いきった0.875秒で探索へ）。MENU の星で開く（逆向きに帯 → 覆いきった瞬間にメニュー → CLOSE の星が着地0.5秒）。演出中は入力を受け付けません。Escでも開閉。CLOSE／MENU の星の元の画像（素材 C）が見つからないため、星はコードで描いた仮の物です。立ち絵は全身の絵を胸から上に切り出して代わりにしています（仕様書は胸上の立ち絵）。</p>
+<nav class="links"><a href="sunfan.html">⑤ 日輪の扇へ</a><a href="index.html">①〜④の比較へ</a><a href="../../../docs/10-design/ui/MENU_HUB2_SPEC_2026-11-08.md">Hub2 の仕様書</a></nav>
+</main>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="sparkle" viewBox="-40 -40 80 80"><g transform="rotate(18)"><path d="M0-36 2.2-3.2 34 0 2.2 3.2 0 36-2.2 3.2-34 0-2.2-3.2Z"/><path d="M0-13 5.5-5.5 13 0 5.5 5.5 0 13-5.5 5.5-13 0-5.5-5.5Z" opacity=".55"/><path d="M-1-1 15-15M1 1 15 15M-1 1-15 15M1-1-15-15" stroke-width="1.1" opacity=".75"/></g></symbol></defs></svg>
+<script src="hub2-sweep-model.js?v=20261108b"></script><script src="hub2-sweep.js?v=20261108b"></script>
+</body></html>
