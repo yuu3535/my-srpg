@@ -117,26 +117,19 @@ namespace Srpg.Battle
             Label(root, "自作SRPG", new Vector2(0f, 160f), new Vector2(500f, 40f), 30, HudPalette.Text, font);
             Label(root, "Unity版の試し（スマホ・ブラウザで遊べる形）", new Vector2(0f, 132f), new Vector2(500f, 20f), 12, HudPalette.Silver, font);
             SilverButton(root, "続きから", "セーブした所から（2026-10-08）", new Vector2(0f, 82f), font, () => SaveMenu.Open(SaveMenu.Mode.Load));
-            SilverButton(root, "プロローグから", "探索 → 訓練の戦闘（人形 → ギュンター）", new Vector2(0f, 22f), font, () =>
+            // 「プロローグから」は2Dの探索（自室で起きて回廊へ）に統一（原作者 2026-11-13: 3Dの探索と2Dのマップで見た目が離れすぎている）。
+            // 3Dの探索（Explore3D の盤）は入口からは行かない（場面は残す）
+            SilverButton(root, "プロローグから", "自室で起きて回廊へ（◀ ▶ で歩く）→ 訓練の戦闘", new Vector2(0f, 22f), font, () =>
             {
-                Object.Destroy(canvas.gameObject);
                 Holding = false;
                 Party.Reset();   // 新しく始める: 仲間の育ちを消す
                 SaveSystem.PlaySeconds = 0f;
-                AddBackButton();
-                Object.FindFirstObjectByType<ExploreController>()?.Begin();
+                SceneManager.LoadScene(CorridorScene);
             });
             SilverButton(root, "試験の戦闘", "森の境（ブラウザ版の試験の戦闘と同じ）", new Vector2(0f, -38f), font, () =>
             {
                 Holding = false;
                 SceneManager.LoadScene(TrialScene);
-            });
-            SilverButton(root, "探索（2Dの試し）", "自室で起きて回廊へ（◀ ▶ で歩く。部屋は仮）", new Vector2(0f, -98f), font, () =>
-            {
-                Holding = false;
-                Party.Reset();
-                SaveSystem.PlaySeconds = 0f;
-                SceneManager.LoadScene(CorridorScene);
             });
             Label(root, "戻るときは、右下の「最初へ」かページの読み込み直し", new Vector2(0f, -150f), new Vector2(500f, 18f), 11, HudPalette.Muted, font);
             // 設定（右上。仮の最小限。メニュー画面ができたらそちらから）
