@@ -12,7 +12,7 @@
 | `support_select_spec.md` | 実装仕様書（受け取ったまま。数値はこれが正） |
 | `SupportSelect2.dc.html` | キャンバスの元データ（数値の最終確認用。画像は `/_blob/` の参照なので、単独では表示されない） |
 | `map_01〜03_*.png` | 位置と大きさを書き込んだ図（1688×780） |
-| `dial_blank.png` | 項目名を消した太陽盤（Unity では左の 668px だけを `Resources/Menu/sun_dial_blank.png` に入れた） |
+| `dial_blank.png` | 項目名を消した太陽盤（2026-11-13 から Unity では使っていない。太陽盤は回る部品で組む） |
 
 見本画像 `ref_01〜05` は二重に持たないよう、Unity の `unity-prototype/Assets/DesignRefs/SupportSelect/` にだけ置いた（エディターで重ねて確かめる用。公開版には入らない）。
 
@@ -23,7 +23,7 @@
 3. BACK の星は仕様書 §13（1582, −2）104×124（Hub2 の CLOSE と同じ）。
 4. 太さ 700 の字: **16px 以下は SemiBold（600）、19px 以上は ExtraBold（800）**（原作者の指定）。手元の字体は Shippori Mincho SemiBold・ExtraBold と Barlow Condensed SemiBold だけ。
 5. Canvas は Hub2 と同じ「1688×780 がいつも全部入る」（仕様書の Match=1 ではなく）。太陽盤は画面の左の端に付ける。
-6. 太陽盤の項目名は、仕様書 §4 のとおり降りながら出す（回る動きは、あとで Hub2 と一緒に）。
+6. 太陽盤は回る（原作者 2026-11-13）。拠点メニューで「支援会話」を押すと針の先へ回ってきて、回り終わるとこの画面になる。太陽盤は回ったまま残るので、仕様書 §4 の「項目名が降りてくる」動きはやめた。
 7. 解放の前でも開けるのは**開発中だけの切り替え**（`SupportSelectView.OpenBeforeUnlock`。あとで false に戻す）。
 8. 支援のしくみ・会話画面の支援モードはまだ無いので、仮のデータで作り、「会話する」は暗転のあとこの画面に戻る。
 9. §11 の立ち絵の数値は手元の絵と合わなかった（デザイン側は別の絵）→ 手元の絵で測り直した（`tools/build_support_portraits.py`）。

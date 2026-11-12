@@ -14,7 +14,7 @@
 
 ## 入っている物
 
-- 太陽盤（項目名を消した絵＋文字。「支援会話」が真ん中・金の光）。入ってくるとき項目名が上から降りる。右の中身は右から寄る。
+- 太陽盤（2026-11-13 から回る太陽盤 `SunDialView`。拠点メニューで回った位置のまま、「支援会話」が針の先・選択の炎。この画面では押せない）。右の中身は右から寄る。
 - 見出し「SUPPORT／支援会話」、帯（話せる会話の数と一文。一文は選んでいる人・軍の誰か・誰もいない、で出し分け、名前はランクの色）。
 - 仲間のカード（加入順、選んだ人は10px浮いて金の枠と角の菱形、押す・ホバーで6px浮いて立ち絵1.05倍、話せる会話がある人に金の点と光の輪）。立ち絵のない人はシルエット。
 - BOND の欄（並び: 話せる → ためている途中 → 条件待ち → すべて見た）。詳細（顔・名前・ランクの菱形・状態・会話するタイル）と簡易（2列）。別の人を選ぶ・切り替えると一番上へ戻る。
@@ -44,7 +44,7 @@
 - `unity-prototype/Assets/Scripts/Battle/Menu/SupportRoster.cs` — データと決まり（並び順・話せる会話の数・帯の一文・ランクの菱形）。画面に触れない
 - `unity-prototype/Assets/Resources/Support/support_roster.json` — 仮のデータ（見本 ref_01 と同じ5人）。組み合わせ・加入順・確定枠は未決
 - `unity-prototype/Assets/Resources/Support/Portraits/` — 顔の大きさをそろえて縮めた立ち絵と `faces.json`（`py -3.12 tools/build_support_portraits.py` で作る。手で直さない）
-- `unity-prototype/Assets/Resources/Menu/sun_dial_blank.png` — 項目名を消した太陽盤
+- 太陽盤の部品: `unity-prototype/Assets/Resources/Menu/Dial/`（下の「回る太陽盤」）
 - `unity-prototype/Assets/DesignRefs/SupportSelect/` — 見本 ref_01〜05（エディターで重ねる用。どこからも参照しないので公開版には入らない）
 - Hub2 側: `Hub2Menu.cs`（太陽盤の「支援会話」で開く・開いている間は Hub2 の中身を隠す・Esc で戻る）
 - テスト: `Tests/EditMode/SupportRosterTests.cs`（6件）、`Tests/PlayMode/Hub2MenuPlayTests.cs` の `SupportSelectOpensFromTheDialAndGoesBack`
@@ -56,3 +56,16 @@
 - 支援のデータ（支援値のたまり方・ランクの上がり方・組み合わせ）とセーブ。
 - 解放の前に開ける切り替え（`OpenBeforeUnlock`）を false に戻す。
 - 仲間カードの長押し → ステータス画面、カリマ軍の太陽盤、帯の一文を順番に流すか、実機で見てからの字の大きさの調整（仕様書 §14）。
+
+## 回る太陽盤（2026-11-13 追記）
+
+原作者「太陽盤は回転させれるようにしておこう！あれは気持ちよかった」。試作 `アイコン素材/携帯端末メニュー画面素材/太陽盤_コマンド試作01`（`wheel.js`・`wheel-math.js`）を写した。
+
+- 札を押すと、その札が針の先へ回ってくる（ばね）。外の輪は札と一緒に回り、針（光の線）は動いた札の数だけ次の菱形へ回る。回り終わってから、その項目を開く（支援会話なら相手選び、セーブならセーブ）。
+- 上下になぞっても回せる（離すと、いちばん近い札で止まる。開きはしない）。↑↓ でも回せ、Enter で決める。
+- 選んだ札には炎（点いたときに膨らみ、そのあとゆっくり揺れる）。設定「端末の演出：なし」では回る動きと炎をやめ、すぐに止まる。
+- 回った位置は拠点メニューと支援会話の画面で共有する（支援会話へ行っても太陽盤は動かず、右側だけが変わる）。
+- 部品の絵（外の輪・円盤・光の線・札ふつう／選択・炎）は、試作の素材と色フィルターから `node tools/export_sun_dial_layers.cjs <sharp の場所>` で書き出した `Resources/Menu/Dial/`。文字は Unity で描く（Shippori Mincho）。前の静止の絵（`sun_dial_arshe.png`・`sun_dial_blank.png`）は消した。
+- 前の静止の絵と重ねて、位置がずれていないことを確かめた。
+- コード: `SunDialMath.cs`（計算。画面に触れない）、`SunDialView.cs`（太陽盤）。テスト: `Tests/EditMode/SunDialMathTests.cs`（5件）、拠点メニューのテストで「押すと回ってから開く」。
+- まだ: カリマ軍の色の太陽盤、炎の火の粉（試作の APNG の燃え方）、回る音。
