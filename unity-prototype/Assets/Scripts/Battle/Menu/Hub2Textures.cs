@@ -7,7 +7,46 @@ namespace Srpg.Battle.Menu
     /// <summary>コードで作る小さな絵（星・ドット・グラデーション）。作った物は使い回す</summary>
     public static class Hub2Textures
     {
-        private static Texture2D star, glow, dots, softLine;
+        private static Texture2D star, glow, dots, softLine, disc;
+
+        /// <summary>ふちのなめらかな丸（金の点・光の輪）</summary>
+        public static Texture2D Disc
+        {
+            get
+            {
+                if (disc != null) return disc;
+                const int S = 64;
+                disc = new Texture2D(S, S, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, name = "Hub2Disc" };
+                var px = new Color[S * S];
+                for (int y = 0; y < S; y++)
+                for (int x = 0; x < S; x++)
+                {
+                    float dx = x + 0.5f - S / 2f, dy = y + 0.5f - S / 2f;
+                    float a = Mathf.Clamp01(S / 2f - Mathf.Sqrt(dx * dx + dy * dy));
+                    px[y * S + x] = new Color(1f, 1f, 1f, a);
+                }
+                disc.SetPixels(px);
+                disc.Apply();
+                return disc;
+            }
+        }
+
+        /// <summary>
+        /// 見本（ブラウザ）と同じ暗さに見える不透明度。Unity は色を線形の空間で混ぜるので、暗い下地を同じ値で重ねると、
+        /// 下の景色がずっと明るく透ける（会話の枠の SeenAlpha と同じ考え）。暗い下地にだけ使う
+        /// </summary>
+        public static float Seen(float a) => QualitySettings.activeColorSpace == ColorSpace.Linear ? 1f - Mathf.Pow(1f - a, 2.2f) : a;
+
+        /// <summary>
+        /// 明るい色（線・シルエット）を暗い下地に薄く重ねるときの不透明度。線形の空間で混ぜると、同じ値ではブラウザよりずっと明るく見えるので弱める。
+        /// fg・bg は重ねる色と下地の明るさ（sRGB の 0〜1）
+        /// </summary>
+        public static float SeenLight(float a, float fg = 0.9f, float bg = 0.05f)
+        {
+            if (QualitySettings.activeColorSpace != ColorSpace.Linear) return a;
+            float target = Mathf.GammaToLinearSpace(a * fg + (1f - a) * bg), lb = Mathf.GammaToLinearSpace(bg);
+            return Mathf.Clamp01((target - lb) / (Mathf.GammaToLinearSpace(fg) - lb));
+        }
 
         /// <summary>線を横切る向きの濃さ（まん中が濃く、ふちへ向かって消える）。縦に 32px</summary>
         public static Texture2D SoftLine

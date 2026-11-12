@@ -38,6 +38,32 @@ namespace Srpg.Battle.Menu
 
         public static Hub2Menu Instance => instance;
 
+        /// <summary>
+        /// 解放された物（原作者 2026-11-09: まだ解放されていない物は隠す）。物語で解放したら true にする（次に開いたときから出る）。
+        /// 今出しているのは、太陽盤・見出し・メインイベント・設定・CLOSE。プロローグの初めでは、ほかはまだ無い
+        /// </summary>
+        public static class Unlocks
+        {
+            public static bool Fortune;   // 運命予報（ヘンリーとラディンのβ版のアプリ）
+            public static bool Support;   // 支援の深い仲間・NEW の札
+            public static bool Funds;     // 所持金・名声（STATUS）
+            public static bool Reward;    // 名声報酬
+            public static bool Log;       // ログ
+            public static void Reset() { Fortune = Support = Funds = Reward = Log = false; }
+            public static void All() { Fortune = Support = Funds = Reward = Log = true; }
+        }
+
+        /// <summary>解放が変わったら組み立て直す（次に開いたときに反映）</summary>
+        public void Rebuild()
+        {
+            if (canvasRect != null) Destroy(canvasRect.gameObject);
+            pageDias.Clear(); pageDiaLines.Clear(); pageDiaFills.Clear();
+            reticle = newBadge = newRing = tickerDot = null;
+            maskFull = true; lastScale = -1f;
+            Build();
+            Apply();
+        }
+
         public Hub2Motion.State State => machine.State;
         public Hub2Motion.Length CurrentLength => machine.Length;
         public string LastOpenReason { get; private set; }
@@ -108,14 +134,14 @@ namespace Srpg.Battle.Menu
         private static Color C(int r, int g, int b, float a = 1f) => new Color(r / 255f, g / 255f, b / 255f, a);
         private static readonly Color InkHi = C(251, 245, 231), Ink = C(241, 234, 217), InkMid = C(207, 199, 182), InkMid2 = C(201, 193, 176),
             InkMid3 = C(185, 177, 161), InkLow = C(165, 158, 144), Gold = C(226, 176, 74), GoldHi = C(243, 205, 120), GoldReticle = C(217, 168, 69),
-            Silver = C(201, 205, 210, 0.75f), SilverSoft = C(201, 205, 210, 0.25f), SilverDim = C(201, 205, 210, 0.5f), Panel = C(12, 10, 20, 0.38f),
-            Tile = C(16, 14, 24, 0.72f), Chip = C(243, 220, 166), Glow = C(242, 205, 120);
+            Silver = C(201, 205, 210, 0.75f), SilverSoft = C(201, 205, 210, 0.25f), SilverDim = C(201, 205, 210, 0.5f), Panel = C(12, 10, 20, Hub2Textures.Seen(0.38f)),
+            Tile = C(16, 14, 24, Hub2Textures.Seen(0.72f)), Chip = C(243, 220, 166), Glow = C(242, 205, 120);
 
         private static Hub2Menu instance;
         private readonly Hub2Motion.Machine machine = new Hub2Motion.Machine(Hub2Motion.State.Closed);
         private Explore2DController explore;
         private Corridor2DView corridor;
-        private Font font;
+        private Font font, fontBold, fontEn;
         private RectTransform canvasRect, menuRoot, content, leftGroup, fx, closeStar, closeStarImg, menuStar, menuStarImg, reticle, newBadge, newRing, tickerDot;
         private CanvasGroup menuGroup;
         private TearMaskGraphic tearMask;
@@ -301,7 +327,11 @@ namespace Srpg.Battle.Menu
 
         private void Build()
         {
-            font = StartMenu.FontOf();
+            // 正本のフォント（Shippori Mincho・Barlow Condensed。どちらも SIL OFL）。ゲームで使う字だけに絞った物を Resources/Fonts に置いた（2026-11-09）
+            var fallback = StartMenu.FontOf();
+            font = Resources.Load<Font>("Fonts/ShipporiMincho-SemiBold") ?? fallback;
+            fontBold = Resources.Load<Font>("Fonts/ShipporiMincho-ExtraBold") ?? font;
+            fontEn = Resources.Load<Font>("Fonts/BarlowCondensed-SemiBold") ?? font;
             var go = new GameObject("Hub2Canvas", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             go.transform.SetParent(transform, false);
             canvas = go.GetComponent<Canvas>();
@@ -341,12 +371,12 @@ namespace Srpg.Battle.Menu
             BuildDots();
             BuildDial();
             BuildHeader();
-            BuildTicker();
+            if (Unlocks.Fortune) BuildTicker();
             BuildMainEvent();
-            BuildSupport();
-            BuildStatus();
+            if (Unlocks.Support) BuildSupport();
+            if (Unlocks.Funds || Unlocks.Reward) BuildStatus();
             BuildTiles();
-            BuildNewBadge();
+            if (Unlocks.Support) BuildNewBadge();
             BuildToast();
             closeStar = BuildStar("CLOSE", menuRoot, false, out closeStarImg, out closeGlow);
             closeStar.GetComponent<Button>().onClick.AddListener(() => RequestClose());
@@ -390,12 +420,12 @@ namespace Srpg.Battle.Menu
             var left = Place(Raw("LeftDark", content, null, Vector2.zero, Color.white).rectTransform, -800f, -400f, 1509f, 1580f);
             float W = 1509f;
             left.GetComponent<RawImage>().texture = Hub2Textures.Gradient("left", dark,
-                new Vector2(0f, 0.45f), new Vector2(800f / W, 0.45f), new Vector2(1306f / W, 0.30f), new Vector2(1f, 0f));
+                new Vector2(0f, Hub2Textures.Seen(0.45f)), new Vector2(800f / W, Hub2Textures.Seen(0.45f)), new Vector2(1306f / W, Hub2Textures.Seen(0.30f)), new Vector2(1f, 0f));
             // 右のガラス: x 690〜（右へはみ出す）。左端 0 → 60px で 0.62 → 右端 0.72（ぼかしは WebGL で重いので省き、少し濃く）
             float RW = 998f + 800f;
             var glass = Place(Raw("RightGlass", content, null, Vector2.zero, Color.white).rectTransform, 690f, -400f, RW, 1580f);
             glass.GetComponent<RawImage>().texture = Hub2Textures.Gradient("glass", new Color(12f / 255f, 10f / 255f, 20f / 255f),
-                new Vector2(0f, 0f), new Vector2(60f / RW, 0.66f), new Vector2(998f / RW, 0.76f), new Vector2(1f, 0.76f));
+                new Vector2(0f, 0f), new Vector2(60f / RW, Hub2Textures.Seen(0.66f)), new Vector2(998f / RW, Hub2Textures.Seen(0.76f)), new Vector2(1f, Hub2Textures.Seen(0.76f)));
         }
 
         private void BuildWatermark()
@@ -545,7 +575,7 @@ namespace Srpg.Battle.Menu
         {
             var card = Place(Node("Card_" + name, content), x, y, 110f, 270f);
             var shape = new[] { P(0, 29.7f), P(110, 0), P(110, 240.3f), P(0, 270) };
-            var bg = Poly("Shape", card, C(12, 10, 20, 0.45f), 110f, 270f); bg.Set(shape, PolyGraphic.Mode.Fill); bg.raycastTarget = true;
+            var bg = Poly("Shape", card, C(12, 10, 20, Hub2Textures.Seen(0.45f)), 110f, 270f); bg.Set(shape, PolyGraphic.Mode.Fill); bg.raycastTarget = true;
             bg.gameObject.AddComponent<Mask>().showMaskGraphic = true;
             var pic = Raw("Art", bg.rectTransform, Resources.Load<Texture2D>(art), Vector2.zero, Color.white);
             Place(pic.rectTransform, 0f, 0f, 110f, 270f);
@@ -570,8 +600,12 @@ namespace Srpg.Battle.Menu
         {
             var en = Label(content, "STATUS", 1352f, 396f, 100f, 20f, 14, Gold, FontStyle.Bold); en.alignment = TextAnchor.MiddleLeft; Spacing(en, 0.3f);
             Fill(content, 1352f + 96f, 406f, 318f - 96f, 1f, C(226, 176, 74, 0.3f));
-            StatusRow(1352f, 422f, "Menu/wallet_icon", "所持金", "FUNDS", "—", "G");
-            StatusRow(1352f, 490f, "Menu/renown_icon", "名声", "FAME", "—", "pt");
+            if (Unlocks.Funds)
+            {
+                StatusRow(1352f, 422f, "Menu/wallet_icon", "所持金", "FUNDS", "—", "G");
+                StatusRow(1352f, 490f, "Menu/renown_icon", "名声", "FAME", "—", "pt");
+            }
+            if (!Unlocks.Reward) return;
             var tile = TileShape("Reward", 1352f, 570f, 318f, 64f);
             var icon = Raw("Icon", tile, Resources.Load<Texture2D>("Menu/ouroboros_icon"), Vector2.zero, Color.white);
             Place(icon.rectTransform, 12f, 9f, 46f, 46f);
@@ -600,6 +634,7 @@ namespace Srpg.Battle.Menu
             var t1 = Label(cfg, "設定", 62f, 10f, 80f, 24f, 17, InkHi, FontStyle.Bold); t1.alignment = TextAnchor.MiddleLeft;
             var e1 = Label(cfg, "CONFIG", 62f, 34f, 90f, 18f, 11, InkLow, FontStyle.Normal); e1.alignment = TextAnchor.MiddleLeft; Spacing(e1, 0.3f);
             cfg.GetComponent<Button>().onClick.AddListener(SettingsMenu.Open);
+            if (!Unlocks.Log) return;
             var log = TileShape("Log", 1350f + 168f, 668f, 156f, 64f);
             var doc = Poly("LogIcon", log, Gold);
             doc.Set(new[] { P(18, 14), P(30, 14), P(36, 20), P(36, 50), P(18, 50) }, PolyGraphic.Mode.Stroke, true, 1.4f);
@@ -775,15 +810,24 @@ namespace Srpg.Battle.Menu
         {
             var rt = Place(Node("Text", parent), x, y, w, h);
             var t = rt.gameObject.AddComponent<Text>();
-            t.font = font;
+            // 英字だけの文字は Barlow Condensed、日本語は Shippori Mincho（太字は ExtraBold の字体を使い、合成の太字にしない）
+            bool en = IsLatin(text);
+            t.font = en ? fontEn : style == FontStyle.Bold ? fontBold : font;
             t.text = text;
             t.fontSize = size;
-            t.fontStyle = style;
+            t.fontStyle = FontStyle.Normal;   // 字体そのものが太い（SemiBold・ExtraBold）。合成の太字は重ねない（Barlow が潰れて見えた）
             t.color = color;
             t.horizontalOverflow = HorizontalWrapMode.Overflow;
             t.verticalOverflow = VerticalWrapMode.Overflow;
             t.raycastTarget = false;
             return t;
+        }
+
+        private static bool IsLatin(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return false;
+            foreach (char c in s) if (c > 0x7E) return false;
+            return true;
         }
 
         /// <summary>字間（正本の letter-spacing。em＝文字の大きさに対する割合）。Shadow より先に付ける</summary>

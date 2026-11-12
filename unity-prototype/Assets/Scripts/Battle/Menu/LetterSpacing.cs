@@ -13,6 +13,7 @@ namespace Srpg.Battle.Menu
     {
         public float em;
         private readonly List<UIVertex> verts = new List<UIVertex>();
+        private readonly List<int> charOf = new List<int>();
 
         public override void ModifyMesh(VertexHelper vh)
         {
@@ -21,11 +22,19 @@ namespace Srpg.Battle.Menu
             float step = em * text.fontSize;
             verts.Clear();
             vh.GetUIVertexStream(verts);
-            // 1文字＝6つの頂点（三角形2つ）。i 番目の文字を i×step だけ右へ
+            // 1文字＝6つの頂点（三角形2つ）。i 番目の文字を i×step だけ右へ。
+            // 空白は形が無いので四角が作られない（作られない分だけ、あとの字の番号がずれる）。四角の数が字の数より少ないときは、空白を飛ばして数える
+            string s = text.text ?? "";
+            int quads = verts.Count / 6;
+            charOf.Clear();
+            if (quads < s.Length)
+                for (int c = 0; c < s.Length; c++) if (!char.IsWhiteSpace(s[c])) charOf.Add(c);
             for (int i = 0; i < verts.Count; i++)
             {
+                int q = i / 6;
+                int index = charOf.Count > q ? charOf[q] : q;
                 var v = verts[i];
-                v.position.x += (i / 6) * step;
+                v.position.x += index * step;
                 verts[i] = v;
             }
             vh.Clear();
