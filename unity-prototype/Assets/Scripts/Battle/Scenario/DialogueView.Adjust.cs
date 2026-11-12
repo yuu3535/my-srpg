@@ -125,17 +125,8 @@ namespace Srpg.Battle
             if (adjustWho == null) return;
             var a = CurrentSliders();
             adjustValues.text = $"大きさ {a.zoom:0.00}　左右 {a.dx:+0.00;-0.00;0.00}　上下 {a.dy:+0.00;-0.00;0.00}";
-            if (actors.TryGetValue(adjustWho, out var image) && image != null)
-            {
-                var portrait = FindPortrait(adjustWho, adjustExpression);
-                if (portrait.texture != null)
-                {
-                    // 枠の幅に切るのは LayoutActors と同じ（見えている幅と全体の幅の比）
-                    float aspect = portrait.texture.width * portrait.uv.width / Mathf.Max(1f, portrait.texture.height * portrait.uv.height);
-                    float fullW = image.rectTransform.sizeDelta.y * aspect;
-                    image.uvRect = SlotUv(AdjustedUv(portrait.uv, a), fullW > 0f ? image.rectTransform.sizeDelta.x / fullW : 1f);
-                }
-            }
+            previewAdjust = a;   // 並べ直すときに、この人だけ保存前の値を使う（DialogueView.Talk の PlaceSide）
+            if (CurrentLine != null) LayoutActors(CurrentLine);
         }
 
         private void SaveAdjust(bool allExpressions)
@@ -157,10 +148,13 @@ namespace Srpg.Battle
             PreviewAdjust();
         }
 
+        private PortraitAdjust previewAdjust;
+
         private void CloseAdjuster()
         {
             if (adjustPanel != null) adjustPanel.gameObject.SetActive(false);
             adjustWho = null;
+            previewAdjust = null;
             if (CurrentLine != null) LayoutActors(CurrentLine);   // 保存した値（または元の値）で並べ直す
         }
 

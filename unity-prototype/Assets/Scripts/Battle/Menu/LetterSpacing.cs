@@ -24,11 +24,18 @@ namespace Srpg.Battle.Menu
             vh.GetUIVertexStream(verts);
             // 1文字＝6つの頂点（三角形2つ）。i 番目の文字を i×step だけ右へ。
             // 空白は形が無いので四角が作られない（作られない分だけ、あとの字の番号がずれる）。四角の数が字の数より少ないときは、空白を飛ばして数える
+            // 改行のある文字は、行ごとに数え直す（2行目の頭がずれないように。会話の本文 2026-11-13）
             string s = text.text ?? "";
             int quads = verts.Count / 6;
             charOf.Clear();
-            if (quads < s.Length)
-                for (int c = 0; c < s.Length; c++) if (!char.IsWhiteSpace(s[c])) charOf.Add(c);
+            int col = 0;
+            bool skipBlank = quads < s.Length;
+            for (int c = 0; c < s.Length; c++)
+            {
+                if (s[c] == '\n') { col = 0; if (!skipBlank) charOf.Add(0); continue; }
+                if (!skipBlank || !char.IsWhiteSpace(s[c])) charOf.Add(col);
+                col++;
+            }
             for (int i = 0; i < verts.Count; i++)
             {
                 int q = i / 6;

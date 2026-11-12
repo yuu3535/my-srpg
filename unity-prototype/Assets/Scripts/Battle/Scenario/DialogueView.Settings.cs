@@ -5,7 +5,7 @@ namespace Srpg.Battle
 {
     /// <summary>
     /// 会話の環境設定（2026-10-09）: 文字を少しずつ出す（文字の速さ）・オート・スキップ（既読だけ／未読も）。
-    /// 押すと、文字を出している途中なら全部出し、出し終えていれば次へ。左上の「ログ」の右に「オート」「スキップ」
+    /// 押すと、文字を出している途中なら全部出し、出し終えていれば次へ。「オート」「スキップ」は下のボタン帯（DialogueView.Talk）
     /// </summary>
     public partial class DialogueView
     {
@@ -13,7 +13,6 @@ namespace Srpg.Battle
         private float revealStart, revealDoneAt = -1f;
         private bool currentRead;
         private float lastSkip;
-        private Text autoLabel, skipLabel;
 
         /// <summary>バッチ（自動のテスト・確認の画像）では文字を一度に出す。文字を出す仕組みのテストだけ false にする</summary>
         public static bool InstantInBatch { get; set; } = true;
@@ -82,38 +81,6 @@ namespace Srpg.Battle
                 revealDoneAt = -1f;
                 Advance();
             }
-        }
-
-        /// <summary>「ログ」の右に「オート」「スキップ」（押すと切り替え。点いているときは明るい）</summary>
-        private void BuildToggles(Font font)
-        {
-            autoLabel = ToggleButton("AutoButton", "オート", new Vector2(84f, -10f), font, () => { Auto = !Auto; if (Auto) Skip = false; RefreshToggles(); });
-            skipLabel = ToggleButton("SkipButton", "スキップ", new Vector2(154f, -10f), font, () => { Skip = !Skip; if (Skip) { Auto = false; FinishReveal(); } RefreshToggles(); });
-            RefreshToggles();
-        }
-
-        private Text ToggleButton(string name, string label, Vector2 pos, Font font, System.Action onClick)
-        {
-            var rt = NewRect(name, root);
-            rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
-            rt.pivot = new Vector2(0f, 1f);
-            rt.sizeDelta = new Vector2(64f, 20f);
-            rt.anchoredPosition = pos;
-            rt.gameObject.AddComponent<Image>().color = new Color32(12, 26, 35, 240);
-            var line = rt.gameObject.AddComponent<Outline>();
-            line.effectColor = new Color(borderCol.r, borderCol.g, borderCol.b, 0.7f);
-            line.effectDistance = new Vector2(1f, -1f);
-            rt.gameObject.AddComponent<Button>().onClick.AddListener(() => onClick());
-            var text = NewText("Text", rt, font, 10, textCol, TextAnchor.MiddleCenter);
-            text.text = label;
-            Stretch(text.rectTransform);
-            return text;
-        }
-
-        private void RefreshToggles()
-        {
-            if (autoLabel != null) { autoLabel.text = Auto ? "オート●" : "オート"; autoLabel.color = Auto ? Color.white : new Color(textCol.r, textCol.g, textCol.b, 0.75f); }
-            if (skipLabel != null) { skipLabel.text = Skip ? "スキップ●" : "スキップ"; skipLabel.color = Skip ? Color.white : new Color(textCol.r, textCol.g, textCol.b, 0.75f); }
         }
     }
 }

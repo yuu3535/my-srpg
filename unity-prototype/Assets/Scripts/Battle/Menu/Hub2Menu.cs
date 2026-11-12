@@ -581,7 +581,7 @@ namespace Srpg.Battle.Menu
             var nm = Label(card, name, 12f, 270f - 36f - 22f, 100f, 22f, 16, InkHi, FontStyle.Bold); nm.alignment = TextAnchor.MiddleLeft; Shadow(nm, 0.9f);
             var btn = card.gameObject.AddComponent<Button>();
             btn.targetGraphic = bg;
-            btn.onClick.AddListener(() => Toast(name + "との支援会話は、まだつながっていません"));
+            // 押しても支援会話には入らない（会話画面の仕様書 §14。支援会話の入口は太陽盤の「支援会話」→ 相手選び）。押したときに出す物は未定
         }
 
         private void BuildStatus()
