@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>支援会話：相手をえらぶ（太陽盤から）</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&amp;family=Shippori+Mincho:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+.en{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase}
+button{font-family:inherit;color:inherit}
+.btn:focus-visible{outline:2px solid #f3cd78;outline-offset:3px}
+.glass{-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.dots{background-image:radial-gradient(circle,rgba(241,234,217,.5) 1.1px,transparent 1.6px);background-size:16px 16px;opacity:.4;-webkit-mask-image:linear-gradient(90deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.15) 30%,#000 78%,#000 100%);mask-image:linear-gradient(90deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.15) 30%,#000 78%,#000 100%)}
+.dl{animation:dlIn .6s cubic-bezier(.2,.9,.25,1) both}
+.dl.on{animation:dlOn .8s cubic-bezier(.2,.9,.25,1) both}
+@keyframes dlIn{from{opacity:0;transform:translateY(-18px)}to{opacity:1;transform:none}}
+@keyframes dlOn{from{opacity:0;transform:translateY(-30px)}to{opacity:1;transform:none}}
+.panel{animation:panelIn .55s .15s cubic-bezier(.2,.9,.25,1) both}
+@keyframes panelIn{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:none}}
+.bond{transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.bond > *{pointer-events:none}
+.bond:hover{transform:translateY(-6px)}
+.bond.sel{transform:translateY(-10px)}
+.bond .chara{transition:transform .4s cubic-bezier(.2,.8,.2,1)}
+.bond:hover .chara{transform:scale(1.05)}
+.bond .bd-frame{stroke:rgba(201,205,210,.75);transition:stroke .25s}
+.bond:hover .bd-frame{stroke:rgba(243,205,120,.95)}
+.bond.sel .bd-frame{stroke:#e2b04a;stroke-width:1.6}
+.bond .cn{opacity:0;transition:opacity .25s}
+.bond.sel .cn{opacity:1}
+.dot{animation:badge 2.2s ease-in-out infinite}
+@keyframes badge{0%,100%{box-shadow:0 0 0 0 rgba(242,196,96,.55)}50%{box-shadow:0 0 0 7px rgba(242,196,96,0)}}
+.pip{position:relative;width:28px;height:28px;padding:0;border:0;background:none;display:flex;align-items:center;justify-content:center}
+.pip .pd{position:absolute;left:4px;top:4px;width:20px;height:20px;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);background:rgba(201,205,210,.42)}
+.pip .pi{position:absolute;inset:1px;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);background:rgba(14,12,20,.8)}
+.pip .pf{display:none}
+.pip b{position:relative;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;color:#a59e90}
+.pip.on .pd{background:var(--rc)}
+.pip.on .pi{background:var(--rc)}
+.pip.on b{color:#121019}
+.pip.ready .pd{background:var(--rc);animation:rkb 3.2s ease-in-out infinite}
+.pip.ready b{color:var(--rc);animation:rkb 3.2s ease-in-out infinite}
+@keyframes rkb{0%,100%{opacity:1}50%{opacity:.25}}
+@media (prefers-reduced-motion: reduce){.pip.ready .pd,.pip.ready b{animation:none}}
+.scr{scrollbar-width:none;-ms-overflow-style:none;overscroll-behavior:contain}
+.scr::-webkit-scrollbar{display:none}
+.more{display:flex;gap:10px;align-items:center;transition:opacity .3s}
+.more.off{opacity:0}
+.more i{display:block;width:9px;height:9px;box-sizing:border-box;border:1px solid;transform:rotate(45deg);animation:hop3 3.6s cubic-bezier(.3,.7,.3,1) infinite,col3 9s linear infinite}
+.more i:nth-child(2){animation-delay:.22s,-6s}
+.more i:nth-child(3){animation-delay:.44s,-3s}
+@keyframes hop3{0%,16%,100%{transform:translateY(0) rotate(45deg)}6%{transform:translateY(-6px) rotate(45deg)}11%{transform:translateY(0) rotate(45deg)}}
+@keyframes col3{0%,100%{border-color:#4fa3a8;background:rgba(79,163,168,.28);box-shadow:0 0 6px rgba(79,163,168,.5)}33.3%{border-color:#e2b04a;background:rgba(226,176,74,.28);box-shadow:0 0 6px rgba(242,196,96,.5)}66.6%{border-color:#c9cdd2;background:rgba(201,205,210,.18);box-shadow:0 0 5px rgba(214,226,240,.35)}}
+@media (prefers-reduced-motion: reduce){.more i{animation:none;border-color:#4fa3a8}.more i:nth-child(2){border-color:#e2b04a}.more i:nth-child(3){border-color:#c9cdd2}}
+.seg{display:flex;align-items:center;gap:2px}
+.sg{position:relative;height:28px;padding:0 8px 0 18px;border:0;background:none;color:#8f887b;font-size:13px;font-weight:700;letter-spacing:.12em;cursor:pointer;transition:color .2s}
+.sg::before{content:'';position:absolute;left:6px;top:50%;width:6px;height:6px;margin-top:-3px;box-sizing:border-box;border:1px solid rgba(201,205,210,.45);transform:rotate(45deg);transition:background .2s,border-color .2s}
+.sg + .sg{margin-left:6px}
+.sg:hover{color:#f1ead9}
+.sg.on{color:#f3cd78}
+.sg.on::before{background:#e2b04a;border-color:#e2b04a;box-shadow:0 0 5px rgba(242,196,96,.6)}
+.mini{transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+.mini > *{pointer-events:none}
+.mini:hover{transform:translateY(-3px)}
+.mini .mf{background:rgba(201,205,210,.3)}
+.mini:hover .mf{background:rgba(243,205,120,.9)}
+.mini.sel .mf{background:#e2b04a}
+.mini.sel .mn{color:#f3cd78}
+.mini.sel{background:rgba(40,33,26,.78) !important}
+.crow .go2{transition:background .2s}
+.crow .go2:hover{background:rgba(34,31,44,.94)}
+.pip.sm{width:22px;height:22px}
+.pip.sm .pd{left:3px;top:3px;width:16px;height:16px}
+.pip.sm b{font-size:9px}
+.tile{transition:background .2s}
+.tile:hover{background:rgba(34,31,44,.94)}
+.arr{transition:opacity .2s,color .2s}
+.arr:hover{color:#f3cd78 !important}
+.arr.off{opacity:.25;pointer-events:none}
+.star-btn .star{transition:transform .5s cubic-bezier(.2,.8,.2,1),filter .3s;filter:drop-shadow(0 0 6px rgba(242,196,96,.5));animation:twinkle 3.4s ease-in-out infinite}
+.star-btn:hover .star{transform:rotate(45deg) scale(1.12);filter:drop-shadow(0 0 14px rgba(255,214,120,.95))}
+@keyframes twinkle{0%,100%{opacity:.82}50%{opacity:1}}
+.veil{animation:veil 1.9s ease both}
+@keyframes veil{0%{opacity:0}18%{opacity:1}78%{opacity:1}100%{opacity:0}}
+@media (prefers-reduced-motion: reduce){.dl,.dl.on,.panel,.dot,.star-btn .star,.veil{animation:none}}
+</style>
+</helmet>
+<div style="position: relative; width: 1688px; height: 780px; overflow: hidden; background: #0d0c12; font-family: 'Shippori Mincho', serif; color: #f1ead9">
+  <img src="/_blob/de575dd30944303d13ab60b42a0d464e" alt="" style="position: absolute; left: 0; top: 0; width: 1688px; height: 780px; display: block">
+  <div class="glass" aria-hidden="true" style="position: absolute; left: 690px; top: 0; width: 998px; height: 780px; background: linear-gradient(90deg, rgba(12,10,20,0) 0, rgba(12,10,20,0.7) 60px, rgba(12,10,20,0.8) 100%)"></div>
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: linear-gradient(90deg, rgba(10,9,16,0.45) 0%, rgba(10,9,16,0.3) 30%, rgba(10,9,16,0) 42%)"></div>
+  <div class="en" aria-hidden="true" style="position: absolute; left: 712px; top: -44px; font-size: 220px; font-weight: 700; line-height: 1; letter-spacing: 0.04em; color: rgba(0,0,0,0); -webkit-text-stroke: 1px rgba(241,234,217,0.07); white-space: nowrap">ORCUS</div>
+
+  <img src="/_blob/19a8fa418163a4264acc9843cd0776c5" alt="太陽盤（支援会話を選択中）" style="position: absolute; left: 0; top: 0; width: 1688px; height: 780px; display: block; pointer-events: none">
+  <span class="dl" style="position: absolute; left: 286px; top: 91px; width: 280px; height: 50px; display: flex; align-items: center; justify-content: center; font-size: 29px; font-weight: 600; letter-spacing: 0.12em; text-indent: 0.12em; color: #e6dfcf; text-shadow: 0 1px 3px rgba(0,0,0,0.9); white-space: nowrap; pointer-events: none">出撃</span>
+  <span class="dl" style="position: absolute; left: 345px; top: 218px; width: 280px; height: 50px; display: flex; align-items: center; justify-content: center; font-size: 29px; font-weight: 600; letter-spacing: 0.12em; text-indent: 0.12em; color: #e6dfcf; text-shadow: 0 1px 3px rgba(0,0,0,0.9); white-space: nowrap; pointer-events: none">探索</span>
+  <span class="dl on" style="position: absolute; left: 359px; top: 363px; width: 280px; height: 50px; display: flex; align-items: center; justify-content: center; font-size: 36px; font-weight: 600; letter-spacing: 0.12em; text-indent: 0.12em; color: #fbf5e7; text-shadow: 0 0 14px rgba(243,205,120,0.55), 0 1px 3px rgba(0,0,0,0.9); white-space: nowrap; pointer-events: none">支援会話</span>
+  <span class="dl" style="position: absolute; left: 345px; top: 507px; width: 280px; height: 50px; display: flex; align-items: center; justify-content: center; font-size: 29px; font-weight: 600; letter-spacing: 0.12em; text-indent: 0.12em; color: #e6dfcf; text-shadow: 0 1px 3px rgba(0,0,0,0.9); white-space: nowrap; pointer-events: none">セーブ</span>
+  <span class="dl" style="position: absolute; left: 286px; top: 634px; width: 280px; height: 50px; display: flex; align-items: center; justify-content: center; font-size: 29px; font-weight: 600; letter-spacing: 0.12em; text-indent: 0.12em; color: #e6dfcf; text-shadow: 0 1px 3px rgba(0,0,0,0.9); white-space: nowrap; pointer-events: none">身支度</span>
+
+  <div class="panel" style="position: absolute; left: 0; top: 0; width: 1688px; height: 780px; pointer-events: none">
+  <header style="position: absolute; left: 770px; top: 26px">
+    <div style="display: flex; align-items: center; gap: 14px">
+      <span class="en" style="font-size: 15px; font-weight: 600; letter-spacing: 0.34em; color: #e2b04a">Support</span>
+    </div>
+    <h1 style="margin: 10px 0 0; font-size: 56px; font-weight: 800; line-height: 1.12; letter-spacing: 0.08em; color: #fbf5e7">支援会話</h1>
+  </header>
+  <div style="position: absolute; left: 772px; top: 146px; width: 820px; height: 36px; display: flex; align-items: center; gap: 12px">
+    <span aria-hidden="true" style="width: 9px; height: 9px; background: #e2b04a; transform: rotate(45deg); flex: none"></span>
+    <span style="font-size: 16px; font-weight: 700; letter-spacing: 0.1em; color: #e2b04a">話せる会話</span>
+    <span class="en" style="font-size: 22px; font-weight: 600; color: #fbf5e7">{{totalReady}}</span>
+    <span aria-hidden="true" style="width: 1px; height: 16px; background: rgba(226,176,74,0.45)"></span>
+    <span aria-live="polite" style="font-size: 15px; letter-spacing: 0.1em; color: #b9b1a1; white-space: nowrap"><sc-for list="{{band}}" as="b" hint-placeholder-count="5"><span style="color: {{b.c}}; font-weight: {{b.w}}">{{b.t}}</span></sc-for></span>
+    <span aria-hidden="true" style="position: absolute; left: 0; right: 0; bottom: -2px; height: 1px; background: linear-gradient(90deg, rgba(226,176,74,0.6), rgba(226,176,74,0.15) 70%, rgba(226,176,74,0))"></span>
+  </div>
+  <div class="dots" aria-hidden="true" style="position: absolute; left: 744px; top: 206px; width: 924px; height: 176px"></div>
+
+  <section aria-label="仲間をえらぶ" style="position: absolute; left: 790px; top: 204px; width: 850px; pointer-events: auto">
+    <div style="display: flex; align-items: center; gap: 14px">
+      <span class="en" style="font-size: 14px; font-weight: 600; letter-spacing: 0.3em; color: #e2b04a">Member</span>
+      <h2 style="margin: 0; font-size: 19px; font-weight: 700; letter-spacing: 0.1em">仲間</h2>
+      <span style="display: flex; align-items: baseline; gap: 4px; color: #a59e90; font-size: 13px; letter-spacing: 0.1em"><span class="en" style="font-size: 18px; font-weight: 600; color: #fbf5e7">{{memberCount}}</span>人</span>
+      <span style="flex: 1; height: 1px; background: rgba(226,176,74,0.3)"></span>
+      <span class="more {{cardMoreCls}}" role="img" aria-label="{{cardMoreLabel}}" style="padding-right: 4px"><i></i><i></i><i></i></span>
+    </div>
+    <div style="height: 240px">
+    <div class="scr" onScroll="{{cardScroll}}" onWheel="{{cardWheel}}" style="margin-top: 6px; width: 850px; height: 230px; box-sizing: border-box; padding: 14px 6px 0 6px; overflow-x: auto; overflow-y: hidden; display: flex; gap: 13px; {{cardMask}}">
+      <sc-for list="{{cards}}" as="c" hint-placeholder-count="5">
+        <button class="btn bond {{c.cls}}" onClick="{{c.pick}}" aria-label="{{c.name}}" aria-pressed="{{c.pressed}}" style="position: relative; flex: none; width: 92px; height: 212px; padding: 0; border: 0; background: none; cursor: pointer">
+          <span style="position: absolute; inset: 0; overflow: hidden; clip-path: polygon(0 11%, 100% 0, 100% 89%, 0 100%); background: rgba(12,10,20,0.45)">
+            <sc-if value="{{c.hasImg}}" hint-placeholder-val="{{ true }}"><img class="chara" src="{{c.img}}" alt="" style="position: absolute; display: block; max-width: none; {{c.imgStyle}}"></sc-if>
+            <sc-if value="{{c.noImg}}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 92 212" aria-hidden="true" style="position: absolute; inset: 0; width: 92px; height: 212px"><circle cx="46" cy="62" r="19" fill="rgba(241,234,217,0.1)"></circle><path d="M10 212 C 12 120 26 96 46 94 C 66 96 80 120 82 212 Z" fill="rgba(241,234,217,0.1)"></path></svg></sc-if>
+            <span style="position: absolute; left: 0; right: 0; bottom: 0; height: 40%; background: linear-gradient(180deg, rgba(14,13,20,0), rgba(14,13,20,0.92))"></span>
+          </span>
+          <svg viewBox="0 0 92 212" aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 92px; height: 212px; overflow: visible"><polygon class="bd-frame" points="0,23.3 92,0 92,188.7 0,212" fill="none" stroke-width="1" stroke-linejoin="round"></polygon></svg>
+          <span class="cn" aria-hidden="true" style="position: absolute; right: -4px; top: -4px; width: 8px; height: 8px; background: #e2b04a; transform: rotate(45deg)"></span>
+          <span class="cn" aria-hidden="true" style="position: absolute; left: -4px; bottom: -4px; width: 8px; height: 8px; background: #e2b04a; transform: rotate(45deg)"></span>
+          <span style="position: absolute; left: 9px; bottom: 26px; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left">
+            <span class="en" style="font-size: 12px; font-weight: 600; color: #e2b04a">{{c.no}}</span>
+            <span style="font-size: {{c.fs}}; font-weight: 800; letter-spacing: 0.06em; color: #fbf5e7; text-shadow: 0 1px 6px rgba(0,0,0,0.8); white-space: nowrap">{{c.name}}</span>
+          </span>
+          <sc-if value="{{c.hasReady}}" hint-placeholder-val="{{ false }}"><span class="dot" role="img" aria-label="まだ見ていない会話あり" style="position: absolute; right: 8px; top: 14px; width: 8px; height: 8px; border-radius: 50%; background: #f3cd78"></span></sc-if>
+        </button>
+      </sc-for>
+      <sc-for list="{{ghosts}}" as="g" hint-placeholder-count="0">
+        <span aria-hidden="true" style="position: relative; flex: none; width: 92px; height: 212px; opacity: {{g.op}}">
+          <svg viewBox="0 0 92 212" style="position: absolute; left: 0; top: 0; width: 92px; height: 212px; overflow: visible"><polygon points="0,23.3 92,0 92,188.7 0,212" fill="rgba(12,10,20,0.45)" stroke="rgba(201,205,210,0.5)" stroke-width="1" stroke-dasharray="3 4" stroke-linejoin="round"></polygon><rect x="42" y="102" width="8" height="8" transform="rotate(45 46 106)" fill="none" stroke="rgba(201,205,210,0.55)" stroke-width="1"></rect></svg>
+        </span>
+      </sc-for>
+      <span aria-hidden="true" style="flex: none; width: 1px"></span>
+    </div>
+    <sc-if value="{{cardsScroll}}" hint-placeholder-val="{{ false }}">
+      <div aria-hidden="true" style="position: relative; margin: 0 6px; height: 2px; background: rgba(241,234,217,0.1)"><span style="position: absolute; top: 0; height: 2px; background: #e2b04a; left: {{cardThumbL}}; width: {{cardThumbW}}"></span></div>
+    </sc-if>
+    </div>
+  </section>
+
+  <sc-for list="{{selOne}}" as="s" hint-placeholder-count="1">
+  <section aria-label="{{s.name}}の支援" style="position: absolute; left: 790px; top: 488px; width: 850px; pointer-events: auto">
+    <div style="display: flex; align-items: center; gap: 14px">
+      <span class="en" style="font-size: 14px; font-weight: 600; letter-spacing: 0.3em; color: #e2b04a">Bond</span>
+      <h2 style="margin: 0; font-size: 19px; font-weight: 700; letter-spacing: 0.1em">{{s.name}}の支援</h2>
+      <span style="display: flex; align-items: baseline; gap: 4px; color: #a59e90; font-size: 13px; letter-spacing: 0.1em">相手<span class="en" style="font-size: 18px; font-weight: 600; color: #fbf5e7; margin-left: 6px">{{s.count}}</span>人</span>
+      <span style="flex: 1; height: 1px; background: rgba(226,176,74,0.3)"></span>
+      <span class="seg" role="group" aria-label="支援の表示"><button class="btn sg {{s.fullCls}}" onClick="{{s.toFull}}" aria-pressed="{{s.fullP}}">詳細</button><button class="btn sg {{s.miniCls}}" onClick="{{s.toMini}}" aria-pressed="{{s.miniP}}">簡易</button></span>
+      <span class="more {{s.moreCls}}" role="img" aria-label="{{s.moreLabel}}" style="padding-right: 4px"><i></i><i></i><i></i></span>
+    </div>
+  </section>
+  </sc-for>
+  <div class="scr" onScroll="{{rowScroll}}" style="position: absolute; left: 790px; top: 524px; width: 850px; height: 256px; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; pointer-events: auto; {{rowMask}}">
+    <sc-if value="{{bvFull}}" hint-placeholder-val="{{ true }}">
+    <sc-for list="{{rows}}" as="row" hint-placeholder-count="4">
+      <div style="position: relative; flex: none; height: 58px; border-bottom: 1px solid rgba(241,234,217,0.1)">
+        <span style="position: absolute; left: 4px; top: 8px; width: 42px; height: 42px; overflow: hidden; clip-path: polygon(0 10%, 100% 0, 100% 90%, 0 100%); background: rgba(16,14,24,0.72)">
+          <sc-if value="{{row.hasImg}}" hint-placeholder-val="{{ true }}"><img src="{{row.img}}" alt="" style="position: absolute; display: block; max-width: none; {{row.imgStyle}}"></sc-if>
+          <sc-if value="{{row.noImg}}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 42 42" aria-hidden="true" style="position: absolute; inset: 0; width: 42px; height: 42px"><circle cx="21" cy="17" r="8" fill="rgba(241,234,217,0.12)"></circle><path d="M5 42 C 7 31 13 27 21 27 C 29 27 35 31 37 42 Z" fill="rgba(241,234,217,0.12)"></path></svg></sc-if>
+        </span>
+        <span style="position: absolute; left: 62px; top: 10px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 16px; font-weight: 700; letter-spacing: 0.1em; white-space: nowrap">{{row.name}}</span>
+          <span class="en" style="font-size: 11px; font-weight: 600; letter-spacing: 0.3em; color: #a59e90">{{row.en}}</span>
+        </span>
+        <span style="position: absolute; left: 254px; top: 15px; display: flex; gap: 8px">
+          <span class="pip {{row.c1}}" role="img" aria-label="{{row.l1}}" style="--rc: {{row.rc1}}"><span class="pd"><span class="pi"><span class="pf" style="height: {{row.f1}}"></span></span></span><b>C</b></span>
+          <span class="pip {{row.c2}}" role="img" aria-label="{{row.l2}}" style="--rc: {{row.rc2}}"><span class="pd"><span class="pi"><span class="pf" style="height: {{row.f2}}"></span></span></span><b>B</b></span>
+          <span class="pip {{row.c3}}" role="img" aria-label="{{row.l3}}" style="--rc: {{row.rc3}}"><span class="pd"><span class="pi"><span class="pf" style="height: {{row.f3}}"></span></span></span><b>A</b></span>
+        </span>
+        <span style="position: absolute; left: 400px; top: 0; height: 58px; width: 250px; display: flex; align-items: center">
+          <sc-if value="{{row.gauge}}" hint-placeholder-val="{{ false }}">
+            <span style="display: flex; align-items: baseline; gap: 6px">
+              <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.1em; color: #a59e90; margin-right: 6px">支援値</span>
+              <span class="en" style="font-size: 20px; font-weight: 600; color: #fbf5e7">{{row.pct}}</span>
+              <span class="en" style="font-size: 12px; font-weight: 600; color: #a59e90">/ 100 pt</span>
+            </span>
+          </sc-if>
+          <sc-if value="{{row.locked}}" hint-placeholder-val="{{ false }}">
+            <span style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; letter-spacing: 0.08em; color: #a59e90"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="10"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>{{row.lockText}}</span>
+          </sc-if>
+          <sc-if value="{{row.max}}" hint-placeholder-val="{{ false }}">
+            <span style="font-size: 13px; font-weight: 600; letter-spacing: 0.1em; color: #a59e90">すべて見た</span>
+          </sc-if>
+        </span>
+        <sc-if value="{{row.ready}}" hint-placeholder-val="{{ false }}">
+          <button class="btn tile" onClick="{{row.talk}}" aria-label="{{row.name}}と{{row.nextRank}}ランクの会話をする" style="position: absolute; right: 0; top: 7px; width: 178px; height: 44px; padding: 0 12px 0 14px; border: 0; background: rgba(16,14,24,0.72); cursor: pointer; display: flex; align-items: center; gap: 10px; text-align: left; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%)">
+            <span aria-hidden="true" style="width: 9px; height: 9px; transform: rotate(45deg); background: {{row.rcN}}; box-shadow: 0 0 6px {{row.rcN}}; flex: none"></span>
+            <span style="display: flex; flex-direction: column; gap: 0; flex: 1">
+              <span style="font-size: 15px; font-weight: 700; letter-spacing: 0.1em">会話する</span>
+              <span class="en" style="font-size: 10px; font-weight: 600; letter-spacing: 0.3em; color: {{row.rcN}}">Rank {{row.nextRank}}</span>
+            </span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e2b04a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg>
+          </button>
+        </sc-if>
+      </div>
+    </sc-for>
+    </sc-if>
+    <sc-if value="{{bvMini}}" hint-placeholder-val="{{ false }}">
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 24px">
+      <sc-for list="{{rows}}" as="row" hint-placeholder-count="8">
+        <div class="crow" style="position: relative; height: 58px; border-bottom: 1px solid rgba(241,234,217,0.1)">
+          <span style="position: absolute; left: 2px; top: 8px; width: 40px; height: 42px; overflow: hidden; clip-path: polygon(0 10%, 100% 0, 100% 90%, 0 100%); background: rgba(16,14,24,0.72)">
+            <sc-if value="{{row.hasImg}}" hint-placeholder-val="{{ true }}"><img src="{{row.img}}" alt="" style="position: absolute; display: block; max-width: none; {{row.tinyStyle}}"></sc-if>
+            <sc-if value="{{row.noImg}}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 40 42" aria-hidden="true" style="position: absolute; inset: 0; width: 40px; height: 42px"><circle cx="20" cy="17" r="8" fill="rgba(241,234,217,0.12)"></circle><path d="M5 42 C 7 31 13 27 20 27 C 27 27 33 31 35 42 Z" fill="rgba(241,234,217,0.12)"></path></svg></sc-if>
+          </span>
+          <span style="position: absolute; left: 54px; top: 10px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 700; letter-spacing: 0.08em; white-space: nowrap">{{row.name}}</span><span class="en" style="font-size: 10px; font-weight: 600; letter-spacing: 0.26em; color: #a59e90">{{row.en}}</span></span>
+          <span style="position: absolute; left: 176px; top: 15px; display: flex; gap: 4px">
+            <span class="pip {{row.c1}}" role="img" aria-label="{{row.l1}}" style="--rc: {{row.rc1}}"><span class="pd"><span class="pi"></span></span><b>C</b></span>
+            <span class="pip {{row.c2}}" role="img" aria-label="{{row.l2}}" style="--rc: {{row.rc2}}"><span class="pd"><span class="pi"></span></span><b>B</b></span>
+            <span class="pip {{row.c3}}" role="img" aria-label="{{row.l3}}" style="--rc: {{row.rc3}}"><span class="pd"><span class="pi"></span></span><b>A</b></span>
+          </span>
+          <sc-if value="{{row.ready}}" hint-placeholder-val="{{ false }}">
+            <button class="btn go2" onClick="{{row.talk}}" aria-label="{{row.name}}と{{row.nextRank}}ランクの会話をする" style="position: absolute; right: 0; top: 12px; height: 34px; padding: 0 10px 0 14px; border: 0; background: rgba(16,14,24,0.72); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; letter-spacing: 0.1em; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%)">会話<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="{{row.rcN}}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 6 15 12 9 18"></polyline></svg></button>
+          </sc-if>
+          <sc-if value="{{row.locked}}" hint-placeholder-val="{{ false }}">
+            <span aria-label="{{row.lockText}}" role="img" style="position: absolute; right: 8px; top: 21px; color: #6f695f"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="10"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg></span>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+    </sc-if>
+  </div>
+  <sc-if value="{{rowsScroll}}" hint-placeholder-val="{{ false }}">
+    <div aria-hidden="true" style="position: absolute; left: 1652px; top: 528px; width: 2px; height: 240px; background: rgba(241,234,217,0.1)"><span style="position: absolute; left: 0; width: 2px; background: #e2b04a; top: {{rowThumbT}}; height: {{rowThumbH}}"></span></div>
+  </sc-if>
+  </div>
+
+  <button class="btn star-btn" onClick="{{close}}" aria-label="拠点メニューへ戻る" style="position: absolute; right: 2px; top: -2px; width: 104px; height: 124px; padding: 0; border: 0; background: transparent; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px">
+    <img class="star" src="/_blob/9b38b3cfe6dcf7bbaa4ca499481d1c4b" alt="" style="width: 60px; height: 60px; display: block">
+    <span class="en" style="font-size: 12px; font-weight: 600; letter-spacing: 0.34em; text-indent: 0.34em; color: #cfc7b6">Back</span>
+  </button>
+
+  <sc-if value="{{goOn}}" hint-placeholder-val="{{ false }}">
+    <div class="veil" aria-live="polite" style="position: absolute; inset: 0; z-index: 50; background: #08070c; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: #f1efe9">
+      <span class="en" style="font-size: 18px; font-weight: 600; letter-spacing: 0.3em; color: #e2b04a">{{goEn}}</span>
+      <span style="font-size: 40px; font-weight: 800; letter-spacing: 0.16em">{{goTitle}}</span>
+      <span style="font-size: 15px; letter-spacing: 0.14em; color: #b8b5ae">{{goSub}}</span>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"members": {"editor": "enum", "default": "5人", "options": ["5人", "8人"]}, "quiet": {"editor": "boolean", "default": false}, "$preview": {"width": 1688, "height": 780}}'>
+var IMG = {
+  arshe: { src: '/_blob/8c8b6c6a0ec1d8e9bbb118d2400bf24e', w: 284, h: 950, fx: 150, fy: 98, hw: 106 },
+  karima: { src: '/_blob/f33eab7e9e20acad67484fdf416a807a', w: 233, h: 950, fx: 125, fy: 100, hw: 104 },
+  carrie: { src: '/_blob/fdebbf55670b101103e1d1fe80dad9d9', w: 491, h: 1060, fx: 242, fy: 86, hw: 86 },
+  albus: { src: '/_blob/88e849ff96372e86028ac67572a0af41', w: 286, h: 1000, fx: 140, fy: 66, hw: 80 },
+  henry: { src: '/_blob/cd9140bae698738717740b94a5fabdc8', w: 401, h: 1000, fx: 173, fy: 82, hw: 90 }
+};
+var ARMY = {
+  ar: { ja: 'アルシェ軍', en: 'Arshe side', word: 'ARSHE', cls: 'v-ar', list: [
+    { id: 'arshe', name: 'アルシェ', en: 'Arshe', img: 'arshe', lead: true },
+    { id: 'albus', name: 'アルバス', en: 'Albus', img: 'albus', shared: true },
+    { id: 'ringholm', name: 'リングホルム', en: 'Ringholm' },
+    { id: 'ann', name: 'アン', en: 'Ann' },
+    { id: 'philo', name: 'フィロ', en: 'Philo' }
+  ] },
+  ka: { ja: 'カリマ軍', en: 'Karima side', word: 'KARIMA', cls: 'v-ka', list: [
+    { id: 'karima', name: 'カリマ', en: 'Karima', img: 'karima', lead: true },
+    { id: 'bell', name: 'ベル', en: 'Bell' },
+    { id: 'henry', name: 'ヘンリー', en: 'Henry', img: 'henry' },
+    { id: 'carrie', name: 'キャリー', en: 'Carrie', img: 'carrie' },
+    { id: 'radin', name: 'ラディン', en: 'Radin' },
+    { id: 'albus', name: 'アルバス', en: 'Albus', img: 'albus', shared: true }
+  ] }
+};
+// 確認用に手で決めた組み合わせ（それ以外は名前から仮の値を作る）
+var FIX = {
+  'albus|arshe': { r: 1, s: 'ready' }, 'arshe|ringholm': { r: 2, s: 'gauge', p: 64 }, 'ann|arshe': { r: 0, s: 'ready' },
+  'arshe|philo': { r: 0, s: 'locked', ch: 3 }, 'albus|ringholm': { r: 3 }, 'albus|ann': { r: 0, s: 'gauge', p: 22 },
+  'albus|karima': { r: 2, s: 'ready' }, 'bell|karima': { r: 1, s: 'gauge', p: 48 }, 'henry|karima': { r: 0, s: 'ready' },
+  'carrie|karima': { r: 3 }, 'karima|radin': { r: 0, s: 'locked', ch: 4 }
+};
+var PER_ROW = 5, PER_CARD = 12;
+function hsh(s) { var h = 7; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 100003; return h; }
+function crop(key, bw, bh, cx, cy, head) {
+  var m = IMG[key]; var s = head / m.hw;
+  return 'left: ' + Math.round(cx - m.fx * s) + 'px; top: ' + Math.round(cy - m.fy * s) + 'px; width: ' + Math.round(m.w * s) + 'px; height: ' + Math.round(m.h * s) + 'px';
+}
+function pairOf(a, b) {
+  var k = [a.id, b.id].sort().join('|');
+  if (FIX[k]) return FIX[k];
+  var h = hsh(k);
+  if (!a.lead && !b.lead && h % 5 === 0) return null;
+  var r = h % 4;
+  if (r === 3) return { r: 3 };
+  var t = (h >> 3) % 3;
+  if (t === 0) return { r: r, s: 'ready' };
+  if (t === 1) return { r: r, s: 'gauge', p: 10 + (h % 80) };
+  return { r: r, s: 'locked', ch: 2 + (h % 5) };
+}
+var RANKS = ['C', 'B', 'A'];
+function dotStyle(on) {
+  return on ? 'border: 1px solid var(--ac); background: var(--ac); box-shadow: 0 0 6px var(--acg)' : 'border: 1px solid var(--ln)';
+}
+
+
+var PER_ROW2 = 4, PER_CARD2 = 7;
+// 主人公以外の組み合わせは限定（仮の割り当て。登場順・確定枠はまだ決まっていない）
+var LINKS = ['albus|ringholm', 'albus|ann', 'philo|ringholm', 'ann|r06', 'philo|r07', 'albus|r08', 'ann|philo'];
+var pairBase = pairOf;
+pairOf = function (a, b) {
+  if (!a.lead && !b.lead && LINKS.indexOf([a.id, b.id].sort().join('|')) < 0) return null;
+  return pairBase(a, b);
+};
+var RC = ['#e2b04a', '#6cc6d6', '#d9475a'];
+function fadeMask(dir, a, b, fa, fb) {
+  if (!a && !b) return '';
+  var g = 'linear-gradient(' + dir + ', ' + (a ? 'transparent 0, #000 ' + fa + 'px' : '#000 0') + ', ' + (b ? '#000 calc(100% - ' + fb + 'px), transparent 100%' : '#000 100%') + ')';
+  return '-webkit-mask-image: ' + g + '; mask-image: ' + g;
+}
+function dot2(on) { return on ? 'border: 1px solid #4fa3a8; background: rgba(79,163,168,0.25); box-shadow: 0 0 6px rgba(79,163,168,0.55)' : 'border: 1px solid rgba(201,205,210,0.5)'; }
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { sel: 0, cs: 0, rs: 0, go: null, mv: 'card', bv: 'full' };
+  }
+  componentWillUnmount() { clearTimeout(this.tg); }
+  roster() {
+    var list = ARMY.ar.list.slice();
+    var m = this.props.members ?? '8人';
+    var want = m === '8人' ? 8 : list.length;
+    for (var i = list.length; i < want; i++) {
+      var no = ('0' + (i + 1)).slice(-2);
+      list.push({ id: 'r' + no, name: '加入キャラ' + no, en: 'Recruit ' + no });
+    }
+    return list;
+  }
+  launch(a, b, rank, replay) {
+    var self = this;
+    clearTimeout(this.tg);
+    this.setState({ go: { a: a.name, b: b.name, rank: rank, replay: replay } });
+    this.tg = setTimeout(function () { self.setState({ go: null }); }, 1900);
+  }
+  renderVals() {
+    var self = this;
+    var list = this.roster();
+    var sel = Math.min(this.state.sel, list.length - 1);
+    var me = list[sel];
+    var readyOf = function (who) {
+      var n = 0; list.forEach(function (o) { if (o !== who) { var p = pairOf(who, o); if (p && p.s === 'ready' && p.r < 3) n++; } }); return n;
+    };
+    var partnersOf = function (who) { var n = 0; list.forEach(function (o) { if (o !== who && pairOf(who, o)) n++; }); return n; };
+    var pairs = [];
+    list.forEach(function (o, i) { if (i !== sel) { var p = pairOf(me, o); if (p) pairs.push({ o: o, p: p }); } });
+    var order = { ready: 0, gauge: 1, locked: 2 };
+    pairs.sort(function (x, y) { return (order[x.p.s] ?? 3) - (order[y.p.s] ?? 3); });
+    var rows = pairs.map(function (q) {
+      var o = q.o, p = q.p, r = p.r, st = r >= 3 ? 'max' : p.s;
+      var cls = function (k) { return k < r ? 'on' : (k === r && st === 'ready' ? 'ready' : ''); };
+      var fil = function (k) { return (k < r || (k === r && st === 'ready') ? 100 : (k === r && st === 'gauge' ? p.p : 0)) + '%'; };
+      var lab = function (k) { return RANKS[k] + 'ランク' + (k < r ? '：見た' : (k === r && st === 'ready' ? '：話せる' : (k === r && st === 'gauge' ? '：支援値 ' + p.p + ' / 100' : '：まだ'))); };
+      var re = function (k) { return function () { if (k < r) self.launch(me, o, RANKS[k], true); }; };
+      var hasImg = !!o.img;
+      return {
+        name: o.name, en: o.en,
+        hasImg: hasImg, noImg: !hasImg, img: hasImg ? IMG[o.img].src : '', imgStyle: hasImg ? crop(o.img, 42, 42, 21, 19, 22) : '', tinyStyle: hasImg ? crop(o.img, 40, 42, 20, 19, 21) : '',
+        c1: cls(0), c2: cls(1), c3: cls(2), f1: fil(0), f2: fil(1), f3: fil(2), rc1: RC[0], rc2: RC[1], rc3: RC[2], rcN: RC[Math.min(r, 2)], l1: lab(0), l2: lab(1), l3: lab(2), re1: re(0), re2: re(1), re3: re(2),
+        ready: st === 'ready', gauge: st === 'gauge', locked: st === 'locked', max: st === 'max',
+        pct: st === 'gauge' ? p.p : 0, pctW: (st === 'gauge' ? p.p : 0) + '%',
+        nextRank: r < 3 ? RANKS[r] : 'A',
+        lockText: '第' + (p.ch || 3) + '章から話せる',
+        talk: function () { self.launch(me, o, RANKS[r], false); }
+      };
+    });
+    var cards = list.map(function (o, idx) {
+      var hasImg = !!o.img;
+      return {
+        name: o.name, no: ('0' + (idx + 1)).slice(-2), cls: idx === sel ? 'sel' : '', pressed: idx === sel ? 'true' : 'false',
+        fs: o.name.length >= 6 ? '12px' : (o.name.length >= 5 ? '13px' : '16px'),
+        hasImg: hasImg, noImg: !hasImg, img: hasImg ? IMG[o.img].src : '', imgStyle: hasImg ? crop(o.img, 92, 212, 48, 58, 40) : '', miniStyle: hasImg ? crop(o.img, 66, 86, 33, 32, 34) : '',
+        mfs: o.name.length >= 6 ? '15px' : '17px',
+        en: o.en, pc: partnersOf(o), rd: readyOf(o), rdColor: readyOf(o) > 0 ? '#f3cd78' : '#a59e90',
+        hasReady: readyOf(o) > 0,
+        pick: function () { if (self.rowsEl) self.rowsEl.scrollTop = 0; self.setState({ sel: idx, rs: 0 }); }
+      };
+    });
+    var dots = function (n, cur) { var a = []; for (var i = 0; i < n; i++) a.push({ st: dot2(i === cur) }); return a; };
+    var total = 0; list.forEach(function (a, i) { list.forEach(function (b, j) { if (j > i) { var p = pairOf(a, b); if (p && p.s === 'ready' && p.r < 3) total++; } }); });
+    var cardsVis = Math.min(1, 850 / (list.length * 105 - 13 + 13));
+    var mini = this.state.bv === 'mini';
+    var rowsVis = Math.min(1, 256 / (mini ? Math.ceil(pairs.length / 2) * 58 : pairs.length * 58));
+    var grid = false;
+    var quiet = !!this.props.quiet;
+    if (quiet) total = 0;
+    var BASE = '#b9b1a1';
+    var band;
+    var mine = quiet ? [] : pairs.filter(function (q) { return q.p.s === 'ready' && q.p.r < 3; });
+    if (mine.length) {
+      var q0 = mine[0], rk = q0.p.r, col = RC[rk];
+      var tail = rk === 0 ? ['の間に、絆が芽生えたようだ。', true] : (rk === 1 ? ['の絆が、深まったようだ。', false] : ['の絆が、固く結ばれようとしている。', false]);
+      band = [
+        { t: me.name, c: col, w: 700 }, { t: 'と', c: BASE, w: 400 }, { t: q0.o.name, c: col, w: 700 },
+        { t: tail[0], c: BASE, w: 400 }
+      ];
+    } else if (total > 0) {
+      band = [{ t: '誰かが、話したいことがあるようだ。', c: BASE, w: 400 }];
+    } else {
+      band = [{ t: '今は、静かな時間が流れている。', c: BASE, w: 400 }];
+    }
+    var go = this.state.go;
+    return {
+      band: band,
+      totalReady: total,
+      cards: cards,
+      memberCount: list.length,
+      ghosts: [],
+      cardsScroll: cardsVis < 1,
+      mvCard: !grid, mvGrid: grid, mvCardCls: grid ? '' : 'on', mvGridCls: grid ? 'on' : '', mvCardP: grid ? 'false' : 'true', mvGridP: grid ? 'true' : 'false',
+      toCard: function () { self.setState({ mv: 'card', cs: 0 }); },
+      toGrid: function () { self.setState({ mv: 'grid' }); },
+      bvFull: !mini, bvMini: mini,
+      cardThumbW: (cardsVis * 100).toFixed(2) + '%', cardThumbL: (this.state.cs * (1 - cardsVis) * 100).toFixed(2) + '%',
+      cardMask: fadeMask('90deg', cardsVis < 1 && this.state.cs > 0.01, cardsVis < 1 && this.state.cs < 0.99, 36, 70),
+      cardScroll: function (e) { var t = e.currentTarget; var mx = t.scrollWidth - t.clientWidth; self.setState({ cs: mx > 0 ? t.scrollLeft / mx : 0 }); },
+      cardWheel: function (e) { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) e.currentTarget.scrollLeft += e.deltaY; },
+      rowsScroll: rowsVis < 1,
+      cardMoreCls: !grid && cardsVis < 1 && this.state.cs < 0.98 ? '' : 'off', cardMoreLabel: !grid && cardsVis < 1 && this.state.cs < 0.98 ? '右に続きがあります' : '',
+      rowThumbH: (rowsVis * 100).toFixed(2) + '%', rowThumbT: (this.state.rs * (1 - rowsVis) * 100).toFixed(2) + '%',
+      rowMask: fadeMask('180deg', rowsVis < 1 && this.state.rs > 0.01, rowsVis < 1 && this.state.rs < 0.99, 24, 48),
+      rowScroll: function (e) { var t = e.currentTarget; self.rowsEl = t; var mx = t.scrollHeight - t.clientHeight; self.setState({ rs: mx > 0 ? t.scrollTop / mx : 0 }); },
+      selOne: [{ name: me.name, count: pairs.length, moreCls: rowsVis < 1 && this.state.rs < 0.98 ? '' : 'off', moreLabel: rowsVis < 1 && this.state.rs < 0.98 ? '下に続きがあります' : '',
+        fullCls: mini ? '' : 'on', miniCls: mini ? 'on' : '', fullP: mini ? 'false' : 'true', miniP: mini ? 'true' : 'false',
+        toFull: function () { if (self.rowsEl) self.rowsEl.scrollTop = 0; self.setState({ bv: 'full', rs: 0 }); },
+        toMini: function () { if (self.rowsEl) self.rowsEl.scrollTop = 0; self.setState({ bv: 'mini', rs: 0 }); } }],
+      rows: rows,
+      close: function () { if (self.rowsEl) self.rowsEl.scrollTop = 0; self.setState({ sel: 0, rs: 0 }); },
+      goOn: !!go,
+      goEn: go ? ('Support ― Rank ' + go.rank) : '',
+      goTitle: go ? (go.a + ' × ' + go.b) : '',
+      goSub: go ? (go.replay ? '会話を見返す（既読）' : '支援会話へ ― 会話画面（支援モード）') : ''
+    };
+  }
+}
+</script>
+</body>
+</html>
