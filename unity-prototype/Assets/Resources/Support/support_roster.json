@@ -1,0 +1,20 @@
+{
+ "_note": "支援会話の仮のデータ（仕様書 docs/10-design/ui/support_select/ の見本 ref_01 と同じ。組み合わせ・加入順・確定枠はまだ決まっていない）。members は加入順。rank は見終わったランクの数（0〜3）、state は Ready（話せる）/ Gauge（支援値をためている）/ Locked（条件待ち）",
+ "members": [
+  { "id": "arshe", "name": "アルシェ", "en": "Arshe", "portrait": "arshe" },
+  { "id": "albus", "name": "アルバス", "en": "Albus", "portrait": "albus" },
+  { "id": "ringholm", "name": "リングホルム", "en": "Ringholm", "portrait": "" },
+  { "id": "ann", "name": "アン", "en": "Ann", "portrait": "" },
+  { "id": "philo", "name": "フィロ", "en": "Philo", "portrait": "" }
+ ],
+ "pairs": [
+  { "a": "albus", "b": "arshe", "rank": 1, "state": "Ready" },
+  { "a": "arshe", "b": "ringholm", "rank": 2, "state": "Gauge", "points": 64 },
+  { "a": "ann", "b": "arshe", "rank": 0, "state": "Ready" },
+  { "a": "arshe", "b": "philo", "rank": 0, "state": "Locked", "unlockChapter": 3 },
+  { "a": "albus", "b": "ringholm", "rank": 3 },
+  { "a": "albus", "b": "ann", "rank": 0, "state": "Gauge", "points": 22 },
+  { "a": "philo", "b": "ringholm", "rank": 0, "state": "Gauge", "points": 35 },
+  { "a": "ann", "b": "philo", "rank": 0, "state": "Locked", "unlockChapter": 4 }
+ ]
+}
