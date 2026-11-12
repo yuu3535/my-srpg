@@ -1,0 +1,41 @@
+{
+ "_note": "回る太陽盤の部品の置き方（844×390 の座標。tools/export_sun_dial_layers.cjs で作る。手で直さない）",
+ "center": {
+  "x": 0,
+  "y": 195
+ },
+ "ring": {
+  "size": 609
+ },
+ "disk": {
+  "size": 406,
+  "x": -40,
+  "y": 195
+ },
+ "rays": {
+  "size": 439
+ },
+ "plate": {
+  "width": 112,
+  "bandHeight": 31,
+  "pad": 8
+ },
+ "flame": {
+  "x": 53.830000000000005,
+  "y": -52.18,
+  "size": 81,
+  "opacity": 0.83
+ },
+ "geometry": {
+  "gap": -27,
+  "radius": 210.82046369112166,
+  "outerRadius": 292.32,
+  "pitch": 20,
+  "inset": -15,
+  "height": 44,
+  "cardWidth": 112,
+  "textPadding": 16,
+  "selectedScale": 1.18,
+  "tipRadius": 222.82046369112166
+ }
+}
