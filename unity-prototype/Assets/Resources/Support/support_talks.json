@@ -1,0 +1,21 @@
+{
+ "_note": "支援会話の台本（2026-11-13 総合担当）。台本ができたら、この形で差し替える。a・b は support_roster.json の id（順不同）、rank は C / B / A、title は上のタブに出す話のタイトル。lines は会話のシナリオと同じ形（type: line／narration／phone、speaker は表示の名前、expression は表情）。draft: true は仮の台詞（デバッグの一覧に「仮」と出る）。いまの2つは画面を確かめるための仮で、物語の台詞ではない",
+ "talks": [
+  {
+   "a": "arshe", "b": "albus", "rank": "B", "title": "（仮）支援会話 B", "draft": true,
+   "lines": [
+    { "type": "narration", "text": "（仮）支援会話の台本が入るまでの、確認用の場面です。" },
+    { "type": "line", "speaker": "アルバス", "text": "（仮）ここにアルバスの台詞が入ります。" },
+    { "type": "line", "speaker": "アルシェ", "text": "（仮）ここにアルシェの台詞が入ります。\n2行目はこのくらいの長さまで。" },
+    { "type": "line", "speaker": "アルバス", "text": "（仮）長い台詞は、2行ずつページに分かれます。\n1ページ目の2行目です。\n2ページ目の1行目です。" }
+   ]
+  },
+  {
+   "a": "arshe", "b": "ann", "rank": "C", "title": "（仮）支援会話 C", "draft": true,
+   "lines": [
+    { "type": "line", "speaker": "アン", "text": "（仮）立ち絵がまだ無い人は、名前と吹き出しだけで話します。" },
+    { "type": "line", "speaker": "アルシェ", "text": "（仮）ここにアルシェの台詞が入ります。" }
+   ]
+  }
+ ]
+}
