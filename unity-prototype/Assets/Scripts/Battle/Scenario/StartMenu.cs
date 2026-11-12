@@ -39,7 +39,12 @@ namespace Srpg.Battle
             if (SaveSystem.HasPending) { shownOnce = true; Holding = false; Menu.Hub2Menu.ResetBoot(); AddBackButton(); return; }   // ロード（続きから）で開いた（次にメニューを開くのは長い版）
             if (scene.name == ExploreScene && ExploreHandoff.Pending) { shownOnce = true; Holding = false; AddBackButton(); }   // 2Dの探索から来た
             else if (scene.name == ExploreScene && !shownOnce) { shownOnce = true; Holding = true; Show(); }
-            else if (scene.name == TrialScene || scene.name == CorridorScene) { Holding = false; AddBackButton(); }
+            else if (scene.name == TrialScene || scene.name == CorridorScene)
+            {
+                Holding = false;
+                AddBackButton();
+                if (scene.name == CorridorScene && Menu.SupportTalkDebug.Pending) Menu.SupportTalkDebug.Attach();   // 支援会話テスト（開発用）
+            }
             else Holding = false;
         }
 
@@ -108,6 +113,9 @@ namespace Srpg.Battle
         /// <summary>開発中だけ: 入口に「戦闘テスト」を出す（原作者 2026-11-13。公開の形にするときに false）</summary>
         public static bool ShowBattleTest = true;
 
+        /// <summary>開発中だけ: 入口に「支援会話テスト」を出す（原作者 2026-11-13。公開の形にするときに false）</summary>
+        public static bool ShowSupportTest = true;
+
         private static void Show()
         {
             var font = FontOf();
@@ -134,6 +142,14 @@ namespace Srpg.Battle
                 {
                     Holding = false;
                     SceneManager.LoadScene(TrialScene);
+                });
+            if (ShowSupportTest)
+                SilverButton(root, "支援会話テスト", "開発用：支援会話の台本を一覧から流す", new Vector2(0f, ShowBattleTest ? -128f : -68f), font, () =>
+                {
+                    Holding = false;
+                    Party.Reset();
+                    Menu.SupportTalkDebug.Pending = true;
+                    SceneManager.LoadScene(CorridorScene);
                 });
             // 設定（右上。仮の最小限。メニュー画面ができたらそちらから）
             var cfg = Rect("Settings", root, new Vector2(1f, 1f), new Vector2(-12f, -12f), new Vector2(64f, 22f));

@@ -44,14 +44,17 @@ namespace Srpg.Battle
         private string supportTitle = "";
         private Action supportClose;
 
-        /// <summary>支援会話として流す（2人・顔の横の吹き出し・上のタブはランク・右上に CLOSE）。ranksSeen＝見終わったランクの数（今のランクの番号）</summary>
+        /// <summary>
+        /// 支援会話として流す（2人・顔の横の吹き出し・上のタブはランク・右上に CLOSE）。ranksSeen＝見終わったランクの数（今のランクの番号）。
+        /// onClose は、最後まで読んだときも CLOSE で閉じたときも1回だけ呼ぶ
+        /// </summary>
         public void PlaySupport(ScenarioBlock scenarioBlock, int ranksSeen, string title, Action onClose)
         {
             SupportMode = true;
             supportSeen = Mathf.Clamp(ranksSeen, 0, 2);
             supportTitle = title ?? "";
             supportClose = onClose;
-            Play(scenarioBlock, () => { SupportMode = false; });
+            Play(scenarioBlock, () => { SupportMode = false; var c = supportClose; supportClose = null; c?.Invoke(); });
         }
 
         // ── 1行の文字（仕様書 §1・§4） ──
@@ -67,6 +70,8 @@ namespace Srpg.Battle
             { "カリマ", new Figure { height = 950f, headX = 128f, faceY = 110f } },
             { "キャリー", new Figure { height = 1060f, headX = 491f - 221f, faceY = 112f } },
             { "ギュンター", new Figure { height = 1100f, headX = 365f - 175f, faceY = 128f } },
+            // アルバス（見本に無い。albas.png の頭の中心 409,118・透明でない所 36〜740 × 7〜1012 から、高さ 1080 で）
+            { "アルバス", new Figure { height = 1080f, headX = (409f - 36f) * 1080f / 1005f, faceY = (118f - 7f) * 1080f / 1005f } },
         };
         // 枠ごとの頭の中心 X と足元の線（見本の立ち絵の左上＋頭の位置、上端＋高さ）
         private struct Slot { public float headX, baseline; }

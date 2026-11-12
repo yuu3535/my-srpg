@@ -93,6 +93,7 @@ namespace Srpg.Tests
             GameSettings.ResetForTest();
             Hub2Menu.ResetMilestones();
             Hub2Menu.Unlocks.Reset();
+            SupportSelectView.ResetStatics();
             SceneManager.LoadScene("Corridor2D");
             yield return null;
             yield return null;
@@ -135,14 +136,18 @@ namespace Srpg.Tests
             view.SetCompact(true);
             Assert.IsTrue(view.Compact);
 
-            // 会話する → 暗転の間は戻れない → 終わるとこの画面に戻る
+            // 会話する → 暗転の間は戻れない → 支援会話（台本がある組）→ 会話を閉じるとこの画面に戻る
             view.Select("arshe");
             view.Talk("albus");
             Assert.IsTrue(view.Veiled);
             view.Back();
-            Assert.IsTrue(SupportSelectView.IsOpen, "暗転の途中で戻ってしまう");
+            Assert.IsTrue(SupportSelectView.IsOpen || SupportSelectView.Talking, "暗転の途中で戻ってしまう");
             yield return new WaitForSecondsRealtime(2.1f);
             Assert.IsFalse(view.Veiled);
+            Assert.IsTrue(SupportSelectView.Talking, "台本のある組なのに支援会話にならない");
+            Object.FindFirstObjectByType<DialogueView>().Close();
+            yield return null;
+            Assert.IsFalse(SupportSelectView.Talking);
             Assert.IsTrue(SupportSelectView.IsOpen);
 
             // 話せない相手には会話しない

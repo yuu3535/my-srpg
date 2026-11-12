@@ -182,7 +182,8 @@ namespace Srpg.Battle.Menu
             }
             else if (kb != null && kb.escapeKey.wasPressedThisFrame && !dialogs)
             {
-                if (SupportSelectView.IsOpen) SupportSelectView.Instance.Back();   // 支援会話の相手選びから、拠点メニューへ戻る
+                if (SupportSelectView.Talking) { }   // 支援会話の間は会話の画面が受ける
+                else if (SupportSelectView.IsOpen) SupportSelectView.Instance.Back();   // 支援会話の相手選びから、拠点メニューへ戻る
                 else if (machine.State == Hub2Motion.State.Open) RequestClose();
                 else RequestOpen();
             }
@@ -205,7 +206,7 @@ namespace Srpg.Battle.Menu
             if (menuRoot == null) return;
             var f = machine.Current(Effect);
             var g = Geo();
-            menuRoot.gameObject.SetActive(f.menu && !SupportSelectView.IsOpen);   // 支援会話の相手選びが出ている間は、その画面が太陽盤ごと描く
+            menuRoot.gameObject.SetActive(f.menu && !SupportSelectView.IsOpen && !SupportSelectView.Talking);   // 支援会話の相手選びが出ている間は、その画面が太陽盤ごと描く
             menuGroup.alpha = f.menuOpacity;
             if (f.clipInside) { tearMask.SetTear(TearMaskGraphic.Mode.Inside, f.o, g); maskFull = false; }
             else if (f.clipOutside) { tearMask.SetTear(TearMaskGraphic.Mode.Outside, f.o, g); maskFull = false; }

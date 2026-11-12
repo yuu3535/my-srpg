@@ -33,9 +33,19 @@ namespace Srpg.Battle.Menu
                 Instance = go.AddComponent<SupportSelectView>();
             }
             Instance.gameObject.SetActive(true);
-            Instance.Show(roster ?? SupportRoster.Load());
+            Instance.Show(roster ?? (Roster ??= SupportRoster.Load()));
             return Instance;
         }
+
+        /// <summary>今の支援のデータ（見た会話はここに残る。セーブはまだ）。roster を渡して開いたときは、それ</summary>
+        public static SupportRoster Roster;
+
+        /// <summary>支援会話を流している間（相手選びは隠れ、拠点メニューの中身も出さない）</summary>
+        public static bool Talking { get; private set; }
+
+        /// <summary>起動したとき・テスト: 支援のデータと「会話中」を消す</summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        public static void ResetStatics() { Roster = null; Talking = false; }
 
         /// <summary>BACK（星・Esc）。拠点メニューに戻る</summary>
         public void Back()
@@ -202,6 +212,9 @@ namespace Srpg.Battle.Menu
             var me = roster.members[selected];
             var p = roster.PairOf(me.id, partnerId);
             if (p == null || !p.Talkable) return;
+            talkPair = p;
+            talk = SupportTalks.Find(me.id, partnerId, p.rank);
+            talkStarted = false;
             veilA = me.name;
             veilB = roster.Find(partnerId)?.name ?? partnerId;
             veilRank = p.rank;
@@ -303,14 +316,50 @@ namespace Srpg.Battle.Menu
             veilTime += dt;
             veilGroup.alpha = Motion.Veil(veilTime);
             veil.gameObject.SetActive(true);
-            // 真っ暗の間に会話画面へ切り替える（支援モードはまだ無いので、ここでは何もしない）
-            if (wasFull && !Motion.VeilFull(veilTime) && veilTime > Motion.VeilLength * 0.5f) { }
+            // 真っ暗の間に会話画面へ切り替える（暗転の半ばで会話を始め、相手選びの中身を隠す。暗転は会話の上で明けていく）
+            if (!talkStarted && veilTime > Motion.VeilLength * 0.5f) BeginTalk();
             if (veilTime >= Motion.VeilLength)
             {
                 veilTime = -1f;
                 veil.gameObject.SetActive(false);
-                Toast("支援会話（会話画面の支援モード）は、まだつながっていません");
+                if (Talking) gameObject.SetActive(false);   // 会話の間は相手選びを閉じておく（終わったら戻る）
+                else Toast("この組の支援会話の台本は、まだありません");
             }
+        }
+
+        private SupportRoster.Pair talkPair;
+        private SupportTalks.Talk talk;
+        private bool talkStarted;
+
+        private void BeginTalk()
+        {
+            talkStarted = true;
+            var dialogue = FindFirstObjectByType<DialogueView>();
+            if (talk == null || dialogue == null) return;
+            Talking = true;
+            for (int i = 0; i < canvasRect.childCount; i++)
+            {
+                var c = canvasRect.GetChild(i);
+                if (veil == null || c != veil.transform) c.gameObject.SetActive(false);
+            }
+            var pair = talkPair;
+            int keep = selected;
+            dialogue.PlaySupport(talk.ToBlock(), pair.rank, talk.title, () => EndTalk(pair, keep));
+        }
+
+        /// <summary>支援会話が終わった（最後まで読んだ・CLOSE）: 見たことにして、相手選びに戻る</summary>
+        private void EndTalk(SupportRoster.Pair pair, int keep)
+        {
+            Talking = false;
+            if (pair != null && pair.Talkable)
+            {
+                pair.rank = Mathf.Min(3, pair.rank + 1);
+                if (pair.rank < 3) { pair.state = "Gauge"; pair.points = 0; }
+            }
+            gameObject.SetActive(true);
+            Show(roster);
+            Select(keep);
+            FinishIntro();
         }
 
         // ── 組み立て ──

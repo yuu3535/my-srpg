@@ -148,8 +148,13 @@ namespace Srpg.Battle
             if (!string.IsNullOrEmpty(expression))
                 foreach (var p in portraits) if (p.name == $"{who}_{expression}") return p;
             foreach (var p in portraits) if (p.name == who) return p;
-            return default;
+            // 場面の立ち絵の一覧に無い人は、Resources/Talk/Portraits/〈名前〉 を探す（支援会話のアルバスなど。2026-11-13）
+            if (string.IsNullOrEmpty(who)) return default;
+            if (!extraPortraits.TryGetValue(who, out var tex)) { tex = Resources.Load<Texture2D>("Talk/Portraits/" + who); extraPortraits[who] = tex; }
+            return tex != null ? new Portrait { name = who, texture = tex } : default;
         }
+
+        private readonly Dictionary<string, Texture2D> extraPortraits = new Dictionary<string, Texture2D>();
 
         // ── 組み立て ──
 

@@ -253,7 +253,7 @@ namespace Srpg.Battle.Menu
         {
             float dt = Time.unscaledDeltaTime;
             clock += dt;
-            if (interactive && Hub2Menu.Instance != null && Hub2Menu.Instance.State == Hub2Motion.State.Open && !SupportSelectView.IsOpen && !SaveMenu.IsOpen && !SettingsMenu.IsOpen)
+            if (interactive && Hub2Menu.Instance != null && Hub2Menu.Instance.State == Hub2Motion.State.Open && !SupportSelectView.IsOpen && !SupportSelectView.Talking && !SaveMenu.IsOpen && !SettingsMenu.IsOpen)
             {
                 var kb = Keyboard.current;
                 if (kb != null)
