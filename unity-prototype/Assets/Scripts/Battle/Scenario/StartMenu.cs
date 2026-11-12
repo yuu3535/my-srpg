@@ -105,6 +105,9 @@ namespace Srpg.Battle
             return button;
         }
 
+        /// <summary>開発中だけ: 入口に「戦闘テスト」を出す（原作者 2026-11-13。公開の形にするときに false）</summary>
+        public static bool ShowBattleTest = true;
+
         private static void Show()
         {
             var font = FontOf();
@@ -116,22 +119,22 @@ namespace Srpg.Battle
             dim.gameObject.AddComponent<Image>().color = new Color(0.05f, 0.09f, 0.12f, 1f);
             Label(root, "自作SRPG", new Vector2(0f, 160f), new Vector2(500f, 40f), 30, HudPalette.Text, font);
             Label(root, "Unity版の試し（スマホ・ブラウザで遊べる形）", new Vector2(0f, 132f), new Vector2(500f, 20f), 12, HudPalette.Silver, font);
-            SilverButton(root, "続きから", "セーブした所から（2026-10-08）", new Vector2(0f, 82f), font, () => SaveMenu.Open(SaveMenu.Mode.Load));
-            // 「プロローグから」は2Dの探索（自室で起きて回廊へ）に統一（原作者 2026-11-13: 3Dの探索と2Dのマップで見た目が離れすぎている）。
-            // 3Dの探索（Explore3D の盤）は入口からは行かない（場面は残す）
-            SilverButton(root, "プロローグから", "自室で起きて回廊へ（◀ ▶ で歩く）→ 訓練の戦闘", new Vector2(0f, 22f), font, () =>
+            // ボタンは「続きから」「はじめから」と、開発中だけ「戦闘テスト」（原作者 2026-11-13: 入口を整理。戦闘テストには入れるようにしておく）。
+            // 「はじめから」は2Dの探索（自室で起きて回廊へ）。3Dの盤は訓練場（戦闘の場所）だけで、入口からは行かない
+            SilverButton(root, "続きから", "セーブした所から", new Vector2(0f, 52f), font, () => SaveMenu.Open(SaveMenu.Mode.Load));
+            SilverButton(root, "はじめから", "プロローグ：自室で起きて回廊へ", new Vector2(0f, -8f), font, () =>
             {
                 Holding = false;
                 Party.Reset();   // 新しく始める: 仲間の育ちを消す
                 SaveSystem.PlaySeconds = 0f;
                 SceneManager.LoadScene(CorridorScene);
             });
-            SilverButton(root, "試験の戦闘", "森の境（ブラウザ版の試験の戦闘と同じ）", new Vector2(0f, -38f), font, () =>
-            {
-                Holding = false;
-                SceneManager.LoadScene(TrialScene);
-            });
-            Label(root, "戻るときは、右下の「最初へ」かページの読み込み直し", new Vector2(0f, -150f), new Vector2(500f, 18f), 11, HudPalette.Muted, font);
+            if (ShowBattleTest)
+                SilverButton(root, "戦闘テスト", "開発用：森の境（ブラウザ版の試験の戦闘と同じ）", new Vector2(0f, -68f), font, () =>
+                {
+                    Holding = false;
+                    SceneManager.LoadScene(TrialScene);
+                });
             // 設定（右上。仮の最小限。メニュー画面ができたらそちらから）
             var cfg = Rect("Settings", root, new Vector2(1f, 1f), new Vector2(-12f, -12f), new Vector2(64f, 22f));
             cfg.pivot = new Vector2(1f, 1f);
