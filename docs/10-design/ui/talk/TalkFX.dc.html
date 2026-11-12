@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>テキストボックスの特殊演出</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&amp;family=Shippori+Mincho:wght@500;600;700;800&amp;family=Zen+Kurenaido&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#e2b04a}a:hover{color:#f3cd78}
+button{font-family:inherit;color:inherit}
+.btn:focus-visible{outline:2px solid #f3cd78;outline-offset:3px}
+.en{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase}
+.t-gen{--ln:rgba(214,218,224,.72);--ln2:rgba(214,218,224,.22);--ac:#e4e7ec;--acg:rgba(214,226,240,.55);--pn:rgba(9,10,13,.74);--pl:rgba(9,10,13,.92);--nm:#f5f3ee;--tx:#f1efe9;--nar:#d6d2c9;--sub:#b8b5ae}
+.t-orc{--ln:rgba(201,205,210,.75);--ln2:rgba(201,205,210,.25);--ac:#e2b04a;--acg:rgba(242,196,96,.55);--pn:rgba(12,10,20,.74);--pl:rgba(12,10,20,.92);--nm:#fbf5e7;--tx:#f1ead9;--nar:#d9d0bd;--sub:#b9b1a1}
+.por{z-index:2;pointer-events:none;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.por.lit{z-index:6}
+.por img{transition:filter .3s}
+.por.dim img{filter:brightness(.5) saturate(.85)}
+.por.lit{transform:translateY(-6px)}
+.dia{display:block;width:9px;height:9px;transform:rotate(45deg);background:var(--ac);box-shadow:0 0 8px var(--acg)}
+.dia.hollow{background:transparent;border:1px solid var(--ac);box-shadow:none;box-sizing:border-box}
+.box{animation:boxIn .34s cubic-bezier(.2,.8,.2,1);transition:left .32s cubic-bezier(.2,.8,.2,1)}
+@keyframes boxIn{from{clip-path:inset(0 50% 0 50%);opacity:.2}to{clip-path:inset(-20px -20px -20px -20px);opacity:1}}
+.band{animation:bandIn .34s ease-out}
+@keyframes bandIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.plate{transition:left .3s cubic-bezier(.2,.8,.2,1),top .3s}
+.plate.sw0{animation:plA .26s cubic-bezier(.2,.8,.2,1)}
+.plate.sw1{animation:plB .26s cubic-bezier(.2,.8,.2,1)}
+@keyframes plA{from{opacity:0;transform:translateX(var(--from))}to{opacity:1;transform:translateX(0)}}
+@keyframes plB{from{opacity:0;transform:translateX(var(--from))}to{opacity:1;transform:translateX(0)}}
+.ptr{transition:left .3s cubic-bezier(.2,.8,.2,1),top .3s}
+.ptr .dia{animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 6px var(--acg)}50%{box-shadow:0 0 14px var(--acg)}}
+.ptr .dia.hollow{animation:none}
+.nx{animation:nxIn .2s ease-out}
+.nx .chev{animation:bob 1.1s ease-in-out infinite}
+@keyframes nxIn{from{opacity:0}to{opacity:1}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+.dots{background-image:radial-gradient(circle,rgba(241,234,217,.5) 1.1px,transparent 1.6px);background-size:16px 16px;opacity:.5;-webkit-mask-image:linear-gradient(90deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.15) 35%,#000 85%);mask-image:linear-gradient(90deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.15) 35%,#000 85%)}
+.bar-t{animation:barT .45s cubic-bezier(.2,.8,.2,1)}
+.bar-b{animation:barB .45s cubic-bezier(.2,.8,.2,1)}
+@keyframes barT{from{transform:translateY(-48px)}to{transform:translateY(0)}}
+@keyframes barB{from{transform:translateY(48px)}to{transform:translateY(0)}}
+.logbtn{transition:color .2s}
+.logbtn:hover{color:#fbf5e7}
+.lg{animation:nxIn .25s ease-out}
+.lg-list{-webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,0) 0,#000 90px);mask-image:linear-gradient(180deg,rgba(0,0,0,0) 0,#000 90px)}
+.star-btn .star{transition:transform .5s cubic-bezier(.2,.8,.2,1);filter:drop-shadow(0 0 6px rgba(242,196,96,.5))}
+.star-btn:hover .star{transform:rotate(45deg) scale(1.12)}
+@media (prefers-reduced-motion: reduce){.box,.band,.plate,.nx .chev,.ptr .dia,.bar-t,.bar-b{animation:none}}
+.por.zb2{z-index:2}.por.zb3{z-index:3}.por.lit{z-index:6}
+.por.soft img{filter:brightness(.72) saturate(.9)}
+.hb{transform-box:fill-box}
+.hb.sw0{animation:hbA .26s cubic-bezier(.2,.8,.2,1)}
+.hb.sw1{animation:hbB .26s cubic-bezier(.2,.8,.2,1)}
+@keyframes hbA{from{opacity:.3;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes hbB{from{opacity:.3;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.tab{transition:left .25s cubic-bezier(.2,.8,.2,1)}
+.tab.sw0{animation:plA .24s ease-out}.tab.sw1{animation:plB .24s ease-out}
+.nxh{animation:nxIn .2s ease-out}
+.nxh .chev{animation:bob 1.1s ease-in-out infinite}
+.lgstrip button{transition:color .2s}
+.rk{display:block;width:10px;height:10px;transform:rotate(45deg);box-sizing:border-box;border:1px solid var(--ac)}
+.rk.on{background:var(--ac);box-shadow:0 0 8px var(--acg)}
+.rk.now{background:var(--ac);box-shadow:0 0 14px var(--acg);animation:pulse 2.4s ease-in-out infinite}
+.por.hide{display:none}
+.por{transition:left .45s cubic-bezier(.2,.8,.2,1),top .45s cubic-bezier(.2,.8,.2,1),transform .35s cubic-bezier(.2,.8,.2,1)}
+.star-btn .star{transition:transform .5s cubic-bezier(.2,.8,.2,1);filter:drop-shadow(0 0 6px rgba(242,196,96,.5))}
+.star-btn:hover .star{transform:rotate(45deg) scale(1.12)}
+.d3{display:block;width:9px;height:9px;box-sizing:border-box;border:1px solid;transform:rotate(45deg);animation:hop3 3.6s cubic-bezier(.3,.7,.3,1) infinite,col3 9s linear infinite,morph3 .55s cubic-bezier(.2,.8,.2,1) both}
+.m3{display:block;width:9px;height:9px;position:relative}
+.m3:nth-child(2) .d3{animation-delay:.22s,-6s,.12s}.m3:nth-child(3) .d3{animation-delay:.44s,-3s,.24s}
+@keyframes morph3{0%{width:5px;height:5px;margin:2px;border-radius:50%;border-color:#8d8a84;background:#8d8a84;box-shadow:none}55%{width:5px;height:5px;margin:2px;border-radius:50%}100%{width:9px;height:9px;margin:0;border-radius:0}}
+.tdots{display:flex;align-items:center;gap:12px;height:20px;padding-right:6px}
+.tdots span{display:block;width:5px;height:5px;border-radius:50%;background:rgba(200,198,192,.55);animation:tdot 1.4s ease-in-out infinite}
+.tdots span:nth-child(2){animation-delay:.2s}.tdots span:nth-child(3){animation-delay:.4s}
+@keyframes tdot{0%,100%{opacity:.35}50%{opacity:.9}}
+@keyframes hop3{0%,16%,100%{transform:translateY(0) rotate(45deg)}6%{transform:translateY(-6px) rotate(45deg)}11%{transform:translateY(0) rotate(45deg)}}
+@keyframes col3{0%,100%{border-color:#4fa3a8;background:rgba(79,163,168,.28);box-shadow:0 0 6px rgba(79,163,168,.5)}33.3%{border-color:#e2b04a;background:rgba(226,176,74,.28);box-shadow:0 0 6px rgba(242,196,96,.5)}66.6%{border-color:#c9cdd2;background:rgba(201,205,210,.18);box-shadow:0 0 5px rgba(214,226,240,.35)}}
+@media (prefers-reduced-motion: reduce){.d3{animation:none}.d3:nth-child(1){border-color:#4fa3a8;background:rgba(79,163,168,.25)}.d3:nth-child(2){border-color:#e2b04a;background:rgba(226,176,74,.25)}.d3:nth-child(3){border-color:#c9cdd2}}
+.tile{transition:background .2s}.tile:hover{background:rgba(34,31,44,.94)}.lgstrip button:hover{color:#fbf5e7}
+.fxshake{animation:fxshake .42s cubic-bezier(.36,.07,.19,.97) .05s both}
+@keyframes fxshake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-7px)}40%,60%{transform:translateX(7px)}}
+.crk{stroke-dasharray:1;stroke-dashoffset:1;animation:crk .5s cubic-bezier(.2,.8,.2,1) forwards}
+@keyframes crk{to{stroke-dashoffset:0}}
+.shard{transform-box:view-box;animation:fall 1s cubic-bezier(.5,0,.75,0) forwards}
+@keyframes fall{from{transform:translate(0,0) rotate(0);opacity:1}to{transform:translate(var(--dx),var(--dy)) rotate(var(--rot));opacity:0}}
+.gone{animation:gone .2s linear forwards}
+@keyframes gone{to{opacity:0}}
+.redin{opacity:0;animation:redin .7s cubic-bezier(.2,.8,.2,1) forwards}
+.redburst{opacity:0;animation:redburst .9s cubic-bezier(.2,1.4,.3,1) .86s forwards}
+@keyframes redburst{0%{opacity:1;transform:scale(.94)}100%{opacity:1;transform:scale(1)}}
+@keyframes redpulse{0%,100%{filter:drop-shadow(0 0 0 rgba(255,40,40,0))}50%{filter:drop-shadow(0 0 14px rgba(255,40,40,.55))}}
+@keyframes redin{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+.flash{opacity:0;animation:flash .5s ease-out forwards}
+@keyframes flash{0%{opacity:0}15%{opacity:.55}100%{opacity:0}}
+.stain{transform:translateY(-440px);animation:stain 3.4s cubic-bezier(.45,0,.25,1) .4s forwards}
+@keyframes stain{to{transform:translateY(0)}}
+.stxt{animation:stxt 2.6s ease-in .9s forwards}
+@keyframes stxt{to{color:#f0b8c6;text-shadow:0 0 10px rgba(160,20,60,.6)}}
+.stab{animation:stab 1.6s ease-in 2s forwards}
+@keyframes stab{to{background:rgba(58,8,26,.96);border-color:rgba(214,70,110,.9)}}
+.fxtxt-crack{animation:txj .42s steps(2) .05s}
+@keyframes txj{0%,100%{transform:translate(0,0)}25%{transform:translate(-3px,1px)}50%{transform:translate(3px,-1px)}75%{transform:translate(-2px,0)}}
+.fxtxt-gone{animation:gone .25s linear .7s forwards}
+@media (prefers-reduced-motion: reduce){.fxshake,.fxtxt-crack{animation:none}.crk{stroke-dashoffset:0;animation:none}}
+</style>
+</helmet>
+<div class="{{themeCls}}" style="position: relative; width: 1688px; height: 780px; overflow: hidden; background: #0b0b0e; font-family: 'Shippori Mincho', serif; color: #f1ead9">
+  <img src="/_blob/de575dd30944303d13ab60b42a0d464e" alt="オルクス城・回廊" style="position: absolute; left: 0; top: 0; width: 1688px; height: 780px; display: block">
+  <div aria-hidden="true" style="position: absolute; inset: 0; z-index: 1; pointer-events: none; background: radial-gradient(ellipse 80% 78% at 50% 52%, rgba(0,0,0,0) 45%, rgba(0,0,0,0.55) 100%)"></div>
+  <div class="por {{porL1}}" style="position: absolute; left: 201px; top: 297px; width: 284px; height: 950px">
+    <img src="/_blob/8c8b6c6a0ec1d8e9bbb118d2400bf24e" alt="アルシェ（13歳）" style="width: 284px; height: 950px; display: block;">
+  </div>
+  <div class="por {{porL2}}" style="position: absolute; left: 439px; top: 293px; width: 233px; height: 950px">
+    <img src="/_blob/f33eab7e9e20acad67484fdf416a807a" alt="カリマ（13歳）" style="width: 233px; height: 950px; display: block;">
+  </div>
+  <div class="por {{porR2}}" style="position: absolute; left: 945px; top: 273px; width: 491px; height: 1060px">
+    <img src="/_blob/fdebbf55670b101103e1d1fe80dad9d9" alt="キャリー" style="width: 491px; height: 1060px; display: block; transform: scaleX(-1);">
+  </div>
+  <div class="por {{porR1}}" style="position: absolute; left: 1272px; top: 230px; width: 365px; height: 1100px">
+    <img src="/_blob/9fecd33be99d415e798bc2fc25f3427f" alt="ギュンター" style="width: 365px; height: 1100px; display: block; transform: scaleX(-1);">
+  </div>
+
+  <button class="btn adv" onClick="{{replay}}" aria-label="演出をもう一度再生" style="position: absolute; left: 0; top: 0; width: 1688px; height: 780px; z-index: 8; padding: 0; border: 0; background: transparent; cursor: pointer"></button>
+
+  <sc-if value="{{play}}" hint-placeholder-val="{{ true }}">
+
+  <sc-if value="{{fxCrack}}" hint-placeholder-val="{{ false }}">
+    <div class="fxshake" style="position: absolute; inset: 0; z-index: 11; pointer-events: none">
+      <svg width="1688" height="780" viewBox="0 0 1688 780" aria-hidden="true" style="position: absolute; left: 0; top: 0; overflow: visible">
+        <defs><clipPath id="bclip"><path d="M301 125 H813 L827 139 V275 L813 289 H395 L343 329 L371 289 H301 L287 275 V139 Z"></path></clipPath></defs>
+        <path d="M301 125 H813 L827 139 V275 L813 289 H395 L343 329 L371 289 H301 L287 275 V139 Z" style="fill: var(--pl); fill-opacity: 0.88; stroke: var(--ln); stroke-width: 1"></path>
+        <path d="M303 131 H811 L821 141 V273 L811 283 H303 L293 273 V141 Z" style="fill: none; stroke: var(--ln2); stroke-width: 1"></path>
+        <g clip-path="url(#bclip)">
+        <polyline class="crk" points="627.2,193.9 663.1,208.2 699.8,223.6 741.1,239.2 772.4,252.8 807.3,266.3 821.7,303.0 863.7,318.1 892.2,333.8 923.3,347.9 963.9,350.4 973.5,408.1 1025.3,386.3 1039.3,426.7 1124.0,334.5" pathLength="1" style="fill: none; stroke: rgba(240,240,236,0.85); stroke-width: 1.6; stroke-linejoin: bevel; animation-delay: 0.05s"></polyline>
+        <polyline class="crk" points="699.8,223.6 706.3,249.6 714.2,275.6" pathLength="1" style="fill: none; stroke: rgba(240,240,236,0.85); stroke-width: 1; stroke-linejoin: bevel; animation-delay: 0.08s"></polyline>
+        <polyline class="crk" points="627.2,193.9 651.2,216.1 662.5,239.9 683.9,267.2 710.7,296.0 728.1,319.2 749.8,362.9 776.3,378.1 811.5,380.9 835.5,400.3 833.9,440.7 882.2,448.1 916.9,471.0 889.9,520.7 951.6,520.7 840.2,611.7 1039.5,527.6" pathLength="1" style="fill: none; stroke: rgba(240,240,236,0.85); stroke-width: 1.6; stroke-linejoin: bevel; animation-delay: 0.11s"></polyline>
+        <polyline class="crk" points="662.5,239.9 657.7,282.4 655.3,325.0" pathLength="1" style="fill: none; stroke: rgba(240,240,236,0.85); stroke-width: 1; stroke-linejoin: bevel; animation-delay: 0.14s"></polyline>
+        <polyline class="crk" points="627.2,193.9 613.4,219.8 597.2,247.6 585.5,273.6 566.8,306.1 557.2,336.4 519.9,369.9 535.3,398.5 473.1,403.0 494.3,466.9 480.1,484.1 456.3,518.7 392.2,541.5 479.1,597.6 404.5,614.0 388.8,641.4" pathLength="1" style="fill: none; stroke: rgba(240,240,236,0.85); stroke-width: 1.6; stroke-linejoin: bevel; animation-delay: 0.17s"></polyline>
+        <polyline class="crk" points="566.8,306.1 570.4,346.1 570.4,386.0" pathLength="1" style="fill: none; stroke: rgba(240,240,236,0.85); stroke-width: 1; stroke-linejoin: bevel; animation-delay: 0.2s"></polyline>
+        <polyline class="crk" points="627.2,193.9 604.7,216.7 582.8,230.3 560.4,257.3 542.2,295.4 501.1,312.6 485.9,355.0 435.7,367.7 450.1,408.3 397.7,403.9 344.9,412.4 405.0,487.2 388.8,535.1 350.8,551.5 273.5,547.0" pathLength="1" style="fill: none; stroke: rgba(240,240,236,0.85); stroke-width: 1.6; stroke-linejoin: bevel; animation-delay: 0.23s"></polyline>
+        <polyline class="crk" points="560.4,257.3 560.0,280.6 565.5,303.9" pathLength="1" style="fill: none; stroke: rgba(240,240,236,0.85); stroke-width: 1; stroke-linejoin: bevel; animation-delay: 0.26s"></polyline>
+        <polyline class="crk" points="627.2,193.9 589.7,183.7 557.0,174.5 508.9,171.5 469.1,165.5 437.9,135.8 394.1,143.0 361.9,127.8 320.7,167.2 290.0,165.7 235.6,156.9 193.6,138.3 174.5,40.8 120.0,70.2" pathLength="1" style="fill: none; stroke: rgba(240,240,236,0.85); stroke-width: 1.6; stroke-linejoin: bevel; animation-delay: 0.29s"></polyline>
+        <polyline class="crk" points="557.0,174.5 540.8,183.9 517.6,193.3" pathLength="1" style="fill: none; stroke: rgba(240,240,236,0.85); stroke-width: 1; stroke-linejoin: bevel; animation-delay: 0.32s"></polyline>
+        <polyline class="crk" points="627.2,193.9 600.1,167.3 588.6,142.6 566.6,111.6 536.2,88.9 520.2,71.8 496.6,39.9 461.5,23.6 458.7,-19.3 405.7,-30.7 442.1,-97.3 444.5,-137.8 380.7,-152.0 286.1,-114.6 265.9,-135.7 336.8,-239.1" pathLength="1" style="fill: none; stroke: rgba(240,240,236,0.85); stroke-width: 1.6; stroke-linejoin: bevel; animation-delay: 0.35s"></polyline>
+        <polyline class="crk" points="566.6,111.6 543.1,105.4 520.4,99.1" pathLength="1" style="fill: none; stroke: rgba(240,240,236,0.85); stroke-width: 1; stroke-linejoin: bevel; animation-delay: 0.38s"></polyline>
+        </g>
+      </svg>
+      <div class="" style="position: absolute; left: 321px; top: 95px; height: 46px; padding: 0 26px; z-index: 12; display: flex; align-items: center; background: var(--pl); border: 1px solid var(--ln); box-sizing: border-box; clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%)"><span style="font-size: 22px; font-weight: 700; letter-spacing: 0.14em; color: #f3f1ec; white-space: nowrap">{{name}}</span></div>
+      <p class="fxtxt-crack" style="position: absolute; left: 345px; top: 159px; font-size: 30px; font-weight: 600; line-height: 50px; letter-spacing: 0.06em; white-space: pre; margin: 0; color: #f1efe9">{{line}}</p>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{fxBreak}}" hint-placeholder-val="{{ false }}">
+    <div class="fxshake" style="position: absolute; inset: 0; z-index: 11; pointer-events: none">
+      <svg width="1688" height="780" viewBox="0 0 1688 780" aria-hidden="true" style="position: absolute; left: 0; top: 0; overflow: visible">
+        <defs>
+        <clipPath id="sh0"><polygon points="627.2,193.9 1435.6,589.5 1152.3,924.8"></polygon></clipPath>
+        <clipPath id="sh1"><polygon points="627.2,193.9 1152.3,924.8 224.5,998.8"></polygon></clipPath>
+        <clipPath id="sh2"><polygon points="627.2,193.9 224.5,998.8 29.1,866.4"></polygon></clipPath>
+        <clipPath id="sh3"><polygon points="627.2,193.9 29.1,866.4 -250.0,-7.3"></polygon></clipPath>
+        <clipPath id="sh4"><polygon points="627.2,193.9 -250.0,-7.3 102.5,-537.3"></polygon></clipPath>
+        <clipPath id="sh5"><polygon points="627.2,193.9 102.5,-537.3 769.0,26.1 1435.6,589.5"></polygon></clipPath>
+          <clipPath id="bclip2"><path d="M301 125 H813 L827 139 V275 L813 289 H395 L343 329 L371 289 H301 L287 275 V139 Z"></path></clipPath>
+          <linearGradient id="redfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgb(128,14,30)"></stop><stop offset="1" stop-color="rgb(72,4,14)"></stop></linearGradient>
+        </defs>
+        <g class="redburst" style="transform-origin: 627.2px 193.9px">
+          <path d="M301 125 H813 L827 139 V275 L813 289 H395 L343 329 L371 289 H301 L287 275 V139 Z" style="fill: var(--pl); fill-opacity: 0.92; stroke: var(--ln); stroke-width: 1"></path>
+          <path d="M303 131 H811 L821 141 V273 L811 283 H303 L293 273 V141 Z" style="fill: none; stroke: var(--ln2)"></path>
+          <g clip-path="url(#bclip2)">
+            <polyline points="627.2,193.9 663.1,208.2 699.8,223.6 741.1,239.2 772.4,252.8 807.3,266.3 821.7,303.0 863.7,318.1 892.2,333.8 923.3,347.9 963.9,350.4 973.5,408.1 1025.3,386.3 1039.3,426.7 1124.0,334.5" style="fill: none; stroke: rgb(4,4,6); stroke-width: 4.2; stroke-linejoin: miter; stroke-linecap: round"></polyline><polyline points="627.2,193.9 663.1,208.2 699.8,223.6 741.1,239.2 772.4,252.8 807.3,266.3 821.7,303.0 863.7,318.1 892.2,333.8 923.3,347.9 963.9,350.4 973.5,408.1 1025.3,386.3 1039.3,426.7 1124.0,334.5" style="fill: none; stroke: rgba(190,40,52,0.6); stroke-width: 1.2; stroke-linejoin: miter"></polyline>
+            <polyline points="699.8,223.6 706.3,249.6 714.2,275.6" style="fill: none; stroke: rgb(4,4,6); stroke-width: 2.4; stroke-linejoin: miter; stroke-linecap: round"></polyline><polyline points="699.8,223.6 706.3,249.6 714.2,275.6" style="fill: none; stroke: rgba(190,40,52,0.6); stroke-width: 0.8; stroke-linejoin: miter"></polyline>
+            <polyline points="627.2,193.9 651.2,216.1 662.5,239.9 683.9,267.2 710.7,296.0 728.1,319.2 749.8,362.9 776.3,378.1 811.5,380.9 835.5,400.3 833.9,440.7 882.2,448.1 916.9,471.0 889.9,520.7 951.6,520.7 840.2,611.7 1039.5,527.6" style="fill: none; stroke: rgb(4,4,6); stroke-width: 4.2; stroke-linejoin: miter; stroke-linecap: round"></polyline><polyline points="627.2,193.9 651.2,216.1 662.5,239.9 683.9,267.2 710.7,296.0 728.1,319.2 749.8,362.9 776.3,378.1 811.5,380.9 835.5,400.3 833.9,440.7 882.2,448.1 916.9,471.0 889.9,520.7 951.6,520.7 840.2,611.7 1039.5,527.6" style="fill: none; stroke: rgba(190,40,52,0.6); stroke-width: 1.2; stroke-linejoin: miter"></polyline>
+            <polyline points="662.5,239.9 657.7,282.4 655.3,325.0" style="fill: none; stroke: rgb(4,4,6); stroke-width: 2.4; stroke-linejoin: miter; stroke-linecap: round"></polyline><polyline points="662.5,239.9 657.7,282.4 655.3,325.0" style="fill: none; stroke: rgba(190,40,52,0.6); stroke-width: 0.8; stroke-linejoin: miter"></polyline>
+            <polyline points="627.2,193.9 613.4,219.8 597.2,247.6 585.5,273.6 566.8,306.1 557.2,336.4 519.9,369.9 535.3,398.5 473.1,403.0 494.3,466.9 480.1,484.1 456.3,518.7 392.2,541.5 479.1,597.6 404.5,614.0 388.8,641.4" style="fill: none; stroke: rgb(4,4,6); stroke-width: 4.2; stroke-linejoin: miter; stroke-linecap: round"></polyline><polyline points="627.2,193.9 613.4,219.8 597.2,247.6 585.5,273.6 566.8,306.1 557.2,336.4 519.9,369.9 535.3,398.5 473.1,403.0 494.3,466.9 480.1,484.1 456.3,518.7 392.2,541.5 479.1,597.6 404.5,614.0 388.8,641.4" style="fill: none; stroke: rgba(190,40,52,0.6); stroke-width: 1.2; stroke-linejoin: miter"></polyline>
+            <polyline points="566.8,306.1 570.4,346.1 570.4,386.0" style="fill: none; stroke: rgb(4,4,6); stroke-width: 2.4; stroke-linejoin: miter; stroke-linecap: round"></polyline><polyline points="566.8,306.1 570.4,346.1 570.4,386.0" style="fill: none; stroke: rgba(190,40,52,0.6); stroke-width: 0.8; stroke-linejoin: miter"></polyline>
+            <polyline points="627.2,193.9 604.7,216.7 582.8,230.3 560.4,257.3 542.2,295.4 501.1,312.6 485.9,355.0 435.7,367.7 450.1,408.3 397.7,403.9 344.9,412.4 405.0,487.2 388.8,535.1 350.8,551.5 273.5,547.0" style="fill: none; stroke: rgb(4,4,6); stroke-width: 4.2; stroke-linejoin: miter; stroke-linecap: round"></polyline><polyline points="627.2,193.9 604.7,216.7 582.8,230.3 560.4,257.3 542.2,295.4 501.1,312.6 485.9,355.0 435.7,367.7 450.1,408.3 397.7,403.9 344.9,412.4 405.0,487.2 388.8,535.1 350.8,551.5 273.5,547.0" style="fill: none; stroke: rgba(190,40,52,0.6); stroke-width: 1.2; stroke-linejoin: miter"></polyline>
+            <polyline points="560.4,257.3 560.0,280.6 565.5,303.9" style="fill: none; stroke: rgb(4,4,6); stroke-width: 2.4; stroke-linejoin: miter; stroke-linecap: round"></polyline><polyline points="560.4,257.3 560.0,280.6 565.5,303.9" style="fill: none; stroke: rgba(190,40,52,0.6); stroke-width: 0.8; stroke-linejoin: miter"></polyline>
+            <polyline points="627.2,193.9 589.7,183.7 557.0,174.5 508.9,171.5 469.1,165.5 437.9,135.8 394.1,143.0 361.9,127.8 320.7,167.2 290.0,165.7 235.6,156.9 193.6,138.3 174.5,40.8 120.0,70.2" style="fill: none; stroke: rgb(4,4,6); stroke-width: 4.2; stroke-linejoin: miter; stroke-linecap: round"></polyline><polyline points="627.2,193.9 589.7,183.7 557.0,174.5 508.9,171.5 469.1,165.5 437.9,135.8 394.1,143.0 361.9,127.8 320.7,167.2 290.0,165.7 235.6,156.9 193.6,138.3 174.5,40.8 120.0,70.2" style="fill: none; stroke: rgba(190,40,52,0.6); stroke-width: 1.2; stroke-linejoin: miter"></polyline>
+            <polyline points="557.0,174.5 540.8,183.9 517.6,193.3" style="fill: none; stroke: rgb(4,4,6); stroke-width: 2.4; stroke-linejoin: miter; stroke-linecap: round"></polyline><polyline points="557.0,174.5 540.8,183.9 517.6,193.3" style="fill: none; stroke: rgba(190,40,52,0.6); stroke-width: 0.8; stroke-linejoin: miter"></polyline>
+            <polyline points="627.2,193.9 600.1,167.3 588.6,142.6 566.6,111.6 536.2,88.9 520.2,71.8 496.6,39.9 461.5,23.6 458.7,-19.3 405.7,-30.7 442.1,-97.3 444.5,-137.8 380.7,-152.0 286.1,-114.6 265.9,-135.7 336.8,-239.1" style="fill: none; stroke: rgb(4,4,6); stroke-width: 4.2; stroke-linejoin: miter; stroke-linecap: round"></polyline><polyline points="627.2,193.9 600.1,167.3 588.6,142.6 566.6,111.6 536.2,88.9 520.2,71.8 496.6,39.9 461.5,23.6 458.7,-19.3 405.7,-30.7 442.1,-97.3 444.5,-137.8 380.7,-152.0 286.1,-114.6 265.9,-135.7 336.8,-239.1" style="fill: none; stroke: rgba(190,40,52,0.6); stroke-width: 1.2; stroke-linejoin: miter"></polyline>
+            <polyline points="566.6,111.6 543.1,105.4 520.4,99.1" style="fill: none; stroke: rgb(4,4,6); stroke-width: 2.4; stroke-linejoin: miter; stroke-linecap: round"></polyline><polyline points="566.6,111.6 543.1,105.4 520.4,99.1" style="fill: none; stroke: rgba(190,40,52,0.6); stroke-width: 0.8; stroke-linejoin: miter"></polyline>
+          </g>
+          <text style="font-family: 'Shippori Mincho', serif; font-size: 30px; font-weight: 600; letter-spacing: 0.06em; fill: #e23a44; filter: drop-shadow(0 0 6px rgba(200,20,30,0.55))"><tspan x="345" y="195">――全部、</tspan><tspan x="345" y="245">壊れてしまえばいい。</tspan></text>
+        </g>
+        <g class="shard" clip-path="url(#sh0)" style="--dx: 34px; --dy: 241px; --rot: -9deg; animation-delay: 0.93s; transform-origin: 627.2px 193.9px"><path d="M301 125 H813 L827 139 V275 L813 289 H395 L343 329 L371 289 H301 L287 275 V139 Z" style="fill: var(--pl); fill-opacity: 0.94; stroke: var(--ln); stroke-width: 1"></path><path d="M303 131 H811 L821 141 V273 L811 283 H303 L293 273 V141 Z" style="fill: none; stroke: var(--ln2)"></path><text style="font-family: 'Shippori Mincho', serif; font-size: 30px; font-weight: 600; letter-spacing: 0.06em; fill: #f1efe9;"><tspan x="345" y="195">もう、やめてくれ……</tspan><tspan x="345" y="245">何も、聞きたくない……！</tspan></text></g>
+        <g class="shard" clip-path="url(#sh1)" style="--dx: 5px; --dy: 246px; --rot: -21deg; animation-delay: 0.87s; transform-origin: 627.2px 193.9px"><path d="M301 125 H813 L827 139 V275 L813 289 H395 L343 329 L371 289 H301 L287 275 V139 Z" style="fill: var(--pl); fill-opacity: 0.94; stroke: var(--ln); stroke-width: 1"></path><path d="M303 131 H811 L821 141 V273 L811 283 H303 L293 273 V141 Z" style="fill: none; stroke: var(--ln2)"></path><text style="font-family: 'Shippori Mincho', serif; font-size: 30px; font-weight: 600; letter-spacing: 0.06em; fill: #f1efe9;"><tspan x="345" y="195">もう、やめてくれ……</tspan><tspan x="345" y="245">何も、聞きたくない……！</tspan></text></g>
+        <g class="shard" clip-path="url(#sh2)" style="--dx: -32px; --dy: 255px; --rot: -17deg; animation-delay: 0.92s; transform-origin: 627.2px 193.9px"><path d="M301 125 H813 L827 139 V275 L813 289 H395 L343 329 L371 289 H301 L287 275 V139 Z" style="fill: var(--pl); fill-opacity: 0.94; stroke: var(--ln); stroke-width: 1"></path><path d="M303 131 H811 L821 141 V273 L811 283 H303 L293 273 V141 Z" style="fill: none; stroke: var(--ln2)"></path><text style="font-family: 'Shippori Mincho', serif; font-size: 30px; font-weight: 600; letter-spacing: 0.06em; fill: #f1efe9;"><tspan x="345" y="195">もう、やめてくれ……</tspan><tspan x="345" y="245">何も、聞きたくない……！</tspan></text></g>
+        <g class="shard" clip-path="url(#sh3)" style="--dx: -112px; --dy: 186px; --rot: -13deg; animation-delay: 0.88s; transform-origin: 627.2px 193.9px"><path d="M301 125 H813 L827 139 V275 L813 289 H395 L343 329 L371 289 H301 L287 275 V139 Z" style="fill: var(--pl); fill-opacity: 0.94; stroke: var(--ln); stroke-width: 1"></path><path d="M303 131 H811 L821 141 V273 L811 283 H303 L293 273 V141 Z" style="fill: none; stroke: var(--ln2)"></path><text style="font-family: 'Shippori Mincho', serif; font-size: 30px; font-weight: 600; letter-spacing: 0.06em; fill: #f1efe9;"><tspan x="345" y="195">もう、やめてくれ……</tspan><tspan x="345" y="245">何も、聞きたくない……！</tspan></text></g>
+        <g class="shard" clip-path="url(#sh4)" style="--dx: -41px; --dy: 217px; --rot: -10deg; animation-delay: 0.95s; transform-origin: 627.2px 193.9px"><path d="M301 125 H813 L827 139 V275 L813 289 H395 L343 329 L371 289 H301 L287 275 V139 Z" style="fill: var(--pl); fill-opacity: 0.94; stroke: var(--ln); stroke-width: 1"></path><path d="M303 131 H811 L821 141 V273 L811 283 H303 L293 273 V141 Z" style="fill: none; stroke: var(--ln2)"></path><text style="font-family: 'Shippori Mincho', serif; font-size: 30px; font-weight: 600; letter-spacing: 0.06em; fill: #f1efe9;"><tspan x="345" y="195">もう、やめてくれ……</tspan><tspan x="345" y="245">何も、聞きたくない……！</tspan></text></g>
+        <g class="shard" clip-path="url(#sh5)" style="--dx: 36px; --dy: 192px; --rot: -17deg; animation-delay: 0.96s; transform-origin: 627.2px 193.9px"><path d="M301 125 H813 L827 139 V275 L813 289 H395 L343 329 L371 289 H301 L287 275 V139 Z" style="fill: var(--pl); fill-opacity: 0.94; stroke: var(--ln); stroke-width: 1"></path><path d="M303 131 H811 L821 141 V273 L811 283 H303 L293 273 V141 Z" style="fill: none; stroke: var(--ln2)"></path><text style="font-family: 'Shippori Mincho', serif; font-size: 30px; font-weight: 600; letter-spacing: 0.06em; fill: #f1efe9;"><tspan x="345" y="195">もう、やめてくれ……</tspan><tspan x="345" y="245">何も、聞きたくない……！</tspan></text></g>
+        <polygon points="333,95 477,95 465,141 321,141" style="fill: var(--pl); stroke: var(--ln); stroke-width: 1"></polygon><text x="347" y="126" style="font-family: 'Shippori Mincho', serif; font-size: 22px; font-weight: 700; letter-spacing: 0.14em; fill: #f3f1ec">アルシェ</text>
+        <g style="clip-path: none">
+          <g class="gone" style="animation-delay: .85s">
+            <g clip-path="url(#bclip2)">
+        <polyline class="crk" points="627.2,193.9 663.1,208.2 699.8,223.6 741.1,239.2 772.4,252.8 807.3,266.3 821.7,303.0 863.7,318.1 892.2,333.8 923.3,347.9 963.9,350.4 973.5,408.1 1025.3,386.3 1039.3,426.7 1124.0,334.5" pathLength="1" style="fill: none; stroke: rgba(240,240,236,0.85); stroke-width: 1.6; stroke-linejoin: bevel; animation-delay: 0.05s"></polyline>
+        <polyline class="crk" points="699.8,223.6 706.3,249.6 714.2,275.6" pathLength="1" style="fill: none; stroke: rgba(240,240,236,0.85); stroke-width: 1; stroke-linejoin: bevel; animation-delay: 0.08s"></polyline>
+        <polyline class="crk" points="627.2,193.9 651.2,216.1 662.5,239.9 683.9,267.2 710.7,296.0 728.1,319.2 749.8,362.9 776.3,378.1 811.5,380.9 835.5,400.3 833.9,440.7 882.2,448.1 916.9,471.0 889.9,520.7 951.6,520.7 840.2,611.7 1039.5,527.6" pathLength="1" style="fill: none; stroke: rgba(240,240,236,0.85); stroke-width: 1.6; stroke-linejoin: bevel; animation-delay: 0.11s"></polyline>
+        <polyline class="crk" points="662.5,239.9 657.7,282.4 655.3,325.0" pathLength="1" style="fill: none; stroke: rgba(240,240,236,0.85); stroke-width: 1; stroke-linejoin: bevel; animation-delay: 0.14s"></polyline>
+        <polyline class="crk" points="627.2,193.9 613.4,219.8 597.2,247.6 585.5,273.6 566.8,306.1 557.2,336.4 519.9,369.9 535.3,398.5 473.1,403.0 494.3,466.9 480.1,484.1 456.3,518.7 392.2,541.5 479.1,597.6 404.5,614.0 388.8,641.4" pathLength="1" style="fill: none; stroke: rgba(240,240,236,0.85); stroke-width: 1.6; stroke-linejoin: bevel; animation-delay: 0.17s"></polyline>
+        <polyline class="crk" points="566.8,306.1 570.4,346.1 570.4,386.0" pathLength="1" style="fill: none; stroke: rgba(240,240,236,0.85); stroke-width: 1; stroke-linejoin: bevel; animation-delay: 0.2s"></polyline>
+        <polyline class="crk" points="627.2,193.9 604.7,216.7 582.8,230.3 560.4,257.3 542.2,295.4 501.1,312.6 485.9,355.0 435.7,367.7 450.1,408.3 397.7,403.9 344.9,412.4 405.0,487.2 388.8,535.1 350.8,551.5 273.5,547.0" pathLength="1" style="fill: none; stroke: rgba(240,240,236,0.85); stroke-width: 1.6; stroke-linejoin: bevel; animation-delay: 0.23s"></polyline>
+        <polyline class="crk" points="560.4,257.3 560.0,280.6 565.5,303.9" pathLength="1" style="fill: none; stroke: rgba(240,240,236,0.85); stroke-width: 1; stroke-linejoin: bevel; animation-delay: 0.26s"></polyline>
+        <polyline class="crk" points="627.2,193.9 589.7,183.7 557.0,174.5 508.9,171.5 469.1,165.5 437.9,135.8 394.1,143.0 361.9,127.8 320.7,167.2 290.0,165.7 235.6,156.9 193.6,138.3 174.5,40.8 120.0,70.2" pathLength="1" style="fill: none; stroke: rgba(240,240,236,0.85); stroke-width: 1.6; stroke-linejoin: bevel; animation-delay: 0.29s"></polyline>
+        <polyline class="crk" points="557.0,174.5 540.8,183.9 517.6,193.3" pathLength="1" style="fill: none; stroke: rgba(240,240,236,0.85); stroke-width: 1; stroke-linejoin: bevel; animation-delay: 0.32s"></polyline>
+        <polyline class="crk" points="627.2,193.9 600.1,167.3 588.6,142.6 566.6,111.6 536.2,88.9 520.2,71.8 496.6,39.9 461.5,23.6 458.7,-19.3 405.7,-30.7 442.1,-97.3 444.5,-137.8 380.7,-152.0 286.1,-114.6 265.9,-135.7 336.8,-239.1" pathLength="1" style="fill: none; stroke: rgba(240,240,236,0.85); stroke-width: 1.6; stroke-linejoin: bevel; animation-delay: 0.35s"></polyline>
+        <polyline class="crk" points="566.6,111.6 543.1,105.4 520.4,99.1" pathLength="1" style="fill: none; stroke: rgba(240,240,236,0.85); stroke-width: 1; stroke-linejoin: bevel; animation-delay: 0.38s"></polyline>
+            </g>
+          </g>
+        </g>
+      </svg>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{fxStain}}" hint-placeholder-val="{{ true }}">
+    <div style="position: absolute; inset: 0; z-index: 11; pointer-events: none">
+      <svg width="1688" height="780" viewBox="0 0 1688 780" aria-hidden="true" style="position: absolute; left: 0; top: 0; overflow: visible">
+        <defs>
+          <filter id="inkedge" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="3" seed="4"></feTurbulence><feDisplacementMap in="SourceGraphic" scale="70"></feDisplacementMap></filter>
+          <linearGradient id="stainfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgb(236,230,238)"></stop><stop offset="1" stop-color="rgb(212,202,218)"></stop></linearGradient>
+          <mask id="stainmask" maskUnits="userSpaceOnUse" x="0" y="0" width="1688" height="780">
+            <g filter="url(#inkedge)"><rect class="stain" x="337" y="1" width="939" height="384" style="fill: #fff"></rect></g>
+          </mask>
+          <mask id="stainmaskInv" maskUnits="userSpaceOnUse" x="0" y="0" width="1688" height="780">
+            <rect x="0" y="0" width="1688" height="780" style="fill: #fff"></rect>
+            <g filter="url(#inkedge)"><rect class="stain" x="337" y="1" width="939" height="384" style="fill: #000"></rect></g>
+          </mask>
+        </defs>
+        <g mask="url(#stainmaskInv)">
+          <path d="M511 121 H1102 L1116 135 V271 L1102 285 H605 L553 325 L581 285 H511 L497 271 V135 Z" style="fill: var(--pl); fill-opacity: 0.9; stroke: var(--ln); stroke-width: 1"></path>
+          <path d="M513 127 H1100 L1110 137 V269 L1100 279 H513 L503 269 V137 Z" style="fill: none; stroke: var(--ln2); stroke-width: 1"></path>
+          <text style="font-family: 'Shippori Mincho', serif; font-size: 30px; font-weight: 600; letter-spacing: 0.06em; fill: #f1efe9;"><tspan x="547" y="191">はい。わかりました。</tspan><tspan x="547" y="241">……言われた通りに、いたします。</tspan></text>
+        </g>
+        <g mask="url(#stainmask)">
+          <path d="M511 121 H1102 L1116 135 V271 L1102 285 H605 L553 325 L581 285 H511 L497 271 V135 Z" style="fill: url(#stainfill); fill-opacity: 0.74; stroke: rgba(120,36,70,0.9); stroke-width: 1.2"></path>
+          <path d="M513 127 H1100 L1110 137 V269 L1100 279 H513 L503 269 V137 Z" style="fill: none; stroke: rgba(120,36,70,0.3)"></path>
+          <text style="font-family: 'Zen Kurenaido', sans-serif; font-size: 30px; font-weight: 400; letter-spacing: 0.06em; fill: #141014;"><tspan x="547" y="191">はい。わかりました。</tspan><tspan x="547" y="241">……言われた通りに、いたします。</tspan></text>
+        </g>
+        <polygon points="543,91 661,91 649,137 531,137" style="fill: var(--pl); stroke: var(--ln); stroke-width: 1"></polygon><text x="557" y="122" style="font-family: 'Shippori Mincho', serif; font-size: 22px; font-weight: 700; letter-spacing: 0.14em; fill: #f3f1ec">カリマ</text>
+      </svg>
+    </div>
+  </sc-if>
+
+  </sc-if>
+
+  <div aria-hidden="true" style="position: absolute; left: 50%; top: 0; transform: translateX(-50%); z-index: 12; pointer-events: none; display: flex; align-items: center; justify-content: center; gap: 18px; padding: 12px 92px 14px; white-space: nowrap; height: 17px">
+    <span style="position: absolute; inset: 0; z-index: -1; background: var(--ln); clip-path: polygon(evenodd, 0 0, 100% 0, calc(100% - 44px) 100%, 44px 100%, 0 0, 1.4px 0, 44.6px calc(100% - 1px), calc(100% - 44.6px) calc(100% - 1px), calc(100% - 1.4px) 0)"></span>
+    <span style="position: absolute; inset: 0; z-index: -1; background: var(--pl); opacity: 0.86; clip-path: polygon(1.4px 0, calc(100% - 1.4px) 0, calc(100% - 44.6px) calc(100% - 1px), 44.6px calc(100% - 1px))"></span>
+    <span class="dia" style="position: absolute; left: 40px; bottom: -4px; width: 7px; height: 7px"></span>
+    <span class="dia" style="position: absolute; right: 40px; bottom: -4px; width: 7px; height: 7px"></span>
+    <span class="en" style="font-size: 15px; font-weight: 600; letter-spacing: 0.34em; color: var(--ac)">Prologue</span>
+    <span style="width: 30px; height: 1px; background: var(--ac)"></span>
+    <span style="font-size: 20px; font-weight: 700; letter-spacing: 0.14em; color: #f1ead9; text-shadow: 0 1px 8px rgba(0,0,0,0.9)">オルクス城・回廊</span>
+  </div>
+  <div aria-hidden="true" style="position: absolute; left: 0; top: 706px; width: 1688px; height: 74px; z-index: 30; pointer-events: none; box-sizing: border-box; border-top: 1px solid rgba(255,255,255,0.08); background: linear-gradient(0deg, rgba(4,4,7,0.74), rgba(4,4,7,0.52))"></div>
+  <div aria-hidden="true" style="position: absolute; left: 20px; top: 715px; z-index: 31; display: flex; gap: 10px; pointer-events: none">
+    <span class="tile" style="height: 56px; padding: 0 18px 0 12px; background: rgba(16,14,24,0.72); display: flex; align-items: center; gap: 10px; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%)"><span style="display: flex; flex-direction: column; gap: 1px"><span style="font-size: 16px; font-weight: 700; letter-spacing: 0.1em; color: #f1ead9">会話ログ</span><span class="en" style="font-size: 10px; font-weight: 600; letter-spacing: 0.3em; color: #a59e90">Log</span></span></span>
+    <span class="tile" style="height: 56px; padding: 0 18px 0 12px; background: rgba(16,14,24,0.72); display: flex; align-items: center; gap: 10px; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%)"><span style="display: flex; flex-direction: column; gap: 1px"><span style="font-size: 16px; font-weight: 700; letter-spacing: 0.1em; color: #f1ead9">オート</span><span class="en" style="font-size: 10px; font-weight: 600; letter-spacing: 0.3em; color: #a59e90">Auto</span></span></span>
+    <span class="tile" style="height: 56px; padding: 0 18px 0 12px; background: rgba(16,14,24,0.72); display: flex; align-items: center; gap: 10px; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%)"><span style="display: flex; flex-direction: column; gap: 1px"><span style="font-size: 16px; font-weight: 700; letter-spacing: 0.1em; color: #f1ead9">スキップ</span><span class="en" style="font-size: 10px; font-weight: 600; letter-spacing: 0.3em; color: #a59e90">Skip</span></span></span>
+  </div>
+
+  <div style="position: absolute; left: 40px; top: 60px; z-index: 12; pointer-events: none; display: flex; align-items: center; gap: 14px">
+    <span class="en" style="font-size: 14px; font-weight: 600; letter-spacing: 0.34em; color: var(--ac)">Effect</span>
+    <span style="width: 30px; height: 1px; background: var(--ac)"></span>
+    <span style="font-size: 16px; font-weight: 600; letter-spacing: 0.12em; color: #d8d2c4; text-shadow: 0 1px 6px rgba(0,0,0,0.9)">{{fxName}}　―　クリックでもう一度</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"effect": {"editor": "enum", "default": "崩れて赤へ", "options": ["ひび（慟哭）", "崩れて赤へ", "染まる（洗脳・侵食）"]}, "theme": {"editor": "enum", "default": "汎用", "options": ["汎用", "オルクス城"]}, "$preview": {"width": 1688, "height": 780}}'>
+var FX = ["ひび（慟哭）", "崩れて赤へ", "染まる（洗脳・侵食）"];
+var LINES = {
+  'ひび（慟哭）': { name: 'アルシェ', line: 'どうして……\nどうして、こうなるんだよ！', line2: '' },
+  '崩れて赤へ': { name: 'アルシェ', line: 'もう、やめてくれ……\n何も、聞きたくない……！', line2: '――全部、壊れてしまえばいい。' },
+  '染まる（洗脳・侵食）': { name: 'カリマ', line: 'はい。わかりました。\n……言われた通りに、いたします。', line2: '' }
+};
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { play: true }; }
+  componentWillUnmount() { clearTimeout(this.t); }
+  renderVals() {
+    var self = this;
+    var fx = this.props.effect ?? FX[1];
+    var L = LINES[fx] || LINES[FX[0]];
+    var spk = L.name === 'カリマ' ? 'L2' : 'L1';
+    var pc = function (k, zb) { return 'zb' + zb + ' ' + (k === spk ? 'lit' : 'soft'); };
+    return {
+      themeCls: (this.props.theme ?? '汎用') === 'オルクス城' ? 't-orc' : 't-gen',
+      porL1: pc('L1', 2), porL2: pc('L2', 3), porR2: pc('R2', 2), porR1: pc('R1', 3),
+      play: this.state.play,
+      replay: function () { self.setState({ play: false }); clearTimeout(self.t); self.t = setTimeout(function () { self.setState({ play: true }); }, 60); },
+      fxCrack: fx === FX[0], fxBreak: fx === FX[1], fxStain: fx === FX[2],
+      fxName: fx, name: L.name, line: L.line, line2: L.line2
+    };
+  }
+}
+</script>
+</body>
+</html>
