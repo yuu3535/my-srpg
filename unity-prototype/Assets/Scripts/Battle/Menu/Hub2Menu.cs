@@ -446,25 +446,12 @@ namespace Srpg.Battle.Menu
             Place(ri.rectTransform, 744f, 206f, 924f, 176f);
         }
 
-        // 太陽盤（正本 §3-5「既存の実装」。Unity にはまだ無いので、試作から書き出した静止の絵＋押せる所）
-        private static readonly (string label, float x, float y, float w, float h)[] DialCommands =
-        {
-            ("セーブ", 315f, 88f, 222f, 64f), ("身支度", 376f, 214f, 224f, 64f), ("出撃", 383f, 352f, 256f, 74f),
-            ("探索", 376f, 503f, 224f, 64f), ("支援会話", 315f, 628f, 222f, 64f),
-        };
+        // 太陽盤（正本 §3-5「既存の実装」）。回る太陽盤（SunDialView。原作者 2026-11-13）: 札を押すと針の先へ回ってきて、回り終わったらその項目を開く
+        private SunDialView dial;
 
         private void BuildDial()
         {
-            var tex = Resources.Load<Texture2D>("Menu/sun_dial_arshe");
-            var ri = Raw("SunDial", leftGroup, tex, Vector2.zero, Color.white);
-            Place(ri.rectTransform, 0f, 0f, 668f, 780f);
-            foreach (var c in DialCommands)
-            {
-                var b = Place(Node("Cmd_" + c.label, leftGroup), c.x, c.y, c.w, c.h);
-                b.gameObject.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0f);
-                var label = c.label;
-                b.gameObject.AddComponent<Button>().onClick.AddListener(() => Command(label));
-            }
+            dial = SunDialView.Create(leftGroup, true, Command);
         }
 
         private void BuildHeader()
@@ -661,7 +648,13 @@ namespace Srpg.Battle.Menu
         // NEW の札（太陽盤の「支援会話」の右上。新しい支援会話があるときだけ。今は見本として出す）
         private void BuildNewBadge()
         {
-            newBadge = Place(Node("NewBadge", leftGroup), 500f, 616f, 62f, 24f);
+            // 「支援会話」の札の右上（札と一緒に回る。札の入れ物は中心が原点の 224×88）
+            var plate = dial != null ? dial.PlateOf("支援会話") : null;
+            newBadge = Node("NewBadge", plate != null ? plate : leftGroup);
+            newBadge.anchorMin = newBadge.anchorMax = new Vector2(0.5f, 0.5f);
+            newBadge.pivot = new Vector2(0f, 1f);
+            newBadge.sizeDelta = new Vector2(62f, 24f);
+            newBadge.anchoredPosition = new Vector2(-112f + 185f, 44f + 12f);
             newRing = Node("Ring", newBadge);
             newRing.anchorMin = Vector2.zero; newRing.anchorMax = Vector2.one; newRing.sizeDelta = Vector2.zero;
             var ringImg = newRing.gameObject.AddComponent<Image>(); ringImg.raycastTarget = false;

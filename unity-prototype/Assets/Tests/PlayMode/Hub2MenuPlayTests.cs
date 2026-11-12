@@ -111,9 +111,18 @@ namespace Srpg.Tests
 
             // 太陽盤の「支援会話」（解放の前でも、開発中の切り替えで開く）
             Assert.IsTrue(SupportSelectView.OpenBeforeUnlock);
+            // 回る太陽盤: 押すと「支援会話」が針の先へ回ってきて、回り終わってから開く
+            SunDialView.ResetState();
+            Assert.AreEqual("出撃", SunDialView.SelectedLabel);
             GameObject.Find("Cmd_支援会話").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
             yield return null;
+            Assert.AreEqual("支援会話", SunDialView.SelectedLabel);
+            Assert.IsFalse(SupportSelectView.IsOpen, "回り終わる前に開いてしまう");
+            float until = Time.realtimeSinceStartup + 3f;   // ばねが止まるまで（時間で待つ。バッチではコマがとても速い）
+            while (!SupportSelectView.IsOpen && Time.realtimeSinceStartup < until) yield return null;
             Assert.IsTrue(SupportSelectView.IsOpen, "支援会話の相手選びが開かない");
+            Assert.IsTrue(SunDialView.Settled);
+            yield return null;
             Assert.IsFalse(GameObject.Find("Hub2Canvas").transform.Find("Menu").gameObject.activeSelf, "拠点メニューの中身が重なって見える");
             Assert.IsTrue(Hub2Menu.Blocking, "探索が動いてしまう");
             var view = SupportSelectView.Instance;

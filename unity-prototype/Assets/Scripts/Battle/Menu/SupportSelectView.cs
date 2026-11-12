@@ -128,7 +128,6 @@ namespace Srpg.Battle.Menu
         private Dictionary<string, (Texture2D tex, float fx, float fy, float hw)> faces;
 
         private readonly List<CardView> cards = new List<CardView>();
-        private readonly List<(RectTransform rt, float baseY, float drop)> dialLabels = new List<(RectTransform, float, float)>();
         private readonly List<(Graphic g, float baseAlpha)> blinkers = new List<(Graphic, float)>();
         private readonly List<(RectTransform rt, Image img)> memberDias = new List<(RectTransform, Image)>(), bondDias = new List<(RectTransform, Image)>();
         private float moreMemberAlpha, moreBondAlpha;
@@ -165,7 +164,7 @@ namespace Srpg.Battle.Menu
             compact = false;   // 開くたびに「詳細」から
             veilTime = -1f;
             if (canvasRect != null) Destroy(canvasRect.gameObject);
-            cards.Clear(); dialLabels.Clear(); blinkers.Clear(); memberDias.Clear(); bondDias.Clear();
+            cards.Clear(); blinkers.Clear(); memberDias.Clear(); bondDias.Clear();
             Build();
             introTime = Still ? 10f : 0f;
             lastScale = -1f;
@@ -226,16 +225,9 @@ namespace Srpg.Battle.Menu
 #endif
             if (veilTime >= 0f) StepVeil(dt);   // Esc で戻るのは Hub2Menu が受ける（同じコマで拠点メニューまで閉じないように）
 
-            // 入ってくる動き: 太陽盤の項目名が上から降りる・右の中身が右から寄る
+            // 入ってくる動き: 右の中身が右から寄る（太陽盤は拠点メニューで回ったまま）
             if (introTime >= 0f && introTime < 10f) introTime += dt;
             float it = introTime < 0f ? 10f : introTime;
-            foreach (var (rt, baseY, drop) in dialLabels)
-            {
-                float len = drop > 20f ? 0.8f : 0.6f;
-                float k = Motion.Ease(it / len);
-                rt.anchoredPosition = new Vector2(rt.anchoredPosition.x, -(baseY - drop * (1f - k)));
-                rt.GetComponent<CanvasGroup>().alpha = Mathf.Clamp01(it / len * 1.6f);
-            }
             float pk = Motion.Ease((it - 0.15f) / 0.55f);
             panelGroup.alpha = Mathf.Clamp01((it - 0.15f) / 0.55f * 1.6f);
             panel.anchoredPosition = new Vector2(26f * (1f - pk), 0f);
@@ -406,35 +398,12 @@ namespace Srpg.Battle.Menu
             ol.effectDistance = new Vector2(1f, -1f);
         }
 
-        // 太陽盤（§4）。項目名を消した絵の上に、「支援会話」を真ん中にした並びで文字を置く（押せない飾り）
-        private static readonly (string label, float x, float y, bool on)[] DialLabels =
-        {
-            ("出撃", 286f, 91f, false), ("探索", 345f, 218f, false), ("支援会話", 359f, 363f, true), ("セーブ", 345f, 507f, false), ("身支度", 286f, 634f, false),
-        };
-
+        // 太陽盤（§4）。Hub2 と同じ回る太陽盤を、「支援会話」が針の先の位置で（この画面では押せない飾り）。
+        // 太陽盤は拠点メニューで回ったまま残るので、仕様書 §4 の「項目名が降りてくる」動きは要らなくなった（原作者 2026-11-13 回る太陽盤）
         private void BuildDial()
         {
-            var ri = Raw("SunDial", leftGroup, Resources.Load<Texture2D>("Menu/sun_dial_blank"), Vector2.zero, Color.white);
-            Place(ri.rectTransform, 0f, 0f, 668f, 780f);
-            foreach (var d in DialLabels)
-            {
-                var box = Place(Node("Dial_" + d.label, leftGroup), d.x, d.y, 280f, 50f);
-                box.gameObject.AddComponent<CanvasGroup>().blocksRaycasts = false;
-                if (d.on)
-                {
-                    var glow = Raw("Glow", box, Hub2Textures.Glow, Vector2.zero, C(243, 205, 120, 0.42f));
-                    Place(glow.rectTransform, 30f, -8f, 220f, 66f);
-                }
-                int size = d.on ? 36 : 29;
-                var t = Label(box, d.label, 0f, 0f, 280f, 50f, size, d.on ? InkHi : DialInk, 600);
-                t.alignment = TextAnchor.MiddleLeft;
-                Spacing(t, 0.12f);
-                // 字間ぶんを見込んで、枠のまん中に（CSS の text-indent 0.12em と同じ考え）
-                float w = Width(t, 0.12f);
-                t.rectTransform.anchoredPosition = new Vector2((280f - w) / 2f + 0.12f * size * 0.5f, 0f);
-                Shadow(t, 0.9f, 1f);
-                dialLabels.Add((box, d.y, d.on ? 30f : 18f));
-            }
+            SunDialView.SnapTo("支援会話");   // 直接開いたとき（拠点メニューから来たときは、もうこの位置）
+            SunDialView.Create(leftGroup, false, null);
         }
 
         private void BuildHeader()
