@@ -182,7 +182,8 @@ namespace Srpg.Battle.Menu
             }
             else if (kb != null && kb.escapeKey.wasPressedThisFrame && !dialogs)
             {
-                if (machine.State == Hub2Motion.State.Open) RequestClose();
+                if (SupportSelectView.IsOpen) SupportSelectView.Instance.Back();   // 支援会話の相手選びから、拠点メニューへ戻る
+                else if (machine.State == Hub2Motion.State.Open) RequestClose();
                 else RequestOpen();
             }
             Apply();
@@ -204,7 +205,7 @@ namespace Srpg.Battle.Menu
             if (menuRoot == null) return;
             var f = machine.Current(Effect);
             var g = Geo();
-            menuRoot.gameObject.SetActive(f.menu);
+            menuRoot.gameObject.SetActive(f.menu && !SupportSelectView.IsOpen);   // 支援会話の相手選びが出ている間は、その画面が太陽盤ごと描く
             menuGroup.alpha = f.menuOpacity;
             if (f.clipInside) { tearMask.SetTear(TearMaskGraphic.Mode.Inside, f.o, g); maskFull = false; }
             else if (f.clipOutside) { tearMask.SetTear(TearMaskGraphic.Mode.Outside, f.o, g); maskFull = false; }
@@ -692,6 +693,11 @@ namespace Srpg.Battle.Menu
             switch (label)
             {
                 case "セーブ": SaveMenu.Open(SaveMenu.Mode.Save); break;
+                case "支援会話":
+                    // 解放の前は開かない。開発中だけ、解放の前でも開く（SupportSelectView.OpenBeforeUnlock）
+                    if (Unlocks.Support || SupportSelectView.OpenBeforeUnlock) SupportSelectView.Open();
+                    else Toast("支援会話は、まだ解放されていません");
+                    break;
                 default: Toast(label + "は、まだつながっていません"); break;
             }
         }

@@ -86,5 +86,72 @@ namespace Srpg.Tests
             yield return new WaitForSecondsRealtime(0.3f);
             Assert.AreEqual(Hub2Motion.State.Closed, menu.State);
         }
+
+        [UnityTest]
+        public IEnumerator SupportSelectOpensFromTheDialAndGoesBack()
+        {
+            GameSettings.ResetForTest();
+            Hub2Menu.ResetMilestones();
+            Hub2Menu.Unlocks.Reset();
+            SceneManager.LoadScene("Corridor2D");
+            yield return null;
+            yield return null;
+            var dialogue = Object.FindFirstObjectByType<DialogueView>();
+            var explore = Object.FindFirstObjectByType<Explore2DController>();
+            for (int i = 0; i < 40 && dialogue.IsPlaying; i++) dialogue.Close();
+            explore.EnterPlace("orcus_castle", "orcus_room_arshe_karima");
+            yield return null;
+            for (int i = 0; i < 40 && dialogue.IsPlaying; i++) dialogue.Close();
+            yield return null;
+            var menu = Hub2Menu.Attach();
+            yield return null;
+            Assert.IsTrue(menu.RequestOpen());
+            menu.Skip();
+            yield return null;
+
+            // 太陽盤の「支援会話」（解放の前でも、開発中の切り替えで開く）
+            Assert.IsTrue(SupportSelectView.OpenBeforeUnlock);
+            GameObject.Find("Cmd_支援会話").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+            yield return null;
+            Assert.IsTrue(SupportSelectView.IsOpen, "支援会話の相手選びが開かない");
+            Assert.IsFalse(GameObject.Find("Hub2Canvas").transform.Find("Menu").gameObject.activeSelf, "拠点メニューの中身が重なって見える");
+            Assert.IsTrue(Hub2Menu.Blocking, "探索が動いてしまう");
+            var view = SupportSelectView.Instance;
+            Assert.AreEqual(0, view.Selected);
+            Assert.IsFalse(view.Compact);
+
+            // 仲間を選ぶ・簡易に切り替える
+            view.Select("albus");
+            Assert.AreEqual(1, view.Selected);
+            view.SetCompact(true);
+            Assert.IsTrue(view.Compact);
+
+            // 会話する → 暗転の間は戻れない → 終わるとこの画面に戻る
+            view.Select("arshe");
+            view.Talk("albus");
+            Assert.IsTrue(view.Veiled);
+            view.Back();
+            Assert.IsTrue(SupportSelectView.IsOpen, "暗転の途中で戻ってしまう");
+            yield return new WaitForSecondsRealtime(2.1f);
+            Assert.IsFalse(view.Veiled);
+            Assert.IsTrue(SupportSelectView.IsOpen);
+
+            // 話せない相手には会話しない
+            view.Talk("philo");
+            Assert.IsFalse(view.Veiled);
+
+            // BACK → 拠点メニュー（メニューは開いたまま）
+            view.Back();
+            yield return null;
+            Assert.IsFalse(SupportSelectView.IsOpen);
+            Assert.AreEqual(Hub2Motion.State.Open, menu.State);
+            Assert.IsTrue(GameObject.Find("Hub2Canvas").transform.Find("Menu").gameObject.activeSelf);
+
+            // 開き直すと「詳細」・先頭の人から
+            SupportSelectView.Open();
+            Assert.IsFalse(SupportSelectView.Instance.Compact);
+            Assert.AreEqual(0, SupportSelectView.Instance.Selected);
+            SupportSelectView.Instance.Back();
+        }
     }
 }
