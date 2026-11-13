@@ -68,8 +68,20 @@ namespace Srpg.Tests
             for (int i = 0; i < 600 && !settled; i++) { var r = SunDialMath.Spring(p, v, 40f, 1f / 60f); p = r.position; v = r.velocity; settled = r.settled; }
             Assert.IsTrue(settled);
             Assert.AreEqual(40f, p);
-            Assert.AreEqual(1f, SunDialView.FlameBurst(1f));
-            Assert.AreEqual(1f, SunDialView.FlameSway(0f), 1e-4f);
+        }
+
+        [Test]
+        public void FlameIgnitesThenBurnsInALoopThenGoesOut()
+        {
+            // 点火 1〜4コマ（180ms・一度だけ）→ 燃焼 5〜11コマ（590ms のくり返し）。消火 12〜17コマ（200ms）で消える
+            Assert.AreEqual(0, SunDialView.FlameFrame(false, 0f));
+            Assert.AreEqual(3, SunDialView.FlameFrame(false, 0.17f));
+            Assert.AreEqual(4, SunDialView.FlameFrame(false, 0.19f));
+            Assert.AreEqual(10, SunDialView.FlameFrame(false, 0.18f + 0.58f));
+            Assert.AreEqual(4, SunDialView.FlameFrame(false, 0.18f + 0.59f + 0.01f));
+            Assert.AreEqual(11, SunDialView.FlameFrame(true, 0f));
+            Assert.AreEqual(16, SunDialView.FlameFrame(true, 0.195f));
+            Assert.AreEqual(-1, SunDialView.FlameFrame(true, 0.2f));
         }
     }
 }
