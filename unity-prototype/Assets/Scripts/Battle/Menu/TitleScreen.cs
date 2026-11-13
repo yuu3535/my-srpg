@@ -302,7 +302,7 @@ namespace Srpg.Battle.Menu
             }
             var tt = Label(tl, "百年戦争編", 0f, 0f, 1688f, 148f, 132, look.title, fontExtra);
             CenterSpaced(tt, 844f, 0.12f);
-            if (look.titleShadow) Shadow(tt, 0.55f, 6f);
+            if (look.titleShadow) SoftShadow(tt, 0.55f, 6f, 12f);   // 0 6px 24px rgba(0,0,0,.55)。ずらした硬い影ではなく、ぼかした影
             // 題名の光: 字の形の中だけを白い斜めの帯が通る（7秒周期。55〜85%で通る）
             var mask = Label(tl, "百年戦争編", 0f, 0f, 1688f, 148f, 132, Color.white, fontExtra);
             CenterSpaced(mask, 844f, 0.12f);
@@ -368,9 +368,10 @@ namespace Srpg.Battle.Menu
                 if (i > 0)
                 {
                     float px = MenuDefs[i - 1].x + MenuDefs[i - 1].w, sx = (px + d.x) / 2f;
+                    // 7×7 の正方形を45度回した菱形（外側の四角は 7×1.414 ≒ 9.9）。ふちのなめらかな絵で描く（回した Image は丸い点に見えた。Hub2担当のレビュー 2026-11-13）
                     var sep = Node("Sep", menuRoot); sep.anchorMin = sep.anchorMax = new Vector2(0f, 1f);
-                    sep.sizeDelta = new Vector2(7f / 1.4142f, 7f / 1.4142f); sep.anchoredPosition = new Vector2(sx, -619f); sep.localEulerAngles = new Vector3(0f, 0f, 45f);
-                    var si = sep.gameObject.AddComponent<Image>(); si.color = new Color(look.accent.r, look.accent.g, look.accent.b, 0.7f); si.raycastTarget = false;
+                    sep.sizeDelta = new Vector2(9.9f, 9.9f); sep.anchoredPosition = new Vector2(sx, -619f);
+                    var si = sep.gameObject.AddComponent<RawImage>(); si.texture = Hub2Textures.Diamond; si.color = new Color(look.accent.r, look.accent.g, look.accent.b, 0.7f); si.raycastTarget = false;
                 }
                 var it = new MenuItem { id = d.id, ja = d.ja, en = d.en, locked = d.id == "arc" || (d.id == "cont" && !HasSave) };
                 it.rt = Place(Node("Item_" + d.id, menuRoot), d.x, 584f, d.w, 70f);
@@ -712,7 +713,9 @@ namespace Srpg.Battle.Menu
                 it.enText.color = new Color(col.r, col.g, col.b, col.a * 0.75f);
                 it.u = still ? (on ? 1f : 0f) : Mathf.MoveTowards(it.u, on ? 1f : 0f, dt / 0.3f);
                 float ue = 1f - Mathf.Pow(1f - it.u, 3f);
-                it.underline.sizeDelta = new Vector2(it.rt.sizeDelta.x * ue, 1f);
+                // 1px の線は、画面が基準（1688×780）より小さいと1画面の点より細くなり消える。いつも1点以上の太さに（Hub2担当のレビュー 2026-11-13）
+                float px1 = canvas != null && canvas.scaleFactor > 0f ? Mathf.Max(1f, 1f / canvas.scaleFactor) : 1f;
+                it.underline.sizeDelta = new Vector2(it.rt.sizeDelta.x * ue, px1);
                 it.underline.GetComponent<Image>().color = col;
             }
             // キー
@@ -987,6 +990,12 @@ namespace Srpg.Battle.Menu
 
         /// <summary>続く空白を1つに（HTML の見え方と同じ。運命予報の文）</summary>
         private static string Collapse(string s) => System.Text.RegularExpressions.Regex.Replace(s ?? "", " {2,}", " ");
+
+        private static void SoftShadow(Text t, float a, float dy, float radius)
+        {
+            var s = t.gameObject.AddComponent<SoftTextShadow>();
+            s.alpha = a; s.offsetY = dy; s.radius = radius;
+        }
 
         private static void Shadow(Text t, float a, float dy)
         {

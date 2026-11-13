@@ -106,6 +106,32 @@ namespace Srpg.Battle.Menu
             return Mathf.Clamp01(1f - across / thick) * (1f - along * 0.85f);
         }
 
+        private static Texture2D diamond;
+
+        /// <summary>
+        /// ふちのなめらかな菱形（正方形を45度回した形。絵の大きさ＝菱形の外側の四角）。
+        /// 小さな菱形を Image の回転で描くと、ふちがぎざぎざで丸い点に見えるので、これを使う（タイトルのメニューの間の印。2026-11-13）
+        /// </summary>
+        public static Texture2D Diamond
+        {
+            get
+            {
+                if (diamond != null) return diamond;
+                const int S = 64;
+                diamond = new Texture2D(S, S, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, name = "Hub2Diamond" };
+                var px = new Color[S * S];
+                for (int y = 0; y < S; y++)
+                for (int x = 0; x < S; x++)
+                {
+                    float d = Mathf.Abs(x + 0.5f - S / 2f) + Mathf.Abs(y + 0.5f - S / 2f);   // 中心からの「ひし形の距離」
+                    px[y * S + x] = new Color(1f, 1f, 1f, Mathf.Clamp01((S / 2f - d) / 1.5f));
+                }
+                diamond.SetPixels(px);
+                diamond.Apply();
+                return diamond;
+            }
+        }
+
         /// <summary>やわらかい丸い光（光彩・流星の尾の頭）</summary>
         public static Texture2D Glow
         {
