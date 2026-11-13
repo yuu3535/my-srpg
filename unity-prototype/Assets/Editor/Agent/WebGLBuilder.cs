@@ -51,6 +51,7 @@ namespace Srpg.EditorAgent
                 watch.Stop();
                 RestoreMipmaps(mipped);
                 AddRotateNotice();
+                FitCanvasToWindow();
                 var s = report.summary;
                 long bytes = Directory.Exists(OutDir) ? Directory.GetFiles(OutDir, "*", SearchOption.AllDirectories).Sum(f => new FileInfo(f).Length) : 0;
                 Debug.Log($"[WebGLBuilder] {s.result}・{watch.Elapsed.TotalMinutes:0.0}分・書き出しの合計 {bytes / 1024f / 1024f:0.0}MB・エラー {s.totalErrors}");
@@ -97,6 +98,32 @@ namespace Srpg.EditorAgent
         }
 
         /// <summary>
+        /// パソコンのブラウザで、ゲームの画面をウィンドウいっぱい（横長の比率 1688:780 のまま）に広げる。
+        /// 前は 1266×586 で固定していて、画面の設計（1688×780）の 75% の細かさで描いていたので、文字や絵がぼやけた（原作者 2026-11-13）。
+        /// 画面の点の細かさ（devicePixelRatio）は Unity が掛けるので、ウィンドウが大きいほど細かく描かれる
+        /// </summary>
+        private static void FitCanvasToWindow()
+        {
+            string path = Path.Combine(OutDir, "index.html");
+            if (!File.Exists(path)) return;
+            string html = File.ReadAllText(path);
+            if (html.Contains("srpgFit")) return;
+            const string fixedSize = "canvas.style.width = \"1266px\";\n        canvas.style.height = \"586px\";";
+            const string fit = @"function srpgFit() {
+          // 下の帯（Unity の印・全画面のボタン 38px）を残して、ウィンドウに収まるいちばん大きな横長
+          var w = window.innerWidth - 16, h = window.innerHeight - 38 - 16;
+          var k = Math.min(w / 1688, h / 780);
+          canvas.style.width = Math.floor(1688 * k) + ""px"";
+          canvas.style.height = Math.floor(780 * k) + ""px"";
+        }
+        srpgFit();
+        window.addEventListener(""resize"", srpgFit);";
+            string normalized = html.Replace("\r\n", "\n");
+            if (!normalized.Contains(fixedSize)) { Debug.LogWarning("[WebGLBuilder] 画面の大きさの行が見つからない（テンプレートが変わった？）"); return; }
+            File.WriteAllText(path, normalized.Replace(fixedSize, fit));
+        }
+
+        /// <summary>
         /// 絵を WebGL の書き出しだけ圧縮する（2026-10-03: 書き出しの 9 割が圧縮していない絵で、83MB あった）。
         /// スマホ向けの ASTC 6×6（透明あり）。エディタ・確認の画像の見え方は変えない（WebGL の上書き設定だけ）。
         /// 大きすぎる絵は 2048 まで（UI の枠・ボタンは 1024 まで）
@@ -110,17 +137,21 @@ namespace Srpg.EditorAgent
                 string path = AssetDatabase.GUIDToAssetPath(guid);
                 if (!(AssetImporter.GetAtPath(path) is TextureImporter importer)) continue;
                 int max = path.StartsWith("Assets/Art/UI/") ? 1024 : 2048;
+                // メニュー・会話・タイトルの絵（文字の札・細い線・立ち絵）は 6×6 だとにじむので、細かい 4×4 に（原作者 2026-11-13「メニューの文字や絵がぼやける」）
+                bool fine = path.StartsWith("Assets/Resources/Menu/") || path.StartsWith("Assets/Resources/Support/") || path.StartsWith("Assets/Resources/Talk/")
+                    || path.StartsWith("Assets/Art/Portraits/");
+                var format = fine ? TextureImporterFormat.ASTC_4x4 : TextureImporterFormat.ASTC_6x6;
                 var settings = importer.GetPlatformTextureSettings("WebGL");
-                if (settings.overridden && settings.format == TextureImporterFormat.ASTC_6x6 && settings.maxTextureSize == max) continue;
+                if (settings.overridden && settings.format == format && settings.maxTextureSize == max) continue;
                 settings.overridden = true;
-                settings.format = TextureImporterFormat.ASTC_6x6;
+                settings.format = format;
                 settings.maxTextureSize = max;
                 settings.textureCompression = TextureImporterCompression.Compressed;
                 importer.SetPlatformTextureSettings(settings);
                 importer.SaveAndReimport();
                 changed++;
             }
-            Debug.Log($"[WebGLBuilder] 絵の圧縮（WebGL・ASTC 6×6）を設定: {changed} 枚");
+            Debug.Log($"[WebGLBuilder] 絵の圧縮（WebGL・ASTC 6×6、メニュー・会話・立ち絵は 4×4）を設定: {changed} 枚");
         }
 
         /// <summary>
