@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>タイトル画面 C3：終幕後は赤黒い星</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&amp;family=Shippori+Mincho:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+.en{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase}
+button{font-family:inherit;color:inherit}
+.btn:focus-visible{outline:2px solid #f3cd78;outline-offset:3px}
+.glass{-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.dots{background-image:radial-gradient(circle,rgba(241,234,217,.5) 1.1px,transparent 1.6px);background-size:16px 16px;opacity:.35}
+.fadeUp{animation:fadeUp 1.1s cubic-bezier(.2,.9,.25,1) both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px);letter-spacing:.24em}to{opacity:1;transform:none}}
+.fadeIn{animation:fadeIn 1.4s ease both}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.slideIn{animation:slideIn .6s cubic-bezier(.2,.9,.25,1) both}
+@keyframes slideIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+.bgZoom{animation:bgZoom 2.6s cubic-bezier(.2,.8,.2,1) both}
+@keyframes bgZoom{from{transform:scale(1.06)}to{transform:scale(1)}}
+.tile{transition:background .2s}
+.tile:hover{background:rgba(34,31,44,.94) !important}
+.tile .bar{position:absolute;left:0;top:0;bottom:0;width:3px;background:#e2b04a;transform:scaleY(0);transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+.tile:hover .bar,.tile.on .bar{transform:scaleY(1)}
+.tile.lock{cursor:default}
+.tile.lock:hover{background:rgba(16,14,24,.6) !important}
+.tile.lock:hover .bar{transform:scaleY(0)}
+.dev{transition:color .2s,border-color .2s}
+.dev:hover{color:#f1ead9 !important;border-color:rgba(201,205,210,.7) !important}
+.star{filter:drop-shadow(0 0 10px rgba(242,196,96,.6));animation:twinkle 3.4s ease-in-out infinite}
+@keyframes twinkle{0%,100%{opacity:.85}50%{opacity:1}}
+.veil{animation:veil 2.4s ease both}
+@keyframes veil{0%{opacity:0}22%{opacity:1}80%{opacity:1}100%{opacity:0}}
+.veil .vt{animation:vt 2.4s cubic-bezier(.2,.9,.25,1) both}
+@keyframes vt{0%,15%{opacity:0;letter-spacing:.5em}35%{opacity:1;letter-spacing:.16em}82%{opacity:1}100%{opacity:0}}
+.toast{animation:toast 2s ease both}
+@keyframes toast{0%{opacity:0;transform:translate(-50%,8px)}12%{opacity:1;transform:translate(-50%,0)}80%{opacity:1}100%{opacity:0}}
+.ink,.ink *{text-shadow:none !important}
+.ink.fadeIn:not(nav){color:rgba(6,3,6,.82) !important}
+.ink .mi{color:rgba(6,3,6,.74) !important}
+.ink .mi.on,.ink .mi:hover{color:#000 !important}
+.ink .mi.lock{color:rgba(6,3,6,.32) !important}
+.ink .blink span{color:#050305 !important}
+@font-face{font-family:'NekoMezame';src:url(/_blob/8c86f3652112b7b2ae6198213b73676f) format('truetype');font-display:block}
+.neko{font-family:'NekoMezame',serif !important;text-transform:none}
+.ring{animation:spinR 200s linear infinite}
+
+@keyframes spinR{from{transform:rotate(0)}to{transform:rotate(-360deg)}}
+.pan{animation:pan 90s ease-in-out infinite alternate}
+@keyframes pan{from{transform:translateX(0)}to{transform:translateX(-652px)}}
+.glowP{animation:glowP 7s ease-in-out infinite}
+@keyframes glowP{0%,100%{opacity:.75;transform:scaleX(1)}50%{opacity:1;transform:scaleX(1.06)}}
+.halo{animation:spinH 120s linear infinite}
+@keyframes spinH{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.halo i{position:absolute;left:0;top:0;width:10px;height:10px;margin:-5px 0 0 -5px;background:rgba(255,255,255,.7);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.halo i:nth-child(odd){width:6px;height:14px;margin:-7px 0 0 -3px;opacity:.6}
+.core{animation:core 4s ease-in-out infinite}
+@keyframes core{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+.flareH{animation:flareH 4s ease-in-out infinite}
+@keyframes flareH{0%,100%{opacity:.7;transform:scaleX(.92)}50%{opacity:1;transform:scaleX(1)}}
+.flareV{animation:flareV 4s ease-in-out infinite}
+@keyframes flareV{0%,100%{opacity:.6;transform:scaleY(.85)}50%{opacity:.95;transform:scaleY(1)}}
+.shine{background:linear-gradient(100deg,rgba(255,255,255,0) 42%,rgba(255,255,255,.95) 50%,rgba(255,255,255,0) 58%) no-repeat;background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 7s ease-in-out infinite}
+@keyframes shine{0%,55%{background-position:120% 0}85%,100%{background-position:-20% 0}}
+.mi{transition:color .2s}
+.mi .u{position:absolute;left:50%;bottom:-8px;width:0;height:1px;background:currentColor;transform:translateX(-50%);transition:width .3s cubic-bezier(.2,.8,.2,1)}
+.mi:hover,.mi.on{color:#fffaf0 !important}
+.mi:hover .u,.mi.on .u{width:100%}
+.mi.lock{color:rgba(200,196,210,.45) !important;cursor:default}
+.mi.lock:hover .u{width:0}
+.blink{animation:blink 2.4s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:.35}50%{opacity:1}}
+.outAll{animation:outAll 1.2s ease both}
+@keyframes outAll{to{opacity:0;transform:translateY(-10px)}}
+.dawnIn{animation:dawnIn 2.6s ease both}
+@keyframes dawnIn{from{opacity:0}to{opacity:1}}
+.sunUp{animation:sunUp 3s cubic-bezier(.3,.7,.2,1) both}
+@keyframes sunUp{0%{opacity:0;transform:translateY(200px) scale(.6)}60%{opacity:1}100%{opacity:1;transform:translateY(0) scale(1.4)}}
+.pv{opacity:0;animation:pv 2.2s cubic-bezier(.2,.9,.25,1) 2.1s both}
+@keyframes pv{0%{opacity:0;letter-spacing:.5em}50%{opacity:1;letter-spacing:.16em}100%{opacity:1;letter-spacing:.16em}}
+@media (prefers-reduced-motion: reduce){.fadeUp,.fadeIn,.slideIn,.bgZoom,.star,.veil,.veil .vt,.toast,.wheel,.rays,.blink{animation:none !important}}
+</style>
+</helmet>
+<div style="position: relative; width: 1688px; height: 780px; overflow: hidden; background: #05060a; font-family: 'Shippori Mincho', serif; color: #f1ead9">
+  <div class="pan" aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 2340px; height: 780px">
+    <img src="{{skySrc}}" alt="" style="width: 2340px; height: 780px; display: block; filter: {{skyFilter}}">
+    <sc-if value="{{dawnOn}}" hint-placeholder-val="{{ false }}"><img class="dawnIn" src="/_blob/ddd13d71329de90b85034d5ad428975d" alt="" style="position: absolute; left: 0; top: 0; width: 2340px; height: 780px; display: block"></sc-if>
+    <sc-if value="{{contOn}}" hint-placeholder-val="{{ false }}"><img class="dawnIn" src="/_blob/7933561a5dad793b064a01f920b421b1" alt="" style="position: absolute; left: 0; top: 0; width: 2340px; height: 780px; display: block; filter: brightness(0.55)"></sc-if>
+  </div>
+  <sc-if value="{{paperOn}}" hint-placeholder-val="{{ false }}">
+    <div aria-hidden="true" style="position: absolute; inset: 0; background: radial-gradient(ellipse 80% 95% at 50% 22%, #f3f0ea 0%, #e9e4dc 48%, #d3ccc1 100%)">
+      <svg viewBox="0 0 1688 780" width="1688" height="780" style="position: absolute; left: 0; top: 0; display: block"><g fill="none" stroke="#1a1416">
+        <circle cx="844" cy="136" r="168" stroke-opacity=".10"></circle><circle cx="844" cy="136" r="262" stroke-opacity=".08"></circle><circle cx="844" cy="136" r="396" stroke-opacity=".065"></circle><circle cx="844" cy="136" r="580" stroke-opacity=".05"></circle><circle cx="844" cy="136" r="830" stroke-opacity=".04"></circle>
+        <path d="M844,0 V780 M0,136 H1688" stroke-opacity=".05"></path>
+      </g></svg>
+    </div>
+  </sc-if>
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: linear-gradient(180deg, {{shadeTop}} 0%, rgba(0,0,0,0) 38%, rgba(0,0,0,0) 58%, {{shadeBot}} 100%)"></div>
+  <sc-if value="{{vigOn}}" hint-placeholder-val="{{ false }}">
+    <div aria-hidden="true" style="position: absolute; inset: 0; background: radial-gradient(ellipse 62% 78% at 50% 52%, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 38%, rgba(8,6,8,.42) 74%, rgba(8,6,8,.78) 100%)"></div>
+  </sc-if>
+  <div class="glowP" aria-hidden="true" style="position: absolute; left: 144px; top: 560px; width: 1400px; height: 420px; background: radial-gradient(closest-side, {{glowC}}, rgba(0,0,0,0))"></div>
+  <div aria-hidden="true" style="position: absolute; left: 194px; top: 500px; width: 1300px; height: 260px; background: radial-gradient(closest-side, rgba(10,6,14,{{bandA}}), rgba(10,6,14,0))"></div>
+  <div aria-hidden="true" style="position: absolute; left: 344px; top: 210px; width: 1000px; height: 260px; background: radial-gradient(closest-side, rgba(10,8,20,{{bandT}}), rgba(10,8,20,0))"></div>
+  <sc-if value="{{dawnOn}}" hint-placeholder-val="{{ false }}">
+    <div class="sunUp" aria-hidden="true" style="position: absolute; left: 444px; top: 380px; width: 800px; height: 800px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,250,230,1), rgba(255,214,140,0.75) 30%, rgba(255,170,90,0.25) 60%, rgba(255,170,90,0) 100%); z-index: 46"></div>
+  </sc-if>
+
+  <sc-if value="{{showMain}}" hint-placeholder-val="{{ true }}">
+    <div class="{{mainCls}}" style="position: absolute; inset: 0">
+      <div aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 1688px; height: 220px; pointer-events: none">
+        <span class="flareH" aria-hidden="true" style="position: absolute; left: 94px; top: 135px; width: 1500px; height: 2px; background: linear-gradient(90deg, rgba(255,255,255,0), {{flareC}} 50%, rgba(255,255,255,0))"></span>
+        <span class="flareH" aria-hidden="true" style="position: absolute; left: 444px; top: 131px; width: 800px; height: 10px; filter: blur(6px); background: linear-gradient(90deg, rgba(255,255,255,0), {{flareC}} 50%, rgba(255,255,255,0))"></span>
+        <span class="flareV" aria-hidden="true" style="position: absolute; left: 843px; top: 20px; width: 2px; height: 232px; background: linear-gradient(180deg, rgba(255,255,255,0), {{flareC}} 50%, rgba(255,255,255,0))"></span>
+        <span aria-hidden="true" style="position: absolute; left: 843px; top: 86px; width: 2px; height: 100px; transform: rotate(45deg); background: linear-gradient(180deg, rgba(255,255,255,0), {{flareC}} 50%, rgba(255,255,255,0)); opacity: .6"></span>
+        <span aria-hidden="true" style="position: absolute; left: 843px; top: 86px; width: 2px; height: 100px; transform: rotate(-45deg); background: linear-gradient(180deg, rgba(255,255,255,0), {{flareC}} 50%, rgba(255,255,255,0)); opacity: .6"></span>
+        <span class="core" aria-hidden="true" style="position: absolute; left: 832px; top: 124px; width: 24px; height: 24px; border-radius: 50%; background: radial-gradient(circle, {{coreIn}} 30%, {{starC}} 60%, rgba(255,255,255,0) 72%); box-shadow: 0 0 30px 10px {{starGlow}}, 0 0 90px 30px {{starGlow2}}"></span>
+        <span class="halo" aria-hidden="true" style="position: absolute; left: 844px; top: 136px; width: 0; height: 0">
+          <sc-for list="{{halo}}" as="h" hint-placeholder-count="24"><i style="transform: rotate({{h.a}}deg) translateY(-70px); background: {{starC}}"></i></sc-for>
+        </span>
+        <span class="ring" style="position: absolute; left: 844px; top: 136px; width: 0; height: 0; display: block">
+          <sc-for list="{{ringChars}}" as="r" hint-placeholder-count="80"><span class="neko" style="position: absolute; left: -12px; top: -12px; width: 24px; height: 24px; line-height: 24px; text-align: center; font-size: 20px; color: {{r.col}}; opacity: {{r.op}}; text-shadow: {{r.sh}}; transform: rotate({{r.a}}deg) translateY(-100px)">{{r.c}}</span></sc-for>
+        </span>
+      </div>
+
+      <header class="{{inkCls}}" style="position: absolute; left: 0; top: 256px; width: 1688px; text-align: center; pointer-events: none">
+        <div class="fadeUp" style="display: flex; align-items: center; justify-content: center; gap: 16px; animation-delay: {{hdDelay}}">
+          <span aria-hidden="true" style="width: 80px; height: 1px; background: linear-gradient(90deg, rgba(255,255,255,0), {{accent}})"></span>
+          <span class="en" style="font-size: 17px; font-weight: 600; letter-spacing: 0.44em; text-indent: 0.44em; color: {{accent}}; text-shadow: 0 1px 8px rgba(0,0,0,.6)">{{titleEn}}</span>
+          <span aria-hidden="true" style="width: 80px; height: 1px; background: linear-gradient(90deg, {{accent}}, rgba(255,255,255,0))"></span>
+        </div>
+        <div class="fadeUp" style="position: relative; display: inline-block; margin-top: 6px; animation-delay: {{hdDelay2}}">
+          <h1 style="margin: 0; font-size: 132px; font-weight: 800; line-height: 1.12; letter-spacing: 0.12em; text-indent: 0.12em; color: {{titleC}}; -webkit-text-stroke: {{titleStroke}}; paint-order: stroke fill; text-shadow: {{titleShadow}}">{{title}}</h1>
+          <span class="shine" aria-hidden="true" style="position: absolute; left: 0; top: 0; right: 0; font-size: 132px; font-weight: 800; line-height: 1.12; letter-spacing: 0.12em; text-indent: 0.12em; white-space: nowrap; opacity: {{shineOp}}">{{title}}</span>
+        </div>
+      </header>
+      <sc-if value="{{hasFc}}" hint-placeholder-val="{{ true }}">
+        <div class="fadeUp {{inkCls}}" style="position: absolute; left: 0; top: 458px; width: 1688px; text-align: center; pointer-events: none; animation-delay: {{hdDelay3}}">
+          <div style="display: flex; justify-content: center; align-items: center; gap: 12px">
+            <span aria-hidden="true" style="width: 40px; height: 1px; background: linear-gradient(90deg, rgba(255,255,255,0), {{accent}})"></span>
+            <span class="en" style="font-size: 12px; font-weight: 600; letter-spacing: 0.4em; text-indent: 0.4em; color: {{accent}}; opacity: .85; text-shadow: 0 1px 6px rgba(0,0,0,.7)">{{fcLabel}}</span>
+            <span aria-hidden="true" style="width: 40px; height: 1px; background: linear-gradient(90deg, {{accent}}, rgba(255,255,255,0))"></span>
+          </div>
+          <sc-for list="{{fcLines}}" as="l" hint-placeholder-count="2"><div class="neko" style="margin-top: 6px; font-size: 28px; line-height: 1.3; letter-spacing: 0.16em; text-indent: 0.16em; color: {{tagC}}; text-shadow: 0 1px 10px rgba(0,0,0,.75)">{{l.t}}</div></sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{tapStage}}" hint-placeholder-val="{{ false }}">
+        <button class="btn {{inkCls}}" onClick="{{tap}}" aria-label="タップしてはじめる" style="position: absolute; left: 0; top: 220px; width: 1688px; height: 560px; z-index: 10; border: 0; background: transparent; cursor: pointer">
+          <span class="blink" style="position: absolute; left: 0; top: 380px; width: 1688px; display: flex; flex-direction: column; align-items: center; gap: 8px">
+            <span class="en" style="font-size: 18px; font-weight: 600; letter-spacing: 0.5em; text-indent: 0.5em; color: #fffaf0">Tap to Start</span>
+            <span style="font-size: 14px; letter-spacing: 0.3em; text-indent: 0.3em; color: rgba(240,236,228,.8)">画面をタップ</span>
+          </span>
+        </button>
+      </sc-if>
+      <sc-if value="{{menuStage}}" hint-placeholder-val="{{ true }}">
+        <nav class="fadeIn {{inkCls}}" aria-label="タイトルメニュー" style="position: absolute; left: 0; top: 584px; width: 1688px; display: flex; justify-content: center; align-items: center; gap: 28px; z-index: 10; animation-delay: {{menuDelay}}">
+          <sc-for list="{{menu}}" as="m" hint-placeholder-count="4">
+            <sc-if value="{{m.sep}}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="width: 7px; height: 7px; background: {{accent}}; opacity: .7; transform: rotate(45deg)"></span></sc-if>
+            <button class="btn mi {{m.cls}}" onClick="{{m.go}}" onMouseEnter="{{m.hover}}" aria-label="{{m.ja}}" style="position: relative; padding: 8px 6px; border: 0; background: none; cursor: pointer; color: rgba(236,232,224,.82); display: flex; flex-direction: column; align-items: center; gap: 4px; text-shadow: 0 1px 10px rgba(0,0,0,.8)">
+              <span style="font-size: 26px; font-weight: 800; letter-spacing: 0.16em; text-indent: 0.16em; white-space: nowrap">{{m.ja}}</span>
+              <span class="en" style="font-size: 11px; font-weight: 600; letter-spacing: 0.3em; text-indent: 0.3em; opacity: .75">{{m.en}}</span>
+              <span class="u"></span>
+            </button>
+          </sc-for>
+        </nav>
+        <div class="fadeIn {{inkCls}}" style="position: absolute; left: 0; top: 688px; width: 1688px; text-align: center; font-size: 14px; letter-spacing: 0.12em; color: rgba(236,232,224,.8); text-shadow: 0 1px 8px rgba(0,0,0,.9); z-index: 10; animation-delay: {{menuDelay}}">{{infoLine}}</div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{dawnOn}}" hint-placeholder-val="{{ false }}">
+    <div aria-live="polite" style="position: absolute; inset: 0; z-index: 48; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; pointer-events: none">
+      <span class="en pv" style="font-size: 18px; font-weight: 600; color: #fff6dc; text-shadow: 0 1px 12px rgba(120,60,10,.6)">Prologue</span>
+      <span class="pv" style="font-size: 44px; font-weight: 800; color: #ffffff; text-shadow: 0 2px 20px rgba(150,80,20,.7)">祝賀会の朝</span>
+    </div>
+  </sc-if>
+  <sc-if value="{{contOn}}" hint-placeholder-val="{{ false }}">
+    <div aria-live="polite" style="position: absolute; inset: 0; z-index: 48; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; pointer-events: none">
+      <span class="pv" style="font-size: 18px; color: #dcd2ee">{{saveCh}}</span>
+      <span class="pv" style="font-size: 32px; font-weight: 700; color: #f6f2fb">{{savePlace}}</span>
+      <span class="en pv" style="font-size: 14px; color: rgba(220,210,238,.75)">{{saveDate}}</span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{devOn}}" hint-placeholder-val="{{ true }}">
+    <button class="btn dev" onClick="{{goDev}}" aria-label="戦闘テスト（開発中だけ）" style="position: absolute; left: 40px; top: 726px; z-index: 20; height: 30px; padding: 0 12px; border: 1px dashed rgba(201,205,210,0.35); background: rgba(10,9,14,0.5); color: #8f887b; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: 0.1em"><span class="en" style="font-size: 11px; letter-spacing: 0.2em">Dev</span>戦闘テスト</button>
+  </sc-if>
+  <span class="en" style="position: absolute; right: 24px; bottom: 16px; z-index: 20; font-size: 12px; font-weight: 600; letter-spacing: 0.24em; color: rgba(185,177,161,0.7)">ver 0.1 ― Development build</span>
+  <sc-if value="{{toastOn}}" hint-placeholder-val="{{ false }}">
+    <div class="toast" role="status" style="position: absolute; left: 50%; top: 470px; z-index: 45; padding: 12px 28px; background: rgba(10,9,14,0.88); border-top: 1px solid rgba(226,176,74,0.5); border-bottom: 1px solid rgba(226,176,74,0.5); font-size: 16px; letter-spacing: 0.12em; color: #f1ead9; white-space: nowrap">{{toastText}}</div>
+  </sc-if>
+  <sc-if value="{{veilOn}}" hint-placeholder-val="{{ false }}">
+    <div class="veil" aria-live="polite" style="position: absolute; inset: 0; z-index: 50; background: #08070c; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: #f1efe9">
+      <span class="en vt" style="font-size: 18px; font-weight: 600; letter-spacing: 0.3em; color: #e2b04a">{{veilEn}}</span>
+      <span class="vt" style="font-size: 40px; font-weight: 800; letter-spacing: 0.16em">{{veilTitle}}</span>
+      <span class="vt" style="font-size: 15px; letter-spacing: 0.14em; color: #b8b5ae">{{veilSub}}</span>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"title": {"editor": "text", "default": "百年戦争編"}, "save": {"editor": "boolean", "default": true}, "dev": {"editor": "boolean", "default": true}, "firstScreen": {"editor": "enum", "default": "タップ待ち", "options": ["タップ待ち", "メニュー"]}, "progress": {"editor": "enum", "default": "終幕後", "options": ["クリア前", "サタン撃破後", "終幕後"]}, "sky": {"editor": "enum", "default": "宵空", "options": ["宵空", "夜空", "薄暮", "星空", "オルクス紫黒", "オルクス赤黒"]}, "titleEn": {"editor": "text", "default": "The Hundred Years War"}, "fcChapter": {"editor": "text", "default": "Prologue"}, "fcText": {"editor": "text", "default": "unsei: hebi.  usemono ni chuui. / warau koe ga kikoetara, furikaeranai koto."}, "tagAfter": {"editor": "text", "default": "soshite, atarashii yoake e"}, "tagEnd": {"editor": "text", "default": "hebi wa mada, waratte iru"}, "ringBefore": {"editor": "text", "default": "ONLY I WAS THE CREATOR OF THIS WORLD  ·  "}, "ringAfter": {"editor": "text", "default": "THIS WORLD IS DEDICATED TO YOU  ·  "}, "ringEnd": {"editor": "text", "default": "IF I CAN BRING YOU BACK, I WILL DO IT  ·  "}, "endSky": {"editor": "enum", "default": "褪せた朝焼け", "options": ["褪せた朝焼け", "褪せた宵空", "白紙", "曇り空", "宵空", "夜空", "薄暮", "星空", "オルクス紫黒", "オルクス赤黒"]}, "endTitle": {"editor": "enum", "default": "黒", "options": ["紅", "暗い血", "黒"]}, "$preview": {"width": 1688, "height": 780}}'>
+var ITEMS = [
+  { id: 'cont', ja: '続きから', en: 'Continue' },
+  { id: 'new', ja: 'はじめから', en: 'New Game' },
+  { id: 'arc', ja: '保管庫', en: 'Archive' },
+  { id: 'cfg', ja: '設定', en: 'Config' }
+];
+var DESC = {
+  cont: 'セーブした所から再開します。',
+  new: 'プロローグから。アルシェが自室で目を覚ますところから始まります。',
+  arc: '見た支援会話などを見返せます。（あとで開放）',
+  cfg: '音量・文字の速さ・画面の設定など。'
+};
+var SAVE = { ch: '第1章', place: 'オルクス城・回廊', date: '2026/11/12 23:40', time: '03:12' };
+var SKY = {"宵空": "/_blob/207d59e2473811aafa83a3c686e69672", "夜空": "/_blob/5d73d3a15b641b2c1a30a0aafa39cca1", "薄暮": "/_blob/12a4e41e7e730c6880a37ec1577c63e5", "星空": "/_blob/df87a69ef8030ce3c0c3c7a54a55bab2", "オルクス紫黒": "/_blob/7933561a5dad793b064a01f920b421b1", "オルクス赤黒": "/_blob/127071b311d27946858dacf4badb883f"};
+var DAWN = '/_blob/ddd13d71329de90b85034d5ad428975d';
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = Object.assign({ veil: null, toast: null, n: 0 }, this.init ? this.init(props) : {}); }
+  componentWillUnmount() { clearTimeout(this.tv); clearTimeout(this.tt); }
+  hasSave() { return this.props.save ?? true; }
+  toast(t) { var s = this; clearTimeout(this.tt); this.setState({ toast: t, n: this.state.n + 1 }); this.tt = setTimeout(function () { s.setState({ toast: null }); }, 2000); }
+  run(id) {
+    var s = this;
+    if (id === 'cont' && !this.hasSave()) { this.toast('セーブデータがありません。'); return; }
+    if (id === 'arc') { this.toast('保管庫は、あとで開放されます。'); return; }
+    if (id === 'cfg') { this.toast('設定画面へ（Hub2と同じ設定画面）'); return; }
+    if (id === 'dev') { this.toast('戦闘テストへ（開発中だけ）'); return; }
+    var v = id === 'new' ? { en: 'Prologue', title: '祝賀会の朝', sub: 'アルシェの部屋 ― 2Dの探索へ' } : { en: SAVE.ch, title: SAVE.place, sub: '続きから ― ' + SAVE.date };
+    clearTimeout(this.tv); this.setState({ veil: v });
+    this.tv = setTimeout(function () { s.setState({ veil: null }); }, 2400);
+  }
+  common() {
+    var s = this, v = this.state.veil, save = this.hasSave();
+    return {
+      title: this.props.title ?? '百年戦争編',
+      devOn: this.props.dev ?? true,
+      goDev: function () { s.run('dev'); },
+      toastOn: !!this.state.toast, toastText: this.state.toast || '',
+      veilOn: !!v, veilEn: v ? v.en : '', veilTitle: v ? v.title : '', veilSub: v ? v.sub : '',
+      hasSave: save, noSave: !save,
+      saveCh: SAVE.ch, savePlace: SAVE.place, saveDate: SAVE.date, saveTime: SAVE.time
+    };
+  }
+
+  init(props) { this._fs = props.firstScreen ?? 'タップ待ち'; return { stage: this.stageOf(this._fs), hov: (props.save ?? true) ? 0 : 1, fx: null }; }
+  stageOf(f) { return f === '語りから' ? -1 : (f === 'タップ待ち' ? 0 : 1); }
+  componentDidMount() { if (this.state.stage === -1) this.startMono(); }
+  componentWillUnmount() { clearTimeout(this.tv); clearTimeout(this.tt); clearTimeout(this.tm); clearTimeout(this.tr); }
+  startMono() { var s = this; clearTimeout(this.tm); this.tm = setTimeout(function () { s.setState({ stage: 1 }); }, 11200); }
+  restart(f) {
+    var s = this; clearTimeout(this.tm); clearTimeout(this.tr); clearTimeout(this.tv);
+    this.setState({ stage: 9, fx: null });
+    this.tr = setTimeout(function () { var st = s.stageOf(f); s.setState({ stage: st }); if (st === -1) s.startMono(); }, 40);
+  }
+  launch(id) {
+    var s = this;
+    if (id !== 'new' && id !== 'cont') { this.run(id); return; }
+    if (id === 'cont' && !this.hasSave()) { this.run(id); return; }
+    clearTimeout(this.tv); this.setState({ fx: id });
+    this.tv = setTimeout(function () { s.restart('メニュー'); }, id === 'new' ? 5200 : 3800);
+  }
+  renderVals() {
+    var s = this, c = this.common(), hov = this.state.hov, st = this.state.stage, fx = this.state.fx;
+    var f = this.props.firstScreen ?? 'タップ待ち';
+    if (f !== this._fs) { this._fs = f; setTimeout(function () { s.restart(f); }, 0); }
+    var prog = this.props.progress ?? 'クリア前'; var eSky = this.props.endSky ?? '褪せた朝焼け'; var gray = prog === '終幕後' && eSky === '曇り空'; var fadedDawn = prog === '終幕後' && eSky === '褪せた朝焼け'; var fadedYoi = prog === '終幕後' && eSky === '褪せた宵空'; var faded = fadedDawn || fadedYoi; var paper = prog === '終幕後' && eSky === '白紙'; var ink = prog === '終幕後' && ((this.props.endTitle ?? '黒') === '黒' || paper || faded); var cleared = prog === 'サタン撃破後'; var ended = prog === '終幕後';
+    var skyName = this.props.sky ?? '宵空';
+    var orcus = skyName.indexOf('オルクス') === 0;
+    var menu = ITEMS.map(function (it, i) {
+      var lock = it.id === 'arc' || (it.id === 'cont' && !c.hasSave);
+      return { ja: it.ja, en: it.en, sep: i > 0, cls: (i === hov ? 'on' : '') + (lock ? ' lock' : ''),
+        go: function () { s.launch(it.id); }, hover: function () { s.setState({ hov: i }); } };
+    });
+    var it = ITEMS[hov];
+    var info = it.id === 'cont' ? (c.hasSave ? (c.saveCh + '　' + c.savePlace + '　' + c.saveDate + '　プレイ時間 ' + c.saveTime) : 'セーブデータがありません。') : DESC[it.id];
+    var halo = []; for (var k = 0; k < 24; k++) halo.push({ a: k * 15 });
+    var fromMono = st === -1;
+    var fcRaw = cleared ? (this.props.tagAfter ?? 'soshite, atarashii yoake e') : ended ? (this.props.tagEnd ?? 'hebi wa mada, waratte iru') : (this.props.fcText ?? 'unsei: hebi.  usemono ni chuui. / warau koe ga kikoetara, furikaeranai koto.');
+    var fcLines = fcRaw.split('/').map(function (t) { return { t: t.trim() }; }).filter(function (o) { return o.t !== ''; });
+    var fcLabel = cleared ? 'New Dawn' : ended ? 'After the Fable' : ('Fate Forecast  ―  ' + (this.props.fcChapter ?? 'Prologue'));
+    var ring = cleared ? (this.props.ringAfter ?? 'THIS WORLD IS DEDICATED TO YOU  ·  ') : ended ? (this.props.ringEnd ?? 'IF I CAN BRING YOU BACK, I WILL DO IT  ·  ') : (this.props.ringBefore ?? 'ONLY I WAS THE CREATOR OF THIS WORLD  ·  ');
+    var rt = ring; while (rt.length < 70) rt += ring;
+    var sc = cleared ? '#ffd98a' : ended ? '#b3263c' : '#cfe0ff';
+    var ringChars = rt.split('').map(function (ch, i, arr) { return { c: ch, a: (i * 360 / arr.length).toFixed(2), col: sc, op: '.9', sh: 'none' }; });
+    return Object.assign(c, {
+      titleEn: this.props.titleEn ?? 'The Hundred Years War',
+      showMain: st !== 9, tapStage: st === 0, menuStage: st === 1,
+      hdDelay: fromMono ? '10.2s' : '.3s', hdDelay2: fromMono ? '10.4s' : '.5s', hdDelay3: fromMono ? '11s' : '1.1s', menuDelay: fromMono ? '11.2s' : '1.2s',
+      mainCls: fx ? 'outAll' : '',
+      tap: function () { s.setState({ stage: 1 }); },
+      menu: menu, infoLine: info, halo: halo,
+      skySrc: (cleared || fadedDawn) ? DAWN : fadedYoi ? SKY['宵空'] : gray ? '/_blob/f888477653b3b80b430247a880777c17' : ended ? (SKY[eSky] || SKY['宵空']) : (SKY[skyName] || SKY['宵空']),
+      skyFilter: fadedDawn ? 'grayscale(1) brightness(1.02) contrast(1.18)' : fadedYoi ? 'grayscale(1) brightness(1.25) contrast(0.95)' : cleared ? 'none' : gray ? 'brightness(' + (ink ? '1' : '0.5') + ')' : ink ? 'brightness(1.03) saturate(0.8)' : ended ? 'brightness(0.72) saturate(0.7)' : (orcus ? 'brightness(0.8)' : 'brightness(0.92) saturate(1.05)'),
+      shadeTop: faded ? 'rgba(10,10,12,0.42)' : paper ? 'rgba(0,0,0,0)' : cleared ? 'rgba(20,30,70,0.25)' : (ink && gray) ? 'rgba(4,6,18,0.12)' : ink ? 'rgba(4,6,18,0.32)' : 'rgba(4,6,18,0.55)',
+      shadeBot: faded ? 'rgba(8,6,8,0.35)' : paper ? 'rgba(0,0,0,0)' : cleared ? 'rgba(40,20,10,0.55)' : ink ? 'rgba(4,5,14,0)' : 'rgba(4,5,14,0.82)',
+      glowC: faded ? 'rgba(255,255,255,0.4)' : paper ? 'rgba(0,0,0,0)' : cleared ? 'rgba(255,214,150,0.55)' : gray ? 'rgba(255,255,255,0)' : ink ? 'rgba(255,226,196,0.34)' : ended ? 'rgba(120,96,150,0.22)' : (orcus ? 'rgba(200,90,180,0.35)' : 'rgba(255,200,140,0.32)'),
+      starC: cleared ? '#ffd98a' : ended ? '#b3263c' : '#cfe0ff',
+      starGlow: cleared ? 'rgba(255,214,130,0.9)' : ended ? 'rgba(170,22,44,0.8)' : 'rgba(190,210,255,0.85)',
+      starGlow2: cleared ? 'rgba(255,190,90,0.35)' : ended ? 'rgba(120,10,30,0.4)' : 'rgba(140,170,255,0.3)',
+      flareC: cleared ? 'rgba(255,226,160,0.95)' : ended ? 'rgba(196,52,72,0.9)' : 'rgba(214,228,255,0.95)',
+      accent: cleared ? '#f3cd78' : paper ? '#a81c2c' : ink ? '#cc2e41' : ended ? '#dc5a6e' : '#c9d8f6',
+      titleC: cleared ? '#fff6dc' : ended ? ({ '紅': '#c9243a', '暗い血': '#7a0e1b', '黒': '#050305' }[this.props.endTitle ?? '黒'] || '#7a0e1b') : '#f4f6fb',
+      titleGlow: cleared ? 'rgba(255,190,90,0.55)' : ended ? 'rgba(190,36,58,0.55)' : 'rgba(130,160,255,0.5)',
+      tagC: cleared ? '#fff3d6' : ink ? '#8e1222' : ended ? 'rgba(240,150,162,0.95)' : 'rgba(220,226,244,0.85)',
+      bandA: (paper || faded) ? '0' : cleared ? '0.5' : ink ? '0' : '0.22', bandT: cleared ? '0.3' : '0',
+      hasFc: fcLines.length > 0, fcLines: fcLines, fcLabel: fcLabel, ringChars: ringChars, snakeOn: ended, paperOn: paper, vigOn: faded, inkCls: ink ? 'ink' : '', titleStroke: '0', shineOp: ended ? ((this.props.endTitle ?? '黒') === '紅' ? '.35' : '.14') : '1', titleShadow: ended ? ((this.props.endTitle ?? '黒') === '黒' ? 'none' : '0 2px 0 rgba(20,0,4,.6), 0 6px 24px rgba(0,0,0,.7)') : ('0 0 40px ' + (cleared ? 'rgba(255,190,90,0.55)' : 'rgba(130,160,255,0.5)') + ', 0 6px 24px rgba(0,0,0,.55)'), coreIn: ended ? '#0a0204' : '#ffffff',
+      dawnOn: fx === 'new', contOn: fx === 'cont'
+    });
+  }
+}
+</script>
+</body>
+</html>
