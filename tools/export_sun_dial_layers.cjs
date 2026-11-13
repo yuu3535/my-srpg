@@ -58,11 +58,18 @@ async function main() {
     await sharp(Buffer.from(svg)).png().toFile(path.join(outDir, selected ? 'plate_selected.png' : 'plate.png'));
   }
 
-  // 選択の炎（燃えている途中の1コマを、アルシェの色に）
+  // 選択の炎（連番の17コマを、アルシェの色に。6列×3段に並べた1枚（左上から右へ）: 1〜4 点火・5〜11 燃焼のくり返し・12〜17 消火。
+  // 試作の command-burning.js と同じ。2026-11-13 原作者「燃え盛るアニメーションになっていたはず」で、止まった1コマから連番へ直した）
   const flameDefs = '<filter id="flame-color" color-interpolation-filters="sRGB"><feColorMatrix values="0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0 0 0 1 0"/><feComponentTransfer>' + burning.palettes.alche.channels.map((table, i) => `<feFunc${['R', 'G', 'B'][i]} type="table" tableValues="${table}"/>`).join('') + '<feFuncA type="identity"/></feComponentTransfer></filter>';
-  const flame = await sharp(path.join(proto, 'fx/command-flame-selection-v01-hold.apng')).png().toBuffer();
-  const fsvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${81 * K}" height="${81 * K}" viewBox="0 0 81 81"><defs>${flameDefs}</defs><image x="0" y="0" width="81" height="81" href="data:image/png;base64,${flame.toString('base64')}" filter="url(#flame-color)"/></svg>`;
-  await sharp(Buffer.from(fsvg)).png().toFile(path.join(outDir, 'flame.png'));
+  const frameDir = path.join(proto, 'fx/command-flame-burn-v03-frames');
+  const F = 17, FS = 81 * K, COLS = 6, ROWS = 3;   // Unity の絵の大きさの上限 2048 に収める
+  let frames = '';
+  for (let i = 0; i < F; i++) {
+    const png = fs.readFileSync(path.join(frameDir, String(i + 1).padStart(2, '0') + '.png')).toString('base64');
+    frames += `<image x="${(i % COLS) * 81}" y="${Math.floor(i / COLS) * 81}" width="81" height="81" href="data:image/png;base64,${png}" filter="url(#flame-color)"/>`;
+  }
+  const fsvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${FS * COLS}" height="${FS * ROWS}" viewBox="0 0 ${81 * COLS} ${81 * ROWS}"><defs>${flameDefs}</defs>${frames}</svg>`;
+  await sharp(Buffer.from(fsvg)).png().toFile(path.join(outDir, 'flame_sheet.png'));
 
   const layout = {
     _note: '回る太陽盤の部品の置き方（844×390 の座標。tools/export_sun_dial_layers.cjs で作る。手で直さない）',
