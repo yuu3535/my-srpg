@@ -548,9 +548,14 @@ namespace Srpg.Battle
                 if (actors[gone] != null) Remove(actors[gone].gameObject);
                 actors.Remove(gone);
             }
+            // 左右に1人ずつ（立ち絵のある人）のときは、支援会話の「2人用の位置」に立つ（外側の位置だと遠すぎる。原作者 2026-11-13 案A）
+            pairStage = !SupportMode && stage.left.Count(HasDrawn) == 1 && stage.right.Count(HasDrawn) == 1;
             PlaceSide(stage.left, false, line);
             PlaceSide(stage.right, true, line);
         }
+
+        private bool pairStage;
+        private bool HasDrawn(string who) => FindPortrait(who, null).texture != null;
 
         private void PlaceSide(List<string> cast, bool right, ScenarioLine line)
         {
@@ -577,7 +582,7 @@ namespace Srpg.Battle
                 image.gameObject.SetActive(visible);
                 bool fresh = image.texture == null;
                 image.texture = portrait.texture;
-                var slot = SupportMode ? (right ? SupR1 : SupL1) : right ? (i == 0 ? SR1 : SR2) : (i == 0 ? SL1 : SL2);
+                var slot = SupportMode || pairStage ? (right ? SupR1 : SupL1) : right ? (i == 0 ? SR1 : SR2) : (i == 0 ? SL1 : SL2);
                 var fig = Figures.TryGetValue(who, out var f) ? f : new Figure { height = 1060f, headX = -1f, faceY = 120f };
                 // 透明でない所（絵の名前で探す。無ければ絵全体）
                 var b = bounds.TryGetValue(portrait.texture.name, out var bb) ? bb : new Bounds { w = portrait.texture.width, h = portrait.texture.height, left = 0, top = 0, right = portrait.texture.width, bottom = portrait.texture.height };
