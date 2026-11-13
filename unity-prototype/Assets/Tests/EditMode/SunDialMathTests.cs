@@ -71,6 +71,18 @@ namespace Srpg.Tests
         }
 
         [Test]
+        public void ClearLeavesNoPlateAndPointsTheNeedleBetweenDiamonds()
+        {
+            Assert.AreEqual(0f, SunDialMath.IdleFor(10f));
+            Assert.AreEqual(60f, SunDialMath.IdleFor(70f));
+            SunDialView.ResetState();
+            Assert.AreEqual("出撃", SunDialView.SelectedLabel);
+            SunDialView.Clear();
+            Assert.IsNull(SunDialView.SelectedLabel);
+            SunDialView.ResetState();
+        }
+
+        [Test]
         public void FlameIgnitesThenBurnsInALoopThenGoesOut()
         {
             // 点火 1〜4コマ（180ms・一度だけ）→ 燃焼 5〜11コマ（590ms のくり返し）。消火 12〜17コマ（200ms）で消える

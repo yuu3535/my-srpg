@@ -60,6 +60,9 @@ namespace Srpg.Battle.Menu
             return new Needle { angle = angle, radius = Mathf.Sqrt(x * x + y * y) * 439f / 1254f, index = i };
         }
 
+        /// <summary>どれも選んでいないときの針の角度（菱形と菱形の間。試作 wheel-math.js の idleFor）</summary>
+        public static float IdleFor(float angle) => Mathf.Round((angle - 30f) / 60f) * 60f;
+
         public struct Slot { public int index; public float angle, left, y, opacity; }
 
         /// <summary>各札の位置（左の辺 left・まん中の高さ y）と濃さ（上下の端で消える）</summary>

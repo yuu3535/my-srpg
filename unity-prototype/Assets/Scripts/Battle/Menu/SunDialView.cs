@@ -16,12 +16,13 @@ namespace Srpg.Battle.Menu
     /// </summary>
     public class SunDialView : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
     {
-        /// <summary>札でない所を押したとき（なぞったときは呼ばない）。支援会話の画面: 拠点メニューへ戻る</summary>
+        /// <summary>札でない所を押したとき（なぞったときは呼ばない）。何も渡さなければ、選んだ札を外す（Clear）</summary>
         public Action onEmptyTap;
 
         public void OnPointerClick(PointerEventData e)
         {
-            if (interactive && !e.dragging) onEmptyTap?.Invoke();
+            if (!interactive || e.dragging) return;
+            if (onEmptyTap != null) onEmptyTap(); else Clear();
         }
 
         // ── 共有の状態（画面が変わっても、回った位置を保つ） ──
@@ -46,7 +47,24 @@ namespace Srpg.Battle.Menu
             State.ready = true;
         }
 
-        public static string SelectedLabel { get { Ensure(); return SunDialMath.Commands[State.selected]; } }
+        /// <summary>今、針の先にある札の名前。どれも選んでいないときは null</summary>
+        public static string SelectedLabel { get { Ensure(); return State.selected >= 0 ? SunDialMath.Commands[State.selected] : null; } }
+
+        /// <summary>
+        /// どの札も選ばない（針は菱形と菱形の間へ戻り、炎は消える）。試作 wheel.js の clear() と同じ:
+        /// 札でない所を押したとき（原作者 2026-11-13「関係ないとこ押したらコマンドに針は置かないようにならなかったっけ？」）
+        /// </summary>
+        public static void Clear()
+        {
+            Ensure();
+            if (State.selected < 0) return;
+            var g = SunDialMath.Make();
+            State.selected = -1;
+            State.pending = -1;
+            State.serial++;
+            State.needleTarget = SunDialMath.IdleFor(State.needleTarget - g.focusAngle) + g.focusAngle;
+            if (Still) { State.needle = State.needleTarget; State.needleVelocity = 0f; }
+        }
         public static bool Settled { get { Ensure(); return State.phase == State.target && State.needle == State.needleTarget; } }
 
         /// <summary>回さずに、すぐその札を針の先へ（支援会話の画面を直接開いたときなど）</summary>
@@ -245,7 +263,8 @@ namespace Srpg.Battle.Menu
         public void Navigate(int direction)
         {
             int n = SunDialMath.Commands.Length;
-            Select(((State.selected + direction) % n + n) % n, false);
+            int from = State.selected >= 0 ? State.selected : SunDialMath.Centered(State.phase, g);
+            Select(((from + direction) % n + n) % n, false);
         }
 
         public void OnBeginDrag(PointerEventData e)
@@ -285,7 +304,7 @@ namespace Srpg.Battle.Menu
                 {
                     if (kb.upArrowKey.wasPressedThisFrame) Navigate(-1);
                     else if (kb.downArrowKey.wasPressedThisFrame) Navigate(1);
-                    else if (kb.enterKey.wasPressedThisFrame) Select(State.selected, true);
+                    else if (kb.enterKey.wasPressedThisFrame && State.selected >= 0) Select(State.selected, true);
                 }
             }
             if (interactive) Step(dt);

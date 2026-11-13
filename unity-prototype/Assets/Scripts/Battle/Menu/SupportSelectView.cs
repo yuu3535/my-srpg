@@ -388,7 +388,7 @@ namespace Srpg.Battle.Menu
             blocker.gameObject.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0f);
             var blank = blocker.gameObject.AddComponent<Button>();
             blank.transition = Selectable.Transition.None;
-            blank.onClick.AddListener(Back);
+            blank.onClick.AddListener(SunDialView.Clear);   // 太陽盤の札を外す → 「支援会話」から離れたので戻る（LeaveIfDialTurned）
 
             content = Node("Content", canvasRect);
             content.anchorMin = content.anchorMax = content.pivot = new Vector2(0.5f, 0.5f);
@@ -461,8 +461,7 @@ namespace Srpg.Battle.Menu
         private void BuildDial()
         {
             SunDialView.SnapTo("支援会話");   // 直接開いたとき（拠点メニューから来たときは、もうこの位置）
-            var dial = SunDialView.Create(leftGroup, true, null);
-            dial.onEmptyTap = Back;   // 太陽盤の札でない所を押しても戻る
+            SunDialView.Create(leftGroup, true, null);   // 太陽盤の札でない所を押したときも同じ（札を外して戻る）
         }
 
         /// <summary>太陽盤が「支援会話」から回されたら、拠点メニューへ戻る（暗転の間・支援会話の間は戻らない）</summary>

@@ -186,11 +186,24 @@ namespace Srpg.Tests
             yield return null;
             var blank = System.Array.Find(SupportSelectView.Instance.GetComponentsInChildren<UnityEngine.UI.Button>(), x => x.name == "Blocker");
             blank.onClick.Invoke();
+            yield return null;
             Assert.IsFalse(SupportSelectView.IsOpen, "何もない所を押しても戻らない");
             SupportSelectView.Open();
             yield return null;
-            SupportSelectView.Instance.GetComponentInChildren<SunDialView>().onEmptyTap();
+            SupportSelectView.Instance.GetComponentInChildren<SunDialView>().OnPointerClick(new UnityEngine.EventSystems.PointerEventData(UnityEngine.EventSystems.EventSystem.current));
+            yield return null;
             Assert.IsFalse(SupportSelectView.IsOpen, "太陽盤の札でない所を押しても戻らない");
+            Assert.IsNull(SunDialView.SelectedLabel, "戻ったのに、針が札に残っている");
+
+            // 拠点メニューでも、何もない所を押したら札を外す（試作の太陽盤と同じ）
+            yield return null;
+            var hub = GameObject.Find("Hub2Canvas").transform;
+            dial = hub.GetComponentInChildren<SunDialView>();
+            Assert.IsNotNull(dial, "拠点メニューの太陽盤が出ていない");
+            dial.Select(SunDialMath.IndexOf("出撃"), false);
+            Assert.AreEqual("出撃", SunDialView.SelectedLabel);
+            hub.Find("Menu").GetComponent<UnityEngine.UI.Button>().onClick.Invoke();
+            Assert.IsNull(SunDialView.SelectedLabel, "何もない所を押しても札が外れない");
         }
     }
 }

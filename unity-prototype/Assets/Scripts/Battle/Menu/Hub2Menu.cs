@@ -356,6 +356,10 @@ namespace Srpg.Battle.Menu
             tearMask.color = Color.white;
             tearMask.raycastTarget = true;   // メニューが出ている間は、後ろの探索を押せない
             menuRoot.gameObject.AddComponent<Mask>().showMaskGraphic = false;
+            // 何もない所を押したら、太陽盤の札を外す（試作の太陽盤と同じ。原作者 2026-11-13）
+            var blank = menuRoot.gameObject.AddComponent<Button>();
+            blank.transition = Selectable.Transition.None;
+            blank.onClick.AddListener(SunDialView.Clear);
 
             content = Node("Content", menuRoot);
             content.anchorMin = content.anchorMax = content.pivot = new Vector2(0.5f, 0.5f);
