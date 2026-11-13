@@ -236,6 +236,8 @@ namespace Srpg.Battle.Menu
             var kb = Keyboard.current;
             if (kb != null && kb.f8Key.wasPressedThisFrame) CycleDesignRef();
 #endif
+            LeaveIfDialTurned();
+            if (!gameObject.activeSelf) return;
             if (veilTime >= 0f) StepVeil(dt);   // Esc で戻るのは Hub2Menu が受ける（同じコマで拠点メニューまで閉じないように）
 
             // 入ってくる動き: 右の中身が右から寄る（太陽盤は拠点メニューで回ったまま）
@@ -447,12 +449,20 @@ namespace Srpg.Battle.Menu
             ol.effectDistance = new Vector2(1f, -1f);
         }
 
-        // 太陽盤（§4）。Hub2 と同じ回る太陽盤を、「支援会話」が針の先の位置で（この画面では押せない飾り）。
-        // 太陽盤は拠点メニューで回ったまま残るので、仕様書 §4 の「項目名が降りてくる」動きは要らなくなった（原作者 2026-11-13 回る太陽盤）
+        // 太陽盤（§4）。Hub2 と同じ回る太陽盤を、「支援会話」が針の先の位置で。
+        // 太陽盤は拠点メニューで回ったまま残るので、仕様書 §4 の「項目名が降りてくる」動きは要らなくなった（原作者 2026-11-13 回る太陽盤）。
+        // この画面でも回せる。ほかの札へ回したら、拠点メニューへ戻る（押した札なら、回り終わってから拠点メニューでその項目を開く）。
+        // 原作者 2026-11-13「メニュー開閉を押さないと戻れないのが不便。コマンドを回転させたときに閉じるとか」
         private void BuildDial()
         {
             SunDialView.SnapTo("支援会話");   // 直接開いたとき（拠点メニューから来たときは、もうこの位置）
-            SunDialView.Create(leftGroup, false, null);
+            SunDialView.Create(leftGroup, true, null);
+        }
+
+        /// <summary>太陽盤が「支援会話」から回されたら、拠点メニューへ戻る（暗転の間・支援会話の間は戻らない）</summary>
+        private void LeaveIfDialTurned()
+        {
+            if (veilTime < 0f && !Talking && SunDialView.SelectedLabel != "支援会話") Back();
         }
 
         private void BuildHeader()

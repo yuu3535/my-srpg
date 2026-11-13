@@ -166,6 +166,20 @@ namespace Srpg.Tests
             Assert.IsFalse(SupportSelectView.Instance.Compact);
             Assert.AreEqual(0, SupportSelectView.Instance.Selected);
             SupportSelectView.Instance.Back();
+            yield return null;
+
+            // 相手選びの画面で太陽盤をほかの札へ回すと、拠点メニューへ戻る（原作者 2026-11-13）
+            SupportSelectView.Open();
+            yield return null;
+            Assert.IsTrue(SupportSelectView.IsOpen);
+            var dial = SupportSelectView.Instance.GetComponentInChildren<SunDialView>();
+            dial.Select(SunDialMath.IndexOf("セーブ"), false);
+            yield return null;
+            yield return null;
+            Assert.IsFalse(SupportSelectView.IsOpen, "太陽盤を回しても相手選びが閉じない");
+            Assert.AreEqual(Hub2Motion.State.Open, menu.State);
+            Assert.IsTrue(GameObject.Find("Hub2Canvas").transform.Find("Menu").gameObject.activeSelf);
+            Assert.AreEqual("セーブ", SunDialView.SelectedLabel);
         }
     }
 }
