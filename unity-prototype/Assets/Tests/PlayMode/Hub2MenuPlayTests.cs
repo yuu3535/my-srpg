@@ -180,6 +180,17 @@ namespace Srpg.Tests
             Assert.AreEqual(Hub2Motion.State.Open, menu.State);
             Assert.IsTrue(GameObject.Find("Hub2Canvas").transform.Find("Menu").gameObject.activeSelf);
             Assert.AreEqual("セーブ", SunDialView.SelectedLabel);
+
+            // 何もない所を押しても、太陽盤の札でない所を押しても戻る（原作者 2026-11-13）
+            SupportSelectView.Open();
+            yield return null;
+            var blank = System.Array.Find(SupportSelectView.Instance.GetComponentsInChildren<UnityEngine.UI.Button>(), x => x.name == "Blocker");
+            blank.onClick.Invoke();
+            Assert.IsFalse(SupportSelectView.IsOpen, "何もない所を押しても戻らない");
+            SupportSelectView.Open();
+            yield return null;
+            SupportSelectView.Instance.GetComponentInChildren<SunDialView>().onEmptyTap();
+            Assert.IsFalse(SupportSelectView.IsOpen, "太陽盤の札でない所を押しても戻らない");
         }
     }
 }

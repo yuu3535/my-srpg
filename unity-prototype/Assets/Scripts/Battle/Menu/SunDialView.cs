@@ -14,8 +14,16 @@ namespace Srpg.Battle.Menu
     /// 札を押したときは、回り終わってからその項目を開く。部品の絵は tools/export_sun_dial_layers.cjs で書き出した Resources/Menu/Dial/。
     /// 回った位置は Hub2 と支援会話の画面で共有する（支援会話へ行くと、太陽盤は回ったまま右側だけが変わる）
     /// </summary>
-    public class SunDialView : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+    public class SunDialView : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerClickHandler
     {
+        /// <summary>札でない所を押したとき（なぞったときは呼ばない）。支援会話の画面: 拠点メニューへ戻る</summary>
+        public Action onEmptyTap;
+
+        public void OnPointerClick(PointerEventData e)
+        {
+            if (interactive && !e.dragging) onEmptyTap?.Invoke();
+        }
+
         // ── 共有の状態（画面が変わっても、回った位置を保つ） ──
         private static class State
         {

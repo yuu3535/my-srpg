@@ -381,9 +381,14 @@ namespace Srpg.Battle.Menu
                 new GameObject("EventSystem", typeof(EventSystem), typeof(UnityEngine.InputSystem.UI.InputSystemUIInputModule));
             canvasRect = (RectTransform)go.transform;
 
-            // 後ろの探索を押せないように（全面の見えない板）
+            // 後ろの探索を押せないように（全面の見えない板）。何もない所を押したら、拠点メニューへ戻る
+            // （原作者 2026-11-13 の動画: 戻り方が分からず、何もない所を何度も押していた）。
+            // カードの並びと支援の一覧は、それぞれ見えない板で受けるので、押し損ねても戻らない
             var blocker = Stretch("Blocker", canvasRect);
             blocker.gameObject.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0f);
+            var blank = blocker.gameObject.AddComponent<Button>();
+            blank.transition = Selectable.Transition.None;
+            blank.onClick.AddListener(Back);
 
             content = Node("Content", canvasRect);
             content.anchorMin = content.anchorMax = content.pivot = new Vector2(0.5f, 0.5f);
@@ -456,7 +461,8 @@ namespace Srpg.Battle.Menu
         private void BuildDial()
         {
             SunDialView.SnapTo("支援会話");   // 直接開いたとき（拠点メニューから来たときは、もうこの位置）
-            SunDialView.Create(leftGroup, true, null);
+            var dial = SunDialView.Create(leftGroup, true, null);
+            dial.onEmptyTap = Back;   // 太陽盤の札でない所を押しても戻る
         }
 
         /// <summary>太陽盤が「支援会話」から回されたら、拠点メニューへ戻る（暗転の間・支援会話の間は戻らない）</summary>
