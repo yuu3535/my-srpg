@@ -1,0 +1,11 @@
+{
+ "_note": "章ごとの文（タイトル画面の運命予報と、拠点メニューの運命予報。2026-11-13）。name はセーブの章の名前、en は英字（運命予報の見出し）。fortuneJa は拠点メニュー、fortuneRomaji はタイトル画面の謎文字（手で用意する。/ で改行）",
+ "chapters": [
+  {
+   "name": "プロローグ",
+   "en": "PROLOGUE",
+   "fortuneJa": "運勢：蛇。　失せモノに注意。　笑う声が聞こえたら、振り返らないこと。",
+   "fortuneRomaji": "unsei: hebi.  usemono ni chuui. / warau koe ga kikoetara, furikaeranai koto."
+  }
+ ]
+}
