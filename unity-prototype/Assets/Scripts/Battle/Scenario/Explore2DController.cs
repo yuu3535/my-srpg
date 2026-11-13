@@ -308,6 +308,7 @@ namespace Srpg.Battle
             view.Locked = busy;
             // 相手のいる会話の間だけ寄る（相手の隣へ歩いて始めた会話。1人で調べたときは寄らない。原作者 2026-10-04）
             view.TalkZoom = dialogue != null && dialogue.IsPlaying && view.FocusX != null;
+            view.HideText = (dialogue != null && dialogue.IsPlaying) || Menu.Hub2Menu.Blocking || Menu.SupportSelectView.Talking;
             if (busy) { view.ShowAction(null, null); return; }
             view.FocusX = null;
             float px = view.PlayerX;

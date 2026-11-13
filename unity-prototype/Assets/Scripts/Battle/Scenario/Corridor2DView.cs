@@ -113,6 +113,23 @@ namespace Srpg.Battle
         /// </summary>
         public bool TalkZoom { get; set; }
 
+        /// <summary>
+        /// 会話・拠点メニューの間は、マップの上の文字（人の名前の札・調べる印・出口の札・「〇〇を手に入れた」など）を隠す。
+        /// 会話の枠やメニューの下から透けて見えていた（Hub2担当のレビュー 2026-11-13）。Explore2DController が毎コマ入れる
+        /// </summary>
+        public bool HideText { get; set; }
+        private bool? textHidden;
+        private Transform textRoot;
+        private readonly List<Text> textScratch = new List<Text>();
+
+        private void ApplyHideText()
+        {
+            if (textRoot == null || textHidden == HideText) return;
+            textHidden = HideText;
+            textRoot.GetComponentsInChildren(true, textScratch);
+            foreach (var t in textScratch) t.enabled = !HideText;
+        }
+
         /// <summary>画面の暗さ（0〜1）。寝起きの暗転開けなど。会話の画面より奥（台詞は読める）</summary>
         public float Darkness { get => darkness; set { darkness = Mathf.Clamp01(value); if (darkImage != null) { darkImage.color = new Color(0.01f, 0.012f, 0.02f, darkness); darkImage.gameObject.SetActive(darkness > 0f); } } }
         private float darkness;
@@ -159,6 +176,8 @@ namespace Srpg.Battle
             people.Clear();   // 人は組み立て直したあとに SetPeople で並べ直す（Explore2DController）
             var canvasObject = new GameObject("Corridor", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             canvasObject.transform.SetParent(transform, false);
+            textRoot = canvasObject.transform;
+            textHidden = null;   // 組み立て直した文字にも当て直す
             var canvas = canvasObject.GetComponent<Canvas>();
             // カメラの画面に描く（確認の画像を撮れるように）。カメラがなければ画面にそのまま
             var cam = targetCamera != null ? targetCamera : Camera.main;
@@ -345,6 +364,7 @@ namespace Srpg.Battle
         {
             UpdateTuner();
             if (data == null) return;
+            ApplyHideText();
             float zt = TalkZoom ? 1f : 0f;
             zoomT = zt;   // 動かさずに切り替える（ゆっくりは画面酔い、速くはシュール。原作者 2026-10-04: アニメーションなし）
             if (shotNow != shotTarget)
@@ -503,6 +523,7 @@ namespace Srpg.Battle
         {
             foreach (var p in people) if (p.rt != null) DestroyImmediate(p.rt.gameObject);
             people.Clear();
+            textHidden = null;
             if (root == null) return;
             foreach (var (id, name, texture, x) in list)
             {
@@ -543,7 +564,7 @@ namespace Srpg.Battle
         {
             actionUse = string.IsNullOrEmpty(label) ? null : use;
             if (exitLabel != null && actionUse != null) exitLabel.text = label;
-            if (exitButton != null) exitButton.gameObject.SetActive(actionUse != null && !Locked);
+            if (exitButton != null) exitButton.gameObject.SetActive(actionUse != null && !Locked && !HideText);
         }
 
         /// <summary>短い知らせ</summary>
@@ -633,6 +654,7 @@ namespace Srpg.Battle
         {
             foreach (var m in markers) if (m.rt != null) DestroyImmediate(m.rt.gameObject);
             markers.Clear();
+            textHidden = null;
             if (root == null) return;
             foreach (var x in xs)
             {

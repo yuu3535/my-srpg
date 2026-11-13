@@ -14,6 +14,15 @@ namespace Srpg.Tests
     /// </summary>
     public class Hub2MenuPlayTests
     {
+        /// <summary>2Dの探索の画面（Corridor）の文字が1つでも出ているか</summary>
+        private static bool MapTextShown()
+        {
+            var view = Object.FindFirstObjectByType<Corridor2DView>();
+            foreach (var t in view.GetComponentsInChildren<UnityEngine.UI.Text>(true))
+                if (t.enabled && t.transform.root == view.transform.root && t.GetComponentInParent<Canvas>().name == "Corridor") return true;
+            return false;
+        }
+
         [TearDown]
         public void TearDown()
         {
@@ -58,11 +67,17 @@ namespace Srpg.Tests
             Assert.AreEqual(Hub2Motion.State.Open, menu.State);
             Assert.IsTrue(GameObject.Find("Menu").activeInHierarchy, "開いたのにメニューが見えない");
 
+            // メニューの間は、マップの上の文字（名前の札・印・出口の札など）を隠す（Hub2担当のレビュー 2026-11-13）
+            yield return null; yield return null;
+            Assert.IsFalse(MapTextShown(), "メニューの下からマップの文字が透けて見える");
+
             // 閉じる（短い版 0.62秒）
             Assert.IsTrue(menu.RequestClose());
             yield return new WaitForSecondsRealtime(0.9f);
             Assert.AreEqual(Hub2Motion.State.Closed, menu.State, "閉じ終わらない");
             Assert.IsFalse(Hub2Menu.Blocking);
+            yield return null; yield return null;
+            Assert.IsTrue(MapTextShown(), "メニューを閉じてもマップの文字が戻らない");
 
             // 同じ日の2回目は短い版。最後まで流れて開ききる
             Assert.IsTrue(menu.RequestOpen());
