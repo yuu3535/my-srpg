@@ -116,6 +116,12 @@ namespace Srpg.Battle
         /// <summary>開発中だけ: 入口に「支援会話テスト」を出す（原作者 2026-11-13。公開の形にするときに false）</summary>
         public static bool ShowSupportTest = true;
 
+        /// <summary>
+        /// 開発中だけ: 右下に「DEV 最初へ」（タイトル画面へ戻る）を出す（Hub2担当のレビュー 2026-11-13「開発用なら、開発中だけ出るように」。
+        /// 公開の形にするときに false。そのときはタイトルへ戻る道を拠点メニューに用意する）
+        /// </summary>
+        public static bool ShowBackToStart = true;
+
         /// <summary>タイトル画面（Menu.TitleScreen。正本 docs/10-design/ui/title/title_spec.md。2026-11-13 から）</summary>
         private static void Show()
         {
@@ -159,13 +165,16 @@ namespace Srpg.Battle
         {
             var font = FontOf();
             var canvas = NewCanvas("BackToStart", 450);
-            var rt = Rect("Back", canvas.transform, new Vector2(1f, 0f), new Vector2(-8f, 22f), new Vector2(64f, 18f));
-            rt.pivot = new Vector2(1f, 0f);
-            rt.gameObject.AddComponent<Image>().color = new Color(0.035f, 0.08f, 0.12f, 0.85f);
-            var button = rt.gameObject.AddComponent<Button>();
-            button.onClick.AddListener(BackToStart);
-            var t = Label(rt, "最初へ", Vector2.zero, new Vector2(64f, 18f), 11, HudPalette.Silver, font);
-            t.rectTransform.anchorMin = t.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            if (ShowBackToStart)
+            {
+                var rt = Rect("Back", canvas.transform, new Vector2(1f, 0f), new Vector2(-8f, 22f), new Vector2(64f, 18f));
+                rt.pivot = new Vector2(1f, 0f);
+                rt.gameObject.AddComponent<Image>().color = new Color(0.035f, 0.08f, 0.12f, 0.85f);
+                var button = rt.gameObject.AddComponent<Button>();
+                button.onClick.AddListener(BackToStart);
+                var t = Label(rt, "DEV 最初へ", Vector2.zero, new Vector2(64f, 18f), 11, HudPalette.Silver, font);
+                t.rectTransform.anchorMin = t.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            }
             if (currentScene == TrialScene) return;   // 試験の戦闘はセーブしない
             if (currentScene == CorridorScene)
             {
