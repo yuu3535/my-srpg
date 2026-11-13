@@ -116,48 +116,39 @@ namespace Srpg.Battle
         /// <summary>開発中だけ: 入口に「支援会話テスト」を出す（原作者 2026-11-13。公開の形にするときに false）</summary>
         public static bool ShowSupportTest = true;
 
+        /// <summary>タイトル画面（Menu.TitleScreen。正本 docs/10-design/ui/title/title_spec.md。2026-11-13 から）</summary>
         private static void Show()
         {
-            var font = FontOf();
-            var canvas = NewCanvas("StartMenu", 500);
-            var root = canvas.transform;
-            var dim = Rect("Dim", root, new Vector2(0.5f, 0.5f), Vector2.zero, Vector2.zero);
-            dim.anchorMin = Vector2.zero;
-            dim.anchorMax = Vector2.one;
-            dim.gameObject.AddComponent<Image>().color = new Color(0.05f, 0.09f, 0.12f, 1f);
-            Label(root, "自作SRPG", new Vector2(0f, 160f), new Vector2(500f, 40f), 30, HudPalette.Text, font);
-            Label(root, "Unity版の試し（スマホ・ブラウザで遊べる形）", new Vector2(0f, 132f), new Vector2(500f, 20f), 12, HudPalette.Silver, font);
-            // ボタンは「続きから」「はじめから」と、開発中だけ「戦闘テスト」（原作者 2026-11-13: 入口を整理。戦闘テストには入れるようにしておく）。
-            // 「はじめから」は2Dの探索（自室で起きて回廊へ）。3Dの盤は訓練場（戦闘の場所）だけで、入口からは行かない
-            SilverButton(root, "続きから", "セーブした所から", new Vector2(0f, 52f), font, () => SaveMenu.Open(SaveMenu.Mode.Load));
-            SilverButton(root, "はじめから", "プロローグ：自室で起きて回廊へ", new Vector2(0f, -8f), font, () =>
+            Menu.TitleScreen.ShowDev = ShowBattleTest || ShowSupportTest;
+            Menu.TitleScreen.Open(new Menu.TitleScreen.Actions
             {
-                Holding = false;
-                Party.Reset();   // 新しく始める: 仲間の育ちを消す
-                SaveSystem.PlaySeconds = 0f;
-                SceneManager.LoadScene(CorridorScene);
-            });
-            if (ShowBattleTest)
-                SilverButton(root, "戦闘テスト", "開発用：森の境（ブラウザ版の試験の戦闘と同じ）", new Vector2(0f, -68f), font, () =>
+                // はじめから: 枠に新しいデータを作って、プロローグ（2Dの探索・自室）へ
+                newGame = slot =>
+                {
+                    Holding = false;
+                    if (Menu.TitleScreen.Instance != null) Object.Destroy(Menu.TitleScreen.Instance.gameObject);
+                    if (!SaveSystem.NewGame(slot, out var msg)) Debug.LogWarning("[Title] " + msg);
+                },
+                // 続きから: いちばん最近のセーブを読む（あとで、ここで枠の一覧を出す。原作者 2026-11-13）
+                continueAt = slot =>
+                {
+                    Holding = false;
+                    if (Menu.TitleScreen.Instance != null) Object.Destroy(Menu.TitleScreen.Instance.gameObject);
+                    if (!SaveSystem.LoadFrom(slot, out var msg)) Debug.LogWarning("[Title] " + msg);
+                },
+                battleTest = () =>
                 {
                     Holding = false;
                     SceneManager.LoadScene(TrialScene);
-                });
-            if (ShowSupportTest)
-                SilverButton(root, "支援会話テスト", "開発用：支援会話の台本を一覧から流す", new Vector2(0f, ShowBattleTest ? -128f : -68f), font, () =>
+                },
+                supportTest = () =>
                 {
                     Holding = false;
                     Party.Reset();
                     Menu.SupportTalkDebug.Pending = true;
                     SceneManager.LoadScene(CorridorScene);
-                });
-            // 設定（右上。仮の最小限。メニュー画面ができたらそちらから）
-            var cfg = Rect("Settings", root, new Vector2(1f, 1f), new Vector2(-12f, -12f), new Vector2(64f, 22f));
-            cfg.pivot = new Vector2(1f, 1f);
-            cfg.gameObject.AddComponent<Image>().color = new Color(0.035f, 0.08f, 0.12f, 0.85f);
-            cfg.gameObject.AddComponent<Button>().onClick.AddListener(SettingsMenu.Open);
-            var ct = Label(cfg, "設定", Vector2.zero, new Vector2(64f, 22f), 12, HudPalette.Silver, font);
-            ct.rectTransform.anchorMin = ct.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+                },
+            });
         }
 
         /// <summary>入口の画面へ戻る</summary>

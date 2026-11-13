@@ -11,7 +11,7 @@ namespace Srpg.Battle
     [Serializable]
     public class SaveData
     {
-        public const int CurrentVersion = 2;   // 1: 探索だけ / 2: 仲間の育ち（因果Lv・経験値・能力）を足した
+        public const int CurrentVersion = 3;   // 1: 探索だけ / 2: 仲間の育ち（因果Lv・経験値・能力）を足した / 3: 章・進み具合・はじめからの印（2026-11-13）
 
         public int version = CurrentVersion;
         public string savedAt;          // 保存した日時（端末の時刻。"yyyy-MM-dd HH:mm"）
@@ -26,6 +26,9 @@ namespace Srpg.Battle
         public List<string> items = new List<string>();    // 持ち物
         public List<StateEntry> states = new List<StateEntry>();   // 配置表ごとの今の場面（戦闘のあと、など）
         public List<PartyMember> party = new List<PartyMember>();  // 仲間の育ち（版2〜。版1のセーブは空＝次の戦闘で加わる）
+        public string chapter;          // 章の名前（版3〜。タイトル画面の説明の行・運命予報。空＝プロローグ）
+        public int progress;            // 進み具合（版3〜。0 クリア前 / 1 サタン撃破後 / 2 終幕後。タイトル画面の空・星・文が変わる）
+        public bool fresh;              // はじめからで作ったばかりのセーブ（読むと、プロローグを最初から始める）
 
         [Serializable] public class StateEntry { public string map, state; }
 

@@ -15,6 +15,8 @@ namespace Srpg.Battle.Menu
         private readonly List<UIVertex> verts = new List<UIVertex>();
         private readonly List<int> charOf = new List<int>();
 
+        private static bool AsciiBlank(char c) => c == ' ' || c == '\n' || c == '\r' || c == '\t';
+
         public override void ModifyMesh(VertexHelper vh)
         {
             if (!IsActive() || em == 0f) return;
@@ -28,12 +30,22 @@ namespace Srpg.Battle.Menu
             string s = text.text ?? "";
             int quads = verts.Count / 6;
             charOf.Clear();
+            // どの字に四角が作られるかは字で違う（半角の空白や改行は作られない。全角の空白は作られることがある）。
+            // 四角の数に合う数え方を選ぶ: 全部 → 半角の空白と改行を除く → 空白（全角も）を除く
             int col = 0;
-            bool skipBlank = quads < s.Length;
+            int all = s.Length, noAscii = 0, noBlank = 0;
+            foreach (char ch in s)
+            {
+                if (!AsciiBlank(ch)) noAscii++;
+                if (!char.IsWhiteSpace(ch)) noBlank++;
+            }
+            int rule = quads == all ? 0 : quads == noAscii ? 1 : 2;
             for (int c = 0; c < s.Length; c++)
             {
-                if (s[c] == '\n') { col = 0; if (!skipBlank) charOf.Add(0); continue; }
-                if (!skipBlank || !char.IsWhiteSpace(s[c])) charOf.Add(col);
+                char ch = s[c];
+                bool skip = rule == 1 ? AsciiBlank(ch) : rule == 2 && char.IsWhiteSpace(ch);
+                if (ch == '\n') { col = 0; if (!skip) charOf.Add(0); continue; }
+                if (!skip) charOf.Add(col);
                 col++;
             }
             for (int i = 0; i < verts.Count; i++)

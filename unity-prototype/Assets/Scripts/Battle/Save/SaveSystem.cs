@@ -57,7 +57,40 @@ namespace Srpg.Battle
             d.savedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
             d.playSeconds = PlaySeconds;
             d.party = Party.Snapshot();
+            d.chapter = GameProgress.Chapter;
+            d.progress = GameProgress.Stage;
+            d.fresh = false;
             return d;
+        }
+
+        /// <summary>今遊んでいるデータの枠（はじめからで作った枠・続きからで読んだ枠。無ければ 0）</summary>
+        public static int CurrentSlot { get; set; }
+
+        /// <summary>
+        /// はじめから: 枠に新しいデータを作り（プロローグの最初）、プロローグを始める（原作者 2026-11-13: 空き枠があれば確認なしでそこへ）。
+        /// 作ったデータは fresh の印つき。読むと、プロローグを最初から始める
+        /// </summary>
+        public static bool NewGame(int slot, out string message)
+        {
+            message = null;
+            GameProgress.Reset();
+            var d = new SaveData
+            {
+                savedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+                playSeconds = 0f,
+                scene = Scene2D,
+                placeName = "アルシェ自室",
+                chapter = GameProgress.Chapter,
+                progress = GameProgress.Stage,
+                fresh = true,
+            };
+            if (!SaveStore.Save(slot, d, out message)) return false;
+            CurrentSlot = slot;
+            Pending = null;
+            PlaySeconds = 0f;
+            Party.Reset();
+            SceneManager.LoadScene(Scene2D);
+            return true;
         }
 
         /// <summary>今の所を枠にセーブする</summary>
@@ -76,6 +109,18 @@ namespace Srpg.Battle
             message = null;
             var d = SaveStore.Load(slot);
             if (d == null) { message = "このセーブは読めません"; return false; }
+            CurrentSlot = slot;
+            GameProgress.Chapter = string.IsNullOrEmpty(d.chapter) ? GameProgress.Prologue : d.chapter;
+            GameProgress.Stage = d.progress;
+            if (d.fresh)
+            {
+                // はじめからで作ったばかり: プロローグを最初から
+                Pending = null;
+                PlaySeconds = 0f;
+                Party.Reset();
+                SceneManager.LoadScene(Scene2D);
+                return true;
+            }
             Pending = d;
             PlaySeconds = d.playSeconds;
             Party.Restore(d.party);
