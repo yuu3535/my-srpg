@@ -238,6 +238,7 @@ namespace Srpg.Battle.Menu
 #endif
             LeaveIfDialTurned();
             if (!gameObject.activeSelf) return;
+            StepRipple(dt);
             if (veilTime >= 0f) StepVeil(dt);   // Esc で戻るのは Hub2Menu が受ける（同じコマで拠点メニューまで閉じないように）
 
             // 入ってくる動き: 右の中身が右から寄る（太陽盤は拠点メニューで回ったまま）
@@ -381,14 +382,14 @@ namespace Srpg.Battle.Menu
                 new GameObject("EventSystem", typeof(EventSystem), typeof(UnityEngine.InputSystem.UI.InputSystemUIInputModule));
             canvasRect = (RectTransform)go.transform;
 
-            // 後ろの探索を押せないように（全面の見えない板）。何もない所を押したら、拠点メニューへ戻る
-            // （原作者 2026-11-13 の動画: 戻り方が分からず、何もない所を何度も押していた）。
+            // 後ろの探索を押せないように（全面の見えない板）。何もない所を素早く2回押したら、拠点メニューへ戻る（BlankTap）。
             // カードの並びと支援の一覧は、それぞれ見えない板で受けるので、押し損ねても戻らない
             var blocker = Stretch("Blocker", canvasRect);
             blocker.gameObject.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0f);
-            var blank = blocker.gameObject.AddComponent<Button>();
-            blank.transition = Selectable.Transition.None;
-            blank.onClick.AddListener(SunDialView.Clear);   // 太陽盤の札を外す → 「支援会話」から離れたので戻る（LeaveIfDialTurned）
+            var trigger = blocker.gameObject.AddComponent<EventTrigger>();
+            var click = new EventTrigger.Entry { eventID = EventTriggerType.PointerClick };
+            click.callback.AddListener(_ => BlankTap());
+            trigger.triggers.Add(click);
 
             content = Node("Content", canvasRect);
             content.anchorMin = content.anchorMax = content.pivot = new Vector2(0.5f, 0.5f);
@@ -461,7 +462,59 @@ namespace Srpg.Battle.Menu
         private void BuildDial()
         {
             SunDialView.SnapTo("支援会話");   // 直接開いたとき（拠点メニューから来たときは、もうこの位置）
-            SunDialView.Create(leftGroup, true, null);   // 太陽盤の札でない所を押したときも同じ（札を外して戻る）
+            SunDialView.Create(leftGroup, true, null).onEmptyTap = BlankTap;   // 太陽盤の札でない所を押したときも同じ
+        }
+
+        // ── 何もない所を押したとき ──
+        // 素早く2回押すと、太陽盤の札を外して拠点メニューへ戻る（札を外すと「支援会話」から離れるので LeaveIfDialTurned が戻す）。
+        // 1回だけなら、押した所に光の輪が出るだけ（押し損ねで、眺めていた画面が急に消えないように）。
+        // 原作者 2026-11-13「素早く２回タップでスッ…と戻る方が良い。１回タップだと誤タップしたときに折角眺めてた画面が急にどこか行くのはストレス」
+        public const float DoubleTapSeconds = 0.35f;
+        private float lastBlankTap = -10f, rippleTime = -1f;
+        private RawImage ripple;
+
+        public void BlankTap()
+        {
+            if (veilTime >= 0f || Talking) return;
+            float now = Time.unscaledTime;
+            if (now - lastBlankTap <= DoubleTapSeconds)
+            {
+                lastBlankTap = -10f;
+                SunDialView.Clear();
+                return;
+            }
+            lastBlankTap = now;
+            ShowRipple();
+        }
+
+        private void ShowRipple()
+        {
+            if (ripple == null)
+            {
+                ripple = Raw("TapRipple", canvasRect, Hub2Textures.Glow, new Vector2(64f, 64f), Color.white);
+                ripple.rectTransform.anchorMin = ripple.rectTransform.anchorMax = ripple.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            }
+            ripple.transform.SetAsLastSibling();
+            var pointer = Pointer.current;
+            Vector2 local = Vector2.zero;
+            if (pointer != null) RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, pointer.position.ReadValue(), null, out local);
+            ripple.rectTransform.anchoredPosition = local;
+            rippleTime = 0f;
+            StepRipple(0f);
+        }
+
+        // 光の輪: 0.4秒で広がって消える（金の淡い光）
+        private void StepRipple(float dt)
+        {
+            if (ripple == null) return;
+            if (rippleTime < 0f) { ripple.enabled = false; return; }
+            rippleTime += dt;
+            float k = rippleTime / 0.4f;
+            if (k >= 1f) { rippleTime = -1f; ripple.enabled = false; return; }
+            ripple.enabled = true;
+            float e = Motion.Ease(k);
+            ripple.rectTransform.localScale = Vector3.one * (0.5f + 1.1f * e);
+            ripple.color = new Color(GoldHi.r, GoldHi.g, GoldHi.b, Hub2Textures.SeenLight(0.35f * (1f - k), 0.8f));
         }
 
         /// <summary>太陽盤が「支援会話」から回されたら、拠点メニューへ戻る（暗転の間・支援会話の間は戻らない）</summary>

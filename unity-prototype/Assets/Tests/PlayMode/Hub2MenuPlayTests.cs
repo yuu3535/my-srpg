@@ -181,19 +181,27 @@ namespace Srpg.Tests
             Assert.IsTrue(GameObject.Find("Hub2Canvas").transform.Find("Menu").gameObject.activeSelf);
             Assert.AreEqual("セーブ", SunDialView.SelectedLabel);
 
-            // 何もない所を押しても、太陽盤の札でない所を押しても戻る（原作者 2026-11-13）
+            // 何もない所を1回押しても戻らない。素早く2回押すと戻る（原作者 2026-11-13）
             SupportSelectView.Open();
             yield return null;
-            var blank = System.Array.Find(SupportSelectView.Instance.GetComponentsInChildren<UnityEngine.UI.Button>(), x => x.name == "Blocker");
-            blank.onClick.Invoke();
+            SupportSelectView.Instance.BlankTap();
             yield return null;
-            Assert.IsFalse(SupportSelectView.IsOpen, "何もない所を押しても戻らない");
-            SupportSelectView.Open();
+            Assert.IsTrue(SupportSelectView.IsOpen, "1回押しただけで戻ってしまう");
+            SupportSelectView.Instance.BlankTap();
             yield return null;
-            SupportSelectView.Instance.GetComponentInChildren<SunDialView>().OnPointerClick(new UnityEngine.EventSystems.PointerEventData(UnityEngine.EventSystems.EventSystem.current));
-            yield return null;
-            Assert.IsFalse(SupportSelectView.IsOpen, "太陽盤の札でない所を押しても戻らない");
+            Assert.IsFalse(SupportSelectView.IsOpen, "素早く2回押しても戻らない");
             Assert.IsNull(SunDialView.SelectedLabel, "戻ったのに、針が札に残っている");
+            // 太陽盤の札でない所も同じ（2回で戻る）
+            SupportSelectView.Open();
+            yield return null;
+            var supportDial = SupportSelectView.Instance.GetComponentInChildren<SunDialView>();
+            var tap = new UnityEngine.EventSystems.PointerEventData(UnityEngine.EventSystems.EventSystem.current);
+            supportDial.OnPointerClick(tap);
+            yield return null;
+            Assert.IsTrue(SupportSelectView.IsOpen);
+            supportDial.OnPointerClick(tap);
+            yield return null;
+            Assert.IsFalse(SupportSelectView.IsOpen, "太陽盤の札でない所を2回押しても戻らない");
 
             // 拠点メニューでも、何もない所を押したら札を外す（試作の太陽盤と同じ）
             yield return null;
