@@ -111,3 +111,9 @@
 
 - `SupportTalksTests`（2件）
 - `SupportTalkPlayTests`（「会話する」→ 支援会話 → CLOSE → 相手選びに戻り、B を見たことになる）
+
+## 吹き出しの位置は立つ枠ごと（2026-11-15 追記）
+
+- ふだんの会話の吹き出しは、話す人の頭の上ではなく「立つ枠」ごとに決めた位置に出す（`DialogueView.Bubble.cs`・`Resources/Talk/bubble_slots.json`）。上の端と話す人の側の端は文の長さで動かない。
+- 位置は原作者が「DEV 立ち絵の並び」→「吹き出しの位置を決める」で決める。詳しくは `docs/90-worklogs/WORK_MEMO_2026-11-15.md`。
+- 支援会話（顔の横）・地の文・携帯端末・立ち絵の無い人は前のまま。
