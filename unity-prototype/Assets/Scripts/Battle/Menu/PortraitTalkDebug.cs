@@ -89,6 +89,8 @@ namespace Srpg.Battle.Menu
             slotsRoot.sizeDelta = Vector2.zero;
             Button(area, "この並びで会話を流す", 150f, 560f, 420f, () => Play(false));
             Button(area, "調整しながら流す（調整パネルを開く）", 590f, 560f, 520f, () => Play(true));
+            // 吹き出しの位置を枠ごとに決める（原作者 2026-11-15。DialogueView.Bubble）
+            Button(area, "吹き出しの位置を決める", 150f, 632f, 420f, () => Play(false, true));
             Refresh();
         }
 
@@ -123,7 +125,7 @@ namespace Srpg.Battle.Menu
         }
 
         /// <summary>見本の会話: 選んだ順（外 → 内）に話す。1行と2行の台詞で吹き出しの大きさも見る。名前が重なったら、その人は1回だけ</summary>
-        private void Play(bool adjust)
+        private void Play(bool adjust, bool bubble = false)
         {
             var dialogue = FindFirstObjectByType<DialogueView>();
             if (dialogue == null) return;
@@ -147,6 +149,7 @@ namespace Srpg.Battle.Menu
             dialogue.Play(new ScenarioBlock { id = "", part = "story", lines = lines.ToArray(), location = "立ち絵の並びテスト" },
                 () => { playing = false; DialogueCast.DebugLeft = null; if (panel != null) panel.gameObject.SetActive(true); });
             if (adjust && who.Count > 0) dialogue.OpenAdjuster(who[0]);
+            if (bubble) dialogue.OpenBubbleTool();
         }
 
         private void Button(RectTransform parent, string text, float x, float y, float w, System.Action act)

@@ -97,7 +97,7 @@ namespace Srpg.Battle
         private struct Bounds { public float w, h, left, top, right, bottom; }
         private Dictionary<string, Bounds> bounds;
 
-        private struct Placed { public float left, top, width, height, headX; public bool right; }
+        private struct Placed { public float left, top, width, height, headX; public bool right; public string slot; }
         private readonly Dictionary<string, Placed> placed = new Dictionary<string, Placed>();
 
         // ── 部品 ──
@@ -116,6 +116,8 @@ namespace Srpg.Battle
         private (RectTransform rt, PolyGraphic bg, Text jp) autoTile, skipTile;
         private float lineShownAt = -10f, talkClock;
         private float bx0, by0, bx1, by1;   // 今の吹き出し
+        /// <summary>今の吹き出しの範囲（1688×780 の座標。確認・テスト用）</summary>
+        public Rect BubbleRect => Rect.MinMaxRect(bx0, by0, bx1, by1);
         private bool lastRevealing;
         private float doneAt = -1f;
         private float pageAt = -10f;
@@ -627,7 +629,8 @@ namespace Srpg.Battle
                 float baseTop = BuildOf.TryGetValue(who, out var build) ? FaceLine[build] - fig.faceY * zoom : slot.baseline - H;
                 float top = baseTop - (adj != null ? adj.dy * H : 0f);
                 // 頭の位置は調整（左右）のあとの位置。吹き出しはこれについて動く（原作者 2026-11-14「立ち絵の位置調整したらテキストボックスも追従して」）
-                placed[who] = new Placed { left = left, top = top, width = W, height = H, headX = left + headOnScreen, right = right };
+                string slotKey = SupportMode || pairStage ? (right ? "pairR" : "pairL") : right ? (i == 0 ? "R1" : "R2") : (i == 0 ? "L1" : "L2");
+                placed[who] = new Placed { left = left, top = top, width = W, height = H, headX = left + headOnScreen, right = right, slot = slotKey };
                 bool speaking = who == stage.Speaker;
                 var rt = image.rectTransform;
                 rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
@@ -656,7 +659,7 @@ namespace Srpg.Battle
             bool talk = line.type == "line" && !string.IsNullOrEmpty(line.speaker) && placed.ContainsKey(line.speaker);
             bool voice = line.type == "line" && !talk;
             // ページ（1ページ2行まで。字は小さくしない）
-            var rows = WrapChars(line.text ?? "", MaxChars);
+            var rows = WrapChars((BubbleToolOpen && editText != null ? editText : line.text) ?? "", MaxChars);   // 吹き出しの調整中は、入れた文で
             var list = new List<string>();
             for (int i = 0; i < rows.Count; i += 2) list.Add(string.Join("\n", rows.GetRange(i, Mathf.Min(2, rows.Count - i))));
             pages = list.Count > 0 ? list.ToArray() : new[] { "" };
@@ -676,28 +679,36 @@ namespace Srpg.Battle
             float refTop = talk ? placed[line.speaker].top : SupportMode ? TopMinSupport : TopMinNormal;
             y1 = Mathf.Min(292f, refTop - 8f); y0 = Mathf.Max(98f, y1 - h); y1 = y0 + h;
             bool face = talk && SupportMode;
-            // 頭の上に置くと自分の頭にかかる人（背の高い大人）だけ、頭の横（画面の真ん中の側）に置く。人の名前では決めない。
-            // 左右は支援会話の face と同じ、上下はできるだけ上（y0＝98）。試作（テキスト修正の担当の依頼・原作者 2026-11-15。
-            // docs/30-planning/TALK_BUBBLE_SIDE_PLACEMENT_HANDOFF_2026-11-15.md）
-            bool beside = talk && !SupportMode && y1 > placed[line.speaker].top;
-            if (face || beside)
+            if (face)
             {
                 if (side > 0) { x1 = Mathf.Max(w + 40f, headX - 115f); x0 = x1 - w; }
                 else { x0 = Mathf.Min(1648f - w, headX + 115f); x1 = x0 + w; }
-                if (face) { y1 = Mathf.Max(98f + h, Mathf.Round(placed[line.speaker].top + 70f)); y0 = y1 - h; }
-                else { y0 = 98f; y1 = y0 + h; }
+                y1 = Mathf.Max(98f + h, Mathf.Round(placed[line.speaker].top + 70f)); y0 = y1 - h;
             }
-            Beside = beside;
+            // ふだんの会話: 立つ枠ごとに決めた位置（DialogueView.Bubble。原作者 2026-11-15「位置を共通であらかじめ決めて」）。
+            // 上の端と、話す人の側の端は文の長さで動かない。画面からはみ出すときだけ内へ寄せる
+            string slotKey = talk && !SupportMode ? placed[line.speaker].slot : null;
+            bubbleKeyNow = slotKey;
+            Vector2 tip = Vector2.zero;
+            if (slotKey != null)
+            {
+                var bs = BubbleOf(slotKey);
+                if (side < 0) { x0 = bs.x; x1 = x0 + w; if (x1 > TalkW - 16f) { x1 = TalkW - 16f; x0 = x1 - w; } }
+                else { x1 = bs.x; x0 = x1 - w; if (x0 < 16f) { x0 = 16f; x1 = x0 + w; } }
+                y0 = bs.y; y1 = y0 + h;
+                tip = new Vector2(bs.tipX, bs.tipY);
+            }
             float cx = Mathf.Round((x0 + x1) / 2f);
             bx0 = x0; by0 = y0; bx1 = x1; by1 = y1;
 
             // 形（角を14px切る。尾つき）
+            int edge = slotKey != null ? TailEdge(x0, y0, x1, y1, tip) : -1;
             var shape = new List<Vector2> { TP(x0 + 14f, y0), TP(x1 - 14f, y0), TP(x1, y0 + 14f) };
             if (voice) { float my = y0 + h / 2f; shape.Add(TP(x1, my - 12f)); shape.Add(TP(x1 + 46f, my - 22f)); shape.Add(TP(x1, my + 12f)); }
-            // 頭の横に置いたとき: 尾は横の辺の下のほうから、話す人の顔へ（下の辺から出すと、隣の人を指して見える）
-            if (beside && side > 0) { shape.Add(TP(x1, y1 - 50f)); shape.Add(TP(x1 + 44f, y1 + 16f)); shape.Add(TP(x1, y1 - 20f)); }
+            if (edge == 0) SlotTail(shape, 0, x0, y0, x1, y1, tip);
             shape.Add(TP(x1, y1 - 14f)); shape.Add(TP(x1 - 14f, y1));
-            if (talk && !beside)
+            if (edge == 1) SlotTail(shape, 1, x0, y0, x1, y1, tip);
+            else if (talk && slotKey == null)
             {
                 float bx; int dir;
                 if (face) { bx = side > 0 ? x1 - 64f : x0 + 64f; dir = side > 0 ? 1 : -1; }
@@ -707,7 +718,7 @@ namespace Srpg.Battle
                 else { shape.Add(TP(bx + 6f, y1)); shape.Add(TP(tx, ty)); shape.Add(TP(bx - 18f, y1)); }
             }
             shape.Add(TP(x0 + 14f, y1)); shape.Add(TP(x0, y1 - 14f));
-            if (beside && side < 0) { shape.Add(TP(x0, y1 - 20f)); shape.Add(TP(x0 - 44f, y1 + 16f)); shape.Add(TP(x0, y1 - 50f)); }
+            if (edge == 2) SlotTail(shape, 2, x0, y0, x1, y1, tip);
             shape.Add(TP(x0, y0 + 14f));
             bubbleFill.color = Dark(p.pl, 0.92f * 0.86f);
             bubbleFill.Set(shape, PolyGraphic.Mode.Fill);
@@ -768,8 +779,6 @@ namespace Srpg.Battle
 
         private PolyGraphic tabBottom;
         private string lastName;
-        /// <summary>今の吹き出しを、背が高くて頭の横に置いたか（確認・テスト用）</summary>
-        public bool Beside { get; private set; }
         private float tabShownAt = -10f;
 
         private void ShowPage()

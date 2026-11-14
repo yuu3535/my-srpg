@@ -62,7 +62,7 @@ namespace Srpg.Battle
         /// <summary>毎フレーム: 文字を出す・オート・スキップ（Update から呼ぶ）</summary>
         private void TickReveal()
         {
-            if (!Application.isPlaying || !IsPlaying || AdjusterOpen) return;
+            if (!Application.isPlaying || !IsPlaying || ToolOpen) return;
             if (Revealing)
             {
                 int n = Mathf.Clamp(Mathf.FloorToInt((Time.unscaledTime - revealStart) * GameSettings.CharsPerSecond), 0, revealTarget.Length);

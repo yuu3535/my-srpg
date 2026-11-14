@@ -92,7 +92,7 @@ namespace Srpg.Battle
         /// <summary>次の行へ（最後の行のあとは閉じる）</summary>
         public void Advance()
         {
-            if (block == null || AdjusterOpen || LogOpen) return;   // 立ち絵の調整中・ログを開いている間は進めない
+            if (block == null || ToolOpen || LogOpen) return;   // 立ち絵の調整中・ログを開いている間は進めない
             AdvanceCore();
         }
 
@@ -111,7 +111,7 @@ namespace Srpg.Battle
             }
             if (dir > 0 && index >= lines.Length - 1 && page >= pages.Length - 1) return;   // 最後の台詞では閉じない
             AdvanceCore();
-            if (AdjusterOpen) Relayout();
+            if (ToolOpen) Relayout();
         }
 
         private void AdvanceCore()
@@ -133,6 +133,8 @@ namespace Srpg.Battle
         public void Close()
         {
             if (adjustPanel != null) adjustPanel.gameObject.SetActive(false);
+            if (bubblePanel != null) { bubblePanel.gameObject.SetActive(false); bubbleGrab.gameObject.SetActive(false); tipGrab.gameObject.SetActive(false); }
+            editText = null;
             adjustWho = null;
             block = null;
             lines = Array.Empty<ScenarioLine>();
@@ -210,6 +212,8 @@ namespace Srpg.Battle
 
             LoadAdjustments();
             BuildAdjuster(TalkFont);
+            LoadBubbleSlots();
+            BuildBubbleTool(TalkFont);   // 吹き出しの位置の調整（DialogueView.Bubble）
             root.gameObject.SetActive(false);
 
             // 押す操作をUIに届ける仕組み（探索のシーンには戦闘のUIがなく、これがないと会話を進められない）
@@ -225,7 +229,7 @@ namespace Srpg.Battle
             UpdateAdjuster();   // 立ち絵の調整（ホイール・矢印キー。DialogueView.Adjust）
             TickReveal();   // 文字を少しずつ出す・オート・スキップ（DialogueView.Settings）
             // 長押しで早送り（レビュー 2026-09-28_2 J8）
-            if (Application.isPlaying && IsPlaying && !AdjusterOpen && !LogOpen)
+            if (Application.isPlaying && IsPlaying && !ToolOpen && !LogOpen)
             {
                 var pointer = UnityEngine.InputSystem.Pointer.current;
                 bool held = pointer != null && pointer.press.isPressed;
