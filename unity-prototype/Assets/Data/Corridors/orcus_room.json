@@ -349,6 +349,54 @@
      704
     ],
     "rimDelay": 0
+   },
+   {
+    "id": "karima_shelf",
+    "x": 1320,
+    "w": 0,
+    "label": "カリマの本棚",
+    "hit": [
+     2495,
+     110,
+     290,
+     630
+    ],
+    "point": [
+     2640,
+     174
+    ],
+    "rim": "twin_room/shelfK",
+    "rimRect": [
+     2471,
+     86,
+     338,
+     678
+    ],
+    "rimDelay": 6.0
+   },
+   {
+    "id": "karima_chest",
+    "x": 1500,
+    "w": 0,
+    "label": "カリマの収納箱",
+    "hit": [
+     2805,
+     614,
+     393,
+     138
+    ],
+    "point": [
+     3001,
+     637
+    ],
+    "rim": "twin_room/chestK",
+    "rimRect": [
+     2782,
+     591,
+     440,
+     184
+    ],
+    "rimDelay": 4.8
    }
   ],
   "looks": [

@@ -270,6 +270,36 @@
      ],
      "required": false,
      "label": "ベッド"
+    },
+    {
+     "id": "karima_shelf",
+     "block": "",
+     "text": "カリマの本棚。\n背表紙がきれいに揃えられている。",
+     "cells": [
+      {
+       "x": 8,
+       "y": 4
+      },
+      {
+       "x": 8,
+       "y": 5
+      }
+     ],
+     "required": false,
+     "label": "本棚"
+    },
+    {
+     "id": "karima_chest",
+     "block": "",
+     "text": "カリマの収納箱だ。\n勝手に開けるのはやめておこう。",
+     "cells": [
+      {
+       "x": 7,
+       "y": 3
+      }
+     ],
+     "required": false,
+     "label": "収納箱"
     }
    ],
    "goals": [
