@@ -238,10 +238,10 @@
      173
     ],
     "rimDelay": 1.2,
-    "emptyText": "収納箱の中は空っぽだ。"
+    "emptyText": "自分の持ち物がぎっしり入っている。"
    },
    {
-    "id": "arshe_bed",
+    "id": "arshe_shelf",
     "x": 801,
     "w": 0,
     "label": "本棚",
