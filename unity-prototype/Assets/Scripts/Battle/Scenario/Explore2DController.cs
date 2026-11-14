@@ -325,7 +325,9 @@ namespace Srpg.Battle
             bool busy = Busy;
             view.Locked = busy;
             // 相手のいる会話の間だけ寄る（相手の隣へ歩いて始めた会話。1人で調べたときは寄らない。原作者 2026-10-04）
-            view.TalkZoom = dialogue != null && dialogue.IsPlaying && view.FocusX != null;
+            // ふだんの会話では寄らない（原作者 2026-11-14「急にSDキャラにカメラが寄るのが違和感。演出で必要でもない限り寄せなくていい」）。
+            // 寄るのはシナリオの演出の指示（StageDirection → SetShot）があるときだけ
+            view.TalkZoom = false;
             view.HideText = (dialogue != null && dialogue.IsPlaying) || Menu.Hub2Menu.Blocking || Menu.SupportSelectView.Talking;
             if (overlay != null) UpdateModern(busy);
             if (busy) { view.ShowAction(null, null); return; }
@@ -491,8 +493,7 @@ namespace Srpg.Battle
             view.WalkTo(stand, () =>
             {
                 view.Face(px);
-                view.FocusX = (view.PlayerX + px) / 2f;
-                PlayBlocks(new List<string> { blockId }, () => view.FocusX = null, replay);
+                PlayBlocks(new List<string> { blockId }, null, replay);   // カメラは動かさない（2人のまん中へ寄せない）
             });
         }
 
