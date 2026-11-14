@@ -70,6 +70,8 @@ namespace Srpg.Battle
             {
                 float x = CellsX(i.id, i.cells);
                 if (x == float.MaxValue || viewItems.Any(v => v.target.id == i.id)) continue;
+                // 調べたときの文がまだ無い所は出さない（御伽噺の本は、シナリオの進行で場所を決める。原作者 2026-11-14「後で決めてもいい？」）
+                if (string.IsNullOrEmpty(i.block) && string.IsNullOrEmpty(i.text)) continue;
                 var spot = SpotOf(i.id);
                 bool gives = spot?.kind == "item" || (spot?.kind != "tips" && !string.IsNullOrEmpty(i.block) && (scenario?.Block(i.block)?.Shown.Any(l => !string.IsNullOrEmpty(l.item)) ?? false));
                 bool got = gives && Got(i.id);
