@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>探索の札 E：縁に光が流れる</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&amp;family=Shippori+Mincho:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+.en{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase}
+button{font-family:inherit;color:inherit}
+.btn{-webkit-tap-highlight-color:transparent}
+.btn:focus-visible{outline:2px solid #e4e7ec;outline-offset:4px}
+.dots{background-image:radial-gradient(circle,rgba(241,234,217,.5) 1.1px,transparent 1.6px);background-size:16px 16px;-webkit-mask-image:linear-gradient(90deg,transparent 0,rgba(0,0,0,.25) 45%,#000 100%);mask-image:linear-gradient(90deg,transparent 0,rgba(0,0,0,.25) 45%,#000 100%);opacity:.3}
+.mk{animation:mk 2.4s ease-in-out infinite}
+@keyframes mk{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.mkd{width:9px;height:9px;transform:rotate(45deg);background:#e4e7ec;box-shadow:0 0 8px 2px rgba(214,226,240,.55)}
+.toast{animation:toast 1.6s ease both}
+@keyframes toast{0%{opacity:0;transform:translate(-50%,8px)}14%{opacity:1;transform:translate(-50%,0)}78%{opacity:1}100%{opacity:0}}
+.hop{animation:hop 3.6s ease-in-out infinite}
+@keyframes hop{0%,82%,100%{transform:translateY(0) rotate(45deg)}88%{transform:translateY(-6px) rotate(45deg)}94%{transform:translateY(0) rotate(45deg)}}
+.out{animation:outK .16s ease both !important}
+@keyframes outK{to{opacity:0}}
+.press{animation:pressK .24s ease both !important}
+@keyframes pressK{0%{transform:scale(1);filter:brightness(1)}35%{transform:scale(.96);filter:brightness(1.5)}100%{transform:scale(1);filter:brightness(1);opacity:0}}
+.gone{opacity:0;pointer-events:none}
+.in0{animation:inB0 .24s cubic-bezier(.2,.9,.25,1) both}.in1{animation:inB1 .24s cubic-bezier(.2,.9,.25,1) both}
+@keyframes inB0{from{opacity:0;transform:translateY(10px) scale(.94)}to{opacity:1;transform:none}}
+@keyframes inB1{from{opacity:0;transform:translateY(10px) scale(.94)}to{opacity:1;transform:none}}
+.ar{animation:arL 2s ease-in-out infinite}.arR{animation:arR 2s ease-in-out infinite}
+@keyframes arL{0%,100%{transform:translateX(0)}50%{transform:translateX(-3px)}}
+@keyframes arR{0%,100%{transform:translateX(0)}50%{transform:translateX(3px)}}
+.d3{display:block;width:9px;height:9px;box-sizing:border-box;border:1px solid;transform:rotate(45deg);animation:hop3 3.6s cubic-bezier(.3,.7,.3,1) infinite,col3 9s linear infinite,morph3 .55s cubic-bezier(.2,.8,.2,1) both}
+.m3{display:block;width:9px;height:9px;position:relative}
+.m3:nth-child(2) .d3{animation-delay:.22s,-6s,.12s}.m3:nth-child(3) .d3{animation-delay:.44s,-3s,.24s}
+@keyframes morph3{0%{width:5px;height:5px;margin:2px;border-radius:50%;border-color:#8d8a84;background:#8d8a84;box-shadow:none}55%{width:5px;height:5px;margin:2px;border-radius:50%}100%{width:9px;height:9px;margin:0;border-radius:0}}
+.tdots{display:flex;align-items:center;gap:12px;height:20px;padding-right:6px}
+.tdots span{display:block;width:5px;height:5px;border-radius:50%;background:rgba(200,198,192,.55);animation:tdot 1.4s ease-in-out infinite}
+.tdots span:nth-child(2){animation-delay:.2s}.tdots span:nth-child(3){animation-delay:.4s}
+@keyframes tdot{0%,100%{opacity:.35}50%{opacity:.9}}
+@keyframes hop3{0%,16%,100%{transform:translateY(0) rotate(45deg)}6%{transform:translateY(-6px) rotate(45deg)}11%{transform:translateY(0) rotate(45deg)}}
+@keyframes col3{0%,100%{border-color:#4fa3a8;background:rgba(79,163,168,.28);box-shadow:0 0 6px rgba(79,163,168,.5)}33.3%{border-color:#e2b04a;background:rgba(226,176,74,.28);box-shadow:0 0 6px rgba(242,196,96,.5)}66.6%{border-color:#c9cdd2;background:rgba(201,205,210,.18);box-shadow:0 0 5px rgba(214,226,240,.35)}}
+@media (prefers-reduced-motion: reduce){.d3{animation:none}.d3:nth-child(1){border-color:#4fa3a8;background:rgba(79,163,168,.25)}.d3:nth-child(2){border-color:#e2b04a;background:rgba(226,176,74,.25)}.d3:nth-child(3){border-color:#c9cdd2}}
+.mbox{animation:mbIn .26s cubic-bezier(.2,.8,.2,1) both}@keyframes mbIn{from{opacity:.3;transform:translateY(6px)}to{opacity:1;transform:none}}
+.mtab{animation:mtIn .24s ease-out both}@keyframes mtIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+.nxh{animation:nxIn .2s ease-out}@keyframes nxIn{from{opacity:0}to{opacity:1}}
+.mdia{display:block;width:7px;height:7px;transform:rotate(45deg);background:#e4e7ec;box-shadow:0 0 8px rgba(214,226,240,.55)}
+@property --a{syntax:'<angle>';inherits:false;initial-value:0deg}
+.run,.run2,.hold{filter:drop-shadow(0 0 1.5px rgba(10,6,14,.85)) drop-shadow(0 0 4px rgba(10,6,14,.45))}
+.rimL{position:absolute;display:block;pointer-events:none;-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;transition:opacity .4s ease}
+.run{background:conic-gradient(from var(--a) at var(--cx) var(--cy), rgba(255,255,255,0) 0deg, rgba(255,255,255,0) 285deg, rgba(240,244,250,.6) 335deg, #ffffff 358deg, rgba(255,255,255,0) 360deg)}
+.run2{background:conic-gradient(from var(--a) at var(--cx) var(--cy), rgba(255,255,255,0) 0deg, rgba(240,244,250,.55) 130deg, #ffffff 178deg, rgba(255,255,255,0) 180deg, rgba(255,255,255,0) 180deg, rgba(240,244,250,.55) 310deg, #ffffff 358deg, rgba(255,255,255,0) 360deg)}
+.glint{animation:glint 8s linear infinite}
+@keyframes glint{0%{--a:0deg;opacity:0}3%{opacity:1}20%{opacity:1}24%{--a:360deg;opacity:0}100%{--a:360deg;opacity:0}}
+.loop{animation:loop 2.6s linear infinite}
+@keyframes loop{from{--a:0deg}to{--a:360deg}}
+.hold{opacity:.55}
+.soft{opacity:.34}
+.halo{animation:halo 2.4s ease-in-out infinite}
+@keyframes halo{0%,100%{opacity:.22}50%{opacity:.45}}
+.hide{opacity:0}
+.cam{transition:transform .6s cubic-bezier(.3,.8,.25,1)}.cam.hold{transition:none}.leave0,.leave1{animation:lvK 2.3s ease both}.leave1{animation-name:lvK2}.leaveT{animation:lvT 2.3s ease both}@keyframes lvK{0%{opacity:0}22%{opacity:1}74%{opacity:1}100%{opacity:0}}@keyframes lvK2{0%{opacity:0}22%{opacity:1}74%{opacity:1}100%{opacity:0}}@keyframes lvT{0%,20%{opacity:0;transform:translateX(-12px)}36%,70%{opacity:1;transform:none}82%,100%{opacity:0}}.exitS.pressX{animation:pressK .24s ease both}
+.dash svg{filter:drop-shadow(0 0 1.5px rgba(6,6,10,.9)) drop-shadow(0 0 10px rgba(214,226,240,.7)) !important}.dash .arR{animation:arR .35s ease-in-out infinite}.dash .ch2{stroke:#eef0f4}
+.glint.sL{animation-name:glintL}.glint.sH{animation-name:glintH}
+@keyframes glintL{0%{--a:0deg;opacity:0}3%{opacity:.55}20%{opacity:.55}24%{--a:360deg;opacity:0}100%{--a:360deg;opacity:0}}
+@keyframes glintH{0%{--a:0deg;opacity:0}3%{opacity:1}20%{opacity:1}24%{--a:360deg;opacity:0}100%{--a:360deg;opacity:0}}
+.glint.pS{animation-duration:11s}.glint.pM{animation-duration:8s}.glint.pF{animation-duration:5.5s}
+.loop.pS{animation-duration:3.6s}.loop.pM{animation-duration:2.6s}.loop.pF{animation-duration:1.8s}
+.hold.sL{opacity:.32}.hold.sH{opacity:.8}.loop.sL{opacity:.6}
+.halo.sL{animation-name:haloL}@keyframes haloL{0%,100%{opacity:.15}50%{opacity:.32}}
+.halo.sH{animation-name:haloH}@keyframes haloH{0%,100%{opacity:.5}50%{opacity:.85}}
+
+.in0 .lead,.in1 .lead{stroke-dasharray:100;animation:leadK .34s cubic-bezier(.3,.8,.25,1) both}
+@keyframes leadK{from{stroke-dashoffset:100}to{stroke-dashoffset:0}}
+.in0 .anc,.in1 .anc{transform-box:fill-box;transform-origin:center;animation:ancK .4s cubic-bezier(.2,.9,.25,1) both}
+@keyframes ancK{0%{transform:rotate(45deg) scale(0)}60%{transform:rotate(45deg) scale(1.5)}100%{transform:rotate(45deg) scale(1)}}
+.ancH{transform-box:fill-box;transform-origin:center;animation:ancH 2.2s ease-out infinite}
+.in0 .uline,.in1 .uline{animation:ulK .34s cubic-bezier(.3,.8,.25,1) .14s both}
+@keyframes ulK{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.in0 .tx,.in1 .tx{animation:txK .4s cubic-bezier(.2,.9,.25,1) .2s both}
+@keyframes txK{from{opacity:0;transform:translateX(var(--dx))}to{opacity:1;transform:none}}
+.edgeP{animation:edgeP 8s linear infinite}.edgeP.pS{animation-duration:11s}.edgeP.pF{animation-duration:5.5s}
+@keyframes edgeP{0%,100%{opacity:.25}3%{opacity:1}22%{opacity:1}28%{opacity:.25}}
+.altB{transition:filter .15s}.altB:hover{filter:brightness(1.3)}
+.tipB{animation:tipB 3s ease-in-out infinite}
+@keyframes tipB{0%,100%{transform:translateY(0);opacity:.75}50%{transform:translateY(-5px);opacity:1}}
+.mk0 .ring,.mk1 .ring{animation:ringK .9s cubic-bezier(.2,.8,.3,1) both}
+.mk0 .ring2,.mk1 .ring2{animation:ringK2 .9s cubic-bezier(.2,.8,.3,1) .08s both}
+.mk0 .dia,.mk1 .dia{animation:diaK 1.4s ease both}
+.mk0{animation:mkA 1.6s ease both}.mk1{animation:mkB 1.6s ease both}
+@keyframes mkA{0%,70%{opacity:1}100%{opacity:0}}@keyframes mkB{0%,70%{opacity:1}100%{opacity:0}}
+@keyframes ringK{from{transform:scale(.2);opacity:1}to{transform:scale(1.25);opacity:0}}
+@keyframes ringK2{from{transform:scale(.3);opacity:1}to{transform:scale(1);opacity:.6}}
+@keyframes diaK{0%{transform:translateY(-14px) rotate(45deg);opacity:0}30%{transform:translateY(0) rotate(45deg);opacity:1}100%{transform:translateY(0) rotate(45deg);opacity:1}}
+.hintT{animation:hintK 3.4s ease-in-out infinite}@keyframes hintK{0%,100%{opacity:.55}50%{opacity:1}}
+.vp{transition:left .6s cubic-bezier(.3,.8,.25,1)}
+.exitL{animation:exK 4s ease-in-out infinite}@keyframes exK{0%,100%{opacity:.8}50%{opacity:1}}
+@keyframes ancH{0%{transform:rotate(45deg) scale(.4);opacity:.8}100%{transform:rotate(45deg) scale(1.3);opacity:0}}
+@media (prefers-reduced-motion: reduce){.mk,.hop,.ar,.pulse,.flick{animation:none !important}}
+</style>
+</helmet>
+<div style="position: relative; width: 1688px; height: 780px; overflow: hidden; background: #0d0c12; font-family: 'Shippori Mincho', serif; color: #f1efe9">
+    <div class="cam {{camCls}}" style="position: absolute; left: 0; top: 0; width: 2340px; height: 780px; transform: translateX({{camX}}px)">
+    <img src="/_blob/6df7aaa8168d63dfd894f0a8a05f71ef" alt="" style="position: absolute; left: 0; top: 0; width: 2340px; height: 780px; display: block">
+    <span class="rimL {{bedA_g}}" aria-hidden="true" style="left: 8px; top: 73px; width: 580px; height: 701px; background: #eef0f4; -webkit-mask-image: url(/_blob/e494fd1d069b6f51685a2ea33db80d6c); mask-image: url(/_blob/e494fd1d069b6f51685a2ea33db80d6c); "></span>
+    <span class="rimL {{bedA_r}}" aria-hidden="true" style="left: 8px; top: 73px; width: 580px; height: 701px; background: #eef0f4; -webkit-mask-image: url(/_blob/5de7f83001ad8f1a564d508a81bb7024); mask-image: url(/_blob/5de7f83001ad8f1a564d508a81bb7024); "></span>
+    <span class="rimL {{bedA_s}}" aria-hidden="true" style="left: 8px; top: 73px; width: 580px; height: 701px; -webkit-mask-image: url(/_blob/5de7f83001ad8f1a564d508a81bb7024); mask-image: url(/_blob/5de7f83001ad8f1a564d508a81bb7024); --cx: 290px; --cy: 350px; animation-delay: {{bedA_d}}"></span>
+    <span class="rimL {{bedA_s}}" aria-hidden="true" style="left: 8px; top: 73px; width: 580px; height: 701px; -webkit-mask-image: url(/_blob/616557a8b5217bd35b44bb77a2fc3190); mask-image: url(/_blob/616557a8b5217bd35b44bb77a2fc3190); --cx: 290px; --cy: 350px; animation-delay: {{bedA_d}}"></span>
+    <span class="rimL {{chestA_g}}" aria-hidden="true" style="left: 64px; top: 616px; width: 438px; height: 178px; background: #eef0f4; -webkit-mask-image: url(/_blob/e6d9e82cdd73cd5fbbe50758137c677e); mask-image: url(/_blob/e6d9e82cdd73cd5fbbe50758137c677e); "></span>
+    <span class="rimL {{chestA_r}}" aria-hidden="true" style="left: 64px; top: 616px; width: 438px; height: 178px; background: #eef0f4; -webkit-mask-image: url(/_blob/66b04d2b5607861cbd0660118e16e221); mask-image: url(/_blob/66b04d2b5607861cbd0660118e16e221); "></span>
+    <span class="rimL {{chestA_s}}" aria-hidden="true" style="left: 64px; top: 616px; width: 438px; height: 178px; -webkit-mask-image: url(/_blob/66b04d2b5607861cbd0660118e16e221); mask-image: url(/_blob/66b04d2b5607861cbd0660118e16e221); --cx: 219px; --cy: 89px; animation-delay: {{chestA_d}}"></span>
+    <span class="rimL {{chestA_s}}" aria-hidden="true" style="left: 64px; top: 616px; width: 438px; height: 178px; -webkit-mask-image: url(/_blob/0a2d8f78b54b9a0ce84c036c3d53263f); mask-image: url(/_blob/0a2d8f78b54b9a0ce84c036c3d53263f); --cx: 219px; --cy: 89px; animation-delay: {{chestA_d}}"></span>
+    <span class="rimL {{shelfA_g}}" aria-hidden="true" style="left: 494px; top: 118px; width: 326px; height: 666px; background: #eef0f4; -webkit-mask-image: url(/_blob/93442d2f582113817753a86de5d9dd21); mask-image: url(/_blob/93442d2f582113817753a86de5d9dd21); "></span>
+    <span class="rimL {{shelfA_r}}" aria-hidden="true" style="left: 494px; top: 118px; width: 326px; height: 666px; background: #eef0f4; -webkit-mask-image: url(/_blob/824de537769494b47ad3f96b1b9f36b7); mask-image: url(/_blob/824de537769494b47ad3f96b1b9f36b7); "></span>
+    <span class="rimL {{shelfA_s}}" aria-hidden="true" style="left: 494px; top: 118px; width: 326px; height: 666px; -webkit-mask-image: url(/_blob/824de537769494b47ad3f96b1b9f36b7); mask-image: url(/_blob/824de537769494b47ad3f96b1b9f36b7); --cx: 163px; --cy: 333px; animation-delay: {{shelfA_d}}"></span>
+    <span class="rimL {{shelfA_s}}" aria-hidden="true" style="left: 494px; top: 118px; width: 326px; height: 666px; -webkit-mask-image: url(/_blob/78c605c731f72954486cffc8f2ad7064); mask-image: url(/_blob/78c605c731f72954486cffc8f2ad7064); --cx: 163px; --cy: 333px; animation-delay: {{shelfA_d}}"></span>
+    <span class="rimL {{bedK_g}}" aria-hidden="true" style="left: 1757px; top: 81px; width: 588px; height: 697px; background: #eef0f4; -webkit-mask-image: url(/_blob/cf94573e0e272d11e258735a58517524); mask-image: url(/_blob/cf94573e0e272d11e258735a58517524); "></span>
+    <span class="rimL {{bedK_r}}" aria-hidden="true" style="left: 1757px; top: 81px; width: 588px; height: 697px; background: #eef0f4; -webkit-mask-image: url(/_blob/515842f1ed54a627a3ec58b47e9495fc); mask-image: url(/_blob/515842f1ed54a627a3ec58b47e9495fc); "></span>
+    <span class="rimL {{bedK_s}}" aria-hidden="true" style="left: 1757px; top: 81px; width: 588px; height: 697px; -webkit-mask-image: url(/_blob/515842f1ed54a627a3ec58b47e9495fc); mask-image: url(/_blob/515842f1ed54a627a3ec58b47e9495fc); --cx: 294px; --cy: 348px; animation-delay: {{bedK_d}}"></span>
+    <span class="rimL {{bedK_s}}" aria-hidden="true" style="left: 1757px; top: 81px; width: 588px; height: 697px; -webkit-mask-image: url(/_blob/37aef35c9ddd591aeaee203e945082b0); mask-image: url(/_blob/37aef35c9ddd591aeaee203e945082b0); --cx: 294px; --cy: 348px; animation-delay: {{bedK_d}}"></span>
+    <span class="rimL {{chestK_g}}" aria-hidden="true" style="left: 1823px; top: 614px; width: 455px; height: 190px; background: #eef0f4; -webkit-mask-image: url(/_blob/ed64f5e53243df5a51be05b46d9b3dd9); mask-image: url(/_blob/ed64f5e53243df5a51be05b46d9b3dd9); "></span>
+    <span class="rimL {{chestK_r}}" aria-hidden="true" style="left: 1823px; top: 614px; width: 455px; height: 190px; background: #eef0f4; -webkit-mask-image: url(/_blob/d83a1d11dd61630a097e2838b4b6832b); mask-image: url(/_blob/d83a1d11dd61630a097e2838b4b6832b); "></span>
+    <span class="rimL {{chestK_s}}" aria-hidden="true" style="left: 1823px; top: 614px; width: 455px; height: 190px; -webkit-mask-image: url(/_blob/d83a1d11dd61630a097e2838b4b6832b); mask-image: url(/_blob/d83a1d11dd61630a097e2838b4b6832b); --cx: 227px; --cy: 95px; animation-delay: {{chestK_d}}"></span>
+    <span class="rimL {{chestK_s}}" aria-hidden="true" style="left: 1823px; top: 614px; width: 455px; height: 190px; -webkit-mask-image: url(/_blob/ef178928c8277ad35e37bcc840dc991d); mask-image: url(/_blob/ef178928c8277ad35e37bcc840dc991d); --cx: 227px; --cy: 95px; animation-delay: {{chestK_d}}"></span>
+    <span class="rimL {{shelfK_g}}" aria-hidden="true" style="left: 1506px; top: 112px; width: 339px; height: 678px; background: #eef0f4; -webkit-mask-image: url(/_blob/3ce9d3db7f876ecb4b2048baf9a88131); mask-image: url(/_blob/3ce9d3db7f876ecb4b2048baf9a88131); "></span>
+    <span class="rimL {{shelfK_r}}" aria-hidden="true" style="left: 1506px; top: 112px; width: 339px; height: 678px; background: #eef0f4; -webkit-mask-image: url(/_blob/97275fa5991ab8efb448160f45611374); mask-image: url(/_blob/97275fa5991ab8efb448160f45611374); "></span>
+    <span class="rimL {{shelfK_s}}" aria-hidden="true" style="left: 1506px; top: 112px; width: 339px; height: 678px; -webkit-mask-image: url(/_blob/97275fa5991ab8efb448160f45611374); mask-image: url(/_blob/97275fa5991ab8efb448160f45611374); --cx: 169px; --cy: 339px; animation-delay: {{shelfK_d}}"></span>
+    <span class="rimL {{shelfK_s}}" aria-hidden="true" style="left: 1506px; top: 112px; width: 339px; height: 678px; -webkit-mask-image: url(/_blob/4bb03a0163e3f6869fc25d92ca4478af); mask-image: url(/_blob/4bb03a0163e3f6869fc25d92ca4478af); --cx: 169px; --cy: 339px; animation-delay: {{shelfK_d}}"></span>
+    <span class="exitS" role="img" aria-label="出口：廊下へ（端まで歩くと移動）" style="position: absolute; left: 0; top: 0; width: 0; height: 0; display: block; pointer-events: none">
+      <span aria-hidden="true" style="position: absolute; left: 2014px; top: 390px; width: 250px; height: 128px; background: radial-gradient(ellipse 50% 50% at 50% 50%, rgba(6,6,10,0.86), rgba(6,6,10,0.62) 50%, rgba(6,6,10,0) 100%); display: block"></span>
+      <svg width="2340" height="780" viewBox="0 0 2340 780" aria-hidden="true" style="position: absolute; left: 0; top: 0; display: block; overflow: visible">
+        <polyline points="2214,484 2232,484 2284,534" fill="none" stroke="rgba(6,6,10,0.55)" stroke-width="3"></polyline><polyline points="2214,484 2232,484 2284,534" fill="none" stroke="rgba(228,231,236,0.9)" stroke-width="1"></polyline>
+        <g transform="translate(2284 548)"><rect class="ancH" x="-11" y="-11" width="22" height="22" fill="none" stroke="#e4e7ec" stroke-width="1" transform="rotate(45)" opacity=".55"></rect><rect x="-5" y="-5" width="10" height="10" fill="#e4e7ec" stroke="rgba(6,6,10,0.7)" stroke-width="1.5" paint-order="stroke" transform="rotate(45)"></rect></g>
+      </svg>
+      <span aria-hidden="true" style="position: absolute; left: 2064px; top: 483.5px; width: 150px; height: 1px; background: linear-gradient(90deg, rgba(228,231,236,0), rgba(228,231,236,0.85)); display: block; box-shadow: 0 1px 0 rgba(6,6,10,.5), 0 -1px 0 rgba(6,6,10,.35)"></span>
+      <span style="position: absolute; left: 2064px; top: 424px; width: 150px; height: 56px; display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-end; gap: 4px; padding: 0 4px; box-sizing: border-box">
+        <span style="display: flex; align-items: center; gap: 7px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e4e7ec" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display: block; flex: none"><path d="M5 21V9a5 5 0 0 1 10 0v12M13 15h8M18 12l3 3-3 3"></path></svg>
+          <span class="en" style="font-size: 12px; font-weight: 600; letter-spacing: 0.36em; color: #e4e7ec; line-height: 1">Exit</span>
+        </span>
+        <span style="font-size: 27px; font-weight: 800; letter-spacing: 0.12em; color: #f6f4ef; white-space: nowrap; line-height: 1.1; text-shadow: 0 1px 8px rgba(0,0,0,.9), 0 0 2px rgba(0,0,0,.9)">廊下へ</span>
+      </span>
+    </span>
+  </div>
+  <sc-for list="{{marks}}" as="m" hint-placeholder-count="2">
+    <span class="mk" aria-hidden="true" style="position: absolute; left: {{m.x}}px; top: {{m.y}}px; width: 0; height: 0; display: block"><span class="mkd" style="position: absolute; left: -4.5px; top: -4.5px; display: block"></span></span>
+  </sc-for>
+  <sc-if value="{{arrowsOn}}" hint-placeholder-val="{{ false }}">
+  <svg width="0" height="0" style="position: absolute"><defs><radialGradient id="arG"><stop offset="0" stop-color="rgba(6,6,10,0.55)"></stop><stop offset="1" stop-color="rgba(6,6,10,0)"></stop></radialGradient></defs></svg>
+  <button class="btn" onClick="{{goL}}" aria-label="左へ歩く" style="position: absolute; left: 23px; top: 333px; width: 96px; height: 120px; padding: 20px 0 0 8px; text-align: left; border: 0; background: none; cursor: pointer; z-index: 5">
+    <span class="ar" style="display: block; width: 80px"><svg width="80" height="80" viewBox="0 0 80 80" aria-hidden="true" style="display: block"><circle cx="40" cy="40" r="35.5" fill="rgba(9,10,13,0.66)" stroke="rgba(214,218,224,0.55)" stroke-width="1"></circle><circle cx="40" cy="40" r="30.5" fill="none" stroke="rgba(214,218,224,0.18)" stroke-width="1"></circle><polyline points="45,26 31,40 45,54" fill="none" stroke="#e4e7ec" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline><rect x="47.5" y="36.5" width="7" height="7" fill="rgba(228,231,236,0.7)" transform="rotate(45 51 40)"></rect></svg></span>
+  </button>
+  <button class="btn" onClick="{{goR}}" aria-label="右へ歩く" style="position: absolute; left: 1559px; top: 333px; width: 96px; height: 120px; padding: 20px 0 0 8px; text-align: left; border: 0; background: none; cursor: pointer; z-index: 5">
+    <span class="arR" style="display: block; width: 80px"><svg width="80" height="80" viewBox="0 0 80 80" aria-hidden="true" style="display: block; transform: scaleX(-1)"><circle cx="40" cy="40" r="35.5" fill="rgba(9,10,13,0.66)" stroke="rgba(214,218,224,0.55)" stroke-width="1"></circle><circle cx="40" cy="40" r="30.5" fill="none" stroke="rgba(214,218,224,0.18)" stroke-width="1"></circle><polyline points="45,26 31,40 45,54" fill="none" stroke="#e4e7ec" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline><rect x="47.5" y="36.5" width="7" height="7" fill="rgba(228,231,236,0.7)" transform="rotate(45 51 40)"></rect></svg></span>
+  </button>
+  </sc-if>
+  <div role="img" aria-label="プロローグ　アルシェとカリマの部屋" style="position: absolute; left: 50%; top: 0; transform: translateX(-50%); z-index: 5; pointer-events: none; display: flex; align-items: center; justify-content: center; gap: 18px; padding: 12px 92px 14px; white-space: nowrap; height: 17px">
+    <span aria-hidden="true" style="position: absolute; inset: 0; z-index: -1; background: rgba(214,218,224,.72); clip-path: polygon(evenodd, 0 0, 100% 0, calc(100% - 44px) 100%, 44px 100%, 0 0, 1.4px 0, 44.6px calc(100% - 1px), calc(100% - 44.6px) calc(100% - 1px), calc(100% - 1.4px) 0)"></span>
+    <span aria-hidden="true" style="position: absolute; inset: 0; z-index: -1; background: rgba(9,10,13,.92); opacity: 0.86; clip-path: polygon(1.4px 0, calc(100% - 1.4px) 0, calc(100% - 44.6px) calc(100% - 1px), 44.6px calc(100% - 1px))"></span>
+    <span aria-hidden="true" style="position: absolute; left: 40px; bottom: -4px; width: 7px; height: 7px; transform: rotate(45deg); background: #e4e7ec; box-shadow: 0 0 8px rgba(214,226,240,.55)"></span>
+    <span aria-hidden="true" style="position: absolute; right: 40px; bottom: -4px; width: 7px; height: 7px; transform: rotate(45deg); background: #e4e7ec; box-shadow: 0 0 8px rgba(214,226,240,.55)"></span>
+    <span class="en" style="font-size: 15px; font-weight: 600; letter-spacing: 0.34em; color: #e4e7ec">Prologue</span>
+    <span style="width: 30px; height: 1px; background: #e4e7ec"></span>
+    <span style="font-size: 20px; font-weight: 700; letter-spacing: 0.14em; color: #f1efe9; text-shadow: 0 1px 8px rgba(0,0,0,0.9)">アルシェとカリマの部屋</span>
+  </div>
+  <sc-if value="{{moreR}}" hint-placeholder-val="{{ true }}">
+    <span class="moreR {{arClsR}}" role="button" aria-label="右へ歩く（長押しで走る）" onPointerDown="{{holdR}}" onPointerUp="{{holdEnd}}" onPointerLeave="{{holdEnd}}" onPointerCancel="{{holdEnd}}" style="touch-action: none; cursor: pointer; position: absolute; left: 1588px; top: 290px; width: 100px; height: 200px; z-index: 4; pointer-events: auto; display: block; background: radial-gradient(ellipse 100% 50% at 100% 50%, rgba(6,6,10,.62), rgba(6,6,10,0) 75%)">
+      <span class="arR" style="position: absolute; left: 0; top: 0; width: 100px; height: 200px; display: block;">
+        <svg width="100" height="200" viewBox="0 0 100 200" style="display: block; overflow: visible; filter: drop-shadow(0 0 1.5px rgba(6,6,10,.9)) drop-shadow(0 0 5px rgba(6,6,10,.6))">
+          <defs><linearGradient id="mlgR" x1="0" x2="1"><stop offset="0" stop-color="#e4e7ec" stop-opacity="0"></stop><stop offset="1" stop-color="#e4e7ec" stop-opacity=".8"></stop></linearGradient></defs>
+          <line x1="4" y1="100" x2="36" y2="100" stroke="url(#mlgR)" stroke-width="1"></line>
+          <rect x="31" y="96" width="8" height="8" fill="rgba(228,231,236,.8)" transform="rotate(45 35 100)"></rect>
+          <polyline points="58,70 86,100 58,130" fill="none" stroke="#eef0f4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>
+          <polyline class="ch2" points="46,82 62,100 46,118" fill="none" stroke="rgba(238,240,244,.5)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></polyline>
+        </svg>
+      </span>
+    </span>
+  </sc-if>
+  <sc-if value="{{moreL}}" hint-placeholder-val="{{ false }}">
+    <span class="moreL {{arClsL}}" role="button" aria-label="左へ歩く（長押しで走る）" onPointerDown="{{holdL}}" onPointerUp="{{holdEnd}}" onPointerLeave="{{holdEnd}}" onPointerCancel="{{holdEnd}}" style="touch-action: none; cursor: pointer; position: absolute; left: 0px; top: 290px; width: 100px; height: 200px; z-index: 4; pointer-events: auto; display: block; background: radial-gradient(ellipse 100% 50% at 0% 50%, rgba(6,6,10,.62), rgba(6,6,10,0) 75%)">
+      <span class="arR" style="position: absolute; left: 0; top: 0; width: 100px; height: 200px; display: block;">
+        <span style="display: block; transform: scaleX(-1)">
+        <svg width="100" height="200" viewBox="0 0 100 200" style="display: block; overflow: visible; filter: drop-shadow(0 0 1.5px rgba(6,6,10,.9)) drop-shadow(0 0 5px rgba(6,6,10,.6))">
+          <defs><linearGradient id="mlgL" x1="0" x2="1"><stop offset="0" stop-color="#e4e7ec" stop-opacity="0"></stop><stop offset="1" stop-color="#e4e7ec" stop-opacity=".8"></stop></linearGradient></defs>
+          <line x1="4" y1="100" x2="36" y2="100" stroke="url(#mlgL)" stroke-width="1"></line>
+          <rect x="31" y="96" width="8" height="8" fill="rgba(228,231,236,.8)" transform="rotate(45 35 100)"></rect>
+          <polyline points="58,70 86,100 58,130" fill="none" stroke="#eef0f4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>
+          <polyline class="ch2" points="46,82 62,100 46,118" fill="none" stroke="rgba(238,240,244,.5)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></polyline>
+        </svg></span>
+      </span>
+    </span>
+  </sc-if>
+  <div class="tapL" onClick="{{tapAt}}" aria-label="行きたい場所をタップ" style="position: absolute; inset: 0; z-index: 3; cursor: pointer"></div>
+  <sc-if value="{{mkOn}}" hint-placeholder-val="{{ false }}">
+    <span class="mk{{mkK}}" aria-hidden="true" style="position: absolute; left: {{mkX}}px; top: {{mkY}}px; width: 0; height: 0; display: block; z-index: 4; pointer-events: none">
+      <span class="ring" style="position: absolute; left: -64px; top: -15px; width: 128px; height: 30px; box-sizing: border-box; border: 1px solid rgba(238,240,244,.85); border-radius: 50%; display: block; box-shadow: 0 0 0 1px rgba(6,6,10,.35)"></span>
+      <span class="ring2" style="position: absolute; left: -34px; top: -8px; width: 68px; height: 16px; box-sizing: border-box; border: 1px solid rgba(238,240,244,.7); border-radius: 50%; display: block"></span>
+      <span class="dia" style="position: absolute; left: -5px; top: -26px; width: 10px; height: 10px; background: #eef0f4; box-shadow: 0 0 0 1.5px rgba(6,6,10,.6), 0 0 10px 2px rgba(214,226,240,.5); transform: rotate(45deg); display: block"></span>
+    </span>
+  </sc-if>
+  <sc-if value="{{hintOn}}" hint-placeholder-val="{{ true }}">
+    <div class="hintT" aria-hidden="true" style="position: absolute; left: 0; width: 1688px; top: 716px; z-index: 4; pointer-events: none; display: flex; justify-content: center; align-items: center; gap: 12px; text-shadow: 0 1px 8px rgba(0,0,0,.9)">
+      <span style="width: 40px; height: 1px; background: linear-gradient(90deg, rgba(228,231,236,0), rgba(228,231,236,.8))"></span>
+      <span style="width: 7px; height: 7px; background: #e4e7ec; transform: rotate(45deg)"></span>
+      <span style="font-size: 18px; font-weight: 600; letter-spacing: 0.14em; color: rgba(241,239,233,.9)">行きたい場所をタップ</span>
+      <span style="width: 7px; height: 7px; background: #e4e7ec; transform: rotate(45deg)"></span>
+      <span style="width: 40px; height: 1px; background: linear-gradient(90deg, rgba(228,231,236,.8), rgba(228,231,236,0))"></span>
+    </div>
+  </sc-if>
+  <sc-for list="{{tipIcons}}" as="t" hint-placeholder-count="4">
+    <span class="tipB" aria-hidden="true" style="pointer-events: none; position: absolute; left: {{t.x}}px; top: {{t.y}}px; width: 0; height: 0; display: block; z-index: 4; animation-delay: {{t.d}}">
+      <span style="position: absolute; left: -15px; top: -15px; width: 30px; height: 30px; box-sizing: border-box; border: 1px solid rgba(228,231,236,.7); background: rgba(9,10,13,.86); box-shadow: 0 0 0 1px rgba(0,0,0,.35), 0 2px 8px rgba(0,0,0,.55); transform: rotate(45deg); display: block"></span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e4e7ec" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="position: absolute; left: -8px; top: -8px; display: block"><path d="M15.5 15.5L20 20M17 11a6 6 0 1 1-12 0 6 6 0 0 1 12 0z"></path></svg>
+    </span>
+  </sc-for>
+  <sc-for list="{{edges}}" as="e" hint-placeholder-count="2">
+    <span class="{{e.cls}}" aria-hidden="true" style="pointer-events: none; position: absolute; left: {{e.x}}px; top: {{e.y}}px; width: 0; height: 0; display: block; z-index: 4; animation-delay: {{e.d}}">
+      <span style="position: absolute; left: -26px; top: -46px; width: 52px; height: 92px; background: radial-gradient(closest-side, rgba(6,6,10,.6), rgba(6,6,10,0)); display: block"></span>
+      <span style="position: absolute; left: -0.5px; top: -40px; width: 1px; height: 80px; background: linear-gradient(180deg, rgba(238,240,244,0), rgba(238,240,244,.9) 50%, rgba(238,240,244,0)); display: block"></span>
+      <svg width="28" height="28" viewBox="-14 -14 28 28" style="position: absolute; left: -14px; top: -14px; display: block; overflow: visible; transform: rotate({{e.rot}}deg)"><rect x="-5.5" y="-5.5" width="11" height="11" fill="#eef0f4" stroke="rgba(6,6,10,.7)" stroke-width="1.5" paint-order="stroke" transform="rotate(45)"></rect><polyline points="-3,-9 5,0 -3,9" fill="none" stroke="rgba(238,240,244,.9)" stroke-width="1.5" transform="translate(-8 0)"></polyline></svg>
+    </span>
+  </sc-for>
+  <sc-if value="{{on}}" hint-placeholder-val="{{ true }}">
+    <svg class="{{anim}}" width="1688" height="780" viewBox="0 0 1688 780" aria-hidden="true" style="position: absolute; left: 0; top: 0; display: block; pointer-events: none; z-index: 6; overflow: visible">
+      <polyline class="lead" points="{{lp}}" fill="none" stroke="rgba(6,6,10,0.55)" stroke-width="3" pathLength="100"></polyline><polyline class="lead" points="{{lp}}" fill="none" stroke="rgba(228,231,236,0.9)" stroke-width="1" pathLength="100"></polyline>
+      <g transform="translate({{ax}} {{ay}})"><rect class="ancH" x="-11" y="-11" width="22" height="22" fill="none" stroke="{{tc}}" stroke-width="1" transform="rotate(45)" opacity=".55"></rect><rect class="anc" x="-5" y="-5" width="10" height="10" fill="{{tc}}" stroke="rgba(6,6,10,0.7)" stroke-width="1.5" paint-order="stroke" transform="rotate(45)"></rect></g>
+    </svg>
+    <sc-if value="{{bare}}" hint-placeholder-val="{{ true }}">
+    <button class="btn {{anim}}" onClick="{{press}}" aria-label="{{label}}" style="position: absolute; left: {{hx}}px; top: {{hy}}px; width: {{pw}}px; height: 60px; padding: 0; border: 0; background: none; cursor: pointer; z-index: 7; transform-origin: {{ox}}px 60px">
+      <span aria-hidden="true" style="position: absolute; left: -50px; top: -34px; width: {{bw}}px; height: {{bh}}px; background: radial-gradient(ellipse 50% 50% at 50% 50%, rgba(6,6,10,0.86), rgba(6,6,10,0.62) 50%, rgba(6,6,10,0) 100%); display: block; pointer-events: none"></span>
+      <span aria-hidden="true" class="uline" style="position: absolute; left: 0; top: 59.5px; width: {{pw}}px; height: 1px; background: {{ulBg}}; transform-origin: {{ulOrg}}; display: block; box-shadow: 0 1px 0 rgba(6,6,10,.5), 0 -1px 0 rgba(6,6,10,.35)"></span>
+      <span class="tx" style="position: absolute; left: 0; right: 0; top: 0; height: 56px; display: flex; flex-direction: column; justify-content: flex-end; align-items: {{al}}; gap: 4px; padding: 0 4px; box-sizing: border-box; --dx: {{dx}}px">
+        <span style="display: flex; align-items: center; gap: 7px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{tc}}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display: block; flex: none"><path d="{{icon}}"></path></svg>
+          <span class="en" style="font-size: 12px; font-weight: 600; letter-spacing: 0.36em; color: {{tc}}; line-height: 1">{{en}}</span>
+        </span>
+        <span style="display: flex; align-items: baseline; gap: 14px; text-shadow: 0 1px 8px rgba(0,0,0,.9), 0 0 2px rgba(0,0,0,.9)">
+          <span style="font-size: 27px; font-weight: 800; letter-spacing: 0.12em; color: #f6f4ef; white-space: nowrap; line-height: 1.1">{{verb}}</span>
+          <sc-if value="{{hasObj}}" hint-placeholder-val="{{ true }}"><span style="font-size: 22px; font-weight: 800; letter-spacing: 0.08em; color: #dcd8cf; white-space: nowrap; line-height: 1.1">{{obj}}</span></sc-if>
+          <sc-if value="{{pc}}" hint-placeholder-val="{{ false }}"><span class="en" style="align-self: center; height: 22px; padding: 0 7px; box-sizing: border-box; border: 1px solid rgba(214,218,224,0.5); display: flex; align-items: center; font-size: 11px; font-weight: 600; letter-spacing: 0.2em; color: #c9c5bc; text-shadow: none">Enter</span></sc-if>
+        </span>
+      </span>
+    </button>
+    <sc-if value="{{hasAlt}}" hint-placeholder-val="{{ false }}">
+      <button class="btn altB {{anim}}" onClick="{{goAlt}}" aria-label="ほかに調べられる物へ切り替え" style="position: absolute; left: {{hx}}px; top: {{altY}}px; width: {{pw}}px; height: 40px; padding: 0 4px; border: 0; background: none; cursor: pointer; z-index: 7; display: flex; align-items: center; justify-content: {{al}}; gap: 8px; text-shadow: 0 1px 6px rgba(0,0,0,.95), 0 0 2px rgba(0,0,0,.9)">
+        <span class="en" style="font-size: 11px; font-weight: 600; letter-spacing: 0.3em; color: rgba(214,218,224,.85)">Also</span>
+        <span style="font-size: 18px; font-weight: 800; letter-spacing: 0.08em; color: rgba(236,232,224,.82)">{{altObj}}</span>
+        <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><polyline points="4,2 9,7 4,12" fill="none" stroke="rgba(236,232,224,.8)" stroke-width="1.4"></polyline></svg>
+      </button>
+    </sc-if>
+    </sc-if>
+    <sc-if value="{{boxed}}" hint-placeholder-val="{{ false }}">
+    <button class="btn {{anim}}" onClick="{{press}}" aria-label="{{label}}" style="position: absolute; left: {{hx}}px; top: {{hy}}px; width: {{pw}}px; height: 60px; padding: 0; border: 0; background: none; cursor: pointer; z-index: 7; transform-origin: {{ox}}px 60px; filter: drop-shadow(0 5px 14px rgba(0,0,0,.5))">
+      <svg width="{{pw}}" height="60" viewBox="0 0 {{pw}} 60" aria-hidden="true" style="position: absolute; left: 0; top: 0; display: block"><polygon points="{{p0}}" fill="rgba(9,10,13,0.8)" stroke="rgba(214,218,224,0.72)" stroke-width="1"></polygon><polygon points="{{p1}}" fill="none" stroke="rgba(214,218,224,0.2)" stroke-width="1"></polygon></svg>
+      <span class="dots" aria-hidden="true" style="position: absolute; left: 6px; top: 6px; right: 6px; bottom: 6px; display: block"></span>
+      <span style="position: absolute; left: 18px; top: 0; height: 60px; right: 18px; display: flex; align-items: center; gap: 12px">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="{{tc}}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display: block; flex: none"><path d="{{icon}}"></path></svg>
+        <span style="font-size: 25px; font-weight: 800; letter-spacing: 0.1em; color: #f3f1ec; white-space: nowrap; line-height: 1">{{verb}}</span>
+        <sc-if value="{{hasObj}}" hint-placeholder-val="{{ true }}"><span aria-hidden="true" style="width: 1px; height: 18px; background: rgba(214,218,224,0.4)"></span><span style="font-size: 21px; font-weight: 800; letter-spacing: 0.08em; color: #d9d5cc; white-space: nowrap; line-height: 1">{{obj}}</span></sc-if>
+        <sc-if value="{{pc}}" hint-placeholder-val="{{ false }}"><span class="en" style="margin-left: 4px; height: 22px; padding: 0 7px; box-sizing: border-box; border: 1px solid rgba(214,218,224,0.45); display: flex; align-items: center; font-size: 11px; font-weight: 600; letter-spacing: 0.2em; color: #b8b5ae">Enter</span></sc-if>
+      </span>
+      <span aria-hidden="true" style="position: absolute; left: {{cdx}}px; top: -4px; width: 7px; height: 7px; background: {{tc}}; transform: rotate(45deg); display: block"></span>
+    </button>
+    </sc-if>
+  </sc-if>
+  <sc-if value="{{leaveOn}}" hint-placeholder-val="{{ false }}">
+    <div class="leave{{leaveK}}" aria-live="polite" style="position: absolute; inset: 0; z-index: 60; background: #050508; display: flex; align-items: center; justify-content: center; pointer-events: auto">
+      <span class="leaveT" style="display: flex; align-items: center; gap: 16px">
+        <span class="en" style="font-size: 14px; font-weight: 600; letter-spacing: 0.34em; color: #e4e7ec">Corridor</span>
+        <span style="width: 30px; height: 1px; background: #e4e7ec"></span>
+        <span style="font-size: 22px; font-weight: 700; letter-spacing: 0.16em; color: #f1efe9">廊下へ</span>
+      </span>
+    </div>
+  </sc-if>
+  <sc-if value="{{msgOn}}" hint-placeholder-val="{{ false }}">
+    <button class="btn" onClick="{{advMsg}}" aria-label="次へ進む" style="position: absolute; left: 0; top: 0; width: 1688px; height: 780px; z-index: 40; padding: 0; border: 0; background: transparent; cursor: pointer"></button>
+    <div class="mbox mbx{{msgK}}" style="position: absolute; left: 0; top: 0; width: 1688px; height: 780px; z-index: 41; pointer-events: none">
+      <svg width="1688" height="780" viewBox="0 0 1688 780" aria-hidden="true" style="position: absolute; left: 0; top: 0; display: block; overflow: visible">
+        <defs>
+          <pattern id="edots" width="16" height="16" patternUnits="userSpaceOnUse"><circle cx="8" cy="8" r="1.1" style="fill: rgba(241,234,217,0.5)"></circle></pattern>
+          <linearGradient id="emg" gradientUnits="userSpaceOnUse" x1="{{mX0}}" y1="0" x2="{{mX1}}" y2="0"><stop offset="0" stop-color="#000"></stop><stop offset="0.45" stop-color="#262626"></stop><stop offset="1" stop-color="#fff"></stop></linearGradient>
+          <mask id="emask" maskUnits="userSpaceOnUse" x="0" y="0" width="1688" height="780"><rect x="0" y="0" width="1688" height="780" fill="url(#emg)"></rect></mask>
+        </defs>
+        <path d="{{mD}}" style="fill: rgba(9,10,13,.92); fill-opacity: 0.86; stroke: rgba(214,218,224,.72); stroke-width: 1; stroke-linejoin: round"></path>
+        <path d="{{mD}}" mask="url(#emask)" style="fill: url(#edots); opacity: {{mDots}}"></path>
+        <path d="{{mHi}}" style="fill: none; stroke: rgba(214,218,224,.22); stroke-width: 1"></path>
+      </svg>
+      <span class="mdia" aria-hidden="true" style="position: absolute; left: {{mTLx}}px; top: {{mTLy}}px"></span>
+      <span class="mdia" aria-hidden="true" style="position: absolute; left: {{mBRx}}px; top: {{mBRy}}px"></span>
+      <sc-if value="{{mHasTab}}" hint-placeholder-val="{{ false }}">
+        <div class="mtab" style="position: absolute; left: {{mTabX}}px; top: {{mTabY}}px; height: 46px; padding: 0 26px; display: flex; align-items: center; background: rgba(9,10,13,.92); border: 1px solid rgba(214,218,224,.72); box-sizing: border-box; clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%)">
+          <span style="font-size: 22px; font-weight: 700; letter-spacing: 0.14em; color: #f3f1ec; white-space: nowrap">{{mName}}</span>
+        </div>
+      </sc-if>
+      <p aria-live="polite" style="position: absolute; left: {{mTxX}}px; top: {{mTxY}}px; width: {{mTxW}}px; margin: 0; font-size: 30px; font-weight: 600; line-height: 50px; letter-spacing: 0.06em; white-space: pre; text-align: {{mAlign}}; color: {{mColor}}; text-shadow: 0 1px 6px rgba(0,0,0,.6)">{{mShown}}</p>
+      <sc-if value="{{mTyping}}" hint-placeholder-val="{{ false }}">
+        <div class="tdots" aria-hidden="true" style="position: absolute; left: {{mNxX}}px; top: {{mNxY}}px; transform: translateX(-100%)"><span></span><span></span><span></span></div>
+      </sc-if>
+      <sc-if value="{{mDone}}" hint-placeholder-val="{{ true }}">
+        <div class="nxh" aria-hidden="true" style="position: absolute; left: {{mNxX}}px; top: {{mNxY}}px; transform: translateX(-100%); display: flex; align-items: center">
+          <span class="pg3" style="display: flex; align-items: center; gap: 10px; height: 20px; padding-right: 4px"><span class="m3"><span class="d3"></span></span><span class="m3"><span class="d3"></span></span><span class="m3"><span class="d3"></span></span></span>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+  <sc-if value="{{toastOn}}" hint-placeholder-val="{{ false }}">
+    <div class="toast" role="status" style="position: absolute; left: 50%; top: 96px; z-index: 45; padding: 12px 30px; background: rgba(9,10,13,0.86); border-top: 1px solid rgba(214,218,224,0.5); border-bottom: 1px solid rgba(214,218,224,0.5); font-size: 18px; font-weight: 600; letter-spacing: 0.12em; color: #f1efe9; white-space: nowrap">{{toastText}}</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"scene": {"editor": "enum", "default": "なし", "options": ["なし", "アルシェのベッド", "アルシェの収納箱", "重なり（収納箱とベッド）", "アルシェの本棚", "カリマの本棚", "カリマのベッド", "カリマの収納箱", "カリマ"]}, "glint": {"editor": "enum", "default": "遠くでもときどき流れる", "options": ["遠くでもときどき流れる", "近いときだけ", "常にうっすら"]}, "camera": {"editor": "enum", "default": "自動", "options": ["自動", "左", "右"]}, "move": {"editor": "enum", "default": "タップで移動", "options": ["タップで移動", "左右の矢印"]}, "tips": {"editor": "enum", "default": "印を出す", "options": ["印を出す", "何も出さない"]}, "got": {"editor": "boolean", "default": false}, "card": {"editor": "enum", "default": "枠なし", "options": ["枠なし", "枠あり"]}, "strength": {"editor": "enum", "default": "控えめ", "options": ["控えめ", "ふつう", "強め"]}, "speed": {"editor": "enum", "default": "ゆっくり", "options": ["ゆっくり", "ふつう", "はやい"]}, "device": {"editor": "enum", "default": "スマホ", "options": ["スマホ", "パソコン"]}, "demo": {"editor": "boolean", "default": false}, "$preview": {"width": 1688, "height": 780}}'>
+var BG = { none: '' };
+var TY = {
+  talk:  { en: 'Talk',  c: '#4fa3a8', g: 'rgba(79,163,168,0.6)' },
+  check: { en: 'Check', c: '#e4e7ec', g: 'rgba(214,226,240,0.55)' },
+  exit:  { en: 'Exit',  c: '#e4e7ec', g: 'rgba(214,226,240,0.55)' }
+};
+var SC = {
+  'なし': { bg: 'none', marks: [] },
+  'アルシェのベッド': { bg: 'none', type: 'check', key: 'bedA', verb: '調べる', obj: 'ベッド', tx: 298, ty: 97, ay: 160, done: 'ベッドを調べた。', marks: [] },
+  'アルシェの収納箱': { bg: 'none', type: 'check', key: 'chestA', verb: '調べる', obj: '収納箱', tx: 283, ty: 640, ay: 664, done: '収納箱を開けた。黒陽の双剣を手に入れた！', marks: [] },
+  'アルシェの本棚': { bg: 'none', type: 'check', key: 'shelfA', verb: '調べる', obj: '本棚', tx: 657, ty: 142, ay: 205, done: '本棚を調べた。', marks: [] },
+  'カリマの本棚': { bg: 'none', type: 'check', key: 'shelfK', verb: '調べる', obj: 'カリマの本棚', tx: 1675, ty: 136, ay: 200, done: 'カリマの本棚を調べた。', marks: [] },
+  'カリマのベッド': { bg: 'none', type: 'check', key: 'bedK', verb: '調べる', obj: 'カリマのベッド', tx: 2051, ty: 105, ay: 168, done: 'カリマのベッドを調べた。', marks: [] },
+  'カリマの収納箱': { bg: 'none', type: 'check', key: 'chestK', verb: '調べる', obj: 'カリマの収納箱', tx: 2050, ty: 638, ay: 662, done: 'カリマの収納箱を調べた。', marks: [] },
+  '重なり（収納箱とベッド）': { bg: 'none', type: 'check', key: 'chestA', verb: '調べる', obj: '収納箱', tx: 283, ty: 640, ay: 664, done: '収納箱を調べた。', marks: [], alt: 'アルシェのベッド', altObj: 'ベッド' },
+  '出口（廊下へ）': { bg: 'none', type: 'exit', key: '', verb: '廊下へ', obj: '', tx: 2284, ty: 560, ay: 548, done: '廊下へ移動する。', marks: [] },
+  'カリマ': { bg: 'none', type: 'talk', key: '', verb: '話す', obj: 'カリマ', tx: 1497, ty: 430, ay: 400, done: 'カリマに話しかけた。', marks: [] }
+};
+var OBJ = {"bedA": [298, 160], "chestA": [283, 664], "shelfA": [657, 205], "bedK": [2051, 168], "chestK": [2050, 662], "shelfK": [1675, 200]};
+var BOX = {"bedA": [32, 97, 532, 653], "chestA": [88, 640, 390, 130], "shelfA": [518, 142, 278, 618], "bedK": [1781, 105, 540, 649], "chestK": [1847, 638, 407, 142], "shelfK": [1530, 136, 291, 630]};
+var NAME = {"bedA": "アルシェのベッド", "chestA": "アルシェの収納箱", "shelfA": "アルシェの本棚", "bedK": "カリマのベッド", "chestK": "カリマの収納箱", "shelfK": "カリマの本棚"};
+OBJ.karima = [1497, 400]; BOX.karima = [1418, 270, 160, 510]; NAME.karima = 'カリマ';
+var DELAY = {"bedA": 0, "chestA": 1.2, "shelfA": 2.4, "bedK": 3.6, "chestK": 4.8, "shelfK": 6.0};
+var MSG = {
+  'アルシェのベッド': { k: 'narr', pages: ['天蓋つきのベッド。\nきちんと整えられている。'] },
+  'アルシェの収納箱': { k: 'narr', pages: ['収納箱を開けた。', '黒陽の双剣を手に入れた！'] },
+  '重なり（収納箱とベッド）': { k: 'narr', pages: ['収納箱を開けた。', '黒陽の双剣を手に入れた！'] },
+  'アルシェの本棚': { k: 'narr', pages: ['本がぎっしりと詰まっている。\n何度も読み返した跡がある。'] },
+  'カリマの本棚': { k: 'narr', pages: ['カリマの本棚。\n背表紙がきれいに揃えられている。'] },
+  'カリマのベッド': { k: 'narr', pages: ['カリマのベッド。\nレースの天蓋がかかっている。'] },
+  'カリマの収納箱': { k: 'narr', pages: ['カリマの収納箱だ。\n勝手に開けるのはやめておこう。'] },
+  'カリマ': { k: 'talk', name: 'カリマ', pages: ['……アルシェ？\nどうかしましたか。'] }
+};
+var MSG_GOT = { k: 'narr', pages: ['収納箱の中は空っぽだ。'] };
+function cham(x0, y0, x1, y1, c, tail) {
+  var d = 'M' + (x0 + c) + ' ' + y0 + ' H' + (x1 - c) + ' L' + x1 + ' ' + (y0 + c);
+  d += ' V' + (y1 - c) + ' L' + (x1 - c) + ' ' + y1;
+  if (tail) { var b = tail.bx, sd = tail.dir;
+    if (sd < 0) d += ' H' + (b + 18) + ' L' + tail.tx + ' ' + tail.ty + ' L' + (b - 6) + ' ' + y1;
+    else d += ' H' + (b + 6) + ' L' + tail.tx + ' ' + tail.ty + ' L' + (b - 18) + ' ' + y1; }
+  d += ' H' + (x0 + c) + ' L' + x0 + ' ' + (y1 - c) + ' V' + (y0 + c) + ' Z';
+  return d;
+}
+var ORDER = ['なし', 'アルシェのベッド', '重なり（収納箱とベッド）', 'アルシェの本棚', 'カリマ', 'カリマの本棚', 'カリマのベッド', 'カリマの収納箱', 'なし'];
+var ICON = {
+  talk: 'M4 5h16v10H10l-4 4v-4H4z',
+  check: 'M15.5 15.5L20 20M17 11a6 6 0 1 1-12 0 6 6 0 0 1 12 0z',
+  exit: 'M5 21V9a5 5 0 0 1 10 0v12M13 15h8M18 12l3 3-3 3'
+};
+function oct(w, h, c, i) { i = i || 0; var a = i + .5, b = w - i - .5, t = i + .5, d = h - i - .5; return [a + c, t, b - c, t, b, t + c, b, d - c, b - c, d, a + c, d, a, d - c, a, t + c].join(' '); }
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this._ps = props.scene ?? 'なし';
+    this.state = { cur: this._ps, phase: 'in', k: 0, toast: null, tn: 0, di: 0 };
+  }
+  componentDidMount() { this.demo(); }
+  componentWillUnmount() { clearInterval(this.ty); clearTimeout(this.tl); clearTimeout(this.tl2); cancelAnimationFrame(this.raf); clearTimeout(this.tg); clearTimeout(this.tt); clearTimeout(this.tp); clearInterval(this.ti); }
+  demo() {
+    var s = this; clearInterval(this.ti);
+    if (this.props.demo ?? false) this.ti = setInterval(function () { var i = (s.state.di + 1) % ORDER.length; s.setState({ di: i }); s.go(ORDER[i]); }, 2400);
+  }
+  go(n) {
+    var s = this; if (n === this.state.cur && this.state.phase !== 'gone') return;
+    clearTimeout(this.tg);
+    if (!SC[this.state.cur].type) { this.setState({ cur: n, phase: 'in', k: this.state.k + 1 }); return; }
+    this.setState({ phase: 'out' });
+    this.tg = setTimeout(function () { s.setState({ cur: n, phase: 'in', k: s.state.k + 1 }); }, 170);
+  }
+  press() {
+    var s = this, d = SC[this.state.cur]; if (!d.type || this.state.phase !== 'in') return;
+    this.setState({ phase: 'press' }); if (d.key === 'chestA' && d.type === 'check') this.setState({ gotA: true });
+    clearTimeout(this.tp); clearTimeout(this.tt);
+    var m = MSG[this.state.cur] || { k: 'narr', pages: [d.done] };
+    if (d.key === 'chestA' && d.type === 'check' && this._gotBefore) m = MSG_GOT;
+    this._gotBefore = this._gotBefore || (d.key === 'chestA' && d.type === 'check');
+    this.tp = setTimeout(function () { s.mOpen = Date.now(); s.setState({ phase: 'gone', msg: m, mp: 0, mn: 0, mk2: (s.state.mk2 || 0) + 1 }); s.typeOn(); }, 260);
+  }
+  typeOn() {
+    var s = this; clearInterval(this.ty);
+    this.ty = setInterval(function () { var m = s.state.msg; if (!m) { clearInterval(s.ty); return; } var t = m.pages[s.state.mp]; if (s.state.mn >= t.length) { clearInterval(s.ty); s.mFull = Date.now(); return; } s.setState({ mn: s.state.mn + 1 }); }, 45);
+  }
+  advMsg() {
+    var m = this.state.msg; if (!m) return; var t = m.pages[this.state.mp], now = Date.now();
+    if (now - (this.mOpen || 0) < 400) return;
+    if (this.state.mn < t.length) { clearInterval(this.ty); this.mFull = now; this.setState({ mn: t.length }); return; }
+    if (now - (this.mFull || 0) < 350) return;
+    if (this.state.mp + 1 < m.pages.length) { this.mOpen = now; this.setState({ mp: this.state.mp + 1, mn: 0, mk2: (this.state.mk2 || 0) + 1 }); this.typeOn(); return; }
+    clearInterval(this.ty); this.setState({ msg: null, phase: 'in', k: this.state.k + 1, cur: 'なし' });
+  }
+  renderVals() {
+    var s = this, sc = this.props.scene ?? 'なし';
+    if (sc !== this._ps) { this._ps = sc; setTimeout(function () { s.setState({ cx: null, camR: null }); s.go(sc); }, 0); }
+    if ((this.props.demo ?? false) !== this._pd) { this._pd = this.props.demo ?? false; setTimeout(function () { s.demo(); }, 0); }
+    var d = SC[this.state.cur], t = d.type ? TY[d.type] : null, ph = this.state.phase;
+    var pc = (this.props.device ?? 'スマホ') === 'パソコン';
+    var anim = ph === 'out' ? 'out' : ph === 'press' ? 'press' : ph === 'gone' ? 'gone' : ('in' + (this.state.k % 2));
+    var marks = d.marks.map(function (m) { return { x: m[0], y: m[1] }; });
+    var v = {
+      bg: BG[d.bg], marks: marks, on: !!t, anim: anim, pc: pc && !!t,
+      tc: t ? t.c : '#e4e7ec', tg: t ? t.g : 'rgba(0,0,0,0)', en: t ? t.en : '', verb: d.verb || '', obj: d.obj || '', hasObj: !!d.obj,
+      icon: t ? ICON[d.type] : '', press: function () { s.press(); },
+      goL: function () { s.toast2('◀ 左へ歩く（長押しで歩き続ける）'); }, goR: function () { s.toast2('右へ歩く ▶（長押しで歩き続ける）'); },
+      toastOn: !!this.state.toast, toastText: this.state.toast || '', label: t ? (d.verb + (d.obj ? '：' + d.obj : '')) : ''
+    };
+    return this.layout(v, d, pc);
+  }
+  toast2(x) { var s = this; clearTimeout(this.tt); this.setState({ toast: x, tn: this.state.tn + 1 }); this.tt = setTimeout(function () { s.setState({ toast: null }); }, 1600); }
+  holdStart(dir, e) {
+    if (this.state.msg) return;
+    var s = this; if (e && e.preventDefault) e.preventDefault();
+    cancelAnimationFrame(this.raf); this.hd = { dir: dir, t0: performance.now(), last: performance.now(), run: false };
+    this.setState({ hint: false, holdDir: dir });
+    var step = function (now) {
+      var h = s.hd; if (!h) return;
+      if (!h.run && now - h.t0 > 180) { h.run = true; h.last = now; if (SC[s.state.cur].type) s.go('なし'); }
+      if (h.run) {
+        var cx = s.state.cx != null ? s.state.cx : (s.lastCam || 0);
+        cx = Math.max(-652, Math.min(0, cx - h.dir * 900 * (now - h.last) / 1000)); h.last = now;
+        if (h.dir > 0 && cx <= -652) { h.endT = h.endT || now; if (now - h.endT > 350) { s.exitNow(); return; } } else h.endT = 0;
+        s.setState({ cx: cx, camR: cx < -326, mk: null });
+      }
+      s.raf = requestAnimationFrame(step);
+    };
+    this.raf = requestAnimationFrame(step);
+  }
+  exitNow() {
+    var s = this; if (this.state.leaving) return;
+    clearTimeout(this.tl); cancelAnimationFrame(this.raf); this.hd = null;
+    if (SC[this.state.cur].type) this.go('なし');
+    this.setState({ hint: false, cx: -652, camR: true, holdDir: 0, mk: { x: 1672, y: 752, n: (this.state.mk ? this.state.mk.n + 1 : 1) } });
+    this.tl = setTimeout(function () { s.setState({ leaving: true, ln: (s.state.ln || 0) + 1 }); }, 450);
+    this.tl2 = setTimeout(function () { s.setState({ leaving: false, mk: null }); }, 450 + 2300);
+  }
+  holdEnd() {
+    var h = this.hd; if (!h) return; this.hd = null; cancelAnimationFrame(this.raf);
+    if (!h.run) {
+      var cx = this.lastCam || 0;
+      if (h.dir > 0 && cx <= -652) { this.setState({ holdDir: 0 }); this.exitNow(); return; }
+      var to = h.dir > 0 ? -652 : 0;
+      this.setState({ holdDir: 0, cx: to, camR: to < 0, mk: { x: h.dir > 0 ? 1600 : 88, y: 752, n: (this.state.mk ? this.state.mk.n + 1 : 1) } });
+      this.go('なし'); return;
+    }
+    this.setState({ holdDir: 0 });
+  }
+  tapAt(e) {
+    if (this.state.msg) return;
+    var el = (e && e.target && e.target.closest) ? e.target.closest('.tapL') : null; if (!el) el = e.currentTarget; if (!el) return;
+    var r = el.getBoundingClientRect(), k = r.width / 1688;
+    var cx = e.clientX != null ? e.clientX : (e.nativeEvent ? e.nativeEvent.clientX : 0), cy = e.clientY != null ? e.clientY : (e.nativeEvent ? e.nativeEvent.clientY : 0);
+    var x = (cx - r.left) / k, y = (cy - r.top) / k;
+    var camX = this.lastCam || 0, wx = x - camX, hit = '', best = 1e9;
+    if (wx > 2290 || (wx >= 2030 && wx <= 2340 && y >= 380 && y <= 590)) { this.exitNow(); return; }
+    Object.keys(BOX).forEach(function (n) { var b = BOX[n]; if (wx >= b[0] && wx <= b[0] + b[2] && y >= b[1] && y <= b[1] + b[3]) { var a = b[2] * b[3]; if (a < best) { best = a; hit = n; } } });
+    if (hit && NAME[hit] === this.state.cur && this.state.phase === 'in') { this.press(); return; }
+    if (hit === 'chestA' && this.state.cur === '重なり（収納箱とベッド）' && this.state.phase === 'in') { this.press(); return; }
+    var tx = hit ? OBJ[hit][0] : wx;
+    if (!hit) Object.keys(OBJ).forEach(function (n) { if (Math.abs(OBJ[n][0] - wx) < 110 && !hit) hit = n; });
+    var camR = tx > 1350 ? true : (tx < 1000 ? false : this.state.camR);
+    var mx = Math.max(60, Math.min(2280, tx)) + (camR ? -652 : 0); mx = Math.max(40, Math.min(1648, mx));
+    this.setState({ cx: camR ? -652 : 0, camR: camR, mk: { x: Math.round(mx), y: 752, n: (this.state.mk ? this.state.mk.n + 1 : 1) }, hint: false });
+    this.go(hit ? NAME[hit] : 'なし');
+  }
+  layout(v, d, pc) {
+    var s2 = this;
+    var mk = this.state.mk; v.mkOn = !!mk; v.mkX = mk ? mk.x : 0; v.mkY = mk ? mk.y : 0; v.mkK = mk ? (mk.n % 2) : 0;
+    v.hintOn = this.state.hint !== false && (this.props.move ?? 'タップで移動') === 'タップで移動';
+    v.arrowsOn = (this.props.move ?? 'タップで移動') === '左右の矢印';
+    v.tapAt = function (e) { s2.tapAt(e); };
+    var mode = this.props.glint ?? '遠くでもときどき流れる';
+    var near = (this.state.phase === 'in' || this.state.phase === 'press') ? d.key : '';
+    var camSel = this.props.camera ?? '自動';
+    var right = camSel === '右' || (camSel === '自動' && (this.state.camR != null ? this.state.camR : ((d.key && OBJ[d.key][0] > 1400) || d.type === 'exit')));
+    var camX = right ? -652 : 0; if (camSel === '自動' && this.state.cx != null) camX = Math.round(this.state.cx); v.camX = camX; this.lastCam = camX;
+    var hd = this.state.holdDir || 0; v.camCls = this.hd && this.hd.run ? 'hold' : ''; v.arClsR = hd > 0 ? 'dash' : ''; v.arClsL = hd < 0 ? 'dash' : '';
+    v.holdR = function (e) { s2.holdStart(1, e); }; v.holdL = function (e) { s2.holdStart(-1, e); }; v.holdEnd = function () { s2.holdEnd(); }; v.exO = (d.type === 'exit' && this.state.phase !== 'gone') ? '0' : '1'; v.leaveOn = !!this.state.leaving; v.leaveK = (this.state.ln || 0) % 2;
+    var M = this.state.msg; v.msgOn = !!M; v.advMsg = function () { s2.advMsg(); }; v.msgK = (this.state.mk2 || 0) % 2;
+    if (M) {
+      var pg = M.pages[this.state.mp], lines = pg.split('\n').length, maxR = 0;
+      M.pages.forEach(function (q) { q.split('\n').forEach(function (r) { maxR = Math.max(maxR, r.length); }); });
+      var isN = M.k === 'narr', txW = Math.round(maxR * 31.8) + 10, mw = Math.max(540, txW + 100), mh = 30 + lines * 50 + 34;
+      var x0, x1, y0, y1, tail = null, hx = Math.round(1497 + camX);
+      if (isN) { x0 = Math.round(844 - mw / 2); x1 = x0 + mw; y0 = 98; y1 = y0 + mh; }
+      else {
+        if (hx > 844) { x1 = Math.min(1648, hx + 70); x0 = x1 - mw; } else { x0 = Math.max(40, hx - 70); x1 = x0 + mw; }
+        y1 = 292; y0 = y1 - mh; if (y0 < 98) { y0 = 98; y1 = y0 + mh; }
+        var dir = hx > 844 ? 1 : -1, bx = Math.max(x0 + 70, Math.min(x1 - 70, hx - dir * 20));
+        tail = { bx: bx, dir: dir, tx: bx + dir * 34, ty: y1 + 40 };
+      }
+      var mcx = Math.round((x0 + x1) / 2), tabW = 52 + (M.name || '').length * 26;
+      Object.assign(v, { mD: cham(x0, y0, x1, y1, 14, tail), mHi: cham(x0 + 6, y0 + 6, x1 - 6, y1 - 6, 10, null), mDots: isN ? 0 : 0.3, mX0: x0, mX1: x1,
+        mTLx: x0 + 10, mTLy: y0 - 4, mBRx: x1 - 17, mBRy: y1 - 4,
+        mHasTab: !isN, mName: M.name || '', mTabX: hx > 844 ? x1 - 34 - tabW : x0 + 34, mTabY: y0 - 30,
+        mTxX: isN ? x0 + 30 : mcx - txW / 2, mTxY: y0 + (isN ? 30 : 34), mTxW: isN ? mw - 60 : txW, mAlign: isN ? 'center' : 'left', mColor: isN ? '#d6d2c9' : '#f1efe9',
+        mShown: pg.slice(0, this.state.mn), mDone: this.state.mn >= pg.length, mTyping: this.state.mn < pg.length, mNxX: x1 - 30, mNxY: y1 - 32 });
+    } else Object.assign(v, { mD: '', mHi: '', mDots: 0, mX0: 0, mX1: 1, mTLx: 0, mTLy: 0, mBRx: 0, mBRy: 0, mHasTab: false, mName: '', mTabX: 0, mTabY: 0, mTxX: 0, mTxY: 0, mTxW: 0, mAlign: 'left', mColor: '#fff', mShown: '', mDone: false, mTyping: false, mNxX: 0, mNxY: 0 });
+
+    v.vpX = Math.round(-camX / 2340 * 300); v.moreR = camX > -640; v.moreL = camX < 0 || hd < 0;
+    v.itX = Math.round(283 / 2340 * 300); v.itO = (this.props.got ?? false) ? '0' : '1';
+    var st = { '控えめ': 'sL', 'ふつう': 'sM', '強め': 'sH' }[this.props.strength ?? '控えめ'];
+    var sp = { 'ゆっくり': 'pS', 'ふつう': 'pM', 'はやい': 'pF' }[this.props.speed ?? 'ゆっくり'];
+    var got = (this.props.got ?? false) || !!this.state.gotA;
+    var item = function (k) { return k === 'chestA' && !got; };
+    var tipsOn = (this.props.tips ?? '印を出す') === '印を出す';
+    var tipIcons = [];
+    Object.keys(DELAY).forEach(function (k) {
+      var on = k === near, it = item(k);
+      v[k + '_g'] = on ? 'halo ' + st : 'hide';
+      v[k + '_r'] = on ? 'hold ' + st : (it ? 'soft' : 'hide');
+      v[k + '_s'] = on ? 'run2 loop ' + st + ' ' + sp : (it ? 'run glint ' + st + ' ' + sp : 'hide');
+      v[k + '_d'] = on ? '0s' : (DELAY[k] + 's');
+      var sx = OBJ[k][0] + camX;
+      if (!it && !on && tipsOn && sx > 40 && sx < 1648) tipIcons.push({ x: sx, y: OBJ[k][1], d: (DELAY[k] * 0.3) + 's' });
+    });
+    v.tipIcons = tipIcons;
+    var edges = [];
+    Object.keys(OBJ).forEach(function (k) {
+      if (k === near || !item(k)) return;
+      var sx = OBJ[k][0] + camX;
+      if (sx < 30 || sx > 1658) edges.push({ x: sx < 30 ? 20 : 1668, y: Math.min(Math.max(OBJ[k][1] + 40, 120), 700), rot: sx < 30 ? 180 : 0, d: DELAY[k] + 's', cls: mode === '近いときだけ' ? 'hide' : 'edgeP ' + sp });
+    });
+    v.edges = edges.filter(function (e, i) { return !edges.some(function (f, j) { return j < i && f.x === e.x && Math.abs(f.y - e.y) < 70; }); });
+    var alt = d.alt && this.state.phase !== 'gone' ? d.alt : '';
+    v.hasAlt = !!alt; v.altObj = d.altObj || ''; v.goAlt = function () { s2.go(alt); };
+    if (!v.on) return Object.assign(v, { hx: 0, hy: 0, pw: 0, p0: '', p1: '', lp: '', ax: 0, ay: 0, ox: 0, cdx: 0, bare: false, boxed: false, hasAlt: false });
+    var ax = Math.round(d.tx + camX), ay = Math.round(d.ay || d.ty);
+    var vw = d.verb.length * 27.5, ow = d.obj ? 1 + 24 + d.obj.length * 22.7 : 0;
+    var bare = (this.props.card ?? '枠なし') === '枠なし';
+    var w = bare ? Math.round(Math.max(vw + ow + (pc ? 62 : 0) + 8, 150)) : Math.round(18 + 22 + 12 + vw + ow + (pc ? 62 : 0) + 18), h = 60;
+    var side = ax < 844 ? 1 : -1;
+    if (side > 0 && ax + 70 + w > 1664) side = -1;
+    if (side < 0 && ax - 70 - w < 24) side = 1;
+    if (d.side) side = d.side;
+    var left = side < 0 ? ax - 70 - w : ax + 70;
+    left = Math.min(Math.max(left, 24), 1664 - w);
+    var top = Math.max(ay - 64 - h, 16);
+    var cx = side < 0 ? left + w : left, cy = top + h;
+    var bx = side < 0 ? cx - 22 : cx + 22;
+    var lp = bare ? (cx + ',' + cy + ' ' + (side < 0 ? cx + 18 : cx - 18) + ',' + cy + ' ' + ax + ',' + (ay - 14)) : (bx + ',' + cy + ' ' + (side < 0 ? cx + 18 : cx - 18) + ',' + cy + ' ' + ax + ',' + (ay - 14));
+    var c = d.type === 'talk' ? '79,163,168' : '228,231,236';
+    v.altY = Math.round(top + h + 4);
+    v.bh = d.alt ? 172 : 128;
+    return Object.assign(v, { bare: bare, boxed: !bare, bw: w + 100, al: side < 0 ? 'flex-end' : 'flex-start', dx: side < 0 ? 10 : -10,
+      ulBg: side < 0 ? 'linear-gradient(90deg, rgba(' + c + ',0), rgba(' + c + ',0.85))' : 'linear-gradient(90deg, rgba(' + c + ',0.85), rgba(' + c + ',0))', ulOrg: side < 0 ? 'right' : 'left',
+      pw: w, hx: Math.round(left), hy: Math.round(top), p0: oct(w, h, 10, 0), p1: oct(w, h, 7, 5), lp: lp, ax: ax, ay: ay, ox: side < 0 ? w : 0, cdx: side < 0 ? w - 17 : 10 });
+  }
+}
+</script>
+</body>
+</html>
