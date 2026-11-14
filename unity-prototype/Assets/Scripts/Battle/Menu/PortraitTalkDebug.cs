@@ -18,7 +18,8 @@ namespace Srpg.Battle.Menu
         // 立ち絵のある人（DialogueView で絵が見つからない人は、選んでも舞台に立たない）
         private static readonly string[] Cast = { "アルシェ", "カリマ", "キャリー", "ギュンター", "ヘンリー", "アルバス" };
 
-        private bool four;
+        private int mode = 2;   // 1 1人（左）・-1 1人（右）・2 2人・4 4人
+        private bool four => mode == 4;
         private readonly int[] pick = { 0, 2, 1, 3 };   // 2人: [左, 右]。4人: [左の外, 右の外, 左の内, 右の内]
         private RectTransform panel, slotsRoot;
         private Font font, fontEn;
@@ -78,9 +79,11 @@ namespace Srpg.Battle.Menu
             Label(area, "DEBUG", 150f, 40f, 200f, 24f, 15, new Color(0.89f, 0.69f, 0.29f), fontEn);
             Label(area, "立ち絵の並びテスト（開発用）", 150f, 64f, 900f, 48f, 34, new Color(0.98f, 0.96f, 0.91f), font);
             Label(area, "並びと人を選んで「会話を流す」。会話の中で立ち絵を5回たたくと調整パネル（ほかの人も並んだまま）。終わるとこの画面に戻ります。", 150f, 116f, 1400f, 26f, 16, new Color(0.65f, 0.62f, 0.56f), font);
-            Button(area, "2人で", 150f, 170f, 150f, () => { four = false; Refresh(); });
-            Button(area, "4人で", 316f, 170f, 150f, () => { four = true; Refresh(); });
-            modeLabel = Label(area, "", 490f, 170f, 600f, 48f, 20, new Color(0.89f, 0.69f, 0.29f), font);
+            Button(area, "1人（左）", 150f, 170f, 150f, () => { mode = 1; Refresh(); });
+            Button(area, "1人（右）", 316f, 170f, 150f, () => { mode = -1; Refresh(); });
+            Button(area, "2人で", 482f, 170f, 150f, () => { mode = 2; Refresh(); });
+            Button(area, "4人で", 648f, 170f, 150f, () => { mode = 4; Refresh(); });
+            modeLabel = Label(area, "", 820f, 170f, 700f, 48f, 20, new Color(0.89f, 0.69f, 0.29f), font);
             slotsRoot = Node("Slots", area);
             slotsRoot.anchorMin = slotsRoot.anchorMax = slotsRoot.pivot = new Vector2(0f, 1f);
             slotsRoot.sizeDelta = Vector2.zero;
@@ -89,16 +92,16 @@ namespace Srpg.Battle.Menu
             Refresh();
         }
 
-        private string[] SlotTitles => four ? new[] { "左の外", "右の外", "左の内", "右の内" } : new[] { "左", "右" };
+        private string[] SlotTitles => mode == 4 ? new[] { "左の外", "右の外", "左の内", "右の内" } : mode == 2 ? new[] { "左", "右" } : new[] { mode > 0 ? "左に立つ人" : "右に立つ人" };
 
         private void Refresh()
         {
-            modeLabel.text = four ? "4人の会話（左右に2人ずつ）" : "2人の会話（左右に1人ずつ・2人用の位置）";
+            modeLabel.text = mode == 4 ? "4人の会話（左右に2人ずつ）" : mode == 2 ? "2人の会話（左右に1人ずつ・2人用の位置）" : "1人の会話（2人用の位置）";
             for (int i = slotsRoot.childCount - 1; i >= 0; i--) Destroy(slotsRoot.GetChild(i).gameObject);
             slotNames.Clear();
             var titles = SlotTitles;
             // 画面の並び（左の外・左の内・右の内・右の外）で見せる
-            int[] order = four ? new[] { 0, 2, 3, 1 } : new[] { 0, 1 };
+            int[] order = mode == 4 ? new[] { 0, 2, 3, 1 } : mode == 2 ? new[] { 0, 1 } : new[] { 0 };
             for (int k = 0; k < order.Length; k++)
             {
                 int s = order[k];
@@ -124,7 +127,7 @@ namespace Srpg.Battle.Menu
         {
             var dialogue = FindFirstObjectByType<DialogueView>();
             if (dialogue == null) return;
-            int n = four ? 4 : 2;
+            int n = mode == 4 ? 4 : mode == 2 ? 2 : 1;
             var who = new List<string>();
             var left = new HashSet<string>();
             for (int s = 0; s < n; s++)
@@ -132,7 +135,7 @@ namespace Srpg.Battle.Menu
                 string c = Cast[pick[s]];
                 if (who.Contains(c)) continue;
                 who.Add(c);
-                if (s % 2 == 0) left.Add(c);   // 0・2 が左
+                if (mode == 1 || (mode >= 2 && s % 2 == 0)) left.Add(c);   // 0・2 が左。1人（右）は右
             }
             DialogueCast.DebugLeft = left;   // 名前に関係なく、選んだ枠の側に立てる
             var lines = new List<ScenarioLine>();

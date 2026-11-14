@@ -562,7 +562,9 @@ namespace Srpg.Battle
                 actors.Remove(gone);
             }
             // 左右に1人ずつ（立ち絵のある人）のときは、支援会話の「2人用の位置」に立つ（外側の位置だと遠すぎる。原作者 2026-11-13 案A）
-            pairStage = !SupportMode && stage.left.Count(HasDrawn) == 1 && stage.right.Count(HasDrawn) == 1;
+            // 1人だけのときも同じ2人用の位置（原作者 2026-11-14「1人の時もなるべく二人会話の時と同じ位置に」）
+            int nl = stage.left.Count(HasDrawn), nr = stage.right.Count(HasDrawn);
+            pairStage = !SupportMode && nl <= 1 && nr <= 1 && nl + nr >= 1;
             PlaceSide(stage.left, false, line);
             PlaceSide(stage.right, true, line);
         }
