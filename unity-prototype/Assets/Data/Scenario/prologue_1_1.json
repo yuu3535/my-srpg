@@ -1,10 +1,10 @@
 {
  "id": "prologue_1_1",
- "source": "シナリオ集/シナリオブラッシュアップ/第1章プロローグ｜シナリオ執筆用.xlsx / シナリオプロローグ1-1",
+ "source": "シナリオ集/シナリオブラッシュアップ/第1章プロローグ｜シナリオ執筆用.xlsx / シナリオプロローグ1-1 (1)",
  "blocks": [
   {
    "id": "prologue_1_1.b01",
-   "part": "battle",
+   "part": "story",
    "scene": "自室・起床",
    "label": "場面説明",
    "location": "アルシェ自室",
@@ -25,10 +25,10 @@
    ]
   },
   {
-   "id": "prologue_1_1.b02",
+   "id": "prologue_1_1.b01_r03",
    "part": "story",
    "scene": "自室・起床",
-   "label": "",
+   "label": "場面説明",
    "location": "アルシェ自室",
    "process": "",
    "note": "",
@@ -59,7 +59,7 @@
      "type": "phone",
      "speaker": "携帯端末",
      "expression": "",
-     "text": "『寝坊助のアルシェへ\nもう訓練場にいるから\n早く来て。\n先日父上からいただいた双剣を持ってくるのを\n忘れずに！ギュンターに見せてあげるからね！』",
+     "text": "『寝坊助のアルシェへ\nもう訓練場にいるから早く来て。\n先日父上からいただいた双剣を持ってくるのを\n忘れずに！ギュンターに見せてあげるからね！』",
      "note": "カリマからのメッセージ、AM6時ごろに届いている",
      "process": "",
      "item": ""
@@ -90,19 +90,19 @@
      "speaker": "",
      "expression": "",
      "text": "",
-     "note": "携帯端末からメニュー画面のチュートリアル。\nタスク、セーブ、アイテム、ステータス確認などができる。セーブとタスクの確認が出来たら端末を閉じて部屋の中を探索。剣を見つける。",
+     "note": "携帯端末からメニュー画面のチュートリアル。\nタスク、セーブ、アイテム、ステータス確認などができる。セーブとタスクの確認が出来たら端末を閉じて部屋の中を探索。剣を見つける。\n本日のタスクには「ギュンターとの演習　訓練場」",
      "process": "",
      "item": ""
     }
    ]
   },
   {
-   "id": "prologue_1_1.b02_r09",
+   "id": "prologue_1_1.b01_r09",
    "part": "story",
    "scene": "自室・起床",
-   "label": "",
+   "label": "場面説明",
    "location": "アルシェ自室",
-   "process": "",
+   "process": "「黒陽の双剣」をアイテムに追加。訓練場へ向かう前の必須取得物として扱う。",
    "note": "「黒陽の双剣」を見つけてアイテムに入れた。",
    "row": 9,
    "lines": [
@@ -111,15 +111,15 @@
      "type": "line",
      "speaker": "アルシェ",
      "expression": "",
-     "text": "あった！折角だから皆にもみせてやろうかな",
+     "text": "あった！\n折角だから皆にもみせてやろうかな",
      "note": "「黒陽の双剣」を見つけてアイテムに入れた。",
-     "process": "",
+     "process": "「黒陽の双剣」をアイテムに追加。訓練場へ向かう前の必須取得物として扱う。",
      "item": "黒陽の双剣"
     }
    ]
   },
   {
-   "id": "prologue_1_1.b03",
+   "id": "prologue_1_1.b02",
    "part": "sidetrack",
    "scene": "自室・任意探索",
    "label": "カリマのベッド周り。",
@@ -141,10 +141,10 @@
    ]
   },
   {
-   "id": "prologue_1_1.b04",
+   "id": "prologue_1_1.b03",
    "part": "sidetrack",
    "scene": "自室・任意探索",
-   "label": "アルシェの本棚周り",
+   "label": "アルシェのベッド周り",
    "location": "アルシェ自室",
    "process": "",
    "note": "",
@@ -155,13 +155,23 @@
      "type": "narration",
      "speaker": "",
      "expression": "",
-     "text": "散らかったベッドの下には、昨日折曲がった漫画が落ちていた。\nどうやら昨日読みながら眠ってしまったみたい。",
+     "text": "散らかったベッドの下には、\n昨日折れ曲がった漫画が落ちていた。",
      "note": "",
      "process": "",
      "item": ""
     },
     {
      "row": 12,
+     "type": "narration",
+     "speaker": "",
+     "expression": "",
+     "text": "どうやら昨日読みながら\n眠ってしまったみたい。",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 13,
      "type": "line",
      "speaker": "アルシェ",
      "expression": "",
@@ -173,17 +183,17 @@
    ]
   },
   {
-   "id": "prologue_1_1.b05",
+   "id": "prologue_1_1.b04",
    "part": "story",
    "scene": "魔王城・廊下",
    "label": "場面説明",
    "location": "オルクス城廊下",
    "process": "探索移動チュートリアル開始。目的地は訓練場。",
    "note": "部屋を出ると、普段通りのオルクス魔王城。従者たちが働いている。魔王城だがアルシェにとっては完全に「実家」。",
-   "row": 13,
+   "row": 14,
    "lines": [
     {
-     "row": 13,
+     "row": 14,
      "type": "memo",
      "speaker": "",
      "expression": "",
@@ -195,17 +205,17 @@
    ]
   },
   {
-   "id": "prologue_1_1.b06",
+   "id": "prologue_1_1.b05",
    "part": "story",
-   "scene": "魔王城・廊下",
+   "scene": "廊下・キャリー",
    "label": "キャリーとの挨拶",
    "location": "オルクス城廊下",
    "process": "",
    "note": "",
-   "row": 14,
+   "row": 15,
    "lines": [
     {
-     "row": 14,
+     "row": 15,
      "type": "line",
      "speaker": "キャリー",
      "expression": "",
@@ -215,21 +225,11 @@
      "item": ""
     },
     {
-     "row": 15,
+     "row": 16,
      "type": "line",
      "speaker": "アルシェ",
      "expression": "",
-     "text": "おはようキャリー！今日もいい天気だな！",
-     "note": "",
-     "process": "",
-     "item": ""
-    },
-    {
-     "row": 16,
-     "type": "line",
-     "speaker": "キャリー",
-     "expression": "",
-     "text": "うふふ　アルシェ様も本日も元気イッパイですね\nあら？その双剣は？",
+     "text": "おはようキャリー！\n今日もいい天気だな！",
      "note": "",
      "process": "",
      "item": ""
@@ -237,9 +237,9 @@
     {
      "row": 17,
      "type": "line",
-     "speaker": "アルシェ",
+     "speaker": "キャリー",
      "expression": "",
-     "text": "これか？この前父上にもらったんだ！\nあとでギュンターにも見せてやるんだぜ！",
+     "text": "うふふ　アルシェ様も\n本日も元気イッパイですね",
      "note": "",
      "process": "",
      "item": ""
@@ -249,7 +249,7 @@
      "type": "line",
      "speaker": "キャリー",
      "expression": "",
-     "text": "まぁ、それは楽しみですわね\nカリマ様はもう訓練場にいるみたいですよ",
+     "text": "あら？その双剣は？",
      "note": "",
      "process": "",
      "item": ""
@@ -259,7 +259,7 @@
      "type": "line",
      "speaker": "アルシェ",
      "expression": "",
-     "text": "知ってる！でもまだ眠いから、\nもうちょっとしゃっきりしてから行く！",
+     "text": "これか？この前父上にもらったんだ！\nあとでギュンターにも見せてやるんだぜ！",
      "note": "",
      "process": "",
      "item": ""
@@ -269,7 +269,7 @@
      "type": "line",
      "speaker": "キャリー",
      "expression": "",
-     "text": "あらあら\nでは皆に挨拶でもしてはいかがです？",
+     "text": "まぁ、それは楽しみですわね\nカリマ様はもう訓練場にいるみたいですよ",
      "note": "",
      "process": "",
      "item": ""
@@ -279,7 +279,7 @@
      "type": "line",
      "speaker": "アルシェ",
      "expression": "",
-     "text": "おう！そうする！\nところでキャリーは、\nまたカリマに頭のやつ作らされてるのか？",
+     "text": "知ってる！でもまだ眠いから、\nもうちょっとしゃっきりしてから行く！",
      "note": "",
      "process": "",
      "item": ""
@@ -289,7 +289,7 @@
      "type": "line",
      "speaker": "キャリー",
      "expression": "",
-     "text": "あらまぁ\nお口が悪くなりましたわね。\n誰の影響でしょうか…\nこれは作らされているのではなく、\n作って差し上げたいと思ってですわよ。",
+     "text": "あらあら\nでは皆に挨拶でもしてはいかがです？",
      "note": "",
      "process": "",
      "item": ""
@@ -299,7 +299,7 @@
      "type": "line",
      "speaker": "アルシェ",
      "expression": "",
-     "text": "ふーん…",
+     "text": "おう！そうする！",
      "note": "",
      "process": "",
      "item": ""
@@ -307,25 +307,75 @@
     {
      "row": 24,
      "type": "line",
-     "speaker": "キャリー",
+     "speaker": "アルシェ",
      "expression": "",
-     "text": "今から\n訓練場にいくのでしたら、\nカリマ様にお渡しして頂けますか？\nちょうど新作が出来たので\n持っていくところでしたのよ",
+     "text": "ところでキャリーは、また\nカリマに頭のやつ作らされてるのか？",
      "note": "",
      "process": "",
      "item": ""
     },
     {
      "row": 25,
+     "type": "line",
+     "speaker": "キャリー",
+     "expression": "",
+     "text": "あらまぁお口が悪くなりましたわね。\n誰の影響でしょうか…",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 26,
+     "type": "line",
+     "speaker": "キャリー",
+     "expression": "",
+     "text": "これは作らされているのではなく、\n作って差し上げたいと思ってですわよ。",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 27,
+     "type": "line",
+     "speaker": "アルシェ",
+     "expression": "",
+     "text": "ふーん…",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 28,
+     "type": "line",
+     "speaker": "キャリー",
+     "expression": "",
+     "text": "今から訓練場にいくのでしたら、\nカリマ様にお渡しして頂けますか？",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 29,
+     "type": "line",
+     "speaker": "キャリー",
+     "expression": "",
+     "text": "ちょうど新作が出来たので\n持っていくところでしたのよ",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 30,
      "type": "narration",
      "speaker": "",
      "expression": "",
      "text": "「ツノ」を手に入れた！",
      "note": "「ツノ」をアイテムに入れた。",
-     "process": "",
+     "process": "「ツノ」をアイテムに追加。後のカリマへの受け渡しに使用。",
      "item": "ツノ"
     },
     {
-     "row": 26,
+     "row": 31,
      "type": "line",
      "speaker": "アルシェ",
      "expression": "",
@@ -335,27 +385,37 @@
      "item": ""
     },
     {
-     "row": 27,
+     "row": 32,
      "type": "line",
      "speaker": "キャリー",
      "expression": "",
-     "text": "うふふ\n今度、アルシェ様もおそろいの頭飾りを\n作って差し上げましょうか",
+     "text": "うふふ",
      "note": "",
      "process": "",
      "item": ""
     },
     {
-     "row": 28,
+     "row": 33,
+     "type": "line",
+     "speaker": "キャリー",
+     "expression": "",
+     "text": "今度、アルシェ様もおそろいの頭飾りを\n作って差し上げましょうか",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 34,
      "type": "line",
      "speaker": "アルシェ",
      "expression": "",
-     "text": "えー、俺はそういうのいいよ。エンリョしとく",
+     "text": "えー、俺はそういうのいいよ。\nエンリョしとく",
      "note": "",
      "process": "",
      "item": ""
     },
     {
-     "row": 29,
+     "row": 35,
      "type": "line",
      "speaker": "キャリー",
      "expression": "",
@@ -367,67 +427,107 @@
    ]
   },
   {
-   "id": "prologue_1_1.b07",
+   "id": "prologue_1_1.b06",
    "part": "sidetrack",
-   "scene": "魔王城・廊下",
+   "scene": "廊下・従者たち",
    "label": "モブの井戸端会議の盗み聞き",
    "location": "オルクス城廊下",
    "process": "一定範囲へ接近すると環境会話発生。話しかける必要なし。",
    "note": "仕事をしながら井戸端会議をしている従者たち。アルシェへ向けた説明ではなく、近くを通れば会話が耳に入る形式。",
-   "row": 30,
+   "row": 36,
    "lines": [
     {
-     "row": 30,
+     "row": 36,
      "type": "line",
      "speaker": "モブ１",
      "expression": "",
-     "text": "そろそろ百年戦争の和平記念パーティーだな。\n忙しくなるなぁ…もう何十年とやっているが、\n年々豪勢になっていく",
+     "text": "そろそろ百年戦争の和平記念パーティーだな。\n忙しくなるなぁ…",
      "note": "仕事をしながら井戸端会議をしている従者たち。アルシェへ向けた説明ではなく、近くを通れば会話が耳に入る形式。",
      "process": "一定範囲へ接近すると環境会話発生。話しかける必要なし。",
      "item": ""
     },
     {
-     "row": 31,
-     "type": "line",
-     "speaker": "モブ２",
-     "expression": "",
-     "text": "あぁ　今回は来賓で来る予定の\nアルストロの騎士団長がちょっと見ないうちに\n若造に代わってやがったよ。\nヒトの成長ってのは早いなぁ。",
-     "note": "",
-     "process": "",
-     "item": ""
-    },
-    {
-     "row": 32,
+     "row": 37,
      "type": "line",
      "speaker": "モブ１",
      "expression": "",
-     "text": "アルシェ様とカリマ様も、\n俺たちよりもずっと早く\n大きくなっちまうんだろうなぁ\n魔王様もお二人の成長の早さを\nめまぐるしく感じておられるだろうよ。",
+     "text": "もう何十年とやっているが、\n年々豪勢になっていく",
      "note": "",
      "process": "",
      "item": ""
     },
     {
-     "row": 33,
+     "row": 38,
+     "type": "line",
+     "speaker": "モブ２",
+     "expression": "",
+     "text": "あぁ　今回は来賓で来る予定の\nアルストロの騎士団長が",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 39,
+     "type": "line",
+     "speaker": "モブ２",
+     "expression": "",
+     "text": "ちょっと見ないうちに\n若造に代わってやがったよ。",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 40,
+     "type": "line",
+     "speaker": "モブ２",
+     "expression": "",
+     "text": "ヒトの成長ってのは早いなぁ。",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 41,
+     "type": "line",
+     "speaker": "モブ１",
+     "expression": "",
+     "text": "アルシェ様とカリマ様も、俺たちよりも\nずっと早く大きくなっちまうんだろうなぁ",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 42,
+     "type": "line",
+     "speaker": "モブ１",
+     "expression": "",
+     "text": "魔王様もお二人の成長の早さを\nめまぐるしく感じておられるだろうよ。",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 43,
      "type": "line",
      "speaker": "アルシェ",
      "expression": "",
      "text": "………",
-     "note": "",
+     "note": "モブ達はアルシェとカリマを愛している一方、ヒトである二人が自分たちよりずっと早く成長し、ずっと早く亡くなることを意識している。ここで話が続けば空気が沈みかねない。",
      "process": "",
      "item": ""
     },
     {
-     "row": 34,
+     "row": 44,
      "type": "line",
      "speaker": "アルシェ",
      "expression": "",
      "text": "おはよー！なぁこれ見てくれよ！\n父上からもらったんだ！",
-     "note": "",
+     "note": "アルシェはその空気を察し、「……」と一拍置いた後、わざと無邪気に剣を振り回して『自分はまだ子供！』と見せつけるように明るく振る舞う。マイペースな陽キャに見えるが、実際は周囲の大人に気を遣い、自分の言動で場を明るくできる子であることを示す描写。",
      "process": "",
      "item": ""
     },
     {
-     "row": 35,
+     "row": 45,
      "type": "line",
      "speaker": "モブ１",
      "expression": "",
@@ -437,7 +537,7 @@
      "item": ""
     },
     {
-     "row": 36,
+     "row": 46,
      "type": "line",
      "speaker": "モブ２",
      "expression": "",
@@ -449,17 +549,17 @@
    ]
   },
   {
-   "id": "prologue_1_1.b08",
+   "id": "prologue_1_1.b07",
    "part": "story",
-   "scene": "魔王城・廊下",
+   "scene": "廊下・ヘンリー",
    "label": "",
    "location": "オルクス城廊下",
    "process": "",
    "note": "",
-   "row": 37,
+   "row": 47,
    "lines": [
     {
-     "row": 37,
+     "row": 47,
      "type": "line",
      "speaker": "アルシェ",
      "expression": "",
@@ -469,111 +569,11 @@
      "item": ""
     },
     {
-     "row": 38,
-     "type": "line",
-     "speaker": "ヘンリー",
-     "expression": "",
-     "text": "おはよー　今日も朝からご機嫌だねアルシェ王子",
-     "note": "",
-     "process": "",
-     "item": ""
-    },
-    {
-     "row": 39,
-     "type": "line",
-     "speaker": "アルシェ",
-     "expression": "",
-     "text": "今日はギュンターに\n父上からもらった双剣をみせてやるんだ！\n絶対うらやましがるぞ",
-     "note": "",
-     "process": "",
-     "item": ""
-    },
-    {
-     "row": 40,
-     "type": "line",
-     "speaker": "ヘンリー",
-     "expression": "",
-     "text": "あはは　きっといい反応してくれるよ\nそれはそうと、\nさっきカリマ様が訓練場にいらしてたよ。",
-     "note": "",
-     "process": "",
-     "item": ""
-    },
-    {
-     "row": 41,
-     "type": "line",
-     "speaker": "ヘンリー",
-     "expression": "",
-     "text": "今日もケガや事故がないように\nおまじないしてあげようか\nそ～れ",
-     "note": "",
-     "process": "",
-     "item": ""
-    },
-    {
-     "row": 42,
-     "type": "line",
-     "speaker": "アルシェ",
-     "expression": "",
-     "text": "ありがと　ケガしないように気を付けるよ",
-     "note": "",
-     "process": "",
-     "item": ""
-    },
-    {
-     "row": 43,
-     "type": "line",
-     "speaker": "ヘンリー",
-     "expression": "",
-     "text": "どういたしまして\nそうそう。アルシェ王子、\n携帯端末を出してごらんよ",
-     "note": "",
-     "process": "",
-     "item": ""
-    },
-    {
-     "row": 44,
-     "type": "line",
-     "speaker": "ヘンリー",
-     "expression": "",
-     "text": "「今月の運命予報」を\n携帯端末でもラディンが\n試したいって言うからさ、\n占いアプリのベータ版を\nアルシェ王子にも試してほしくて",
-     "note": "",
-     "process": "",
-     "item": ""
-    },
-    {
-     "row": 45,
-     "type": "line",
-     "speaker": "アルシェ",
-     "expression": "",
-     "text": "へぇ～　なんかまた二人で変な事やってるんだな\n任せとけよ！\n…で、このアプリは何が出来るんだ？",
-     "note": "",
-     "process": "",
-     "item": ""
-    },
-    {
-     "row": 46,
-     "type": "line",
-     "speaker": "ヘンリー",
-     "expression": "",
-     "text": "ざっくり説明するなら、\n今月のアルシェ王子の運命が分かるよ\n試しに今月の運命予報をタップしてごらんよ",
-     "note": "チュートリアル：メニュー画面から「運命予報」を確認できます。運命予報はシナリオの章の展開や章ごとの戦闘に関するのヒントの役目を果たします。",
-     "process": "",
-     "item": ""
-    },
-    {
-     "row": 47,
-     "type": "phone",
-     "speaker": "携帯端末",
-     "expression": "",
-     "text": "運勢：蛇。失せモノに注意。\n笑う声が聞こえたら、振り返らないこと。",
-     "note": "",
-     "process": "",
-     "item": ""
-    },
-    {
      "row": 48,
      "type": "line",
-     "speaker": "アルシェ",
+     "speaker": "ヘンリー",
      "expression": "",
-     "text": "？？？\nよく分かんないけど、\n落し物しないようにってことか？",
+     "text": "おはよー\n今日も朝からご機嫌だねアルシェ王子",
      "note": "",
      "process": "",
      "item": ""
@@ -581,9 +581,9 @@
     {
      "row": 49,
      "type": "line",
-     "speaker": "ヘンリー",
+     "speaker": "アルシェ",
      "expression": "",
-     "text": "すなおに受け取るならそういうことだね～\n貰った双剣がうれしくてふりまわしてたら\n手からすっぽ抜けないように気を付けるんだよ",
+     "text": "今日はギュンターに\n父上からもらった双剣をみせてやるんだ！",
      "note": "",
      "process": "",
      "item": ""
@@ -593,13 +593,203 @@
      "type": "line",
      "speaker": "アルシェ",
      "expression": "",
-     "text": "うっ　気をつける！",
+     "text": "絶対うらやましがるぞ",
      "note": "",
      "process": "",
      "item": ""
     },
     {
      "row": 51,
+     "type": "line",
+     "speaker": "ヘンリー",
+     "expression": "",
+     "text": "あはは　きっといい反応してくれるよ",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 52,
+     "type": "line",
+     "speaker": "ヘンリー",
+     "expression": "",
+     "text": "それはそうと、さっきカリマ様が\n訓練場にいらしてたよ。",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 53,
+     "type": "line",
+     "speaker": "ヘンリー",
+     "expression": "",
+     "text": "今日もケガや事故がないように\nおまじないしてあげようか",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 54,
+     "type": "line",
+     "speaker": "ヘンリー",
+     "expression": "",
+     "text": "そ～れ",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 55,
+     "type": "line",
+     "speaker": "アルシェ",
+     "expression": "",
+     "text": "ありがと\nケガしないように気を付けるよ",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 56,
+     "type": "line",
+     "speaker": "ヘンリー",
+     "expression": "",
+     "text": "どういたしまして",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 57,
+     "type": "line",
+     "speaker": "ヘンリー",
+     "expression": "",
+     "text": "そうそう。アルシェ王子、\n携帯端末を出してごらんよ",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 58,
+     "type": "line",
+     "speaker": "ヘンリー",
+     "expression": "",
+     "text": "「今月の運命予報」を携帯端末でも\nラディンが試したいって言うからさ、",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 59,
+     "type": "line",
+     "speaker": "ヘンリー",
+     "expression": "",
+     "text": "占いアプリのベータ版を\nアルシェ王子にも試してほしくて",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 60,
+     "type": "line",
+     "speaker": "アルシェ",
+     "expression": "",
+     "text": "へぇ～　なんかまた\n二人で変な事やってるんだな",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 61,
+     "type": "line",
+     "speaker": "アルシェ",
+     "expression": "",
+     "text": "任せとけよ！\n…で、このアプリは何が出来るんだ？",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 62,
+     "type": "line",
+     "speaker": "ヘンリー",
+     "expression": "",
+     "text": "ざっくり説明するなら、\n今月のアルシェ王子の運命が分かるよ",
+     "note": "チュートリアル：メニュー画面から「運命予報」を確認できます。運命予報はシナリオの章の展開や章ごとの戦闘に関するのヒントの役目を果たします。",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 63,
+     "type": "line",
+     "speaker": "ヘンリー",
+     "expression": "",
+     "text": "試しに今月の運命予報を\nタップしてごらんよ",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 64,
+     "type": "phone",
+     "speaker": "携帯端末",
+     "expression": "",
+     "text": "運勢：蛇。失せモノに注意。\n笑う声が聞こえたら、振り返らないこと。",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 65,
+     "type": "line",
+     "speaker": "アルシェ",
+     "expression": "",
+     "text": "？？？",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 66,
+     "type": "line",
+     "speaker": "アルシェ",
+     "expression": "",
+     "text": "よく分かんないけど、\n落し物しないようにってことか？",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 67,
+     "type": "line",
+     "speaker": "ヘンリー",
+     "expression": "",
+     "text": "すなおに受け取るならそういうことだね～",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 68,
+     "type": "line",
+     "speaker": "ヘンリー",
+     "expression": "",
+     "text": "貰った双剣がうれしくてふりまわしてたら\n手からすっぽ抜けないように気を付けるんだよ",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 69,
+     "type": "line",
+     "speaker": "アルシェ",
+     "expression": "",
+     "text": "うっ　気をつける！",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 70,
      "type": "line",
      "speaker": "ヘンリー",
      "expression": "",
@@ -611,17 +801,17 @@
    ]
   },
   {
-   "id": "prologue_1_1.b09",
+   "id": "prologue_1_1.b08",
    "part": "sidetrack",
-   "scene": "魔王城・廊下",
+   "scene": "謁見の間・寄り道",
    "label": "",
    "location": "オルクス城謁見の間",
    "process": "",
    "note": "オルクス魔王城の謁見の間を見れる。のちにラスボスの戦闘マップとなる場所です。一見の価値あり。",
-   "row": 52,
+   "row": 71,
    "lines": [
     {
-     "row": 52,
+     "row": 71,
      "type": "line",
      "speaker": "アルシェ",
      "expression": "",
@@ -631,7 +821,7 @@
      "item": ""
     },
     {
-     "row": 53,
+     "row": 72,
      "type": "line",
      "speaker": "アルシェ",
      "expression": "",
@@ -641,17 +831,27 @@
      "item": ""
     },
     {
-     "row": 54,
+     "row": 73,
      "type": "line",
      "speaker": "アルシェ",
      "expression": "",
-     "text": "なんてな。\n俺たちのほうが早く死んじゃうんだから\nあるわけないよな！\n…？じゃあなんでわざわざ\n訓練なんかしなきゃいけないんだ？",
+     "text": "なんてな。俺たちのほうが\n早く死んじゃうんだからあるわけないよな！",
      "note": "",
      "process": "",
      "item": ""
     },
     {
-     "row": 55,
+     "row": 74,
+     "type": "line",
+     "speaker": "アルシェ",
+     "expression": "",
+     "text": "…？じゃあなんでわざわざ\n訓練なんかしなきゃいけないんだ？",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 75,
      "type": "line",
      "speaker": "アルシェ",
      "expression": "",
@@ -663,17 +863,17 @@
    ]
   },
   {
-   "id": "prologue_1_1.b10",
+   "id": "prologue_1_1.b09",
    "part": "story",
-   "scene": "魔王城・廊下",
+   "scene": "訓練場・合流",
    "label": "",
    "location": "オルクス城訓練場",
    "process": "",
    "note": "訓練場に既にいるカリマとギュンター",
-   "row": 56,
+   "row": 76,
    "lines": [
     {
-     "row": 56,
+     "row": 76,
      "type": "line",
      "speaker": "カリマ",
      "expression": "",
@@ -683,7 +883,7 @@
      "item": ""
     },
     {
-     "row": 57,
+     "row": 77,
      "type": "line",
      "speaker": "アルシェ",
      "expression": "",
@@ -693,47 +893,87 @@
      "item": ""
     },
     {
-     "row": 58,
+     "row": 78,
      "type": "line",
      "speaker": "カリマ",
      "expression": "",
-     "text": "だって起こしてもアルが微動だにしないから…\nそれより、\n遅刻したんだからギュンターに謝りなよ。",
+     "text": "だって起こしても\nアルが微動だにしないから…",
      "note": "",
      "process": "",
      "item": ""
     },
     {
-     "row": 59,
+     "row": 79,
+     "type": "line",
+     "speaker": "カリマ",
+     "expression": "",
+     "text": "それより、遅刻したんだから\nギュンターに謝りなよ。",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 80,
      "type": "line",
      "speaker": "アルシェ",
      "expression": "",
-     "text": "ギュンター、ごめん！また寝坊した！\n次からはちゃんと起きてみせる！期待しててくれ！",
+     "text": "ギュンター、ごめん！また寝坊した！",
      "note": "",
      "process": "",
      "item": ""
     },
     {
-     "row": 60,
+     "row": 81,
+     "type": "line",
+     "speaker": "アルシェ",
+     "expression": "",
+     "text": "次からはちゃんと起きてみせる！\n期待しててくれ！",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 82,
      "type": "line",
      "speaker": "ギュンター",
      "expression": "",
-     "text": "その台詞を聞くのは今月で４度目なんだぞ…。\nアルシェ王子、貴方は魔王様のご子息であり\n誇り高きオルクスの…",
+     "text": "その台詞を聞くのは\n今月で４度目なんだぞ…。",
      "note": "",
      "process": "",
      "item": ""
     },
     {
-     "row": 61,
+     "row": 83,
+     "type": "line",
+     "speaker": "ギュンター",
+     "expression": "",
+     "text": "アルシェ王子、貴方は魔王様の\nご子息であり誇り高きオルクスの…",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 84,
      "type": "line",
      "speaker": "アルシェ",
      "expression": "",
-     "text": "わかったわかった\nそれよりも訓練始めようぜ！\n丁度しゃっきりしてきたところだ！",
+     "text": "わかったわかった\nそれよりも訓練始めようぜ！",
      "note": "",
      "process": "",
      "item": ""
     },
     {
-     "row": 62,
+     "row": 85,
+     "type": "line",
+     "speaker": "アルシェ",
+     "expression": "",
+     "text": "丁度しゃっきりしてきたところだ！",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 86,
      "type": "line",
      "speaker": "ギュンター",
      "expression": "",
@@ -743,7 +983,7 @@
      "item": ""
     },
     {
-     "row": 63,
+     "row": 87,
      "type": "line",
      "speaker": "カリマ",
      "expression": "",
@@ -751,29 +991,51 @@
      "note": "",
      "process": "",
      "item": ""
-    },
+    }
+   ]
+  },
+  {
+   "id": "prologue_1_1.b10",
+   "part": "story",
+   "scene": "訓練場・戦闘導入",
+   "label": "",
+   "location": "オルクス城訓練場",
+   "process": "",
+   "note": "",
+   "row": 88,
+   "lines": [
     {
-     "row": 64,
+     "row": 88,
      "type": "line",
      "speaker": "ギュンター",
      "expression": "",
-     "text": "左様ですか。\nでは、予定通り本日は\n実戦に近い稽古をはじめましょう。",
+     "text": "左様ですか。では、予定通り本日は\n実戦に近い稽古をはじめましょう。",
      "note": "",
      "process": "",
      "item": ""
     },
     {
-     "row": 65,
+     "row": 89,
      "type": "line",
      "speaker": "ギュンター",
      "expression": "",
-     "text": "では、基本の動き方を確認し、\n演習で俺から一本取れたら\n今日の稽古は終了にするぞ。",
+     "text": "では、基本の動き方を確認し、",
      "note": "",
      "process": "",
      "item": ""
     },
     {
-     "row": 66,
+     "row": 90,
+     "type": "line",
+     "speaker": "ギュンター",
+     "expression": "",
+     "text": "演習で俺から一本取れたら\n今日の稽古は終了にするぞ。",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 91,
      "type": "line",
      "speaker": "アルシェ",
      "expression": "",
@@ -783,7 +1045,7 @@
      "item": ""
     },
     {
-     "row": 67,
+     "row": 92,
      "type": "line",
      "speaker": "カリマ",
      "expression": "",
@@ -802,10 +1064,10 @@
    "location": "オルクス城訓練場",
    "process": "チュートリアル開始",
    "note": "画面暗転または戦闘UIへ移行。",
-   "row": 68,
+   "row": 93,
    "lines": [
     {
-     "row": 68,
+     "row": 93,
      "type": "memo",
      "speaker": "",
      "expression": "",
@@ -815,7 +1077,7 @@
      "item": ""
     },
     {
-     "row": 69,
+     "row": 94,
      "type": "memo",
      "speaker": "",
      "expression": "",
@@ -825,61 +1087,91 @@
      "item": ""
     },
     {
-     "row": 70,
+     "row": 95,
      "type": "line",
      "speaker": "カリマ",
      "expression": "",
-     "text": "そういえばアル、僕のツノ知らない？\nキャリーからもらう予定だったんだけど、\n入れ違いになっちゃって",
+     "text": "そういえばアル、僕のツノ知らない？",
+     "note": "アイテムを交換のチュートリアル",
+     "process": "「ツノ」所持を前提にしたアイテム交換チュートリアル。キャリーとの会話を必須通過にするか、未取得時の分岐が必要。要実装確認。",
+     "item": ""
+    },
+    {
+     "row": 96,
+     "type": "line",
+     "speaker": "カリマ",
+     "expression": "",
+     "text": "キャリーにもらう予定だったんだけど、\n入れ違いになっちゃって",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 97,
+     "type": "line",
+     "speaker": "カリマ",
+     "expression": "",
+     "text": "ありがとう！\n流石キャリー…今回もいい出来だなぁ…",
      "note": "アイテムを交換のチュートリアル",
      "process": "アイテム交換のチュートリアル",
      "item": ""
     },
     {
-     "row": 71,
+     "row": 98,
      "type": "line",
      "speaker": "カリマ",
      "expression": "",
-     "text": "ありがとう！\n流石キャリー…今回もいい出来だなぁ…\nお礼にアルにポーションあげるね",
-     "note": "アイテムを交換のチュートリアル",
-     "process": "アイテム交換のチュートリアル",
+     "text": "お礼にアルにポーションあげるね",
+     "note": "",
+     "process": "",
      "item": ""
     },
     {
-     "row": 72,
+     "row": 99,
      "type": "line",
      "speaker": "ギュンター",
      "expression": "",
      "text": "さぁ来いアルシェ様！\n全力でやらねば訓練にならないぞ！",
-     "note": "",
+     "note": "アルシェVSギュンター特殊会話",
      "process": "",
      "item": ""
     },
     {
-     "row": 73,
+     "row": 100,
      "type": "line",
      "speaker": "アルシェ",
      "expression": "",
      "text": "よし！行くぞ、ギュンター師範！",
-     "note": "",
+     "note": "アルシェVSギュンター特殊会話",
      "process": "",
      "item": ""
     },
     {
-     "row": 74,
+     "row": 101,
      "type": "line",
      "speaker": "ギュンター",
      "expression": "",
      "text": "カリマ様、あまり無理はしないように。",
-     "note": "",
+     "note": "カリマVSギュンター特殊会話",
      "process": "",
      "item": ""
     },
     {
-     "row": 75,
+     "row": 102,
      "type": "line",
      "speaker": "カリマ",
      "expression": "",
-     "text": "大丈夫だよ…！僕だって魔王の息子なんだから\n油断してたら火傷するよ…！",
+     "text": "大丈夫だよ…！\n僕だって魔王の息子なんだから",
+     "note": "カリマVSギュンター特殊会話",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 103,
+     "type": "line",
+     "speaker": "カリマ",
+     "expression": "",
+     "text": "油断してたら火傷するよ…！",
      "note": "",
      "process": "",
      "item": ""
@@ -894,10 +1186,10 @@
    "location": "オルクス城訓練場",
    "process": "",
    "note": "",
-   "row": 76,
+   "row": 104,
    "lines": [
     {
-     "row": 76,
+     "row": 104,
      "type": "line",
      "speaker": "アルシェ",
      "expression": "",
@@ -907,37 +1199,67 @@
      "item": ""
     },
     {
-     "row": 77,
+     "row": 105,
      "type": "line",
      "speaker": "カリマ",
      "expression": "",
-     "text": "あのねアル…\n僕はアルよりも先に来て\n先に訓練して演習までやったんだよ…\n僕を見習って少しはしっかりしてよ。\nこれじゃ父上だって呆れちゃうよ",
+     "text": "あのねアル…僕はアルよりも先に来て\n先に訓練して演習までやったんだよ…",
      "note": "",
      "process": "",
      "item": ""
     },
     {
-     "row": 78,
+     "row": 106,
+     "type": "line",
+     "speaker": "カリマ",
+     "expression": "",
+     "text": "僕を見習って少しはしっかりしてよ。\nこれじゃ父上だって呆れちゃうよ",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 107,
      "type": "line",
      "speaker": "アルシェ",
      "expression": "",
-     "text": "そうだ！父上と言えば…見てよベル！！\nこの前、父上から双剣もらったんだ！\nかっこいいだろ！",
+     "text": "そうだ！父上と言えば…\n見てよベル！！",
      "note": "",
      "process": "",
      "item": ""
     },
     {
-     "row": 79,
+     "row": 108,
+     "type": "line",
+     "speaker": "アルシェ",
+     "expression": "",
+     "text": "この前、父上から双剣もらったんだ！\nかっこいいだろ！",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 109,
      "type": "line",
      "speaker": "ギュンター",
      "expression": "",
-     "text": "それは良かったですね。\n……なっ…！？これは魔王様が\n大切になさっていた王族に伝わる双剣では…！？",
+     "text": "それは良かったですね……\n……なっ…！？",
      "note": "",
      "process": "",
      "item": ""
     },
     {
-     "row": 80,
+     "row": 110,
+     "type": "line",
+     "speaker": "ギュンター",
+     "expression": "",
+     "text": "これは魔王様が大切になさっていた\n王族に伝わる双剣では…！？",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 111,
      "type": "line",
      "speaker": "カリマ",
      "expression": "",
@@ -947,37 +1269,77 @@
      "item": ""
     },
     {
-     "row": 81,
+     "row": 112,
      "type": "line",
      "speaker": "ギュンター",
      "expression": "",
-     "text": "ぐぬぬ…この俺を差し置いて…\nいや…必ず俺も魔王様の特別に……こほん",
+     "text": "ぐぬぬ…この俺を差し置いて…",
      "note": "ギュンターは魔王様大好き野郎なので魔王様絡むと発言が若干危うさある。",
      "process": "",
      "item": ""
     },
     {
-     "row": 82,
+     "row": 113,
      "type": "line",
      "speaker": "ギュンター",
      "expression": "",
-     "text": "アルシェ様、その双剣はオルクス王族に伝わる\n貴重な宝です。くれぐれも\n見せびらかすような真似はしないように。",
+     "text": "いや…必ず俺も魔王様の特別に……\nこほん",
      "note": "",
      "process": "",
      "item": ""
     },
     {
-     "row": 83,
+     "row": 114,
      "type": "line",
      "speaker": "ギュンター",
      "expression": "",
-     "text": "近々催される\n百年戦争終結を記念するパーティーで、\nオルクスの王族ともあろうものが\nはしたないとアルストロの来賓に\n思われてはならないので。",
+     "text": "アルシェ様、その双剣は\nオルクス王族に伝わる貴重な宝です。",
      "note": "",
      "process": "",
      "item": ""
     },
     {
-     "row": 84,
+     "row": 115,
+     "type": "line",
+     "speaker": "ギュンター",
+     "expression": "",
+     "text": "くれぐれも見せびらかすような\n真似はしないように。",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 116,
+     "type": "line",
+     "speaker": "ギュンター",
+     "expression": "",
+     "text": "近々催される百年戦争終結を\n記念するパーティーで、",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 117,
+     "type": "line",
+     "speaker": "ギュンター",
+     "expression": "",
+     "text": "オルクスの王族ともあろうものが\nはしたないと",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 118,
+     "type": "line",
+     "speaker": "ギュンター",
+     "expression": "",
+     "text": "アルストロの来賓に\n思われてはならないので。",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 119,
      "type": "line",
      "speaker": "アルシェ",
      "expression": "",
@@ -987,77 +1349,127 @@
      "item": ""
     },
     {
-     "row": 85,
+     "row": 120,
      "type": "line",
      "speaker": "ギュンター",
      "expression": "",
-     "text": "…それと、その呼び方は人前では控えるように。",
-     "note": "",
+     "text": "…それと、その呼び方は\n人前では控えるように。",
+     "note": "「ベル」はギュンター・フォン・マキシミリア・ベルゼブブの幼少期からの呼び名。少年時代は親しくなれそうな相手に自分から「ベル」呼びを強要していたが、大人になった現在はそれを黒歴史として人前では「ギュンター」呼びを希望している。ただし敬愛する魔王フォースから「ベル」と呼ばれるのは内心うれしい。過去編に登場する少年ベルとの紐づけ伏線。",
      "process": "",
      "item": ""
     },
     {
-     "row": 86,
+     "row": 121,
      "type": "line",
      "speaker": "アルシェ",
      "expression": "",
-     "text": "はいはい、ギュンターって呼べばいいんだろ。\n父上に呼ばれるときは\n尻尾振ってる幻覚まで見えるくらい喜ぶくせに",
+     "text": "はいはい、\nギュンターって呼べばいいんだろ。",
      "note": "",
      "process": "",
      "item": ""
     },
     {
-     "row": 87,
+     "row": 122,
+     "type": "line",
+     "speaker": "アルシェ",
+     "expression": "",
+     "text": "父上に呼ばれるときは尻尾振ってる\n幻覚まで見えるくらい喜ぶくせに",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 123,
      "type": "line",
      "speaker": "カリマ",
      "expression": "",
-     "text": "そういえば、今日はまだ父上を見かけてないね。\nお仕事忙しいのかな",
+     "text": "そういえば、今日はまだ父上を\n見かけてないね。お仕事忙しいのかな",
      "note": "",
      "process": "",
      "item": ""
     },
     {
-     "row": 88,
+     "row": 124,
      "type": "line",
      "speaker": "ギュンター",
      "expression": "",
-     "text": "魔王様ともあろう方であれば\nこの時期は普段よりも\n増して忙しいのですよ\nなにせアルストロとの和平を結んでから\nオルクスも随分変わりましたから",
+     "text": "魔王様ともあろう方であれば\nこの時期は普段以上に忙しいのですよ",
      "note": "",
      "process": "",
      "item": ""
     },
     {
-     "row": 89,
+     "row": 125,
+     "type": "line",
+     "speaker": "ギュンター",
+     "expression": "",
+     "text": "なにせアルストロとの和平を結んでから\nオルクスも随分変わりましたから",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 126,
      "type": "line",
      "speaker": "カリマ",
      "expression": "",
-     "text": "百年戦争終結…だっけ。\n勇者リングホルムによって、\n平和が訪れたんだよね",
+     "text": "百年戦争終結…だっけ。",
      "note": "",
      "process": "",
      "item": ""
     },
     {
-     "row": 90,
+     "row": 127,
+     "type": "line",
+     "speaker": "カリマ",
+     "expression": "",
+     "text": "勇者リングホルムによって、\n平和が訪れたんだよね",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 128,
      "type": "line",
      "speaker": "アルシェ",
      "expression": "",
-     "text": "っていってもただのお伽話だろ。\nみんなパーティーしたいだけなんじゃないの",
+     "text": "っていってもただのお伽話だろ。",
      "note": "",
      "process": "",
      "item": ""
     },
     {
-     "row": 91,
+     "row": 129,
+     "type": "line",
+     "speaker": "アルシェ",
+     "expression": "",
+     "text": "みんなパーティーしたい\nだけなんじゃないの",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 130,
      "type": "line",
      "speaker": "カリマ",
      "expression": "",
-     "text": "…アルはもう少し歴史というものを\n勉強した方が良いよ。\nそんなんじゃアルストロの人たちに笑われちゃう。",
+     "text": "…アルはもう少し歴史というものを\n勉強した方が良いよ。",
      "note": "",
      "process": "",
      "item": ""
     },
     {
-     "row": 92,
+     "row": 131,
+     "type": "line",
+     "speaker": "カリマ",
+     "expression": "",
+     "text": "そんなんじゃアルストロの人たちに\n笑われちゃう。",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 132,
      "type": "line",
      "speaker": "カリマ",
      "expression": "",
@@ -1067,27 +1479,47 @@
      "item": ""
     },
     {
-     "row": 93,
+     "row": 133,
      "type": "line",
      "speaker": "アルシェ",
      "expression": "",
-     "text": "お前が読みたいだけじゃ…\nいや、分かったよ。あとで一緒に読もうぜ",
+     "text": "お前が読みたいだけじゃ…",
      "note": "",
      "process": "",
      "item": ""
     },
     {
-     "row": 94,
+     "row": 134,
+     "type": "line",
+     "speaker": "アルシェ",
+     "expression": "",
+     "text": "いや、分かったよ。\nあとで一緒に読もうぜ",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 135,
      "type": "line",
      "speaker": "カリマ",
      "expression": "",
-     "text": "ふふ、勇者リングホルムについて\nたっぷり教えてあげるからね\nギュンター師範、今日も訓練ありがとう",
+     "text": "ふふ、勇者リングホルムについて\nたっぷり教えてあげるからね",
      "note": "",
      "process": "",
      "item": ""
     },
     {
-     "row": 95,
+     "row": 136,
+     "type": "line",
+     "speaker": "カリマ",
+     "expression": "",
+     "text": "ギュンター師範、今日も訓練ありがとう",
+     "note": "",
+     "process": "",
+     "item": ""
+    },
+    {
+     "row": 137,
      "type": "line",
      "speaker": "アルシェ",
      "expression": "",
@@ -1097,23 +1529,45 @@
      "item": ""
     },
     {
-     "row": 96,
+     "row": 138,
      "type": "line",
      "speaker": "ギュンター",
      "expression": "",
-     "text": "あぁ。お二人とも、本日もよく頑張りました。\nではお勉強に励んでくださいね",
+     "text": "あぁ。お二人とも、\n本日もよく頑張りました。",
      "note": "",
      "process": "",
      "item": ""
     },
     {
-     "row": 97,
+     "row": 139,
+     "type": "line",
+     "speaker": "ギュンター",
+     "expression": "",
+     "text": "ではお勉強に励んでくださいね",
+     "note": "",
+     "process": "",
+     "item": ""
+    }
+   ]
+  },
+  {
+   "id": "prologue_1_1.b13",
+   "part": "story",
+   "scene": "プロローグ1-1終了",
+   "label": "",
+   "location": "オルクス城訓練場",
+   "process": "次の目的を更新：アルシェとカリマの部屋へ戻り、百年戦争についての本を調べる。",
+   "note": "この辺でプロローグ終わり。次はアルシェとカリマの部屋で百年戦争についての御伽噺を調べることとなる。",
+   "row": 140,
+   "lines": [
+    {
+     "row": 140,
      "type": "memo",
      "speaker": "",
      "expression": "",
      "text": "",
      "note": "この辺でプロローグ終わり。次はアルシェとカリマの部屋で百年戦争についての御伽噺を調べることとなる。",
-     "process": "",
+     "process": "次の目的を更新：アルシェとカリマの部屋へ戻り、百年戦争についての本を調べる。",
      "item": ""
     }
    ]

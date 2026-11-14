@@ -522,7 +522,10 @@
     {
      "id": "enter_yard",
      "exit": "",
-     "block": "prologue_1_1.b10",
+     "block": "prologue_1_1.b09",
+     "moreBlocks": [
+      "prologue_1_1.b10"
+     ],
      "thenBattleArea": "prologue",
      "thenBlock": "prologue_1_1.b11",
      "cells": [

@@ -176,7 +176,7 @@
         },
         "onEnter": [
           "prologue_1_1.b01",
-          "prologue_1_1.b02"
+          "prologue_1_1.b01_r03"
         ],
         "people": [],
         "talkAreas": [],
@@ -189,7 +189,7 @@
                 8
               ]
             ],
-            "block": "prologue_1_1.b02_r09",
+            "block": "prologue_1_1.b01_r09",
             "required": true,
             "note": "剣を見つける（表の9行目）。必須"
           },
@@ -205,7 +205,7 @@
                 2
               ]
             ],
-            "block": "prologue_1_1.b03"
+            "block": "prologue_1_1.b02"
           },
           {
             "id": "arshe_shelf",
@@ -236,7 +236,7 @@
               ]
             ],
             "label": "ベッド",
-            "block": "prologue_1_1.b04",
+            "block": "prologue_1_1.b03",
             "note": "シナリオの表どおり、折れた漫画はアルシェのベッドの下（原作者 2026-11-14 案A）"
           },
           {

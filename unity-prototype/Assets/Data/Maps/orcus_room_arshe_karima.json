@@ -202,14 +202,14 @@
    },
    "onEnter": [
     "prologue_1_1.b01",
-    "prologue_1_1.b02"
+    "prologue_1_1.b01_r03"
    ],
    "people": [],
    "talkAreas": [],
    "inspect": [
     {
      "id": "find_sword",
-     "block": "prologue_1_1.b02_r09",
+     "block": "prologue_1_1.b01_r09",
      "text": "",
      "cells": [
       {
@@ -222,7 +222,7 @@
     },
     {
      "id": "karima_bed",
-     "block": "prologue_1_1.b03",
+     "block": "prologue_1_1.b02",
      "text": "",
      "cells": [
       {
@@ -256,7 +256,7 @@
     },
     {
      "id": "arshe_bed",
-     "block": "prologue_1_1.b04",
+     "block": "prologue_1_1.b03",
      "text": "",
      "cells": [
       {

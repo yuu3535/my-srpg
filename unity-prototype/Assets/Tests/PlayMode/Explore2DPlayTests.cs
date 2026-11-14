@@ -55,7 +55,7 @@ namespace Srpg.Tests
             yield return null;
             yield return null;
             Assert.IsFalse(view.Locked, "会話が終わったら歩ける");
-            Assert.IsTrue(explore.Seen.Contains("prologue_1_1.b06"), "キャリーの会話を流した");
+            Assert.IsTrue(explore.Seen.Contains("prologue_1_1.b05"), "キャリーの会話を流した");
         }
 
         [UnityTest]
@@ -110,7 +110,7 @@ namespace Srpg.Tests
             explore.EnterPlace("orcus_castle", null);
             yield return null;
             // キャリーとヘンリーに会ったことにする（階段の条件）
-            explore.PlayBlocks(new System.Collections.Generic.List<string> { "prologue_1_1.b06", "prologue_1_1.b08" }, null);
+            explore.PlayBlocks(new System.Collections.Generic.List<string> { "prologue_1_1.b05", "prologue_1_1.b07" }, null);
             for (int i = 0; i < 40 && dialogue.IsPlaying; i++) dialogue.Close();
             yield return null;
             view.PlayerX = explore.SpotX("to_yard") - 20f;
@@ -122,7 +122,7 @@ namespace Srpg.Tests
             var board = Object.FindFirstObjectByType<ExploreController>();
             Assert.IsNotNull(board?.Place, "Explore3D の探索が始まらない");
             Assert.AreEqual("orcus_training_yard", board.Place.mapId, "訓練場から始まらない");
-            Assert.IsTrue(board.Seen.Contains("prologue_1_1.b08"), "回廊で流した会話が引き継がれない");
+            Assert.IsTrue(board.Seen.Contains("prologue_1_1.b07"), "回廊で流した会話が引き継がれない");
         }
 
         [UnityTest]

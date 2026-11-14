@@ -17,16 +17,16 @@ namespace Srpg.Tests
         {
             var s = Load();
             Assert.AreEqual("prologue_1_1", s.id);
-            Assert.IsNotNull(s.Block("prologue_1_1.b06"), "キャリーとの挨拶");
-            Assert.AreEqual("キャリーとの挨拶", s.Block("prologue_1_1.b06").label);
-            Assert.IsTrue(s.Block("prologue_1_1.b06").lines.Any(l => l.item == "ツノ"), "キャリーからツノを受け取る");
-            var sword = s.Block("prologue_1_1.b02_r09");
+            Assert.IsNotNull(s.Block("prologue_1_1.b05"), "キャリーとの挨拶");
+            Assert.AreEqual("キャリーとの挨拶", s.Block("prologue_1_1.b05").label);
+            Assert.IsTrue(s.Block("prologue_1_1.b05").lines.Any(l => l.item == "ツノ"), "キャリーからツノを受け取る");
+            var sword = s.Block("prologue_1_1.b01_r09");
             Assert.IsNotNull(sword, "剣立てを調べたときの行は別のブロック（--split 9）");
             Assert.AreEqual("黒陽の双剣", sword.lines.Single().item);
-            Assert.IsFalse(s.Block("prologue_1_1.b02").lines.Any(l => l.row == 9), "起床のブロックには剣を見つける行を含めない");
+            Assert.IsFalse(s.Block("prologue_1_1.b01_r03").lines.Any(l => l.row == 9), "起床のブロックには剣を見つける行を含めない");
             Assert.IsTrue(s.Block("prologue_1_1.b11").lines.Where(l => l.type == "memo").All(l => !s.Block("prologue_1_1.b11").Shown.Contains(l)),
                 "制作メモの行は出さない");
-            Assert.AreEqual("sidetrack", s.Block("prologue_1_1.b07").part, "井戸端会議は寄り道");
+            Assert.AreEqual("sidetrack", s.Block("prologue_1_1.b06").part, "井戸端会議は寄り道");
         }
 
         /// <summary>訓練の戦闘の手引き: 表の行が b11 にある・済む行動の種類が戦闘の知らせにある・2段（人形 → ギュンター。原作者 2026-10-02）</summary>
@@ -48,7 +48,8 @@ namespace Srpg.Tests
             // 1段目: 人形の説明 → 移動・攻撃・魔法・反撃 → 交換（カリマ「僕のツノ知らない？」から）→ 回復。2段目: ギュンターの登場 → 行動予告・両断
             CollectionAssert.AreEqual(new[] { "dolls", "move", "attack", "magic", "counter", "trade", "item", "gunter", "intent", "art" }, t.lessons.Select(l => l.id).ToArray());
             var trade = t.lessons.Single(l => l.id == "trade");
-            CollectionAssert.AreEqual(new[] { 70 }, trade.rows, "カリマ「僕のツノ知らない？」から");
+            // 行の番号は表を直すとずれるので、中身で確かめる
+            Assert.IsTrue(block.Shown.Single(l => l.row == trade.rows[0]).text.Contains("ツノ知らない"), "カリマ「僕のツノ知らない？」から");
             Assert.IsTrue(t.lessons.Where(l => l.id == "gunter" || l.id == "intent" || l.id == "art").All(l => l.phase == 2), "ギュンターが出てからの手引きは2段目");
             Assert.IsTrue(t.lessons.Where(l => l.phase != 2).All(l => l.phase <= 1), "そのほかは1段目");
         }

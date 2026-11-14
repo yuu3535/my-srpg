@@ -199,12 +199,15 @@
                 1
               ]
             ],
-            "block": "prologue_1_1.b10",
+            "block": "prologue_1_1.b09",
+            "moreBlocks": [
+              "prologue_1_1.b10"
+            ],
             "then": {
               "battleArea": "prologue",
               "block": "prologue_1_1.b11"
             },
-            "note": "訓練場へ入ると探索パート終了 → b10 合流の会話 → 戦闘（b11 の会話は戦闘中。カリマとの交換の手引き）",
+            "note": "訓練場へ入ると探索パート終了 → b09 合流の会話 → b10 戦闘の前の会話 → 戦闘（b11 の会話は戦闘中。カリマとの交換の手引き）",
             "talkAt": {
               "cell": [
                 12,

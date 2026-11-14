@@ -194,7 +194,7 @@ namespace Srpg.EditorAgent
                 Shot("explore_after_carrie", "キャリーと話したあと");
                 explore.StepForTest(view.Length - 150f);
                 Shot("explore_stairs", "階段の前");
-                if (!explore.Seen.Contains("prologue_1_1.b08"))
+                if (!explore.Seen.Contains("prologue_1_1.b07"))
                 {
                     use.Invoke(view, null);
                     Shot("explore_stairs_locked", "階段を使う（ヘンリーにまだ会っていない）");

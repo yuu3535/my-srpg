@@ -185,11 +185,11 @@ namespace Srpg.EditorAgent
             }
 
             Shot("prologue_1_1.b01", 0);           // 携帯端末の音（場面説明）
-            Shot("prologue_1_1.b06", 0, 1, 2);     // キャリーとの挨拶（キャリー右・アルシェ左）
-            Shot("prologue_1_1.b08", 0, 1);        // ヘンリー
-            Shot("prologue_1_1.b10", 0, 3, 4);     // 訓練場（カリマ・アルシェ左、ギュンター右）
+            Shot("prologue_1_1.b05", 0, 1, 2);     // キャリーとの挨拶（キャリー右・アルシェ左）
+            Shot("prologue_1_1.b07", 0, 1);        // ヘンリー
+            Shot("prologue_1_1.b09", 0, 3, 4);     // 訓練場（カリマ・アルシェ左、ギュンター右）
             // 立ち絵の位置の調整パネル（会話中に立ち絵を5回たたくと開く）
-            view.Play(scenario.Block("prologue_1_1.b06"));
+            view.Play(scenario.Block("prologue_1_1.b05"));
             view.Advance();
             view.OpenAdjuster("キャリー");
             Canvas.ForceUpdateCanvases();

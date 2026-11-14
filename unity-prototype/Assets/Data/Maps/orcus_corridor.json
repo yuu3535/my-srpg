@@ -216,8 +216,8 @@
     "y": 1
    },
    "requires": [
-    "block:prologue_1_1.b06",
-    "block:prologue_1_1.b08"
+    "block:prologue_1_1.b05",
+    "block:prologue_1_1.b07"
    ]
   }
  ],
@@ -234,14 +234,14 @@
     "y": 20
    },
    "onEnter": [
-    "prologue_1_1.b05"
+    "prologue_1_1.b04"
    ],
    "people": [
     {
      "id": "carrie",
      "name": "キャリー",
      "facing": "south",
-     "talkBlock": "prologue_1_1.b06",
+     "talkBlock": "prologue_1_1.b05",
      "x": 3,
      "y": 17
     },
@@ -265,7 +265,7 @@
      "id": "henry",
      "name": "ヘンリー",
      "facing": "south",
-     "talkBlock": "prologue_1_1.b08",
+     "talkBlock": "prologue_1_1.b07",
      "x": 3,
      "y": 9
     },
@@ -281,7 +281,7 @@
    "talkAreas": [
     {
      "id": "carrie_greet",
-     "block": "prologue_1_1.b06",
+     "block": "prologue_1_1.b05",
      "trigger": "approach",
      "x": 1,
      "y": 16,
@@ -293,7 +293,7 @@
     },
     {
      "id": "servants_gossip",
-     "block": "prologue_1_1.b07",
+     "block": "prologue_1_1.b06",
      "trigger": "approach",
      "x": 1,
      "y": 11,
@@ -305,7 +305,7 @@
     },
     {
      "id": "henry_greet",
-     "block": "prologue_1_1.b08",
+     "block": "prologue_1_1.b07",
      "trigger": "approach",
      "x": 1,
      "y": 9,
@@ -319,7 +319,7 @@
    "inspect": [
     {
      "id": "throne_door",
-     "block": "prologue_1_1.b09",
+     "block": "prologue_1_1.b08",
      "text": "",
      "cells": [
       {
