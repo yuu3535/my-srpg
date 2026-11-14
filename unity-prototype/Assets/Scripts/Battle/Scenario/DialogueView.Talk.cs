@@ -73,6 +73,20 @@ namespace Srpg.Battle
             // アルバス（見本に無い。albas.png の頭の中心 409,118・透明でない所 36〜740 × 7〜1012 から、高さ 1080 で）
             { "アルバス", new Figure { height = 1080f, headX = (409f - 36f) * 1080f / 1005f, faceY = (118f - 7f) * 1080f / 1005f } },
         };
+        // ── 顔の高さ（目の線）を、年齢と性差の分類でそろえる（2026-11-14 原作者「アルシェとカリマ＝子供、ギュンター＝大人男性、キャリー＝大人女性」。
+        //    どの並び・どの枠でも、同じ分類の人は同じ高さに顔が来る。値は原作者が4人の並びで合わせた顔の高さ） ──
+        public enum Physique { Child, AdultMale, AdultFemale }
+        public static readonly Dictionary<Physique, float> FaceLine = new Dictionary<Physique, float>
+        {
+            { Physique.Child, 403f }, { Physique.AdultMale, 336f }, { Physique.AdultFemale, 377f },
+        };
+        public static readonly Dictionary<string, Physique> BuildOf = new Dictionary<string, Physique>
+        {
+            { "アルシェ", Physique.Child }, { "カリマ", Physique.Child },
+            { "ギュンター", Physique.AdultMale }, { "アルバス", Physique.AdultMale }, { "ヘンリー", Physique.AdultMale },
+            { "キャリー", Physique.AdultFemale },
+        };
+
         // 枠ごとの頭の中心 X と足元の線（見本の立ち絵の左上＋頭の位置、上端＋高さ）
         private struct Slot { public float headX, baseline; }
         private static readonly Slot SL1 = new Slot { headX = 201f + 156f, baseline = 297f + 950f }, SL2 = new Slot { headX = 439f + 128f, baseline = 293f + 950f },
@@ -609,7 +623,9 @@ namespace Srpg.Battle
                 float natHead = fig.headX >= 0f ? fig.headX * zoom : W * 0.5f;
                 float headOnScreen = right ? W - natHead : natHead;
                 float left = slot.headX - headOnScreen + (adj != null ? adj.dx * W : 0f);
-                float top = slot.baseline - H - (adj != null ? adj.dy * H : 0f);
+                // 上下: 分類のある人は顔の高さ（目の線）で決める。ない人は枠の足元の線から（前と同じ）
+                float baseTop = BuildOf.TryGetValue(who, out var build) ? FaceLine[build] - fig.faceY * zoom : slot.baseline - H;
+                float top = baseTop - (adj != null ? adj.dy * H : 0f);
                 // 頭の位置は調整（左右）のあとの位置。吹き出しはこれについて動く（原作者 2026-11-14「立ち絵の位置調整したらテキストボックスも追従して」）
                 placed[who] = new Placed { left = left, top = top, width = W, height = H, headX = left + headOnScreen, right = right };
                 bool speaking = who == stage.Speaker;
