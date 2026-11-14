@@ -12,7 +12,7 @@ namespace Srpg.Battle
     /// 人・範囲ごとに場所のデータ（Assets/Data/Corridors/&lt;場所&gt;.json の explore.spots）で横の位置を上書きできる。
     /// 近づくと流れる会話（一度だけ。相手の隣まで歩いてから始める）、話す・調べる・扉の札、扉の条件（先に会う人・持ち物）
     /// </summary>
-    public class Explore2DController : MonoBehaviour
+    public partial class Explore2DController : MonoBehaviour
     {
         [Serializable]
         public class Spot
@@ -20,7 +20,18 @@ namespace Srpg.Battle
             public string id;
             public float x;
             public float w;   // 範囲（talkArea）の幅。0 なら配置表のマスから
-            public string label;   // 調べる所の名前（2Dでの置き物に合わせる。例: 剣は収納箱の中）
+            public string label;   // 調べる所の名前（2Dでの置き物に合わせる。例: 剣は収納箱の中）。出口は案内の文（「廊下へ」）
+            // ── 探索の新しい画面（探索の仕様書 explore_spec.md。2026-11-14）。座標は「部屋の座標」＝場所の座標の2倍（1688×780 の細かさ） ──
+            public float[] hit;        // 当たり判定 [x, y, 幅, 高さ]。なければ横の位置から決める
+            public float[] point;      // 札が指す点 [x, y]
+            public string kind;        // item（拾得物）/ tips（チップス）。なければ、ブロックで物を手に入れるなら item
+            public string rim;         // 縁の光のマスク（Resources/Explore/Rim/<rim>_glow・_rim・_band）
+            public float[] rimRect;    // マスクの置き場所 [x, y, 幅, 高さ]
+            public float rimDelay;     // ときどき1周の光の開始のずれ（秒）
+            public string emptyText;   // 拾得物を取ったあとに調べたときの文
+            public string en;          // 出口の英字（「CORRIDOR」など）。なければ EXIT
+            public float[] plate;      // 出口の案内の位置 [x, y, 幅, 高さ]
+            public float strip;        // 出口: この横の位置より外側（端の側）を押しても出口（0 なら端から決める）
         }
 
         [Serializable] public class StateLook { public string state, look; }
@@ -83,11 +94,14 @@ namespace Srpg.Battle
 
         private void Start() => Begin();
 
+        [SerializeField] private bool modernUI = true;   // 探索の新しい画面（Explore2DController.Modern）
+
         public void Begin()
         {
             scenario = scenarioJson != null ? JsonUtility.FromJson<ScenarioFile>(scenarioJson.text) : new ScenarioFile();
             if (view == null || placeJsons.Length == 0) { enabled = false; return; }
             view.Controlled = true;
+            if (modernUI) SetupModern();
             view.Rebuilt -= OnViewRebuilt;
             view.Rebuilt += OnViewRebuilt;
             view.Tapped -= OnTap;
@@ -248,7 +262,8 @@ namespace Srpg.Battle
         {
             if (dialogue != null) dialogue.Letterbox = view.TalkBands;   // 場面の見え方で、会話の帯を出すか
             view.SetPeople(peopleList);
-            view.SetMarkers(InspectSpots().Select(i => CellsX(i.id, i.cells)));
+            if (overlay != null) { view.SetMarkers(Array.Empty<float>()); RefreshTargets(); }
+            else view.SetMarkers(InspectSpots().Select(i => CellsX(i.id, i.cells)));
         }
 
         private IEnumerable<MapInspect> InspectSpots() => (State?.inspect ?? Array.Empty<MapInspect>()).Concat(map?.inspect ?? Array.Empty<MapInspect>());
@@ -260,6 +275,7 @@ namespace Srpg.Battle
         private void OnTap(float x, float y)
         {
             if (Busy || State == null) return;
+            if (overlay != null) { TapWorld(new Vector2(x * 2f, y * 2f)); return; }   // 新しい画面: 当たり判定の順で（Explore2DController.Modern）
             const float Pick = 48f;
             var person = (State.people ?? Array.Empty<MapPerson>()).Where(p => !string.IsNullOrEmpty(p.talkBlock) && Mathf.Abs(personX[p.id] - x) < Pick)
                 .OrderBy(p => Mathf.Abs(personX[p.id] - x)).FirstOrDefault();
@@ -309,6 +325,7 @@ namespace Srpg.Battle
             // 相手のいる会話の間だけ寄る（相手の隣へ歩いて始めた会話。1人で調べたときは寄らない。原作者 2026-10-04）
             view.TalkZoom = dialogue != null && dialogue.IsPlaying && view.FocusX != null;
             view.HideText = (dialogue != null && dialogue.IsPlaying) || Menu.Hub2Menu.Blocking || Menu.SupportSelectView.Talking;
+            if (overlay != null) UpdateModern(busy);
             if (busy) { view.ShowAction(null, null); return; }
             view.FocusX = null;
             float px = view.PlayerX;
@@ -324,6 +341,7 @@ namespace Srpg.Battle
                 return;
             }
 
+            if (overlay != null) return;   // 新しい画面は、押して選ぶ（下の札は出さない）
             // 札: いちばん近い人（話す）・調べる所・扉
             (float dist, string label, Action act) best = (float.MaxValue, null, null);
             foreach (var p in State.people ?? Array.Empty<MapPerson>())
@@ -436,12 +454,12 @@ namespace Srpg.Battle
                 // 2Dにない場所＝戦闘になる場所（奥行きのある盤面）。会話・持ち物を持って Explore3D へ（原作者 2026-10-04）
                 if (!Application.isPlaying) { Debug.Log($"[Explore2D] 戦闘の場所へ: {exit.toMap}"); return; }
                 ExploreHandoff.Set(exit.toMap, exit.toCell.V, exit.facing, seen, items);
-                StartCoroutine(Move(() => UnityEngine.SceneManagement.SceneManager.LoadScene("Explore3D")));
+                Transit(exit, () => UnityEngine.SceneManagement.SceneManager.LoadScene("Explore3D"));
                 return;
             }
             string from = map.mapId;
             if (!Application.isPlaying) { EnterPlace(target, from); return; }
-            StartCoroutine(Move(() => EnterPlace(target, from)));
+            Transit(exit, () => EnterPlace(target, from));
         }
 
         private bool Satisfied(string requirement)
@@ -512,7 +530,7 @@ namespace Srpg.Battle
         {
             if (dialogue == null) return;
             view.ShowAction(null, null);
-            dialogue.Play(new ScenarioBlock { id = "", part = "story", lines = lines }, null);
+            dialogue.Play(new ScenarioBlock { id = "", part = "story", lines = lines, location = map?.name }, null);   // 上のタブに場所の名前
         }
 
         /// <summary>確認用: 調べる所・扉・人の横の位置（id）</summary>

@@ -64,22 +64,29 @@ namespace Srpg.Tests
             for (int i = 0; i < 20 && dialogue.IsPlaying; i++) dialogue.Close();
             yield return null;
 
-            // 床の何もない所を押すと、そこへ歩く（手前の高さも）
-            float target = view.PlayerX + 120f;
-            view.OnTap(target, 380f);
-            for (float t = 0f; t < 3f && Mathf.Abs(view.PlayerX - target) > 1f; t += Time.unscaledDeltaTime) yield return null;
-            Assert.AreEqual(target, view.PlayerX, 1f, "押した所へ歩かない");
+            // 床の何もない所を押すと、そこへ歩く（部屋の座標。仕様書 §3.1 の ⑤）
+            explore.TapWorld(new Vector2(2000f, 760f));
+            for (float t = 0f; t < 4f && Mathf.Abs(view.PlayerX - 1000f) > 1f; t += Time.unscaledDeltaTime) yield return null;
+            Assert.AreEqual(1000f, view.PlayerX, 1f, "押した所へ歩かない");
 
-            // 剣立てを押すと、歩いて調べて双剣を手に入れる
-            view.OnTap(explore.SpotX("find_sword"), 360f);
-            for (float t = 0f; t < 4f && !dialogue.IsPlaying; t += Time.unscaledDeltaTime) yield return null;
-            Assert.IsTrue(dialogue.IsPlaying, "剣立てを調べる会話が始まらない");
+            // 収納箱を押すと、歩いて選ぶ（札が出る）→ もう一度押すと調べて、双剣を手に入れる
+            var chest = explore.Targets.First(t => t.target.id == "find_sword");
+            Assert.AreEqual(ExploreHit.Kind.Item, chest.target.kind, "収納箱は拾得物（光る）");
+            explore.TapWorld(chest.target.hit.center);
+            for (float t = 0f; t < 6f && explore.SelectedId != "find_sword"; t += Time.unscaledDeltaTime) yield return null;
+            Assert.AreEqual("find_sword", explore.SelectedId, "歩いて収納箱を選んでいない");
+            Assert.IsFalse(dialogue.IsPlaying, "選んだだけで調べてしまう");
+            explore.TapWorld(chest.target.hit.center);
+            for (float t = 0f; t < 2f && !dialogue.IsPlaying; t += Time.unscaledDeltaTime) yield return null;
+            Assert.IsTrue(dialogue.IsPlaying, "選んだ物をもう一度押しても調べない");
             for (int i = 0; i < 20 && dialogue.IsPlaying; i++) dialogue.Close();
+            yield return null;
             Assert.IsTrue(explore.Items.Contains("黒陽の双剣"), "双剣を手に入れていない");
+            Assert.AreEqual(ExploreHit.Kind.Tips, explore.Targets.First(t => t.target.id == "find_sword").target.kind, "取ったあとは光らない");
 
-            // 扉を押すと、回廊へ出る
-            view.OnTap(explore.SpotX("to_corridor"), 360f);
-            for (float t = 0f; t < 15f && explore.Place != "orcus_castle"; t += Time.unscaledDeltaTime) yield return null;   // 扉は右の端なので歩く距離が長い
+            // 出口の範囲を押すと、端まで歩いて廊下へ出る（押して開く札は出さない）
+            explore.TapWorld(new Vector2(3100f, 450f));
+            for (float t = 0f; t < 15f && explore.Place != "orcus_castle"; t += Time.unscaledDeltaTime) yield return null;
             Assert.AreEqual("orcus_castle", explore.Place, "部屋から回廊へ出られない");
         }
 
@@ -100,7 +107,7 @@ namespace Srpg.Tests
             for (int i = 0; i < 40 && dialogue.IsPlaying; i++) dialogue.Close();
             yield return null;
             view.PlayerX = explore.SpotX("to_yard") - 20f;
-            view.OnTap(explore.SpotX("to_yard"), 360f);
+            explore.TapWorld(explore.Targets.First(t => t.target.id == "to_yard").target.point);   // 途中の扉: 案内の所を押すと歩いて出る
             for (float t = 0f; t < 8f && SceneManager.GetActiveScene().name != "Explore3D"; t += Time.unscaledDeltaTime) yield return null;
             Assert.AreEqual("Explore3D", SceneManager.GetActiveScene().name, "階段から戦闘の場所（Explore3D）へ移らない");
             yield return null;

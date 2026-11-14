@@ -99,6 +99,7 @@ namespace Srpg.Battle
         private readonly Dictionary<RawImage, Vector2> moduleHome = new Dictionary<RawImage, Vector2>();
         private float toastUntil;
         private bool facingLeft;
+        private float keyHeld;
         private float walkTime;
         private readonly List<RectTransform> walkButtons = new List<RectTransform>();
         private readonly List<(RectTransform rt, RawImage img, float x)> people = new List<(RectTransform, RawImage, float)>();
@@ -302,6 +303,7 @@ namespace Srpg.Battle
 
             // アルシェ
             heroRect = NewRect("Hero", root);
+            BuildWorldLayer();   // 縁の光などの層（家具の手前・人とアルシェの奥。Corridor2DView.Modern）
             var heroImage = heroRect.gameObject.AddComponent<RawImage>();
             heroImage.texture = hero;
             heroImage.raycastTarget = false;
@@ -381,15 +383,18 @@ namespace Srpg.Battle
                 else if (kb.rightArrowKey.isPressed || kb.dKey.isPressed) dir = 1;
             }
             if (dir != 0 && autoWalk != null) { StopCoroutine(autoWalk); autoWalk = null; }   // ◀ ▶ を押したら、押した所へ歩くのをやめる
+            // 新しい探索の画面: キーも押しっぱなしで走る（0.18秒から。Corridor2DView.Modern）
+            if (Modern && holding == 0) { keyHeld = dir != 0 ? keyHeld + Time.unscaledDeltaTime : 0f; if (keyHeld >= 0.18f) Running = true; else if (dir == 0) Running = false; }
             if (dir != 0)
             {
-                playerX = Mathf.Clamp(playerX + dir * walkSpeed * GameSettings.MoveMultiplier * Time.deltaTime, WalkMinX, WalkMaxX);
+                float speed = Modern && Running ? RunSpeed : walkSpeed * GameSettings.MoveMultiplier;
+                playerX = Mathf.Clamp(playerX + dir * speed * Time.deltaTime, WalkMinX, WalkMaxX);
                 facingLeft = dir < 0;
                 walkTime += Time.deltaTime;
             }
             else walkTime = 0f;
-            if (kb != null && !Locked && !SaveMenu.IsOpen && !SettingsMenu.IsOpen && !Menu.Hub2Menu.Blocking && (kb.enterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame) && (nearExit != null || (Controlled && actionUse != null))) UseExit();
-            foreach (var b in walkButtons) if (b != null) b.gameObject.SetActive(!Locked && !Menu.Hub2Menu.Blocking);
+            if (!Modern && kb != null && !Locked && !SaveMenu.IsOpen && !SettingsMenu.IsOpen && !Menu.Hub2Menu.Blocking && (kb.enterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame) && (nearExit != null || (Controlled && actionUse != null))) UseExit();
+            foreach (var b in walkButtons) if (b != null) b.gameObject.SetActive(!Modern && !Locked && !Menu.Hub2Menu.Blocking);
             Apply();
         }
 
@@ -489,7 +494,7 @@ namespace Srpg.Battle
                     if (nearExit != null) exitLabel.text = nearExit.label;
                 }
             }
-            else if (exitButton != null) exitButton.gameObject.SetActive(actionUse != null && !Locked && !Menu.Hub2Menu.Blocking);   // メニュー（Hub2）を開いている間は隠す
+            else if (exitButton != null) exitButton.gameObject.SetActive(actionUse != null && !Locked && !Menu.Hub2Menu.Blocking && !Modern);   // メニュー（Hub2）を開いている間は隠す
             // 人（アルシェのほうを向く）
             foreach (var (rt, img, x) in people)
             {
@@ -506,6 +511,7 @@ namespace Srpg.Battle
             }
             if (toast != null && toast.gameObject.activeSelf && Application.isPlaying && Time.unscaledTime > toastUntil) toast.gameObject.SetActive(false);
             ShiftShafts();
+            ApplyWorldLayer();
             ApplyZoom();
             if (heroRect != null)
             {
@@ -564,7 +570,7 @@ namespace Srpg.Battle
         {
             actionUse = string.IsNullOrEmpty(label) ? null : use;
             if (exitLabel != null && actionUse != null) exitLabel.text = label;
-            if (exitButton != null) exitButton.gameObject.SetActive(actionUse != null && !Locked && !HideText);
+            if (exitButton != null) exitButton.gameObject.SetActive(actionUse != null && !Locked && !HideText && !Modern);
         }
 
         /// <summary>短い知らせ</summary>
