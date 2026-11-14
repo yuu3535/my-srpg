@@ -104,6 +104,19 @@ namespace Srpg.Battle
         private float bx0, by0, bx1, by1;   // 今の吹き出し
         private bool lastRevealing;
         private float doneAt = -1f;
+        private float pageAt = -10f;
+
+        /// <summary>
+        /// 画面を押して次へ（誤タップ対策。探索の仕様書 §8: 枠が開いた直後・ページが変わった直後の 0.4秒と、
+        /// 全部出た直後の 0.35秒は押しても何もしない。2026-11-14。キー・テストの Advance はそのまま）
+        /// </summary>
+        public void TapAdvance()
+        {
+            float now = Time.unscaledTime;
+            if (now - pageAt < 0.4f) return;
+            if (!Revealing && doneAt >= 0f && now - doneAt < 0.35f) return;
+            Advance();
+        }
         private RawImage designRef;
 
         private class LogEntry { public string name, text; public bool narration, phone; }
@@ -729,6 +742,7 @@ namespace Srpg.Battle
 
         private void ShowPage()
         {
+            pageAt = Time.unscaledTime;
             BeginReveal(pages[page]);
             pageLabel.text = pages.Length > 1 ? $"{page + 1} / {pages.Length}" : "";
             // 右寄せ＋字間: 見える右の端を（菱形の左 −51 − 間12 − 最後の字間）に

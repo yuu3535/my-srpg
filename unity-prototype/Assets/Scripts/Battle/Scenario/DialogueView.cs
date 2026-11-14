@@ -180,7 +180,7 @@ namespace Srpg.Battle
             hit.color = new Color(0, 0, 0, 0);
             var next = root.gameObject.AddComponent<Button>();
             next.transition = Selectable.Transition.None;
-            next.onClick.AddListener(Advance);
+            next.onClick.AddListener(TapAdvance);   // 誤タップ対策つき（DialogueView.Talk）
 
             BuildTalk();   // 周辺減光・立ち絵の舞台・吹き出し・上のタブ・下のボタン帯・ログ（DialogueView.Talk）
 
