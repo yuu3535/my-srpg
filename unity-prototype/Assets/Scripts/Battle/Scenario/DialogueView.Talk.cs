@@ -676,20 +676,28 @@ namespace Srpg.Battle
             float refTop = talk ? placed[line.speaker].top : SupportMode ? TopMinSupport : TopMinNormal;
             y1 = Mathf.Min(292f, refTop - 8f); y0 = Mathf.Max(98f, y1 - h); y1 = y0 + h;
             bool face = talk && SupportMode;
-            if (face)
+            // 頭の上に置くと自分の頭にかかる人（背の高い大人）だけ、頭の横（画面の真ん中の側）に置く。人の名前では決めない。
+            // 左右は支援会話の face と同じ、上下はできるだけ上（y0＝98）。試作（テキスト修正の担当の依頼・原作者 2026-11-15。
+            // docs/30-planning/TALK_BUBBLE_SIDE_PLACEMENT_HANDOFF_2026-11-15.md）
+            bool beside = talk && !SupportMode && y1 > placed[line.speaker].top;
+            if (face || beside)
             {
                 if (side > 0) { x1 = Mathf.Max(w + 40f, headX - 115f); x0 = x1 - w; }
                 else { x0 = Mathf.Min(1648f - w, headX + 115f); x1 = x0 + w; }
-                y1 = Mathf.Max(98f + h, Mathf.Round(placed[line.speaker].top + 70f)); y0 = y1 - h;
+                if (face) { y1 = Mathf.Max(98f + h, Mathf.Round(placed[line.speaker].top + 70f)); y0 = y1 - h; }
+                else { y0 = 98f; y1 = y0 + h; }
             }
+            Beside = beside;
             float cx = Mathf.Round((x0 + x1) / 2f);
             bx0 = x0; by0 = y0; bx1 = x1; by1 = y1;
 
             // 形（角を14px切る。尾つき）
             var shape = new List<Vector2> { TP(x0 + 14f, y0), TP(x1 - 14f, y0), TP(x1, y0 + 14f) };
             if (voice) { float my = y0 + h / 2f; shape.Add(TP(x1, my - 12f)); shape.Add(TP(x1 + 46f, my - 22f)); shape.Add(TP(x1, my + 12f)); }
+            // 頭の横に置いたとき: 尾は横の辺の下のほうから、話す人の顔へ（下の辺から出すと、隣の人を指して見える）
+            if (beside && side > 0) { shape.Add(TP(x1, y1 - 50f)); shape.Add(TP(x1 + 44f, y1 + 16f)); shape.Add(TP(x1, y1 - 20f)); }
             shape.Add(TP(x1, y1 - 14f)); shape.Add(TP(x1 - 14f, y1));
-            if (talk)
+            if (talk && !beside)
             {
                 float bx; int dir;
                 if (face) { bx = side > 0 ? x1 - 64f : x0 + 64f; dir = side > 0 ? 1 : -1; }
@@ -698,7 +706,9 @@ namespace Srpg.Battle
                 if (dir < 0) { shape.Add(TP(bx + 18f, y1)); shape.Add(TP(tx, ty)); shape.Add(TP(bx - 6f, y1)); }
                 else { shape.Add(TP(bx + 6f, y1)); shape.Add(TP(tx, ty)); shape.Add(TP(bx - 18f, y1)); }
             }
-            shape.Add(TP(x0 + 14f, y1)); shape.Add(TP(x0, y1 - 14f)); shape.Add(TP(x0, y0 + 14f));
+            shape.Add(TP(x0 + 14f, y1)); shape.Add(TP(x0, y1 - 14f));
+            if (beside && side < 0) { shape.Add(TP(x0, y1 - 20f)); shape.Add(TP(x0 - 44f, y1 + 16f)); shape.Add(TP(x0, y1 - 50f)); }
+            shape.Add(TP(x0, y0 + 14f));
             bubbleFill.color = Dark(p.pl, 0.92f * 0.86f);
             bubbleFill.Set(shape, PolyGraphic.Mode.Fill);
             bubbleLine.color = Light(p.ln);
@@ -758,6 +768,8 @@ namespace Srpg.Battle
 
         private PolyGraphic tabBottom;
         private string lastName;
+        /// <summary>今の吹き出しを、背が高くて頭の横に置いたか（確認・テスト用）</summary>
+        public bool Beside { get; private set; }
         private float tabShownAt = -10f;
 
         private void ShowPage()
