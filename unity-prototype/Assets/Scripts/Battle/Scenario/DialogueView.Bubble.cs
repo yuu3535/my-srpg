@@ -22,7 +22,10 @@ namespace Srpg.Battle
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")] private static extern void SrpgEditText(string initial, TextDone done);
 #endif
-        private delegate void TextDone(IntPtr text);   // ブラウザの入力欄から戻る（IL2CPP は総称の delegate を渡せない）
+        private delegate void TextDone(IntPtr text);
+#if UNITY_WEBGL && !UNITY_EDITOR
+        [DllImport("__Internal")] private static extern void SrpgEditNumbers(string title, string labels, string values, TextDone done);
+#endif   // ブラウザの入力欄から戻る（IL2CPP は総称の delegate を渡せない）
 
         [Serializable]
         public class BubbleSlot
@@ -192,8 +195,9 @@ namespace Srpg.Battle
         {
             if (bubbleKeyNow == null) return;
             var s = bubblePending.TryGetValue(bubbleKeyNow, out var p) ? p : Copy(BubbleOf(bubbleKeyNow));
-            if (!tipOnly) { s.x += dx; s.y += dy; }
-            s.tipX += dx; s.tipY += dy;   // 吹き出しを動かすと尾の先も一緒に（尾の先だけは菱形で）
+            // 吹き出しを動かしても尾の先は動かさない（尾の先は菱形で。原作者 2026-11-15「吹き出しだけの調整をしたいときに不便」）
+            if (tipOnly) { s.tipX += dx; s.tipY += dy; }
+            else { s.x += dx; s.y += dy; }
             s.x = Mathf.Clamp(s.x, 0f, TalkW); s.y = Mathf.Clamp(s.y, 0f, TalkH - 60f);
             s.tipX = Mathf.Clamp(s.tipX, 0f, TalkW); s.tipY = Mathf.Clamp(s.tipY, 0f, TalkH);
             bubblePending[bubbleKeyNow] = s;
@@ -256,6 +260,48 @@ namespace Srpg.Battle
             int i = Array.IndexOf(samples, editText);
             SetEditText(samples[(i + 1) % samples.Length]);
 #endif
+        }
+
+        /// <summary>数で入れる（話す人の側の端・上の端・尾の先）。ブラウザ版はブラウザの入力欄</summary>
+        private void EditNumbers()
+        {
+            if (bubbleKeyNow == null) return;
+            var s = BubbleOf(bubbleKeyNow);
+            string side = SlotRight(bubbleKeyNow) ? "右の端" : "左の端";
+#if UNITY_WEBGL && !UNITY_EDITOR
+            textEditing = this;
+            WebGLInput.captureAllKeyboardInput = false;
+            SrpgEditNumbers($"枠：{SlotName(bubbleKeyNow)}（1688×780 の座標。左上が 0）", $"{side}|上の端|尾の先（横）|尾の先（縦）",
+                $"{s.x:0}|{s.y:0}|{s.tipX:0}|{s.tipY:0}", OnNumbersEdited);
+#else
+            Debug.Log($"[DialogueView] 数で入れるのはブラウザ版だけ（今の値 {side} {s.x} 上 {s.y} 尾 {s.tipX},{s.tipY}）");
+#endif
+        }
+
+        /// <summary>入れた数を当てる（空の欄はそのまま）</summary>
+        public void SetBubbleNumbers(float? x, float? y, float? tipX, float? tipY)
+        {
+            if (bubbleKeyNow == null) return;
+            var s = bubblePending.TryGetValue(bubbleKeyNow, out var p) ? p : Copy(BubbleOf(bubbleKeyNow));
+            if (x.HasValue) s.x = Mathf.Clamp(x.Value, 0f, TalkW);
+            if (y.HasValue) s.y = Mathf.Clamp(y.Value, 0f, TalkH - 60f);
+            if (tipX.HasValue) s.tipX = Mathf.Clamp(tipX.Value, 0f, TalkW);
+            if (tipY.HasValue) s.tipY = Mathf.Clamp(tipY.Value, 0f, TalkH);
+            bubblePending[bubbleKeyNow] = s;
+            bubbleDirty = true;
+            RelayoutBubble();
+        }
+
+        [AOT.MonoPInvokeCallback(typeof(TextDone))]
+        private static void OnNumbersEdited(IntPtr ptr)
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            WebGLInput.captureAllKeyboardInput = true;
+#endif
+            if (ptr == IntPtr.Zero || textEditing == null) return;
+            var parts = (Marshal.PtrToStringUTF8(ptr) ?? "").Split('|');
+            float? At(int i) => i < parts.Length && float.TryParse(parts[i], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v) ? Mathf.Round(v) : (float?)null;
+            textEditing.SetBubbleNumbers(At(0), At(1), At(2), At(3));
         }
 
         [AOT.MonoPInvokeCallback(typeof(TextDone))]
@@ -338,7 +384,7 @@ namespace Srpg.Battle
             bubbleValues.alignment = TextAnchor.MiddleLeft;
             bubbleState = TLabel(bubblePanel, "", 1090f, 12f, 540f, 30f, 15, HexC("#a8a49c"), 600);
             bubbleState.alignment = TextAnchor.MiddleLeft;
-            var hint = TLabel(bubblePanel, "吹き出しをドラッグで動かす・菱形（尾の先）をドラッグ・同じ枠の人はみんな同じ位置になる。文の大きさが変わっても、上の端と話す人の側の端は動かない", 20f, 46f, 1400f, 14f, 12, HexC("#8f8a82"), 600);
+            var hint = TLabel(bubblePanel, "吹き出しをドラッグで動かす（尾の先は動かない）・菱形（尾の先）をドラッグ・「数で入れる」で数を打つ・同じ枠の人はみんな同じ位置になる。文の大きさが変わっても、上の端と話す人の側の端は動かない", 20f, 46f, 1400f, 14f, 12, HexC("#8f8a82"), 600);
             hint.alignment = TextAnchor.MiddleLeft;
 
             float x = 20f, y = 64f;
@@ -361,7 +407,7 @@ namespace Srpg.Battle
             void Gap() => x += 14f;
             B("短い文", 80f, () => SetEditText(ShortSample));
             B("長い文", 80f, () => SetEditText(LongSample));
-            B("文を入れる（改行できる）", 230f, EditText);
+            B("文を入れる", 120f, EditText);
             Gap();
             B("前の台詞", 96f, () => { StepLine(-1); RelayoutBubble(); });
             B("次の台詞", 96f, () => { StepLine(1); RelayoutBubble(); });
@@ -370,12 +416,13 @@ namespace Srpg.Battle
             B("右へ", 52f, () => MoveBubble(4f, 0f, false));
             B("上へ", 52f, () => MoveBubble(0f, -4f, false));
             B("下へ", 52f, () => MoveBubble(0f, 4f, false));
+            B("数で入れる", 110f, EditNumbers);
             Gap();
             B("保存", 72f, SaveBubbles);
-            B("この枠を元に戻す", 150f, ResetBubble);
-            B("全部の位置をコピー（総合担当へ）", 300f, CopyBubbles);
+            B("元に戻す", 96f, ResetBubble);
+            B("コピー（総合担当へ）", 200f, CopyBubbles);
             Gap();
-            B("上へ／下へ", 112f, () => { bubbleTop = !bubbleTop; PlaceBubblePanel(); });
+            B("パネルを上へ／下へ", 170f, () => { bubbleTop = !bubbleTop; PlaceBubblePanel(); });
             B("閉じる", 80f, CloseBubbleTool);
             bubblePanel.gameObject.SetActive(false);
         }
