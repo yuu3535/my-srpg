@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,10 +12,15 @@ namespace Srpg.Battle
     /// 立ち絵の位置の調整（原作者 2026-09-28: 今のUIでも自分で調整できるように。ブラウザ版の「立ち絵を5回たたくと調整パネル」と同じやり方）。
     /// 会話中に立ち絵を素早く5回たたくと、調整パネルが開く。大きさ・上下・左右をつまみで変え、「この表情」か「全表情」に保存する。
     /// 保存先: Unity のエディタで遊んだときは Assets/Data/portrait_adjust.json（コミットすれば全員に効く）、
-    /// 書き出したゲームでは端末の中（persistentDataPath）。キーは「名前」（全表情）か「名前_表情」（その表情だけ）
+    /// 書き出したゲームでは端末の中（persistentDataPath）。キーは「名前」（全表情）か「名前_表情」（その表情だけ）。
+    /// ブラウザ版で調整した値は「全部の調整をコピー」で文にして、総合担当が Assets/Data/portrait_adjust.json に入れる
     /// </summary>
     public partial class DialogueView
     {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        [DllImport("__Internal")] private static extern void SrpgCopyText(string text);
+#endif
+
         [Serializable]
         public class PortraitAdjust
         {
@@ -95,7 +101,7 @@ namespace Srpg.Battle
         {
             float now = Time.realtimeSinceStartup;
             if (who == tapWho && now - lastTap < 0.6f) tapCount++;
-            else { tapCount = 1; tapWho = who; Advance(); }
+            else { tapCount = 1; tapWho = who; TapAdvance(); }   // 誤タップ対策つき（会話の枠を押したときと同じ）
             lastTap = now;
             if (tapCount >= 5) { tapCount = 0; OpenAdjuster(who); }
         }
@@ -140,6 +146,23 @@ namespace Srpg.Battle
             adjustValues.text += "　保存した";
         }
 
+        /// <summary>
+        /// 調整した全部の値を、文字にしてコピーする（ブラウザ版の調整は、そのブラウザの中にしか残らないので、総合担当に貼って届ける。
+        /// 貼ってもらった文を Assets/Data/portrait_adjust.json に入れると、全員に効く。原作者 2026-11-14）
+        /// </summary>
+        public string AdjustmentsText() => JsonUtility.ToJson(new AdjustFile { items = adjusts.Values.OrderBy(a => a.key, StringComparer.Ordinal).ToArray() }, true);
+
+        private void CopyAdjustments()
+        {
+            string text = AdjustmentsText();
+#if UNITY_WEBGL && !UNITY_EDITOR
+            SrpgCopyText(text);
+#else
+            GUIUtility.systemCopyBuffer = text;
+#endif
+            adjustValues.text = $"{adjusts.Count}件の調整をコピーした。総合担当に貼ってください（写せていなければ、もう一度画面をタップ）";
+        }
+
         private void ResetAdjust()
         {
             zoomSlider.SetValueWithoutNotify(1f);
@@ -165,7 +188,7 @@ namespace Srpg.Battle
             adjustPanel = NewRect("Adjuster", root);
             adjustPanel.anchorMin = adjustPanel.anchorMax = new Vector2(0.5f, 1f);
             adjustPanel.pivot = new Vector2(0.5f, 1f);
-            adjustPanel.sizeDelta = new Vector2(380f, 168f);
+            adjustPanel.sizeDelta = new Vector2(380f, 196f);
             adjustPanel.anchoredPosition = new Vector2(0f, -8f);
             var bg = adjustPanel.gameObject.AddComponent<Image>();
             if (panelSprite != null) { bg.sprite = panelSprite; bg.type = Image.Type.Sliced; } else bg.color = new Color(0.05f, 0.03f, 0.08f, 0.96f);
@@ -180,6 +203,7 @@ namespace Srpg.Battle
             NewButton("全表情に保存", 108f, () => SaveAdjust(true), font);
             NewButton("元に戻す", 200f, ResetAdjust, font);
             NewButton("閉じる", 276f, CloseAdjuster, font);
+            NewButton("全部の調整をコピー（総合担当へ）", 16f, CopyAdjustments, font, 162f);
             adjustPanel.gameObject.SetActive(false);
         }
 
@@ -215,10 +239,10 @@ namespace Srpg.Battle
             return slider;
         }
 
-        private void NewButton(string label, float x, Action action, Font font)
+        private void NewButton(string label, float x, Action action, Font font, float y = 132f)
         {
             var rt = NewRect("Button_" + label, adjustPanel);
-            PlaceTop(rt, x, 132f, label.Length * 11f + 18f, 24f);
+            PlaceTop(rt, x, y, label.Length * 11f + 18f, 24f);
             var bg = rt.gameObject.AddComponent<Image>();
             bg.color = new Color(0.22f, 0.08f, 0.28f, 0.95f);
             var button = rt.gameObject.AddComponent<Button>();
