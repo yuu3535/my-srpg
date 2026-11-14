@@ -93,6 +93,30 @@ namespace Srpg.Battle
         public void Advance()
         {
             if (block == null || AdjusterOpen || LogOpen) return;   // 立ち絵の調整中・ログを開いている間は進めない
+            AdvanceCore();
+        }
+
+        /// <summary>
+        /// 立ち絵の調整パネルの「前の台詞」「次の台詞」（dir＝−1・1）。調整を開いたまま会話を行き来して、ほかの吹き出しとの重なりを見る
+        /// </summary>
+        public void StepLine(int dir)
+        {
+            if (block == null) return;
+            if (Revealing) FinishReveal();
+            if (dir < 0)
+            {
+                if (index <= 0) return;
+                index -= 2;
+                pages = Array.Empty<string>(); page = 0;
+            }
+            if (dir > 0 && index >= lines.Length - 1 && page >= pages.Length - 1) return;   // 最後の台詞では閉じない
+            AdvanceCore();
+            if (AdjusterOpen) Relayout();
+        }
+
+        private void AdvanceCore()
+        {
+            if (block == null) return;
             if (Revealing) { FinishReveal(); return; }    // 文字を出している途中なら、まず全部出す
             // 長い文は次のページへ（話す人・表情はそのまま。ログ・物を手に入れるのは最初のページだけ）
             if (page < pages.Length - 1) { page++; ShowPage(); return; }
@@ -186,7 +210,6 @@ namespace Srpg.Battle
 
             LoadAdjustments();
             BuildAdjuster(TalkFont);
-            adjustPanel.localScale = Vector3.one * 2f;   // 調整パネルは 844 の大きさで作ってある
             root.gameObject.SetActive(false);
 
             // 押す操作をUIに届ける仕組み（探索のシーンには戦闘のUIがなく、これがないと会話を進められない）
@@ -199,6 +222,7 @@ namespace Srpg.Battle
 
         private void Update()
         {
+            UpdateAdjuster();   // 立ち絵の調整（ホイール・矢印キー。DialogueView.Adjust）
             TickReveal();   // 文字を少しずつ出す・オート・スキップ（DialogueView.Settings）
             // 長押しで早送り（レビュー 2026-09-28_2 J8）
             if (Application.isPlaying && IsPlaying && !AdjusterOpen && !LogOpen)

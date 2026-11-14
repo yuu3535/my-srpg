@@ -590,6 +590,7 @@ namespace Srpg.Battle
                     tap.transition = Selectable.Transition.None;
                     string tapped = who;
                     tap.onClick.AddListener(() => OnPortraitTap(tapped));
+                    AttachPortraitDrag(image.gameObject, tapped);   // 調整パネルが出ているときは、ドラッグで動かす
                     actors[who] = image;
                 }
                 image.gameObject.SetActive(visible);
@@ -600,14 +601,15 @@ namespace Srpg.Battle
                 // 透明でない所（絵の名前で探す。無ければ絵全体）
                 var b = bounds.TryGetValue(portrait.texture.name, out var bb) ? bb : new Bounds { w = portrait.texture.width, h = portrait.texture.height, left = 0, top = 0, right = portrait.texture.width, bottom = portrait.texture.height };
                 float bw = b.right - b.left, bh = b.bottom - b.top;
-                var adj = adjustWho == who && previewAdjust != null ? previewAdjust : AdjustOf(who, expression);
+                var adj = PreviewOf(who) ?? AdjustOf(who, expression);   // 調整中は保存前の値（DialogueView.Adjust）
                 float zoom = adj != null ? Mathf.Clamp(adj.zoom, 0.5f, 2.5f) : 1f;
                 float H = fig.height * zoom, W = H * bw / Mathf.Max(1f, bh);
                 float natHead = fig.headX >= 0f ? fig.headX * zoom : W * 0.5f;
                 float headOnScreen = right ? W - natHead : natHead;
                 float left = slot.headX - headOnScreen + (adj != null ? adj.dx * W : 0f);
                 float top = slot.baseline - H - (adj != null ? adj.dy * H : 0f);
-                placed[who] = new Placed { left = left, top = top, width = W, height = H, headX = slot.headX, right = right };
+                // 頭の位置は調整（左右）のあとの位置。吹き出しはこれについて動く（原作者 2026-11-14「立ち絵の位置調整したらテキストボックスも追従して」）
+                placed[who] = new Placed { left = left, top = top, width = W, height = H, headX = left + headOnScreen, right = right };
                 bool speaking = who == stage.Speaker;
                 var rt = image.rectTransform;
                 rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);

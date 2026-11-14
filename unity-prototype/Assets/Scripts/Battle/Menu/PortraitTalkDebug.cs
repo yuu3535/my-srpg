@@ -42,6 +42,8 @@ namespace Srpg.Battle.Menu
             if (explore != null) explore.enabled = false;
             var view = FindFirstObjectByType<Corridor2DView>();
             if (view != null) view.Darkness = 0f;
+            var overlay = FindFirstObjectByType<ExploreOverlay>();
+            if (overlay != null) { overlay.Visible = false; overlay.HintOn = false; overlay.ShowLeft = overlay.ShowRight = false; }   // 探索の札・矢印・案内は出さない
             Build();
         }
 
@@ -82,7 +84,8 @@ namespace Srpg.Battle.Menu
             slotsRoot = Node("Slots", area);
             slotsRoot.anchorMin = slotsRoot.anchorMax = slotsRoot.pivot = new Vector2(0f, 1f);
             slotsRoot.sizeDelta = Vector2.zero;
-            Button(area, "この並びで会話を流す", 150f, 560f, 420f, Play);
+            Button(area, "この並びで会話を流す", 150f, 560f, 420f, () => Play(false));
+            Button(area, "調整しながら流す（調整パネルを開く）", 590f, 560f, 520f, () => Play(true));
             Refresh();
         }
 
@@ -117,7 +120,7 @@ namespace Srpg.Battle.Menu
         }
 
         /// <summary>見本の会話: 選んだ順（外 → 内）に話す。1行と2行の台詞で吹き出しの大きさも見る。名前が重なったら、その人は1回だけ</summary>
-        private void Play()
+        private void Play(bool adjust)
         {
             var dialogue = FindFirstObjectByType<DialogueView>();
             if (dialogue == null) return;
@@ -140,6 +143,7 @@ namespace Srpg.Battle.Menu
             playing = true;
             dialogue.Play(new ScenarioBlock { id = "", part = "story", lines = lines.ToArray(), location = "立ち絵の並びテスト" },
                 () => { playing = false; DialogueCast.DebugLeft = null; if (panel != null) panel.gameObject.SetActive(true); });
+            if (adjust && who.Count > 0) dialogue.OpenAdjuster(who[0]);
         }
 
         private void Button(RectTransform parent, string text, float x, float y, float w, System.Action act)
