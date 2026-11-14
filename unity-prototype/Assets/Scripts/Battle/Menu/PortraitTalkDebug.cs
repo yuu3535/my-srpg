@@ -37,11 +37,20 @@ namespace Srpg.Battle.Menu
             fontEn = Resources.Load<Font>("Fonts/BarlowCondensed-SemiBold") ?? font;
             yield return null;
             yield return null;
-            var dialogue = FindFirstObjectByType<DialogueView>();
-            for (int i = 0; i < 40 && dialogue != null && dialogue.IsPlaying; i++) dialogue.Close();
-            yield return null;
-            for (int i = 0; i < 40 && dialogue != null && dialogue.IsPlaying; i++) dialogue.Close();
+            // 部屋の物語（起きたときの会話・近づくと流れる会話）は止める。テストの会話のほかは、出たらすぐ閉じる（Update）
+            var explore = FindFirstObjectByType<Explore2DController>();
+            if (explore != null) explore.enabled = false;
+            var view = FindFirstObjectByType<Corridor2DView>();
+            if (view != null) view.Darkness = 0f;
             Build();
+        }
+
+        private bool playing;
+
+        private void Update()
+        {
+            var dialogue = FindFirstObjectByType<DialogueView>();
+            if (!playing && dialogue != null && dialogue.IsPlaying) dialogue.Close();
         }
 
         private void OnDestroy() => DialogueCast.DebugLeft = null;
@@ -128,8 +137,9 @@ namespace Srpg.Battle.Menu
             foreach (var c in who) lines.Add(new ScenarioLine { type = "line", speaker = c, text = "二行の台詞の見本です。吹き出しの大きさと、立ち絵との重なりを確かめます。" });
             lines.Add(new ScenarioLine { type = "narration", text = "地の文の見本です。" });
             panel.gameObject.SetActive(false);
+            playing = true;
             dialogue.Play(new ScenarioBlock { id = "", part = "story", lines = lines.ToArray(), location = "立ち絵の並びテスト" },
-                () => { DialogueCast.DebugLeft = null; if (panel != null) panel.gameObject.SetActive(true); });
+                () => { playing = false; DialogueCast.DebugLeft = null; if (panel != null) panel.gameObject.SetActive(true); });
         }
 
         private void Button(RectTransform parent, string text, float x, float y, float w, System.Action act)
