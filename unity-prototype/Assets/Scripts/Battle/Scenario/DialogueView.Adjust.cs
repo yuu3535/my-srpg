@@ -38,7 +38,8 @@ namespace Srpg.Battle
         [SerializeField] private TextAsset adjustJson;   // Assets/Data/portrait_adjust.json（あれば）
 
         private readonly Dictionary<string, PortraitAdjust> adjusts = new Dictionary<string, PortraitAdjust>();
-        private RectTransform adjustPanel, guides;
+        private RectTransform adjustPanel, guides, balance;
+        private int balanceMode;   // 0 なし・1 三分割・2 黄金比・3 両方
         private Text adjustTitle, adjustValues, adjustState;
         private string adjustWho;
         private string tapWho;
@@ -112,6 +113,7 @@ namespace Srpg.Battle
             adjustPanel.gameObject.SetActive(true);
             PlacePanel();
             Relayout();
+            DrawBalance();
         }
 
         public bool AdjusterOpen => adjustPanel != null && adjustPanel.gameObject.activeSelf;
@@ -197,6 +199,7 @@ namespace Srpg.Battle
         {
             if (adjustPanel != null) adjustPanel.gameObject.SetActive(false);
             if (guides != null) guides.gameObject.SetActive(false);
+            if (balance != null) balance.gameObject.SetActive(false);
             adjustWho = null;
             previewAdjust = null;
             pending.Clear();
@@ -272,6 +275,49 @@ namespace Srpg.Battle
             TFill(guides, bx0, by0, 1f, by1 - by0, b); TFill(guides, bx1, by0, 1f, by1 - by0, b);
         }
 
+        // ── バランス線（原作者 2026-11-14「どこの位置に調整すると美しいか、目安があるとバランスとりやすい」） ──
+        // 三分割（1/3・2/3）・黄金比（0.382・0.618）・まん中、と、立ち絵の枠のふつうの頭の位置（左の外・左の内・右の内・右の外、2人用）
+
+        private static readonly string[] BalanceNames = { "バランス線：なし", "バランス線：三分割", "バランス線：黄金比", "バランス線：両方" };
+
+        private void DrawBalance()
+        {
+            if (balance == null) return;
+            for (int i = balance.childCount - 1; i >= 0; i--) Destroy(balance.GetChild(i).gameObject);
+            balance.gameObject.SetActive(balanceMode > 0 && AdjusterOpen);
+            if (balanceMode == 0 || !AdjusterOpen) return;
+            var thirds = new Color(1f, 1f, 1f, 0.32f);
+            var golden = new Color(0.98f, 0.82f, 0.45f, 0.42f);
+            var center = new Color(1f, 1f, 1f, 0.16f);
+            void V(float x, Color c, string label)
+            {
+                TFill(balance, x - 0.5f, 0f, 1f, TalkH, c);
+                if (!string.IsNullOrEmpty(label)) { var t = TLabel(balance, label, x + 4f, 52f, 200f, 16f, 12, c, 600); t.alignment = TextAnchor.MiddleLeft; }
+            }
+            void Hz(float y, Color c, string label)
+            {
+                TFill(balance, 0f, y - 0.5f, TalkW, 1f, c);
+                if (!string.IsNullOrEmpty(label)) { var t = TLabel(balance, label, 8f, y + 2f, 200f, 16f, 12, c, 600); t.alignment = TextAnchor.MiddleLeft; }
+            }
+            V(TalkW / 2f, center, "まん中");
+            if (balanceMode == 1 || balanceMode == 3)
+            {
+                V(TalkW / 3f, thirds, "1/3"); V(TalkW * 2f / 3f, thirds, "2/3");
+                Hz(TalkH / 3f, thirds, "1/3（目の高さの目安）"); Hz(TalkH * 2f / 3f, thirds, "2/3");
+            }
+            if (balanceMode == 2 || balanceMode == 3)
+            {
+                V(TalkW * 0.382f, golden, "黄金比"); V(TalkW * 0.618f, golden, "黄金比");
+                Hz(TalkH * 0.382f, golden, "黄金比"); Hz(TalkH * 0.618f, golden, "");
+            }
+            // 枠のふつうの頭の位置（小さな印）。並び方で、どの枠の基準か分かるように
+            var slotCol = new Color(0.55f, 0.85f, 0.95f, 0.7f);
+            // 画面の上の端の近く（下は調整パネルに隠れるため）
+            void Tick(float x, string label) { TFill(balance, x - 1f, 74f, 2f, 18f, slotCol); var t = TLabel(balance, label, x - 60f, 94f, 120f, 18f, 12, slotCol, 600); t.alignment = TextAnchor.MiddleCenter; }
+            Tick(SL1.headX, "左の外"); Tick(SL2.headX, "左の内"); Tick(SR2.headX, "右の内"); Tick(SR1.headX, "右の外");
+            Tick(SupL1.headX, "2人・左"); Tick(SupR1.headX, "2人・右");
+        }
+
         // ── 組み立て（1688×780。会話枠 H と同じ黒い地に銀の線） ──
 
         private const float PanelH = 104f;
@@ -285,6 +331,10 @@ namespace Srpg.Battle
 
         private void BuildAdjuster(Font font)
         {
+            balance = TNode("BalanceGuides", root);
+            balance.anchorMin = balance.anchorMax = balance.pivot = new Vector2(0f, 1f);
+            balance.sizeDelta = Vector2.zero;
+            balance.gameObject.SetActive(false);
             guides = TNode("AdjustGuides", root);
             guides.anchorMin = guides.anchorMax = guides.pivot = new Vector2(0f, 1f);
             guides.sizeDelta = Vector2.zero;
@@ -338,6 +388,9 @@ namespace Srpg.Battle
             B("次の台詞", 96f, () => StepLine(1));
             Gap();
             B("目安の線", 96f, () => { guidesOn = !guidesOn; DrawGuides(); });
+            Text balanceLabel = null;
+            B("バランス線：なし", 190f, () => { balanceMode = (balanceMode + 1) % 4; if (balanceLabel != null) balanceLabel.text = BalanceNames[balanceMode]; DrawBalance(); });
+            balanceLabel = adjustPanel.Find("Btn_バランス線：なし").GetComponentInChildren<Text>();
             Gap();
             B("保存", 72f, SaveAdjust);
             B("元に戻す", 96f, ResetAdjust);
