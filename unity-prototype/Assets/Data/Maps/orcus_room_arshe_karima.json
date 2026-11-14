@@ -253,6 +253,23 @@
      ],
      "required": false,
      "label": ""
+    },
+    {
+     "id": "arshe_bed",
+     "block": "",
+     "text": "寝相のせいで、布団がぐちゃぐちゃのままだ。\nあとで直しておこう……たぶん。",
+     "cells": [
+      {
+       "x": 1,
+       "y": 1
+      },
+      {
+       "x": 1,
+       "y": 2
+      }
+     ],
+     "required": false,
+     "label": "ベッド"
     }
    ],
    "goals": [
