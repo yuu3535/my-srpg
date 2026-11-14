@@ -179,6 +179,8 @@ namespace Srpg.Battle
             if (ex == null || map == null) { Debug.LogWarning($"[Explore2D] 場所がない: {placeName}"); return; }
             peopleList = new List<(string, string, Texture2D, float)>();
             view.SetPlace(asset);
+            // 会話の枠の上のタブも、探索の場所札と同じ名前に（シナリオの「アルシェ自室」は実質アルシェとカリマの部屋。原作者 2026-11-14）
+            if (dialogue != null && !string.IsNullOrEmpty(map.name)) dialogue.Place = map.name;
             string stateId = stateOf.TryGetValue(map.mapId, out var sid) ? sid : ex.state;
             State = (!string.IsNullOrEmpty(stateId) ? map.State(stateId) : null) ?? map.states?.FirstOrDefault();
 
