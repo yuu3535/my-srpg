@@ -671,7 +671,9 @@ namespace Srpg.Battle
             int maxLen = rows.Count > 0 ? rows.Max(r => r.Length) : 0;
             int lineCount = Mathf.Min(perPage, Mathf.Max(1, rows.Count));
             float txW = Mathf.Round(maxLen * CW) + 10f;
-            float w = Mathf.Max(540f, txW + 100f);
+            // 1行の字数を決めた枠は、その字数の幅で固定（540 より細くもなる。話す人や文が変わっても箱の大きさが跳ばない。原作者 2026-11-15「直して」）
+            float minW = slotBs != null && slotBs.chars > 0 ? Mathf.Round(slotBs.chars * CW) + 10f + 100f : 540f;
+            float w = Mathf.Max(minW, txW + 100f);
             float h = 30f + lineCount * LH + 34f;
 
             float x0, x1, y0, y1;

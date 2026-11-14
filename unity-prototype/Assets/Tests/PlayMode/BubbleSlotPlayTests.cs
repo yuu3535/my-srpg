@@ -62,6 +62,7 @@ namespace Srpg.Tests
                 Assert.AreEqual(wide.yMin, narrow.yMin, 0.5f, "行数を変えると上の端が動く");
                 Assert.AreEqual(30f + 4 * 50f + 34f, narrow.height, 0.5f, "4行の高さにならない");
                 Assert.AreEqual(1, dialogue.PageCount, "4行なら1ページに収まる");
+                Assert.AreEqual(Mathf.Round(13 * 31.8f) + 110f, narrow.width, 0.5f, "字数を決めた枠は、その字数の幅（540 より細い）");
             }
             finally
             {
