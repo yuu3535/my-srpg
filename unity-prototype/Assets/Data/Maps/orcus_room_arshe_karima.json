@@ -239,8 +239,8 @@
     },
     {
      "id": "arshe_shelf",
-     "block": "prologue_1_1.b04",
-     "text": "",
+     "block": "",
+     "text": "本がぎっしりと詰まっている。\n何度も読み返した跡がある。",
      "cells": [
       {
        "x": 2,
@@ -252,12 +252,12 @@
       }
      ],
      "required": false,
-     "label": ""
+     "label": "本棚"
     },
     {
      "id": "arshe_bed",
-     "block": "",
-     "text": "寝相のせいで、布団がぐちゃぐちゃのままだ。\nあとで直しておこう……たぶん。",
+     "block": "prologue_1_1.b04",
+     "text": "",
      "cells": [
       {
        "x": 1,
