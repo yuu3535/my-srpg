@@ -64,7 +64,7 @@ namespace Srpg.Battle
         public MapCell[] cells;
         public bool hasTarget;
         public MapCell toCell;
-        public string[] requires;   // "item:黒陽の双剣" / "block:prologue_1_1.b06"
+        public string[] requires;   // "item:黒陽の双剣" / "block:prologue_1_1.b05"
     }
 
     [Serializable]
@@ -103,6 +103,7 @@ namespace Srpg.Battle
     public class MapGoal
     {
         public string id, exit, block, thenBattleArea, thenBlock;
+        public string[] moreBlocks; // block のあとに続けて流すブロック（表でシーンが分かれた会話。例: 訓練場の合流 b09 → 戦闘の前 b10）
         public MapCell[] cells;
         public MapCell talkAt;      // 着いたら、このマスまで歩いてから会話（イベントの場面の位置。原作者 2026-10-05）
         public bool hasTalkAt;

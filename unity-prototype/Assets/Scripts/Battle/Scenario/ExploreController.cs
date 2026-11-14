@@ -435,6 +435,7 @@ namespace Srpg.Battle
             {
                 var blocks = new List<string>();
                 if (!string.IsNullOrEmpty(goal.block)) blocks.Add(goal.block);
+                if (goal.moreBlocks != null) blocks.AddRange(goal.moreBlocks.Where(b => !string.IsNullOrEmpty(b)));
                 // イベントの場面の位置（talkAt）があれば、そこまで歩いてから。なければ相手の隣まで
                 Action<Action> approach = goal.hasTalkAt ? (Action<Action>)(play => WalkToCellThen(goal.talkAt.V, play)) : play => ApproachThen(goal.block, play);
                 approach(() => PlayBlocks(blocks, () =>

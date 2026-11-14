@@ -295,7 +295,7 @@ def to_unity(path):
         goals = []
         for g in st.get("goals", []):
             then = g.get("then") or {}
-            goals.append({"id": g.get("id", ""), "exit": g.get("exit") or "", "block": g.get("block") or "",
+            goals.append({"id": g.get("id", ""), "exit": g.get("exit") or "", "block": g.get("block") or "", "moreBlocks": g.get("moreBlocks") or [],
                           "thenBattleArea": then.get("battleArea") or "", "thenBlock": then.get("block") or "", "cells": cells_of(g.get("cells")),
                           # 着いたら、このマスまで歩いてから会話（イベントの場面の位置。原作者 2026-10-05）
                           "talkAt": {"x": g["talkAt"]["cell"][0], "y": g["talkAt"]["cell"][1]} if g.get("talkAt") else {"x": 0, "y": 0},
