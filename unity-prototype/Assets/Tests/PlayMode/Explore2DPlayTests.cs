@@ -40,6 +40,13 @@ namespace Srpg.Tests
             view.PlayerX = carrie - 90f;
             for (float t = 0f; t < 3f && !dialogue.IsPlaying; t += Time.unscaledDeltaTime) yield return null;   // 歩く時間（フレームの数でなく時間で待つ）
             Assert.IsTrue(dialogue.IsPlaying, "キャリーの近くで会話が始まらない");
+            // 会話の枠を押すと、会話の枠が受ける（探索の画面の部品が手前で受けてしまい、進まなかった。2026-11-14）
+            yield return null;   // 会話の枠が画面に出てから
+            var es = UnityEngine.EventSystems.EventSystem.current;
+            var hits = new System.Collections.Generic.List<UnityEngine.EventSystems.RaycastResult>();
+            es.RaycastAll(new UnityEngine.EventSystems.PointerEventData(es) { position = new Vector2(Screen.width / 2f, Screen.height / 2f) }, hits);
+            Assert.IsTrue(hits.Count > 0 && hits[0].gameObject.GetComponentInParent<Canvas>().rootCanvas.name == "Dialogue",
+                "会話の枠より手前で押すのを受けている: " + (hits.Count > 0 ? hits[0].gameObject.GetComponentInParent<Canvas>().rootCanvas.name : "なし"));
             Assert.AreEqual("キャリー", dialogue.CurrentLine?.speaker);
             Assert.Less(Mathf.Abs(view.PlayerX - carrie), 80f, "キャリーの隣まで歩いていない");
             Assert.IsTrue(view.Locked, "会話の間は歩けない");

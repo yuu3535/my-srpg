@@ -83,8 +83,12 @@ namespace Srpg.Battle
             var go = new GameObject("ExploreOverlay", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             // 場面のいちばん上に置く（部屋の組み立て直しで、Corridor2DView の子は消されるため）
             var canvas = go.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 150;   // 部屋（−10）より手前、会話（200）・拠点メニュー（460）より奥
+            // 部屋・会話の画面と同じくカメラに描く（画面にじかに描くと、カメラに描く会話の枠より必ず手前になり、
+            // 会話の枠を押しても進まなかった。2026-11-14）。部屋（−10・距離 1）より手前、会話（200・距離 0.9）より奥
+            var cam = Camera.main;
+            if (cam != null) { canvas.renderMode = RenderMode.ScreenSpaceCamera; canvas.worldCamera = cam; canvas.planeDistance = 0.95f; }
+            else canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 150;
             var scaler = go.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(W, H);
