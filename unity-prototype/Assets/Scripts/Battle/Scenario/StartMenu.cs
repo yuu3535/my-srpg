@@ -44,6 +44,7 @@ namespace Srpg.Battle
                 Holding = false;
                 AddBackButton();
                 if (scene.name == CorridorScene && Menu.SupportTalkDebug.Pending) Menu.SupportTalkDebug.Attach();   // 支援会話テスト（開発用）
+                if (scene.name == CorridorScene && Menu.PortraitTalkDebug.Pending) Menu.PortraitTalkDebug.Attach();   // 立ち絵の並びテスト（開発用）
             }
             else Holding = false;
         }
@@ -116,6 +117,9 @@ namespace Srpg.Battle
         /// <summary>開発中だけ: 入口に「支援会話テスト」を出す（原作者 2026-11-13。公開の形にするときに false）</summary>
         public static bool ShowSupportTest = true;
 
+        /// <summary>開発中だけ: 入口に「立ち絵の並び」（2人・4人の会話で立ち絵の位置を確かめる）を出す（原作者 2026-11-14。公開の形にするときに false）</summary>
+        public static bool ShowPortraitTest = true;
+
         /// <summary>
         /// 開発中だけ: 右下に「DEV 最初へ」（タイトル画面へ戻る）を出す（Hub2担当のレビュー 2026-11-13「開発用なら、開発中だけ出るように」。
         /// 公開の形にするときに false。そのときはタイトルへ戻る道を拠点メニューに用意する）
@@ -125,7 +129,7 @@ namespace Srpg.Battle
         /// <summary>タイトル画面（Menu.TitleScreen。正本 docs/10-design/ui/title/title_spec.md。2026-11-13 から）</summary>
         private static void Show()
         {
-            Menu.TitleScreen.ShowDev = ShowBattleTest || ShowSupportTest;
+            Menu.TitleScreen.ShowDev = ShowBattleTest || ShowSupportTest || ShowPortraitTest;
             Menu.TitleScreen.Open(new Menu.TitleScreen.Actions
             {
                 // はじめから: 枠に新しいデータを作って、プロローグ（2Dの探索・自室）へ
@@ -152,6 +156,13 @@ namespace Srpg.Battle
                     Holding = false;
                     Party.Reset();
                     Menu.SupportTalkDebug.Pending = true;
+                    SceneManager.LoadScene(CorridorScene);
+                },
+                portraitTest = () =>
+                {
+                    Holding = false;
+                    Party.Reset();
+                    Menu.PortraitTalkDebug.Pending = true;
                     SceneManager.LoadScene(CorridorScene);
                 },
             });

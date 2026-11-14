@@ -83,5 +83,21 @@ namespace Srpg.Tests
             stage.Speak("キャリー");
             Assert.AreEqual(1, stage.right.Count, "立っている人が話しても増えない");
         }
+
+        [Test]
+        public void DebugLeftPutsAnyoneOnTheLeft()
+        {
+            // 立ち絵の並びテスト（開発用）: 名前に関係なく、選んだ枠の側に立てる
+            DialogueCast.DebugLeft = new System.Collections.Generic.HashSet<string> { "キャリー", "ギュンター" };
+            try
+            {
+                var stage = new DialogueCast.Stage();
+                stage.Enter(new[] { "キャリー", "アルシェ", "ギュンター", "カリマ" });
+                CollectionAssert.AreEqual(new[] { "キャリー", "ギュンター" }, stage.left);
+                CollectionAssert.AreEqual(new[] { "アルシェ", "カリマ" }, stage.right);
+            }
+            finally { DialogueCast.DebugLeft = null; }
+            Assert.IsTrue(DialogueCast.IsLeft("アルシェ"), "ふだんはアルシェが左");
+        }
     }
 }

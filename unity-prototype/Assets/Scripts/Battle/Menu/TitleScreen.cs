@@ -41,7 +41,7 @@ namespace Srpg.Battle.Menu
         {
             public Action<int> newGame;     // 枠を決めた: その枠に新しいデータ → プロローグ
             public Action<int> continueAt;  // 続きから: その枠を読む
-            public Action battleTest, supportTest;
+            public Action battleTest, supportTest, portraitTest;
         }
 
         public static TitleScreen Instance { get; private set; }
@@ -418,6 +418,7 @@ namespace Srpg.Battle.Menu
             float x = 0f;
             x = DevButton(bar, x, "戦闘テスト", () => actions.battleTest?.Invoke()) + 10f;
             if (StartMenu.ShowSupportTest) x = DevButton(bar, x, "支援会話テスト", () => actions.supportTest?.Invoke()) + 10f;
+            if (StartMenu.ShowPortraitTest) x = DevButton(bar, x, "立ち絵の並び", () => actions.portraitTest?.Invoke()) + 10f;
             string[] names = { "クリア前", "サタン撃破後", "終幕後" };
             DevButton(bar, x, "表示：" + names[Mathf.Clamp(Stage, 0, 2)], () =>
             {

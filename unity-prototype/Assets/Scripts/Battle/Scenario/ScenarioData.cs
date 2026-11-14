@@ -56,7 +56,10 @@ namespace Srpg.Battle
         /// <summary>左に立つ人（主人公の側）</summary>
         public static readonly HashSet<string> LeftSide = new HashSet<string> { "アルシェ", "カリマ" };
 
-        public static bool IsLeft(string speaker) => LeftSide.Contains(speaker ?? "");
+        /// <summary>開発用（立ち絵の並びテスト）: これがあれば、名前に関係なくここにいる人を左に立てる</summary>
+        public static HashSet<string> DebugLeft;
+
+        public static bool IsLeft(string speaker) => DebugLeft != null ? DebugLeft.Contains(speaker ?? "") : LeftSide.Contains(speaker ?? "");
 
         /// <summary>
         /// 1行ずつ、舞台に立つ人を決める（純粋な計算。表示とテストで同じものを使う）。
