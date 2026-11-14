@@ -593,37 +593,59 @@ namespace Srpg.Battle
                 if (pl.rt == null) continue;
                 if (pl.rt.childCount == 0) LayoutExitPlate(pl);
                 var it = pl.item;
-                var origin = ScreenPoint(new Vector2(it.plate.width > 0f ? it.plate.x : it.target.point.x - 220f, it.plate.width > 0f ? it.plate.y : it.target.point.y - 124f));
+                var origin = ScreenPoint(PlateOrigin(it));
                 pl.rt.anchoredPosition = new Vector2(origin.x, -origin.y);
                 bool on = origin.x > -400f && origin.x < W + 200f;
                 pl.rt.gameObject.SetActive(on);
             }
         }
 
-        /// <summary>出口の案内（押せない飾り。札と同じ作り: 枠なし・下線・引き出し線・指す点の菱形。右寄せ）</summary>
+        /// <summary>左の端の出口（案内を指す点の右へ、左寄せで出す。右の端の出口と左右反対）</summary>
+        private static bool LeftEndPlate(Item it) => it.plate.width <= 0f && !float.IsNaN(it.target.stripX) && !it.target.stripRight;
+
+        /// <summary>出口の案内の左上（部屋の座標）。幅 0 なら指す点から決める（右の端は点の左・左の端は点の右）</summary>
+        private static Vector2 PlateOrigin(Item it)
+        {
+            if (it.plate.width > 0f) return new Vector2(it.plate.x, it.plate.y);
+            return new Vector2(LeftEndPlate(it) ? it.target.point.x + 70f : it.target.point.x - 220f, it.target.point.y - 124f);
+        }
+
+        /// <summary>出口の案内（押せない飾り。札と同じ作り: 枠なし・下線・引き出し線・指す点の菱形。右の端は右寄せ・左の端は左寄せ）</summary>
         private void LayoutExitPlate(Plate pl)
         {
             var it = pl.item;
             float pw = it.plate.width > 0f ? it.plate.width : 150f;
+            bool left = LeftEndPlate(it);
             // 部屋の座標での、案内の左上からの指す点の位置（画面の大きさは部屋と同じ細かさ）
-            var pt = it.target.point - new Vector2(it.plate.width > 0f ? it.plate.x : it.target.point.x - 220f, it.plate.width > 0f ? it.plate.y : it.target.point.y - 124f);
+            var pt = it.target.point - PlateOrigin(it);
             var dark = Raw(pl.rt, ExploreTextures.Ellipse, Dk(new Color(4 / 255f, 4 / 255f, 8 / 255f), 0.86f));
             dark.rectTransform.anchorMin = dark.rectTransform.anchorMax = new Vector2(0f, 1f);
             dark.rectTransform.pivot = new Vector2(0.5f, 0.5f);
             dark.rectTransform.sizeDelta = new Vector2(250f, 128f);
-            dark.rectTransform.anchoredPosition = new Vector2(pw / 2f + 2f, -30f);
+            dark.rectTransform.anchoredPosition = new Vector2(left ? pw / 2f - 2f : pw / 2f + 2f, -30f);
             var en = Label(pl.rt, it.exitEn ?? "EXIT", fontEn, 12, Check, 0.36f);
             var jp = Label(pl.rt, it.exitJp ?? "", fontBold, 27, Ink, 0.12f);
             Shadow(jp, 0.95f); Shadow(en, 0.9f);
             float ew = Width(en, 0.36f), jw = Width(jp, 0.12f);
-            Place(en.rectTransform, pw - ew, -1f, 200f, 18f); en.alignment = TextAnchor.MiddleLeft;
             var icon = Raw(pl.rt, ExitIcon(), Check);
-            Place(icon.rectTransform, pw - ew - 22f, 0f, 16f, 16f);
-            Place(jp.rectTransform, pw - jw, 20f, 300f, 34f); jp.alignment = TextAnchor.LowerLeft;
+            if (left)
+            {
+                Place(icon.rectTransform, 0f, 0f, 16f, 16f);
+                icon.uvRect = new Rect(1f, 0f, -1f, 1f);   // 矢印を左向きに
+                Place(en.rectTransform, 22f, -1f, 200f, 18f);
+                Place(jp.rectTransform, 0f, 20f, 300f, 34f);
+            }
+            else
+            {
+                Place(en.rectTransform, pw - ew, -1f, 200f, 18f);
+                Place(icon.rectTransform, pw - ew - 22f, 0f, 16f, 16f);
+                Place(jp.rectTransform, pw - jw, 20f, 300f, 34f);
+            }
+            en.alignment = TextAnchor.MiddleLeft; jp.alignment = TextAnchor.LowerLeft;
             var ul = Raw(pl.rt, Hub2Textures.Gradient("explore_underline", Color.white, new Vector2(0f, 0.85f), new Vector2(1f, 0f)), Check);
             Place(ul.rectTransform, 0f, 60f, pw, 1f);
-            ul.uvRect = new Rect(1f, 0f, -1f, 1f);
-            var from = new Vector2(pw - 18f, 60f);
+            ul.uvRect = left ? new Rect(0f, 0f, 1f, 1f) : new Rect(1f, 0f, -1f, 1f);   // 指す点の側が濃い
+            var from = new Vector2(left ? 18f : pw - 18f, 60f);
             var to = new Vector2(pt.x, pt.y - 14f);
             var d = Poly(pl.rt, Dk(new Color(6 / 255f, 6 / 255f, 10 / 255f), 0.55f)); d.Soft = true;
             d.Set(new[] { new Vector2(from.x, -from.y - 1.5f), new Vector2(to.x, -to.y - 1.5f) }, PolyGraphic.Mode.Stroke, false, 5.4f);

@@ -76,6 +76,7 @@ namespace Srpg.Battle
         private readonly HashSet<string> seen = new HashSet<string>();
         private readonly HashSet<string> played = new HashSet<string>();
         private readonly List<string> items = new List<string>();
+        private readonly List<string> gotQueue = new List<string>();   // 会話の中で手に入れて、まだ知らせていない物
         private readonly Dictionary<string, float> personX = new Dictionary<string, float>();
         private bool starting, moving;
         private readonly Dictionary<string, string> stateOf = new Dictionary<string, string>();   // 配置表 → 使う場面（あとで場面を進めるとき）
@@ -316,7 +317,10 @@ namespace Srpg.Battle
 
         private void GotItem(string item)
         {
-            if (!items.Contains(item)) { items.Add(item); view.Toast($"「{item}」を手に入れた"); }
+            if (items.Contains(item)) return;
+            items.Add(item);
+            if (view.Modern) gotQueue.Add(item);   // 会話が終わったらテキスト枠で（ShowGotItems）
+            else view.Toast($"「{item}」を手に入れた");
         }
 
         private void Update()
@@ -519,7 +523,7 @@ namespace Srpg.Battle
             var queue = new Queue<string>(blockIds.Where(b => replay || !seen.Contains(b)));
             void Next()
             {
-                if (queue.Count == 0) { then?.Invoke(); return; }
+                if (queue.Count == 0) { ShowGotItems(then); return; }
                 var id = queue.Dequeue();
                 var block = scenario?.Block(id);
                 seen.Add(id);
@@ -529,11 +533,23 @@ namespace Srpg.Battle
             Next();
         }
 
-        private void PlayLines(ScenarioLine[] lines)
+        /// <summary>
+        /// 会話の中で手に入れた物を、会話のあとにテキスト枠（地の文）で知らせる（探索の仕様書 §3・§8「黒陽の双剣を手に入れた！」）。
+        /// 前は画面の下の小さな文字で、すぐ消えていた（原作者 2026-11-15「テキストボックスにテキストが出てこない」）
+        /// </summary>
+        private void ShowGotItems(Action then)
+        {
+            if (gotQueue.Count == 0 || dialogue == null) { then?.Invoke(); return; }
+            var lines = gotQueue.Select(i => new ScenarioLine { type = "narration", text = $"{i}を手に入れた！" }).ToArray();
+            gotQueue.Clear();
+            PlayLines(lines, then);
+        }
+
+        private void PlayLines(ScenarioLine[] lines, Action then = null)
         {
             if (dialogue == null) return;
             view.ShowAction(null, null);
-            dialogue.Play(new ScenarioBlock { id = "", part = "story", lines = lines, location = map?.name }, null);   // 上のタブに場所の名前
+            dialogue.Play(new ScenarioBlock { id = "", part = "story", lines = lines, location = map?.name }, then);   // 上のタブに場所の名前
         }
 
         /// <summary>確認用: 調べる所・扉・人の横の位置（id）</summary>
