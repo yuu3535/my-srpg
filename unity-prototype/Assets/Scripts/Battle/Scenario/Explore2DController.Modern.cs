@@ -156,7 +156,8 @@ namespace Srpg.Battle
         public void TapWorld(Vector2 p, float floorX = float.NaN)
         {
             if (Busy || overlay == null || overlay.Exiting) return;
-            var r = ExploreHit.Pick(p, viewItems.Select(v => v.target).ToList(), selectedId);
+            // 床（アルシェの足元の少し上から下）を押したら歩く。物の近くの床でも選ばない
+            var r = ExploreHit.Pick(p, viewItems.Select(v => v.target).ToList(), selectedId, 110f, view.FeetY * 2f - 30f);
             switch (r.action)
             {
                 case ExploreHit.Action.Exit: Deselect(); GoExit(r.id); break;

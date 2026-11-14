@@ -58,6 +58,7 @@ namespace Srpg.Tests
             var near = new List<ExploreHit.Target> { T("a", ExploreHit.Kind.Tips, 0, 0, 10, 10, 500, 100) };
             Assert.AreEqual("a", ExploreHit.Pick(new Vector2(600, 700), near, null).id, "指す点の横 ±110 以内なら選ぶ");
             Assert.AreEqual(ExploreHit.Action.Walk, ExploreHit.Pick(new Vector2(620, 700), near, null).action);
+            Assert.AreEqual(ExploreHit.Action.Walk, ExploreHit.Pick(new Vector2(600, 740), near, null, 110f, 726f).action, "床を押したら、物の近くでも歩く");
         }
 
         [Test]

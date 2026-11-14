@@ -42,7 +42,8 @@ namespace Srpg.Battle
         /// ④ どれにも入らないが、ある物の指す点の横の位置から ±near 以内 ⑤ それ以外は床（歩く）。
         /// （テキスト枠が出ているときは、ここへ来ない＝枠を進めるだけ）
         /// </summary>
-        public static Result Pick(Vector2 p, IReadOnlyList<Target> targets, string selected, float near = 110f)
+        /// floorY＝床の帯の上の端。これより下（床）を押したときは ④ を使わず歩く（物の近くの床を押しただけで選ばれて光ってしまった。原作者 2026-11-14）
+        public static Result Pick(Vector2 p, IReadOnlyList<Target> targets, string selected, float near = 110f, float floorY = float.MaxValue)
         {
             foreach (var t in targets)
                 if (t.kind == Kind.Exit && t.Contains(p)) return new Result { action = Action.Exit, id = t.id };
@@ -57,6 +58,7 @@ namespace Srpg.Battle
                 else if (second == null || t.Area < second.Area) second = t;
             }
             if (best != null) return new Result { action = Action.Select, id = best.id, also = second?.id };
+            if (p.y >= floorY) return new Result { action = Action.Walk };
             Target nearest = null;
             float bestD = near;
             foreach (var t in targets)
