@@ -33,6 +33,8 @@ namespace Srpg.Battle
             public string key;        // pairL / pairR / L1 / L2 / R2 / R1
             public float x, y;        // 話す人の側の端（左の人は左の端・右の人は右の端）と、上の端（1688×780 の座標）
             public float tipX, tipY;  // 尾の先
+            public int chars;         // 1行の字数（0 ならふつうの 26字）
+            public int lines;         // 1ページの行数（0 ならふつうの 2行）。多いと吹き出しが下へ伸びる
         }
 
         [Serializable] private class BubbleFile { public BubbleSlot[] items = Array.Empty<BubbleSlot>(); }
@@ -113,7 +115,7 @@ namespace Srpg.Battle
             return bubbleSlots.TryGetValue(key, out var s) ? s : DefaultBubble(key);
         }
 
-        private static BubbleSlot Copy(BubbleSlot s) => new BubbleSlot { key = s.key, x = s.x, y = s.y, tipX = s.tipX, tipY = s.tipY };
+        private static BubbleSlot Copy(BubbleSlot s) => new BubbleSlot { key = s.key, x = s.x, y = s.y, tipX = s.tipX, tipY = s.tipY, chars = s.chars, lines = s.lines };
 
         /// <summary>
         /// 枠で決めた吹き出しの形（LayoutTalk から）。尾は、尾の先が吹き出しより下なら下の辺から、横なら横の辺から出す。
@@ -184,7 +186,7 @@ namespace Srpg.Battle
             {
                 var s = BubbleOf(bubbleKeyNow);
                 bubbleTitle.text = $"枠：{SlotName(bubbleKeyNow)}";
-                bubbleValues.text = $"{(SlotRight(bubbleKeyNow) ? "右の端" : "左の端")} {s.x:0}　上の端 {s.y:0}　尾の先 ({s.tipX:0}, {s.tipY:0})　幅 {bx1 - bx0:0} × 高さ {by1 - by0:0}";
+                bubbleValues.text = $"{(SlotRight(bubbleKeyNow) ? "右の端" : "左の端")} {s.x:0}　上の端 {s.y:0}　尾の先 ({s.tipX:0}, {s.tipY:0})　1行 {CharsOf(s)}字・{LinesOf(s)}行　幅 {bx1 - bx0:0} × 高さ {by1 - by0:0}";
             }
             bool dirty = bubbleDirty || bubblePending.Count > 0;
             bubbleState.text = dirty ? "● 保存していない変更あり" : "保存済み";
@@ -200,6 +202,21 @@ namespace Srpg.Battle
             else { s.x += dx; s.y += dy; }
             s.x = Mathf.Clamp(s.x, 0f, TalkW); s.y = Mathf.Clamp(s.y, 0f, TalkH - 60f);
             s.tipX = Mathf.Clamp(s.tipX, 0f, TalkW); s.tipY = Mathf.Clamp(s.tipY, 0f, TalkH);
+            bubblePending[bubbleKeyNow] = s;
+            bubbleDirty = true;
+            RelayoutBubble();
+        }
+
+        private static int CharsOf(BubbleSlot s) => s.chars > 0 ? s.chars : MaxChars;
+        private static int LinesOf(BubbleSlot s) => s.lines > 0 ? s.lines : 2;
+
+        /// <summary>1行の字数・1ページの行数を変える（字数 6〜26・行数 1〜8）</summary>
+        private void ChangeShape(int dChars, int dLines)
+        {
+            if (bubbleKeyNow == null) return;
+            var s = bubblePending.TryGetValue(bubbleKeyNow, out var p) ? p : Copy(BubbleOf(bubbleKeyNow));
+            s.chars = Mathf.Clamp(CharsOf(s) + dChars, 6, MaxChars);
+            s.lines = Mathf.Clamp(LinesOf(s) + dLines, 1, 8);
             bubblePending[bubbleKeyNow] = s;
             bubbleDirty = true;
             RelayoutBubble();
@@ -271,15 +288,15 @@ namespace Srpg.Battle
 #if UNITY_WEBGL && !UNITY_EDITOR
             textEditing = this;
             WebGLInput.captureAllKeyboardInput = false;
-            SrpgEditNumbers($"枠：{SlotName(bubbleKeyNow)}（1688×780 の座標。左上が 0）", $"{side}|上の端|尾の先（横）|尾の先（縦）",
-                $"{s.x:0}|{s.y:0}|{s.tipX:0}|{s.tipY:0}", OnNumbersEdited);
+            SrpgEditNumbers($"枠：{SlotName(bubbleKeyNow)}（1688×780 の座標。左上が 0）", $"{side}|上の端|尾の先（横）|尾の先（縦）|1行の字数（6〜26）|1ページの行数（1〜8）",
+                $"{s.x:0}|{s.y:0}|{s.tipX:0}|{s.tipY:0}|{CharsOf(s)}|{LinesOf(s)}", OnNumbersEdited);
 #else
             Debug.Log($"[DialogueView] 数で入れるのはブラウザ版だけ（今の値 {side} {s.x} 上 {s.y} 尾 {s.tipX},{s.tipY}）");
 #endif
         }
 
         /// <summary>入れた数を当てる（空の欄はそのまま）</summary>
-        public void SetBubbleNumbers(float? x, float? y, float? tipX, float? tipY)
+        public void SetBubbleNumbers(float? x, float? y, float? tipX, float? tipY, float? chars = null, float? lines = null)
         {
             if (bubbleKeyNow == null) return;
             var s = bubblePending.TryGetValue(bubbleKeyNow, out var p) ? p : Copy(BubbleOf(bubbleKeyNow));
@@ -287,6 +304,8 @@ namespace Srpg.Battle
             if (y.HasValue) s.y = Mathf.Clamp(y.Value, 0f, TalkH - 60f);
             if (tipX.HasValue) s.tipX = Mathf.Clamp(tipX.Value, 0f, TalkW);
             if (tipY.HasValue) s.tipY = Mathf.Clamp(tipY.Value, 0f, TalkH);
+            if (chars.HasValue) s.chars = Mathf.Clamp(Mathf.RoundToInt(chars.Value), 6, MaxChars);
+            if (lines.HasValue) s.lines = Mathf.Clamp(Mathf.RoundToInt(lines.Value), 1, 8);
             bubblePending[bubbleKeyNow] = s;
             bubbleDirty = true;
             RelayoutBubble();
@@ -301,7 +320,7 @@ namespace Srpg.Battle
             if (ptr == IntPtr.Zero || textEditing == null) return;
             var parts = (Marshal.PtrToStringUTF8(ptr) ?? "").Split('|');
             float? At(int i) => i < parts.Length && float.TryParse(parts[i], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v) ? Mathf.Round(v) : (float?)null;
-            textEditing.SetBubbleNumbers(At(0), At(1), At(2), At(3));
+            textEditing.SetBubbleNumbers(At(0), At(1), At(2), At(3), At(4), At(5));
         }
 
         [AOT.MonoPInvokeCallback(typeof(TextDone))]
@@ -339,10 +358,12 @@ namespace Srpg.Battle
             trig.triggers.Add(drag);
         }
 
+        private const float BubblePanelH = 142f;   // ボタン2行
+
         private void PlaceBubblePanel()
         {
             if (bubblePanel == null) return;
-            float y = bubbleTop ? 60f : TalkH - 74f - PanelH - 8f;
+            float y = bubbleTop ? 60f : TalkH - 74f - BubblePanelH - 8f;
             bubblePanel.anchoredPosition = new Vector2(24f, -y);
         }
 
@@ -371,11 +392,11 @@ namespace Srpg.Battle
 
             bubblePanel = TNode("BubbleTool", root);
             bubblePanel.anchorMin = bubblePanel.anchorMax = bubblePanel.pivot = new Vector2(0f, 1f);
-            bubblePanel.sizeDelta = new Vector2(TalkW - 48f, PanelH);
+            bubblePanel.sizeDelta = new Vector2(TalkW - 48f, BubblePanelH);
             var bg = bubblePanel.gameObject.AddComponent<Image>();
             bg.color = Dark(Rgb(9, 10, 13), 0.9f);
             TFill(bubblePanel, 0f, 0f, TalkW - 48f, 1f, Light(Rgb(214, 218, 224, 0.72f)));
-            TFill(bubblePanel, 0f, PanelH - 1f, TalkW - 48f, 1f, Light(Rgb(214, 218, 224, 0.72f)));
+            TFill(bubblePanel, 0f, BubblePanelH - 1f, TalkW - 48f, 1f, Light(Rgb(214, 218, 224, 0.72f)));
             TFill(bubblePanel, 0f, 5f, TalkW - 48f, 1f, Light(Rgb(214, 218, 224, 0.2f)));
 
             bubbleTitle = TLabel(bubblePanel, "吹き出しの位置", 20f, 12f, 300f, 30f, 20, HexC("#f1efe9"), 700);
@@ -405,22 +426,27 @@ namespace Srpg.Battle
                 x += w + 6f;
             }
             void Gap() => x += 14f;
-            B("短い文", 80f, () => SetEditText(ShortSample));
-            B("長い文", 80f, () => SetEditText(LongSample));
+            B("短い文", 70f, () => SetEditText(ShortSample));
+            B("長い文", 70f, () => SetEditText(LongSample));
             B("文を入れる", 120f, EditText);
             Gap();
-            B("前の台詞", 96f, () => { StepLine(-1); RelayoutBubble(); });
-            B("次の台詞", 96f, () => { StepLine(1); RelayoutBubble(); });
+            B("前の台詞", 88f, () => { StepLine(-1); RelayoutBubble(); });
+            B("次の台詞", 88f, () => { StepLine(1); RelayoutBubble(); });
             Gap();
             B("左へ", 52f, () => MoveBubble(-4f, 0f, false));
             B("右へ", 52f, () => MoveBubble(4f, 0f, false));
             B("上へ", 52f, () => MoveBubble(0f, -4f, false));
             B("下へ", 52f, () => MoveBubble(0f, 4f, false));
             B("数で入れる", 110f, EditNumbers);
+            x = 20f; y = 102f;   // 2行目
+            B("字数−", 66f, () => ChangeShape(-1, 0));
+            B("字数＋", 66f, () => ChangeShape(1, 0));
+            B("行数−", 66f, () => ChangeShape(0, -1));
+            B("行数＋", 66f, () => ChangeShape(0, 1));
             Gap();
             B("保存", 72f, SaveBubbles);
-            B("元に戻す", 96f, ResetBubble);
-            B("コピー（総合担当へ）", 200f, CopyBubbles);
+            B("元に戻す", 86f, ResetBubble);
+            B("コピー（総合担当へ）", 186f, CopyBubbles);
             Gap();
             B("パネルを上へ／下へ", 170f, () => { bubbleTop = !bubbleTop; PlaceBubblePanel(); });
             B("閉じる", 80f, CloseBubbleTool);

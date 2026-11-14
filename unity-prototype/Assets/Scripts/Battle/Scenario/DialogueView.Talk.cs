@@ -659,13 +659,17 @@ namespace Srpg.Battle
             bool talk = line.type == "line" && !string.IsNullOrEmpty(line.speaker) && placed.ContainsKey(line.speaker);
             bool voice = line.type == "line" && !talk;
             // ページ（1ページ2行まで。字は小さくしない）
-            var rows = WrapChars((BubbleToolOpen && editText != null ? editText : line.text) ?? "", MaxChars);   // 吹き出しの調整中は、入れた文で
+            // 枠ごとの1行の字数・1ページの行数（決めていなければ 26字・2行。DialogueView.Bubble。原作者 2026-11-15 真ん中のすき間の案）
+            var slotBs = talk && !SupportMode && placed[line.speaker].slot != null ? BubbleOf(placed[line.speaker].slot) : null;
+            int maxChars = slotBs != null && slotBs.chars > 0 ? slotBs.chars : MaxChars;
+            int perPage = slotBs != null && slotBs.lines > 0 ? slotBs.lines : 2;
+            var rows = WrapChars((BubbleToolOpen && editText != null ? editText : line.text) ?? "", maxChars);   // 吹き出しの調整中は、入れた文で
             var list = new List<string>();
-            for (int i = 0; i < rows.Count; i += 2) list.Add(string.Join("\n", rows.GetRange(i, Mathf.Min(2, rows.Count - i))));
+            for (int i = 0; i < rows.Count; i += perPage) list.Add(string.Join("\n", rows.GetRange(i, Mathf.Min(perPage, rows.Count - i))));
             pages = list.Count > 0 ? list.ToArray() : new[] { "" };
             page = 0;
             int maxLen = rows.Count > 0 ? rows.Max(r => r.Length) : 0;
-            int lineCount = Mathf.Min(2, Mathf.Max(1, rows.Count));
+            int lineCount = Mathf.Min(perPage, Mathf.Max(1, rows.Count));
             float txW = Mathf.Round(maxLen * CW) + 10f;
             float w = Mathf.Max(540f, txW + 100f);
             float h = 30f + lineCount * LH + 34f;

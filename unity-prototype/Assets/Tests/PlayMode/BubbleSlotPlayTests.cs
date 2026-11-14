@@ -51,6 +51,17 @@ namespace Srpg.Tests
                 var longL = Show("アルシェ", "カリマ", "アルシェ", "改行なしの長い文の見本です。二十六字を超えると自動で折り返します。");
                 Assert.AreEqual("pairL", dialogue.BubbleSlotNow);
                 Assert.AreEqual(shortL.xMin, longL.xMin, 0.5f, "文が長くなると左の端が動く");
+
+                // 枠ごとの1行の字数・1ページの行数（真ん中のすき間に置く案）: 13字・4行なら、狭く・下へ伸びる（保存はしない）
+                Show("アルシェ", "カリマ", "アルシェ", "短い。");
+                dialogue.OpenBubbleTool();   // 長い文の見本で出す
+                var wide = dialogue.BubbleRect;
+                dialogue.SetBubbleNumbers(null, null, null, null, 13, 4);
+                var narrow = dialogue.BubbleRect;
+                Assert.AreEqual(wide.xMin, narrow.xMin, 0.5f, "字数を変えると左の端が動く");
+                Assert.AreEqual(wide.yMin, narrow.yMin, 0.5f, "行数を変えると上の端が動く");
+                Assert.AreEqual(30f + 4 * 50f + 34f, narrow.height, 0.5f, "4行の高さにならない");
+                Assert.AreEqual(1, dialogue.PageCount, "4行なら1ページに収まる");
             }
             finally
             {
