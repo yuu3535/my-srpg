@@ -16,7 +16,7 @@ namespace Srpg.Battle
     /// パネルが出ている間は、立ち絵を1回押すとその人を選ぶ。立ち絵をそのままドラッグで左右・上下、ホイール・「−」「＋」で大きさ、
     /// 「◀ ▶ ▲ ▼」や矢印キーで少しずつ。「前の台詞」「次の台詞」で会話を行き来しながら、ほかの吹き出しとの重なりを見られる。
     /// 保存は人ごと（表情ごとには分けない。立ち絵は仮置きで、表情の差分はポーズが変わらない予定。原作者 2026-11-14）。
-    /// 保存先: エディタでは Assets/Data/portrait_adjust.json、書き出したゲームでは端末の中。ブラウザ版の値は「全部の調整をコピー」で総合担当へ
+    /// 保存先: エディタでは Assets/Resources/Talk/portrait_adjust.json（全員に効く）、書き出したゲームでは端末の中。ブラウザ版の値は「全部の調整をコピー」で総合担当へ
     /// </summary>
     public partial class DialogueView
     {
@@ -35,7 +35,7 @@ namespace Srpg.Battle
         [Serializable]
         private class AdjustFile { public PortraitAdjust[] items = Array.Empty<PortraitAdjust>(); }
 
-        [SerializeField] private TextAsset adjustJson;   // Assets/Data/portrait_adjust.json（あれば）
+        [SerializeField] private TextAsset adjustJson;   // （使わなければ Resources/Talk/portrait_adjust.json）
 
         private readonly Dictionary<string, PortraitAdjust> adjusts = new Dictionary<string, PortraitAdjust>();
         private RectTransform adjustPanel, guides, balance;
@@ -48,7 +48,8 @@ namespace Srpg.Battle
         private bool adjustTop, guidesOn, adjustDirty;
         private PortraitAdjust previewAdjust;
 
-        private static string EditorAdjustPath => Path.Combine(Application.dataPath, "Data", "portrait_adjust.json");
+        // 全員に効く調整は Resources/Talk/portrait_adjust.json（書き出しにも入る。原作者の調整を総合担当が入れる。2026-11-14）
+        private static string EditorAdjustPath => Path.Combine(Application.dataPath, "Resources", "Talk", "portrait_adjust.json");
         private static string PlayerAdjustPath => Path.Combine(Application.persistentDataPath, "portrait_adjust.json");
 
         private static string AdjustKey(string who, string expression) => string.IsNullOrEmpty(expression) ? who : $"{who}_{expression}";
@@ -68,6 +69,7 @@ namespace Srpg.Battle
             }
             if (Application.isEditor && File.Exists(EditorAdjustPath)) Read(File.ReadAllText(EditorAdjustPath));
             else if (adjustJson != null) Read(adjustJson.text);
+            else Read(Resources.Load<TextAsset>("Talk/portrait_adjust")?.text);
             if (!Application.isEditor && File.Exists(PlayerAdjustPath)) Read(File.ReadAllText(PlayerAdjustPath));
         }
 
@@ -82,7 +84,7 @@ namespace Srpg.Battle
             catch (Exception e) { Debug.LogWarning($"[DialogueView] 立ち絵の調整を保存できなかった: {e.Message}"); }
         }
 
-        /// <summary>調整した全部の値（文字）。貼ってもらった文を Assets/Data/portrait_adjust.json に入れると全員に効く</summary>
+        /// <summary>調整した全部の値（文字）。貼ってもらった文を Resources/Talk/portrait_adjust.json に入れると全員に効く</summary>
         public string AdjustmentsText() => JsonUtility.ToJson(new AdjustFile { items = adjusts.Values.OrderBy(a => a.key, StringComparer.Ordinal).ToArray() }, true);
 
         /// <summary>その人の調整（表情の調整があればそれ。今は人ごとに保存する）</summary>
