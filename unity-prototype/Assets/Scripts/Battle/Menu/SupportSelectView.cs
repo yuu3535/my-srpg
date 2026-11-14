@@ -238,7 +238,6 @@ namespace Srpg.Battle.Menu
 #endif
             LeaveIfDialTurned();
             if (!gameObject.activeSelf) return;
-            StepRipple(dt);
             if (veilTime >= 0f) StepVeil(dt);   // Esc で戻るのは Hub2Menu が受ける（同じコマで拠点メニューまで閉じないように）
 
             // 入ってくる動き: 右の中身が右から寄る（太陽盤は拠点メニューで回ったまま）
@@ -467,11 +466,10 @@ namespace Srpg.Battle.Menu
 
         // ── 何もない所を押したとき ──
         // 素早く2回押すと、太陽盤の札を外して拠点メニューへ戻る（札を外すと「支援会話」から離れるので LeaveIfDialTurned が戻す）。
-        // 1回だけなら、押した所に光の輪が出るだけ（押し損ねで、眺めていた画面が急に消えないように）。
+        // 1回だけなら、全画面共通のタップの波紋が出るだけ（押し損ねで、眺めていた画面が急に消えないように。金の光の輪は 2026-11-14 に銀の波紋へ置き換え）。
         // 原作者 2026-11-13「素早く２回タップでスッ…と戻る方が良い。１回タップだと誤タップしたときに折角眺めてた画面が急にどこか行くのはストレス」
         public const float DoubleTapSeconds = 0.35f;
-        private float lastBlankTap = -10f, rippleTime = -1f;
-        private RawImage ripple;
+        private float lastBlankTap = -10f;
 
         public void BlankTap()
         {
@@ -483,38 +481,7 @@ namespace Srpg.Battle.Menu
                 SunDialView.Clear();
                 return;
             }
-            lastBlankTap = now;
-            ShowRipple();
-        }
-
-        private void ShowRipple()
-        {
-            if (ripple == null)
-            {
-                ripple = Raw("TapRipple", canvasRect, Hub2Textures.Glow, new Vector2(64f, 64f), Color.white);
-                ripple.rectTransform.anchorMin = ripple.rectTransform.anchorMax = ripple.rectTransform.pivot = new Vector2(0.5f, 0.5f);
-            }
-            ripple.transform.SetAsLastSibling();
-            var pointer = Pointer.current;
-            Vector2 local = Vector2.zero;
-            if (pointer != null) RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, pointer.position.ReadValue(), null, out local);
-            ripple.rectTransform.anchoredPosition = local;
-            rippleTime = 0f;
-            StepRipple(0f);
-        }
-
-        // 光の輪: 0.4秒で広がって消える（金の淡い光）
-        private void StepRipple(float dt)
-        {
-            if (ripple == null) return;
-            if (rippleTime < 0f) { ripple.enabled = false; return; }
-            rippleTime += dt;
-            float k = rippleTime / 0.4f;
-            if (k >= 1f) { rippleTime = -1f; ripple.enabled = false; return; }
-            ripple.enabled = true;
-            float e = Motion.Ease(k);
-            ripple.rectTransform.localScale = Vector3.one * (0.5f + 1.1f * e);
-            ripple.color = new Color(GoldHi.r, GoldHi.g, GoldHi.b, Hub2Textures.SeenLight(0.35f * (1f - k), 0.8f));
+            lastBlankTap = now;   // 1回目は、全画面共通のタップの波紋（TapRipple）が出るだけ
         }
 
         /// <summary>太陽盤が「支援会話」から回されたら、拠点メニューへ戻る（暗転の間・支援会話の間は戻らない）</summary>
