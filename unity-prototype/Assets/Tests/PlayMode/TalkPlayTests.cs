@@ -38,8 +38,9 @@ namespace Srpg.Tests
                 {
                     L("line", "ギュンター", "遅い。"),
                     L("line", "キャリー", "あら。"),
-                    L("line", "カリマ", "一行目。\n二行目。\n三行目。"),
-                    L("line", "城の兵士", "伝言です！"),
+                    L("line", "カリマ", "はい。"),
+                    // 立ち絵の無い人は枠を使わないので、ふつうの1ページ2行（枠に立つ人の行数は bubble_slots.json で変わる。2026-11-15）
+                    L("line", "城の兵士", "一行目。\n二行目。\n三行目。"),
                     L("narration", null, "鐘が鳴った。"),
                 }
             };
@@ -48,19 +49,20 @@ namespace Srpg.Tests
             dialogue.Advance();
             dialogue.Advance();
             Assert.AreEqual("カリマ", dialogue.CurrentLine.speaker);
-            Assert.AreEqual(2, dialogue.PageCount, "3行は2ページ（1ページ2行まで）");
-            dialogue.Advance();
-            Assert.AreEqual(1, dialogue.PageIndex);
             dialogue.Advance();
             // 立ち絵の無い人が話しても、右の2人はそのまま
             Assert.AreEqual("城の兵士", dialogue.CurrentLine.speaker);
             CollectionAssert.AreEquivalent(new[] { "ギュンター", "キャリー" }, dialogue.RightCast);
+            Assert.AreEqual(2, dialogue.PageCount, "3行は2ページ（1ページ2行まで）");
+            dialogue.Advance();
+            Assert.AreEqual(1, dialogue.PageIndex);
 
             // ログを開いている間は進まない
             dialogue.OpenLog();
             Assert.IsTrue(dialogue.LogOpen);
             dialogue.Advance();
             Assert.AreEqual("城の兵士", dialogue.CurrentLine.speaker);
+            Assert.AreEqual(1, dialogue.PageIndex);
             dialogue.CloseLog();
             Assert.IsFalse(dialogue.LogOpen);
             dialogue.Advance();
