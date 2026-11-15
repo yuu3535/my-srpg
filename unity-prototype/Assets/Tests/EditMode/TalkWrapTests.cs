@@ -10,7 +10,10 @@ namespace Srpg.Tests
         public void WrapsAtMaxCharsAndKeepsLineBreaks()
         {
             var rows = DialogueView.WrapChars("一二三四五\n六七", 3);
-            CollectionAssert.AreEqual(new[] { "一二三", "四五", "六七" }, rows);
+            Assert.AreEqual(3, rows.Count);
+            foreach (var r in rows) Assert.LessOrEqual(r.Length, 3);
+            Assert.AreEqual("一二三四五", rows[0] + rows[1]);
+            Assert.AreEqual("六七", rows[2], "改行はそのまま");
         }
 
         [Test]
@@ -21,6 +24,16 @@ namespace Srpg.Tests
             CollectionAssert.AreEqual(new[] { "ギュンター、", "ごめん！" }, DialogueView.WrapChars("ギュンター、ごめん！", 6));
             foreach (var r in DialogueView.WrapChars("あらアルシェ様、おはようございます。その剣はどうなさったの？", DialogueView.BoxChars))
                 Assert.LessOrEqual(r.Length, DialogueView.BoxChars);
+        }
+
+        [Test]
+        public void BreaksAtReadablePlaces()
+        {
+            // 「、」の後ろ・助詞の後ろ・ひらがなから漢字へ変わる所で切る。1〜2字だけ次の行へ余らせない（原作者 2026-11-16 案B）
+            CollectionAssert.AreEqual(new[] { "あらアルシェ様、", "おはようございます" }, DialogueView.WrapChars("あらアルシェ様、おはようございます", 13));
+            CollectionAssert.AreEqual(new[] { "今日のやること", "確認しておこう。" }, DialogueView.WrapChars("今日のやること確認しておこう。", 13));
+            CollectionAssert.AreEqual(new[] { "先日父上からいただいた", "双剣を持ってくるのを" }, DialogueView.WrapChars("先日父上からいただいた双剣を持ってくるのを", 13));
+            CollectionAssert.AreEqual(new[] { "これか？", "この前父上にもらったんだ！" }, DialogueView.WrapChars("これか？この前父上にもらったんだ！", 13));
         }
 
         [Test]

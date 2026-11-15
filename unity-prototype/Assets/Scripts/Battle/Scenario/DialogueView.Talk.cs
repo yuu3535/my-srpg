@@ -956,8 +956,8 @@ namespace Srpg.Battle
         private const string NoLineStart = "、。，．！？!?）」』】〕〉》…‥ーぁぃぅぇぉっゃゅょァィゥェォッャュョ～　";
 
         /// <summary>
-        /// 字の数で折り返す（改行は段落の区切りとしてそのまま）。行の頭に来てはいけない字（、。！？」）…ー・全角スペースなど）が次の行の頭になるときは、
-        /// 前の行の終わりの字を次の行へ送る（追い出し。1行の字数を越えないので、決まった幅の箱からはみ出さない。吹き出し配置の仕様 §7）
+        /// 字の数で折り返す（改行は段落の区切りとしてそのまま）。1行の字数は越えない（決まった幅の箱からはみ出さない）。
+        /// 行の頭に来てはいけない字（、。！？」）…ー・全角スペースなど）は行の頭に置かず、なるべく句読点や助詞の後ろで切る（WrapParagraph。吹き出し配置の仕様 §7）
         /// </summary>
         public static List<string> WrapChars(string text, int max)
         {
@@ -965,15 +965,64 @@ namespace Srpg.Battle
             foreach (var para in (text ?? "").Split('\n'))
             {
                 if (para.Length == 0) { rows.Add(""); continue; }
-                int i = 0;
-                while (i < para.Length)
-                {
-                    int n = Mathf.Min(max, para.Length - i);
-                    while (n > 1 && i + n < para.Length && NoLineStart.IndexOf(para[i + n]) >= 0) n--;
-                    rows.Add(para.Substring(i, n));
-                    i += n;
-                }
+                rows.AddRange(WrapParagraph(para, max));
             }
+            return rows;
+        }
+
+        // ── 読みやすい所で折り返す（原作者 2026-11-16 案B。テキストの書き直しが届くまでのつなぎにもなる） ──
+        // 1段落を、行の数をできるだけ増やさずに、切れ目の良い所で分ける。良い所: 「、。！？…」」の後ろ（0）／「「」の前（0.5）／
+        // 漢字・カタカナの後ろの助詞（は・が・を・に…）の後ろ（1）／ひらがなから漢字・カタカナへ変わる所（1.5）。悪い所: 語の途中（5）、
+        // 「お」「ご」と漢字の間・「っ」の後ろ・助詞が続く所・「この」の途中（5〜6）。2字以下の行・4字以下の行は避ける。行の頭の禁則は必ず守る
+        private const string BreakAfter = "、。，．！？!?…‥」』）)】";
+        private const string OpenBracket = "「『（(【";
+        private const string Particles = "はがをにでともへやの";
+
+        private static bool IsHira(char c) => c >= 'ぁ' && c <= 'ゟ';
+        private static bool IsKata(char c) => c >= 'ァ' && c <= 'ヺ';
+        private static bool IsKanji(char c) => (c >= '一' && c <= '鿿') || c == '々';
+
+        private static float BreakCost(string p, int i)
+        {
+            char a = p[i - 1], b = p[i], z = i >= 2 ? p[i - 2] : '\0';
+            if (BreakAfter.IndexOf(a) >= 0) return 0f;
+            if (OpenBracket.IndexOf(b) >= 0) return 0.5f;
+            if (Particles.IndexOf(a) >= 0 && "もはをがのへとで".IndexOf(b) >= 0) return 5f;
+            if (a == 'の' && "こそあど".IndexOf(z) >= 0) return 5f;
+            if (Particles.IndexOf(a) >= 0 && z != '\0' && (IsKanji(z) || IsKata(z) || z == 'ー')) return 1f;
+            if ((a == 'お' || a == 'ご') && IsKanji(b)) return 6f;
+            if (a == 'っ') return 6f;
+            if (IsHira(a) && (IsKanji(b) || IsKata(b))) return 1.5f;
+            return 5f;
+        }
+
+        private static float LineLenCost(int n) => n <= 2 ? 6f : n <= 4 ? 2f : 0f;
+
+        private static List<string> WrapParagraph(string p, int max)
+        {
+            int L = p.Length;
+            if (L <= max) return new List<string> { p };
+            int k0 = (L + max - 1) / max, K = k0 + 1;
+            const float Inf = 1e9f;
+            var dp = new float[L + 1, K + 1];
+            var from = new int[L + 1, K + 1];
+            for (int i = 0; i <= L; i++) for (int j = 0; j <= K; j++) { dp[i, j] = Inf; from[i, j] = -1; }
+            dp[0, 0] = 0f;
+            for (int j = 1; j <= K; j++)
+            for (int i = 1; i <= L; i++)
+            for (int s = Mathf.Max(0, i - max); s < i; s++)
+            {
+                if (dp[s, j - 1] >= Inf) continue;
+                if (s > 0 && NoLineStart.IndexOf(p[s]) >= 0) continue;          // 行の頭に来てはいけない字
+                if (i < L && OpenBracket.IndexOf(p[i - 1]) >= 0) continue;     // 行の終わりに「 を残さない
+                float c = dp[s, j - 1] + (i < L ? BreakCost(p, i) : 0f) + LineLenCost(i - s);
+                if (c < dp[i, j]) { dp[i, j] = c; from[i, j] = s; }
+            }
+            float best = Inf; int bj = -1;
+            for (int j = k0; j <= K; j++) { float c = dp[L, j] + 2f * (j - k0); if (c < best) { best = c; bj = j; } }
+            var rows = new List<string>();
+            if (bj < 0) { for (int i = 0; i < L; i += max) rows.Add(p.Substring(i, Mathf.Min(max, L - i))); return rows; }
+            for (int i = L, j = bj; j > 0; j--) { int s = from[i, j]; rows.Insert(0, p.Substring(s, i - s)); i = s; }
             return rows;
         }
 
