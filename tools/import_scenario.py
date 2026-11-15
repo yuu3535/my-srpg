@@ -17,6 +17,10 @@
   id は <シナリオのid>.b01 から順に付ける。寄り道のブロックは、マップの配置表で「どの人・どの範囲で流れるか」をこの id で指す。
 - 行の種類: line（話者の台詞）/ narration（話者なし・場面説明）/ phone（携帯端末）/ memo（本文がなく演出・備考だけの行や、【】だけの目印。ゲームでは出さない）
 - アイテム入手: 本文か演出・備考に「「○○」を手に入れた」「「○○」を…アイテムに入れた」があれば item に○○を入れる
+- 吹き出しの演出（無くてもよい列。2026-11-16 吹き出し配置の仕様 §7）:
+  - 「箱の演出」: 空（ふつう）か「叫ぶ」
+  - 「ガヤ」: 「名前：本文」。強めは終わりに「（強め）」。2人ぶんは改行で分ける（例: カリマ：えっ、そうなの？ ／ キャリー：あらあら（強め））
+  - 「画面の外の声」: 「ひそひそ」か「ざわざわ」。本文を付けるときは「ひそひそ：ねえ、聞いた…？／ひそひそ…」（／で分ける。無ければ決まった文）
 - 表を直したら、このコマンドを実行し直す。表そのものは書き換えない。
 
 出力:
@@ -50,6 +54,49 @@ def find_item(*texts):
             if m:
                 return m.group(1)
     return ""
+
+
+COLON = re.compile(r"[：:]")
+
+
+def parse_fx(value, index, warnings):
+    v = (value or "").strip()
+    if not v or v == "ふつう":
+        return ""
+    if v == "叫ぶ":
+        return "shout"
+    warnings.append(f"{index}行目: 箱の演出「{v}」は知らない値（ふつう／叫ぶ）")
+    return ""
+
+
+def parse_gaya(value, index, warnings):
+    out = []
+    for raw in re.split(r"[\r\n]+", value or ""):
+        s = raw.strip()
+        if not s or s in ("なし", "（なし）"):
+            continue
+        parts = COLON.split(s, maxsplit=1)
+        if len(parts) < 2 or not parts[0].strip() or not parts[1].strip():
+            warnings.append(f"{index}行目: ガヤ「{s}」は「名前：本文」の形になっていない")
+            continue
+        text = parts[1].strip()
+        strong = bool(re.search(r"[（(]強め[）)]\s*$", text))
+        text = re.sub(r"\s*[（(]強め[）)]\s*$", "", text)
+        out.append({"who": parts[0].strip(), "text": text, "strong": strong})
+    return out
+
+
+def parse_mob(value, index, warnings):
+    s = (value or "").strip()
+    if not s or s in ("なし", "（なし）"):
+        return "", []
+    parts = COLON.split(s, maxsplit=1)
+    kind = {"ひそひそ": "whisper", "ざわざわ": "murmur"}.get(parts[0].strip())
+    if kind is None:
+        warnings.append(f"{index}行目: 画面の外の声「{s}」は「ひそひそ」か「ざわざわ」で始めて")
+        return "", []
+    texts = [t.strip() for t in re.split(r"[／/]", parts[1])] if len(parts) > 1 else []
+    return kind, [t for t in texts if t]
 
 
 def main():
@@ -109,6 +156,18 @@ def main():
             "text": text, "note": note, "process": process,
             "item": find_item(text, note),
         }
+        # 吹き出しの演出（列が無ければ何も足さない。前の JSON と同じ形のまま）
+        fx = parse_fx(get("箱の演出"), index, warnings)
+        gaya = parse_gaya(get("ガヤ"), index, warnings)
+        mob, mob_texts = parse_mob(get("画面の外の声"), index, warnings)
+        if fx:
+            line["fx"] = fx
+        if gaya:
+            line["gaya"] = gaya
+        if mob:
+            line["mob"] = mob
+            if mob_texts:
+                line["mobTexts"] = mob_texts
         current["lines"].append(line)
         if not part_ja and text:
             warnings.append(f"{index}行目: パートが空（前の行のまとまりに入れた）")
