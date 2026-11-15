@@ -27,6 +27,8 @@ namespace Srpg.Tests
             yield return null;
             var box = Rect.MinMaxRect(604f, 98f, 1084f, 312f);   // 3行のとき
             var box1 = Rect.MinMaxRect(604f, 98f, 1084f, 212f);  // 1行のとき（上・左右の端は同じ。原作者 2026-11-16）
+            // 9字以下の1行は小さい箱（幅 360）。話す人の側の端は動かない（試作 2026-11-16）
+            Rect smallR = Rect.MinMaxRect(724f, 98f, 1084f, 212f), smallL = Rect.MinMaxRect(604f, 98f, 964f, 212f);
             // 来た順: アルシェ（左の内）→ ギュンター（右の内）→ カリマ（左の外）→ キャリー（右の外）
             dialogue.Play(new ScenarioBlock
             {
@@ -62,17 +64,17 @@ namespace Srpg.Tests
                 Assert.AreEqual("bottom", dialogue.TailNow.edge);
                 Assert.AreEqual(new Vector2(668f - 37f, 354f), dialogue.TailNow.tip);
 
-                // 右の内（1行）: 箱は1行の高さ。尾は下の端について上がる
+                // 右の内（3字）: 小さい箱・1行の高さ。右の端は 1084 のまま。尾は下の端について上がる
                 To("ギュンター");
                 Assert.AreEqual("ギュンター", dialogue.CurrentLine.speaker);
-                Assert.AreEqual(box1, dialogue.BubbleRect);
+                Assert.AreEqual(smallR, dialogue.BubbleRect);
                 Assert.AreEqual("bottom", dialogue.TailNow.edge);
                 Assert.AreEqual(new Vector2(1020f + 37f, 254f), dialogue.TailNow.tip);
 
-                // 左の外（1行）: 左の辺から。低い箱なので付け根は下の端 −30 の 182、先 (554, 213)
+                // 左の外（9字）: 小さい箱。左の辺から。低い箱なので付け根は下の端 −30 の 182、先 (554, 213)
                 To("カリマ");
                 Assert.AreEqual("カリマ", dialogue.CurrentLine.speaker);
-                Assert.AreEqual(box1, dialogue.BubbleRect);
+                Assert.AreEqual(smallL, dialogue.BubbleRect);
                 Assert.AreEqual("left", dialogue.TailNow.edge);
                 Assert.AreEqual(new Vector2(554f, 213f), dialogue.TailNow.tip);
 
@@ -84,7 +86,7 @@ namespace Srpg.Tests
                 Assert.AreEqual(new Vector2(1134f, 190f), dialogue.TailNow.tip);
                 Assert.AreEqual(1, dialogue.PageCount, "13字で3行に収まる");
 
-                // 立ち絵のない人: 尾なし・箱は同じ所（1行の高さ）
+                // 立ち絵のない人（10字）: 尾なし・今の箱（1行の高さ）
                 To("城の兵士");
                 Assert.AreEqual("城の兵士", dialogue.CurrentLine.speaker);
                 Assert.AreEqual(box1, dialogue.BubbleRect);
