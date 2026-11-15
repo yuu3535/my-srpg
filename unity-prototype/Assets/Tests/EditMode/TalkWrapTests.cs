@@ -30,7 +30,7 @@ namespace Srpg.Tests
             float txW = UnityEngine.Mathf.Round(DialogueView.BoxChars * 31.8f), left = UnityEngine.Mathf.Round(844f - txW / 2f);
             Assert.GreaterOrEqual(left, DialogueView.BoxX0 + 6f);
             Assert.LessOrEqual(left + txW, DialogueView.BoxX0 + DialogueView.BoxW - 6f);
-            Assert.AreEqual(214f, DialogueView.BoxH);
+            Assert.AreEqual(214f, DialogueView.BoxH, "3行のときの高さ");
         }
 
         [Test]

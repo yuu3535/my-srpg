@@ -67,7 +67,7 @@ namespace Srpg.Battle
         public const float BoxX0 = 604f, BoxY0 = 98f, BoxW = 480f;
         /// <summary>1行の字数・1ページの行数（前の 18字・2行は使わない）</summary>
         public const int BoxChars = 13, BoxLines = 3;
-        /// <summary>高さ 214（台詞が1行・2行でも3行分のまま）</summary>
+        /// <summary>いちばん高いとき（3行）の高さ 214。1行・2行の台詞は低くなる（上の端は固定。原作者 2026-11-16）</summary>
         public const float BoxH = 64f + BoxLines * LH;
         private const float CenterX = 844f, InnerD = 300f, OuterD = 600f;
         /// <summary>
@@ -695,7 +695,8 @@ namespace Srpg.Battle
             if (!SupportMode)
             {
                 // ふだん: 真ん中の固定の箱（左 604・上 98・幅 480・高さ 214）。本文の箱は 13字ぶんの幅で、真ん中にそろえて上から書く
-                txW = Mathf.Round(BoxChars * CW); w = BoxW; h = BoxH;
+                // 高さは行数に合わせて 1〜3行（114・164・214）。左右と上の端は動かない（原作者 2026-11-16「1行13文字で、基本3行までのテキストボックス」。仕様の「3行分のまま」から変更）
+                txW = Mathf.Round(BoxChars * CW); w = BoxW; h = 64f + lineCount * LH;
                 x0 = BoxX0; x1 = x0 + w; y0 = BoxY0; y1 = y0 + h;
             }
             else
@@ -735,7 +736,7 @@ namespace Srpg.Battle
                 else
                 {
                     // 付け根 y0+110・先は 50 外へ・31 下へ。先が同じ側の内側の人の頭のてっぺん −40 より下なら、付け根ごと上へ（上限 y0+24）
-                    tby = y0 + 110f;
+                    tby = y0 + Mathf.Min(110f, h - 30f);   // 低い箱では下の端 −30 まで（TalkPlace.dc.html と同じ）
                     float ty = tby + 31f;
                     foreach (var q in placed.Values)
                     {

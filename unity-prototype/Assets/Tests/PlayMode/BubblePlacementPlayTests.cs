@@ -8,7 +8,7 @@ using UnityEngine.TestTools;
 namespace Srpg.Tests
 {
     /// <summary>
-    /// 吹き出しの置き場所（2026-11-15 デザインのチャットの仕様）: 箱は真ん中に固定・先に来た人が内側・内側は下の尾・外側は横の尾（隣の頭をよける）・
+    /// 吹き出しの置き場所（2026-11-15 デザインのチャットの仕様）: 箱は真ん中に固定（高さは1〜3行で伸びる。2026-11-16）・先に来た人が内側・内側は下の尾・外側は横の尾（隣の頭をよける）・
     /// 立ち絵のない人は尾なし・1ページ3行
     /// </summary>
     public class BubblePlacementPlayTests
@@ -25,7 +25,8 @@ namespace Srpg.Tests
             var dialogue = Object.FindFirstObjectByType<DialogueView>();
             for (int i = 0; i < 40 && dialogue.IsPlaying; i++) dialogue.Close();
             yield return null;
-            var box = Rect.MinMaxRect(604f, 98f, 1084f, 312f);
+            var box = Rect.MinMaxRect(604f, 98f, 1084f, 312f);   // 3行のとき
+            var box1 = Rect.MinMaxRect(604f, 98f, 1084f, 212f);  // 1行のとき（上・左右の端は同じ。原作者 2026-11-16）
             // 来た順: アルシェ（左の内）→ ギュンター（右の内）→ カリマ（左の外）→ キャリー（右の外）
             dialogue.Play(new ScenarioBlock
             {
@@ -61,19 +62,19 @@ namespace Srpg.Tests
                 Assert.AreEqual("bottom", dialogue.TailNow.edge);
                 Assert.AreEqual(new Vector2(668f - 37f, 354f), dialogue.TailNow.tip);
 
-                // 右の内（1行）: 箱は3行分の高さのまま
+                // 右の内（1行）: 箱は1行の高さ。尾は下の端について上がる
                 To("ギュンター");
                 Assert.AreEqual("ギュンター", dialogue.CurrentLine.speaker);
-                Assert.AreEqual(box, dialogue.BubbleRect);
+                Assert.AreEqual(box1, dialogue.BubbleRect);
                 Assert.AreEqual("bottom", dialogue.TailNow.edge);
-                Assert.AreEqual(new Vector2(1020f + 37f, 354f), dialogue.TailNow.tip);
+                Assert.AreEqual(new Vector2(1020f + 37f, 254f), dialogue.TailNow.tip);
 
-                // 左の外: 左の辺から。内側のアルシェ（頭 297）にはかからないので、付け根 208・先 (554, 239)
+                // 左の外（1行）: 左の辺から。低い箱なので付け根は下の端 −30 の 182、先 (554, 213)
                 To("カリマ");
                 Assert.AreEqual("カリマ", dialogue.CurrentLine.speaker);
-                Assert.AreEqual(box, dialogue.BubbleRect);
+                Assert.AreEqual(box1, dialogue.BubbleRect);
                 Assert.AreEqual("left", dialogue.TailNow.edge);
-                Assert.AreEqual(new Vector2(554f, 239f), dialogue.TailNow.tip);
+                Assert.AreEqual(new Vector2(554f, 213f), dialogue.TailNow.tip);
 
                 // 右の外: 内側がギュンター（頭 230）なので、先は 190 まで上がる
                 To("キャリー");
@@ -83,10 +84,10 @@ namespace Srpg.Tests
                 Assert.AreEqual(new Vector2(1134f, 190f), dialogue.TailNow.tip);
                 Assert.AreEqual(1, dialogue.PageCount, "13字で3行に収まる");
 
-                // 立ち絵のない人: 尾なし・箱は同じ
+                // 立ち絵のない人: 尾なし・箱は同じ所（1行の高さ）
                 To("城の兵士");
                 Assert.AreEqual("城の兵士", dialogue.CurrentLine.speaker);
-                Assert.AreEqual(box, dialogue.BubbleRect);
+                Assert.AreEqual(box1, dialogue.BubbleRect);
                 Assert.IsNull(dialogue.TailNow.edge);
 
                 // 4行は2ページ
