@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>会話枠 H 吹き出しの置き場所の調整</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&amp;family=Shippori+Mincho:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#e2b04a}a:hover{color:#f3cd78}
+button{font-family:inherit;color:inherit}
+.btn:focus-visible{outline:2px solid #f3cd78;outline-offset:3px}
+.en{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase}
+.t-gen{--ln:rgba(214,218,224,.72);--ln2:rgba(214,218,224,.22);--ac:#e4e7ec;--acg:rgba(214,226,240,.55);--pl:rgba(9,10,13,.92);--tx:#f1efe9;--nar:#d6d2c9}
+.por{pointer-events:none;transition:left .45s cubic-bezier(.2,.8,.2,1),top .45s cubic-bezier(.2,.8,.2,1),transform .35s cubic-bezier(.2,.8,.2,1)}
+.por img{transition:filter .3s}
+.por.zb2{z-index:2}.por.zb3{z-index:3}.por.lit{z-index:6;transform:translateY(-6px)}
+.por.soft img{filter:brightness(.72) saturate(.9)}
+.por.mid img{filter:brightness(.9) saturate(.96)}
+.por.hide{display:none}
+.dia{display:block;width:9px;height:9px;transform:rotate(45deg);background:var(--ac);box-shadow:0 0 8px var(--acg)}
+.hb{transform-box:fill-box}
+.hb.sw0{animation:hbA .26s cubic-bezier(.2,.8,.2,1)}
+.hb.sw1{animation:hbB .26s cubic-bezier(.2,.8,.2,1)}
+@keyframes hbA{from{opacity:.3;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes hbB{from{opacity:.3;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.tab.sw0{animation:plA .24s ease-out}.tab.sw1{animation:plB .24s ease-out}
+@keyframes plA{from{opacity:0}to{opacity:1}}
+@keyframes plB{from{opacity:0}to{opacity:1}}
+.d3{display:block;width:9px;height:9px;box-sizing:border-box;border:1px solid;transform:rotate(45deg)}
+.d3.c1{border-color:#4fa3a8;background:rgba(79,163,168,.28);box-shadow:0 0 6px rgba(79,163,168,.5)}
+.d3.c2{border-color:#e2b04a;background:rgba(226,176,74,.28);box-shadow:0 0 6px rgba(242,196,96,.5)}
+.d3.c3{border-color:#c9cdd2;background:rgba(201,205,210,.18);box-shadow:0 0 5px rgba(214,226,240,.35)}
+@media (prefers-reduced-motion: reduce){.hb,.tab{animation:none}.por{transition:none}}
+.mobz{opacity:0;animation:mobIn 3.6s ease-in-out infinite}
+@keyframes mobIn{0%{opacity:0;transform:translateY(5px)}18%,68%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-5px)}}
+.mobh{animation:mobH .5s ease-out both}
+.gyB0{animation:gyBa 4.2s ease-in-out .5s both}.gyB1{animation:gyBb 4.2s ease-in-out .5s both}
+@keyframes gyBa{0%{opacity:0;transform:translateY(4px)}14%,72%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-4px)}}
+@keyframes gyBb{0%{opacity:0;transform:translateY(4px)}14%,72%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-4px)}}
+.gyS0{animation:gySa .38s cubic-bezier(.2,1.6,.4,1) both}.gyS1{animation:gySb .38s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes gySa{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+@keyframes gySb{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+.gyO0{animation:gyOa .45s ease-in both}.gyO1{animation:gyOb .45s ease-in both}
+@keyframes gyOa{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-5px)}}
+@keyframes gyOb{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-5px)}}
+.gyK0{animation:gyKa .46s ease-out both}.gyK1{animation:gyKb .46s ease-out both}
+@keyframes gyKa{0%{opacity:0;transform:translateX(0)}15%{opacity:1;transform:translateX(-6px)}32%{transform:translateX(6px)}50%{transform:translateX(-4px)}68%{transform:translateX(4px)}84%{transform:translateX(-2px)}100%{opacity:1;transform:translateX(0)}}
+@keyframes gyKb{0%{opacity:0;transform:translateX(0)}15%{opacity:1;transform:translateX(-6px)}32%{transform:translateX(6px)}50%{transform:translateX(-4px)}68%{transform:translateX(4px)}84%{transform:translateX(-2px)}100%{opacity:1;transform:translateX(0)}}
+@media (prefers-reduced-motion: reduce){.gyK0,.gyK1{animation:none}}
+.gyQ0{animation:gyQa .7s ease-out both}.gyQ1{animation:gyQb .7s ease-out both}
+@keyframes gyQa{from{opacity:0;transform:translateY(5px)}to{opacity:.82;transform:translateY(0)}}
+@keyframes gyQb{from{opacity:0;transform:translateY(5px)}to{opacity:.82;transform:translateY(0)}}
+@media (prefers-reduced-motion: reduce){.gyB0,.gyB1,.gyS0,.gyS1,.gyQ0,.gyQ1{animation:none}}
+@keyframes mobH{from{opacity:0}to{opacity:1}}
+.shk0{animation:shkA .36s ease-out}.shk1{animation:shkB .36s ease-out}
+@keyframes shkA{0%{transform:scale(1.015) translate(0,0)}15%{transform:scale(1.015) translate(-6px,3px)}30%{transform:scale(1.015) translate(6px,-3px)}48%{transform:scale(1.015) translate(-4px,2px)}66%{transform:scale(1.015) translate(3px,-1px)}84%{transform:scale(1.015) translate(-1px,0)}100%{transform:none}}
+@keyframes shkB{0%{transform:scale(1.015) translate(0,0)}15%{transform:scale(1.015) translate(-6px,3px)}30%{transform:scale(1.015) translate(6px,-3px)}48%{transform:scale(1.015) translate(-4px,2px)}66%{transform:scale(1.015) translate(3px,-1px)}84%{transform:scale(1.015) translate(-1px,0)}100%{transform:none}}
+.slm0{animation:slmA .2s cubic-bezier(.2,.9,.3,1) both}.slm1{animation:slmB .2s cubic-bezier(.2,.9,.3,1) both}
+@keyframes slmA{from{opacity:.2;transform:scale(1.08)}to{opacity:1;transform:scale(1)}}
+@keyframes slmB{from{opacity:.2;transform:scale(1.08)}to{opacity:1;transform:scale(1)}}
+.por.shout{transform:translateY(-12px) scale(1.04);transform-origin:50% 100%}
+.shoutDim{position:absolute;inset:0;z-index:1;pointer-events:none;background:radial-gradient(ellipse 70% 70% at 50% 45%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.5) 100%);animation:mobH .25s ease-out both}
+@media (prefers-reduced-motion: reduce){.shk0,.shk1,.slm0,.slm1{animation:none}}
+@media (prefers-reduced-motion: reduce){.mobz{animation:none;opacity:1}.mobh{animation:none}}
+</style>
+</helmet>
+<div class="t-gen {{shkCls}}" style="position: relative; width: 1688px; height: 780px; overflow: hidden; background: #0b0b0e; font-family: 'Shippori Mincho', serif; color: #f1ead9">
+  <img src="/_blob/de575dd30944303d13ab60b42a0d464e" alt="オルクス城・回廊" style="position: absolute; left: 0; top: 0; width: 1688px; height: 780px; display: block">
+  <sc-if value="{{shout}}" hint-placeholder-val="{{ false }}"><div class="shoutDim" aria-hidden="true"></div></sc-if>
+  <div aria-hidden="true" style="position: absolute; inset: 0; z-index: 1; pointer-events: none; background: radial-gradient(ellipse 80% 78% at 50% 52%, rgba(0,0,0,0) 45%, rgba(0,0,0,0.55) 100%)"></div>
+  <div class="por {{porA}}" style="position: absolute; left: {{pxA}}px; top: {{pyA}}px; width: 284px; height: 950px">
+    <img src="/_blob/8c8b6c6a0ec1d8e9bbb118d2400bf24e" alt="アルシェ（13歳）" style="width: 284px; height: 950px; display: block">
+  </div>
+  <div class="por {{porK}}" style="position: absolute; left: {{pxK}}px; top: {{pyK}}px; width: 233px; height: 950px">
+    <img src="/_blob/f33eab7e9e20acad67484fdf416a807a" alt="カリマ（13歳）" style="width: 233px; height: 950px; display: block">
+  </div>
+  <div class="por {{porC}}" style="position: absolute; left: {{pxC}}px; top: {{pyC}}px; width: 491px; height: 1060px">
+    <img src="/_blob/fdebbf55670b101103e1d1fe80dad9d9" alt="キャリー" style="width: 491px; height: 1060px; display: block; transform: scaleX(-1)">
+  </div>
+  <div class="por {{porG}}" style="position: absolute; left: {{pxG}}px; top: {{pyG}}px; width: 365px; height: 1100px">
+    <img src="/_blob/9fecd33be99d415e798bc2fc25f3427f" alt="ギュンター" style="width: 365px; height: 1100px; display: block; transform: scaleX(-1)">
+  </div>
+
+  <button class="btn" onClick="{{advance}}" aria-label="次の人が話す" style="position: absolute; left: 0; top: 0; width: 1688px; height: 780px; z-index: 8; padding: 0; border: 0; background: transparent; cursor: pointer"></button>
+
+  <sc-if value="{{guides}}" hint-placeholder-val="{{ true }}">
+    <svg width="1688" height="780" viewBox="0 0 1688 780" aria-hidden="true" style="position: absolute; left: 0; top: 0; z-index: 10; pointer-events: none">
+      <line x1="0" y1="98" x2="1688" y2="98" style="stroke: rgba(79,163,168,0.75); stroke-width: 1; stroke-dasharray: 6 6"></line>
+      <line x1="0" y1="706" x2="1688" y2="706" style="stroke: rgba(79,163,168,0.75); stroke-width: 1; stroke-dasharray: 6 6"></line>
+      <line x1="{{gx0}}" y1="98" x2="{{gx0}}" y2="706" style="stroke: rgba(226,176,74,0.8); stroke-width: 1; stroke-dasharray: 6 6"></line>
+      <line x1="{{gx1}}" y1="98" x2="{{gx1}}" y2="706" style="stroke: rgba(226,176,74,0.8); stroke-width: 1; stroke-dasharray: 6 6"></line>
+    </svg>
+  </sc-if>
+
+  <svg class="{{mainCls}}" width="1688" height="780" viewBox="0 0 1688 780" aria-hidden="true" style="position: absolute; left: 0; top: 0; z-index: 11; pointer-events: none; overflow: visible; transform-origin: {{mox}}px {{moy}}px">
+    <defs>
+      <pattern id="pdots" width="16" height="16" patternUnits="userSpaceOnUse"><circle cx="8" cy="8" r="1.1" style="fill: rgba(241,234,217,0.5)"></circle></pattern>
+      <linearGradient id="pmg" gradientUnits="userSpaceOnUse" x1="{{mgX0}}" y1="0" x2="{{mgX1}}" y2="0"><stop offset="0" stop-color="#000"></stop><stop offset="0.45" stop-color="#262626"></stop><stop offset="1" stop-color="#fff"></stop></linearGradient>
+      <mask id="pmask" maskUnits="userSpaceOnUse" x="0" y="0" width="1688" height="780"><rect x="0" y="0" width="1688" height="780" fill="url(#pmg)"></rect></mask>
+    </defs>
+    <path d="{{fillD}}" style="fill: var(--pl); fill-opacity: 0.86; stroke: {{boxStroke}}; stroke-width: 1; stroke-linejoin: round"></path>
+    <path d="{{fillD}}" mask="url(#pmask)" style="fill: url(#pdots); opacity: {{dotsOp}}"></path>
+    <path d="{{bubD}}" style="fill: none; stroke: var(--ln); stroke-width: 1; stroke-linejoin: round; opacity: {{olOp}}"></path>
+    <path d="{{hiD}}" style="fill: none; stroke: var(--ln2); stroke-width: 1"></path>
+    <path d="{{burstD}}" style="fill: none; stroke: var(--ln); stroke-width: 2; stroke-linecap: round"></path>
+    <line x1="{{tlX1}}" y1="{{tlY1}}" x2="{{tlX2}}" y2="{{tlY2}}" style="stroke: var(--ln); stroke-width: 1.4; opacity: {{tlOp}}"></line>
+  </svg>
+
+  <span class="dia" aria-hidden="true" style="position: absolute; left: {{cdTLx}}px; top: {{cdTLy}}px; width: 7px; height: 7px; z-index: 12; pointer-events: none"></span>
+  <span class="dia" aria-hidden="true" style="position: absolute; left: {{cdBRx}}px; top: {{cdBRy}}px; width: 7px; height: 7px; z-index: 12; pointer-events: none"></span>
+  <sc-if value="{{hasTip}}" hint-placeholder-val="{{ false }}">
+    <span class="dia" aria-hidden="true" style="position: absolute; left: {{tipX}}px; top: {{tipY}}px; z-index: 12; pointer-events: none"></span>
+  </sc-if>
+
+  <div role="img" aria-label="プロローグ オルクス城・回廊" style="position: absolute; left: 50%; top: 0; transform: translateX(-50%); z-index: 12; pointer-events: none; display: flex; align-items: center; justify-content: center; gap: 18px; padding: 12px 92px 14px; white-space: nowrap; height: 17px">
+    <span aria-hidden="true" style="position: absolute; inset: 0; z-index: -1; background: var(--ln); clip-path: polygon(evenodd, 0 0, 100% 0, calc(100% - 44px) 100%, 44px 100%, 0 0, 1.4px 0, 44.6px calc(100% - 1px), calc(100% - 44.6px) calc(100% - 1px), calc(100% - 1.4px) 0)"></span>
+    <span aria-hidden="true" style="position: absolute; inset: 0; z-index: -1; background: var(--pl); opacity: 0.86; clip-path: polygon(1.4px 0, calc(100% - 1.4px) 0, calc(100% - 44.6px) calc(100% - 1px), 44.6px calc(100% - 1px))"></span>
+    <span class="dia" aria-hidden="true" style="position: absolute; left: 40px; bottom: -4px; width: 7px; height: 7px"></span>
+    <span class="dia" aria-hidden="true" style="position: absolute; right: 40px; bottom: -4px; width: 7px; height: 7px"></span>
+    <span class="en" style="font-size: 15px; font-weight: 600; letter-spacing: 0.34em; color: var(--ac)">Prologue</span>
+    <span style="width: 30px; height: 1px; background: var(--ac)"></span>
+    <span style="font-size: 20px; font-weight: 700; letter-spacing: 0.14em; color: #f1ead9; text-shadow: 0 1px 8px rgba(0,0,0,0.9)">オルクス城・回廊</span>
+  </div>
+
+  <sc-if value="{{hasTab}}" hint-placeholder-val="{{ true }}">
+    <div class="tab {{swapCls}}" style="position: absolute; left: {{tabX}}px; top: {{tabY}}px; height: 46px; padding: 0 26px; z-index: 12; pointer-events: none; display: flex; align-items: center; gap: 10px; background: var(--pl); border: 1px solid var(--ln); box-sizing: border-box; clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%)">
+      <sc-if value="{{isPhone}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="display: block; flex: none"><path d="M12 1 L14.2 9.8 L23 12 L14.2 14.2 L12 23 L9.8 14.2 L1 12 L9.8 9.8 Z" style="fill: var(--ac)"></path></svg></sc-if>
+      <span style="font-size: 22px; font-weight: 700; letter-spacing: 0.14em; color: #f3f1ec; white-space: nowrap">{{name}}</span>
+    </div>
+  </sc-if>
+
+  <p aria-live="polite" class="{{txCls}}" style="transform-origin: {{mtx}}px {{mty}}px; position: absolute; left: {{txX}}px; top: {{txY}}px; width: {{txW}}px; margin: 0; z-index: 12; pointer-events: none; font-size: 30px; font-weight: {{txFw}}; line-height: 50px; letter-spacing: 0.06em; white-space: pre; text-align: {{txAlign}}; color: {{txColor}}">{{shown}}</p>
+
+  <sc-for list="{{mobs}}" as="m" hint-placeholder-count="2">
+    <div class="{{m.cls}}" style="position: absolute; left: 0; top: 0; width: 1688px; height: 780px; z-index: 11; pointer-events: none; animation-delay: {{m.delay}}s">
+      <svg width="1688" height="780" viewBox="0 0 1688 780" aria-hidden="true" style="position: absolute; left: 0; top: 0; overflow: visible"><path d="{{m.d}}" style="fill: rgba(9,10,13,0.58); stroke: rgba(214,218,224,0.3); stroke-width: 1; stroke-linejoin: round"></path></svg>
+      <p style="position: absolute; left: {{m.x}}px; top: {{m.y}}px; width: {{m.w}}px; margin: 0; font-size: 20px; font-weight: 600; line-height: 40px; letter-spacing: 0.08em; text-align: center; white-space: nowrap; color: #b8b5ae">{{m.t}}</p>
+    </div>
+  </sc-for>
+
+  <sc-if value="{{gLs}}" hint-placeholder-val="{{ true }}">
+    <svg class="{{gLc}}" width="1688" height="780" viewBox="0 0 1688 780" aria-hidden="true" style="position: absolute; left: 0; top: 0; z-index: 11; pointer-events: none; overflow: visible; transform-origin: {{gLox}}px {{gLoy}}px; filter: {{gGlow}}"><path d="{{gLd}}" style="fill: {{gFill}}; stroke: {{gStroke}}; stroke-width: {{gSW}}; stroke-linejoin: round"></path><path d="{{gLd}}" style="fill: url(#pdots); opacity: {{gDots}}"></path><path d="{{gLh}}" style="fill: none; stroke: var(--ln2); stroke-width: 1"></path><path d="{{gLm}}" style="fill: var(--ac)"></path></svg>
+    <p class="{{gLc}}" style="position: absolute; left: {{gLx}}px; top: {{gLy}}px; width: {{gLw}}px; margin: 0; z-index: 12; pointer-events: none; font-size: {{gFs}}px; font-weight: {{gFw}}; line-height: {{gLH}}px; letter-spacing: 0.06em; text-align: center; white-space: nowrap; color: {{gTx}}">{{gLt}}</p>
+  </sc-if>
+  <sc-if value="{{gRs}}" hint-placeholder-val="{{ true }}">
+    <svg class="{{gRc}}" width="1688" height="780" viewBox="0 0 1688 780" aria-hidden="true" style="position: absolute; left: 0; top: 0; z-index: 11; pointer-events: none; overflow: visible; transform-origin: {{gRox}}px {{gRoy}}px; filter: {{gGlow}}"><path d="{{gRd}}" style="fill: {{gFill}}; stroke: {{gStroke}}; stroke-width: {{gSW}}; stroke-linejoin: round"></path><path d="{{gRd}}" style="fill: url(#pdots); opacity: {{gDots}}"></path><path d="{{gRh}}" style="fill: none; stroke: var(--ln2); stroke-width: 1"></path><path d="{{gRm}}" style="fill: var(--ac)"></path></svg>
+    <p class="{{gRc}}" style="position: absolute; left: {{gRx}}px; top: {{gRy}}px; width: {{gRw}}px; margin: 0; z-index: 12; pointer-events: none; font-size: {{gFs}}px; font-weight: {{gFw}}; line-height: {{gLH}}px; letter-spacing: 0.06em; text-align: center; white-space: nowrap; color: {{gTx}}">{{gRt}}</p>
+  </sc-if>
+
+  <div aria-hidden="true" style="position: absolute; left: {{nxX}}px; top: {{nxY}}px; z-index: 12; pointer-events: none; display: flex; align-items: center; gap: 10px; height: 20px; padding-right: 4px; transform: translateX(-100%)">
+    <sc-if value="{{multi}}" hint-placeholder-val="{{ true }}"><span class="en" style="font-size: 14px; font-weight: 600; letter-spacing: 0.2em; color: #b8b5ae; margin-right: 2px">1 / 2</span></sc-if>
+    <span class="d3 c1"></span><span class="d3 c2"></span><span class="d3 c3"></span>
+  </div>
+
+  <div aria-hidden="true" style="position: absolute; left: 0; top: 706px; width: 1688px; height: 74px; z-index: 30; pointer-events: none; box-sizing: border-box; border-top: 1px solid rgba(255,255,255,0.08); background: linear-gradient(0deg, rgba(4,4,7,0.74), rgba(4,4,7,0.52))"></div>
+  <div aria-hidden="true" style="position: absolute; left: 20px; top: 715px; z-index: 31; display: flex; gap: 10px; pointer-events: none">
+    <span style="height: 56px; padding: 0 18px 0 12px; background: rgba(16,14,24,0.72); display: flex; align-items: center; gap: 10px; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="1"></rect><line x1="9" y1="8" x2="15" y2="8"></line><line x1="9" y1="12" x2="15" y2="12"></line><line x1="9" y1="16" x2="13" y2="16"></line></svg>
+      <span style="display: flex; flex-direction: column; gap: 1px"><span style="font-size: 16px; font-weight: 700; letter-spacing: 0.1em; color: #f1ead9">会話ログ</span><span class="en" style="font-size: 10px; font-weight: 600; letter-spacing: 0.3em; color: #a59e90">Log</span></span>
+    </span>
+    <span style="height: 56px; padding: 0 18px 0 12px; background: rgba(16,14,24,0.72); display: flex; align-items: center; gap: 10px; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="7 5 18 12 7 19 7 5"></polygon></svg>
+      <span style="display: flex; flex-direction: column; gap: 1px"><span style="font-size: 16px; font-weight: 700; letter-spacing: 0.1em; color: #f1ead9">オート</span><span class="en" style="font-size: 10px; font-weight: 600; letter-spacing: 0.3em; color: #a59e90">Auto</span></span>
+    </span>
+    <span style="height: 56px; padding: 0 18px 0 12px; background: rgba(16,14,24,0.72); display: flex; align-items: center; gap: 10px; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 6 11 12 5 18"></polyline><polyline points="12 6 18 12 12 18"></polyline></svg>
+      <span style="display: flex; flex-direction: column; gap: 1px"><span style="font-size: 16px; font-weight: 700; letter-spacing: 0.1em; color: #f1ead9">スキップ</span><span class="en" style="font-size: 10px; font-weight: 600; letter-spacing: 0.3em; color: #a59e90">Skip</span></span>
+    </span>
+  </div>
+
+  <sc-if value="{{guides}}" hint-placeholder-val="{{ true }}">
+    <div style="position: absolute; right: 24px; top: 716px; height: 54px; z-index: 32; pointer-events: none; display: flex; flex-direction: column; justify-content: center; align-items: flex-end; gap: 4px; font-family: 'Shippori Mincho', serif; white-space: nowrap">
+      <span style="font-size: 17px; font-weight: 600; letter-spacing: 0.06em; color: #f1ead9">{{info1}}</span>
+      <span style="font-size: 15px; font-weight: 600; letter-spacing: 0.06em; color: {{info2Color}}">{{info2}}</span>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;count&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;4人&quot;,&quot;options&quot;:[&quot;1人&quot;,&quot;2人&quot;,&quot;3人&quot;,&quot;4人&quot;]},&quot;speaker&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;地の文&quot;,&quot;options&quot;:[&quot;左の外&quot;,&quot;左の内&quot;,&quot;右の内&quot;,&quot;右の外&quot;,&quot;地の文&quot;,&quot;携帯端末&quot;,&quot;立ち絵なし&quot;]},&quot;textLen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;いっぱいまで（続きは次のページ）&quot;,&quot;options&quot;:[&quot;1行の台詞&quot;,&quot;2行の台詞&quot;,&quot;3行の台詞（続きなし）&quot;,&quot;いっぱいまで（続きは次のページ）&quot;]},&quot;third&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;3人目は左の外&quot;,&quot;options&quot;:[&quot;3人目は左の外&quot;,&quot;3人目は右の外&quot;]},&quot;order&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;内＝ギュンター／外＝キャリー&quot;,&quot;options&quot;:[&quot;内＝ギュンター／外＝キャリー&quot;,&quot;内＝キャリー／外＝ギュンター&quot;]},&quot;innerD&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:150,&quot;max&quot;:450,&quot;step&quot;:1,&quot;unit&quot;:&quot;px&quot;,&quot;default&quot;:300,&quot;section&quot;:&quot;立ち絵の位置（中心844から左右同じ距離）&quot;},&quot;outerD&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:350,&quot;max&quot;:750,&quot;step&quot;:1,&quot;unit&quot;:&quot;px&quot;,&quot;default&quot;:600,&quot;section&quot;:&quot;立ち絵の位置（中心844から左右同じ距離）&quot;},&quot;offA&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:-120,&quot;max&quot;:160,&quot;step&quot;:1,&quot;unit&quot;:&quot;px&quot;,&quot;default&quot;:0,&quot;section&quot;:&quot;キャラごとの補正（横：＋で外へ／縦：＋で下へ）&quot;},&quot;dyA&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:-120,&quot;max&quot;:120,&quot;step&quot;:1,&quot;unit&quot;:&quot;px&quot;,&quot;default&quot;:0,&quot;section&quot;:&quot;キャラごとの補正（横：＋で外へ／縦：＋で下へ）&quot;},&quot;offK&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:-120,&quot;max&quot;:160,&quot;step&quot;:1,&quot;unit&quot;:&quot;px&quot;,&quot;default&quot;:0,&quot;section&quot;:&quot;キャラごとの補正（横：＋で外へ／縦：＋で下へ）&quot;},&quot;dyK&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:-120,&quot;max&quot;:120,&quot;step&quot;:1,&quot;unit&quot;:&quot;px&quot;,&quot;default&quot;:0,&quot;section&quot;:&quot;キャラごとの補正（横：＋で外へ／縦：＋で下へ）&quot;},&quot;offC&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:-120,&quot;max&quot;:160,&quot;step&quot;:1,&quot;unit&quot;:&quot;px&quot;,&quot;default&quot;:0,&quot;section&quot;:&quot;キャラごとの補正（横：＋で外へ／縦：＋で下へ）&quot;},&quot;dyC&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:-120,&quot;max&quot;:120,&quot;step&quot;:1,&quot;unit&quot;:&quot;px&quot;,&quot;default&quot;:0,&quot;section&quot;:&quot;キャラごとの補正（横：＋で外へ／縦：＋で下へ）&quot;},&quot;offG&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:-120,&quot;max&quot;:160,&quot;step&quot;:1,&quot;unit&quot;:&quot;px&quot;,&quot;default&quot;:16,&quot;section&quot;:&quot;キャラごとの補正（横：＋で外へ／縦：＋で下へ）&quot;},&quot;dyG&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:-120,&quot;max&quot;:120,&quot;step&quot;:1,&quot;unit&quot;:&quot;px&quot;,&quot;default&quot;:0,&quot;section&quot;:&quot;キャラごとの補正（横：＋で外へ／縦：＋で下へ）&quot;},&quot;mainFx&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;ふつう&quot;,&quot;options&quot;:[&quot;ふつう&quot;,&quot;叫ぶ（一気に出る＋画面が揺れる＋立ち絵が前へ）&quot;]},&quot;gaya&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;section&quot;:&quot;ガヤ・画面の外の声&quot;},&quot;gayaL&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;えっ、そうなの？&quot;,&quot;options&quot;:[&quot;ほんとかなぁ…&quot;,&quot;またか…&quot;,&quot;ふふっ&quot;,&quot;えっ、そうなの？&quot;,&quot;（なし）&quot;],&quot;section&quot;:&quot;ガヤ・画面の外の声&quot;},&quot;gayaR&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;あらあら&quot;,&quot;options&quot;:[&quot;全くもう…&quot;,&quot;あらあら&quot;,&quot;はぁ…&quot;,&quot;うふふ&quot;,&quot;（なし）&quot;],&quot;section&quot;:&quot;ガヤ・画面の外の声&quot;},&quot;gayaMode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;強め（弾んで出る）&quot;,&quot;options&quot;:[&quot;ふつう（次へ進むまで残る）&quot;,&quot;強め（弾んで出る）&quot;],&quot;section&quot;:&quot;ガヤ・画面の外の声&quot;},&quot;gayaShape&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;とげC（内側の線もとげに沿う）&quot;,&quot;options&quot;:[&quot;とげC（内側の線もとげに沿う）&quot;,&quot;とげB（角がとげに＋辺がへこむ）&quot;,&quot;とげA（角がとげに）&quot;,&quot;とげ（前の形）&quot;,&quot;ふつうの形&quot;],&quot;section&quot;:&quot;ガヤ・画面の外の声&quot;},&quot;mob&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;ざわざわ（場の空気）&quot;,&quot;options&quot;:[&quot;ひそひそ（画面の外の人の声）&quot;,&quot;ざわざわ（場の空気）&quot;,&quot;なし&quot;],&quot;section&quot;:&quot;ガヤ・画面の外の声&quot;},&quot;guides&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true},&quot;$preview&quot;:{&quot;width&quot;:1688,&quot;height&quot;:780}}">
+var TALK = '遅れてすみません。祝賀会の支度が思いのほか長引いてしまって、気づいたら鐘が三度も鳴っていました。カリマは先に行けと言ってくれたのですが、あの量の飾りつけを一人に任せるわけにもいかなくて。次からは必ず刻限より前に訓練場へ立ちます。ですから今日のところは、素振り三百本で許してもらえませんか。もちろん終わるまで休みません。';
+var NARR = '回廊の向こうで、祝賀の鐘が三度鳴った。石の壁に響いた音は、長い尾を引いて夜の底へ沈んでいく。城の誰もが足を止め、同じ方角を見上げていた。今夜を境に何かが変わるのだと、まだ誰も口にはしなかった。けれど灯りの消えた窓の数だけ、胸の内で数えている者がいた。そのことを知る者は、まだ一人もいない。';
+var PHONE = '通知。訓練場の使用許可が下りました。本日の演習は予定どおり、日没の鐘から始まります。参加する者は装備を整え、刻限までに東の門へ集まってください。遅れた者には隊長から追加の課題が出ます。なお祝賀会の片づけは、演習のあとに全員で行います。';
+var VOICE = '隊長より伝言です！　至急お越しください！　東の門に見慣れない一団が現れ、通行の許しを求めています。旗印はどの家のものでもなく、名乗りも要領を得ません。門番だけでは判断がつかず、指示を待っている状態です。どうかお急ぎください。';
+var SM = {
+  A: { s1: 'わかったわかった！', long: ['ギュンター、ごめん！', 'また寝坊した！', '次はちゃんと起きるよ！', 'だから今日のところは、', '素振り三百本で', '許してくれないか？'] },
+  K: { s1: 'それとこれとは別。', long: ['あ！遅いよアル…！', 'ずっと待ってたんだよ。', 'ちゃんと謝りなよね。', '父上に言いつけるから。', '……なんてね。', '早く始めよう？'] },
+  C: { s1: 'あらあら、残念。', long: ['あらアルシェ様、', 'おはようございます。', 'その剣はどうなさったの？', 'まぁ、魔王様から？', 'それは楽しみですわね。', 'カリマ様にもぜひ。'] },
+  G: { s1: 'では、構えてください。', long: ['その台詞は、', '今月で四度目だぞ。', '……まったく。', 'ご自覚をお持ちください。', 'では、構えてください。', '手加減はしませんよ。'] },
+  narr: { s1: '鐘の音が、三度鳴った。', long: ['回廊の向こうで、', '祝賀の鐘が三度鳴った。', '城の誰もが足を止めた。', '石の壁に響いた音は、', '長く尾を引いて', '夜の底へ沈んでいった。'] },
+  phone: { s1: '新着メッセージ：1件', long: ['訓練場の使用許可が', '下りました。', '日没の鐘から演習です。', '装備を整えて', '東の門へ集合してください。', '遅刻は追加課題です。'] },
+  voice: { s1: '至急お越しください！', long: ['隊長より伝言です！', '至急お越しください！', '東の門に、', '見慣れない一団が', '現れました。', 'どうかお急ぎを！'] }
+};
+var IDS = ['LO', 'LI', 'RI', 'RO', 'narr', 'phone', 'voice'];
+var LABELS = ['左の外', '左の内', '右の内', '右の外', '地の文', '携帯端末', '立ち絵なし'];
+var KIN = '、。！？」）…ー　';
+function wrap2(src, chars) {
+  var out = [];
+  src.forEach(function (ln) {
+    var i = 0;
+    while (i < ln.length) {
+      var seg = ln.substr(i, chars);
+      while (seg.length > 1 && i + seg.length < ln.length && KIN.indexOf(ln.charAt(i + seg.length)) >= 0) seg = seg.slice(0, -1);
+      out.push(seg); i += seg.length;
+    }
+  });
+  return out;
+}
+var LH = 50, CW = 31.8;
+function wrap(pool, chars, n) {
+  var out = [], i = 0;
+  while (out.length < n && i < pool.length) {
+    var seg = pool.substr(i, chars);
+    var nx = pool.charAt(i + seg.length);
+    if (seg.length === chars && nx && KIN.indexOf(nx) >= 0) seg = pool.substr(i, chars - 1);
+    out.push(seg); i += seg.length;
+  }
+  var last = out[out.length - 1];
+  var k = Math.max(last.lastIndexOf('。'), last.lastIndexOf('、'), last.lastIndexOf('！'));
+  if (k >= 2 && k < last.length - 1) out[out.length - 1] = last.slice(0, k) + (last.charAt(k) === '、' ? '。' : last.charAt(k));
+  return out;
+}
+function chamC(x0, y0, x1, y1, c, t) {
+  var L = t.L, W = t.W, h = t.dir === 'h', P = [];
+  if (t.k === 'TL' && h) P.push([x0, y0 + W], [x0 - L, y0]); else P.push([x0, y0 + c], [x0 + c, y0]);
+  if (t.k === 'TR' && h) P.push([x1 + L, y0], [x1, y0 + W]); else P.push([x1 - c, y0], [x1, y0 + c]);
+  if (t.k === 'BR' && h) P.push([x1, y1 - W], [x1 + L, y1]);
+  else if (t.k === 'BR') P.push([x1, y1 + L], [x1 - W, y1]);
+  else P.push([x1, y1 - c], [x1 - c, y1]);
+  if (t.k === 'BL' && h) P.push([x0 - L, y1], [x0, y1 - W]);
+  else if (t.k === 'BL') P.push([x0 + W, y1], [x0, y1 + L]);
+  else P.push([x0 + c, y1], [x0, y1 - c]);
+  return 'M' + P.map(function (p) { return p[0] + ' ' + p[1]; }).join(' L') + ' Z';
+}
+function spikeBox(x0, y0, x1, y1, s, k, tail) {
+  var cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, P = [];
+  P.push([x0, y0 + 18], [x0 - s, y0 + 1], [x0 + 7, y0 + 6], [x0 + 3, y0 - s], [x0 + 20, y0], [cx, y0 + k]);
+  P.push([x1 - 20, y0], [x1 - 3, y0 - s], [x1 - 7, y0 + 6], [x1 + s, y0 + 1], [x1, y0 + 18], [x1 - k, cy]);
+  P.push([x1, y1 - 18], [x1 + s, y1 - 1], [x1 - 7, y1 - 6], [x1 - 3, y1 + s], [x1 - 20, y1]);
+  if (tail) P.push([tail.bx + tail.bw / 2, y1], [tail.tx, tail.ty], [tail.bx - tail.bw / 2, y1]);
+  P.push([x0 + 20, y1], [x0 + 3, y1 + s], [x0 + 7, y1 - 6], [x0 - s, y1 - 1], [x0, y1 - 18], [x0 + k, cy]);
+  return 'M' + P.map(function (p) { return p[0] + ' ' + p[1]; }).join(' L') + ' Z';
+}
+function chamSpike(x0, y0, x1, y1, c, s, k, tail) {
+  var cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, P = [[x0 + c, y0]];
+  if (k) P.push([cx, y0 + k]);
+  P.push([x1 - c, y0], [x1 + s, y0 - s], [x1, y0 + c]);
+  if (tail && tail.edge === 'right') P.push([x1, tail.y - tail.hw], [tail.tx, tail.ty], [x1, tail.y + tail.hw]);
+  else if (k) P.push([x1 - k, cy]);
+  P.push([x1, y1 - c], [x1 + s, y1 + s], [x1 - c, y1]);
+  if (tail && tail.edge === 'bottom') P.push([tail.bx + tail.bw / 2, y1], [tail.tx, tail.ty], [tail.bx - tail.bw / 2, y1]);
+  P.push([x0 + c, y1], [x0 - s, y1 + s], [x0, y1 - c]);
+  if (tail && tail.edge === 'left') P.push([x0, tail.y + tail.hw], [tail.tx, tail.ty], [x0, tail.y - tail.hw]);
+  else if (k) P.push([x0 + k, cy]);
+  P.push([x0, y0 + c], [x0 - s, y0 - s]);
+  return 'M' + P.map(function (p) { return p[0] + ' ' + p[1]; }).join(' L') + ' Z';
+}
+function chamSpike2(x0, y0, x1, y1, c, s, k, tail) {
+  var m = c / 2, a = c * 0.35, P = [[x0 + c, y0], [x1 - c, y0], [x1 - a, y0 - s], [x1 - m, y0 + m], [x1 + s, y0 + a], [x1, y0 + c]];
+  if (tail && tail.edge === 'right') P.push([x1, tail.y - tail.hw], [tail.tx, tail.ty], [x1, tail.y + tail.hw]);
+  P.push([x1, y1 - c], [x1 + s, y1 - a], [x1 - m, y1 - m], [x1 - a, y1 + s], [x1 - c, y1]);
+  if (tail && tail.edge === 'bottom') P.push([tail.bx + tail.bw / 2, y1], [tail.tx, tail.ty], [tail.bx - tail.bw / 2, y1]);
+  P.push([x0 + c, y1], [x0 + a, y1 + s], [x0 + m, y1 - m], [x0 - s, y1 - a], [x0, y1 - c]);
+  if (tail && tail.edge === 'left') P.push([x0, tail.y + tail.hw], [tail.tx, tail.ty], [x0, tail.y - tail.hw]);
+  P.push([x0, y0 + c], [x0 - s, y0 + a], [x0 + m, y0 + m], [x0 + a, y0 - s]);
+  return 'M' + P.map(function (p) { return p[0] + ' ' + p[1]; }).join(' L') + ' Z';
+}
+function cham(x0, y0, x1, y1, c, tail) {
+  if (tail && tail.k) return chamC(x0, y0, x1, y1, c, tail);
+  var d = 'M' + (x0 + c) + ' ' + y0 + ' H' + (x1 - c) + ' L' + x1 + ' ' + (y0 + c);
+  var hw = tail && tail.hw ? tail.hw : 12;
+  if (tail && tail.edge === 'right') d += ' V' + (tail.y - hw) + ' L' + tail.tx + ' ' + tail.ty + ' L' + x1 + ' ' + (tail.y + hw);
+  d += ' V' + (y1 - c) + ' L' + (x1 - c) + ' ' + y1;
+  if (tail && tail.edge === 'bottom') {
+    var b = tail.bx;
+    if (tail.bw) d += ' H' + (b + tail.bw / 2) + ' L' + tail.tx + ' ' + tail.ty + ' L' + (b - tail.bw / 2) + ' ' + y1;
+    else if (tail.dir < 0) d += ' H' + (b + 18) + ' L' + tail.tx + ' ' + tail.ty + ' L' + (b - 6) + ' ' + y1;
+    else d += ' H' + (b + 6) + ' L' + tail.tx + ' ' + tail.ty + ' L' + (b - 18) + ' ' + y1;
+  }
+  d += ' H' + (x0 + c) + ' L' + x0 + ' ' + (y1 - c);
+  if (tail && tail.edge === 'left') d += ' V' + (tail.y + hw) + ' L' + tail.tx + ' ' + tail.ty + ' L' + x0 + ' ' + (tail.y - hw);
+  d += ' V' + (y0 + c) + ' Z';
+  return d;
+}
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { base: null, step: 0, swap: false, n: 0 };
+  }
+  componentDidMount() {
+    var s = this;
+    this.tm = setInterval(function () {
+      var st = s.state;
+      if (st.base !== s.key()) return;
+      if (st.n < (s._total || 0)) s.setState({ n: st.n + 1 });
+    }, 34);
+  }
+  componentWillUnmount() { clearInterval(this.tm); }
+  key() { var p = this.props; return (p.count ?? '4人') + '|' + (p.speaker ?? '左の内') + '|' + (p.order ?? '') + '|' + (p.stand ?? '') + '|' + (p.third ?? ''); }
+  innerFirst() { return (this.props.stand ?? '先に来た人が内側（人数が変わっても動かない）') === '先に来た人が内側（人数が変わっても動かない）'; }
+  slots() {
+    var n = parseInt(this.props.count ?? '4人', 10) || 4;
+    if (!this.innerFirst()) return n === 1 ? ['LO'] : n === 2 ? ['LO', 'RO'] : n === 3 ? ['LO', 'LI', 'RO'] : ['LO', 'LI', 'RI', 'RO'];
+    var thirdL = (this.props.third ?? '3人目は左の外') === '3人目は左の外';
+    var arr = ['LI', 'RI', thirdL ? 'LO' : 'RO', thirdL ? 'RO' : 'LO'];
+    return arr.slice(0, n);
+  }
+  avail() {
+    var s = this.slots();
+    return ['LO', 'LI', 'RI', 'RO'].filter(function (k) { return s.indexOf(k) >= 0; });
+  }
+  who() {
+    var av = this.avail();
+    var k = LABELS.indexOf(this.props.speaker ?? '左の内');
+    var start = IDS[k < 0 ? 1 : k];
+    if (k < 4 && av.indexOf(start) < 0) start = av[0];
+    var step = this.state.base === this.key() ? this.state.step : 0;
+    if (step === 0) return start;
+    var cyc = av.concat(['narr']);
+    var idx = cyc.indexOf(start);
+    return cyc[(idx + step + cyc.length * 100) % cyc.length];
+  }
+  advance() {
+    var b = this.key();
+    var step = this.state.base === b ? this.state.step : 0;
+    if (this.state.base === b && !this._shout && this.state.n < (this._total || 0)) { this.setState({ n: 99999 }); return; }
+    this.setState({ base: b, step: step + 1, swap: !this.state.swap, n: 0, prevG: this._curG || null });
+  }
+  renderVals() {
+    var self = this, pp = this.props;
+    var count = parseInt(pp.count ?? '4人', 10) || 4;
+    var gInner = (pp.order ?? '内＝ギュンター／外＝キャリー') === '内＝ギュンター／外＝キャリー';
+    var chars = pp.chars ?? 13, nLines = pp.lines ?? 3;
+    var central = (pp.place ?? '真ん中（全員共通）') === '真ん中（全員共通）';
+    var tailMode = pp.tail ?? '外＝横の尾／内＝下の尾';
+    var id = this.who();
+    var isNarr = id === 'narr', isPhone = id === 'phone', isVoice = id === 'voice', isTalk = !isNarr && !isPhone && !isVoice;
+    var shout = (pp.mainFx ?? 'ふつう') !== 'ふつう' && isTalk;
+    this._shout = shout;
+
+    var CH = {
+      A: { name: 'アルシェ', off: 156, top: 297, z: 2 },
+      K: { name: 'カリマ', off: 128, top: 293, z: 3 },
+      C: { name: 'キャリー', off: 221, top: 273, z: 2 },
+      G: { name: 'ギュンター', off: 175, top: (count === 2 && !this.innerFirst()) ? 218 : 230, z: 3 }
+    };
+    var slotChar = {};
+    if (this.innerFirst()) {
+      var arrive = ['A', gInner ? 'G' : 'C', 'K', gInner ? 'C' : 'G'];
+      this.slots().forEach(function (s, i) { slotChar[s] = arrive[i]; });
+      if (slotChar.LO && slotChar.LO !== 'K' && slotChar.LI === 'A') { }
+      if (slotChar.RO === 'K') { slotChar.RO = arrive[1] === 'G' ? 'C' : 'G'; }
+      if (count === 4) { slotChar.LO = 'K'; slotChar.RO = gInner ? 'C' : 'G'; }
+    } else {
+      slotChar.LO = 'A';
+      if (count >= 3) slotChar.LI = 'K';
+      if (count === 4) { slotChar.RI = gInner ? 'G' : 'C'; slotChar.RO = gInner ? 'C' : 'G'; }
+      else if (count >= 2) slotChar.RO = 'G';
+    }
+    var cD = pp.innerD ?? 300, oD = pp.outerD ?? 600;
+    var HX = (count <= 2 && !this.innerFirst()) ? { LO: 432, RO: 1328 } : { LO: 844 - oD, LI: 844 - cD, RI: 844 + cD, RO: 844 + oD };
+    var OFX = { A: pp.offA ?? 0, K: pp.offK ?? 0, C: pp.offC ?? 0, G: pp.offG ?? 16 };
+    var OFY = { A: pp.dyA ?? 0, K: pp.dyK ?? 0, C: pp.dyC ?? 0, G: pp.dyG ?? 0 };
+    var HXc = {};
+    var px = { A: 201, K: 439, C: 945, G: 1272 }, shown = {};
+    Object.keys(slotChar).forEach(function (s) { var c = slotChar[s]; var hx = HX[s] + (s.charAt(0) === 'L' ? -1 : 1) * OFX[c]; HXc[s] = hx; px[c] = hx - CH[c].off; CH[c].top += OFY[c]; shown[c] = true; CH[c].z = (s === 'LI' || s === 'RI') ? 3 : 2; });
+    var spk = isTalk ? slotChar[id] : null;
+    var pc = function (c) { return !shown[c] ? 'hide' : 'zb' + CH[c].z + ' ' + (spk === c ? (shout ? 'lit shout' : 'lit') : (gayaOn[c] ? 'mid' : 'soft')); };
+
+    var smp = isNarr ? SM.narr : isPhone ? SM.phone : isVoice ? SM.voice : SM[spk];
+    var tl = pp.textLen ?? 'いっぱいまで（続きは次のページ）';
+    var nShow = tl === '1行の台詞' ? 1 : tl === '2行の台詞' ? 2 : tl === '3行の台詞（続きなし）' ? 3 : nLines;
+    var allRows = wrap2(nShow === 1 ? [smp.s1] : smp.long, chars);
+    var rows = allRows.slice(0, Math.min(nShow, nLines));
+    var fullTxt = rows.join('\n'); this._total = fullTxt.length;
+    var nTyped = this.state.base === this.key() ? this.state.n : 99999;
+    if (shout) nTyped = 99999;
+    var typed = nTyped >= fullTxt.length, shownTxt = fullTxt.slice(0, nTyped);
+    var lines = rows.length, maxRow = 0, total = 0;
+    rows.forEach(function (r) { maxRow = Math.max(maxRow, r.length); total += r.length; });
+    var fixedH = central && (pp.boxH ?? '高さ固定（lines の行数分）') === '高さ固定（lines の行数分）';
+    var boxLines = fixedH ? nLines : lines;
+    var h = 64 + boxLines * LH;
+    var tyOff = (pp.vAlign ?? '上にそろえる') === '上下の真ん中' ? Math.round((boxLines - lines) * LH / 2) : 0;
+    var multi = tl === 'いっぱいまで（続きは次のページ）' && allRows.length > rows.length;
+    var side = isTalk ? (id.charAt(0) === 'L' ? 'L' : 'R') : 'C';
+    var headX = isTalk ? HXc[id] : 844, headTop = isTalk ? CH[spk].top : 0;
+    var x0, x1, y0, y1, w, txW, tail = null, tip = null, tline = null, lineT = false;
+
+    if (central) {
+      w = pp.boxW ?? 480; x0 = pp.boxX ?? 604; x1 = x0 + w; y0 = pp.boxY ?? 98; y1 = y0 + h;
+      txW = Math.round(chars * CW);
+      if (isTalk && tailMode !== '尾なし') {
+        var sg = side === 'L' ? 1 : -1;
+        var shortT = side === 'L'
+          ? { edge: 'bottom', bx: x0 + 64, dir: -1, tx: x0 + 28, ty: y1 + 38 }
+          : { edge: 'bottom', bx: x1 - 64, dir: 1, tx: x1 - 28, ty: y1 + 38 };
+        if (tailMode === '外＝横の尾／内＝下の尾') {
+          var outer = id === 'LO' || id === 'RO';
+          var ts = pp.tailStyle ?? 'B 細く鋭い尾';
+          lineT = ts === '線だけ（中は透ける）';
+          var withDia = ts === 'くさび＋先に菱形' || ts === '細い線＋菱形';
+          if (count <= 2 && (pp.few ?? '1〜2人は横の尾') === '1〜2人は下の尾') outer = false;
+          if (outer) {
+            var sy = y0 + Math.min(pp.sideY ?? 110, h - 30);
+            var wedge = (pp.sideTail ?? 'くさび（長さ・向き・太さを調整）') !== '頭の上へ（長い）';
+            var sl = pp.sideLen ?? 64;
+            var stx = wedge ? (side === 'L' ? x0 - sl : x1 + sl) : headX + sg * 70;
+            var sty = wedge ? sy + (pp.sideDrop ?? 18) : headTop - 30;
+            var shw = wedge ? (pp.sideW ?? 36) / 2 : 12;
+            if (wedge && ts === '旗形（上が斜め・下が水平）') sty = sy + shw;
+            if (wedge && lineT) { shw = 9; var sl2 = Math.round(sl * 0.7); stx = side === 'L' ? x0 - sl2 : x1 + sl2; }
+            tail = { edge: side === 'L' ? 'left' : 'right', y: sy, tx: stx, ty: sty, hw: shw };
+            if (wedge && ts === '細い線＋菱形') { tail = null; tline = { x1: side === 'L' ? x0 : x1, y1: sy, x2: stx, y2: sty }; }
+            if (wedge && withDia) tip = { x: stx, y: sty };
+          } else {
+            var ibx = Math.max(x0 + 64, Math.min(x1 - 64, headX + sg * 40));
+            var itx = ts === '旗形（上が斜め・下が水平）' ? ibx - sg * 6 : ibx - sg * 32;
+            tail = { edge: 'bottom', bx: ibx, dir: side === 'L' ? -1 : 1, tx: itx, ty: y1 + 38 };
+            if (ts === '細い線＋菱形') { tail = null; tline = { x1: ibx, y1: y1, x2: ibx - sg * 24, y2: y1 + 44 }; }
+            if (withDia) tip = tail ? { x: itx, y: y1 + 38 } : { x: ibx - sg * 24, y: y1 + 44 };
+          }
+          if (ts === 'B 細く鋭い尾') {
+            tip = null; tline = null; lineT = false;
+            var bL = Math.round((pp.sideLen ?? 64) * 0.78), bW = Math.round((pp.sideW ?? 36) / 2);
+            if (outer) {
+              var by = y0 + Math.min(pp.sideY ?? 110, h - 30);
+              var bty = by + Math.round(bL * 0.62);
+              var nb = slotChar[side === 'L' ? 'LI' : 'RI'];
+              if (nb && (pp.avoid ?? true)) {
+                var maxTy = CH[nb].top - (pp.avoidGap ?? 40);
+                if (bty > maxTy) { var sh = Math.min(bty - maxTy, by - (y0 + 24)); by -= sh; bty -= sh; }
+              }
+              tail = { edge: side === 'L' ? 'left' : 'right', y: by, tx: side === 'L' ? x0 - bL : x1 + bL, ty: bty, hw: bW / 2 };
+            } else {
+              var bbx = Math.max(x0 + 64, Math.min(x1 - 64, headX + sg * 40));
+              tail = { edge: 'bottom', bx: bbx, bw: bW, tx: bbx - sg * Math.round(bL * 0.74), ty: y1 + Math.round(bL * 0.84) };
+            }
+          }
+          if (ts === '角から伸びる（枠の線の延長）') {
+            tip = null; tline = null; lineT = false;
+            var cL = Math.round((pp.sideLen ?? 64) * (outer ? 0.75 : 0.55)), cW = Math.round((pp.sideW ?? 36) * (outer ? 0.8 : 0.66));
+            var cTop = (pp.sideCorner ?? '上の角') === '上の角';
+            tail = outer ? { k: (cTop ? 'T' : 'B') + side, dir: 'h', L: cL, W: cW } : { k: 'B' + side, dir: 'v', L: cL, W: cW };
+          }
+        } else if (tailMode === '長い尾（話す人の頭へ）') {
+          var tx = headX + sg * 50, ty = headTop + 30;
+          var inside = tx > x0 - 20 && tx < x1 + 20 && ty < y1 + 20;
+          if (inside) tail = shortT;
+          else {
+            tail = { edge: side === 'L' ? 'left' : 'right', y: Math.max(y0 + 30, Math.min(y1 - 30, ty - 30)), tx: tx, ty: ty };
+            tip = { x: tx, y: ty };
+          }
+        } else tail = shortT;
+      }
+    } else {
+      txW = Math.round(maxRow * CW) + 10;
+      w = Math.max(540, txW + 100);
+      if (isTalk && side === 'L') { x0 = Math.max(40, headX - 70); x1 = x0 + w; }
+      else if (isTalk) { x1 = Math.min(1648, headX + 70); x0 = x1 - w; }
+      else { var c0 = 844 + (isVoice ? 60 : 0); x0 = Math.round(c0 - w / 2); x1 = x0 + w; }
+      var refTop = isTalk ? headTop : 293;
+      y1 = Math.min(292, refTop - 8); y0 = Math.max(98, y1 - h); y1 = y0 + h;
+      if (isTalk) {
+        var dir = side === 'L' ? -1 : 1;
+        var bx = Math.max(x0 + 70, Math.min(x1 - 70, headX + (side === 'L' ? 20 : -20)));
+        tail = { edge: 'bottom', bx: bx, dir: dir, tx: bx + dir * 34, ty: y1 + 40 };
+      } else if (isVoice) tail = { edge: 'right', y: y0 + h / 2, tx: x1 + 46, ty: y0 + h / 2 - 22 };
+    }
+    var cx = Math.round((x0 + x1) / 2);
+    var name = isTalk ? CH[spk].name : isPhone ? '携帯端末' : isVoice ? '城の兵士' : '';
+    var tabW = 52 + name.length * 26 + (isPhone ? 26 : 0);
+    var tabX = side === 'R' ? x1 - 34 - tabW : side === 'L' ? x0 + 34 : cx - tabW / 2;
+    var over = y1 > 706 ? '下のボタン帯にかかっています' : (y0 - 30 < 60 && !isNarr ? '名前札が場所札にかかっています' : '');
+    var info1 = '左の端 ' + x0 + '・上の端 ' + y0 + '・下の端 ' + y1 + '／幅 ' + w + ' × 高さ ' + h;
+    var info2 = over || ('1行 ' + chars + '字 × ' + lines + '行（このページ ' + total + '字・最大 ' + (chars * (pp.lines ?? 4)) + '字）');
+    var gaya = function (slot, txt) {
+      var c = slotChar[slot];
+      if (!(pp.gaya ?? true) || count < 3 || !c || id === slot || !txt || txt === '（なし）' || isNarr || isPhone) return { s: false, d: '', h: '', m: '', x: 0, y: 0, w: 0, t: '' };
+      var gStr = (pp.gayaMode ?? '').indexOf('強め') === 0;
+      var gw = gStr ? Math.round(txt.length * 28) + 54 : Math.round(txt.length * 25.4) + 48, gh = gStr ? 54 : 50;
+      var hx = HXc[slot];
+      var gx0 = Math.max(16, Math.min(1688 - 16 - gw, Math.round(hx - gw / 2))), gy1 = CH[c].top - (pp.gayaGap ?? 26), gy0 = gy1 - gh;
+      var gbx = Math.max(gx0 + 22, Math.min(gx0 + gw - 22, hx));
+      var full = (pp.gayaStyle ?? 'メインと同じ装飾') === 'メインと同じ装飾';
+      var dm = function (x, y) { return 'M' + x + ' ' + (y - 4.9) + ' L' + (x + 4.9) + ' ' + y + ' L' + x + ' ' + (y + 4.9) + ' L' + (x - 4.9) + ' ' + y + ' Z'; };
+      var gsh = pp.gayaShape ?? 'とげC（内側の線もとげに沿う）';
+      var spkC = gStr && gsh === 'とげC（内側の線もとげに沿う）';
+      var spk = gStr && gsh === 'とげ（前の形）';
+      var spkA = gStr && gsh === 'とげA（角がとげに）', spkB = gStr && gsh === 'とげB（角がとげに＋辺がへこむ）';
+      if (spk) gbx = Math.max(gx0 + 34, Math.min(gx0 + gw - 34, hx));
+      var gTail = { edge: 'bottom', bx: gbx, bw: 14, tx: gbx + (slot === 'LO' ? 4 : -4), ty: gy1 + 14 };
+      var gd0 = spkC ? chamSpike(gx0, gy0, gx0 + gw, gy1, 10, 13, 4, gTail) : spk ? spikeBox(gx0, gy0, gx0 + gw, gy1, 10, 4, gTail) : (spkA || spkB) ? chamSpike(gx0, gy0, gx0 + gw, gy1, 8, 9, spkB ? 3 : 0, gTail) : cham(gx0, gy0, gx0 + gw, gy1, 8, gTail);
+      return { s: true, d: gd0,
+        h: spkC ? chamSpike(gx0 + 5, gy0 + 5, gx0 + gw - 5, gy1 - 5, 7, 5, 3, null) : full && !spk ? cham(gx0 + 5, gy0 + 5, gx0 + gw - 5, gy1 - 5, 5, null) : '',
+        m: !full || spk ? '' : (function () {
+          var gd = pp.gayaDia ?? '1つ（右下・左右共通）';
+          var tl = dm(gx0 + 12, gy0 - 0.5), tr = dm(gx0 + gw - 12, gy0 - 0.5), br = dm(gx0 + gw - 12, gy1 - 0.5), bl = dm(gx0 + 12, gy1 - 0.5);
+          if (gd === '1つ（右下・左右共通）') return br;
+          if (gd === '1つ（下の角・画面の外側）') return slot === 'LO' ? bl : br;
+          if (gd === '1つ（下の角・画面の内側）') return slot === 'LO' ? br : bl;
+          if (gd === '2つ（メインと同じ）') return tl + ' ' + br;
+          if (gd === '1つ（上の角・画面の外側）') return slot === 'LO' ? tl : tr;
+          if (gd === '1つ（上の角・画面の内側）') return slot === 'LO' ? tr : tl;
+          return '';
+        })(),
+        x: gx0, y: gy0, w: gw, t: txt };
+    };
+    var mobMode = pp.mob ?? 'ひそひそ（画面の外の人の声）';
+    var mobW = function (t) { return Math.round(t.length * 21.6) + 36; };
+    var mobs = [];
+    if (mobMode === 'ひそひそ（画面の外の人の声）') {
+      var mt1 = 'ねえ、聞いた…？', mw1 = mobW(mt1), mx1 = 46, my1 = 112;
+      var mt2 = 'ひそひそ…', mw2 = mobW(mt2), mx2 = 1688 - 46 - mw2, my2 = 108;
+      mobs.push({ cls: 'mobz', delay: 0, d: cham(mx1, my1, mx1 + mw1, my1 + 40, 6, null), x: mx1, y: my1, w: mw1, t: mt1 });
+      mobs.push({ cls: 'mobz', delay: 1.8, d: cham(mx2, my2, mx2 + mw2, my2 + 40, 6, null), x: mx2, y: my2, w: mw2, t: mt2 });
+    } else if (mobMode === 'ざわざわ（場の空気）') {
+      [['ざわ…', 70, 118, 0], ['ざわざわ…', 372, 150, 0.9], ['ざわ…', 1150, 112, 1.8], ['ざわざわ…', 1430, 108, 2.7]].forEach(function (z) {
+        var zw = mobW(z[0]);
+        mobs.push({ cls: 'mobz', delay: z[3], d: cham(z[1], z[2], z[1] + zw, z[2] + 40, 6, null), x: z[1], y: z[2], w: zw, t: z[0] });
+      });
+    }
+    var GL = gaya('LO', pp.gayaL ?? 'ほんとかなぁ…'), GR = gaya('RO', pp.gayaR ?? '全くもう…');
+    var gayaOn = {}; if (slotChar.LO) gayaOn[slotChar.LO] = GL.s; if (slotChar.RO) gayaOn[slotChar.RO] = GR.s;
+    var gMode = pp.gayaMode ?? 'ふつう（次へ進むまで残る）';
+    var gSw = this.state.swap ? 1 : 0;
+    var gCls = gMode === 'ぼそっ（静かに出て残る）' ? 'gyQ' + gSw : gMode === 'ぼそっ（出て消える）' ? 'gyB' + gSw : gMode === '強め（弾んで出る）' ? 'gyS' + gSw : gMode === '強め（揺れて出る）' ? 'gyK' + gSw : 'hb ' + (this.state.swap ? 'sw1' : 'sw0');
+    var mShp = pp.mainShape ?? 'ふつうの形';
+    var mSpk2 = mShp === 'とげB（角に2本）';
+    var burstD = '';
+    if (mShp === '叫び線（角から線が弾ける）') {
+      var bc = 14, bL = 30, bg = 6;
+      var CS = [[x0 + bc / 2, y0 + bc / 2, -1, -1], [x1 - bc / 2, y0 + bc / 2, 1, -1], [x1 - bc / 2, y1 - bc / 2, 1, 1], [x0 + bc / 2, y1 - bc / 2, -1, 1]];
+      var skipI = -1;
+      if (tail) { var bestD = 1e9; CS.forEach(function (q, qi) { var dd = Math.pow(q[0] - tail.tx, 2) + Math.pow(q[1] - tail.ty, 2); if (dd < bestD) { bestD = dd; skipI = qi; } }); }
+      CS.forEach(function (q, qi) {
+        if (qi === skipI) return;
+        [[0, 1], [-26, 0.7], [26, 0.7]].forEach(function (r) {
+          var an = Math.atan2(q[3], q[2]) + r[0] * Math.PI / 180, r0 = bg + bc * 0.7, r1 = r0 + bL * r[1];
+          burstD += 'M' + (q[0] + Math.cos(an) * r0).toFixed(1) + ' ' + (q[1] + Math.sin(an) * r0).toFixed(1) + ' L' + (q[0] + Math.cos(an) * r1).toFixed(1) + ' ' + (q[1] + Math.sin(an) * r1).toFixed(1) + ' ';
+        });
+      });
+    }
+    var mSpk = mShp === 'とげC（感情が爆発する台詞用）' || mShp === 'とげ（大きく）';
+    var mS = mShp === 'とげ（大きく）' ? [36, 14, 26, 11] : [22, 8, 14, 6];
+    var mTail = tail && (tail.edge === 'bottom' ? (tail.bw ? tail : { edge: 'bottom', bx: tail.bx, bw: 24, tx: tail.tx, ty: tail.ty }) : (tail.edge === 'left' || tail.edge === 'right') ? { edge: tail.edge, y: tail.y, hw: tail.hw || 12, tx: tail.tx, ty: tail.ty } : null);
+    var pg = this.state.base === this.key() ? this.state.prevG : null;
+    var gLc = gCls, gRc = gCls;
+    if (pg && pg.L && pg.L.s && GL.s && pg.L.t === GL.t) gLc = 'gyStay';
+    if (pg && pg.R && pg.R.s && GR.s && pg.R.t === GR.t) gRc = 'gyStay';
+    var gStrong = gMode.indexOf('強め') === 0;
+    this._curG = { L: GL, R: GR };
+    if (!GL.s && pg && pg.L && pg.L.s) { GL = pg.L; gLc = 'gyO' + gSw; }
+    if (!GR.s && pg && pg.R && pg.R.s) { GR = pg.R; gRc = 'gyO' + gSw; }
+    return {
+      gLc: gLc, gRc: gRc,
+      gCls: gCls, gFs: gStrong ? 26 : 24, gFw: gStrong ? 800 : 600, gLH: gStrong ? 54 : 50,
+      gSW: 1, gGlow: 'none',
+      gTx: gStrong ? '#f6f4ef' : gMode === 'ぼそっ（静かに出て残る）' ? '#c4c0b8' : '#d6d2c9',
+      gLox: GL.x + GL.w / 2, gLoy: GL.y + 32, gRox: GR.x + GR.w / 2, gRoy: GR.y + 32,
+      mobs: mobs,
+      gLs: GL.s, gLd: GL.d, gLh: GL.h, gLm: GL.m, gLx: GL.x, gLy: GL.y, gLw: GL.w, gLt: GL.t,
+      gRs: GR.s, gRd: GR.d, gRh: GR.h, gRm: GR.m, gRx: GR.x, gRy: GR.y, gRw: GR.w, gRt: GR.t,
+      gFill: (pp.gayaStyle ?? 'メインと同じ装飾') === 'メインと同じ装飾' ? 'rgba(9,10,13,0.79)' : 'rgba(9,10,13,0.72)',
+      gStroke: (pp.gayaStyle ?? 'メインと同じ装飾') === 'メインと同じ装飾' ? 'var(--ln)' : 'rgba(214,218,224,0.42)',
+      gDots: (pp.gayaStyle ?? 'メインと同じ装飾') === 'メインと同じ装飾' ? 0.22 : 0,
+      advance: function () { self.advance(); },
+      guides: !!(pp.guides ?? true), gx0: x0, gx1: x1,
+      pxA: px.A, pxK: px.K, pxC: px.C, pxG: px.G,
+      pyA: CH.A.top, pyK: CH.K.top, pyC: CH.C.top, pyG: CH.G.top,
+      porA: pc('A'), porK: pc('K'), porC: pc('C'), porG: pc('G'),
+      swapCls: this.state.swap ? 'sw1' : 'sw0',
+      txFw: 600, burstD: burstD,
+      shout: shout, shkCls: shout ? 'shk' + (this.state.swap ? 1 : 0) : '',
+      mainCls: shout ? 'slm' + (this.state.swap ? 1 : 0) : 'hb ' + (this.state.swap ? 'sw1' : 'sw0'),
+      txCls: shout ? 'slm' + (this.state.swap ? 1 : 0) : '',
+      mox: Math.round((x0 + x1) / 2), moy: Math.round((y0 + y1) / 2), mtx: Math.round(txW / 2), mty: 75,
+      bubD: mSpk2 ? chamSpike2(x0, y0, x1, y1, 20, 28, 0, mTail) : mSpk ? chamSpike(x0, y0, x1, y1, 14, mS[0], mS[1], mTail) : cham(x0, y0, x1, y1, 14, tail),
+      fillD: mSpk2 ? chamSpike2(x0, y0, x1, y1, 20, 28, 0, mTail) : mSpk ? chamSpike(x0, y0, x1, y1, 14, mS[0], mS[1], mTail) : lineT && tail ? cham(x0, y0, x1, y1, 14, null) : cham(x0, y0, x1, y1, 14, tail),
+      boxStroke: lineT && tail ? 'none' : 'var(--ln)', olOp: lineT && tail ? 1 : 0,
+      hiD: mSpk2 ? chamSpike2(x0 + 6, y0 + 6, x1 - 6, y1 - 6, 15, 19, 0, null) : mSpk ? chamSpike(x0 + 6, y0 + 6, x1 - 6, y1 - 6, 10, mS[2], mS[3], null) : cham(x0 + 6, y0 + 6, x1 - 6, y1 - 6, 10, null),
+      dotsOp: isPhone ? 0.55 : (isNarr ? 0 : 0.3),
+      mgX0: x0, mgX1: x1,
+      cdTLx: mSpk2 ? x0 + 24 : x0 + 10, cdTLy: y0 - 4, cdBRx: mSpk2 ? x1 - 31 : x1 - 17, cdBRy: y1 - 4,
+      hasTip: !!tip, tlOp: tline ? 1 : 0, tlX1: tline ? tline.x1 : 0, tlY1: tline ? tline.y1 : 0, tlX2: tline ? tline.x2 : 0, tlY2: tline ? tline.y2 : 0, tipX: tip ? tip.x - 5 : 0, tipY: tip ? tip.y - 5 : 0,
+      hasTab: !isNarr, name: name, isPhone: isPhone, tabX: Math.round(tabX), tabY: y0 - 30,
+      txX: isNarr ? x0 + 30 : Math.round(cx - txW / 2), txY: y0 + (isNarr ? 30 : 34) + tyOff, multi: multi, txW: isNarr ? w - 60 : txW,
+      txAlign: isNarr ? 'center' : 'left', txColor: isNarr ? '#d6d2c9' : '#f1efe9',
+      shown: shownTxt,
+      nxX: x1 - 30, nxY: y1 - 32,
+      info1: info1, info2: info2, info2Color: over ? '#f0a35e' : '#b8b5ae'
+    };
+  }
+}
+</script>
+</body>
+</html>
