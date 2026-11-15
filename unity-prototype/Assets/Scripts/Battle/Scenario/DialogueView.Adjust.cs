@@ -50,7 +50,9 @@ namespace Srpg.Battle
 
         // 全員に効く調整は Resources/Talk/portrait_adjust.json（書き出しにも入る。原作者の調整を総合担当が入れる。2026-11-14）
         private static string EditorAdjustPath => Path.Combine(Application.dataPath, "Resources", "Talk", "portrait_adjust.json");
-        private static string PlayerAdjustPath => Path.Combine(Application.persistentDataPath, "portrait_adjust.json");
+        // 端末に保存した調整。2026-11-16 に立ち位置を吹き出し配置の仕様（内 ±300・外 ±600）へ変えたので、前の並びに合わせた調整（portrait_adjust.json）は読まない
+        // （残っていると新しい位置に足されて、仕様からずれる。デザインのチャット 2026-11-16「頭の中心Xが仕様とずれている」）
+        private static string PlayerAdjustPath => Path.Combine(Application.persistentDataPath, "portrait_adjust_v2.json");
 
         private static string AdjustKey(string who, string expression) => string.IsNullOrEmpty(expression) ? who : $"{who}_{expression}";
 
