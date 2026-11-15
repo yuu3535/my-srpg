@@ -20,7 +20,7 @@ namespace Srpg.Battle.Menu
 
         private int mode = 2;   // 1 1人（左）・-1 1人（右）・2 2人・4 4人
         private bool four => mode == 4;
-        private readonly int[] pick = { 0, 2, 1, 3 };   // 2人: [左, 右]。4人: [左の外, 右の外, 左の内, 右の内]
+        private readonly int[] pick = { 0, 2, 1, 3 };   // 2人: [左, 右]。4人: [左の内, 右の内, 左の外, 右の外]（先に来た人が内側。吹き出し配置の仕様 2026-11-15）
         private RectTransform panel, slotsRoot;
         private Font font, fontEn;
         private readonly List<Text> slotNames = new List<Text>();
@@ -89,21 +89,19 @@ namespace Srpg.Battle.Menu
             slotsRoot.sizeDelta = Vector2.zero;
             Button(area, "この並びで会話を流す", 150f, 560f, 420f, () => Play(false));
             Button(area, "調整しながら流す（調整パネルを開く）", 590f, 560f, 520f, () => Play(true));
-            // 吹き出しの位置を枠ごとに決める（原作者 2026-11-15。DialogueView.Bubble）
-            Button(area, "吹き出しの位置を決める", 150f, 632f, 420f, () => Play(false, true));
             Refresh();
         }
 
-        private string[] SlotTitles => mode == 4 ? new[] { "左の外", "右の外", "左の内", "右の内" } : mode == 2 ? new[] { "左", "右" } : new[] { mode > 0 ? "左に立つ人" : "右に立つ人" };
+        private string[] SlotTitles => mode == 4 ? new[] { "左の内", "右の内", "左の外", "右の外" } : mode == 2 ? new[] { "左", "右" } : new[] { mode > 0 ? "左に立つ人" : "右に立つ人" };
 
         private void Refresh()
         {
-            modeLabel.text = mode == 4 ? "4人の会話（左右に2人ずつ）" : mode == 2 ? "2人の会話（左右に1人ずつ・2人用の位置）" : "1人の会話（2人用の位置）";
+            modeLabel.text = mode == 4 ? "4人の会話（左右に2人ずつ）" : mode == 2 ? "2人の会話（左右に1人ずつ・内側）" : "1人の会話（内側）";
             for (int i = slotsRoot.childCount - 1; i >= 0; i--) Destroy(slotsRoot.GetChild(i).gameObject);
             slotNames.Clear();
             var titles = SlotTitles;
             // 画面の並び（左の外・左の内・右の内・右の外）で見せる
-            int[] order = mode == 4 ? new[] { 0, 2, 3, 1 } : mode == 2 ? new[] { 0, 1 } : new[] { 0 };
+            int[] order = mode == 4 ? new[] { 2, 0, 1, 3 } : mode == 2 ? new[] { 0, 1 } : new[] { 0 };
             for (int k = 0; k < order.Length; k++)
             {
                 int s = order[k];
@@ -124,8 +122,8 @@ namespace Srpg.Battle.Menu
             for (int s = 0; s < slotNames.Count; s++) if (slotNames[s] != null) slotNames[s].text = Cast[pick[s]];
         }
 
-        /// <summary>見本の会話: 選んだ順（外 → 内）に話す。1行と2行の台詞で吹き出しの大きさも見る。名前が重なったら、その人は1回だけ</summary>
-        private void Play(bool adjust, bool bubble = false)
+        /// <summary>見本の会話: 選んだ順（内 → 外）に話す。1行と2行の台詞で吹き出しの大きさも見る。名前が重なったら、その人は1回だけ</summary>
+        private void Play(bool adjust)
         {
             var dialogue = FindFirstObjectByType<DialogueView>();
             if (dialogue == null) return;
@@ -149,7 +147,6 @@ namespace Srpg.Battle.Menu
             dialogue.Play(new ScenarioBlock { id = "", part = "story", lines = lines.ToArray(), location = "立ち絵の並びテスト" },
                 () => { playing = false; DialogueCast.DebugLeft = null; if (panel != null) panel.gameObject.SetActive(true); });
             if (adjust && who.Count > 0) dialogue.OpenAdjuster(who[0]);
-            if (bubble) dialogue.OpenBubbleTool();
         }
 
         private void Button(RectTransform parent, string text, float x, float y, float w, System.Action act)

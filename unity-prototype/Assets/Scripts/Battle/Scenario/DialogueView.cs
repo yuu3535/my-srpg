@@ -8,8 +8,8 @@ namespace Srpg.Battle
 {
     /// <summary>
     /// 会話の画面（ノベルパート）。2026-11-13 から「会話枠 H」（正本 docs/10-design/ui/talk/talk_spec.md。基準 1688×780）。
-    /// 探索の景色をそのまま見せ、立ち絵を左右に2人ずつ（外側 L1・R1、内側 L2・R2）。話している人は明るく少し上へ、黙っている人は暗く。
-    /// 吹き出しは話す人の頭の上（支援会話は顔の横）。押すと次へ（文字を出している途中なら全部出す → 次のページ → 次の台詞）。
+    /// 探索の景色をそのまま見せ、立ち絵を左右に2人ずつ（先に来た人が内側）。話している人は明るく少し上へ、黙っている人は暗く。
+    /// 吹き出しは真ん中に1つで固定し、誰が話すかは尾で示す（2026-11-15 吹き出し配置の仕様。支援会話は顔の横）。押すと次へ（文字を出している途中なら全部出す → 次のページ → 次の台詞）。
     /// 制作メモの行は出さない。物を手に入れる行では OnItem を呼ぶ。見た目と組み立ては DialogueView.Talk.cs
     /// </summary>
     public partial class DialogueView : MonoBehaviour
@@ -133,8 +133,6 @@ namespace Srpg.Battle
         public void Close()
         {
             if (adjustPanel != null) adjustPanel.gameObject.SetActive(false);
-            if (bubblePanel != null) { bubblePanel.gameObject.SetActive(false); bubbleGrab.gameObject.SetActive(false); tipGrab.gameObject.SetActive(false); }
-            editText = null;
             adjustWho = null;
             block = null;
             lines = Array.Empty<ScenarioLine>();
@@ -212,8 +210,6 @@ namespace Srpg.Battle
 
             LoadAdjustments();
             BuildAdjuster(TalkFont);
-            LoadBubbleSlots();
-            BuildBubbleTool(TalkFont);   // 吹き出しの位置の調整（DialogueView.Bubble）
             root.gameObject.SetActive(false);
 
             // 押す操作をUIに届ける仕組み（探索のシーンには戦闘のUIがなく、これがないと会話を進められない）

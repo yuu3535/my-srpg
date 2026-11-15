@@ -62,6 +62,27 @@ namespace Srpg.Battle
         /// <summary>1行に入れる字の数の上限（仕様書に無いので、吹き出しが画面に収まる幅で総合担当が決めた。2026-11-13）</summary>
         public const int MaxChars = 26;
 
+        // ── 吹き出しの置き場所（2026-11-15 デザインのチャット。正本 docs/10-design/ui/talk/TALK_BUBBLE_PLACEMENT_SPEC_2026-11-15.md） ──
+        // ふだんの会話の吹き出しは、真ん中に1つで固定（話す人が変わっても、位置も大きさも動かない）。誰が話しているかは尾で示す。支援会話は前のまま
+        public const float BoxX0 = 604f, BoxY0 = 98f, BoxW = 480f;
+        /// <summary>1行の字数・1ページの行数（前の 18字・2行は使わない）</summary>
+        public const int BoxChars = 13, BoxLines = 3;
+        /// <summary>高さ 214（台詞が1行・2行でも3行分のまま）</summary>
+        public const float BoxH = 64f + BoxLines * LH;
+        private const float CenterX = 844f, InnerD = 300f, OuterD = 600f;
+        /// <summary>
+        /// キャラごとの頭のてっぺん Y と、横の補正（＋で画面の外側へ）。内側に立っても外側に立っても同じ値。
+        /// 立ち絵を描き直したら、基準（内 300・外 600）は変えずにここだけ直す。ヘンリーは立ち絵が来たら決める（仮に約216）。アルバスは仕様に無いので前の顔の高さから
+        /// </summary>
+        public static readonly Dictionary<string, (float top, float dx)> HeadOf = new Dictionary<string, (float, float)>
+        {
+            { "アルシェ", (297f, 0f) }, { "カリマ", (293f, 0f) }, { "キャリー", (273f, 0f) }, { "ギュンター", (230f, 16f) },
+            { "ヘンリー", (216f, 0f) }, { "アルバス", (216f, 0f) },
+        };
+        /// <summary>立ち位置の頭の中心 X（内側 ±300・外側 ±600 ＋ キャラの補正）</summary>
+        public static float HeadXOf(string who, bool right, bool inner) =>
+            CenterX + (right ? 1f : -1f) * ((inner ? InnerD : OuterD) + (HeadOf.TryGetValue(who ?? "", out var h) ? h.dx : 0f));
+
         // ── 立ち絵の置き方（仕様書 §3。立ち絵は仮。見本と同じ見え方になるよう、透明でない所の高さをそろえる） ──
         private struct Figure { public float height, headX, faceY; }   // 表示の高さ・頭の中心（右向きの絵の左から）・顔の中心（上から）
         private static readonly Dictionary<string, Figure> Figures = new Dictionary<string, Figure>
@@ -87,17 +108,15 @@ namespace Srpg.Battle
             { "キャリー", Physique.AdultFemale },
         };
 
-        // 枠ごとの頭の中心 X と足元の線（見本の立ち絵の左上＋頭の位置、上端＋高さ）
+        // 支援会話の2人の頭の中心 X と足元の線（見本の立ち絵の左上＋頭の位置、上端＋高さ）
         private struct Slot { public float headX, baseline; }
-        private static readonly Slot SL1 = new Slot { headX = 201f + 156f, baseline = 297f + 950f }, SL2 = new Slot { headX = 439f + 128f, baseline = 293f + 950f },
-            SR2 = new Slot { headX = 945f + 221f, baseline = 273f + 1060f }, SR1 = new Slot { headX = 1272f + 175f, baseline = 230f + 1100f },
-            SupL1 = new Slot { headX = 276f + 156f, baseline = 297f + 950f }, SupR1 = new Slot { headX = 1153f + 175f, baseline = 218f + 1100f };
-        private const float TopMinNormal = 230f, TopMinSupport = 218f;
+        private static readonly Slot SupL1 = new Slot { headX = 276f + 156f, baseline = 297f + 950f }, SupR1 = new Slot { headX = 1153f + 175f, baseline = 218f + 1100f };
+        private const float TopMinSupport = 218f;
 
         private struct Bounds { public float w, h, left, top, right, bottom; }
         private Dictionary<string, Bounds> bounds;
 
-        private struct Placed { public float left, top, width, height, headX; public bool right; public string slot; }
+        private struct Placed { public float left, top, width, height, headX; public bool right, inner; }
         private readonly Dictionary<string, Placed> placed = new Dictionary<string, Placed>();
 
         // ── 部品 ──
@@ -577,20 +596,15 @@ namespace Srpg.Battle
                 if (actors[gone] != null) Remove(actors[gone].gameObject);
                 actors.Remove(gone);
             }
-            // 左右に1人ずつ（立ち絵のある人）のときは、支援会話の「2人用の位置」に立つ（外側の位置だと遠すぎる。原作者 2026-11-13 案A）
-            // 1人だけのときも同じ2人用の位置（原作者 2026-11-14「1人の時もなるべく二人会話の時と同じ位置に」）
-            int nl = stage.left.Count(HasDrawn), nr = stage.right.Count(HasDrawn);
-            pairStage = !SupportMode && nl <= 1 && nr <= 1 && nl + nr >= 1;
+            // 先に来た人が内側。人数が増えても先にいる人は動かず、あとから来た人が外側へ（吹き出し配置の仕様 §2）。1〜2人の場面は全員が内側
             PlaceSide(stage.left, false, line);
             PlaceSide(stage.right, true, line);
         }
 
-        private bool pairStage;
-        private bool HasDrawn(string who) => FindPortrait(who, null).texture != null;
 
         private void PlaceSide(List<string> cast, bool right, ScenarioLine line)
         {
-            // 絵のある人だけ枠に入れる（先に立った人が外側）。支援会話は外側の1人だけ
+            // 絵のある人だけ枠に入れる（先に立った人が内側）。支援会話は1人目だけ
             var drawn = cast.Where(w => FindPortrait(w, null).texture != null).ToList();
             foreach (var hidden in cast.Except(drawn)) if (actors.TryGetValue(hidden, out var img) && img != null) { Remove(img.gameObject); actors.Remove(hidden); }
             for (int i = 0; i < drawn.Count; i++)
@@ -614,7 +628,8 @@ namespace Srpg.Battle
                 image.gameObject.SetActive(visible);
                 bool fresh = image.texture == null;
                 image.texture = portrait.texture;
-                var slot = SupportMode || pairStage ? (right ? SupR1 : SupL1) : right ? (i == 0 ? SR1 : SR2) : (i == 0 ? SL1 : SL2);
+                bool inner = i == 0;
+                var slot = right ? SupR1 : SupL1;   // 支援会話だけで使う
                 var fig = Figures.TryGetValue(who, out var f) ? f : new Figure { height = 1060f, headX = -1f, faceY = 120f };
                 // 透明でない所（絵の名前で探す。無ければ絵全体）
                 var b = bounds.TryGetValue(portrait.texture.name, out var bb) ? bb : new Bounds { w = portrait.texture.width, h = portrait.texture.height, left = 0, top = 0, right = portrait.texture.width, bottom = portrait.texture.height };
@@ -624,13 +639,16 @@ namespace Srpg.Battle
                 float H = fig.height * zoom, W = H * bw / Mathf.Max(1f, bh);
                 float natHead = fig.headX >= 0f ? fig.headX * zoom : W * 0.5f;
                 float headOnScreen = right ? W - natHead : natHead;
-                float left = slot.headX - headOnScreen + (adj != null ? adj.dx * W : 0f);
-                // 上下: 分類のある人は顔の高さ（目の線）で決める。ない人は枠の足元の線から（前と同じ）
-                float baseTop = BuildOf.TryGetValue(who, out var build) ? FaceLine[build] - fig.faceY * zoom : slot.baseline - H;
+                float standX = SupportMode ? slot.headX : HeadXOf(who, right, inner);
+                float left = standX - headOnScreen + (adj != null ? adj.dx * W : 0f);
+                // 上下: ふだんはキャラごとの頭のてっぺん（吹き出し配置の仕様 §2）。支援会話・表に無い人は顔の高さ（目の線）か足元の線から（前と同じ）
+                float baseTop;
+                if (!SupportMode && HeadOf.TryGetValue(who, out var hd)) baseTop = hd.top;
+                else if (BuildOf.TryGetValue(who, out var build)) baseTop = FaceLine[build] - fig.faceY * zoom;
+                else baseTop = SupportMode ? slot.baseline - H : 230f;
                 float top = baseTop - (adj != null ? adj.dy * H : 0f);
                 // 頭の位置は調整（左右）のあとの位置。吹き出しはこれについて動く（原作者 2026-11-14「立ち絵の位置調整したらテキストボックスも追従して」）
-                string slotKey = SupportMode || pairStage ? (right ? "pairR" : "pairL") : right ? (i == 0 ? "R1" : "R2") : (i == 0 ? "L1" : "L2");
-                placed[who] = new Placed { left = left, top = top, width = W, height = H, headX = left + headOnScreen, right = right, slot = slotKey };
+                placed[who] = new Placed { left = left, top = top, width = W, height = H, headX = left + headOnScreen, right = right, inner = inner };
                 bool speaking = who == stage.Speaker;
                 var rt = image.rectTransform;
                 rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
@@ -646,7 +664,8 @@ namespace Srpg.Battle
                 var color = speaking ? Color.white : new Color(0.72f, 0.72f, 0.72f, 1f);
                 actorColor[who] = color;
                 if (fresh || !Application.isPlaying) image.color = color;
-                if (speaking) rt.SetAsLastSibling(); else rt.SetAsFirstSibling();
+                // 重なり: ふだんは内側の人が外側の人より手前（仕様 §2）。支援会話は話している人が手前
+                if (SupportMode ? speaking : inner) rt.SetAsLastSibling(); else rt.SetAsFirstSibling();
             }
         }
 
@@ -658,73 +677,92 @@ namespace Srpg.Battle
             bool narration = line.type == "narration", phone = line.type == "phone";
             bool talk = line.type == "line" && !string.IsNullOrEmpty(line.speaker) && placed.ContainsKey(line.speaker);
             bool voice = line.type == "line" && !talk;
-            // ページ（1ページ2行まで。字は小さくしない）
-            // 枠ごとの1行の字数・1ページの行数（決めていなければ 26字・2行。DialogueView.Bubble。原作者 2026-11-15 真ん中のすき間の案）
-            var slotBs = talk && !SupportMode && placed[line.speaker].slot != null ? BubbleOf(placed[line.speaker].slot) : null;
-            int maxChars = slotBs != null && slotBs.chars > 0 ? slotBs.chars : MaxChars;
-            int perPage = slotBs != null && slotBs.lines > 0 ? slotBs.lines : 2;
-            var rows = WrapChars((BubbleToolOpen && editText != null ? editText : line.text) ?? "", maxChars);   // 吹き出しの調整中は、入れた文で
+            bool face = talk && SupportMode;
+            // ページ: ふだんは1行13字・1ページ3行（吹き出し配置の仕様 §1）。支援会話は前のまま（26字・2行）。字は小さくしない
+            int maxChars = SupportMode ? MaxChars : BoxChars, perPage = SupportMode ? 2 : BoxLines;
+            var rows = WrapChars(line.text ?? "", maxChars);
             var list = new List<string>();
             for (int i = 0; i < rows.Count; i += perPage) list.Add(string.Join("\n", rows.GetRange(i, Mathf.Min(perPage, rows.Count - i))));
             pages = list.Count > 0 ? list.ToArray() : new[] { "" };
             page = 0;
             int maxLen = rows.Count > 0 ? rows.Max(r => r.Length) : 0;
             int lineCount = Mathf.Min(perPage, Mathf.Max(1, rows.Count));
-            float txW = Mathf.Round(maxLen * CW) + 10f;
-            // 1行の字数を決めた枠は、その字数の幅で固定（540 より細くもなる。話す人や文が変わっても箱の大きさが跳ばない。原作者 2026-11-15「直して」）
-            float minW = slotBs != null && slotBs.chars > 0 ? Mathf.Round(slotBs.chars * CW) + 10f + 100f : 540f;
-            float w = Mathf.Max(minW, txW + 100f);
-            float h = 30f + lineCount * LH + 34f;
 
-            float x0, x1, y0, y1;
-            int side = talk ? (placed[line.speaker].right ? 1 : -1) : voice ? 1 : 0;
-            float headX = talk ? placed[line.speaker].headX : 844f;
-            if (talk && side < 0) { x0 = Mathf.Max(40f, headX - 70f); x1 = x0 + w; }
-            else if (talk) { x1 = Mathf.Min(1648f, headX + 70f); x0 = x1 - w; }
-            else { float c0 = 844f + (voice ? 60f : 0f); x0 = Mathf.Round(c0 - w / 2f); x1 = Mathf.Round(c0 + w / 2f); }
-            float refTop = talk ? placed[line.speaker].top : SupportMode ? TopMinSupport : TopMinNormal;
-            y1 = Mathf.Min(292f, refTop - 8f); y0 = Mathf.Max(98f, y1 - h); y1 = y0 + h;
-            bool face = talk && SupportMode;
-            if (face)
+            float txW, w, h, x0, x1, y0, y1;
+            // 名前札と尾の側（−1 左・1 右・0 真ん中）。ふだんの立ち絵のない人は真ん中（尾なし・名前札あり）
+            int side = talk ? (placed[line.speaker].right ? 1 : -1) : voice && SupportMode ? 1 : 0;
+            float headX = talk ? placed[line.speaker].headX : CenterX;
+            if (!SupportMode)
             {
-                if (side > 0) { x1 = Mathf.Max(w + 40f, headX - 115f); x0 = x1 - w; }
-                else { x0 = Mathf.Min(1648f - w, headX + 115f); x1 = x0 + w; }
-                y1 = Mathf.Max(98f + h, Mathf.Round(placed[line.speaker].top + 70f)); y0 = y1 - h;
+                // ふだん: 真ん中の固定の箱（左 604・上 98・幅 480・高さ 214）。本文の箱は 13字ぶんの幅で、真ん中にそろえて上から書く
+                txW = Mathf.Round(BoxChars * CW); w = BoxW; h = BoxH;
+                x0 = BoxX0; x1 = x0 + w; y0 = BoxY0; y1 = y0 + h;
             }
-            // ふだんの会話: 立つ枠ごとに決めた位置（DialogueView.Bubble。原作者 2026-11-15「位置を共通であらかじめ決めて」）。
-            // 上の端と、話す人の側の端は文の長さで動かない。画面からはみ出すときだけ内へ寄せる
-            string slotKey = talk && !SupportMode ? placed[line.speaker].slot : null;
-            bubbleKeyNow = slotKey;
-            Vector2 tip = Vector2.zero;
-            if (slotKey != null)
+            else
             {
-                var bs = BubbleOf(slotKey);
-                if (side < 0) { x0 = bs.x; x1 = x0 + w; if (x1 > TalkW - 16f) { x1 = TalkW - 16f; x0 = x1 - w; } }
-                else { x1 = bs.x; x0 = x1 - w; if (x0 < 16f) { x0 = 16f; x1 = x0 + w; } }
-                y0 = bs.y; y1 = y0 + h;
-                tip = new Vector2(bs.tipX, bs.tipY);
+                // 支援会話（前のまま。顔の横）
+                txW = Mathf.Round(maxLen * CW) + 10f;
+                w = Mathf.Max(540f, txW + 100f);
+                h = 30f + lineCount * LH + 34f;
+                float c0 = CenterX + (voice ? 60f : 0f); x0 = Mathf.Round(c0 - w / 2f); x1 = Mathf.Round(c0 + w / 2f);
+                float refTop = talk ? placed[line.speaker].top : TopMinSupport;
+                y1 = Mathf.Min(292f, refTop - 8f); y0 = Mathf.Max(98f, y1 - h); y1 = y0 + h;
+                if (face)
+                {
+                    if (side > 0) { x1 = Mathf.Max(w + 40f, headX - 115f); x0 = x1 - w; }
+                    else { x0 = Mathf.Min(1648f - w, headX + 115f); x1 = x0 + w; }
+                    y1 = Mathf.Max(98f + h, Mathf.Round(placed[line.speaker].top + 70f)); y0 = y1 - h;
+                }
             }
             float cx = Mathf.Round((x0 + x1) / 2f);
             bx0 = x0; by0 = y0; bx1 = x1; by1 = y1;
 
-            // 形（角を14px切る。尾つき）
-            int edge = slotKey != null ? TailEdge(x0, y0, x1, y1, tip) : -1;
-            var shape = new List<Vector2> { TP(x0 + 14f, y0), TP(x1 - 14f, y0), TP(x1, y0 + 14f) };
-            if (voice) { float my = y0 + h / 2f; shape.Add(TP(x1, my - 12f)); shape.Add(TP(x1 + 46f, my - 22f)); shape.Add(TP(x1, my + 12f)); }
-            if (edge == 0) SlotTail(shape, 0, x0, y0, x1, y1, tip);
-            shape.Add(TP(x1, y1 - 14f)); shape.Add(TP(x1 - 14f, y1));
-            if (edge == 1) SlotTail(shape, 1, x0, y0, x1, y1, tip);
-            else if (talk && slotKey == null)
+            // 尾（仕様 §3。細く鋭い三角）: 内側の人は下の辺から、外側の人は話す人の側の横の辺から。立ち絵のない人・地の文・携帯端末は尾なし
+            tailEdgeNow = -1;
+            float tby = 0f, tbx = 0f;
+            const float half = 9f;   // 付け根の幅 18
+            tailTip = Vector2.zero;
+            if (!SupportMode && talk)
             {
-                float bx; int dir;
-                if (face) { bx = side > 0 ? x1 - 64f : x0 + 64f; dir = side > 0 ? 1 : -1; }
-                else { dir = side < 0 ? -1 : 1; bx = Mathf.Max(x0 + 70f, Mathf.Min(x1 - 70f, headX + (side < 0 ? 20f : -20f))); }
-                float tx = face ? bx + dir * 36f : bx + dir * 34f, ty = face ? y1 + 38f : y1 + 40f;
+                var me = placed[line.speaker];
+                float sg = side < 0 ? 1f : -1f;
+                if (me.inner)
+                {
+                    tbx = Mathf.Clamp(headX + sg * 40f, x0 + 64f, x1 - 64f);
+                    tailTip = new Vector2(tbx - sg * 37f, y1 + 42f);
+                    tailEdgeNow = 1;
+                }
+                else
+                {
+                    // 付け根 y0+110・先は 50 外へ・31 下へ。先が同じ側の内側の人の頭のてっぺん −40 より下なら、付け根ごと上へ（上限 y0+24）
+                    tby = y0 + 110f;
+                    float ty = tby + 31f;
+                    foreach (var q in placed.Values)
+                    {
+                        if (q.right != me.right || !q.inner) continue;
+                        float maxTy = q.top - 40f;
+                        if (ty > maxTy) { float sh = Mathf.Min(ty - maxTy, tby - (y0 + 24f)); tby -= sh; ty -= sh; }
+                    }
+                    tailTip = new Vector2(side < 0 ? x0 - 50f : x1 + 50f, ty);
+                    tailEdgeNow = side < 0 ? 2 : 0;
+                }
+            }
+
+            // 形（角を14px切る。尾は同じ輪郭の一部として描く）
+            var shape = new List<Vector2> { TP(x0 + 14f, y0), TP(x1 - 14f, y0), TP(x1, y0 + 14f) };
+            if (voice && SupportMode) { float my = y0 + h / 2f; shape.Add(TP(x1, my - 12f)); shape.Add(TP(x1 + 46f, my - 22f)); shape.Add(TP(x1, my + 12f)); }
+            if (tailEdgeNow == 0) { shape.Add(TP(x1, tby - half)); shape.Add(TP(tailTip.x, tailTip.y)); shape.Add(TP(x1, tby + half)); }
+            shape.Add(TP(x1, y1 - 14f)); shape.Add(TP(x1 - 14f, y1));
+            if (tailEdgeNow == 1) { shape.Add(TP(tbx + half, y1)); shape.Add(TP(tailTip.x, tailTip.y)); shape.Add(TP(tbx - half, y1)); }
+            else if (face)
+            {
+                float bx = side > 0 ? x1 - 64f : x0 + 64f; int dir = side > 0 ? 1 : -1;
+                float tx = bx + dir * 36f, ty = y1 + 38f;
                 if (dir < 0) { shape.Add(TP(bx + 18f, y1)); shape.Add(TP(tx, ty)); shape.Add(TP(bx - 6f, y1)); }
                 else { shape.Add(TP(bx + 6f, y1)); shape.Add(TP(tx, ty)); shape.Add(TP(bx - 18f, y1)); }
             }
             shape.Add(TP(x0 + 14f, y1)); shape.Add(TP(x0, y1 - 14f));
-            if (edge == 2) SlotTail(shape, 2, x0, y0, x1, y1, tip);
+            if (tailEdgeNow == 2) { shape.Add(TP(x0, tby + half)); shape.Add(TP(tailTip.x, tailTip.y)); shape.Add(TP(x0, tby - half)); }
             shape.Add(TP(x0, y0 + 14f));
             bubbleFill.color = Dark(p.pl, 0.92f * 0.86f);
             bubbleFill.Set(shape, PolyGraphic.Mode.Fill);
@@ -746,7 +784,7 @@ namespace Srpg.Battle
             // 本文
             bodyText.color = narration ? p.nar : p.tx;
             bodyText.alignment = narration ? TextAnchor.UpperCenter : TextAnchor.UpperLeft;
-            float txX = narration ? x0 + 30f : cx - txW / 2f, txY = y0 + (narration ? 30f : 34f), boxW = narration ? w - 60f : txW + 40f;
+            float txX = narration ? x0 + 30f : Mathf.Round(cx - txW / 2f), txY = y0 + (narration ? 30f : 34f), boxW = narration ? w - 60f : txW + 40f;
             TPlace(bodyText.rectTransform, txX, txY - TextTopPad(bodyText, LH), boxW, lineCount * LH + 20f);
             // 中央寄せ＋字間: 字間で右へずれる分（(n−1)×字間の半分）と、CSS が最後の字間も幅に入れる分（字間の半分）を戻す
             if (narration) bodyText.rectTransform.anchoredPosition += new Vector2(-maxLen * 0.06f * 30f / 2f, 0f);
@@ -784,6 +822,17 @@ namespace Srpg.Battle
         }
 
         private PolyGraphic tabBottom;
+        private int tailEdgeNow = -1;   // 尾の辺（0 右・1 下・2 左・−1 なし）
+        private Vector2 tailTip;
+        /// <summary>今の尾（確認・テスト用）: 辺（"right"／"bottom"／"left"／なしは null）と、先の点（1688×780 の座標）</summary>
+        public (string edge, Vector2 tip) TailNow => (tailEdgeNow == 0 ? "right" : tailEdgeNow == 1 ? "bottom" : tailEdgeNow == 2 ? "left" : null, tailTip);
+        /// <summary>舞台に立っている人の頭の中心 X・頭のてっぺん Y・内側か（確認・テスト用）</summary>
+        public bool TryStand(string who, out float headX, out float headTop, out bool inner)
+        {
+            bool ok = placed.TryGetValue(who ?? "", out var q);
+            headX = q.headX; headTop = q.top; inner = q.inner;
+            return ok;
+        }
         private string lastName;
         private float tabShownAt = -10f;
 
@@ -879,6 +928,10 @@ namespace Srpg.Battle
 #if UNITY_EDITOR
         public static readonly string[] DesignRefs =
         {
+            // 吹き出しの置き場所（2026-11-15）
+            "place_01_4p_inner_left_3lines", "place_02_4p_outer_right_avoid", "place_05_2p", "place_06_one_line", "place_07_two_pages", "place_08_narration",
+            "place_09_phone", "place_10_no_portrait",
+            // 会話枠 H（2026-11-13。吹き出しの位置は古い）
             "talk_03_outer_left_2lines", "talk_01_narration", "talk_02_outer_right", "talk_04_inner_right_page1of2", "talk_05_inner_left_page1of2",
             "talk_06_phone", "talk_07_voice_no_portrait", "talk_08_typing", "talk_09_theme_orcus", "support_01_right_speaker", "support_02_left_speaker", "log_01_open",
         };
@@ -896,21 +949,26 @@ namespace Srpg.Battle
 
         // ── 文字 ──
 
-        private const string NoLineStart = "、。，．！？!?）」』】〕〉》…‥ーぁぃぅぇぉっゃゅょァィゥェォッャュョ～";
+        private const string NoLineStart = "、。，．！？!?）」』】〕〉》…‥ーぁぃぅぇぉっゃゅょァィゥェォッャュョ～　";
 
-        /// <summary>字の数で折り返す（改行はそのまま。行の頭に来てはいけない字は前の行の終わりへぶら下げる）</summary>
+        /// <summary>
+        /// 字の数で折り返す（改行は段落の区切りとしてそのまま）。行の頭に来てはいけない字（、。！？」）…ー・全角スペースなど）が次の行の頭になるときは、
+        /// 前の行の終わりの字を次の行へ送る（追い出し。1行の字数を越えないので、決まった幅の箱からはみ出さない。吹き出し配置の仕様 §7）
+        /// </summary>
         public static List<string> WrapChars(string text, int max)
         {
             var rows = new List<string>();
             foreach (var para in (text ?? "").Split('\n'))
             {
-                var row = new System.Text.StringBuilder();
-                foreach (char c in para)
+                if (para.Length == 0) { rows.Add(""); continue; }
+                int i = 0;
+                while (i < para.Length)
                 {
-                    if (row.Length >= max && NoLineStart.IndexOf(c) < 0) { rows.Add(row.ToString()); row.Clear(); }
-                    row.Append(c);
+                    int n = Mathf.Min(max, para.Length - i);
+                    while (n > 1 && i + n < para.Length && NoLineStart.IndexOf(para[i + n]) >= 0) n--;
+                    rows.Add(para.Substring(i, n));
+                    i += n;
                 }
-                rows.Add(row.ToString());
             }
             return rows;
         }

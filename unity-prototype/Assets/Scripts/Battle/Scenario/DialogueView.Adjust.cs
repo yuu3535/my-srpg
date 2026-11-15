@@ -119,6 +119,8 @@ namespace Srpg.Battle
         }
 
         public bool AdjusterOpen => adjustPanel != null && adjustPanel.gameObject.activeSelf;
+        /// <summary>調整の道具を開いている（会話を進めない）</summary>
+        public bool ToolOpen => AdjusterOpen;
 
         // 変えた人の、保存前の値（別の人へ移っても消えない。「保存」で全部を保存）
         private readonly Dictionary<string, PortraitAdjust> pending = new Dictionary<string, PortraitAdjust>();
@@ -316,7 +318,7 @@ namespace Srpg.Battle
             var slotCol = new Color(0.55f, 0.85f, 0.95f, 0.7f);
             // 画面の上の端の近く（下は調整パネルに隠れるため）
             void Tick(float x, string label) { TFill(balance, x - 1f, 74f, 2f, 18f, slotCol); var t = TLabel(balance, label, x - 60f, 94f, 120f, 18f, 12, slotCol, 600); t.alignment = TextAnchor.MiddleCenter; }
-            Tick(SL1.headX, "左の外"); Tick(SL2.headX, "左の内"); Tick(SR2.headX, "右の内"); Tick(SR1.headX, "右の外");
+            Tick(CenterX - OuterD, "左の外"); Tick(CenterX - InnerD, "左の内"); Tick(CenterX + InnerD, "右の内"); Tick(CenterX + OuterD, "右の外");
             Tick(SupL1.headX, "2人・左"); Tick(SupR1.headX, "2人・右");
         }
 

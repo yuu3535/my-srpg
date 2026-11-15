@@ -8,7 +8,7 @@ using UnityEngine.TestTools;
 namespace Srpg.Tests
 {
     /// <summary>
-    /// 会話枠 H（2026-11-13）: 1ページ2行まで／立ち絵の無い人は舞台の枠を取らない／ログを開いている間は進まない・閉じると戻る／
+    /// 会話枠 H（2026-11-13）: 1ページ3行まで（2026-11-15 吹き出し配置の仕様）／立ち絵の無い人は舞台の枠を取らない／ログを開いている間は進まない・閉じると戻る／
     /// 支援会話は CLOSE で閉じて呼んだ側へ戻る
     /// </summary>
     public class TalkPlayTests
@@ -39,8 +39,7 @@ namespace Srpg.Tests
                     L("line", "ギュンター", "遅い。"),
                     L("line", "キャリー", "あら。"),
                     L("line", "カリマ", "はい。"),
-                    // 立ち絵の無い人は枠を使わないので、ふつうの1ページ2行（枠に立つ人の行数は bubble_slots.json で変わる。2026-11-15）
-                    L("line", "城の兵士", "一行目。\n二行目。\n三行目。"),
+                    L("line", "城の兵士", "一行目。\n二行目。\n三行目。\n四行目。"),
                     L("narration", null, "鐘が鳴った。"),
                 }
             };
@@ -53,7 +52,7 @@ namespace Srpg.Tests
             // 立ち絵の無い人が話しても、右の2人はそのまま
             Assert.AreEqual("城の兵士", dialogue.CurrentLine.speaker);
             CollectionAssert.AreEquivalent(new[] { "ギュンター", "キャリー" }, dialogue.RightCast);
-            Assert.AreEqual(2, dialogue.PageCount, "3行は2ページ（1ページ2行まで）");
+            Assert.AreEqual(2, dialogue.PageCount, "4行は2ページ（1ページ3行まで）");
             dialogue.Advance();
             Assert.AreEqual(1, dialogue.PageIndex);
 
