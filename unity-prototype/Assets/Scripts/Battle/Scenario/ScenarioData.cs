@@ -46,6 +46,20 @@ namespace Srpg.Battle
         public string note;
         public string process;
         public string item;        // この行で手に入れる物（なければ空）
+        // ── 吹き出しの演出（2026-11-15 吹き出し配置の仕様 §4〜§7。表の列「箱の演出」「ガヤ」「画面の外の声」） ──
+        public string fx;          // 箱の演出: ""（ふつう）/ shout（叫ぶ）
+        public GayaLine[] gaya;    // 端の人のつぶやき（3人以上の場面の外側の人だけ）
+        public string mob;         // 画面の外の声: ""（なし）/ whisper（ひそひそ）/ murmur（ざわざわ）
+        public string[] mobTexts;  // 画面の外の声の本文（空なら決まった文）
+    }
+
+    /// <summary>ガヤ1つ（誰が・何を・強めか）</summary>
+    [Serializable]
+    public class GayaLine
+    {
+        public string who;
+        public string text;
+        public bool strong;
     }
 
     /// <summary>

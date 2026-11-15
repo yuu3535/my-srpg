@@ -81,7 +81,8 @@ namespace Srpg.Battle
             index = -1;
             stage = new DialogueCast.Stage();
             // 立ち絵の無い人（モブ）は舞台に立てない（枠を取らず、話しても誰も入れ替えない。仕様書 §4: 全員話していない扱い）
-            stage.Enter(lines.Where(l => l.type == "line" && HasPortrait(l.speaker)).Select(l => l.speaker));
+            // ガヤだけ言う人も舞台に立つ（出てきた順。外側に立つ人のつぶやき。吹き出し配置の仕様 §4）
+            stage.Enter(lines.SelectMany(l => (l.type == "line" ? new[] { l.speaker } : new string[0]).Concat((l.gaya ?? new GayaLine[0]).Select(g => g?.who))).Where(HasPortrait));
             foreach (var a in actors.Values) if (a != null) Remove(a.gameObject);
             actors.Clear();
             root.gameObject.SetActive(true);
@@ -140,6 +141,7 @@ namespace Srpg.Battle
             pages = Array.Empty<string>();
             page = 0;
             CloseLog();
+            HideEffects();
             if (root != null) root.gameObject.SetActive(false);
             GameSettings.FlushRead();
             var done = onEnd;
@@ -156,10 +158,13 @@ namespace Srpg.Battle
             string name = line.type == "phone" ? "携帯端末" : narration ? "" : line.speaker;
             LayoutActors(line);
             LayoutTalk(line, name);   // 吹き出し・名前札・ページ（DialogueView.Talk）
+            ShowEffects(line);        // ガヤ・画面の外の声・叫ぶ演出（DialogueView.Effects）
             ShowPage();
+            if (shoutNow) FinishReveal();   // 叫ぶ台詞は文字送りをせず、全文を一気に出す
             log.Add(string.IsNullOrEmpty(name) ? line.text : $"{name}「{line.text}」");
             if (log.Count > 80) log.RemoveAt(0);
             AddLog(line, name);
+            AddGayaLog(line);
         }
 
         private bool HasPortrait(string who) => !string.IsNullOrEmpty(who) && FindPortrait(who, null).texture != null;
@@ -242,6 +247,10 @@ namespace Srpg.Battle
                     if (pair.Value == null) continue;
                     if (actorTarget.TryGetValue(pair.Key, out var t)) pair.Value.rectTransform.anchoredPosition = Vector2.Lerp(pair.Value.rectTransform.anchoredPosition, t, k);
                     if (actorColor.TryGetValue(pair.Key, out var c)) pair.Value.color = Color.Lerp(pair.Value.color, c, k);
+                    // 叫ぶ: 話す人を 1.04 倍へ（右の人は左右反転のまま）
+                    var ls = pair.Value.rectTransform.localScale;
+                    float z = actorZoom.TryGetValue(pair.Key, out var zz) ? zz : 1f, cur = Mathf.Lerp(Mathf.Abs(ls.y), z, k);
+                    pair.Value.rectTransform.localScale = new Vector3(Mathf.Sign(ls.x) * cur, cur, 1f);
                 }
             }
             TickTalk();   // 吹き出しの出方・「次へ」の印・タブの脈・ログ（DialogueView.Talk）

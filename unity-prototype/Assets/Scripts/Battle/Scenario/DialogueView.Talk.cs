@@ -251,6 +251,7 @@ namespace Srpg.Battle
             BuildContextTab();
             BuildBottomBar();
             BuildLog();
+            BuildEffects();   // ガヤ・画面の外の声・叫ぶ演出（DialogueView.Effects）
 
             // 支援会話の CLOSE の星（右上）
             closeStar = TStar("CLOSE", root, () => { var c = supportClose; supportClose = null; SupportMode = false; Close(); c?.Invoke(); });
@@ -656,7 +657,8 @@ namespace Srpg.Battle
                 rt.sizeDelta = new Vector2(W, H);
                 image.uvRect = new Rect(b.left / b.w, 1f - b.bottom / b.h, bw / b.w, bh / b.h);
                 // 右の人は左右を反転（立ち絵は全員右向きで描く決まり）
-                rt.localScale = new Vector3(right ? -1f : 1f, 1f, 1f);
+                float mag = Mathf.Abs(rt.localScale.y) > 0.01f ? Mathf.Abs(rt.localScale.y) : 1f;   // 叫ぶ演出の大きさは Update でなめらかに戻す
+                rt.localScale = new Vector3((right ? -1f : 1f) * mag, mag, 1f);
                 var target = new Vector2(left + W / 2f, -(top + H / 2f) + (speaking ? 6f : 0f));
                 actorTarget[who] = target;
                 if (fresh || !Application.isPlaying) rt.anchoredPosition = target;
@@ -919,6 +921,7 @@ namespace Srpg.Battle
                 logThumb.sizeDelta = new Vector2(3f, hThumb);
                 logThumb.anchoredPosition = new Vector2(1489f, -(96f + (640f - hThumb) * (1f - pos)));
             }
+            TickEffects();   // ガヤ・画面の外の声・叫ぶ演出（吹き出しの出方より後に上書きする）
 #if UNITY_EDITOR
             var kb = UnityEngine.InputSystem.Keyboard.current;
             if (kb != null && kb.f8Key.wasPressedThisFrame) { DesignRefIndex = DesignRefIndex + 1 >= DesignRefs.Length ? -1 : DesignRefIndex + 1; ApplyDesignRef(); }
@@ -1208,7 +1211,16 @@ namespace Srpg.Battle
             string key = $"{x0 % 16f}_{y0 % 16f}_{w}_{h}_{op}";
             if (dotsKey == key && dotsTex != null) return dotsTex;
             if (dotsTex != null) Destroy(dotsTex);
-            dotsTex = new Texture2D(w, h, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, name = "TalkDots" };
+            dotsTex = BuildDots(x0, y0, x1, y1, op);
+            dotsKey = key;
+            return dotsTex;
+        }
+
+        /// <summary>ドット柄の絵を新しく作る（吹き出し・ガヤ共通）</summary>
+        private static Texture2D BuildDots(float x0, float y0, float x1, float y1, float op)
+        {
+            int w = Mathf.CeilToInt(x1 - x0), h = Mathf.CeilToInt(y1 - y0);
+            var dotsTex = new Texture2D(w, h, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp, name = "TalkDots" };
             var px = new Color32[w * h];
             for (int y = 0; y < h; y++)
             {
@@ -1230,7 +1242,6 @@ namespace Srpg.Battle
             }
             dotsTex.SetPixels32(px);
             dotsTex.Apply();
-            dotsKey = key;
             return dotsTex;
         }
     }
