@@ -420,6 +420,7 @@ namespace Srpg.Battle
         private void Inspect(MapInspect inspect)
         {
             if (!string.IsNullOrEmpty(inspect.block)) { PlayBlocks(new List<string> { inspect.block }, null, replay: true); return; }
+            Sfx.Play("explore_check");
             if (!string.IsNullOrEmpty(inspect.text)) PlayLines(new[] { new ScenarioLine { type = "narration", text = inspect.text } });
         }
 
@@ -443,6 +444,7 @@ namespace Srpg.Battle
 
         private void UseExit(MapExit exit)
         {
+            Sfx.Play("explore_exit");
             if (!exit.hasTarget || string.IsNullOrEmpty(exit.toMap))
             {
                 PlayLines(new[] { new ScenarioLine { type = "narration", text = $"{ExitLabel(exit)}は、今は入れない。" } });

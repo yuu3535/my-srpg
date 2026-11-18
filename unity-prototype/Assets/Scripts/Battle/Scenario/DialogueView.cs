@@ -120,7 +120,7 @@ namespace Srpg.Battle
             if (block == null) return;
             if (Revealing) { FinishReveal(); return; }    // 文字を出している途中なら、まず全部出す
             // 長い文は次のページへ（話す人・表情はそのまま。ログ・物を手に入れるのは最初のページだけ）
-            if (page < pages.Length - 1) { page++; ShowPage(); return; }
+            if (page < pages.Length - 1) { page++; ShowPage(); Sfx.Play("talk_next"); return; }
             index++;
             if (index >= lines.Length) { Close(); return; }
             var line = lines[index];
@@ -128,7 +128,9 @@ namespace Srpg.Battle
             NoteRead();
             if (index < directions.Length && !string.IsNullOrWhiteSpace(directions[index])) OnDirection?.Invoke(directions[index]);
             ShowLine(line);
-            if (!string.IsNullOrEmpty(line.item)) OnItem?.Invoke(line.item);
+            if (index > 0) Sfx.Play(shoutNow ? "talk_shout" : "talk_next");   // 会話を送った（叫ぶ台詞は叫ぶ音）
+            else if (shoutNow) Sfx.Play("talk_shout");
+            if (!string.IsNullOrEmpty(line.item)) { OnItem?.Invoke(line.item); Sfx.Play("item_get"); }
         }
 
         public void Close()

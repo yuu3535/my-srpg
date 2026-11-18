@@ -1,0 +1,141 @@
+{
+  "note": "効果音の一覧（Sfx.cs）。id ごとに、鳴らす場面（name）・音量（volume 0〜2）・同じ音を続けて鳴らさない間（cooldown 秒）。音のファイルは同じフォルダの〈id〉.wav／.ogg／.mp3。file・source は tools/se_picker.py が書く（元のファイル名と配布元。クレジット用）。ファイルの無い id は鳴らない",
+  "items": [
+    {
+      "id": "ui_tap",
+      "name": "画面を押した（ボタン以外。波紋と一緒）",
+      "file": "",
+      "source": "",
+      "volume": 0.5,
+      "cooldown": 0.05
+    },
+    {
+      "id": "ui_select",
+      "name": "ボタンを押した（決定）",
+      "file": "",
+      "source": "",
+      "volume": 0.8,
+      "cooldown": 0.05
+    },
+    {
+      "id": "talk_next",
+      "name": "会話を送った（次の台詞・次のページ）",
+      "file": "",
+      "source": "",
+      "volume": 0.5,
+      "cooldown": 0.05
+    },
+    {
+      "id": "talk_shout",
+      "name": "叫ぶ台詞（画面が揺れるとき）",
+      "file": "",
+      "source": "",
+      "volume": 1.0,
+      "cooldown": 0.3
+    },
+    {
+      "id": "item_get",
+      "name": "物を手に入れた",
+      "file": "",
+      "source": "",
+      "volume": 0.9,
+      "cooldown": 0.3
+    },
+    {
+      "id": "explore_check",
+      "name": "探索で調べた（CHECK）",
+      "file": "",
+      "source": "",
+      "volume": 0.7,
+      "cooldown": 0.2
+    },
+    {
+      "id": "explore_exit",
+      "name": "探索で出入り口を使った",
+      "file": "",
+      "source": "",
+      "volume": 0.8,
+      "cooldown": 0.5
+    },
+    {
+      "id": "battle_move",
+      "name": "戦闘でユニットが動いた",
+      "file": "",
+      "source": "",
+      "volume": 0.6,
+      "cooldown": 0.1
+    },
+    {
+      "id": "battle_hit",
+      "name": "攻撃が当たった",
+      "file": "",
+      "source": "",
+      "volume": 0.9,
+      "cooldown": 0.05
+    },
+    {
+      "id": "battle_crit",
+      "name": "必殺が出た",
+      "file": "",
+      "source": "",
+      "volume": 1.0,
+      "cooldown": 0.05
+    },
+    {
+      "id": "battle_miss",
+      "name": "攻撃が外れた",
+      "file": "",
+      "source": "",
+      "volume": 0.7,
+      "cooldown": 0.05
+    },
+    {
+      "id": "battle_down",
+      "name": "ユニットが倒れた",
+      "file": "",
+      "source": "",
+      "volume": 0.9,
+      "cooldown": 0.1
+    },
+    {
+      "id": "battle_heal",
+      "name": "回復の物を使った",
+      "file": "",
+      "source": "",
+      "volume": 0.8,
+      "cooldown": 0.1
+    },
+    {
+      "id": "phase_ally",
+      "name": "味方フェーズになった",
+      "file": "",
+      "source": "",
+      "volume": 0.8,
+      "cooldown": 0.5
+    },
+    {
+      "id": "phase_enemy",
+      "name": "敵フェーズになった",
+      "file": "",
+      "source": "",
+      "volume": 0.8,
+      "cooldown": 0.5
+    },
+    {
+      "id": "battle_victory",
+      "name": "勝った",
+      "file": "",
+      "source": "",
+      "volume": 1.0,
+      "cooldown": 1.0
+    },
+    {
+      "id": "battle_defeat",
+      "name": "負けた",
+      "file": "",
+      "source": "",
+      "volume": 1.0,
+      "cooldown": 1.0
+    }
+  ]
+}

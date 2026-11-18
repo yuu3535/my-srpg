@@ -78,6 +78,7 @@ namespace Srpg.Battle.Menu
             if (live.Count >= Max) { Destroy(live[0].rt.gameObject); live.RemoveAt(0); }
             RectTransformUtility.ScreenPointToLocalPointInRectangle(root, screen, null, out var local);
             bool strong = OverButton(screen);
+            Sfx.Play(strong ? "ui_select" : "ui_tap");   // ボタンの上は決定の音、それ以外は軽いタップの音（Sfx。音のファイルが無ければ鳴らない）
             var r = new Ripple { strong = strong, length = strong ? 0.5f : 0.42f };
             r.rt = Node("Ripple", root);
             r.rt.anchoredPosition = local;

@@ -185,6 +185,7 @@ namespace Srpg.Battle
                 AddPopup(unit.Id, $"+{unit.plan.hp - before}", new Color(0.45f, 1f, 0.6f));
                 AddLog($"{unit.Name}は {used.name} を使用 → HP +{unit.plan.hp - before}");
             }
+            Sfx.Play("battle_heal");
             ActionDone?.Invoke("item", unit);
             FinishAction(unit);
         }
@@ -530,6 +531,7 @@ namespace Srpg.Battle
             {
                 if (step.durabilityCost > 0) LogDurability(attacker, step);
                 var victim = targets.First(t => t.Id == step.targetId);
+                Sfx.Play(!step.hit ? "battle_miss" : step.crit ? "battle_crit" : "battle_hit", 0.05f + 0.12f * plan.steps.IndexOf(step));
                 if (!step.hit)
                 {
                     AddLog($"  {victim.Name}：外れた（{step.hitRoll}/{step.hitRate}%）");
@@ -996,7 +998,7 @@ namespace Srpg.Battle
                 if (selected.plan != null) { selected.plan.x = cell.x; selected.plan.y = cell.y; }
                 view.MoveUnit(selected.Id, cell);
             }
-            if (cell != moveFrom) ActionDone?.Invoke("move", selected);
+            if (cell != moveFrom) { Sfx.Play("battle_move"); ActionDone?.Invoke("move", selected); }
             selected.moved = true;
             view.FollowCell(cell);   // 動いた先が画面の端なら付いていく
             pickedThisMove = null;
@@ -1287,6 +1289,7 @@ namespace Srpg.Battle
             if (option != null && (option.isArt || option.isMagic)) AddLog($"{attacker.Name}の{option.ActionName}");
             var byId = new Dictionary<string, UnitState> { { attacker.Id, attacker }, { defender.Id, defender } };
             AddLog($"{attacker.Name} → {defender.Name}");
+            float sfxAt = 0.05f;
             foreach (var step in plan.steps)
             {
                 if (step.durabilityCost > 0) LogDurability(byId[step.actorId], step);
@@ -1301,6 +1304,8 @@ namespace Srpg.Battle
                 var actor = byId[step.actorId];
                 var victim = byId[step.targetId];
                 string what = step.role == "attack" ? "攻撃" : step.role == "followUp" ? "追撃" : step.role == "counter" ? "反撃" : "反撃の追撃";
+                Sfx.Play(!step.hit ? "battle_miss" : step.crit ? "battle_crit" : "battle_hit", sfxAt);
+                sfxAt += 0.28f;
                 if (!step.hit)
                 {
                     AddLog($"  {what}：{actor.Name}の攻撃は外れた（{step.hitRoll}/{step.hitRate}%）");
@@ -1326,6 +1331,7 @@ namespace Srpg.Battle
             foreach (var unit in new[] { attacker, defender })
             {
                 if (unit.Alive) continue;
+                Sfx.Play("battle_down", sfxAt);
                 AddLog($"{unit.Name}は倒れた");
                 view.RemoveUnit(unit.Id);
             }
@@ -1507,8 +1513,8 @@ namespace Srpg.Battle
                 else BringReservesNow();
                 return false;
             }
-            if (!units.Any(u => u.Alive && u.Side == "enemy")) { CurrentPhase = Phase.Victory; AddLog("勝利！ すべての敵を倒した"); ApplyExp(); RaiseFinished(); return true; }
-            if (!units.Any(u => u.Alive && u.Side == "ally" && !u.summoned)) { CurrentPhase = Phase.Defeat; AddLog("敗北…"); RaiseFinished(); return true; }
+            if (!units.Any(u => u.Alive && u.Side == "enemy")) { CurrentPhase = Phase.Victory; Sfx.Play("battle_victory", 0.6f); AddLog("勝利！ すべての敵を倒した"); ApplyExp(); RaiseFinished(); return true; }
+            if (!units.Any(u => u.Alive && u.Side == "ally" && !u.summoned)) { CurrentPhase = Phase.Defeat; Sfx.Play("battle_defeat", 0.6f); AddLog("敗北…"); RaiseFinished(); return true; }
             return false;
         }
 
@@ -1608,6 +1614,7 @@ namespace Srpg.Battle
             if (CurrentPhase != Phase.Ally || reservePending) return;
             CancelToIdle();
             CurrentPhase = Phase.Enemy;
+            Sfx.Play("phase_enemy");
             AddLog($"敵フェーズ ターン{Turn}");
             TickStatusEffects("enemy");
             if (CheckEnd()) return;
@@ -1733,6 +1740,7 @@ namespace Srpg.Battle
             if (CurrentPhase != Phase.Enemy) return;
             Turn++;
             CurrentPhase = Phase.Ally;
+            Sfx.Play("phase_ally");
             foreach (var unit in units)
             {
                 unit.moved = false;
