@@ -60,7 +60,7 @@ namespace Srpg.Tests
                 Stand("キャリー", 1444f, 273f, false);
 
                 // 左の内（3行）: 下の尾。付け根は 544+40 を [668, 1020] に収めた 668、先 (−37, 下の端+42)（見本01）
-                Assert.AreEqual(box, dialogue.BubbleRect);
+                Assert.AreEqual(Rect.MinMaxRect(604f, 98f, 1021f, 312f), dialogue.BubbleRect, "いちばん長い行が11字なので細い箱（350＋67＝417）");
                 Assert.AreEqual(1, dialogue.PageCount);
                 Assert.AreEqual("bottom", dialogue.TailNow.edge);
                 Assert.AreEqual(new Vector2(668f - 37f, 354f), dialogue.TailNow.tip);
@@ -90,7 +90,7 @@ namespace Srpg.Tests
                 // 立ち絵のない人（10字）: 尾なし・今の箱（1行の高さ）
                 To("城の兵士");
                 Assert.AreEqual("城の兵士", dialogue.CurrentLine.speaker);
-                Assert.AreEqual(box1, dialogue.BubbleRect);
+                Assert.AreEqual(Rect.MinMaxRect(651.5f, 98f, 1036.5f, 212f), dialogue.BubbleRect, "10字は細い箱（318＋67＝385）・立ち絵のない人は真ん中");
                 Assert.IsNull(dialogue.TailNow.edge);
 
                 // 4行は2ページ
@@ -99,6 +99,10 @@ namespace Srpg.Tests
                 Assert.AreEqual(2, dialogue.PageCount);
                 // いちばん長い行が4字なので、3行でも小さい箱（名前札「アルシェ」が入る幅 224・3行の高さ 214。原作者 2026-11-18 案A）
                 Assert.AreEqual(Rect.MinMaxRect(604f, 98f, 828f, 312f), dialogue.BubbleRect);
+                // 2ページ目（1行）: そのページの行で高さが決まる（原作者 2026-11-18「ページごとに」）
+                for (int i = 0; i < 4 && dialogue.PageIndex == 0; i++) dialogue.Advance();
+                Assert.AreEqual(1, dialogue.PageIndex);
+                Assert.AreEqual(Rect.MinMaxRect(604f, 98f, 828f, 212f), dialogue.BubbleRect);
             }
             finally { dialogue.Close(); }
         }

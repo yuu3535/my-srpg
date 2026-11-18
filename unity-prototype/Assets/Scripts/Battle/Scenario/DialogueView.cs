@@ -120,7 +120,7 @@ namespace Srpg.Battle
             if (block == null) return;
             if (Revealing) { FinishReveal(); return; }    // 文字を出している途中なら、まず全部出す
             // 長い文は次のページへ（話す人・表情はそのまま。ログ・物を手に入れるのは最初のページだけ）
-            if (page < pages.Length - 1) { page++; ShowPage(); Sfx.Play("talk_next"); return; }
+            if (page < pages.Length - 1) { page++; RelayoutPage(); ShowPage(); Sfx.Play("talk_next"); return; }
             index++;
             if (index >= lines.Length) { Close(); return; }
             var line = lines[index];

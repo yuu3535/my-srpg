@@ -70,9 +70,9 @@ namespace Srpg.Battle
         /// <summary>いちばん高いとき（3行）の高さ 214。1行・2行の台詞は低くなる（上の端は固定。原作者 2026-11-16）</summary>
         public const float BoxH = 64f + BoxLines * LH;
         private const float CenterX = 844f, InnerD = 300f, OuterD = 600f;
-        /// <summary>小さい箱（短い台詞）: いちばん長い行が9字以下の台詞（行数は問わない）。幅は字数に合わせ、いちばん広くて 360（2026-11-16〜18）</summary>
-        public const int ShortChars = 9;
-        public const float ShortW = 360f, ShortMinW = 200f;
+        /// <summary>小さい箱（短い台詞）: そのページのいちばん長い行が11字以下（行数は問わない）。幅は字数に合わせ、いちばん広くて 417（2026-11-16〜18）</summary>
+        public const int ShortChars = 11;
+        public const float ShortW = 417f, ShortMinW = 200f;   // いちばん広くて 11字 × 31.8 ＋ 67
         /// <summary>
         /// キャラごとの頭のてっぺん Y と、横の補正（＋で画面の外側へ）。内側に立っても外側に立っても同じ値。
         /// 立ち絵を描き直したら、基準（内 300・外 600）は変えずにここだけ直す。ヘンリーは立ち絵が来たら決める（仮に約216）。アルバスは仕様に無いので前の顔の高さから
@@ -676,8 +676,19 @@ namespace Srpg.Battle
 
         // ── 吹き出し（§4・§5） ──
 
-        private void LayoutTalk(ScenarioLine line, string name)
+        private ScenarioLine layoutLine;
+        private string layoutName;
+
+        /// <summary>ページを送ったとき、そのページの行で吹き出しの幅・高さを決め直す（ふだんの会話だけ。原作者 2026-11-18「ページごとに」）</summary>
+        private void RelayoutPage()
         {
+            if (!SupportMode && layoutLine != null) LayoutTalk(layoutLine, layoutName, page);
+        }
+
+        private void LayoutTalk(ScenarioLine line, string name, int pageIdx = 0)
+        {
+            layoutLine = line;
+            layoutName = name;
             var p = Pal;
             bool narration = line.type == "narration", phone = line.type == "phone";
             bool talk = line.type == "line" && !string.IsNullOrEmpty(line.speaker) && placed.ContainsKey(line.speaker);
@@ -689,9 +700,16 @@ namespace Srpg.Battle
             var list = new List<string>();
             for (int i = 0; i < rows.Count; i += perPage) list.Add(string.Join("\n", rows.GetRange(i, Mathf.Min(perPage, rows.Count - i))));
             pages = list.Count > 0 ? list.ToArray() : new[] { "" };
-            page = 0;
+            page = Mathf.Clamp(pageIdx, 0, pages.Length - 1);
             int maxLen = rows.Count > 0 ? rows.Max(r => r.Length) : 0;
             int lineCount = Mathf.Min(perPage, Mathf.Max(1, rows.Count));
+            if (!SupportMode && rows.Count > 0)
+            {
+                // ふだんの会話は、今のページの行だけで幅と高さを決める（2ページ目に長い行があっても、1ページ目は細いまま）
+                var pageRows = rows.GetRange(page * perPage, Mathf.Min(perPage, rows.Count - page * perPage));
+                maxLen = pageRows.Max(r => r.Length);
+                lineCount = Mathf.Max(1, pageRows.Count);
+            }
 
             float txW, w, h, x0, x1, y0, y1;
             // 名前札と尾の側（−1 左・1 右・0 真ん中）。ふだんの立ち絵のない人は真ん中（尾なし・名前札あり）
@@ -704,8 +722,9 @@ namespace Srpg.Battle
                 // 短い台詞（折り返したあと1行・9字以下）は小さい箱（幅 360）。話す人の側の端は動かさず反対側だけ縮める（左の人は左の端 604、右の人は右の端 1084 のまま。
                 // 地の文・携帯端末・立ち絵のない人は真ん中のまま両側から）。大きさは2つだけ（試作。原作者 2026-11-16「数文字しかない文章は横幅を自動で」→ A＋2段階）
                 // 小さい箱の幅は字数に合わせる（原作者 2026-11-18「3〜7文字くらいの短い台詞に対してボックスの横幅広くない？」）。
-                // 本文 ＋ 左右の余白 67。ただし名前札（札の幅 ＋ 左右 34）と「次へ」の印が入る幅（200）より狭くしない。いちばん広くて 360
+                // 本文 ＋ 左右の余白 67。ただし名前札（札の幅 ＋ 左右 34）と「次へ」の印が入る幅（200）より狭くしない。いちばん広くて 360（→ 2026-11-18 から 11字・417）
                 // 行数に関係なく、いちばん長い行が9字以下なら小さい箱（原作者 2026-11-18「台詞数はそこそこだけど、改行では短めの文の時」→ 案A）
+                // 境目は11字（原作者 2026-11-18「両方入れて」: 10〜11字の行で右が2〜3字ぶん余るのを無くす。480 の箱で余るのは多くて1字ぶん）
                 bool small = maxLen <= ShortChars;
                 txW = Mathf.Round((small ? maxLen : BoxChars) * CW); h = 64f + lineCount * LH;
                 float tabNeed = narration ? 0f : 52f + (name ?? "").Length * 26f + (phone ? 26f : 0f) + 68f;
@@ -834,7 +853,7 @@ namespace Srpg.Battle
             typingRoot.anchoredPosition = new Vector2(x1 - 30f, -(y1 - 32f));
             // 菱形3つ（9px・間10・右の余白4）の中心は右端から 8.5・27.5・46.5。ページの「1 / 2」はその左に間12
             for (int i = 0; i < 3; i++) nextDias[i].rt.anchoredPosition = new Vector2(-8.5f - (2 - i) * 19f, -10f);
-            lineShownAt = Application.isPlaying ? Time.unscaledTime : -10f;
+            if (pageIdx == 0) lineShownAt = Application.isPlaying ? Time.unscaledTime : -10f;   // ページ送りでは出し直さない
             doneAt = -1f;
         }
 
