@@ -27,8 +27,9 @@ namespace Srpg.Tests
             yield return null;
             var box = Rect.MinMaxRect(604f, 98f, 1084f, 312f);   // 3行のとき
             var box1 = Rect.MinMaxRect(604f, 98f, 1084f, 212f);  // 1行のとき（上・左右の端は同じ。原作者 2026-11-16）
-            // 9字以下の1行は小さい箱（幅 360）。話す人の側の端は動かない（試作 2026-11-16）
-            Rect smallR = Rect.MinMaxRect(724f, 98f, 1084f, 212f), smallL = Rect.MinMaxRect(604f, 98f, 964f, 212f);
+            // 9字以下の1行は字数に合わせた小さい箱（名前札が入る幅より狭くしない）。話す人の側の端は動かない（2026-11-18）
+            // ギュンター「遅い。」: 名前札 182＋68＝250。カリマ（9字）: 286＋67＝353
+            Rect smallR = Rect.MinMaxRect(834f, 98f, 1084f, 212f), smallL = Rect.MinMaxRect(604f, 98f, 957f, 212f);
             // 来た順: アルシェ（左の内）→ ギュンター（右の内）→ カリマ（左の外）→ キャリー（右の外）
             dialogue.Play(new ScenarioBlock
             {

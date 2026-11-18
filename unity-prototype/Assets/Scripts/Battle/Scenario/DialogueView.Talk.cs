@@ -72,7 +72,7 @@ namespace Srpg.Battle
         private const float CenterX = 844f, InnerD = 300f, OuterD = 600f;
         /// <summary>小さい箱（短い台詞）: 9字以下の1行の台詞。幅 360（9字 × 31.8 ＋ 今の箱と同じ左右の余白。試作 2026-11-16）</summary>
         public const int ShortChars = 9;
-        public const float ShortW = 360f;
+        public const float ShortW = 360f, ShortMinW = 200f;
         /// <summary>
         /// キャラごとの頭のてっぺん Y と、横の補正（＋で画面の外側へ）。内側に立っても外側に立っても同じ値。
         /// 立ち絵を描き直したら、基準（内 300・外 600）は変えずにここだけ直す。ヘンリーは立ち絵が来たら決める（仮に約216）。アルバスは仕様に無いので前の顔の高さから
@@ -703,8 +703,12 @@ namespace Srpg.Battle
                 // 高さは行数に合わせて 1〜3行（114・164・214）。左右と上の端は動かない（原作者 2026-11-16「1行13文字で、基本3行までのテキストボックス」。仕様の「3行分のまま」から変更）
                 // 短い台詞（折り返したあと1行・9字以下）は小さい箱（幅 360）。話す人の側の端は動かさず反対側だけ縮める（左の人は左の端 604、右の人は右の端 1084 のまま。
                 // 地の文・携帯端末・立ち絵のない人は真ん中のまま両側から）。大きさは2つだけ（試作。原作者 2026-11-16「数文字しかない文章は横幅を自動で」→ A＋2段階）
+                // 小さい箱の幅は字数に合わせる（原作者 2026-11-18「3〜7文字くらいの短い台詞に対してボックスの横幅広くない？」）。
+                // 本文 ＋ 左右の余白 67。ただし名前札（札の幅 ＋ 左右 34）と「次へ」の印が入る幅（200）より狭くしない。いちばん広くて 360
                 bool small = rows.Count == 1 && maxLen <= ShortChars;
-                txW = Mathf.Round((small ? ShortChars : BoxChars) * CW); w = small ? ShortW : BoxW; h = 64f + lineCount * LH;
+                txW = Mathf.Round((small ? maxLen : BoxChars) * CW); h = 64f + lineCount * LH;
+                float tabNeed = narration ? 0f : 52f + (name ?? "").Length * 26f + (phone ? 26f : 0f) + 68f;
+                w = small ? Mathf.Min(ShortW, Mathf.Max(Mathf.Max(txW + 67f, tabNeed), ShortMinW)) : BoxW;
                 if (side < 0) { x0 = BoxX0; x1 = x0 + w; }
                 else if (side > 0) { x1 = BoxX0 + BoxW; x0 = x1 - w; }
                 else { x0 = CenterX - w / 2f; x1 = x0 + w; }
