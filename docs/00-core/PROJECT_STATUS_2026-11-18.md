@@ -29,6 +29,7 @@
 | 拠点メニュー | `docs/10-design/ui/MENU_HUB2_SPEC_2026-11-08.md` |
 | 探索 | `docs/10-design/ui/explore/`・`docs/10-design/map/SIDE_SCROLL_2D_MAP_PIPELINE_2026-10-03.md` |
 | 戦闘UI | 依頼文 `docs/30-planning/BATTLE_UI_DESIGN_HANDOFF_2026-11-18.md`（方向の参考: `docs/10-design/ui/SILVER_BATTLE_UI_DIRECTION_2026-10-02.md`） |
+| まだ Hub2 とそろっていない画面（デザインの依頼の一覧） | `docs/30-planning/UI_DESIGN_REQUESTS_INDEX_2026-11-19.md` |
 | 効果音 | `docs/90-worklogs/WORK_MEMO_2026-11-18.md`「SE」・道具 `tools/se_picker.py` |
 
 ## 3. 確かめ方
