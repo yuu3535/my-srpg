@@ -97,6 +97,8 @@ namespace Srpg.Tests
                 To("アルシェ");
                 Assert.AreEqual("一行目。\n二行目。\n三行目。\n四行目。", dialogue.CurrentLine.text);
                 Assert.AreEqual(2, dialogue.PageCount);
+                // いちばん長い行が4字なので、3行でも小さい箱（名前札「アルシェ」が入る幅 224・3行の高さ 214。原作者 2026-11-18 案A）
+                Assert.AreEqual(Rect.MinMaxRect(604f, 98f, 828f, 312f), dialogue.BubbleRect);
             }
             finally { dialogue.Close(); }
         }

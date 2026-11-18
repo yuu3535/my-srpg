@@ -70,7 +70,7 @@ namespace Srpg.Battle
         /// <summary>いちばん高いとき（3行）の高さ 214。1行・2行の台詞は低くなる（上の端は固定。原作者 2026-11-16）</summary>
         public const float BoxH = 64f + BoxLines * LH;
         private const float CenterX = 844f, InnerD = 300f, OuterD = 600f;
-        /// <summary>小さい箱（短い台詞）: 9字以下の1行の台詞。幅 360（9字 × 31.8 ＋ 今の箱と同じ左右の余白。試作 2026-11-16）</summary>
+        /// <summary>小さい箱（短い台詞）: いちばん長い行が9字以下の台詞（行数は問わない）。幅は字数に合わせ、いちばん広くて 360（2026-11-16〜18）</summary>
         public const int ShortChars = 9;
         public const float ShortW = 360f, ShortMinW = 200f;
         /// <summary>
@@ -705,7 +705,8 @@ namespace Srpg.Battle
                 // 地の文・携帯端末・立ち絵のない人は真ん中のまま両側から）。大きさは2つだけ（試作。原作者 2026-11-16「数文字しかない文章は横幅を自動で」→ A＋2段階）
                 // 小さい箱の幅は字数に合わせる（原作者 2026-11-18「3〜7文字くらいの短い台詞に対してボックスの横幅広くない？」）。
                 // 本文 ＋ 左右の余白 67。ただし名前札（札の幅 ＋ 左右 34）と「次へ」の印が入る幅（200）より狭くしない。いちばん広くて 360
-                bool small = rows.Count == 1 && maxLen <= ShortChars;
+                // 行数に関係なく、いちばん長い行が9字以下なら小さい箱（原作者 2026-11-18「台詞数はそこそこだけど、改行では短めの文の時」→ 案A）
+                bool small = maxLen <= ShortChars;
                 txW = Mathf.Round((small ? maxLen : BoxChars) * CW); h = 64f + lineCount * LH;
                 float tabNeed = narration ? 0f : 52f + (name ?? "").Length * 26f + (phone ? 26f : 0f) + 68f;
                 w = small ? Mathf.Min(ShortW, Mathf.Max(Mathf.Max(txW + 67f, tabNeed), ShortMinW)) : BoxW;
