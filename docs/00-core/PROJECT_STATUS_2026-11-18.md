@@ -34,7 +34,7 @@
 ## 3. 確かめ方
 
 - 手元の最新: http://localhost:8931/unity-prototype/Builds/WebGL/index.html （静的サーバー `srpg-static`。総合担当が組み立てる）
-- 公開中の Unity 版 https://yuu3535.github.io/my-srpg-unity/ は **古い**（2026-11-13 より前）。更新は原作者の確認のあと。
+- 公開中の Unity 版 https://yuu3535.github.io/my-srpg-unity/ は 2026-11-18 に更新した（その日の手元の版と同じ）。次の更新も原作者の確認のあと。
 - ブラウザ版 https://yuu3535.github.io/my-srpg/ は古い試作。今の画面の確認には使わない。
 
 ## 4. 担当
